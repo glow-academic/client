@@ -85,6 +85,7 @@ class GenerateArtifactPayload(BaseModel):
     file_size: int | None = None
     upload_id: str | None = None
     chat_id: str | None = None  # For audio session store, never emitted externally
+    metadata: dict[str, Any] | None = None  # Opaque passthrough — domain handlers read this
 
 
 def _extract_template_var(template: str) -> str | None:
@@ -456,6 +457,7 @@ async def _generate_artifact_impl(
                 "group_id": data.group_id,
                 "type": "start",
                 "message": "Starting generation",
+                "metadata": data.metadata,
             },
         )
 
@@ -492,6 +494,7 @@ async def _generate_artifact_impl(
                     "mime_type": data.mime_type,
                     "file_size": data.file_size,
                     "upload_id": data.upload_id,
+                    "metadata": data.metadata,
                 },
             )
             return
@@ -556,6 +559,7 @@ async def _generate_artifact_impl(
                     "artifact_type": data.artifact_type,
                     "type": "start",
                     "message": "Audio session ready",
+                    "metadata": data.metadata,
                 },
             )
             return
@@ -669,6 +673,7 @@ async def _generate_artifact_impl(
                             "group_id": data.group_id,
                             "type": "start",
                             "event_type": "text_start",
+                            "metadata": data.metadata,
                         },
                     )
 
@@ -690,6 +695,7 @@ async def _generate_artifact_impl(
                                 "event_type": "text_delta",
                                 "delta": delta,
                                 "accumulated_content": assistant_output,
+                                "metadata": data.metadata,
                             },
                         )
 
@@ -708,6 +714,7 @@ async def _generate_artifact_impl(
                             "type": "complete",
                             "event_type": "text_complete",
                             "text": assistant_output,
+                            "metadata": data.metadata,
                         },
                     )
 
@@ -742,6 +749,7 @@ async def _generate_artifact_impl(
                             "type": "start",
                             "event_type": "tool_call_start",
                             "tool_call_id": tool_call_id,
+                            "metadata": data.metadata,
                         },
                     )
 
@@ -788,6 +796,7 @@ async def _generate_artifact_impl(
                             "arguments_delta": delta,
                             "arguments": parsed_args,
                             "resolved_fields": resolved_fields,
+                            "metadata": data.metadata,
                         },
                     )
 
@@ -834,6 +843,7 @@ async def _generate_artifact_impl(
                             "arguments_delta": arguments_str,
                             "call_id": tool_call_id,
                             "resolved_fields": complete_resolved,
+                            "metadata": data.metadata,
                         },
                     )
 
@@ -898,6 +908,7 @@ async def _generate_artifact_impl(
                             "tool_name": tool_name,
                             "result": tool_result,
                             "resolved_fields": complete_resolved,
+                            "metadata": data.metadata,
                         },
                     )
 
@@ -1019,6 +1030,7 @@ async def _generate_artifact_impl(
                 "assistant_output": final_assistant_output,
                 "tool_results": all_tool_results,
                 "save": data.save,
+                "metadata": data.metadata,
             },
         )
 

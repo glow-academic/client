@@ -24,11 +24,11 @@ async def handle_audio_delta(data: dict[str, Any]) -> None:
     if not audio_data:
         return
     await internal_sio.emit(
-        "attempt_progress",
+        "attempt_assistant_progress",
         {
-            "type": "assistant_audio",
             "sid": session.sid,
             "chat_id": session.chat_id,
+            "content_type": "audio",
             "audio": audio_data,
         },
     )

@@ -110,9 +110,8 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
             # === CREATE MODE ===
             if not payload.training_entry_id:
                 await internal_sio.emit(
-                    "attempt_progress",
+                    "attempt_error",
                     {
-                        "type": "error",
                         "sid": sid,
                         "error_type": "start",
                         "message": "training_entry_id is required to create an attempt",
@@ -134,9 +133,8 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
 
             # Emit attempt_started to client via server layer
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_started",
                 {
-                    "type": "started",
                     "sid": sid,
                     "attempt_id": str(attempt_id),
                     "training_entry_id": str(payload.training_entry_id),
@@ -175,9 +173,8 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
             if not items or not items[0].get("training_entry_id"):
                 logger.warning(f"No training context in MV for attempt {attempt_id}")
                 await internal_sio.emit(
-                    "attempt_progress",
+                    "attempt_error",
                     {
-                        "type": "error",
                         "sid": sid,
                         "error_type": "start",
                         "message": "Attempt context not found",
@@ -207,9 +204,8 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
             else:
                 # All scenarios complete — emit attempt_ended
                 await internal_sio.emit(
-                    "attempt_progress",
+                    "attempt_ended",
                     {
-                        "type": "ended",
                         "sid": sid,
                         "attempt_id": str(attempt_id),
                         "success": True,
@@ -221,9 +217,8 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
     except Exception as e:
         logger.exception(f"Error in attempt_start: {e}")
         await internal_sio.emit(
-            "attempt_progress",
+            "attempt_error",
             {
-                "type": "error",
                 "sid": sid,
                 "error_type": "start",
                 "message": f"Failed to start attempt: {e}",

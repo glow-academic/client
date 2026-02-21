@@ -56,9 +56,8 @@ async def attempt_message_handler(data: dict[str, Any]) -> None:
         # Step 1: Validate message
         if not message or not message.strip():
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_error",
                 {
-                    "type": "error",
                     "sid": sid,
                     "error_type": "send",
                     "message": "Missing or empty message",
@@ -77,9 +76,8 @@ async def attempt_message_handler(data: dict[str, Any]) -> None:
 
         if not result.resources:
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_error",
                 {
-                    "type": "error",
                     "sid": sid,
                     "error_type": "send",
                     "message": "Attempt not found or access denied",
@@ -95,9 +93,8 @@ async def attempt_message_handler(data: dict[str, Any]) -> None:
                 if chat.id == chat_id:
                     if chat.completed:
                         await internal_sio.emit(
-                            "attempt_progress",
+                            "attempt_error",
                             {
-                                "type": "error",
                                 "sid": sid,
                                 "error_type": "send",
                                 "message": "Chat has already been completed",
@@ -110,9 +107,8 @@ async def attempt_message_handler(data: dict[str, Any]) -> None:
 
         if not chat_valid:
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_error",
                 {
-                    "type": "error",
                     "sid": sid,
                     "error_type": "send",
                     "message": "Chat does not exist",
@@ -132,9 +128,8 @@ async def attempt_message_handler(data: dict[str, Any]) -> None:
 
         if not agent_resource or not model_resource or not provider_resource:
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_error",
                 {
-                    "type": "error",
                     "sid": sid,
                     "error_type": "send",
                     "message": "Missing agent/model/provider configuration",
@@ -171,9 +166,8 @@ async def attempt_message_handler(data: dict[str, Any]) -> None:
                 f"profile_id={profile_id}, chat_id={chat_id}"
             )
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_error",
                 {
-                    "type": "error",
                     "sid": sid,
                     "error_type": "send",
                     "message": "Failed to create message",
@@ -190,9 +184,8 @@ async def attempt_message_handler(data: dict[str, Any]) -> None:
 
         # Step 6: Emit attempt_user_complete (to sid + attempt room)
         await internal_sio.emit(
-            "attempt_progress",
+            "attempt_user_complete",
             {
-                "type": "user_complete",
                 "sid": sid,
                 "rooms": [sid, f"attempt_{chat_id}"],
                 "chat_id": str(chat_id),
@@ -204,9 +197,8 @@ async def attempt_message_handler(data: dict[str, Any]) -> None:
 
         # Step 7: Emit attempt_assistant_start (to sid)
         await internal_sio.emit(
-            "attempt_progress",
+            "attempt_assistant_start",
             {
-                "type": "assistant_start",
                 "sid": sid,
                 "chat_id": str(chat_id),
                 "message_id": str(msg_prepare_row.assistant_message_id),
@@ -262,9 +254,8 @@ async def attempt_message_handler(data: dict[str, Any]) -> None:
     except Exception as e:
         logger.exception(f"Error in attempt_message: {e}")
         await internal_sio.emit(
-            "attempt_progress",
+            "attempt_error",
             {
-                "type": "error",
                 "sid": sid,
                 "error_type": "send",
                 "message": f"Failed to send message: {e}",

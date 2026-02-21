@@ -24,9 +24,8 @@ async def handle_user_speech_start(data: dict[str, Any]) -> None:
     if not item_id:
         return
     await internal_sio.emit(
-        "attempt_progress",
+        "attempt_user_start",
         {
-            "type": "user_start",
             "sid": session.sid,
             "chat_id": session.chat_id,
             "item_id": item_id,

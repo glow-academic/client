@@ -24,9 +24,8 @@ async def handle_user_speech_delta(data: dict[str, Any]) -> None:
     if not item_id:
         return
     await internal_sio.emit(
-        "attempt_progress",
+        "attempt_user_progress",
         {
-            "type": "user_delta",
             "sid": session.sid,
             "chat_id": session.chat_id,
             "item_id": item_id,

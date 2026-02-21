@@ -75,9 +75,8 @@ async def handle_user_speech_complete(data: dict[str, Any]) -> None:
             return
 
         await internal_sio.emit(
-            "attempt_progress",
+            "attempt_user_complete",
             {
-                "type": "user_complete",
                 "sid": session.sid,
                 "chat_id": session.chat_id,
                 "message_id": str(result.user_message_id),

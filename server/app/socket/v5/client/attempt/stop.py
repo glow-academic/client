@@ -55,9 +55,8 @@ async def _attempt_stop_impl(sid: str, data: AttemptStopPayload) -> None:
         if success and cancelled_message_id:
             # Emit to sid + attempt room via server layer
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_stopped",
                 {
-                    "type": "stopped",
                     "sid": sid,
                     "rooms": [sid, f"attempt_{chat_id}"],
                     "chat_id": chat_id,
@@ -80,9 +79,8 @@ async def _attempt_stop_impl(sid: str, data: AttemptStopPayload) -> None:
                 pass
         else:
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_stopped",
                 {
-                    "type": "stopped",
                     "sid": sid,
                     "chat_id": chat_id,
                     "success": False,
@@ -93,9 +91,8 @@ async def _attempt_stop_impl(sid: str, data: AttemptStopPayload) -> None:
     except Exception as e:
         logger.exception(f"Error in attempt_stop_message: {e}")
         await internal_sio.emit(
-            "attempt_progress",
+            "attempt_error",
             {
-                "type": "error",
                 "sid": sid,
                 "error_type": "stop",
                 "message": f"Failed to stop: {e}",
@@ -114,9 +111,8 @@ async def attempt_stop_message(sid: str, data: dict[str, Any]) -> None:
         logger.exception(f"Invalid request in attempt_stop_message: {e}")
         chat_id = data.get("chat_id", "")
         await internal_sio.emit(
-            "attempt_progress",
+            "attempt_error",
             {
-                "type": "error",
                 "sid": sid,
                 "error_type": "stop",
                 "message": f"Invalid request: {e}",

@@ -51,9 +51,8 @@ async def _attempt_end_all_impl(sid: str, data: AttemptEndAllPayload) -> None:
 
             # Emit attempt_ended via server layer
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_ended",
                 {
-                    "type": "ended",
                     "sid": sid,
                     "attempt_id": attempt_id,
                     "success": True,
@@ -77,9 +76,8 @@ async def _attempt_end_all_impl(sid: str, data: AttemptEndAllPayload) -> None:
     except Exception as e:
         logger.exception(f"Error in attempt_end_all: {e}")
         await internal_sio.emit(
-            "attempt_progress",
+            "attempt_error",
             {
-                "type": "error",
                 "sid": sid,
                 "error_type": "end",
                 "message": f"Failed to end all chats: {e}",
@@ -97,9 +95,8 @@ async def attempt_end_all(sid: str, data: dict[str, Any]) -> None:
     except Exception as e:
         logger.exception(f"Invalid request in attempt_end_all: {e}")
         await internal_sio.emit(
-            "attempt_progress",
+            "attempt_error",
             {
-                "type": "error",
                 "sid": sid,
                 "error_type": "end",
                 "message": f"Invalid request: {e}",

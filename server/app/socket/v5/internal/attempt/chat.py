@@ -79,9 +79,8 @@ async def _attempt_chat_impl(sid: str, data: dict[str, Any]) -> None:
 
             # Emit attempt_chat_ended to client via server layer
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_chat_ended",
                 {
-                    "type": "chat_ended",
                     "sid": sid,
                     "chat_id": last_chat_id or "",
                     "is_attempt_finished": None,
@@ -139,9 +138,8 @@ async def _attempt_chat_impl(sid: str, data: dict[str, Any]) -> None:
 
             # Emit attempt_chat_started to client via server layer
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_chat_started",
                 {
-                    "type": "chat_started",
                     "sid": sid,
                     "attempt_id": str(attempt_id),
                     "chat_id": str(chat_id),
@@ -151,9 +149,8 @@ async def _attempt_chat_impl(sid: str, data: dict[str, Any]) -> None:
     except Exception as e:
         logger.exception(f"Error in attempt_chat: {str(e)}")
         await internal_sio.emit(
-            "attempt_progress",
+            "attempt_error",
             {
-                "type": "error",
                 "sid": sid,
                 "error_type": "chat",
                 "message": f"Failed to handle chat lifecycle: {str(e)}",

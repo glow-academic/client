@@ -25,9 +25,8 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
 
         if not profile_id_str:
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_error",
                 {
-                    "type": "error",
                     "sid": sid,
                     "error_type": "send",
                     "message": "Profile not found. Please reconnect.",
@@ -47,9 +46,8 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
     except Exception as e:
         logger.exception(f"Invalid request in attempt_message: {e}")
         await internal_sio.emit(
-            "attempt_progress",
+            "attempt_error",
             {
-                "type": "error",
                 "sid": sid,
                 "error_type": "send",
                 "message": f"Invalid request: {e}",

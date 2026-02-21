@@ -45,9 +45,8 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
 
         if not profile_id_str:
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_error",
                 {
-                    "type": "error",
                     "sid": sid,
                     "error_type": "audio",
                     "message": "Profile not found. Please reconnect.",
@@ -73,9 +72,8 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
 
         if not context_row or not context_row.chat_exists:
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_error",
                 {
-                    "type": "error",
                     "sid": sid,
                     "error_type": "audio",
                     "message": "Chat not found",
@@ -86,9 +84,8 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
 
         if context_row.chat_is_completed:
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_error",
                 {
-                    "type": "error",
                     "sid": sid,
                     "error_type": "audio",
                     "message": "Chat is already completed",
@@ -109,9 +106,8 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
                 f"profile_id={profile_id}, chat_id={chat_id}"
             )
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_error",
                 {
-                    "type": "error",
                     "sid": sid,
                     "error_type": "audio",
                     "message": error_msg,
@@ -123,9 +119,8 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
         attempt_id = context_row.attempt_id
         if not attempt_id:
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_error",
                 {
-                    "type": "error",
                     "sid": sid,
                     "error_type": "audio",
                     "message": "Attempt not found for this chat",
@@ -150,9 +145,8 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
 
         if not prepare_row or not prepare_row.run_id:
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_error",
                 {
-                    "type": "error",
                     "sid": sid,
                     "error_type": "audio",
                     "message": "Failed to prepare audio session",
@@ -199,9 +193,8 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
     except Exception as e:
         logger.exception(f"Error in attempt_audio_start: {e}")
         await internal_sio.emit(
-            "attempt_progress",
+            "attempt_error",
             {
-                "type": "error",
                 "sid": sid,
                 "error_type": "audio",
                 "message": f"Failed to start voice session: {e}",

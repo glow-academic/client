@@ -60,9 +60,8 @@ async def _attempt_end_impl(sid: str, data: AttemptEndPayload) -> None:
     except Exception as e:
         logger.exception(f"Error in attempt_end: {e}")
         await internal_sio.emit(
-            "attempt_progress",
+            "attempt_error",
             {
-                "type": "error",
                 "sid": sid,
                 "error_type": "end",
                 "message": f"Failed to end chat: {e}",
@@ -80,9 +79,8 @@ async def attempt_end(sid: str, data: dict[str, Any]) -> None:
 
         if not profile_id_str:
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_error",
                 {
-                    "type": "error",
                     "sid": sid,
                     "error_type": "end",
                     "message": "Profile not found. Please reconnect.",
@@ -95,9 +93,8 @@ async def attempt_end(sid: str, data: dict[str, Any]) -> None:
     except Exception as e:
         logger.exception(f"Invalid request in attempt_end: {e}")
         await internal_sio.emit(
-            "attempt_progress",
+            "attempt_error",
             {
-                "type": "error",
                 "sid": sid,
                 "error_type": "end",
                 "message": f"Invalid request: {e}",

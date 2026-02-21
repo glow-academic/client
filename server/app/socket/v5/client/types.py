@@ -362,6 +362,30 @@ class AttemptAssistantStartEvent(BaseModel):
     created_at: str
 
 
+class AttemptAssistantProgressEvent(BaseModel):
+    """Server-to-client: assistant generation progress."""
+
+    chat_id: str
+    content_type: str  # "delta" | "audio"
+    content: str | None = None
+    audio: Any | None = None
+
+
+class AttemptAssistantCompleteEvent(BaseModel):
+    """Server-to-client: assistant message generation complete."""
+
+    chat_id: str
+    message_id: str
+    content: str | None = None
+
+
+class AttemptAssistantHintsEvent(BaseModel):
+    """Server-to-client: hints created during assistant generation."""
+
+    chat_id: str
+    hints: list[dict[str, Any]]
+
+
 # ---------------------------------------------------------------------------
 # Attempt grade events
 # ---------------------------------------------------------------------------
@@ -374,6 +398,29 @@ class AttemptGradePayload(BaseModel):
     chat_id: UUID | None = None
     resource_types: list[str] | None = None
     user_instructions: list[str] | None = None
+
+
+class AttemptGradeStartEvent(BaseModel):
+    """Server-to-client: grading began."""
+
+    chat_id: str
+    grade_id: str | None = None
+
+
+class AttemptGradeProgressEvent(BaseModel):
+    """Server-to-client: per-criterion grade result."""
+
+    chat_id: str
+    grade_id: str | None = None
+    resource_type: str | None = None
+    entry: dict[str, Any] | None = None
+
+
+class AttemptGradeCompleteEvent(BaseModel):
+    """Server-to-client: aggregate grade result."""
+
+    chat_id: str
+    grade_id: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -440,8 +487,16 @@ class AttemptUserStartEvent(BaseModel):
     item_id: str
 
 
+class AttemptUserProgressEvent(BaseModel):
+    """Server-to-client: user transcription progress (audio mode)."""
+
+    chat_id: str
+    item_id: str
+    transcript: str
+
+
 class AttemptUserDeltaEvent(BaseModel):
-    """Server-to-client: voice transcription delta."""
+    """Server-to-client: voice transcription delta (deprecated alias)."""
 
     chat_id: str
     item_id: str

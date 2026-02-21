@@ -162,8 +162,9 @@ async def handle_run_complete(data: dict[str, Any]) -> None:
 
     # 4e: Special case — chat emits attempt_chat after completion
     if artifact_type == "chat":
-        attempt_id_data = data.get("attempt_id")
-        training_department_id_data = data.get("training_department_id")
+        metadata = data.get("metadata") or {}
+        attempt_id_data = metadata.get("attempt_id")
+        training_department_id_data = metadata.get("training_department_id")
         if should_save and profile_id_str and attempt_id_data and training_department_id_data:
             await internal_sio.emit(
                 "attempt_chat",

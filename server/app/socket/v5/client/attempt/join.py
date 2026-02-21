@@ -24,9 +24,8 @@ async def attempt_join(sid: str, data: dict[str, Any]) -> None:
 
         if not profile_id_str:
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_error",
                 {
-                    "type": "error",
                     "sid": sid,
                     "error_type": "join",
                     "message": "Profile not found. Please reconnect.",
@@ -40,9 +39,8 @@ async def attempt_join(sid: str, data: dict[str, Any]) -> None:
         await sio.enter_room(sid, room_name)
 
         await internal_sio.emit(
-            "attempt_progress",
+            "attempt_joined",
             {
-                "type": "joined",
                 "sid": sid,
                 "chat_id": chat_id,
                 "success": True,
@@ -53,9 +51,8 @@ async def attempt_join(sid: str, data: dict[str, Any]) -> None:
         logger.exception(f"Error in attempt_join: {e}")
         chat_id = data.get("chat_id", "")
         await internal_sio.emit(
-            "attempt_progress",
+            "attempt_error",
             {
-                "type": "error",
                 "sid": sid,
                 "error_type": "join",
                 "message": f"Failed to join room: {e}",

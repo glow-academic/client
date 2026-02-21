@@ -72,9 +72,8 @@ async def _attempt_use_previous_impl(sid: str, data: AttemptUsePreviousPayload) 
 
             # Emit attempt_chat_ended via server layer
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_chat_ended",
                 {
-                    "type": "chat_ended",
                     "sid": sid,
                     "chat_id": last_chat_id or "",
                     "is_attempt_finished": None,
@@ -98,9 +97,8 @@ async def _attempt_use_previous_impl(sid: str, data: AttemptUsePreviousPayload) 
     except Exception as e:
         logger.exception(f"Error in attempt_use_previous: {e}")
         await internal_sio.emit(
-            "attempt_progress",
+            "attempt_error",
             {
-                "type": "error",
                 "sid": sid,
                 "error_type": "end",
                 "message": f"Failed to use previous grades: {e}",
@@ -117,9 +115,8 @@ async def attempt_use_previous(sid: str, data: dict[str, Any]) -> None:
 
         if not profile_id_str:
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_error",
                 {
-                    "type": "error",
                     "sid": sid,
                     "error_type": "end",
                     "message": "Profile not found. Please reconnect.",
@@ -132,9 +129,8 @@ async def attempt_use_previous(sid: str, data: dict[str, Any]) -> None:
     except Exception as e:
         logger.exception(f"Invalid request in attempt_use_previous: {e}")
         await internal_sio.emit(
-            "attempt_progress",
+            "attempt_error",
             {
-                "type": "error",
                 "sid": sid,
                 "error_type": "end",
                 "message": f"Invalid request: {e}",

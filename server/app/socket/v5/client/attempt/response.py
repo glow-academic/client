@@ -31,9 +31,8 @@ async def _attempt_response_impl(
 
         if not chat_id or not question_id or not option_ids:
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_error",
                 {
-                    "type": "error",
                     "sid": sid,
                     "error_type": "quiz",
                     "message": "Missing required fields",
@@ -50,9 +49,8 @@ async def _attempt_response_impl(
 
         # Emit success (placeholder — actual correctness check needs implementation)
         await internal_sio.emit(
-            "attempt_progress",
+            "attempt_response_result",
             {
-                "type": "response_result",
                 "sid": sid,
                 "success": True,
                 "message": "Response submitted",
@@ -76,9 +74,8 @@ async def _attempt_response_impl(
     except Exception as e:
         logger.exception(f"Error in attempt_response_submit: {e}")
         await internal_sio.emit(
-            "attempt_progress",
+            "attempt_error",
             {
-                "type": "error",
                 "sid": sid,
                 "error_type": "quiz",
                 "message": f"Failed to submit response: {e}",
@@ -96,9 +93,8 @@ async def attempt_response_submit(sid: str, data: dict[str, Any]) -> None:
 
         if not profile_id_str:
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_error",
                 {
-                    "type": "error",
                     "sid": sid,
                     "error_type": "quiz",
                     "message": "Profile not found. Please reconnect.",
@@ -113,9 +109,8 @@ async def attempt_response_submit(sid: str, data: dict[str, Any]) -> None:
         logger.exception(f"Invalid request in attempt_response_submit: {e}")
         chat_id = data.get("chat_id", "")
         await internal_sio.emit(
-            "attempt_progress",
+            "attempt_error",
             {
-                "type": "error",
                 "sid": sid,
                 "error_type": "quiz",
                 "message": f"Invalid request: {e}",

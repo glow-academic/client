@@ -21,9 +21,8 @@ async def handle_audio_error(data: dict[str, Any]) -> None:
     if not session:
         return
     await internal_sio.emit(
-        "attempt_progress",
+        "attempt_error",
         {
-            "type": "error",
             "sid": session.sid,
             "error_type": "audio",
             "message": data.get("error_message", "Unknown audio error"),

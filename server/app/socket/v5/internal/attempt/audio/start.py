@@ -21,9 +21,8 @@ async def handle_audio_start(data: dict[str, Any]) -> None:
     session = get_session_by_group_id(group_id)
     chat_id = session.chat_id if session else group_id
     await internal_sio.emit(
-        "attempt_progress",
+        "attempt_audio_ready",
         {
-            "type": "ready",
             "sid": sid,
             "chat_id": chat_id,
             "success": True,

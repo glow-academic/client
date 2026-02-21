@@ -70,9 +70,8 @@ async def attempt_grade_handler(data: dict[str, Any]) -> None:
 
         if not result.resources:
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_error",
                 {
-                    "type": "error",
                     "sid": sid,
                     "error_type": "grade",
                     "message": "Attempt not found or access denied",
@@ -88,9 +87,8 @@ async def attempt_grade_handler(data: dict[str, Any]) -> None:
 
         if not grade_chat_id:
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_error",
                 {
-                    "type": "error",
                     "sid": sid,
                     "error_type": "grade",
                     "message": "No chat found for grading",
@@ -102,9 +100,8 @@ async def attempt_grade_handler(data: dict[str, Any]) -> None:
         existing_group_id = result.group_id
         if not existing_group_id:
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_error",
                 {
-                    "type": "error",
                     "sid": sid,
                     "error_type": "grade",
                     "message": "No group found for grading",
@@ -124,9 +121,8 @@ async def attempt_grade_handler(data: dict[str, Any]) -> None:
 
         if not agent_resource or not model_resource or not provider_resource:
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_error",
                 {
-                    "type": "error",
                     "sid": sid,
                     "error_type": "grade",
                     "message": "Missing agent/model/provider configuration",
@@ -158,9 +154,8 @@ async def attempt_grade_handler(data: dict[str, Any]) -> None:
                 f"profile_id={profile_id}, attempt_id={attempt_id}"
             )
             await internal_sio.emit(
-                "attempt_progress",
+                "attempt_error",
                 {
-                    "type": "error",
                     "sid": sid,
                     "error_type": "grade",
                     "message": "Failed to prepare grading",
@@ -169,7 +164,19 @@ async def attempt_grade_handler(data: dict[str, Any]) -> None:
             )
             return
 
-        # Step 6: Emit to generate pipeline (pre-created run_id skips prepare)
+        # Step 6: Emit grade_start to server layer
+        await internal_sio.emit(
+            "attempt_grade_start",
+            {
+                "sid": sid,
+                "chat_id": str(grade_chat_id),
+                "grade_id": str(grade_prepare_row.grade_id)
+                if grade_prepare_row.grade_id
+                else None,
+            },
+        )
+
+        # Step 7: Emit to generate pipeline (pre-created run_id skips prepare)
         await internal_sio.emit(
             "generate",
             {
@@ -206,9 +213,8 @@ async def attempt_grade_handler(data: dict[str, Any]) -> None:
     except Exception as e:
         logger.exception(f"Error in attempt_grade: {e}")
         await internal_sio.emit(
-            "attempt_progress",
+            "attempt_error",
             {
-                "type": "error",
                 "sid": sid,
                 "error_type": "grade",
                 "message": f"Failed to start grading: {e}",

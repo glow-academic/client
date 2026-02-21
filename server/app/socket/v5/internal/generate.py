@@ -564,17 +564,22 @@ async def generate_handler(data: dict[str, Any]) -> None:
                     "save": payload.save,
                 }
 
-                # Forward extra fields (e.g. attempt_id, chat_resolved_id)
+                # Build metadata from extra_emit_fields + attempt-specific IDs
+                metadata: dict[str, Any] = {}
                 for field_name in config.extra_emit_fields:
                     value = getattr(payload, field_name, None)
                     if value is not None:
-                        emit_payload[field_name] = value
-
-                # Forward attempt-specific IDs for complete handler
+                        metadata[field_name] = (
+                            str(value) if isinstance(value, uuid.UUID) else value
+                        )
                 if payload.grade_id:
-                    emit_payload["grade_id"] = payload.grade_id
+                    metadata["grade_id"] = payload.grade_id
                 if payload.chat_id:
-                    emit_payload["chat_id"] = payload.chat_id
+                    metadata["chat_id"] = payload.chat_id
+                if payload.save is not None:
+                    metadata["save"] = payload.save
+
+                emit_payload["metadata"] = metadata or None
 
                 await internal_sio.emit("generate_artifact", emit_payload)
 
