@@ -262,7 +262,9 @@ async def _attempt_generate_impl(
         # Step 2: Extract LLM config from pre-fetched resources
         config_agents = result.resources.config_agents or [] if result.resources else []
         config_models = result.resources.config_models or [] if result.resources else []
-        config_providers = result.resources.config_providers or [] if result.resources else []
+        config_providers = (
+            result.resources.config_providers or [] if result.resources else []
+        )
 
         agent_resource = config_agents[0] if config_agents else None
         model_resource = config_models[0] if config_models else None

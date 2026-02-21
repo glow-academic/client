@@ -50,9 +50,7 @@ async def test_progress_server_handler(data: dict[str, Any]) -> None:
             created_at=data.get("created_at", ""),
         )
         for room in all_rooms:
-            await sio.emit(
-                "test_run_start", event.model_dump(mode="json"), room=room
-            )
+            await sio.emit("test_run_start", event.model_dump(mode="json"), room=room)
 
     elif event_type == "run_delta":
         delta_event = TestRunDeltaEvent(

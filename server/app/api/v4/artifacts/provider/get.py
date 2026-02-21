@@ -40,17 +40,17 @@ from app.api.v4.artifacts.provider.types import (
     ProviderKeySection,
     ProviderNameSection,
     ProviderValueSection,
-    ProviderWebsocketResources,
     ProviderWebsocketEntries,
+    ProviderWebsocketResources,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.provider_drafts.get import get_provider_drafts_entries_internal
 from app.api.v4.entries.runs.search import get_run_list_entries_internal
 from app.api.v4.permissions import has_tools_for_resource, resolve_agents_for_artifact
+from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.args.get import get_args_internal
 from app.api.v4.resources.args_outputs.get import get_args_outputs_internal
-from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal

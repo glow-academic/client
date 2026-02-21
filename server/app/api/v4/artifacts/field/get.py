@@ -33,8 +33,8 @@ from app.api.v4.artifacts.field.types import (
     FieldFlagSection,
     FieldInternalData,
     FieldNameSection,
-    FieldWebsocketResources,
     FieldWebsocketEntries,
+    FieldWebsocketResources,
     GetFieldApiRequest,
     GetFieldApiResponse,
     GetFieldWebsocketResponse,
@@ -44,9 +44,9 @@ from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.field_drafts.get import get_field_drafts_entries_internal
 from app.api.v4.entries.runs.search import get_run_list_entries_internal
 from app.api.v4.permissions import has_tools_for_resource, resolve_agents_for_artifact
+from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.args.get import get_args_internal
 from app.api.v4.resources.args_outputs.get import get_args_outputs_internal
-from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal

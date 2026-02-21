@@ -82,11 +82,7 @@ async def get_dashboard_footer(
 
         # 3. Enrich with document_ids from training config
         cr_ids = list(
-            {
-                item.chat_resolved_id
-                for item in chat_items
-                if item.chat_resolved_id
-            }
+            {item.chat_resolved_id for item in chat_items if item.chat_resolved_id}
         )
         if cr_ids:
             async with pool.acquire() as c:

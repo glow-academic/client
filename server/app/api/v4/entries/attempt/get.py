@@ -292,11 +292,7 @@ async def get_attempt_chats_internal(
 
     # Pass 2: Get training config for all unique chat_resolved_ids
     cr_ids = list(
-        {
-            item.chat_resolved_id
-            for item in all_items
-            if item.chat_resolved_id
-        }
+        {item.chat_resolved_id for item in all_items if item.chat_resolved_id}
     )
     config_map = {}
     if cr_ids:
@@ -310,9 +306,7 @@ async def get_attempt_chats_internal(
     items: list[ChatViewItem] = []
     for chat in all_items:
         config = (
-            config_map.get(chat.chat_resolved_id)
-            if chat.chat_resolved_id
-            else None
+            config_map.get(chat.chat_resolved_id) if chat.chat_resolved_id else None
         )
 
         grade = None

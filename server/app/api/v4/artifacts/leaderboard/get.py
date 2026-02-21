@@ -23,8 +23,8 @@ from app.api.v4.artifacts.leaderboard.types import (
     LeaderboardSections,
     LeaderboardSimulationResource,
     LeaderboardViews,
-    LeaderboardWebsocketResources,
     LeaderboardWebsocketEntries,
+    LeaderboardWebsocketResources,
 )
 from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.auth.settings import get_auth_settings_internal

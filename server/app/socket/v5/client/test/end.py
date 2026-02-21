@@ -85,9 +85,7 @@ async def test_end(sid: str, data: dict[str, Any]) -> None:
         )
 
 
-async def _test_end_impl(
-    sid: str, data: TestEndPayload, profile_id: uuid.UUID
-) -> None:
+async def _test_end_impl(sid: str, data: TestEndPayload, profile_id: uuid.UUID) -> None:
     """Handle test grade with all business logic."""
     invocation_id_str = str(data.invocation_id)
 

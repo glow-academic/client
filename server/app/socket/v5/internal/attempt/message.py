@@ -177,9 +177,7 @@ async def attempt_message_handler(data: dict[str, Any]) -> None:
             return
 
         created_at_str = (
-            msg_prepare_row.created_at.isoformat()
-            if msg_prepare_row.created_at
-            else ""
+            msg_prepare_row.created_at.isoformat() if msg_prepare_row.created_at else ""
         )
 
         # Step 6: Emit attempt_user_complete (to sid + attempt room)

@@ -46,8 +46,8 @@ from app.api.v4.artifacts.parameter.types import (
     ParameterNameSection,
     ParameterResourceBucket,
     ParameterResources,
-    ParameterWebsocketResources,
     ParameterWebsocketEntries,
+    ParameterWebsocketResources,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal

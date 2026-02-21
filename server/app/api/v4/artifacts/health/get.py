@@ -14,8 +14,8 @@ from app.api.v4.artifacts.health.types import (
     HealthRequest,
     HealthResponse,
     HealthViews,
-    HealthWebsocketResources,
     HealthWebsocketEntries,
+    HealthWebsocketResources,
 )
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.health.get import get_health_list_view_internal

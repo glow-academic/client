@@ -19,6 +19,4 @@ async def attempt_grade_start_server_handler(data: dict[str, Any]) -> None:
         grade_id=data.get("grade_id"),
     )
     for room in data.get("rooms") or [sid]:
-        await sio.emit(
-            "attempt_grade_start", event.model_dump(mode="json"), room=room
-        )
+        await sio.emit("attempt_grade_start", event.model_dump(mode="json"), room=room)

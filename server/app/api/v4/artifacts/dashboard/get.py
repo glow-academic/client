@@ -44,8 +44,8 @@ from app.api.v4.artifacts.dashboard.types import (
     DashboardBundleResponse,
     DashboardRequest,
     DashboardSectionRequest,
-    DashboardWebsocketResources,
     DashboardWebsocketEntries,
+    DashboardWebsocketResources,
     GetDashboardWebsocketResponse,
 )
 from app.api.v4.artifacts.types import FilterOption, HistoryItem, HistoryResponse

@@ -28,8 +28,8 @@ from app.api.v4.artifacts.invocation.types import (
     SuiteTemperatureLevelSection,
     SuiteToolSection,
     SuiteVoiceSection,
-    SuiteWebsocketResources,
     SuiteWebsocketEntries,
+    SuiteWebsocketResources,
 )
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.runs.search import get_run_list_entries_internal

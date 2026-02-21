@@ -20,6 +20,4 @@ async def attempt_audio_ended_server_handler(data: dict[str, Any]) -> None:
         message=data.get("message"),
     )
     for room in data.get("rooms") or [sid]:
-        await sio.emit(
-            "attempt_audio_ended", event.model_dump(mode="json"), room=room
-        )
+        await sio.emit("attempt_audio_ended", event.model_dump(mode="json"), room=room)

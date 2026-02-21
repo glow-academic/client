@@ -19,8 +19,8 @@ from app.api.v4.artifacts.activity.types import (
     ActivityResources,
     ActivityResponse,
     ActivityViews,
-    ActivityWebsocketResources,
     ActivityWebsocketEntries,
+    ActivityWebsocketResources,
     GetActivityWebsocketResponse,
 )
 from app.api.v4.artifacts.session.types import (

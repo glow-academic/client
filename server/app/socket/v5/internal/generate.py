@@ -247,12 +247,8 @@ async def generate_handler(data: dict[str, Any]) -> None:
             return
 
         # Step 7: Extract LLM config from pre-fetched resources
-        config_agents = (
-            getattr(result.resources, config.config_agents_attr, None) or []
-        )
-        config_models = (
-            getattr(result.resources, config.config_models_attr, None) or []
-        )
+        config_agents = getattr(result.resources, config.config_agents_attr, None) or []
+        config_models = getattr(result.resources, config.config_models_attr, None) or []
         config_providers = (
             getattr(result.resources, config.config_providers_attr, None) or []
         )
@@ -291,9 +287,7 @@ async def generate_handler(data: dict[str, Any]) -> None:
             else model_resource.name
         )
         base_url = (
-            provider_resource.endpoint
-            if hasattr(provider_resource, "endpoint")
-            else ""
+            provider_resource.endpoint if hasattr(provider_resource, "endpoint") else ""
         )
         api_key = provider_resource.key if hasattr(provider_resource, "key") else ""
         temperature = (
@@ -305,9 +299,7 @@ async def generate_handler(data: dict[str, Any]) -> None:
             agent_resource.reasoning if hasattr(agent_resource, "reasoning") else None
         )
         voice = agent_resource.voice if hasattr(agent_resource, "voice") else None
-        quality = (
-            agent_resource.quality if hasattr(agent_resource, "quality") else None
-        )
+        quality = agent_resource.quality if hasattr(agent_resource, "quality") else None
         provider_name = provider_resource.value or provider_resource.name or ""
 
         if not api_key:
@@ -430,9 +422,7 @@ async def generate_handler(data: dict[str, Any]) -> None:
                         sid,
                         f"Failed to prepare {artifact_type} generation: Unknown error",
                         artifact_type,
-                        group_id=str(existing_group_id)
-                        if existing_group_id
-                        else None,
+                        group_id=str(existing_group_id) if existing_group_id else None,
                     )
                     return
 

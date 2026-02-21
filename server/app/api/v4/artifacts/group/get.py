@@ -26,8 +26,8 @@ from app.api.v4.artifacts.group.types import (
     GroupDetailRunItem,
     GroupDetailRunWithMessages,
     GroupInternalData,
-    GroupWebsocketResources,
     GroupWebsocketEntries,
+    GroupWebsocketResources,
 )
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.calls.get import get_call_list_view_internal

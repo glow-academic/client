@@ -10,8 +10,8 @@ import asyncpg
 
 from app.api.v4.artifacts.record.types import (
     GetRecordWebsocketResponse,
-    RecordWebsocketResources,
     RecordWebsocketEntries,
+    RecordWebsocketResources,
 )
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.runs.search import (

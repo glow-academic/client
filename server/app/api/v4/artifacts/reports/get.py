@@ -21,8 +21,8 @@ from app.api.v4.artifacts.reports.types import (
     ReportsSections,
     ReportsSimulationResource,
     ReportsViews,
-    ReportsWebsocketResources,
     ReportsWebsocketEntries,
+    ReportsWebsocketResources,
 )
 from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.auth.settings import get_auth_settings_internal
@@ -32,9 +32,9 @@ from app.api.v4.entries.runs.search import (
     get_run_list_entries_internal,
 )
 from app.api.v4.permissions import resolve_agents_for_artifact
-from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.args.get import get_args_internal
 from app.api.v4.resources.args_outputs.get import get_args_outputs_internal
+from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.providers.get import get_providers_internal

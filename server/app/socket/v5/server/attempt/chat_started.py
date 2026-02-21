@@ -19,6 +19,4 @@ async def attempt_chat_started_server_handler(data: dict[str, Any]) -> None:
         chat_id=data.get("chat_id", ""),
     )
     for room in data.get("rooms") or [sid]:
-        await sio.emit(
-            "attempt_chat_started", event.model_dump(mode="json"), room=room
-        )
+        await sio.emit("attempt_chat_started", event.model_dump(mode="json"), room=room)

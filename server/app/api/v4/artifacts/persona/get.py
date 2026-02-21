@@ -63,8 +63,8 @@ from app.api.v4.artifacts.persona.types import (
     PersonaParameterSection,
     PersonaResourceBucket,
     PersonaResources,
-    PersonaWebsocketResources,
     PersonaWebsocketEntries,
+    PersonaWebsocketResources,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal

@@ -57,9 +57,7 @@ async def search_attempt_chat_entries_internal(
             "offset_count": offset_count,
             "attempt_id": str(attempt_id) if attempt_id else None,
             "group_id": str(group_id) if group_id else None,
-            "chat_resolved_id": str(chat_resolved_id)
-            if chat_resolved_id
-            else None,
+            "chat_resolved_id": str(chat_resolved_id) if chat_resolved_id else None,
             "profile_id": str(profile_id) if profile_id else None,
             "cohort_id": str(cohort_id) if cohort_id else None,
             "department_id": str(department_id) if department_id else None,

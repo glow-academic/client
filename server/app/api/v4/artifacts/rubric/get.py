@@ -52,8 +52,8 @@ from app.api.v4.artifacts.rubric.types import (
     RubricPointsSection,
     RubricStandardGroupsSection,
     RubricStandardsSection,
-    RubricWebsocketResources,
     RubricWebsocketEntries,
+    RubricWebsocketResources,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal

@@ -24,11 +24,11 @@ from app.api.v4.artifacts.test.types import (
     GetTestArtifactRequest,
     GetTestArtifactResponse,
     GetTestWebsocketResponse,
+    TestEntries,
     TestInternalData,
     TestResources,
     TestRunItem,
     TestStatusSummary,
-    TestEntries,
     TestWebsocketResources,
 )
 from app.api.v4.entries.test_invocation.get import (

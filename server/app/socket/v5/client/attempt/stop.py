@@ -43,9 +43,7 @@ async def _attempt_stop_impl(sid: str, data: AttemptStopPayload) -> None:
                 await execute_sql_typed(
                     conn,
                     SQL_PATH_STOP,
-                    params=SimulationTextStopRunSqlParams(
-                        chat_id=uuid.UUID(chat_id)
-                    ),
+                    params=SimulationTextStopRunSqlParams(chat_id=uuid.UUID(chat_id)),
                 ),
             )
 

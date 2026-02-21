@@ -38,8 +38,8 @@ from app.api.v4.artifacts.department.types import (
     DepartmentFlagSection,
     DepartmentNameSection,
     DepartmentSettingSection,
-    DepartmentWebsocketResources,
     DepartmentWebsocketEntries,
+    DepartmentWebsocketResources,
     GetDepartmentApiRequest,
     GetDepartmentApiResponse,
     GetDepartmentWebsocketResponse,
@@ -51,9 +51,9 @@ from app.api.v4.entries.department_drafts.get import (
 )
 from app.api.v4.entries.runs.search import get_run_list_entries_internal
 from app.api.v4.permissions import has_tools_for_resource, resolve_agents_for_artifact
+from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.args.get import get_args_internal
 from app.api.v4.resources.args_outputs.get import get_args_outputs_internal
-from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.descriptions.search import search_descriptions_internal
 from app.api.v4.resources.flags.get import get_flags_internal

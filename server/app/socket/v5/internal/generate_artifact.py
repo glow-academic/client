@@ -85,7 +85,9 @@ class GenerateArtifactPayload(BaseModel):
     file_size: int | None = None
     upload_id: str | None = None
     chat_id: str | None = None  # For audio session store, never emitted externally
-    metadata: dict[str, Any] | None = None  # Opaque passthrough — domain handlers read this
+    metadata: dict[str, Any] | None = (
+        None  # Opaque passthrough — domain handlers read this
+    )
 
 
 def _extract_template_var(template: str) -> str | None:
