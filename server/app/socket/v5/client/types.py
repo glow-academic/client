@@ -125,11 +125,16 @@ class TestLeavePayload(BaseModel):
 
 
 class TestStartPayload(BaseModel):
-    """Client-to-server: start test (create or next mode)."""
+    """Client-to-server: create a new test."""
 
-    eval_id: UUID | None = None
-    test_id: UUID | None = None
+    eval_id: UUID
     infinite_mode: bool = False
+
+
+class TestNextPayload(BaseModel):
+    """Client-to-server: find next pending run in an existing test."""
+
+    test_id: UUID
 
 
 class TestRunPayload(BaseModel):

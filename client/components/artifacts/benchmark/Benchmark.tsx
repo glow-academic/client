@@ -7,12 +7,13 @@
 "use client";
 import type { EvalsListOut } from "@/app/(main)/benchmark/page";
 import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useSocket } from "@/contexts/socket-context";
+import { useTestLifecycle } from "@/hooks/use-test-lifecycle";
 import BenchmarkZone, { BenchmarkZoneSkeleton } from "./BenchmarkZone";
 
 // Rubric mapping types
@@ -50,21 +51,9 @@ export default function Benchmark({
   );
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
-  // Extract evals list from data
-  const evalsList = useMemo(() => {
-    const evals = evalsData?.evals || [];
-    // Add missing use_groups property if not present
-    return evals.map((evalItem) => ({
-      ...evalItem,
-      use_groups: (evalItem as { use_groups?: boolean | null }).use_groups ?? false,
-    }));
-  }, [evalsData?.evals]);
-
-  // Set up WebSocket listeners for test_started / test_error
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleTestStarted = (data: { test_id: string }) => {
+  const { startTest } = useTestLifecycle({
+    socket,
+    onStarted: (data) => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
@@ -77,9 +66,8 @@ export default function Benchmark({
       toast.success("Eval started successfully.");
       router.refresh();
       router.push(`/test/${data.test_id}`);
-    };
-
-    const handleTestError = (data: { message?: string }) => {
+    },
+    onError: (data) => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
@@ -89,19 +77,18 @@ export default function Benchmark({
       }
       setStartingEvalId(null);
       toast.error(data.message || "Failed to start eval. Please try again.");
-    };
+    },
+  });
 
-    socket.on("test_started", handleTestStarted);
-    socket.on("test_error", handleTestError);
-
-    return () => {
-      socket.off("test_started", handleTestStarted);
-      socket.off("test_error", handleTestError);
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [router, loadingToastId, socket]);
+  // Extract evals list from data
+  const evalsList = useMemo(() => {
+    const evals = evalsData?.evals || [];
+    // Add missing use_groups property if not present
+    return evals.map((evalItem) => ({
+      ...evalItem,
+      use_groups: (evalItem as { use_groups?: boolean | null }).use_groups ?? false,
+    }));
+  }, [evalsData?.evals]);
 
   const handleStartEval = useCallback(
     async (evalId: string, infiniteMode: boolean = false) => {
@@ -127,10 +114,7 @@ export default function Benchmark({
         setLoadingToastId(toastId);
         setStartingEvalId(evalId);
 
-        socket.emit("test_start", {
-          eval_id: evalId,
-          infinite_mode: infiniteMode,
-        });
+        startTest(evalId, { infiniteMode });
 
         // timeout...
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -152,6 +136,7 @@ export default function Benchmark({
       isConnected,
       socket,
       loadingToastId,
+      startTest,
     ]
   );
 

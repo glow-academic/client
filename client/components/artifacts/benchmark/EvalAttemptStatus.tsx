@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/table";
 import { useProfile } from "@/contexts/profile-context";
 import { useSocket } from "@/contexts/socket-context";
+import { useTestLifecycle } from "@/hooks/use-test-lifecycle";
 import type { OutputOf } from "@/lib/api/types";
 import { AlertCircle, CheckCircle2, Clock, Play, Square, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -47,25 +48,16 @@ export default function EvalAttemptStatus({
 
   const [infiniteMode] = useState(attemptData.infinite_mode || false);
 
-    // Join test room on mount for real-time updates
-  useEffect(() => {
-    if (!socket || !isConnected) return;
-
-    // Join test room using invocation_id
-    // For now, join with first run's chat_id as invocation_id
+  // Derive invocation ID from first run
+  const invocationId = useMemo(() => {
     const firstRun = runs[0];
-    const invocationId = firstRun?.chat_id;
-    if (invocationId) {
-      socket.emit("test_join", { invocation_id: invocationId });
-    }
+    return firstRun?.chat_id ?? null;
+  }, [runs]);
 
-    // Listen for test run start
-    const handleRunStart = (data: {
-      invocation_id: string;
-      run_id: string;
-      current_run: number;
-      total_runs: number;
-    }) => {
+  const { runTest, stopTest, joinRoom, leaveRoom } = useTestLifecycle({
+    socket,
+    invocationId,
+    onRunStart: (data) => {
       setStartingRunIds((prev) => {
         const next = new Set(prev);
         next.delete(data.run_id);
@@ -79,16 +71,8 @@ export default function EvalAttemptStatus({
           return run;
         })
       );
-    };
-
-    // Listen for test run complete
-    const handleRunComplete = (data: {
-      invocation_id: string;
-      run_id: string;
-      current_run: number;
-      total_runs: number;
-      remaining_runs: number;
-    }) => {
+    },
+    onRunComplete: (data) => {
       setRuns((prevRuns) =>
         prevRuns.map((run) => {
           if (run.chat_id === data.invocation_id) {
@@ -97,15 +81,8 @@ export default function EvalAttemptStatus({
           return run;
         })
       );
-    };
-
-    // Listen for test graded
-    const handleGraded = (data: {
-      invocation_id: string;
-      grade_id?: string;
-      score?: number;
-      passed?: boolean;
-    }) => {
+    },
+    onGraded: (data) => {
       setRuns((prevRuns) =>
         prevRuns.map((run) => {
           if (run.chat_id === data.invocation_id) {
@@ -118,27 +95,12 @@ export default function EvalAttemptStatus({
           return run;
         })
       );
-    };
-
-    // Listen for all complete
-    const handleAllComplete = (data: {
-      invocation_id: string;
-      total_runs: number;
-    }) => {
+    },
+    onAllComplete: () => {
       toast.success("All test runs complete!");
-    };
-
-    // Listen for test stopped
-    const handleStopped = (data: {
-      invocation_id: string;
-      success: boolean;
-      message?: string;
-    }) => {
-      setStoppingRunIds((prev) => {
-        const next = new Set(prev);
-        // Clear all stopping states
-        return new Set();
-      });
+    },
+    onStopped: (data) => {
+      setStoppingRunIds(new Set());
       if (data.success) {
         setRuns((prevRuns) =>
           prevRuns.map((run) => {
@@ -152,71 +114,49 @@ export default function EvalAttemptStatus({
       } else {
         toast.error(data.message || "Failed to stop test.");
       }
-    };
-
-    // Listen for test errors
-    const handleError = (data: {
-      invocation_id?: string;
-      message: string;
-      error_type?: string;
-    }) => {
+    },
+    onError: (data) => {
       setStartingRunIds(new Set());
       setStoppingRunIds(new Set());
       toast.error(data.message);
-    };
+    },
+  });
 
-    socket.on("test_run_start", handleRunStart);
-    socket.on("test_run_complete", handleRunComplete);
-    socket.on("test_graded", handleGraded);
-    socket.on("test_all_complete", handleAllComplete);
-    socket.on("test_stopped", handleStopped);
-    socket.on("test_error", handleError);
+  // Join test room on mount, leave on unmount
+  useEffect(() => {
+    if (!socket || !isConnected || !invocationId) return;
+
+    joinRoom(invocationId);
 
     return () => {
-      // Leave test room on unmount
-      if (invocationId) {
-        socket.emit("test_leave", { invocation_id: invocationId });
-      }
-      socket.off("test_run_start", handleRunStart);
-      socket.off("test_run_complete", handleRunComplete);
-      socket.off("test_graded", handleGraded);
-      socket.off("test_all_complete", handleAllComplete);
-      socket.off("test_stopped", handleStopped);
-      socket.off("test_error", handleError);
+      leaveRoom(invocationId);
     };
-  }, [socket, isConnected, attemptId, runs]);
+  }, [socket, isConnected, invocationId, joinRoom, leaveRoom]);
 
   const handleStartRun = useCallback(
-    (invocationId: string) => {
+    (runInvocationId: string) => {
       if (!socket || !isConnected) {
         toast.error("WebSocket not connected. Please wait for connection.");
         return;
       }
 
-      setStartingRunIds((prev) => new Set(prev).add(invocationId));
-
-      socket.emit("test_run", {
-        invocation_id: invocationId,
-        test_id: attemptId,
-      });
+      setStartingRunIds((prev) => new Set(prev).add(runInvocationId));
+      runTest(runInvocationId, attemptId);
     },
-    [socket, isConnected, attemptId]
+    [socket, isConnected, attemptId, runTest]
   );
 
   const handleStopRun = useCallback(
-    (invocationId: string) => {
+    (runInvocationId: string) => {
       if (!socket || !isConnected) {
         toast.error("WebSocket not connected. Please wait for connection.");
         return;
       }
 
-      setStoppingRunIds((prev) => new Set(prev).add(invocationId));
-
-      socket.emit("test_stop", {
-        invocation_id: invocationId,
-      });
+      setStoppingRunIds((prev) => new Set(prev).add(runInvocationId));
+      stopTest(runInvocationId);
     },
-    [socket, isConnected]
+    [socket, isConnected, stopTest]
   );
 
   const getStatusBadge = (status: string) => {

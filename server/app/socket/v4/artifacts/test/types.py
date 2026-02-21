@@ -44,14 +44,20 @@ TEST_ENTRY_TYPES = ["grades", "feedbacks"]
 class TestStartPayload(BaseModel):
     """Request payload for test_start WebSocket event.
 
-    Dual-mode:
-    - Create mode (has eval_id, no test_id): Create test + invocations
-    - Next mode (has test_id): Find next invocation with pending runs
+    Create mode only: creates a new test + invocations for the given eval.
     """
 
-    eval_id: UUID | None = None
-    test_id: UUID | None = None
+    eval_id: UUID
     infinite_mode: bool = False
+
+
+class TestNextPayload(BaseModel):
+    """Request payload for test_next WebSocket event.
+
+    Finds the next invocation with pending runs in an existing test.
+    """
+
+    test_id: UUID
 
 
 class TestRunPayload(BaseModel):

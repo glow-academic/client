@@ -9,5 +9,6 @@ Importing this module registers:
 from . import (
     complete,  # noqa: F401 — registers generate_call_complete handler
     error,  # noqa: F401 — registers test_error_event handler
+    next,  # noqa: F401 — registers test_next handler
     progress,  # noqa: F401 — registers test_progress_update handler
 )
