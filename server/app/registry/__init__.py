@@ -2,6 +2,7 @@
 
 from app.registry.artifacts import ARTIFACTS, ArtifactKind, ArtifactMeta
 from app.registry.entries import ENTRY_SCHEMAS
+from app.registry.entry_views import ENTRY_VIEW_NAMES, ENTRY_VIEW_SCHEMAS
 from app.registry.relations import (
     ARTIFACT_FLAGS,
     ARTIFACT_RESOURCES,
@@ -27,6 +28,8 @@ __all__ = [
     "ArtifactMeta",
     "ENTRY_RESOURCES",
     "ENTRY_SCHEMAS",
+    "ENTRY_VIEW_NAMES",
+    "ENTRY_VIEW_SCHEMAS",
     "RESOURCE_ENTRIES",
     "RESOURCE_MODALITIES",
     "RESOURCE_SCHEMAS",
