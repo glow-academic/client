@@ -18,10 +18,10 @@ from . import (
     assistant_progress,  # noqa: F401 — registers generate_text_progress internal event
     audio,  # noqa: F401 — registers generate_audio_* internal events
     chat,  # noqa: F401 — registers attempt_chat internal event
-    continue_,  # noqa: F401 — registers attempt_continue internal event
     grade,  # noqa: F401 — registers attempt_grade internal event
     grade_complete,  # noqa: F401 — registers generate_*_complete internal events
     grade_progress,  # noqa: F401 — registers generate_call_complete internal event
     message,  # noqa: F401 — registers attempt_message internal event
+    next,  # noqa: F401 — registers attempt_next internal event
     start,  # noqa: F401 — registers attempt_start internal event
 )

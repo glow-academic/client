@@ -1,6 +1,6 @@
-"""Internal attempt_continue handler — next-scenario logic for existing attempts.
+"""Internal attempt_next handler — next-scenario logic for existing attempts.
 
-Handles: @internal_sio.on("attempt_continue")
+Handles: @internal_sio.on("attempt_next")
 
 Checks remaining scenarios in the attempt. If more remain, emits "generate"
 for the next chat. If all complete, emits attempt_ended.
@@ -13,7 +13,7 @@ from app.api.v4.entries.attempt.get import get_attempt_entries_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio
-from app.socket.v5.client.types import AttemptContinuePayload
+from app.socket.v5.client.types import AttemptNextPayload
 from app.socket.v5.internal.attempt.start import (
     SQL_REMAINING_SCENARIOS,
     _emit_chat_generate,
@@ -29,9 +29,9 @@ logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 
-@internal_sio.on("attempt_continue")  # type: ignore
-async def attempt_continue_handler(data: dict[str, Any]) -> None:
-    """Handle attempt_continue — proceed to next scenario in existing attempt."""
+@internal_sio.on("attempt_next")  # type: ignore
+async def attempt_next_handler(data: dict[str, Any]) -> None:
+    """Handle attempt_next — proceed to next scenario in existing attempt."""
     sid = data.get("sid", "")
     if not sid:
         return
@@ -42,9 +42,9 @@ async def attempt_continue_handler(data: dict[str, Any]) -> None:
 
     try:
         profile_id = uuid.UUID(profile_id_str)
-        payload = AttemptContinuePayload(**data)
+        payload = AttemptNextPayload(**data)
     except Exception as e:
-        logger.exception(f"Invalid attempt_continue payload: {e}")
+        logger.exception(f"Invalid attempt_next payload: {e}")
         return
 
     try:
@@ -62,7 +62,7 @@ async def attempt_continue_handler(data: dict[str, Any]) -> None:
                 "attempt_error",
                 AttemptErrorData(
                     sid=sid,
-                    error_type="continue",
+                    error_type="next",
                     message="Attempt context not found",
                 ).model_dump(mode="json"),
             )
@@ -101,12 +101,12 @@ async def attempt_continue_handler(data: dict[str, Any]) -> None:
             )
 
     except Exception as e:
-        logger.exception(f"Error in attempt_continue: {e}")
+        logger.exception(f"Error in attempt_next: {e}")
         await internal_sio.emit(
             "attempt_error",
             AttemptErrorData(
                 sid=sid,
-                error_type="continue",
+                error_type="next",
                 message=f"Failed to continue attempt: {e}",
             ).model_dump(mode="json"),
         )

@@ -258,7 +258,7 @@ class AttemptStartPayload(BaseModel):
     save: bool = True
 
 
-class AttemptContinuePayload(BaseModel):
+class AttemptNextPayload(BaseModel):
     """Client-to-server: proceed to the next scenario in an existing attempt."""
 
     attempt_id: UUID

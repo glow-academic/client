@@ -4,7 +4,7 @@ Handles: @internal_sio.on("attempt_start")
 
 Create-only: resolve context, create attempt, emit attempt_started,
 then emit "generate" to kick off the first chat.
-Next-scenario logic is handled by attempt_continue.
+Next-scenario logic is handled by attempt_next.
 """
 
 import uuid
@@ -16,7 +16,7 @@ from app.api.v4.resources.training.context import get_training_attempt_context_i
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio
-from app.socket.v5.client.types import AttemptContinuePayload, AttemptStartPayload
+from app.socket.v5.client.types import AttemptNextPayload, AttemptStartPayload
 from app.socket.v5.internal.attempt.types import (
     AttemptErrorData,
     AttemptStartedData,
@@ -62,7 +62,7 @@ async def _emit_chat_generate(
     attempt_id: uuid.UUID,
     training_entry_id: uuid.UUID,
     chat_resolved_id: uuid.UUID,
-    payload: AttemptStartPayload | AttemptContinuePayload,
+    payload: AttemptStartPayload | AttemptNextPayload,
 ) -> None:
     """Compose with generate by emitting to the internal bus."""
     resource_types = payload.resource_types or [

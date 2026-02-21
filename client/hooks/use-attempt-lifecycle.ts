@@ -37,7 +37,7 @@ export interface UseAttemptLifecycleReturn {
     trainingEntryId: string,
     opts?: { infiniteMode?: boolean },
   ) => void;
-  continueAttempt: (
+  nextScenario: (
     attemptId: string,
     opts?: { draftId?: string; userInstructions?: string[] },
   ) => void;
@@ -163,13 +163,13 @@ export function useAttemptLifecycle({
     [socket],
   );
 
-  const continueAttempt = useCallback(
+  const nextScenario = useCallback(
     (
       attemptIdArg: string,
       opts?: { draftId?: string; userInstructions?: string[] },
     ) => {
       if (!socket) return;
-      socket.emit("attempt_continue", {
+      socket.emit("attempt_next", {
         attempt_id: attemptIdArg,
         ...(opts?.draftId && { draft_id: opts.draftId }),
         ...(opts?.userInstructions && {
@@ -231,7 +231,7 @@ export function useAttemptLifecycle({
 
   return {
     startAttempt,
-    continueAttempt,
+    nextScenario,
     endChat,
     endAll,
     usePrevious,

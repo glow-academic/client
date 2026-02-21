@@ -344,8 +344,8 @@ class AttemptStartPayload(BaseModel):
     save: bool = True
 
 
-class AttemptContinuePayload(BaseModel):
-    """Request payload for attempt_continue WebSocket event.
+class AttemptNextPayload(BaseModel):
+    """Request payload for attempt_next WebSocket event.
 
     Proceed to the next scenario in an existing attempt.
     """

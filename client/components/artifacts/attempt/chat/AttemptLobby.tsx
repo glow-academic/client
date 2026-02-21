@@ -59,7 +59,7 @@ export function AttemptLobby({
   );
 
   // Listen for attempt lifecycle events
-  const { continueAttempt, usePrevious } = useAttemptLifecycle({
+  const { nextScenario, usePrevious } = useAttemptLifecycle({
     socket,
     attemptId,
     onChatStarted: useCallback((data: AttemptChatStartedEvent) => {
@@ -86,7 +86,7 @@ export function AttemptLobby({
     }, [attemptId, router]),
     onError: useCallback((data: AttemptErrorEvent) => {
       if (!isStartingRef.current) return;
-      if (data.type === "end" || data.type === "start" || data.type === "continue") {
+      if (data.type === "end" || data.type === "start" || data.type === "next") {
         setIsStarting(false);
         isStartingRef.current = false;
         toast.error(data.message || "Failed to start training.");
@@ -103,7 +103,7 @@ export function AttemptLobby({
     setIsStarting(true);
     isStartingRef.current = true;
 
-    continueAttempt(attemptId, {
+    nextScenario(attemptId, {
       draftId: draftId ?? undefined,
       userInstructions: userInstructions?.trim()
         ? [userInstructions.trim()]
@@ -115,7 +115,7 @@ export function AttemptLobby({
     attemptId,
     draftId,
     userInstructions,
-    continueAttempt,
+    nextScenario,
   ]);
 
   const handleUsePrevious = useCallback(() => {
