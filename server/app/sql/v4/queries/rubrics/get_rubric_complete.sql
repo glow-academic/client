@@ -735,8 +735,8 @@ user_departments_for_agents AS (
 agent_artifact_tool_counts AS (
     SELECT 
         a.id as agent_id,
-        COUNT(DISTINCT CASE WHEN ar.resource IS NOT NULL THEN dr_rt.resource::text END) as matched_artifact_count,
-        COUNT(DISTINCT CASE WHEN ar.resource IS NULL THEN dr_rt.resource::text END) as extra_outside_count
+        COUNT(DISTINCT CASE WHEN dr_rt.resource = ANY(ARRAY['departments','descriptions','flags','names','points','rubrics','standard_groups','standards']::resource_type[]) THEN dr_rt.resource::text END) as matched_artifact_count,
+        COUNT(DISTINCT CASE WHEN dr_rt.resource IS NOT NULL AND NOT (dr_rt.resource = ANY(ARRAY['departments','descriptions','flags','names','points','rubrics','standard_groups','standards']::resource_type[])) THEN dr_rt.resource::text END) as extra_outside_count
     FROM agent_artifact a
     LEFT JOIN agent_tools_junction at ON at.agent_id = a.id AND at.active = true
     LEFT JOIN tools_resource tr ON tr.id = at.tool_id
@@ -748,7 +748,6 @@ agent_artifact_tool_counts AS (
     )
     LEFT JOIN tool_domains_junction tdj_rt ON tdj_rt.tool_id = t.id AND tdj_rt.active = true
     LEFT JOIN domains_resource dr_rt ON dr_rt.id = tdj_rt.domain_id AND dr_rt.active = true
-    LEFT JOIN artifact_resources_relation ar ON ar.resource = dr_rt.resource AND ar.artifact = 'rubric'::artifact_type
     GROUP BY a.id
 ),
 
@@ -768,10 +767,9 @@ name_agent_data AS (
             JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
             JOIN tool_domains_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
             JOIN domains_resource dr_rt ON dr_rt.id = tdj_rt.domain_id AND dr_rt.active = true
-            JOIN artifact_resources_relation ar ON ar.resource = dr_rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'rubric'::artifact_type
+              AND dr_rt.resource = ANY(ARRAY['departments','descriptions','flags','names','points','rubrics','standard_groups','standards']::resource_type[])
         )
         AND (
             EXISTS (
@@ -854,10 +852,9 @@ description_agent_data AS (
             JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
             JOIN tool_domains_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
             JOIN domains_resource dr_rt ON dr_rt.id = tdj_rt.domain_id AND dr_rt.active = true
-            JOIN artifact_resources_relation ar ON ar.resource = dr_rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'rubric'::artifact_type
+              AND dr_rt.resource = ANY(ARRAY['departments','descriptions','flags','names','points','rubrics','standard_groups','standards']::resource_type[])
         )
         AND (
             EXISTS (
@@ -940,10 +937,9 @@ departments_agent_data AS (
             JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
             JOIN tool_domains_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
             JOIN domains_resource dr_rt ON dr_rt.id = tdj_rt.domain_id AND dr_rt.active = true
-            JOIN artifact_resources_relation ar ON ar.resource = dr_rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'rubric'::artifact_type
+              AND dr_rt.resource = ANY(ARRAY['departments','descriptions','flags','names','points','rubrics','standard_groups','standards']::resource_type[])
         )
         AND (
             EXISTS (
@@ -1018,10 +1014,9 @@ flag_agent_data AS (
             JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
             JOIN tool_domains_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
             JOIN domains_resource dr_rt ON dr_rt.id = tdj_rt.domain_id AND dr_rt.active = true
-            JOIN artifact_resources_relation ar ON ar.resource = dr_rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'rubric'::artifact_type
+              AND dr_rt.resource = ANY(ARRAY['departments','descriptions','flags','names','points','rubrics','standard_groups','standards']::resource_type[])
         )
         AND (
             EXISTS (
@@ -1104,10 +1099,9 @@ points_agent_data AS (
             JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
             JOIN tool_domains_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
             JOIN domains_resource dr_rt ON dr_rt.id = tdj_rt.domain_id AND dr_rt.active = true
-            JOIN artifact_resources_relation ar ON ar.resource = dr_rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'rubric'::artifact_type
+              AND dr_rt.resource = ANY(ARRAY['departments','descriptions','flags','names','points','rubrics','standard_groups','standards']::resource_type[])
         )
         AND (
             EXISTS (
@@ -1190,10 +1184,9 @@ standard_groups_agent_data AS (
             JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
             JOIN tool_domains_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
             JOIN domains_resource dr_rt ON dr_rt.id = tdj_rt.domain_id AND dr_rt.active = true
-            JOIN artifact_resources_relation ar ON ar.resource = dr_rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'rubric'::artifact_type
+              AND dr_rt.resource = ANY(ARRAY['departments','descriptions','flags','names','points','rubrics','standard_groups','standards']::resource_type[])
         )
         AND (
             EXISTS (
@@ -1276,10 +1269,9 @@ standards_agent_data AS (
             JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
             JOIN tool_domains_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
             JOIN domains_resource dr_rt ON dr_rt.id = tdj_rt.domain_id AND dr_rt.active = true
-            JOIN artifact_resources_relation ar ON ar.resource = dr_rt.resource
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND ar.artifact = 'rubric'::artifact_type
+              AND dr_rt.resource = ANY(ARRAY['departments','descriptions','flags','names','points','rubrics','standard_groups','standards']::resource_type[])
         )
         AND (
             EXISTS (
