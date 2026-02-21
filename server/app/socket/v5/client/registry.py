@@ -123,12 +123,40 @@ async def _fetch_with_pool(
     return await fn(**kwargs)
 
 
+async def _fetch_with_conn(
+    module_path: str,
+    func_name: str,
+    id_kwarg: str,
+    profile_id: UUID,
+    artifact_id: UUID | None,
+    draft_id: UUID | None,  # noqa: ARG001
+    pool: asyncpg.Pool | None,  # noqa: ARG001
+) -> object:
+    """Conn-based fetcher: get_*_websocket(conn, profile_id, <id_kwarg>).
+
+    Used by attempt/test which take a raw connection, not pool or kwargs.
+    Acquires a connection via get_db_connection().
+    """
+    import importlib
+
+    from app.infra.v4.websocket.get_db_connection import get_db_connection
+
+    mod = importlib.import_module(module_path)
+    fn = getattr(mod, func_name)
+    async with get_db_connection() as conn:
+        kwargs: dict[str, object] = {"conn": conn, "profile_id": profile_id}
+        if id_kwarg:
+            kwargs[id_kwarg] = artifact_id
+        return await fn(**kwargs)
+
+
 def _make_fetcher(
     module_path: str,
     func_name: str,
     id_kwarg: str,
     *,
     needs_pool: bool = False,
+    needs_conn: bool = False,
 ) -> Callable[
     [UUID, UUID | None, UUID | None, asyncpg.Pool | None],
     Coroutine[Any, Any, object],
@@ -141,6 +169,16 @@ def _make_fetcher(
         draft_id: UUID | None,
         pool: asyncpg.Pool | None,
     ) -> object:
+        if needs_conn:
+            return await _fetch_with_conn(
+                module_path,
+                func_name,
+                id_kwarg,
+                profile_id,
+                artifact_id,
+                draft_id,
+                pool,
+            )
         if needs_pool:
             return await _fetch_with_pool(
                 module_path,
@@ -960,6 +998,59 @@ _register(
             "get_practice_websocket",
             "",
             needs_pool=True,
+        ),
+    )
+)
+
+# === Conn-based artifacts (attempt/test — use get_db_connection, no draft) ===
+
+_register(
+    ArtifactGenerateConfig(
+        artifact_type="attempt",
+        valid_resource_types=[
+            "user_messages",
+            "assistant_messages",
+            "contents",
+            "hints",
+            "feedbacks",
+            "strengths",
+            "improvements",
+            "analyses",
+            "highlights",
+            "replacements",
+        ],
+        prepare_sql_path="app/sql/v4/queries/generate/persona/prepare_persona_generation_complete.sql",
+        draft_view_key="draft_attempt",
+        requires_draft=False,
+        entry_types=["insights", "debug_info"],
+        fetcher_id_kwarg="attempt_id",
+        extra_emit_fields=["attempt_id", "chat_id", "grade_id"],
+        fetcher=_make_fetcher(
+            "app.api.v4.artifacts.attempt.get",
+            "get_attempt_websocket",
+            "attempt_id",
+            needs_conn=True,
+        ),
+    )
+)
+
+_register(
+    ArtifactGenerateConfig(
+        artifact_type="test",
+        valid_resource_types=[
+            "grades",
+            "feedbacks",
+        ],
+        prepare_sql_path="app/sql/v4/queries/generate/persona/prepare_persona_generation_complete.sql",
+        draft_view_key="draft_test",
+        requires_draft=False,
+        entry_types=["insights", "debug_info"],
+        fetcher_id_kwarg="test_id",
+        fetcher=_make_fetcher(
+            "app.api.v4.artifacts.test.get",
+            "get_test_websocket",
+            "test_id",
+            needs_conn=True,
         ),
     )
 )

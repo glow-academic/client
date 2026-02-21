@@ -82,6 +82,62 @@ def _build_jinja_context(result: object) -> dict[str, Any]:
     return {}
 
 
+def _enrich_tools_with_args_outputs(
+    tool_dicts: list[dict[str, Any]], result: object
+) -> list[dict[str, Any]]:
+    """Attach _args_outputs to tools for output schema resolution.
+
+    Looks up each tool's args_output_ids from resources.tools, resolves them
+    against resources.config_args_outputs, and attaches {name, template} dicts.
+    """
+    resources = getattr(result, "resources", None)
+    if not tool_dicts or not resources:
+        return tool_dicts
+
+    resource_tools = getattr(resources, "tools", None) or []
+    config_args_outputs = getattr(resources, "config_args_outputs", None) or []
+
+    if not resource_tools or not config_args_outputs:
+        return tool_dicts
+
+    # Build lookup: tool name → args_output_ids
+    tool_output_ids_by_name: dict[str, list[Any]] = {}
+    for rt in resource_tools:
+        name = getattr(rt, "name", None)
+        ao_ids = getattr(rt, "args_output_ids", None)
+        if name and ao_ids:
+            tool_output_ids_by_name[name] = ao_ids
+
+    if not tool_output_ids_by_name:
+        return tool_dicts
+
+    # Build lookup: args_output id → {name, template}
+    ao_by_id = {}
+    for ao in config_args_outputs:
+        ao_id = getattr(ao, "id", None)
+        if ao_id:
+            ao_by_id[ao_id] = ao
+
+    # Enrich each tool dict
+    for td in tool_dicts:
+        t_name = td.get("name")
+        if t_name and t_name in tool_output_ids_by_name:
+            ao_list = []
+            for ao_id in tool_output_ids_by_name[t_name]:
+                ao = ao_by_id.get(ao_id)
+                if ao:
+                    ao_list.append(
+                        {
+                            "name": getattr(ao, "name", ""),
+                            "template": getattr(ao, "template", ""),
+                        }
+                    )
+            if ao_list:
+                td["_args_outputs"] = ao_list
+
+    return tool_dicts
+
+
 # ---------------------------------------------------------------------------
 # Unified implementation
 # ---------------------------------------------------------------------------
@@ -469,7 +525,11 @@ async def _generate_impl(
                 room=sid,
             )
 
-            # Step 16: Dispatch to generate_artifact handler(s)
+            # Step 16: Convert tools and enrich with _args_outputs
+            tool_dicts = convert_tools_to_dict(tools)
+            tool_dicts = _enrich_tools_with_args_outputs(tool_dicts, result)
+
+            # Step 17: Dispatch to generate_artifact handler(s)
             for _agent_group_id, agent_resource_types in agent_groups.items():
                 emit_payload: dict[str, Any] = {
                     "sid": sid,
@@ -493,7 +553,7 @@ async def _generate_impl(
                         "length_seconds": None,
                         "tool_choice": "required",
                     },
-                    "tools": convert_tools_to_dict(tools),
+                    "tools": tool_dicts,
                     "save": data.save,
                 }
 
