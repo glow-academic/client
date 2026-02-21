@@ -5,6 +5,7 @@ v5 uses a single GeneratePayload that carries the artifact_type discriminator an
 generic artifact_id field. The registry maps these to the correct fetcher kwarg.
 """
 
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -123,11 +124,114 @@ class TestLeavePayload(BaseModel):
     invocation_id: UUID
 
 
+class TestStartPayload(BaseModel):
+    """Client-to-server: start test (create or next mode)."""
+
+    eval_id: UUID | None = None
+    test_id: UUID | None = None
+    infinite_mode: bool = False
+
+
+class TestRunPayload(BaseModel):
+    """Client-to-server: run one auto-regressive replay."""
+
+    invocation_id: UUID
+    test_id: UUID
+
+
+class TestEndPayload(BaseModel):
+    """Client-to-server: end test (triggers grading)."""
+
+    invocation_id: UUID
+    test_id: UUID
+    run_id: UUID
+
+
+class TestStopPayload(BaseModel):
+    """Client-to-server: stop current test execution."""
+
+    invocation_id: UUID
+
+
 class TestJoinedEvent(BaseModel):
     """Server-to-client: successfully joined a test room."""
 
     invocation_id: str
     success: bool = True
+
+
+class TestStartedEvent(BaseModel):
+    """Server-to-client: test created."""
+
+    test_id: str
+
+
+class TestRunStartEvent(BaseModel):
+    """Server-to-client: run replay started."""
+
+    invocation_id: str
+    run_id: str
+    original_run_resource_id: str | None = None
+    current_run: int
+    total_runs: int
+    created_at: str
+
+
+class TestRunDeltaEvent(BaseModel):
+    """Server-to-client: generation progress delta."""
+
+    invocation_id: str
+    run_id: str
+    content: str
+
+
+class TestRunCompleteEvent(BaseModel):
+    """Server-to-client: single run replay completed."""
+
+    invocation_id: str
+    run_id: str
+    original_run_resource_id: str | None = None
+    tool_calls: list[dict[str, Any]] | None = None
+    current_run: int
+    total_runs: int
+    remaining_runs: int
+
+
+class TestAllCompleteEvent(BaseModel):
+    """Server-to-client: all runs complete."""
+
+    invocation_id: str
+    total_runs: int
+    success: bool = True
+
+
+class TestGradedEvent(BaseModel):
+    """Server-to-client: grading completed."""
+
+    invocation_id: str
+    grade_id: str | None = None
+    score: float | None = None
+    passed: bool | None = None
+    feedback: str | None = None
+
+
+class TestProgressEvent(BaseModel):
+    """Server-to-client: test progress update."""
+
+    invocation_id: str
+    type: str
+    run_id: str | None = None
+    current_run: int | None = None
+    total_runs: int | None = None
+    message: str | None = None
+
+
+class TestStoppedEvent(BaseModel):
+    """Server-to-client: test execution stopped."""
+
+    invocation_id: str
+    success: bool = True
+    message: str | None = None
 
 
 class TestErrorEvent(BaseModel):
