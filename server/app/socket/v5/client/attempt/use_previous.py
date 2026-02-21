@@ -30,9 +30,7 @@ SQL_PATH_USE_PREVIOUS = (
 )
 
 
-async def _attempt_use_previous_impl(
-    sid: str, data: AttemptUsePreviousPayload
-) -> None:
+async def _attempt_use_previous_impl(sid: str, data: AttemptUsePreviousPayload) -> None:
     """Handle attempt_use_previous — create skipped chats with copied grades."""
     try:
         attempt_id = str(data.attempt_id)

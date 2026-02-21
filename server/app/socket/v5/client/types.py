@@ -183,68 +183,6 @@ class AttemptUsePreviousPayload(BaseModel):
 class AttemptErrorEvent(BaseModel):
     """Server-to-client: attempt error."""
 
-    group_id: str | None = None
-    run_id: str | None = None
     chat_id: str | None = None
     type: str | None = None
     message: str
-
-
-# ---------------------------------------------------------------------------
-# Attempt generation (messages, grades, direct entry types)
-# ---------------------------------------------------------------------------
-
-
-class AttemptGeneratePayload(BaseModel):
-    """Client-to-server: unified attempt generation.
-
-    Entry types control the pipeline:
-    - Message types (user_messages, assistant_messages): create user message +
-      assistant placeholder, then generate via LLM
-    - Grade types (feedbacks, strengths, improvements, etc.): trigger grading
-    - Content types (contents, hints): LLM-generated content
-    """
-
-    attempt_id: UUID
-    entry_types: list[str]
-    user_instructions: list[str] | None = None
-    chat_id: UUID | None = None
-    message: str | None = None
-    voice_mode: bool = False
-    upload_id: UUID | None = None
-
-
-class AttemptGenerationStartedEvent(BaseModel):
-    """Server-to-client: attempt generation started."""
-
-    artifact_type: str = "attempt"
-    group_id: str
-    run_id: str
-    entry_types: list[str]
-
-
-class AttemptUserCompleteEvent(BaseModel):
-    """Server-to-client: user message finalized."""
-
-    chat_id: str
-    message_id: str
-    content: str
-    created_at: str
-    persona_id: str | None = None
-    item_id: str | None = None
-
-
-class AttemptAssistantStartEvent(BaseModel):
-    """Server-to-client: assistant message generation started."""
-
-    chat_id: str
-    message_id: str
-    created_at: str
-    persona_id: str | None = None
-
-
-class AttemptChatStartedEvent(BaseModel):
-    """Server-to-client: new chat created within an attempt."""
-
-    attempt_id: str
-    chat_id: str

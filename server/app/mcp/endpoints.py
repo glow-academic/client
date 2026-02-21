@@ -67,8 +67,6 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     },
     "benchmark": {
         "get": ("app.api.v4.artifacts.benchmark.get", "benchmark_bundle_get"),
-        "list": ("app.api.v4.artifacts.benchmark.list", "list_benchmark"),
-        "draft": ("app.api.v4.artifacts.benchmark.draft", "patch_benchmark_draft"),
         "refresh": ("app.api.v4.artifacts.benchmark.refresh", "benchmark_refresh"),
         "docs": ("app.api.v4.artifacts.benchmark.docs", "get_benchmarks_docs"),
     },
@@ -82,6 +80,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
         "docs": ("app.api.v4.artifacts.cohort.docs", "get_cohorts_docs"),
     },
     "dashboard": {
+        "get": ("app.api.v4.artifacts.dashboard.get", "get_dashboard"),
         "header": ("app.api.v4.artifacts.dashboard.header", "get_dashboard_header"),
         "footer": ("app.api.v4.artifacts.dashboard.footer", "get_dashboard_footer"),
         "primary": ("app.api.v4.artifacts.dashboard.primary", "get_dashboard_primary"),
@@ -601,6 +600,63 @@ def _suggest_item_name(name: str) -> str | None:
     return None
 
 
+def _resolve_related_names(name: str) -> dict[str, str]:
+    """Resolve a name to all related registry keys across artifact/resource/entry.
+
+    Given any form (singular or plural), finds the canonical key in each
+    registry where the concept exists.
+
+    Returns:
+        Dict mapping registry label → registry key, e.g.
+        {"artifact": "scenario", "resource": "scenarios"}
+    """
+    result: dict[str, str] = {}
+
+    # Direct matches
+    if name in ARTIFACT_REGISTRY:
+        result["artifact"] = name
+    if name in RESOURCE_REGISTRY:
+        result["resource"] = name
+    if name in ENTRY_REGISTRY:
+        result["entry"] = name
+
+    # Singular → plural: check resource registry with pluralized form
+    if "resource" not in result and name in ARTIFACT_REGISTRY:
+        plural = pluralize_artifact(name)
+        if plural in RESOURCE_REGISTRY:
+            result["resource"] = plural
+
+    # Plural → singular: check artifact registry with de-pluralized form
+    if "artifact" not in result:
+        singular = None
+        _plural_to_singular = {pluralize_artifact(a): a for a in ARTIFACTS}
+        if name in _plural_to_singular:
+            singular = _plural_to_singular[name]
+        elif name.endswith("s") and name[:-1] in ARTIFACT_REGISTRY:
+            singular = name[:-1]
+        if singular:
+            result["artifact"] = singular
+
+    # Singular → plural: check entry registry
+    if "entry" not in result:
+        plural = pluralize_artifact(name)
+        if plural in ENTRY_REGISTRY:
+            result["entry"] = plural
+
+    # Plural → singular: check entry registry
+    if "entry" not in result:
+        if name.endswith("s") and name[:-1] in ENTRY_REGISTRY:
+            result["entry"] = name[:-1]
+        _plural_to_singular = {pluralize_artifact(a): a for a in ARTIFACTS}
+        if name in _plural_to_singular and _plural_to_singular[name] in ENTRY_REGISTRY:
+            result["entry"] = _plural_to_singular[name]
+
+    # Resource plural → entry (e.g., "groups" resource, "groups" entry)
+    # Already handled by direct match above
+
+    return result
+
+
 def is_artifact(name: str) -> bool:
     """Check if name is an artifact."""
     return name in ARTIFACT_REGISTRY
@@ -873,19 +929,842 @@ async def call_endpoint_handler(
 
 
 def register_endpoints(server: FastMCP) -> None:
-    """Register all MCP endpoints."""
+    """Register all MCP endpoints — 30 native-feeling tools."""
 
-    # ------------------------------------------------------------------
-    # Discovery tools
-    # ------------------------------------------------------------------
+    # ==================================================================
+    # Category 1: Top-Level Analytical / Special Tools (12 tools)
+    # ==================================================================
 
     @server.tool()
-    def artifacts() -> list[dict[str, str]]:
-        """List all available artifacts with descriptions.
+    async def dashboard(
+        start_date: str | None = None,
+        end_date: str | None = None,
+        cohort_ids: list[str] | None = None,
+        simulation_ids: list[str] | None = None,
+        department_ids: list[str] | None = None,
+        roles: list[str] | None = None,
+        simulation_filters: list[str] | None = None,
+        target_profile_id: str | None = None,
+        page_limit: int | None = None,
+        page_offset: int | None = None,
+        kwargs: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Get the dashboard with key metrics, charts, and summaries.
 
-        Returns:
-            List of dictionaries with 'name' and 'description' keys.
+        Args:
+            start_date: Start date filter (YYYY-MM-DD).
+            end_date: End date filter (YYYY-MM-DD).
+            cohort_ids: Filter by cohort IDs.
+            simulation_ids: Filter by simulation IDs.
+            department_ids: Filter by department IDs.
+            roles: Filter by roles.
+            simulation_filters: Additional simulation filter values.
+            target_profile_id: View dashboard for a specific profile.
+            page_limit: Number of results per page.
+            page_offset: Pagination offset.
+            kwargs: Additional parameters — use docs("dashboard") for full schema.
         """
+        payload = {
+            k: v
+            for k, v in {
+                "start_date": start_date,
+                "end_date": end_date,
+                "cohort_ids": cohort_ids,
+                "simulation_ids": simulation_ids,
+                "department_ids": department_ids,
+                "roles": roles,
+                "simulation_filters": simulation_filters,
+                "target_profile_id": target_profile_id,
+                "page_limit": page_limit,
+                "page_offset": page_offset,
+            }.items()
+            if v is not None
+        }
+        if kwargs:
+            payload.update(kwargs)
+        return await call_handler("dashboard", "get", payload)
+
+    @server.tool()
+    async def activity(
+        profile_id: str | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
+        department_ids: list[str] | None = None,
+        roles: list[str] | None = None,
+        page_limit: int | None = None,
+        page_offset: int | None = None,
+        history_enabled: bool = False,
+        kwargs: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Get activity analytics — session counts, durations, and trends.
+
+        Args:
+            profile_id: Filter to a specific profile's activity.
+            date_from: Start date filter (YYYY-MM-DD).
+            date_to: End date filter (YYYY-MM-DD).
+            department_ids: Filter by department IDs.
+            roles: Filter by roles.
+            page_limit: Number of results per page.
+            page_offset: Pagination offset.
+            history_enabled: Include historical trend data.
+            kwargs: Additional parameters — use docs("activity") for full schema.
+        """
+        payload = {
+            k: v
+            for k, v in {
+                "profile_id": profile_id,
+                "date_from": date_from,
+                "date_to": date_to,
+                "department_ids": department_ids,
+                "roles": roles,
+                "page_limit": page_limit,
+                "page_offset": page_offset,
+                "history_enabled": history_enabled,
+            }.items()
+            if v is not None
+        }
+        if kwargs:
+            payload.update(kwargs)
+        return await call_handler("activity", "get", payload)
+
+    @server.tool()
+    async def pricing(
+        start_date: str | None = None,
+        end_date: str | None = None,
+        model_id: str | None = None,
+        agent_id: str | None = None,
+        page_limit: int | None = None,
+        page_offset: int | None = None,
+        history_enabled: bool = False,
+        kwargs: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Get pricing analytics — token costs, model usage, and spending trends.
+
+        Args:
+            start_date: Start date filter (YYYY-MM-DD).
+            end_date: End date filter (YYYY-MM-DD).
+            model_id: Filter by specific model.
+            agent_id: Filter by specific agent.
+            page_limit: Number of results per page.
+            page_offset: Pagination offset.
+            history_enabled: Include historical trend data.
+            kwargs: Additional parameters — use docs("pricing") for full schema.
+        """
+        payload = {
+            k: v
+            for k, v in {
+                "start_date": start_date,
+                "end_date": end_date,
+                "model_id": model_id,
+                "agent_id": agent_id,
+                "page_limit": page_limit,
+                "page_offset": page_offset,
+                "history_enabled": history_enabled,
+            }.items()
+            if v is not None
+        }
+        if kwargs:
+            payload.update(kwargs)
+        return await call_handler("pricing", "get", payload)
+
+    @server.tool()
+    async def reports(
+        start_date: str | None = None,
+        end_date: str | None = None,
+        cohort_ids: list[str] | None = None,
+        simulation_ids: list[str] | None = None,
+        department_ids: list[str] | None = None,
+        roles: list[str] | None = None,
+        target_profile_id: str | None = None,
+        search: str | None = None,
+        sort_by: str | None = None,
+        sort_order: str | None = None,
+        page_limit: int | None = None,
+        page_offset: int | None = None,
+        kwargs: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Get reports — detailed performance data, scores, and analytics per learner.
+
+        Args:
+            start_date: Start date filter (YYYY-MM-DD).
+            end_date: End date filter (YYYY-MM-DD).
+            cohort_ids: Filter by cohort IDs.
+            simulation_ids: Filter by simulation IDs.
+            department_ids: Filter by department IDs.
+            roles: Filter by roles.
+            target_profile_id: View report for a specific profile.
+            search: Search query string.
+            sort_by: Column to sort by.
+            sort_order: Sort direction ("asc" or "desc").
+            page_limit: Number of results per page.
+            page_offset: Pagination offset.
+            kwargs: Additional parameters — use docs("reports") for full schema.
+        """
+        payload = {
+            k: v
+            for k, v in {
+                "start_date": start_date,
+                "end_date": end_date,
+                "cohort_ids": cohort_ids,
+                "simulation_ids": simulation_ids,
+                "department_ids": department_ids,
+                "roles": roles,
+                "target_profile_id": target_profile_id,
+                "search": search,
+                "sort_by": sort_by,
+                "sort_order": sort_order,
+                "page_limit": page_limit,
+                "page_offset": page_offset,
+            }.items()
+            if v is not None
+        }
+        if kwargs:
+            payload.update(kwargs)
+        return await call_handler("reports", "get", payload)
+
+    @server.tool()
+    async def health(
+        service: str | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
+        page_limit: int | None = None,
+    ) -> dict[str, Any]:
+        """Get system health metrics — uptime, error rates, and service status.
+
+        Args:
+            service: Filter to a specific service.
+            date_from: Start date filter (YYYY-MM-DD).
+            date_to: End date filter (YYYY-MM-DD).
+            page_limit: Number of results per page.
+        """
+        payload = {
+            k: v
+            for k, v in {
+                "service": service,
+                "date_from": date_from,
+                "date_to": date_to,
+                "page_limit": page_limit,
+            }.items()
+            if v is not None
+        }
+        return await call_handler("health", "get", payload)
+
+    @server.tool()
+    async def leaderboard(
+        start_date: str | None = None,
+        end_date: str | None = None,
+        cohort_ids: list[str] | None = None,
+        simulation_ids: list[str] | None = None,
+        department_ids: list[str] | None = None,
+        roles: list[str] | None = None,
+        target_profile_id: str | None = None,
+        search: str | None = None,
+        sort_by: str | None = None,
+        sort_order: str | None = None,
+        page_limit: int | None = None,
+        page_offset: int | None = None,
+        kwargs: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Get leaderboard rankings — top performers by score, completion, and streaks.
+
+        Args:
+            start_date: Start date filter (YYYY-MM-DD).
+            end_date: End date filter (YYYY-MM-DD).
+            cohort_ids: Filter by cohort IDs.
+            simulation_ids: Filter by simulation IDs.
+            department_ids: Filter by department IDs.
+            roles: Filter by roles.
+            target_profile_id: View ranking for a specific profile.
+            search: Search query string.
+            sort_by: Column to sort by.
+            sort_order: Sort direction ("asc" or "desc").
+            page_limit: Number of results per page.
+            page_offset: Pagination offset.
+            kwargs: Additional parameters — use docs("leaderboard") for full schema.
+        """
+        payload = {
+            k: v
+            for k, v in {
+                "start_date": start_date,
+                "end_date": end_date,
+                "cohort_ids": cohort_ids,
+                "simulation_ids": simulation_ids,
+                "department_ids": department_ids,
+                "roles": roles,
+                "target_profile_id": target_profile_id,
+                "search": search,
+                "sort_by": sort_by,
+                "sort_order": sort_order,
+                "page_limit": page_limit,
+                "page_offset": page_offset,
+            }.items()
+            if v is not None
+        }
+        if kwargs:
+            payload.update(kwargs)
+        return await call_handler("leaderboard", "get", payload)
+
+    @server.tool()
+    async def benchmark(
+        start_date: str | None = None,
+        end_date: str | None = None,
+        department_ids: list[str] | None = None,
+        history_enabled: bool = False,
+        kwargs: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Get benchmark analytics — evaluation results and agent performance comparisons.
+
+        Args:
+            start_date: Start date filter (YYYY-MM-DD).
+            end_date: End date filter (YYYY-MM-DD).
+            department_ids: Filter by department IDs.
+            history_enabled: Include historical trend data.
+            kwargs: Additional parameters — use docs("benchmark") for full schema.
+        """
+        payload = {
+            k: v
+            for k, v in {
+                "start_date": start_date,
+                "end_date": end_date,
+                "department_ids": department_ids,
+                "history_enabled": history_enabled,
+            }.items()
+            if v is not None
+        }
+        if kwargs:
+            payload.update(kwargs)
+        return await call_handler("benchmark", "get", payload)
+
+    @server.tool()
+    async def chat(
+        training_entry_id: str | None = None,
+        draft_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Get chat data — conversation messages for a training session or draft.
+
+        Args:
+            training_entry_id: Training entry ID to fetch chat for.
+            draft_id: Draft ID to fetch chat for.
+        """
+        payload = {
+            k: v
+            for k, v in {
+                "training_entry_id": training_entry_id,
+                "draft_id": draft_id,
+            }.items()
+            if v is not None
+        }
+        return await call_handler("chat", "get", payload)
+
+    @server.tool()
+    async def attempt(
+        attempt_id: str,
+    ) -> dict[str, Any]:
+        """Get a single attempt — detailed results for one training attempt.
+
+        Args:
+            attempt_id: The attempt ID to fetch.
+        """
+        return await call_handler("attempt", "get", {"attempt_id": attempt_id})
+
+    @server.tool()
+    async def session(
+        session_id: str,
+        audit_limit: int = 50,
+        audit_offset: int = 0,
+    ) -> dict[str, Any]:
+        """Get a session — full session details with audit log.
+
+        Args:
+            session_id: The session ID to fetch.
+            audit_limit: Max number of audit entries to return (default 50).
+            audit_offset: Audit log pagination offset (default 0).
+        """
+        return await call_handler(
+            "session",
+            "get",
+            {
+                "session_id": session_id,
+                "audit_limit": audit_limit,
+                "audit_offset": audit_offset,
+            },
+        )
+
+    @server.tool()
+    async def group(
+        group_id: str,
+    ) -> dict[str, Any]:
+        """Get a group — group details and members.
+
+        Args:
+            group_id: The group ID to fetch.
+        """
+        return await call_handler("group", "get", {"group_id": group_id})
+
+    @server.tool()
+    async def invocation(
+        test_id: str,
+    ) -> dict[str, Any]:
+        """Get a test invocation — detailed test execution results.
+
+        Args:
+            test_id: The test invocation ID to fetch.
+        """
+        return await call_handler("test", "get", {"test_id": test_id})
+
+    # ==================================================================
+    # Category 2: CRUD Artifact Tools (6 tools)
+    # ==================================================================
+
+    _CRUD_ARTIFACTS = [
+        "agent",
+        "auth",
+        "cohort",
+        "department",
+        "document",
+        "eval",
+        "field",
+        "model",
+        "parameter",
+        "persona",
+        "profile",
+        "provider",
+        "rubric",
+        "scenario",
+        "setting",
+        "simulation",
+        "tool",
+    ]
+
+    @server.tool()
+    async def get_artifact(
+        artifact: str,
+        artifact_id: str | None = None,
+        draft_id: str | None = None,
+        kwargs: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Get an artifact by ID.
+
+        Args:
+            artifact: Artifact type — one of: agent, auth, cohort, department,
+                document, eval, field, model, parameter, persona, profile,
+                provider, rubric, scenario, setting, simulation, tool.
+            artifact_id: The artifact's UUID.
+            draft_id: Optional draft ID to fetch draft version.
+            kwargs: Additional parameters — use docs(artifact) for full schema.
+        """
+        payload: dict[str, Any] = {}
+        if artifact_id is not None:
+            payload[f"{artifact}_id"] = artifact_id
+        if draft_id is not None:
+            payload["draft_id"] = draft_id
+        if kwargs:
+            payload.update(kwargs)
+        return await call_handler(artifact, "get", payload)
+
+    @server.tool()
+    async def list_artifact(
+        artifact: str,
+        kwargs: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """List artifacts with optional filters.
+
+        Args:
+            artifact: Artifact type — one of: agent, auth, cohort, department,
+                document, eval, field, model, parameter, persona, profile,
+                provider, rubric, scenario, setting, simulation, tool.
+            kwargs: Filter/pagination parameters — use docs(artifact) for full schema.
+        """
+        payload: dict[str, Any] = kwargs or {}
+        return await call_handler(artifact, "list", payload)
+
+    @server.tool()
+    async def save_artifact(
+        artifact: str,
+        payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Save (create or update) an artifact.
+
+        Args:
+            artifact: Artifact type — one of: agent, auth, cohort, department,
+                document, eval, field, model, parameter, persona, profile,
+                provider, rubric, scenario, setting, simulation, tool.
+            payload: Full save payload — use docs(artifact) for schema.
+        """
+        return await call_handler(artifact, "save", payload)
+
+    @server.tool()
+    async def delete_artifact(
+        artifact: str,
+        artifact_id: str,
+    ) -> dict[str, Any]:
+        """Delete an artifact.
+
+        Args:
+            artifact: Artifact type — one of: agent, auth, cohort, department,
+                document, eval, field, model, parameter, persona, profile,
+                provider, rubric, scenario, setting, simulation, tool.
+            artifact_id: The artifact's UUID to delete.
+        """
+        return await call_handler(artifact, "delete", {f"{artifact}_id": artifact_id})
+
+    @server.tool()
+    async def duplicate_artifact(
+        artifact: str,
+        artifact_id: str,
+        name: str | None = None,
+    ) -> dict[str, Any]:
+        """Duplicate an artifact.
+
+        Args:
+            artifact: Artifact type — one of: agent, auth, cohort, department,
+                document, eval, field, model, parameter, persona, profile,
+                provider, rubric, scenario, setting, simulation, tool.
+            artifact_id: The artifact's UUID to duplicate.
+            name: Optional name for the duplicate.
+        """
+        payload: dict[str, Any] = {f"{artifact}_id": artifact_id}
+        if name is not None:
+            payload["name"] = name
+        return await call_handler(artifact, "duplicate", payload)
+
+    @server.tool()
+    async def draft_artifact(
+        artifact: str,
+        payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Create or update a draft artifact (autosave).
+
+        Args:
+            artifact: Artifact type — one of: agent, auth, cohort, department,
+                document, eval, field, model, parameter, persona, profile,
+                provider, rubric, scenario, setting, simulation, tool.
+            payload: Full draft payload — use docs(artifact) for schema.
+        """
+        return await call_handler(artifact, "draft", payload)
+
+    # ==================================================================
+    # Category 3: Resource Tools (3 tools)
+    # ==================================================================
+
+    @server.tool()
+    async def get_resource(
+        resource: str,
+        ids: list[str],
+    ) -> dict[str, Any]:
+        """Get resources by IDs.
+
+        Args:
+            resource: Resource name (e.g., "names", "descriptions", "models", "prompts").
+                Use discover_resources() to see all available resources.
+            ids: List of resource UUIDs to fetch.
+        """
+        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+
+        profile_id = get_mcp_profile_id()
+
+        if resource not in RESOURCE_REGISTRY:
+            suggestion = _suggest_item_name(resource)
+            result: dict[str, Any] = {"error": f"'{resource}' is not a valid resource."}
+            if suggestion:
+                result["suggestion"] = suggestion
+            return result
+
+        handler = _get_handler(*RESOURCE_REGISTRY[resource]["get"])
+
+        # Auto-detect ids vs p_ids field name
+        request_model = get_request_model_from_handler(handler)
+        if (
+            request_model
+            and hasattr(request_model, "model_fields")
+            and "p_ids" in request_model.model_fields
+        ):
+            payload: dict[str, Any] = {"p_ids": ids}
+        else:
+            payload = {"ids": ids}
+
+        return await call_endpoint_handler(handler, payload, profile_id)
+
+    @server.tool()
+    async def search_resource(
+        resource: str,
+        query: str | None = None,
+        limit: int = 20,
+        offset: int = 0,
+        kwargs: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Search resources by text query.
+
+        Args:
+            resource: Resource name (e.g., "names", "descriptions", "models").
+                Use discover_resources() to see all available resources.
+            query: Search text.
+            limit: Max results to return (default 20).
+            offset: Pagination offset (default 0).
+            kwargs: Additional parameters — use docs(resource) for full schema.
+        """
+        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+
+        profile_id = get_mcp_profile_id()
+
+        if resource not in RESOURCE_REGISTRY:
+            suggestion = _suggest_item_name(resource)
+            result: dict[str, Any] = {"error": f"'{resource}' is not a valid resource."}
+            if suggestion:
+                result["suggestion"] = suggestion
+            return result
+
+        payload: dict[str, Any] = {
+            "limit_count": limit,
+            "offset_count": offset,
+        }
+        if query is not None:
+            payload["search"] = query
+        if kwargs:
+            payload.update(kwargs)
+
+        handler = _get_handler(*RESOURCE_REGISTRY[resource]["search"])
+        return await call_endpoint_handler(handler, payload, profile_id)
+
+    @server.tool()
+    async def create_resource(
+        resource: str,
+        payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Create a new resource.
+
+        Args:
+            resource: Resource name (e.g., "names", "descriptions", "flags").
+                Use discover_resources() to see all available resources.
+            payload: Full create payload — use docs(resource) for schema.
+        """
+        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+
+        profile_id = get_mcp_profile_id()
+
+        if resource not in RESOURCE_REGISTRY:
+            return {"error": f"'{resource}' is not a valid resource."}
+
+        if "create" not in RESOURCE_REGISTRY[resource]:
+            return {"error": f"Resource '{resource}' does not support create."}
+
+        handler = _get_handler(*RESOURCE_REGISTRY[resource]["create"])
+        return await call_endpoint_handler(handler, payload, profile_id)
+
+    # ==================================================================
+    # Category 4: Entry Tools (3 tools)
+    # ==================================================================
+
+    @server.tool()
+    async def get_entry(
+        entry: str,
+        ids: list[str] | None = None,
+        kwargs: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Get entry data.
+
+        Args:
+            entry: Entry name (e.g., "activity", "attempt", "training", "sessions").
+                Use discover_entries() to see all available entries.
+            ids: Optional list of entry IDs.
+            kwargs: Additional parameters — use docs(entry) for full schema.
+        """
+        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+
+        profile_id = get_mcp_profile_id()
+
+        if entry not in ENTRY_REGISTRY:
+            suggestion = _suggest_item_name(entry)
+            result: dict[str, Any] = {"error": f"'{entry}' is not a valid entry."}
+            if suggestion:
+                result["suggestion"] = suggestion
+            return result
+
+        payload: dict[str, Any] = {}
+        if ids is not None:
+            payload["ids"] = ids
+        if kwargs:
+            payload.update(kwargs)
+
+        handler = _get_handler(*ENTRY_REGISTRY[entry]["get"])
+        return await call_endpoint_handler(handler, payload, profile_id)
+
+    @server.tool()
+    async def search_entry(
+        entry: str,
+        query: str | None = None,
+        limit: int = 20,
+        offset: int = 0,
+        kwargs: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Search entries by text query.
+
+        Args:
+            entry: Entry name (e.g., "activity", "attempt", "training").
+                Use discover_entries() to see all available entries.
+            query: Search text.
+            limit: Max results to return (default 20).
+            offset: Pagination offset (default 0).
+            kwargs: Additional parameters — use docs(entry) for full schema.
+        """
+        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+
+        profile_id = get_mcp_profile_id()
+
+        if entry not in ENTRY_REGISTRY:
+            suggestion = _suggest_item_name(entry)
+            result: dict[str, Any] = {"error": f"'{entry}' is not a valid entry."}
+            if suggestion:
+                result["suggestion"] = suggestion
+            return result
+
+        payload: dict[str, Any] = {
+            "limit_count": limit,
+            "offset_count": offset,
+        }
+        if query is not None:
+            payload["search"] = query
+        if kwargs:
+            payload.update(kwargs)
+
+        handler = _get_handler(*ENTRY_REGISTRY[entry]["search"])
+        return await call_endpoint_handler(handler, payload, profile_id)
+
+    @server.tool()
+    async def create_entry(
+        entry: str,
+        payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Create a new entry.
+
+        Args:
+            entry: Entry name (e.g., "activity", "attempt", "training").
+                Use discover_entries() to see all available entries.
+            payload: Full create payload — use docs(entry) for schema.
+        """
+        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+
+        profile_id = get_mcp_profile_id()
+
+        if entry not in ENTRY_REGISTRY:
+            return {"error": f"'{entry}' is not a valid entry."}
+
+        if "create" not in ENTRY_REGISTRY[entry]:
+            return {"error": f"Entry '{entry}' does not support create."}
+
+        handler = _get_handler(*ENTRY_REGISTRY[entry]["create"])
+        return await call_endpoint_handler(handler, payload, profile_id)
+
+    # ==================================================================
+    # Category 5: Utility Tools (5 tools)
+    # ==================================================================
+
+    @server.tool()
+    def docs(name: str) -> dict[str, Any]:
+        """Get documentation for any artifact, resource, or entry — or pass "glow" for general docs.
+
+        Smart name resolution: "scenario" and "scenarios" both return the same
+        merged docs from artifact + resource registries. Works with singular or
+        plural forms.
+
+        Args:
+            name: Item name (e.g., "agent", "scenario", "scenarios", "names",
+                "training") or "glow" for general documentation.
+        """
+        # General GLOW docs
+        if name == "glow":
+            try:
+                handler = _get_handler("app.api.v4.docs", "get_glow_docs")
+                return handler()
+            except Exception:
+                return {"error": "Root GLOW documentation not available."}
+
+        # Resolve name to all related registry keys
+        related = _resolve_related_names(name)
+
+        if not related:
+            suggestion = _suggest_item_name(name)
+            result: dict[str, Any] = {
+                "error": f"'{name}' is not a valid artifact, resource, or entry."
+            }
+            if suggestion:
+                result["suggestion"] = suggestion
+            return result
+
+        # Collect docs from all matching registries
+        registry_map = {
+            "artifact": ARTIFACT_REGISTRY,
+            "resource": RESOURCE_REGISTRY,
+            "entry": ENTRY_REGISTRY,
+        }
+
+        collected: dict[str, Any] = {}
+        operations: dict[str, list[str]] = {}
+
+        for label, key in related.items():
+            registry = registry_map[label]
+            if "docs" in registry[key]:
+                try:
+                    handler = _get_handler(*registry[key]["docs"])
+                    collected[label] = handler()
+                except Exception:
+                    pass
+            ops = [op for op in registry[key] if op != "docs"]
+            if ops:
+                operations[label] = ops
+
+        if not collected:
+            return {
+                "error": f"Documentation not available for '{name}'.",
+                "found_in": {
+                    label: {"key": key, "operations": operations.get(label, [])}
+                    for label, key in related.items()
+                },
+            }
+
+        # If only one registry matched, return its docs directly
+        if len(collected) == 1:
+            label, doc = next(iter(collected.items()))
+            key = related[label]
+            result = cast(dict[str, Any], doc)
+            # Add context about other registries if they exist but had no docs
+            other = {
+                lbl: {"key": k, "operations": operations.get(lbl, [])}
+                for lbl, k in related.items()
+                if lbl != label
+            }
+            if other:
+                result = {**result, "also_available_as": other}
+            return result
+
+        # Multiple registries matched — return merged result
+        result = {"name": name, "resolved": related}
+        for label, doc in collected.items():
+            result[f"{label}_docs"] = doc
+        if operations:
+            result["operations"] = operations
+        return result
+
+    _REFRESHABLE = {name for name, ops in ARTIFACT_REGISTRY.items() if "refresh" in ops}
+
+    @server.tool()
+    async def refresh(name: str) -> dict[str, Any]:
+        """Refresh cached data / materialized views for an artifact.
+
+        Args:
+            name: Artifact name to refresh. Valid values: activity, benchmark,
+                chat, dashboard, health, leaderboard, pricing, reports.
+        """
+        if name not in _REFRESHABLE:
+            return {
+                "error": f"'{name}' is not refreshable.",
+                "refreshable": sorted(_REFRESHABLE),
+            }
+        return await call_handler(name, "refresh", {})
+
+    @server.tool()
+    def discover_artifacts() -> list[dict[str, str]]:
+        """List all 29 available artifacts with descriptions."""
         return [
             {
                 "name": artifact,
@@ -895,12 +1774,8 @@ def register_endpoints(server: FastMCP) -> None:
         ]
 
     @server.tool()
-    def resources() -> list[dict[str, str]]:
-        """List all available resources with descriptions.
-
-        Returns:
-            List of dictionaries with 'name' and 'description' keys.
-        """
+    def discover_resources() -> list[dict[str, str]]:
+        """List all 75 available resources with descriptions."""
         return [
             {
                 "name": resource,
@@ -910,12 +1785,8 @@ def register_endpoints(server: FastMCP) -> None:
         ]
 
     @server.tool()
-    def entries() -> list[dict[str, str]]:
-        """List all available entries with descriptions.
-
-        Returns:
-            List of dictionaries with 'name' and 'description' keys.
-        """
+    def discover_entries() -> list[dict[str, str]]:
+        """List all 101 available entries with descriptions."""
         return [
             {
                 "name": entry,
@@ -924,420 +1795,39 @@ def register_endpoints(server: FastMCP) -> None:
             for entry in ENTRIES
         ]
 
-    # ------------------------------------------------------------------
-    # Documentation tools
-    # ------------------------------------------------------------------
+    # ==================================================================
+    # Category 6: Upload Tool (1 tool)
+    # ==================================================================
 
     @server.tool()
-    def docs_artifact(name: str) -> dict[str, Any]:
-        """Get comprehensive documentation for an artifact.
+    async def upload(
+        filename: str,
+        base64_data: str,
+        mime_type: str | None = None,
+        subfolder: str | None = None,
+    ) -> dict[str, Any]:
+        """Upload a file (image, document, video, audio).
 
         Args:
-            name: Artifact name (e.g., "agent", "persona", "cohort", "document").
-
-        Returns:
-            Dictionary containing database schema, relationships, API routing,
-            resources, frontend components, and GLOW context.
-        """
-        if name not in ARTIFACT_REGISTRY:
-            return {"error": f"'{name}' is not a valid artifact."}
-
-        ops = ARTIFACT_REGISTRY[name]
-        if "docs" not in ops:
-            return {
-                "error": f"Documentation not available for '{name}'",
-                "note": "Check if docs.py exists for this artifact.",
-            }
-
-        handler = _get_handler(*ops["docs"])
-        return cast(dict[str, Any], handler())
-
-    @server.tool()
-    def docs_resource(name: str) -> dict[str, Any]:
-        """Get comprehensive documentation for a resource.
-
-        Args:
-            name: Resource name (e.g., "names", "descriptions", "flags").
-
-        Returns:
-            Dictionary containing database schema, relationships, and usage patterns.
-        """
-        if name not in RESOURCE_REGISTRY:
-            return {"error": f"'{name}' is not a valid resource."}
-
-        ops = RESOURCE_REGISTRY[name]
-        if "docs" not in ops:
-            return {
-                "error": f"Documentation not available for '{name}'",
-                "note": "Check if docs.py exists for this resource.",
-            }
-
-        handler = _get_handler(*ops["docs"])
-        return cast(dict[str, Any], handler())
-
-    @server.tool()
-    def docs_entry(name: str) -> dict[str, Any]:
-        """Get comprehensive documentation for an entry.
-
-        Args:
-            name: Entry name (e.g., "activity", "attempt", "training").
-
-        Returns:
-            Dictionary containing entry documentation and usage patterns.
-        """
-        if name not in ENTRY_REGISTRY:
-            return {"error": f"'{name}' is not a valid entry."}
-
-        ops = ENTRY_REGISTRY[name]
-        if "docs" not in ops:
-            return {
-                "error": f"Documentation not available for '{name}'",
-                "note": "Entry docs are not yet implemented.",
-            }
-
-        handler = _get_handler(*ops["docs"])
-        return cast(dict[str, Any], handler())
-
-    @server.tool()
-    def docs() -> dict[str, Any]:
-        """Get general GLOW documentation.
-
-        Returns:
-            Dictionary containing general information about GLOW architecture,
-            core concepts, common patterns, and best practices.
-        """
-        try:
-            handler = _get_handler("app.api.v4.docs", "get_glow_docs")
-            return handler()
-        except Exception:
-            return {"error": "Root GLOW documentation not available."}
-
-    # ------------------------------------------------------------------
-    # Payload schema tools
-    # ------------------------------------------------------------------
-
-    @server.tool()
-    def payload_artifact(name: str, operation: str = "get") -> dict[str, Any]:  # type: ignore[return]
-        """Get payload schema for an artifact.
-
-        IMPORTANT: Call this tool FIRST before using artifact operations.
-
-        Args:
-            name: Artifact name (e.g., "agent", "persona", "cohort").
-            operation: Operation name (e.g., "get", "save", "list", "duplicate", "delete", "draft").
-
-        Returns:
-            JSON schema for the payload. The 'mcp' field is auto-filtered.
-        """
-        return get_payload_schema(name, operation)
-
-    @server.tool()
-    def payload_resource(name: str, operation: str = "create") -> dict[str, Any]:  # type: ignore[return]
-        """Get payload schema for a resource.
-
-        IMPORTANT: Call this tool FIRST before using create_resource.
-
-        Args:
-            name: Resource name (e.g., "names", "descriptions", "flags").
-            operation: Operation name. Defaults to "create".
-
-        Returns:
-            JSON schema for the payload. The 'mcp' field is auto-filtered.
-        """
-        return get_payload_schema(name, operation)
-
-    @server.tool()
-    def payload_entry(name: str, operation: str = "get") -> dict[str, Any]:  # type: ignore[return]
-        """Get payload schema for an entry.
-
-        IMPORTANT: Call this tool FIRST before using entry operations.
-
-        Args:
-            name: Entry name (e.g., "activity", "attempt", "training").
-            operation: Operation name (e.g., "get", "search", "create"). Defaults to "get".
-
-        Returns:
-            JSON schema for the payload. The 'mcp' field is auto-filtered.
-        """
-        if name not in ENTRY_REGISTRY:
-            return {
-                "error": f"'{name}' is not a valid entry. Available: {', '.join(ENTRIES)}"
-            }
-        if operation not in ENTRY_REGISTRY[name]:
-            return {
-                "error": f"Operation '{operation}' not available for entry '{name}'.",
-                "available_operations": list(ENTRY_REGISTRY[name].keys()),
-            }
-        return get_payload_schema(name, operation)
-
-    # ------------------------------------------------------------------
-    # Artifact CRUD tools
-    # ------------------------------------------------------------------
-
-    @server.tool()
-    async def get_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
-        """Get an artifact by name.
-
-        Args:
-            name: Artifact name (e.g., "agent", "persona", "cohort", "document").
-                  Use singular form: "scenario" not "scenarios".
-            payload: Request payload. Call payload_artifact(name, "get") first.
-
-        Returns:
-            Object containing artifact data with id, name, timestamps, and related resources.
-        """
-        return await call_handler(name, "get", payload)
-
-    @server.tool()
-    async def save_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
-        """Save (create or update) an artifact.
-
-        Args:
-            name: Artifact name (e.g., "agent", "persona", "cohort").
-            payload: Request payload. Call payload_artifact(name, "save") first.
-
-        Returns:
-            Object with saved artifact data including id and timestamps.
-        """
-        return await call_handler(name, "save", payload)
-
-    @server.tool()
-    async def list_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
-        """List items for an artifact.
-
-        Args:
-            name: Artifact name (e.g., "agent", "persona", "cohort"). Use singular form.
-            payload: Request payload with filter parameters. Call payload_artifact(name, "list") first.
-
-        Returns:
-            List of artifact objects with id, name, timestamps, and related data.
-        """
-        return await call_handler(name, "list", payload)
-
-    @server.tool()
-    async def duplicate_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
-        """Duplicate an artifact.
-
-        Args:
-            name: Artifact name (e.g., "agent", "persona"). Use singular form.
-            payload: Request payload. Call payload_artifact(name, "duplicate") first.
-
-        Returns:
-            Object with duplicated artifact data including new id.
-        """
-        return await call_handler(name, "duplicate", payload)
-
-    @server.tool()
-    async def delete_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
-        """Delete an artifact.
-
-        Args:
-            name: Artifact name (e.g., "agent", "persona"). Use singular form.
-            payload: Request payload. Call payload_artifact(name, "delete") first.
-
-        Returns:
-            Success response or error message.
-        """
-        return await call_handler(name, "delete", payload)
-
-    @server.tool()
-    async def draft_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
-        """Create or patch a draft artifact (autosave).
-
-        Args:
-            name: Artifact name (e.g., "agent", "persona"). Use singular form.
-            payload: Request payload. Call payload_artifact(name, "draft") first.
-
-        Returns:
-            Draft data including draft_id and version information.
-        """
-        return await call_handler(name, "draft", payload)
-
-    @server.tool()
-    async def refresh_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
-        """Refresh an artifact's cached data.
-
-        Args:
-            name: Artifact name (e.g., "activity", "benchmark", "dashboard", "health").
-            payload: Request payload. Call payload_artifact(name, "refresh") first.
-
-        Returns:
-            Refresh result.
-        """
-        return await call_handler(name, "refresh", payload)
-
-    # ------------------------------------------------------------------
-    # Resource tools
-    # ------------------------------------------------------------------
-
-    @server.tool()
-    async def get_resource(name: str, payload: dict[str, Any]) -> dict[str, Any]:
-        """Get resource data by name.
-
-        Args:
-            name: Resource name (e.g., "agents", "names", "descriptions").
-            payload: Request payload. Call payload_resource(name, "get") first.
-
-        Returns:
-            Resource data.
+            filename: Original filename with extension (e.g., "photo.png").
+            base64_data: Base64-encoded file contents.
+            mime_type: MIME type (e.g., "image/png"). Auto-detected from extension if omitted.
+            subfolder: Optional subfolder path for organization.
         """
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
         profile_id = get_mcp_profile_id()
 
-        if name not in RESOURCE_REGISTRY:
-            return {"error": f"'{name}' is not a valid resource."}
+        entry_data: dict[str, Any] = {
+            "filename": filename,
+            "base64_data": base64_data,
+        }
+        if mime_type is not None:
+            entry_data["mime_type"] = mime_type
+        if subfolder is not None:
+            entry_data["subfolder"] = subfolder
 
-        if "get" not in RESOURCE_REGISTRY[name]:
-            return {"error": f"get operation not available for '{name}'."}
-
-        handler = _get_handler(*RESOURCE_REGISTRY[name]["get"])
-        return await call_endpoint_handler(handler, payload, profile_id)
-
-    @server.tool()
-    async def search_resource(name: str, payload: dict[str, Any]) -> dict[str, Any]:
-        """Search resources by name.
-
-        Args:
-            name: Resource name (e.g., "agents", "names", "descriptions").
-            payload: Request payload. Call payload_resource(name, "search") first.
-
-        Returns:
-            Search results.
-        """
-        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
-
-        profile_id = get_mcp_profile_id()
-
-        if name not in RESOURCE_REGISTRY:
-            return {"error": f"'{name}' is not a valid resource."}
-
-        if "search" not in RESOURCE_REGISTRY[name]:
-            return {"error": f"search operation not available for '{name}'."}
-
-        handler = _get_handler(*RESOURCE_REGISTRY[name]["search"])
-        return await call_endpoint_handler(handler, payload, profile_id)
-
-    @server.tool()
-    async def create_resource(name: str, payload: dict[str, Any]) -> dict[str, Any]:
-        """Create a resource.
-
-        Args:
-            name: Resource name (e.g., "names", "descriptions", "flags").
-            payload: Request payload. Call payload_resource(name) first.
-
-        Returns:
-            Success response with created resource data including id.
-        """
-        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
-
-        profile_id = get_mcp_profile_id()
-
-        if name not in RESOURCE_REGISTRY:
-            return {
-                "error": f"'{name}' is not a valid resource.",
-                "status": "invalid_resource",
-            }
-
-        if "create" not in RESOURCE_REGISTRY[name]:
-            return {
-                "error": f"Resource '{name}' does not support create.",
-                "status": "not_implemented",
-            }
-
-        handler = _get_handler(*RESOURCE_REGISTRY[name]["create"])
-        return await call_endpoint_handler(handler, payload, profile_id)
-
-    # ------------------------------------------------------------------
-    # Entry tools
-    # ------------------------------------------------------------------
-
-    @server.tool()
-    async def get_entry(name: str, payload: dict[str, Any]) -> dict[str, Any]:
-        """Get entry data by name.
-
-        Args:
-            name: Entry name (e.g., "activity", "attempt", "training").
-            payload: Request payload. Call payload_entry(name, "get") first.
-
-        Returns:
-            Entry data.
-        """
-        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
-
-        profile_id = get_mcp_profile_id()
-
-        if name not in ENTRY_REGISTRY:
-            return {
-                "error": f"'{name}' is not a valid entry.",
-                "available_entries": ENTRIES,
-            }
-
-        if "get" not in ENTRY_REGISTRY[name]:
-            return {
-                "error": f"get operation not available for entry '{name}'.",
-                "available_operations": list(ENTRY_REGISTRY[name].keys()),
-            }
-
-        handler = _get_handler(*ENTRY_REGISTRY[name]["get"])
-        return await call_endpoint_handler(handler, payload, profile_id)
-
-    @server.tool()
-    async def search_entry(name: str, payload: dict[str, Any]) -> dict[str, Any]:
-        """Search entries by name.
-
-        Args:
-            name: Entry name (e.g., "activity", "attempt", "training").
-            payload: Request payload. Call payload_entry(name, "search") first.
-
-        Returns:
-            Search results.
-        """
-        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
-
-        profile_id = get_mcp_profile_id()
-
-        if name not in ENTRY_REGISTRY:
-            return {
-                "error": f"'{name}' is not a valid entry.",
-                "available_entries": ENTRIES,
-            }
-
-        if "search" not in ENTRY_REGISTRY[name]:
-            return {
-                "error": f"search operation not available for entry '{name}'.",
-                "available_operations": list(ENTRY_REGISTRY[name].keys()),
-            }
-
-        handler = _get_handler(*ENTRY_REGISTRY[name]["search"])
-        return await call_endpoint_handler(handler, payload, profile_id)
-
-    @server.tool()
-    async def create_entry(name: str, payload: dict[str, Any]) -> dict[str, Any]:
-        """Create an entry.
-
-        Args:
-            name: Entry name (e.g., "activity", "attempt", "training").
-            payload: Request payload. Call payload_entry(name, "create") first.
-
-        Returns:
-            Success response with created entry data.
-        """
-        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
-
-        profile_id = get_mcp_profile_id()
-
-        if name not in ENTRY_REGISTRY:
-            return {
-                "error": f"'{name}' is not a valid entry.",
-                "available_entries": ENTRIES,
-            }
-
-        if "create" not in ENTRY_REGISTRY[name]:
-            return {
-                "error": f"create operation not available for entry '{name}'.",
-                "available_operations": list(ENTRY_REGISTRY[name].keys()),
-            }
-
-        handler = _get_handler(*ENTRY_REGISTRY[name]["create"])
-        return await call_endpoint_handler(handler, payload, profile_id)
+        handler = _get_handler(*ENTRY_REGISTRY["uploads"]["create"])
+        return await call_endpoint_handler(
+            handler, {"entry_data": entry_data}, profile_id
+        )
