@@ -36,12 +36,12 @@ The user is currently editing a eval with the following selections:
 **Current Departments:** (not selected)
 {% endif %}
 
-{% if agents and agents|length > 0 %}
-**Current Agents:** {% for item in agents %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.agent_ids and draft.agent_ids|length > 0 %}
-**Current Agents IDs:** {% for id in draft.agent_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if runs and runs|length > 0 %}
+**Current Runs:** {% for item in runs %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% elif draft and draft.run_ids and draft.run_ids|length > 0 %}
+**Current Runs IDs:** {% for id in draft.run_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% else %}
-**Current Agents:** (not selected)
+**Current Runs:** (not selected)
 {% endif %}
 
 {% if run_positions and run_positions|length > 0 %}
@@ -52,6 +52,22 @@ The user is currently editing a eval with the following selections:
 **Current Run Positions:** (not selected)
 {% endif %}
 
+{% if runs_rubrics and runs_rubrics|length > 0 %}
+**Current Runs Rubrics:** {% for item in runs_rubrics %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% elif draft and draft.runs_rubric_ids and draft.runs_rubric_ids|length > 0 %}
+**Current Runs Rubrics IDs:** {% for id in draft.runs_rubric_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}
+**Current Runs Rubrics:** (not selected)
+{% endif %}
+
+{% if groups and groups|length > 0 %}
+**Current Groups:** {% for item in groups %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% elif draft and draft.group_ids and draft.group_ids|length > 0 %}
+**Current Groups IDs:** {% for id in draft.group_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}
+**Current Groups:** (not selected)
+{% endif %}
+
 {% if group_positions and group_positions|length > 0 %}
 **Current Group Positions:** {% for item in group_positions %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% elif draft and draft.group_position_ids and draft.group_position_ids|length > 0 %}
@@ -60,28 +76,12 @@ The user is currently editing a eval with the following selections:
 **Current Group Positions:** (not selected)
 {% endif %}
 
-{% if run_rubrics and run_rubrics|length > 0 %}
-**Current Run Rubrics:** {% for item in run_rubrics %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.run_rubric_ids and draft.run_rubric_ids|length > 0 %}
-**Current Run Rubrics IDs:** {% for id in draft.run_rubric_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if groups_rubrics and groups_rubrics|length > 0 %}
+**Current Groups Rubrics:** {% for item in groups_rubrics %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% elif draft and draft.groups_rubric_ids and draft.groups_rubric_ids|length > 0 %}
+**Current Groups Rubrics IDs:** {% for id in draft.groups_rubric_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% else %}
-**Current Run Rubrics:** (not selected)
-{% endif %}
-
-{% if group_rubrics and group_rubrics|length > 0 %}
-**Current Group Rubrics:** {% for item in group_rubrics %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.group_rubric_ids and draft.group_rubric_ids|length > 0 %}
-**Current Group Rubrics IDs:** {% for id in draft.group_rubric_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Group Rubrics:** (not selected)
-{% endif %}
-
-{% if rubrics and rubrics|length > 0 %}
-**Current Rubrics:** {% for item in rubrics %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.rubric_ids and draft.rubric_ids|length > 0 %}
-**Current Rubrics IDs:** {% for id in draft.rubric_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Rubrics:** (not selected)
+**Current Groups Rubrics:** (not selected)
 {% endif %}
 
 ---
@@ -107,56 +107,56 @@ You have access to the following existing resources. Either **use_*** an existin
 {% if flags and flags|length > 0 %}
 ### Available Flags
 {% for item in flags %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
 {% if departments and departments|length > 0 %}
 ### Available Departments
 {% for item in departments %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
-{% if agents and agents|length > 0 %}
-### Available Agents
-{% for item in agents %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+{% if runs and runs|length > 0 %}
+### Available Runs
+{% for item in runs %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
 {% if run_positions and run_positions|length > 0 %}
 ### Available Run Positions
 {% for item in run_positions %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if runs_rubrics and runs_rubrics|length > 0 %}
+### Available Runs Rubrics
+{% for item in runs_rubrics %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if groups and groups|length > 0 %}
+### Available Groups
+{% for item in groups %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
 {% if group_positions and group_positions|length > 0 %}
 ### Available Group Positions
 {% for item in group_positions %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
-{% if run_rubrics and run_rubrics|length > 0 %}
-### Available Run Rubrics
-{% for item in run_rubrics %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
-
-{% if group_rubrics and group_rubrics|length > 0 %}
-### Available Group Rubrics
-{% for item in group_rubrics %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
-
-{% if rubrics and rubrics|length > 0 %}
-### Available Rubrics
-{% for item in rubrics %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+{% if groups_rubrics and groups_rubrics|length > 0 %}
+### Available Groups Rubrics
+{% for item in groups_rubrics %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 

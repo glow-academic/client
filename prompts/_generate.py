@@ -1,11 +1,16 @@
-"""Generate system prompt and instruction template files for all 34 artifacts."""
+"""Generate system prompt and instruction template files for all 34 artifacts.
+
+Resources are derived from actual DB junction/connection tables.
+Tool names match intended state (create_{resource} / use_{resource}).
+"""
 
 import os
 
 PROMPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # ---------------------------------------------------------------------------
-# Artifact definitions: (name, category, resources, description)
+# CRUD artifacts — resources from {artifact}_{resource}_junction tables
+# Self-ref junctions excluded (e.g. agent_agents_junction)
 # ---------------------------------------------------------------------------
 
 CRUD_ARTIFACTS = {
@@ -13,7 +18,7 @@ CRUD_ARTIFACTS = {
         "resources": [
             ("names", "name (name text)"),
             ("descriptions", "description (description text)"),
-            ("models", "model reference (model_id)"),
+            ("models", "model binding (model_id)"),
             ("prompts", "system prompt (system_prompt text)"),
             ("instructions", "instruction template (template text)"),
             ("flags", "flag setting (flag value)"),
@@ -30,11 +35,12 @@ CRUD_ARTIFACTS = {
             ("names", "name (name text)"),
             ("descriptions", "description (description text)"),
             ("flags", "flag setting (flag value)"),
+            ("departments", "department assignment (department_id)"),
+            ("items", "auth item (item configuration)"),
             ("protocols", "auth protocol (protocol type)"),
             ("slugs", "URL slug (slug text)"),
-            ("items", "auth item (item configuration)"),
         ],
-        "desc": "authentication configurations with protocols and items",
+        "desc": "authentication configurations with protocols, slugs, and items",
     },
     "persona": {
         "resources": [
@@ -55,32 +61,33 @@ CRUD_ARTIFACTS = {
         "resources": [
             ("names", "name (name text)"),
             ("descriptions", "description (description text)"),
-            ("problem_statements", "problem statement (statement text)"),
-            ("objectives", "objective (objective text)"),
-            ("scenario_flags", "scenario flag (flag value)"),
-            ("images", "image (image reference)"),
-            ("videos", "video (video reference)"),
-            ("questions", "question (question text)"),
+            ("flags", "flag setting (flag value)"),
             ("departments", "department assignment (department_id)"),
+            ("documents", "reference document (document_id)"),
+            ("images", "image (image reference)"),
+            ("objectives", "learning objective (objective text)"),
+            ("options", "response option (option text)"),
             ("parameter_fields", "parameter field link (field_id, parameter_id)"),
-            ("personas", "persona binding (persona_id)"),
-            ("documents", "document reference (document_id)"),
             ("parameters", "parameter binding (parameter_id)"),
+            ("personas", "persona binding (persona_id)"),
+            ("problem_statements", "problem statement (statement text)"),
+            ("questions", "question (question text, options)"),
+            ("videos", "video (video reference)"),
         ],
-        "desc": "training scenarios with problem statements, objectives, and persona assignments",
+        "desc": "training scenarios with problem statements, objectives, questions, and persona assignments",
     },
     "simulation": {
         "resources": [
             ("names", "name (name text)"),
             ("descriptions", "description (description text)"),
-            ("departments", "department assignment (department_id)"),
             ("flags", "flag setting (flag value)"),
+            ("departments", "department assignment (department_id)"),
             ("scenarios", "scenario binding (scenario_id)"),
-            ("scenario_flags", "scenario flag override (flag value)"),
-            ("scenario_personas", "scenario persona override (persona_id)"),
-            ("scenario_positions", "scenario ordering (position)"),
-            ("scenario_rubrics", "scenario rubric binding (rubric_id)"),
-            ("scenario_time_limits", "scenario time limit (minutes)"),
+            ("scenario_flags", "scenario flag override (flag value per scenario)"),
+            ("scenario_personas", "scenario persona override (persona_id per scenario)"),
+            ("scenario_positions", "scenario ordering (position per scenario)"),
+            ("scenario_rubrics", "scenario rubric binding (rubric_id per scenario)"),
+            ("scenario_time_limits", "scenario time limit (minutes per scenario)"),
         ],
         "desc": "simulation configurations with scenario orderings, rubrics, and time limits",
     },
@@ -92,6 +99,7 @@ CRUD_ARTIFACTS = {
             ("departments", "department assignment (department_id)"),
             ("simulations", "simulation binding (simulation_id)"),
             ("simulation_positions", "simulation ordering (position)"),
+            ("simulation_availability", "simulation availability window (start, end)"),
         ],
         "desc": "cohorts grouping simulations for training programs",
     },
@@ -101,23 +109,25 @@ CRUD_ARTIFACTS = {
             ("descriptions", "description (description text)"),
             ("flags", "flag setting (flag value)"),
             ("departments", "department assignment (department_id)"),
-            ("fields", "field binding (field_id)"),
-            ("uploads", "file upload (upload reference)"),
             ("images", "image (image reference)"),
+            ("parameter_fields", "parameter field link (field_id, parameter_id)"),
+            ("parameters", "parameter binding (parameter_id)"),
             ("texts", "text content (text body)"),
+            ("uploads", "file upload (upload reference)"),
         ],
-        "desc": "documents with uploads, images, and structured text content",
+        "desc": "documents with uploads, images, text content, and parameter fields",
     },
     "profile": {
         "resources": [
             ("names", "name (name text)"),
             ("flags", "flag setting (flag value)"),
-            ("request_limits", "request limit (limit value)"),
             ("departments", "department assignment (department_id)"),
             ("emails", "email address (email text)"),
-            ("cohorts", "cohort assignment (cohort_id)"),
+            ("cohorts", "cohort enrollment (cohort_id)"),
+            ("request_limits", "request limit (limit value)"),
+            ("roles", "role assignment (role type)"),
         ],
-        "desc": "user profiles with department assignments and cohort enrollments",
+        "desc": "user profiles with department assignments, cohort enrollments, and roles",
     },
     "parameter": {
         "resources": [
@@ -143,7 +153,7 @@ CRUD_ARTIFACTS = {
         "resources": [
             ("names", "name (name text)"),
             ("descriptions", "description (description text)"),
-            ("values", "model value/identifier (value text)"),
+            ("values", "model identifier (value text)"),
             ("providers", "provider binding (provider_id)"),
             ("flags", "flag setting (flag value)"),
             ("departments", "department assignment (department_id)"),
@@ -154,18 +164,21 @@ CRUD_ARTIFACTS = {
             ("qualities", "quality tier (quality level)"),
             ("voices", "voice setting (voice)"),
         ],
-        "desc": "AI model configurations with providers, modalities, and pricing",
+        "desc": "AI model configurations with providers, modalities, pricing, and capabilities",
     },
     "tool": {
         "resources": [
             ("names", "name (name text)"),
             ("descriptions", "description (description text)"),
+            ("flags", "flag setting (flag value)"),
+            ("departments", "department assignment (department_id)"),
             ("args", "argument definition (name, type, description)"),
             ("arg_positions", "argument ordering (position)"),
             ("args_outputs", "argument output mapping (output configuration)"),
-            ("flags", "flag setting (flag value)"),
+            ("bindings", "entry type binding (entry_type)"),
+            ("domains", "domain scope (domain name)"),
         ],
-        "desc": "tool definitions with arguments, ordering, and output mappings",
+        "desc": "tool definitions with arguments, output mappings, entry bindings, and domain scopes",
     },
     "department": {
         "resources": [
@@ -182,23 +195,23 @@ CRUD_ARTIFACTS = {
             ("descriptions", "description (description text)"),
             ("flags", "flag setting (flag value)"),
             ("departments", "department assignment (department_id)"),
-            ("values", "provider value/identifier (value text)"),
+            ("values", "provider identifier (value text)"),
             ("endpoints", "API endpoint (endpoint URL)"),
+            ("keys", "API key (key configuration)"),
         ],
-        "desc": "AI provider configurations with endpoints and credentials",
+        "desc": "AI provider configurations with endpoints and API keys",
     },
     "rubric": {
         "resources": [
             ("names", "name (name text)"),
             ("descriptions", "description (description text)"),
-            ("departments", "department assignment (department_id)"),
             ("flags", "flag setting (flag value)"),
+            ("departments", "department assignment (department_id)"),
             ("points", "point value (points number)"),
-            ("pass_points", "passing threshold (pass_points number)"),
-            ("standard_groups", "standard group (group configuration)"),
-            ("standards", "standard (standard definition)"),
+            ("standard_groups", "standard group (group name, description)"),
+            ("standards", "standard (standard definition, criteria)"),
         ],
-        "desc": "grading rubrics with standards, point values, and passing thresholds",
+        "desc": "grading rubrics with standard groups, standards, and point values",
     },
     "eval": {
         "resources": [
@@ -206,31 +219,79 @@ CRUD_ARTIFACTS = {
             ("descriptions", "description (description text)"),
             ("flags", "flag setting (flag value)"),
             ("departments", "department assignment (department_id)"),
-            ("agents", "agent binding (agent_id)"),
+            ("runs", "evaluation run (run configuration)"),
             ("run_positions", "run ordering (position)"),
+            ("runs_rubrics", "run rubric binding (rubric_id per run)"),
+            ("groups", "evaluation group (group configuration)"),
             ("group_positions", "group ordering (position)"),
-            ("run_rubrics", "run rubric binding (rubric_id)"),
-            ("group_rubrics", "group rubric binding (rubric_id)"),
-            ("rubrics", "rubric binding (rubric_id)"),
+            ("groups_rubrics", "group rubric binding (rubric_id per group)"),
         ],
-        "desc": "evaluation configurations with agent assignments, runs, groups, and rubric bindings",
+        "desc": "evaluation configurations with runs, groups, and rubric bindings",
     },
     "setting": {
         "resources": [
             ("names", "name (name text)"),
             ("descriptions", "description (description text)"),
-            ("colors", "color (name, hex_code)"),
+            ("colors", "theme color (name, hex_code)"),
             ("flags", "flag setting (flag value)"),
             ("departments", "department assignment (department_id)"),
-            ("profiles", "profile binding (profile_id)"),
-            ("auths", "auth binding (auth_id)"),
-            ("provider_keys", "provider API key (key configuration)"),
+            ("agents", "system agent binding (agent_id)"),
+            ("auths", "auth configuration binding (auth_id)"),
             ("auth_item_keys", "auth item key (key configuration)"),
-            ("roles", "role assignment (role type)"),
+            ("auth_values", "auth value setting (value)"),
+            ("profiles", "profile binding (profile_id)"),
+            ("provider_keys", "provider API key (key configuration)"),
+            ("thresholds", "threshold setting (threshold value)"),
         ],
-        "desc": "system settings with auth, provider keys, roles, and department assignments",
+        "desc": "system settings with auth, provider keys, thresholds, and department assignments",
+    },
+    # --- Chat and Invocation use CRUD pattern (from connection tables) ---
+    "chat": {
+        "resources": [
+            ("names", "name (name text)"),
+            ("descriptions", "description (description text)"),
+            ("flags", "flag setting (flag value)"),
+            ("departments", "department assignment (department_id)"),
+            ("personas", "persona binding (persona_id)"),
+            ("documents", "reference document (document_id)"),
+            ("scenarios", "scenario binding (scenario_id)"),
+            ("parameter_fields", "parameter field link (field_id, parameter_id)"),
+            ("parameters", "parameter binding (parameter_id)"),
+            ("fields", "field value (field_id)"),
+            ("questions", "scenario question (question text)"),
+            ("options", "response option (option text)"),
+            ("videos", "video reference (video_id)"),
+            ("images", "image reference (image_id)"),
+            ("objectives", "learning objective (objective text)"),
+            ("problem_statements", "problem statement (statement text)"),
+        ],
+        "desc": "training chat sessions with persona-driven scenario conversations",
+    },
+    "invocation": {
+        "resources": [
+            ("names", "name (name text)"),
+            ("descriptions", "description (description text)"),
+            ("flags", "flag setting (flag value)"),
+            ("departments", "department assignment (department_id)"),
+            ("models", "model binding (model_id)"),
+            ("prompts", "system prompt (system_prompt text)"),
+            ("instructions", "instruction template (template text)"),
+            ("runs", "evaluation run (run_id)"),
+            ("groups", "evaluation group (group_id)"),
+            ("keys", "API key binding (key_id)"),
+            ("tools", "tool binding (tool_id)"),
+            ("temperature_levels", "temperature level (level)"),
+            ("reasoning_levels", "reasoning level (level)"),
+            ("voices", "voice setting (voice)"),
+        ],
+        "desc": "benchmark invocations with model, prompt, and tool configurations for evaluation runs",
     },
 }
+
+# ---------------------------------------------------------------------------
+# Analytical artifacts — use create_insights tool
+# Resources from registry: names, descriptions, flags, departments
+# ---------------------------------------------------------------------------
 
 ANALYTICAL_ARTIFACTS = {
     "dashboard": {
@@ -271,90 +332,68 @@ ANALYTICAL_ARTIFACTS = {
     },
 }
 
-TRAINING_ARTIFACTS = {
-    "chat": {
-        "resources": [
-            ("departments", "department context"),
-            ("personas", "persona in conversation"),
-            ("documents", "reference document"),
-            ("parameter_fields", "parameter field value"),
-            ("scenarios", "active scenario"),
-            ("parameters", "parameter binding"),
-            ("fields", "field value"),
-            ("questions", "scenario question"),
-            ("options", "response option"),
-            ("videos", "video reference"),
-            ("images", "image reference"),
-            ("templates", "response template"),
-            ("problem_statements", "problem statement"),
-            ("objectives", "learning objective"),
-        ],
-        "desc": "live training chat sessions where the AI acts as a persona in a scenario-driven conversation",
-    },
-    "benchmark": {
-        "resources": [
-            ("departments", "department context"),
-            ("models", "model under test"),
-            ("prompts", "system prompt"),
-            ("instructions", "instruction template"),
-            ("voices", "voice setting"),
-            ("temperature_levels", "temperature level"),
-            ("reasoning_levels", "reasoning level"),
-            ("tools", "tool binding"),
-            ("keys", "API key"),
-        ],
-        "desc": "benchmark execution running evaluations across model configurations",
-    },
-    "invocation": {
-        "resources": [
-            ("departments", "department context"),
-            ("models", "model under test"),
-            ("prompts", "system prompt"),
-            ("instructions", "instruction template"),
-            ("voices", "voice setting"),
-            ("temperature_levels", "temperature level"),
-            ("reasoning_levels", "reasoning level"),
-            ("tools", "tool binding"),
-            ("keys", "API key"),
-        ],
-        "desc": "individual benchmark invocation within a test suite",
-    },
-    "home": {
-        "resources": [],
-        "desc": "home page overview for the current user showing available training and recent activity",
-    },
-    "practice": {
-        "resources": [],
-        "desc": "practice mode entry point showing available simulations and training options",
-    },
+# ---------------------------------------------------------------------------
+# Specialized artifacts — entry-type tools, NOT create/use CRUD pattern
+# ---------------------------------------------------------------------------
+
+SPECIALIZED_ARTIFACTS = {
     "attempt-chat": {
-        "resources": [
-            ("user_messages", "user message in conversation"),
-            ("assistant_messages", "assistant response"),
-            ("contents", "content block"),
-            ("hints", "hint for the user"),
+        "tools": [
+            ("create_content", "Make a persona speak — generate the in-character response as a content block"),
+            ("create_hint", "Create a strategic hint for the user when they are struggling"),
         ],
         "desc": "the conversational portion of a training attempt — the AI acts as the persona conducting the training dialogue",
     },
     "attempt-grade": {
-        "resources": [
-            ("feedbacks", "feedback comment"),
-            ("strengths", "identified strength"),
-            ("improvements", "improvement suggestion"),
-            ("analyses", "analytical observation"),
-            ("highlights", "notable moment highlight"),
-            ("replacements", "suggested replacement phrase"),
+        "tools": [
+            ("create_feedback", "Create a grade for a specific standard group with a 1-5 score and feedback"),
+            ("create_strength", "Highlight what was strong about a specific message with optional text highlights"),
+            ("create_improvement", "Suggest improvements for a specific message with optional strikethrough/replace"),
+            ("create_analysis", "Create an analysis of audio messages from the conversation"),
+            ("create_highlight", "Create a highlight for a notable strength in the simulation"),
+            ("create_replacement", "Create a replacement suggestion for an improvement"),
         ],
         "desc": "the grading/evaluation portion of a training attempt — analyzing performance and providing structured feedback",
     },
     "test": {
-        "resources": [
-            ("grades", "grade assignment"),
-            ("feedbacks", "feedback comment"),
+        "tools": [
+            ("create_feedback", "Create a grade for a specific standard group with a 1-5 score and feedback"),
         ],
         "desc": "benchmark test grading — evaluating model outputs against rubric standards",
     },
+    "benchmark": {
+        "tools": [
+            ("create_names", "Create a name for the benchmark run"),
+            ("create_descriptions", "Create a description for the benchmark run"),
+            ("create_instructions", "Create an instruction template"),
+            ("create_models", "Create a model configuration"),
+            ("create_prompt", "Set the system prompt"),
+            ("create_keys", "Create an API key binding"),
+            ("create_reasoning_levels", "Create a reasoning level"),
+            ("create_temperature_levels", "Create a temperature level"),
+            ("create_voices", "Create a voice setting"),
+            ("use_names", "Use an existing name by its ID"),
+            ("use_descriptions", "Use an existing description by its ID"),
+            ("use_flags", "Use an existing flag by its ID"),
+            ("use_departments", "Use an existing department by its ID"),
+            ("use_instructions", "Use an existing instruction by its ID"),
+        ],
+        "desc": "benchmark execution running evaluations across model configurations",
+    },
+    "home": {
+        "tools": [],
+        "desc": "home page overview for the current user showing available training and recent activity",
+    },
+    "practice": {
+        "tools": [],
+        "desc": "practice mode entry point showing available simulations and training options",
+    },
 }
+
+
+# ---------------------------------------------------------------------------
+# Generator functions
+# ---------------------------------------------------------------------------
 
 
 def write_crud_system(name: str, info: dict) -> str:
@@ -365,7 +404,8 @@ def write_crud_system(name: str, info: dict) -> str:
         f"- **create_{r[0]}**: Create a new {r[1]}" for r in resources
     )
     use_tools = "\n".join(
-        f"- **use_{r[0]}**: Use an existing {r[0]} by its ID" for r in resources
+        f"- **use_{r[0]}**: Use an existing {r[0].rstrip('s') if not r[0].endswith('ss') else r[0]} by its ID"
+        for r in resources
     )
 
     resource_names = ", ".join(r[0] for r in resources)
@@ -425,38 +465,48 @@ def write_crud_instructions(name: str, info: dict) -> str:
         display = r_name.replace("_", " ").title()
         # Different display logic per resource type
         if r_name == "names":
+            iter_var = "name"
             value_expr = "name.name"
         elif r_name == "descriptions":
+            iter_var = "desc"
             value_expr = "desc.description[:100]"
-            iter_var = "desc"
         elif r_name == "colors":
-            value_expr = "color.name ~ ' (' ~ color.hex_code ~ ')'"
             iter_var = "color"
+            value_expr = "color.name ~ ' (' ~ color.hex_code ~ ')'"
         elif r_name == "icons":
-            value_expr = "icon.name ~ ' (' ~ icon.value ~ ')'"
             iter_var = "icon"
+            value_expr = "icon.name ~ ' (' ~ icon.value ~ ')'"
         elif r_name == "instructions":
-            value_expr = "inst.template[:80]"
             iter_var = "inst"
+            value_expr = "inst.template[:80]"
         elif r_name == "examples":
-            value_expr = "ex.example[:50]"
             iter_var = "ex"
+            value_expr = "ex.example[:50]"
+        elif r_name == "prompts":
+            iter_var = "p"
+            value_expr = "p.system_prompt[:80]"
+        elif r_name == "texts":
+            iter_var = "t"
+            value_expr = "t.text[:80]"
         else:
-            value_expr = f"item.name"
             iter_var = "item"
+            value_expr = "item.name"
 
-        if r_name == "names":
-            iter_var = "name"
-        elif r_name == "descriptions":
-            iter_var = "desc"
-        elif r_name not in ("colors", "icons", "instructions", "examples"):
-            iter_var = "item"
+        # Derive draft ID key — strip trailing 's' unless double-s
+        if r_name.endswith("ies"):
+            id_key = r_name  # keep as-is, e.g. modalities
+        elif r_name.endswith("ss"):
+            id_key = r_name  # e.g. "pass" — keep
+        elif r_name.endswith("s"):
+            id_key = r_name[:-1]  # names → name, descriptions → description
+        else:
+            id_key = r_name
 
         form_blocks.append(
             f"""{{% if {r_name} and {r_name}|length > 0 %}}
 **Current {display}:** {{% for {iter_var} in {r_name} %}}{{{{ {value_expr} }}}}{{% if not loop.last %}}, {{% endif %}}{{% endfor %}}
-{{% elif draft and draft.{r_name.rstrip('s') if not r_name.endswith('ss') else r_name}_ids and draft.{r_name.rstrip('s') if not r_name.endswith('ss') else r_name}_ids|length > 0 %}}
-**Current {display} IDs:** {{% for id in draft.{r_name.rstrip('s') if not r_name.endswith('ss') else r_name}_ids %}}{{{{ id }}}}{{% if not loop.last %}}, {{% endif %}}{{% endfor %}}
+{{% elif draft and draft.{id_key}_ids and draft.{id_key}_ids|length > 0 %}}
+**Current {display} IDs:** {{% for id in draft.{id_key}_ids %}}{{{{ id }}}}{{% if not loop.last %}}, {{% endif %}}{{% endfor %}}
 {{% else %}}
 **Current {display}:** (not selected)
 {{% endif %}}"""
@@ -478,8 +528,18 @@ def write_crud_instructions(name: str, info: dict) -> str:
             line = f"- id: {{{{ item.id }}}} | template: {{{{ item.template[:80] }}}}{{% if item.template|length > 80 %}}...{{% endif %}}"
         elif r_name == "examples":
             line = f"- id: {{{{ item.id }}}} | example: {{{{ item.example[:80] }}}}{{% if item.example|length > 80 %}}...{{% endif %}}"
-        else:
+        elif r_name == "prompts":
+            line = f"- id: {{{{ item.id }}}} | name: {{{{ item.name }}}} | prompt: {{{{ item.system_prompt[:60] }}}}{{% if item.system_prompt|length > 60 %}}...{{% endif %}}"
+        elif r_name == "texts":
+            line = f"- id: {{{{ item.id }}}} | text: {{{{ item.text[:80] }}}}{{% if item.text|length > 80 %}}...{{% endif %}}"
+        elif r_name in ("points", "pricing", "request_limits", "thresholds"):
+            line = f"- id: {{{{ item.id }}}} | value: {{{{ item.value }}}}"
+        elif r_name in ("args", "args_outputs"):
             line = f"- id: {{{{ item.id }}}} | name: {{{{ item.name }}}}{{% if item.description %}} | {{{{ item.description[:50] }}}}{{% endif %}}"
+        elif r_name in ("emails", "slugs", "values", "endpoints"):
+            line = f"- id: {{{{ item.id }}}} | value: {{{{ item.value if item.value is defined else item.id }}}}"
+        else:
+            line = f"- id: {{{{ item.id }}}} | name: {{{{ item.name }}}}{{% if item.description is defined and item.description %}} | {{{{ item.description[:50] }}}}{{% endif %}}"
 
         available_blocks.append(
             f"""{{% if {r_name} and {r_name}|length > 0 %}}
@@ -529,6 +589,11 @@ def write_analytical_system(name: str, info: dict) -> str:
 
 You analyze data and produce structured, actionable insights. You receive contextual data about {focus} and must synthesize it into clear analysis.
 
+## Tool
+
+You have one primary tool:
+- **create_insights**: Create an insight entry with your analysis. Call this tool once per discrete insight. Each insight should be a focused, self-contained observation.
+
 ## Analysis Framework
 
 ### 1. Pattern Recognition
@@ -548,12 +613,12 @@ You analyze data and produce structured, actionable insights. You receive contex
 
 ## Output Guidelines
 
+- Call **create_insights** for each discrete finding — do not combine multiple insights into one
 - Lead with the most important finding
 - Use specific numbers and percentages, not vague qualifiers
-- Keep insights concise — one clear observation per insight
+- Keep each insight concise — one clear observation per tool call
 - Include context (e.g., "up 15% vs last month" not just "15%")
 - Flag items that need immediate attention separately from trends
-- Do not output narrative prose — produce structured insight entries
 
 ## Tone
 
@@ -576,15 +641,15 @@ You are analyzing the **{name}** view which provides {desc}.
 {{% if draft %}}
 ### Current View State
 
-{{% if draft.filters %}}
+{{% if draft.filters is defined and draft.filters %}}
 **Active Filters:** {{{{ draft.filters | tojson }}}}
 {{% endif %}}
 
-{{% if draft.date_range %}}
+{{% if draft.date_range is defined and draft.date_range %}}
 **Date Range:** {{{{ draft.date_range.start }}}} to {{{{ draft.date_range.end }}}}
 {{% endif %}}
 
-{{% if draft.department_ids and draft.department_ids|length > 0 %}}
+{{% if draft.department_ids is defined and draft.department_ids and draft.department_ids|length > 0 %}}
 **Selected Departments:** {{% for id in draft.department_ids %}}{{{{ id }}}}{{% if not loop.last %}}, {{% endif %}}{{% endfor %}}
 {{% endif %}}
 {{% endif %}}
@@ -594,7 +659,7 @@ You are analyzing the **{name}** view which provides {desc}.
 {{% if departments and departments|length > 0 %}}
 #### Departments in Scope
 {{% for dept in departments %}}
-- id: {{{{ dept.id }}}} | name: {{{{ dept.name }}}}{{% if dept.description %}} | {{{{ dept.description[:50] }}}}{{% endif %}}
+- id: {{{{ dept.id }}}} | name: {{{{ dept.name }}}}{{% if dept.description is defined and dept.description %}} | {{{{ dept.description[:50] }}}}{{% endif %}}
 {{% endfor %}}
 {{% endif %}}
 
@@ -605,10 +670,17 @@ You are analyzing the **{name}** view which provides {desc}.
 {{% endfor %}}
 {{% endif %}}
 
+{{% if descriptions and descriptions|length > 0 %}}
+#### Descriptions
+{{% for desc in descriptions %}}
+- id: {{{{ desc.id }}}} | {{{{ desc.description[:80] }}}}
+{{% endfor %}}
+{{% endif %}}
+
 {{% if flags and flags|length > 0 %}}
 #### Active Flags
 {{% for flag in flags %}}
-- id: {{{{ flag.id }}}} | key: {{{{ flag.key }}}}{{% if flag.label %}} | {{{{ flag.label }}}}{{% endif %}}
+- id: {{{{ flag.id }}}} | {{{{ flag.key if flag.key is defined else flag.id }}}}{{% if flag.label is defined and flag.label %}} | {{{{ flag.label }}}}{{% endif %}}
 {{% endfor %}}
 {{% endif %}}
 
@@ -616,48 +688,16 @@ You are analyzing the **{name}** view which provides {desc}.
 
 Produce insights focused on: {focus}.
 
-Structure each insight as a discrete observation with:
+For each insight, call **create_insights** with a clear, structured observation:
 1. **What** — the data point or pattern
 2. **Why it matters** — business impact or significance
 3. **Recommendation** — what action to take (if applicable)
 """
 
 
-def write_training_system(name: str, info: dict) -> str:
+def write_specialized_system(name: str, info: dict) -> str:
     desc = info["desc"]
-    resources = info.get("resources", [])
-
-    if name == "chat":
-        return f"""You are a training conversation agent facilitating {desc}.
-
-## Your Role
-
-You are conducting a live training session. You embody the persona assigned to this scenario and engage the user in realistic, scenario-driven dialogue. Your goal is to create an authentic training experience that tests and develops the user's skills.
-
-## Conversation Guidelines
-
-- Stay in character as the assigned persona throughout the conversation
-- Follow the scenario's problem statement and objectives
-- Respond naturally while steering toward learning objectives
-- Adjust difficulty based on user performance
-- Use the scenario's questions and options to guide the conversation when appropriate
-- Reference documents and materials when relevant to the scenario
-
-## Context Resources
-
-You have access to the following context that shapes your behavior:
-- **Persona**: Your character, personality, and behavioral instructions
-- **Scenario**: The situation, problem statement, and learning objectives
-- **Documents**: Reference materials relevant to the scenario
-- **Parameters/Fields**: Dynamic configuration values for this session
-- **Questions/Options**: Structured prompts and response options
-
-## Output
-
-- Respond conversationally as the persona
-- Do not break character or reference the system
-- Do not reveal scenario objectives to the user
-"""
+    tools = info.get("tools", [])
 
     if name == "attempt-chat":
         return f"""You are the conversational AI for {desc}.
@@ -678,12 +718,13 @@ You are conducting the training dialogue as the assigned persona. You must:
 - Provide hints when the user is struggling (if configured)
 - Generate content blocks that enrich the conversation when appropriate
 
+## Tools
+
+{chr(10).join(f'- **{t[0]}**: {t[1]}' for t in tools)}
+
 ## Output
 
-Generate responses as the persona. Use the available tools:
-- **create_assistant_messages**: Generate your in-character response
-- **create_contents**: Generate supplementary content blocks
-- **create_hints**: Provide guidance when the user needs help
+Generate responses as the persona using the tools above. Do not output narrative text outside of tool calls.
 """
 
     if name == "attempt-grade":
@@ -693,32 +734,32 @@ Generate responses as the persona. Use the available tools:
 
 You analyze a completed training conversation and produce structured evaluation feedback. You assess the user's performance against the rubric standards and provide actionable feedback.
 
+## Tools
+
+{chr(10).join(f'- **{t[0]}**: {t[1]}' for t in tools)}
+
 ## Evaluation Framework
 
 ### Assessment Areas
-- **Strengths**: What the user did well — specific, evidence-based observations
-- **Improvements**: Where the user can improve — constructive, actionable suggestions
-- **Analysis**: Deeper analytical observations about patterns in the conversation
+- **Feedback/Grades**: Score each standard group on a 1-5 scale with evidence-based justification
+- **Strengths**: What the user did well — specific, evidence-based observations tied to specific messages
+- **Improvements**: Where the user can improve — constructive, actionable suggestions tied to specific messages
+- **Analysis**: Deeper analytical observations about patterns in audio/conversation quality
 - **Highlights**: Notable moments (positive or negative) worth calling out
 - **Replacements**: Specific phrases the user said that could be improved, with suggested alternatives
 
 ## Grading Guidelines
 
 - Base all feedback on observable evidence from the conversation
-- Reference specific moments or quotes when possible
+- Reference specific message numbers when providing strengths/improvements
 - Be constructive — frame improvements as opportunities, not failures
 - Provide specific, actionable replacement suggestions
 - Consider the scenario context and difficulty level
+- Score each standard group independently using the rubric criteria
 
 ## Output
 
-Generate structured feedback using the available tools:
-- **create_feedbacks**: Overall feedback comments
-- **create_strengths**: Identified strengths with evidence
-- **create_improvements**: Specific improvement suggestions
-- **create_analyses**: Analytical observations
-- **create_highlights**: Notable conversation moments
-- **create_replacements**: Suggested phrase improvements
+Generate structured feedback using the tools above. Do not output narrative text outside of tool calls.
 """
 
     if name == "test":
@@ -728,39 +769,43 @@ Generate structured feedback using the available tools:
 
 You evaluate model outputs against rubric standards and assign grades. You provide objective, criteria-based feedback on model performance.
 
+## Tools
+
+{chr(10).join(f'- **{t[0]}**: {t[1]}' for t in tools)}
+
 ## Grading Guidelines
 
 - Evaluate strictly against the rubric criteria
-- Assign grades based on evidence in the model output
+- Assign grades (1-5) based on evidence in the model output
 - Provide specific feedback referencing rubric standards
 - Be consistent and objective across evaluations
 - Note edge cases or ambiguous assessments
 
 ## Output
 
-Generate evaluations using the available tools:
-- **create_grades**: Assign grade values based on rubric criteria
-- **create_feedbacks**: Provide specific feedback referencing standards
+Generate evaluations using the tools above. Do not output narrative text outside of tool calls.
 """
 
-    if name in ("benchmark", "invocation"):
-        return f"""You are a benchmark execution agent for {desc}.
+    if name == "benchmark":
+        tool_lines = "\n".join(f"- **{t[0]}**: {t[1]}" for t in tools)
+        return f"""You are a benchmark configuration agent for {desc}.
 
 ## Your Role
 
-You execute benchmark evaluations using the configured model, prompt, and tool settings. You run the evaluation scenario and produce structured results.
+Generate or update the configuration for a benchmark evaluation run. Set up the model, prompt, instructions, and tool bindings needed for the evaluation.
 
-## Execution Guidelines
+## Tools
 
-- Use the configured model and prompt settings exactly as specified
-- Apply instruction templates as developer messages
-- Respect temperature and reasoning level settings
-- Execute with the provided tool bindings
-- Record all outputs for grading
+{tool_lines}
 
-## Context
+## Guidelines
 
-You operate within the benchmark framework, executing evaluations that will later be graded against rubric standards. Focus on faithful execution of the configured scenario.
+- Prefer using existing resources when suitable ones are available
+- Create new resources only when nothing suitable exists
+- Do not invent IDs — use IDs provided in context
+- Keep outputs deterministic, concise, and production-safe
+- Return only valid tool calls and arguments
+- Do not output narrative text
 """
 
     if name in ("home", "practice"):
@@ -783,17 +828,18 @@ You help users discover and navigate available training content. You provide per
 
 ## Your Role
 
-Generate or update the requested resources. Follow the standard create/use pattern for available resource types.
+Generate or update the requested resources using the available tools.
 """
 
 
-def write_training_instructions(name: str, info: dict) -> str:
-    resources = info.get("resources", [])
+def write_specialized_instructions(name: str, info: dict) -> str:
+    tools = info.get("tools", [])
+    draft_key = f"draft_{name.replace('-', '_')}"
 
-    if not resources:
+    if name in ("home", "practice"):
         return f"""## Context
 
-{{% set draft = views.draft_{name.replace('-', '_')} if views and views.draft_{name.replace('-', '_')} else None %}}
+{{% set draft = views.{draft_key} if views and views.{draft_key} else None %}}
 
 {{% if draft %}}
 ### Current State
@@ -803,23 +849,8 @@ def write_training_instructions(name: str, info: dict) -> str:
 No additional resource context is available for this artifact type.
 """
 
-    # Build available resources section
-    available_blocks = []
-    for r_name, r_desc in resources:
-        display = r_name.replace("_", " ").title()
-        available_blocks.append(
-            f"""{{% if {r_name} and {r_name}|length > 0 %}}
-### Available {display}
-{{% for item in {r_name} %}}
-- id: {{{{ item.id }}}} | {{{{ item.name if item.name is defined else item.id }}}}
-{{% endfor %}}
-{{% endif %}}"""
-        )
-
-    available_resources = "\n\n".join(available_blocks)
-    draft_key = f"draft_{name.replace('-', '_')}"
-
-    return f"""## Context
+    if name in ("attempt-chat", "attempt-grade"):
+        return f"""## Context
 
 {{% set draft = views.{draft_key} if views and views.{draft_key} else None %}}
 
@@ -831,18 +862,107 @@ No additional resource context is available for this artifact type.
 {{% if draft.persona_name is defined %}}
 **Persona:** {{{{ draft.persona_name }}}}
 {{% endif %}}
-{{% if draft.department_ids and draft.department_ids|length > 0 %}}
+{{% if draft.rubric_name is defined %}}
+**Rubric:** {{{{ draft.rubric_name }}}}
+{{% endif %}}
+{{% if draft.department_ids is defined and draft.department_ids and draft.department_ids|length > 0 %}}
 **Departments:** {{% for id in draft.department_ids %}}{{{{ id }}}}{{% if not loop.last %}}, {{% endif %}}{{% endfor %}}
 {{% endif %}}
 {{% endif %}}
 
-### Available Resources
+{{% if standard_groups and standard_groups|length > 0 %}}
+### Rubric Standard Groups
+{{% for sg in standard_groups %}}
+- id: {{{{ sg.id }}}} | name: {{{{ sg.name }}}}{{% if sg.description is defined %}} | {{{{ sg.description[:50] }}}}{{% endif %}}
+{{% endfor %}}
+{{% endif %}}
 
-{available_resources}
+{{% if standards and standards|length > 0 %}}
+### Rubric Standards
+{{% for s in standards %}}
+- id: {{{{ s.id }}}} | description: {{{{ s.description[:80] if s.description is defined else s.id }}}}
+{{% endfor %}}
+{{% endif %}}
 
 ## Tool Usage
 
-For each resource type, use the appropriate **create_*** tool to generate new content based on the context above.
+Use the tools listed in the system prompt to generate structured output. Each tool call produces one entry.
+"""
+
+    if name == "test":
+        return f"""## Context
+
+{{% set draft = views.{draft_key} if views and views.{draft_key} else None %}}
+
+{{% if draft %}}
+### Current State
+{{{{ draft | tojson }}}}
+{{% endif %}}
+
+{{% if standard_groups and standard_groups|length > 0 %}}
+### Rubric Standard Groups
+{{% for sg in standard_groups %}}
+- id: {{{{ sg.id }}}} | name: {{{{ sg.name }}}}{{% if sg.description is defined %}} | {{{{ sg.description[:50] }}}}{{% endif %}}
+{{% endfor %}}
+{{% endif %}}
+
+{{% if standards and standards|length > 0 %}}
+### Rubric Standards
+{{% for s in standards %}}
+- id: {{{{ s.id }}}} | description: {{{{ s.description[:80] if s.description is defined else s.id }}}}
+{{% endfor %}}
+{{% endif %}}
+
+## Tool Usage
+
+Use **create_feedback** for each standard group. Score 1-5 with specific evidence from the model output.
+"""
+
+    if name == "benchmark":
+        return f"""## Context
+
+{{% set draft = views.draft_invocation if views and views.draft_invocation else None %}}
+
+{{% if draft %}}
+### Current State
+{{{{ draft | tojson }}}}
+{{% endif %}}
+
+{{% if models and models|length > 0 %}}
+### Available Models
+{{% for item in models %}}
+- id: {{{{ item.id }}}} | name: {{{{ item.name }}}}
+{{% endfor %}}
+{{% endif %}}
+
+{{% if instructions and instructions|length > 0 %}}
+### Available Instructions
+{{% for item in instructions %}}
+- id: {{{{ item.id }}}} | template: {{{{ item.template[:80] }}}}{{% if item.template|length > 80 %}}...{{% endif %}}
+{{% endfor %}}
+{{% endif %}}
+
+{{% if departments and departments|length > 0 %}}
+### Available Departments
+{{% for item in departments %}}
+- id: {{{{ item.id }}}} | name: {{{{ item.name }}}}
+{{% endfor %}}
+{{% endif %}}
+
+## Tool Usage
+
+Use the tools listed in the system prompt. Prefer **use_*** tools when suitable resources already exist above.
+"""
+
+    # Fallback
+    return f"""## Context
+
+{{% set draft = views.{draft_key} if views and views.{draft_key} else None %}}
+
+{{% if draft %}}
+### Current State
+{{{{ draft | tojson }}}}
+{{% endif %}}
 """
 
 
@@ -851,7 +971,7 @@ def main():
 
     count = 0
 
-    # CRUD artifacts
+    # CRUD artifacts (19: 17 standard + chat + invocation)
     for name, info in CRUD_ARTIFACTS.items():
         with open(os.path.join(PROMPTS_DIR, f"{name}.system.jinja"), "w") as f:
             f.write(write_crud_system(name, info))
@@ -859,7 +979,7 @@ def main():
             f.write(write_crud_instructions(name, info))
         count += 1
 
-    # Analytical artifacts
+    # Analytical artifacts (9)
     for name, info in ANALYTICAL_ARTIFACTS.items():
         with open(os.path.join(PROMPTS_DIR, f"{name}.system.jinja"), "w") as f:
             f.write(write_analytical_system(name, info))
@@ -867,12 +987,12 @@ def main():
             f.write(write_analytical_instructions(name, info))
         count += 1
 
-    # Training/execution artifacts
-    for name, info in TRAINING_ARTIFACTS.items():
+    # Specialized artifacts (6: attempt-chat, attempt-grade, test, benchmark, home, practice)
+    for name, info in SPECIALIZED_ARTIFACTS.items():
         with open(os.path.join(PROMPTS_DIR, f"{name}.system.jinja"), "w") as f:
-            f.write(write_training_system(name, info))
+            f.write(write_specialized_system(name, info))
         with open(os.path.join(PROMPTS_DIR, f"{name}.instructions.jinja"), "w") as f:
-            f.write(write_training_instructions(name, info))
+            f.write(write_specialized_instructions(name, info))
         count += 1
 
     print(f"Generated {count} artifacts ({count * 2} files)")

@@ -29,7 +29,7 @@ The user is currently editing a agent with the following selections:
 {% endif %}
 
 {% if prompts and prompts|length > 0 %}
-**Current Prompts:** {% for item in prompts %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+**Current Prompts:** {% for p in prompts %}{{ p.system_prompt[:80] }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% elif draft and draft.prompt_ids and draft.prompt_ids|length > 0 %}
 **Current Prompts IDs:** {% for id in draft.prompt_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% else %}
@@ -115,14 +115,14 @@ You have access to the following existing resources. Either **use_*** an existin
 {% if models and models|length > 0 %}
 ### Available Models
 {% for item in models %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
 {% if prompts and prompts|length > 0 %}
 ### Available Prompts
 {% for item in prompts %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }} | prompt: {{ item.system_prompt[:60] }}{% if item.system_prompt|length > 60 %}...{% endif %}
 {% endfor %}
 {% endif %}
 
@@ -136,42 +136,42 @@ You have access to the following existing resources. Either **use_*** an existin
 {% if flags and flags|length > 0 %}
 ### Available Flags
 {% for item in flags %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
 {% if departments and departments|length > 0 %}
 ### Available Departments
 {% for item in departments %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
 {% if tools and tools|length > 0 %}
 ### Available Tools
 {% for item in tools %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
 {% if temperature_levels and temperature_levels|length > 0 %}
 ### Available Temperature Levels
 {% for item in temperature_levels %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
 {% if reasoning_levels and reasoning_levels|length > 0 %}
 ### Available Reasoning Levels
 {% for item in reasoning_levels %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
 {% if voices and voices|length > 0 %}
 ### Available Voices
 {% for item in voices %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 

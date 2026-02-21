@@ -10,55 +10,28 @@
 {% if draft.persona_name is defined %}
 **Persona:** {{ draft.persona_name }}
 {% endif %}
-{% if draft.department_ids and draft.department_ids|length > 0 %}
+{% if draft.rubric_name is defined %}
+**Rubric:** {{ draft.rubric_name }}
+{% endif %}
+{% if draft.department_ids is defined and draft.department_ids and draft.department_ids|length > 0 %}
 **Departments:** {% for id in draft.department_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% endif %}
 {% endif %}
 
-### Available Resources
-
-{% if feedbacks and feedbacks|length > 0 %}
-### Available Feedbacks
-{% for item in feedbacks %}
-- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% if standard_groups and standard_groups|length > 0 %}
+### Rubric Standard Groups
+{% for sg in standard_groups %}
+- id: {{ sg.id }} | name: {{ sg.name }}{% if sg.description is defined %} | {{ sg.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
-{% if strengths and strengths|length > 0 %}
-### Available Strengths
-{% for item in strengths %}
-- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
-{% endfor %}
-{% endif %}
-
-{% if improvements and improvements|length > 0 %}
-### Available Improvements
-{% for item in improvements %}
-- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
-{% endfor %}
-{% endif %}
-
-{% if analyses and analyses|length > 0 %}
-### Available Analyses
-{% for item in analyses %}
-- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
-{% endfor %}
-{% endif %}
-
-{% if highlights and highlights|length > 0 %}
-### Available Highlights
-{% for item in highlights %}
-- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
-{% endfor %}
-{% endif %}
-
-{% if replacements and replacements|length > 0 %}
-### Available Replacements
-{% for item in replacements %}
-- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% if standards and standards|length > 0 %}
+### Rubric Standards
+{% for s in standards %}
+- id: {{ s.id }} | description: {{ s.description[:80] if s.description is defined else s.id }}
 {% endfor %}
 {% endif %}
 
 ## Tool Usage
 
-For each resource type, use the appropriate **create_*** tool to generate new content based on the context above.
+Use the tools listed in the system prompt to generate structured output. Each tool call produces one entry.

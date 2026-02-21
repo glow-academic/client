@@ -44,12 +44,12 @@ The user is currently editing a setting with the following selections:
 **Current Departments:** (not selected)
 {% endif %}
 
-{% if profiles and profiles|length > 0 %}
-**Current Profiles:** {% for item in profiles %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.profile_ids and draft.profile_ids|length > 0 %}
-**Current Profiles IDs:** {% for id in draft.profile_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if agents and agents|length > 0 %}
+**Current Agents:** {% for item in agents %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% elif draft and draft.agent_ids and draft.agent_ids|length > 0 %}
+**Current Agents IDs:** {% for id in draft.agent_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% else %}
-**Current Profiles:** (not selected)
+**Current Agents:** (not selected)
 {% endif %}
 
 {% if auths and auths|length > 0 %}
@@ -60,14 +60,6 @@ The user is currently editing a setting with the following selections:
 **Current Auths:** (not selected)
 {% endif %}
 
-{% if provider_keys and provider_keys|length > 0 %}
-**Current Provider Keys:** {% for item in provider_keys %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.provider_key_ids and draft.provider_key_ids|length > 0 %}
-**Current Provider Keys IDs:** {% for id in draft.provider_key_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Provider Keys:** (not selected)
-{% endif %}
-
 {% if auth_item_keys and auth_item_keys|length > 0 %}
 **Current Auth Item Keys:** {% for item in auth_item_keys %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% elif draft and draft.auth_item_key_ids and draft.auth_item_key_ids|length > 0 %}
@@ -76,12 +68,36 @@ The user is currently editing a setting with the following selections:
 **Current Auth Item Keys:** (not selected)
 {% endif %}
 
-{% if roles and roles|length > 0 %}
-**Current Roles:** {% for item in roles %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.role_ids and draft.role_ids|length > 0 %}
-**Current Roles IDs:** {% for id in draft.role_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if auth_values and auth_values|length > 0 %}
+**Current Auth Values:** {% for item in auth_values %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% elif draft and draft.auth_value_ids and draft.auth_value_ids|length > 0 %}
+**Current Auth Values IDs:** {% for id in draft.auth_value_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% else %}
-**Current Roles:** (not selected)
+**Current Auth Values:** (not selected)
+{% endif %}
+
+{% if profiles and profiles|length > 0 %}
+**Current Profiles:** {% for item in profiles %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% elif draft and draft.profile_ids and draft.profile_ids|length > 0 %}
+**Current Profiles IDs:** {% for id in draft.profile_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}
+**Current Profiles:** (not selected)
+{% endif %}
+
+{% if provider_keys and provider_keys|length > 0 %}
+**Current Provider Keys:** {% for item in provider_keys %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% elif draft and draft.provider_key_ids and draft.provider_key_ids|length > 0 %}
+**Current Provider Keys IDs:** {% for id in draft.provider_key_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}
+**Current Provider Keys:** (not selected)
+{% endif %}
+
+{% if thresholds and thresholds|length > 0 %}
+**Current Thresholds:** {% for item in thresholds %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% elif draft and draft.threshold_ids and draft.threshold_ids|length > 0 %}
+**Current Thresholds IDs:** {% for id in draft.threshold_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}
+**Current Thresholds:** (not selected)
 {% endif %}
 
 ---
@@ -114,49 +130,63 @@ You have access to the following existing resources. Either **use_*** an existin
 {% if flags and flags|length > 0 %}
 ### Available Flags
 {% for item in flags %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
 {% if departments and departments|length > 0 %}
 ### Available Departments
 {% for item in departments %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
-{% if profiles and profiles|length > 0 %}
-### Available Profiles
-{% for item in profiles %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+{% if agents and agents|length > 0 %}
+### Available Agents
+{% for item in agents %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
 {% if auths and auths|length > 0 %}
 ### Available Auths
 {% for item in auths %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
-
-{% if provider_keys and provider_keys|length > 0 %}
-### Available Provider Keys
-{% for item in provider_keys %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
 {% if auth_item_keys and auth_item_keys|length > 0 %}
 ### Available Auth Item Keys
 {% for item in auth_item_keys %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
-{% if roles and roles|length > 0 %}
-### Available Roles
-{% for item in roles %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+{% if auth_values and auth_values|length > 0 %}
+### Available Auth Values
+{% for item in auth_values %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if profiles and profiles|length > 0 %}
+### Available Profiles
+{% for item in profiles %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if provider_keys and provider_keys|length > 0 %}
+### Available Provider Keys
+{% for item in provider_keys %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if thresholds and thresholds|length > 0 %}
+### Available Thresholds
+{% for item in thresholds %}
+- id: {{ item.id }} | value: {{ item.value }}
 {% endfor %}
 {% endif %}
 

@@ -4,33 +4,23 @@
 
 {% if draft %}
 ### Current State
-{% if draft.scenario_name is defined %}
-**Scenario:** {{ draft.scenario_name }}
-{% endif %}
-{% if draft.persona_name is defined %}
-**Persona:** {{ draft.persona_name }}
-{% endif %}
-{% if draft.department_ids and draft.department_ids|length > 0 %}
-**Departments:** {% for id in draft.department_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% endif %}
+{{ draft | tojson }}
 {% endif %}
 
-### Available Resources
-
-{% if grades and grades|length > 0 %}
-### Available Grades
-{% for item in grades %}
-- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% if standard_groups and standard_groups|length > 0 %}
+### Rubric Standard Groups
+{% for sg in standard_groups %}
+- id: {{ sg.id }} | name: {{ sg.name }}{% if sg.description is defined %} | {{ sg.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
-{% if feedbacks and feedbacks|length > 0 %}
-### Available Feedbacks
-{% for item in feedbacks %}
-- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% if standards and standards|length > 0 %}
+### Rubric Standards
+{% for s in standards %}
+- id: {{ s.id }} | description: {{ s.description[:80] if s.description is defined else s.id }}
 {% endfor %}
 {% endif %}
 
 ## Tool Usage
 
-For each resource type, use the appropriate **create_*** tool to generate new content based on the context above.
+Use **create_feedback** for each standard group. Score 1-5 with specific evidence from the model output.

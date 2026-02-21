@@ -54,8 +54,8 @@ The user is currently editing a model with the following selections:
 
 {% if modalities and modalities|length > 0 %}
 **Current Modalities:** {% for item in modalities %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.modalitie_ids and draft.modalitie_ids|length > 0 %}
-**Current Modalities IDs:** {% for id in draft.modalitie_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% elif draft and draft.modalities_ids and draft.modalities_ids|length > 0 %}
+**Current Modalities IDs:** {% for id in draft.modalities_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% else %}
 **Current Modalities:** (not selected)
 {% endif %}
@@ -86,8 +86,8 @@ The user is currently editing a model with the following selections:
 
 {% if qualities and qualities|length > 0 %}
 **Current Qualities:** {% for item in qualities %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.qualitie_ids and draft.qualitie_ids|length > 0 %}
-**Current Qualities IDs:** {% for id in draft.qualitie_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% elif draft and draft.qualities_ids and draft.qualities_ids|length > 0 %}
+**Current Qualities IDs:** {% for id in draft.qualities_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% else %}
 **Current Qualities:** (not selected)
 {% endif %}
@@ -123,70 +123,70 @@ You have access to the following existing resources. Either **use_*** an existin
 {% if values and values|length > 0 %}
 ### Available Values
 {% for item in values %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | value: {{ item.value if item.value is defined else item.id }}
 {% endfor %}
 {% endif %}
 
 {% if providers and providers|length > 0 %}
 ### Available Providers
 {% for item in providers %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
 {% if flags and flags|length > 0 %}
 ### Available Flags
 {% for item in flags %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
 {% if departments and departments|length > 0 %}
 ### Available Departments
 {% for item in departments %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
 {% if modalities and modalities|length > 0 %}
 ### Available Modalities
 {% for item in modalities %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
 {% if temperature_levels and temperature_levels|length > 0 %}
 ### Available Temperature Levels
 {% for item in temperature_levels %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
 {% if pricing and pricing|length > 0 %}
 ### Available Pricing
 {% for item in pricing %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | value: {{ item.value }}
 {% endfor %}
 {% endif %}
 
 {% if reasoning_levels and reasoning_levels|length > 0 %}
 ### Available Reasoning Levels
 {% for item in reasoning_levels %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
 {% if qualities and qualities|length > 0 %}
 ### Available Qualities
 {% for item in qualities %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
 {% if voices and voices|length > 0 %}
 ### Available Voices
 {% for item in voices %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 

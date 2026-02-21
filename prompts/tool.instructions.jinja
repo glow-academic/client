@@ -20,6 +20,22 @@ The user is currently editing a tool with the following selections:
 **Current Descriptions:** (not selected)
 {% endif %}
 
+{% if flags and flags|length > 0 %}
+**Current Flags:** {% for item in flags %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% elif draft and draft.flag_ids and draft.flag_ids|length > 0 %}
+**Current Flags IDs:** {% for id in draft.flag_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}
+**Current Flags:** (not selected)
+{% endif %}
+
+{% if departments and departments|length > 0 %}
+**Current Departments:** {% for item in departments %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% elif draft and draft.department_ids and draft.department_ids|length > 0 %}
+**Current Departments IDs:** {% for id in draft.department_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}
+**Current Departments:** (not selected)
+{% endif %}
+
 {% if args and args|length > 0 %}
 **Current Args:** {% for item in args %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% elif draft and draft.arg_ids and draft.arg_ids|length > 0 %}
@@ -44,12 +60,20 @@ The user is currently editing a tool with the following selections:
 **Current Args Outputs:** (not selected)
 {% endif %}
 
-{% if flags and flags|length > 0 %}
-**Current Flags:** {% for item in flags %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.flag_ids and draft.flag_ids|length > 0 %}
-**Current Flags IDs:** {% for id in draft.flag_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if bindings and bindings|length > 0 %}
+**Current Bindings:** {% for item in bindings %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% elif draft and draft.binding_ids and draft.binding_ids|length > 0 %}
+**Current Bindings IDs:** {% for id in draft.binding_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% else %}
-**Current Flags:** (not selected)
+**Current Bindings:** (not selected)
+{% endif %}
+
+{% if domains and domains|length > 0 %}
+**Current Domains:** {% for item in domains %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% elif draft and draft.domain_ids and draft.domain_ids|length > 0 %}
+**Current Domains IDs:** {% for id in draft.domain_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}
+**Current Domains:** (not selected)
 {% endif %}
 
 ---
@@ -72,6 +96,20 @@ You have access to the following existing resources. Either **use_*** an existin
 {% endfor %}
 {% endif %}
 
+{% if flags and flags|length > 0 %}
+### Available Flags
+{% for item in flags %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if departments and departments|length > 0 %}
+### Available Departments
+{% for item in departments %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}
+{% endif %}
+
 {% if args and args|length > 0 %}
 ### Available Args
 {% for item in args %}
@@ -82,7 +120,7 @@ You have access to the following existing resources. Either **use_*** an existin
 {% if arg_positions and arg_positions|length > 0 %}
 ### Available Arg Positions
 {% for item in arg_positions %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
@@ -93,10 +131,17 @@ You have access to the following existing resources. Either **use_*** an existin
 {% endfor %}
 {% endif %}
 
-{% if flags and flags|length > 0 %}
-### Available Flags
-{% for item in flags %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+{% if bindings and bindings|length > 0 %}
+### Available Bindings
+{% for item in bindings %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if domains and domains|length > 0 %}
+### Available Domains
+{% for item in domains %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 

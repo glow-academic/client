@@ -10,41 +10,28 @@
 {% if draft.persona_name is defined %}
 **Persona:** {{ draft.persona_name }}
 {% endif %}
-{% if draft.department_ids and draft.department_ids|length > 0 %}
+{% if draft.rubric_name is defined %}
+**Rubric:** {{ draft.rubric_name }}
+{% endif %}
+{% if draft.department_ids is defined and draft.department_ids and draft.department_ids|length > 0 %}
 **Departments:** {% for id in draft.department_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% endif %}
 {% endif %}
 
-### Available Resources
-
-{% if user_messages and user_messages|length > 0 %}
-### Available User Messages
-{% for item in user_messages %}
-- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% if standard_groups and standard_groups|length > 0 %}
+### Rubric Standard Groups
+{% for sg in standard_groups %}
+- id: {{ sg.id }} | name: {{ sg.name }}{% if sg.description is defined %} | {{ sg.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
-{% if assistant_messages and assistant_messages|length > 0 %}
-### Available Assistant Messages
-{% for item in assistant_messages %}
-- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
-{% endfor %}
-{% endif %}
-
-{% if contents and contents|length > 0 %}
-### Available Contents
-{% for item in contents %}
-- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
-{% endfor %}
-{% endif %}
-
-{% if hints and hints|length > 0 %}
-### Available Hints
-{% for item in hints %}
-- id: {{ item.id }} | {{ item.name if item.name is defined else item.id }}
+{% if standards and standards|length > 0 %}
+### Rubric Standards
+{% for s in standards %}
+- id: {{ s.id }} | description: {{ s.description[:80] if s.description is defined else s.id }}
 {% endfor %}
 {% endif %}
 
 ## Tool Usage
 
-For each resource type, use the appropriate **create_*** tool to generate new content based on the context above.
+Use the tools listed in the system prompt to generate structured output. Each tool call produces one entry.

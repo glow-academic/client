@@ -28,6 +28,22 @@ The user is currently editing a auth with the following selections:
 **Current Flags:** (not selected)
 {% endif %}
 
+{% if departments and departments|length > 0 %}
+**Current Departments:** {% for item in departments %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% elif draft and draft.department_ids and draft.department_ids|length > 0 %}
+**Current Departments IDs:** {% for id in draft.department_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}
+**Current Departments:** (not selected)
+{% endif %}
+
+{% if items and items|length > 0 %}
+**Current Items:** {% for item in items %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% elif draft and draft.item_ids and draft.item_ids|length > 0 %}
+**Current Items IDs:** {% for id in draft.item_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}
+**Current Items:** (not selected)
+{% endif %}
+
 {% if protocols and protocols|length > 0 %}
 **Current Protocols:** {% for item in protocols %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% elif draft and draft.protocol_ids and draft.protocol_ids|length > 0 %}
@@ -42,14 +58,6 @@ The user is currently editing a auth with the following selections:
 **Current Slugs IDs:** {% for id in draft.slug_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% else %}
 **Current Slugs:** (not selected)
-{% endif %}
-
-{% if items and items|length > 0 %}
-**Current Items:** {% for item in items %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.item_ids and draft.item_ids|length > 0 %}
-**Current Items IDs:** {% for id in draft.item_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Items:** (not selected)
 {% endif %}
 
 ---
@@ -75,28 +83,35 @@ You have access to the following existing resources. Either **use_*** an existin
 {% if flags and flags|length > 0 %}
 ### Available Flags
 {% for item in flags %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
-{% if protocols and protocols|length > 0 %}
-### Available Protocols
-{% for item in protocols %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
-
-{% if slugs and slugs|length > 0 %}
-### Available Slugs
-{% for item in slugs %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+{% if departments and departments|length > 0 %}
+### Available Departments
+{% for item in departments %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
 {% if items and items|length > 0 %}
 ### Available Items
 {% for item in items %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if protocols and protocols|length > 0 %}
+### Available Protocols
+{% for item in protocols %}
+- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if slugs and slugs|length > 0 %}
+### Available Slugs
+{% for item in slugs %}
+- id: {{ item.id }} | value: {{ item.value if item.value is defined else item.id }}
 {% endfor %}
 {% endif %}
 
