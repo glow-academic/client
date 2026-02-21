@@ -24,6 +24,7 @@ from app.api.v4.artifacts.tool.permissions import (
     compute_show_name,
     has_access,
 )
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.artifacts.tool.types import (
     GetToolApiRequest,
     GetToolApiResponse,
@@ -618,6 +619,16 @@ async def get_tool_websocket(
         runs=runs_result,
     )
 
+    websocket_config = WebsocketConfig(
+        agents=data.config_agent_resources,
+        models=data.config_model_resources,
+        providers=data.config_provider_resources,
+        tools=tools_result or None,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=config_profile_result or None,
+    )
+
     return GetToolWebsocketResponse(
         entries=entries if draft_tool or runs_result else None,
         resources=ToolWebsocketResources(
@@ -627,14 +638,8 @@ async def get_tool_websocket(
             args=current.args if current else None,
             arg_positions=current.arg_positions if current else None,
             args_outputs=current.args_outputs if current else None,
-            config_agents=data.config_agent_resources,
-            config_models=data.config_model_resources,
-            config_providers=data.config_provider_resources,
-            config_tools=tools_result or None,
-            config_args=config_args,
-            config_args_outputs=config_args_outputs,
-            config_profile=config_profile_result or None,
         ),
+        config=websocket_config,
         resource_agent_ids=data.agent_ids,
         group_id=data.group_id,
     )

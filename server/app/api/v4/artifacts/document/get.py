@@ -53,6 +53,7 @@ from app.api.v4.artifacts.document.types import (
     GetDocumentApiResponse,
     GetDocumentWebsocketResponse,
 )
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.document_drafts.get import get_document_drafts_entries_internal
@@ -828,27 +829,33 @@ async def get_document_websocket(
                 fetch_args_outputs(),
             )
 
+    websocket_resources = DocumentWebsocketResources(
+        names=current.names if current else None,
+        descriptions=current.descriptions if current else None,
+        flags=selected_enriched_flags or None,
+        departments=current.departments if current else None,
+        fields=current.fields if current else None,
+        uploads=current.uploads if current else None,
+        images=current.images if current else None,
+        texts=current.texts if current else None,
+    )
+
+    websocket_config = WebsocketConfig(
+        agents=data.config_agent_resources,
+        models=data.config_model_resources,
+        providers=data.config_provider_resources,
+        tools=tools_result or None,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=config_profile_result or None,
+    )
+
     return GetDocumentWebsocketResponse(
         group_id=data.group_id,
         entries=entries if draft_view or runs_result else None,
         resource_agent_ids=data.agent_ids,
-        resources=DocumentWebsocketResources(
-            names=current.names if current else None,
-            descriptions=current.descriptions if current else None,
-            flags=selected_enriched_flags or None,
-            departments=current.departments if current else None,
-            fields=current.fields if current else None,
-            uploads=current.uploads if current else None,
-            images=current.images if current else None,
-            texts=current.texts if current else None,
-            config_agents=data.config_agent_resources,
-            config_models=data.config_model_resources,
-            config_providers=data.config_provider_resources,
-            config_tools=tools_result or None,
-            config_args=config_args,
-            config_args_outputs=config_args_outputs,
-            config_profile=config_profile_result or None,
-        ),
+        resources=websocket_resources,
+        config=websocket_config,
     )
 
 

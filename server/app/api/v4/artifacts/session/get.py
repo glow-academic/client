@@ -25,6 +25,7 @@ from app.api.v4.artifacts.session.types import (
     SessionWebsocketEntries,
     SessionWebsocketResources,
 )
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.audits.get import get_audit_list_view_internal
@@ -447,21 +448,24 @@ async def get_session_websocket(
                 fetch_args_outputs(),
             )
 
+    websocket_config = WebsocketConfig(
+        agents=data.config_agents or None,
+        models=data.config_models or None,
+        providers=data.config_providers or None,
+        tools=config_tools or None,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=data.config_profile or None,
+    )
+
     return GetSessionWebsocketResponse(
         entries=SessionWebsocketEntries(
             runs=data.runs_today,
             groups=data.groups_result.items if data.groups_result.items else None,
             audits=data.audits_result.items if data.audits_result.items else None,
         ),
-        resources=SessionWebsocketResources(
-            config_agents=data.config_agents or None,
-            config_models=data.config_models or None,
-            config_providers=data.config_providers or None,
-            config_tools=config_tools or None,
-            config_args=config_args,
-            config_args_outputs=config_args_outputs,
-            config_profile=data.config_profile or None,
-        ),
+        resources=SessionWebsocketResources(),
+        config=websocket_config,
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
     )

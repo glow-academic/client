@@ -37,6 +37,7 @@ from app.api.v4.artifacts.home.types import (
     HomeWebsocketEntries,
     HomeWebsocketResources,
 )
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.artifacts.types import FilterOption, HistoryItem, HistoryResponse
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.entries.attempt.get import ChatViewItem, get_attempt_chats_internal
@@ -1068,32 +1069,38 @@ async def get_home_websocket(
                 fetch_args_outputs(),
             )
 
+    websocket_resources = HomeWebsocketResources(
+        departments=data.current_resources.get("departments") or None,
+        personas=data.current_resources.get("personas") or None,
+        documents=data.current_resources.get("documents") or None,
+        parameter_fields=data.current_resources.get("parameter_fields") or None,
+        scenarios=data.current_resources.get("scenarios") or None,
+        parameters=data.current_resources.get("parameters") or None,
+        questions=data.current_resources.get("questions") or None,
+        options=data.current_resources.get("options") or None,
+        videos=data.current_resources.get("videos") or None,
+        images=data.current_resources.get("images") or None,
+        problem_statements=data.current_resources.get("problem_statements") or None,
+        objectives=data.current_resources.get("objectives") or None,
+    )
+
+    websocket_config = WebsocketConfig(
+        agents=data.config_agents or None,
+        models=data.config_models or None,
+        providers=data.config_providers or None,
+        tools=data.config_tools or None,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=config_profile_result or None,
+    )
+
     return GetHomeWebsocketResponse(
         entries=HomeWebsocketEntries(
             draft_training=data.draft_item,
             runs=runs_result,
         ),
-        resources=HomeWebsocketResources(
-            departments=data.current_resources.get("departments") or None,
-            personas=data.current_resources.get("personas") or None,
-            documents=data.current_resources.get("documents") or None,
-            parameter_fields=data.current_resources.get("parameter_fields") or None,
-            scenarios=data.current_resources.get("scenarios") or None,
-            parameters=data.current_resources.get("parameters") or None,
-            questions=data.current_resources.get("questions") or None,
-            options=data.current_resources.get("options") or None,
-            videos=data.current_resources.get("videos") or None,
-            images=data.current_resources.get("images") or None,
-            problem_statements=data.current_resources.get("problem_statements") or None,
-            objectives=data.current_resources.get("objectives") or None,
-            config_agents=data.config_agents or None,
-            config_models=data.config_models or None,
-            config_providers=data.config_providers or None,
-            config_tools=data.config_tools or None,
-            config_args=config_args,
-            config_args_outputs=config_args_outputs,
-            config_profile=config_profile_result or None,
-        ),
+        resources=websocket_resources,
+        config=websocket_config,
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
     )

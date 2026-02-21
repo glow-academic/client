@@ -12,15 +12,9 @@ from pydantic import BaseModel
 
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.api.v4.types import BaseResourceSection, ListFilterSection
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.sql.types import (
-    QGetAgentsV4Item,
-    QGetArgsOutputsV4Item,
-    QGetArgsV4Item,
     QGetCohortDraftsEntriesV4Item,
-    QGetModelsV4Item,
-    QGetProfilesV4Item,
-    QGetProvidersV4Item,
-    QGetToolsV4Item,
 )
 
 # =============================================================================
@@ -187,6 +181,7 @@ class GetCohortWebsocketResponse(BaseModel):
     entries: "CohortWebsocketEntries | None" = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     resources: "CohortWebsocketResources"
+    config: WebsocketConfig | None = None
 
 
 class CohortWebsocketEntries(BaseModel):
@@ -203,14 +198,6 @@ class CohortWebsocketResources(BaseModel):
     departments: list[CohortDepartment] | None = None
     simulations: list[CohortSimulation] | None = None
     simulation_positions: list[CohortSimulationPosition] | None = None
-
-    config_agents: list[QGetAgentsV4Item] | None = None
-    config_models: list[QGetModelsV4Item] | None = None
-    config_providers: list[QGetProvidersV4Item] | None = None
-    config_tools: list[QGetToolsV4Item] | None = None
-    config_args: list[QGetArgsV4Item] | None = None
-    config_args_outputs: list[QGetArgsOutputsV4Item] | None = None
-    config_profile: list[QGetProfilesV4Item] | None = None
 
 
 # =============================================================================

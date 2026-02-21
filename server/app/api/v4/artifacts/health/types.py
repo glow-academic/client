@@ -53,13 +53,7 @@ class HealthWebsocketEntries(BaseModel):
 class HealthWebsocketResources(BaseModel):
     """Hydrated resources for health websocket — selected only."""
 
-    config_agents: "list[QGetAgentsV4Item] | None" = None
-    config_models: "list[QGetModelsV4Item] | None" = None
-    config_providers: "list[QGetProvidersV4Item] | None" = None
-    config_tools: "list[QGetToolsV4Item] | None" = None
-    config_args: "list[QGetArgsV4Item] | None" = None
-    config_args_outputs: "list[QGetArgsOutputsV4Item] | None" = None
-    config_profile: "list[QGetProfilesV4Item] | None" = None
+    pass
 
 
 class GetHealthWebsocketResponse(BaseModel):
@@ -67,20 +61,14 @@ class GetHealthWebsocketResponse(BaseModel):
 
     entries: HealthWebsocketEntries | None = None
     resources: HealthWebsocketResources
+    config: "WebsocketConfig | None" = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
 
 
+from app.api.v4.artifacts.types import WebsocketConfig  # noqa: E402
 from app.api.v4.entries.runs.search import GetRunListViewResponse  # noqa: E402
-from app.sql.types import (  # noqa: E402
-    QGetAgentsV4Item,
-    QGetArgsOutputsV4Item,
-    QGetArgsV4Item,
-    QGetModelsV4Item,
-    QGetProfilesV4Item,
-    QGetProvidersV4Item,
-    QGetToolsV4Item,
-)
 
 HealthWebsocketEntries.model_rebuild()
 HealthWebsocketResources.model_rebuild()
+GetHealthWebsocketResponse.model_rebuild()

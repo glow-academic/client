@@ -10,27 +10,20 @@ from app.api.v4.artifacts.chat.types import (
     StandardGroupMapping,
     StandardMapping,
 )
-from app.api.v4.artifacts.types import HistoryResponse
+from app.api.v4.artifacts.types import HistoryResponse, WebsocketConfig
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.sql.types import (
-    QGetAgentsV4Item,
-    QGetArgsOutputsV4Item,
-    QGetArgsV4Item,
     QGetDepartmentsV4Item,
     QGetDocumentsV4Item,
     QGetImagesV4Item,
-    QGetModelsV4Item,
     QGetObjectivesV4Item,
     QGetOptionsV4Item,
     QGetParameterFieldsV4Item,
     QGetParametersV4Item,
     QGetPersonasV4Item,
     QGetProblemStatementsV4Item,
-    QGetProfilesV4Item,
-    QGetProvidersV4Item,
     QGetQuestionsV4Item,
     QGetScenariosV4Item,
-    QGetToolsV4Item,
     QGetTrainingDraftsEntriesV4Item,
     QGetVideosV4Item,
 )
@@ -63,14 +56,6 @@ class PracticeWebsocketResources(BaseModel):
     images: list[QGetImagesV4Item] | None = None
     problem_statements: list[QGetProblemStatementsV4Item] | None = None
     objectives: list[QGetObjectivesV4Item] | None = None
-    # Config chain
-    config_agents: list[QGetAgentsV4Item] | None = None
-    config_models: list[QGetModelsV4Item] | None = None
-    config_providers: list[QGetProvidersV4Item] | None = None
-    config_tools: list[QGetToolsV4Item] | None = None
-    config_args: list[QGetArgsV4Item] | None = None
-    config_args_outputs: list[QGetArgsOutputsV4Item] | None = None
-    config_profile: list[QGetProfilesV4Item] | None = None
 
 
 class GetPracticeWebsocketResponse(BaseModel):
@@ -78,6 +63,7 @@ class GetPracticeWebsocketResponse(BaseModel):
 
     entries: PracticeWebsocketEntries | None = None
     resources: PracticeWebsocketResources
+    config: WebsocketConfig | None = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
 

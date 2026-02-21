@@ -39,6 +39,7 @@ from app.api.v4.artifacts.field.types import (
     GetFieldApiResponse,
     GetFieldWebsocketResponse,
 )
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.field_drafts.get import get_field_drafts_entries_internal
@@ -627,22 +628,28 @@ async def get_field_websocket(
                 fetch_args_outputs(),
             )
 
+    websocket_resources = FieldWebsocketResources(
+        names=data.selected_names,
+        descriptions=data.selected_descriptions,
+        flags=data.selected_flags,
+        departments=data.selected_departments,
+        conditional_parameters=data.selected_conditional_parameters,
+    )
+
+    websocket_config = WebsocketConfig(
+        agents=data.config_agents,
+        models=data.config_models,
+        providers=data.config_providers,
+        tools=tools_result or None,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=config_profile_result or None,
+    )
+
     return GetFieldWebsocketResponse(
         entries=entries if draft_field or runs_result else None,
-        resources=FieldWebsocketResources(
-            names=data.selected_names,
-            descriptions=data.selected_descriptions,
-            flags=data.selected_flags,
-            departments=data.selected_departments,
-            conditional_parameters=data.selected_conditional_parameters,
-            config_agents=data.config_agents,
-            config_models=data.config_models,
-            config_providers=data.config_providers,
-            config_tools=tools_result or None,
-            config_args=config_args,
-            config_args_outputs=config_args_outputs,
-            config_profile=config_profile_result or None,
-        ),
+        resources=websocket_resources,
+        config=websocket_config,
         resource_agent_ids=data.agent_ids,
         group_id=data.group_id,
     )

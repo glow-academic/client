@@ -31,6 +31,7 @@ from app.api.v4.artifacts.test.types import (
     TestStatusSummary,
     TestWebsocketResources,
 )
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.entries.test_invocation.get import (
     get_test_invocation_internal,
 )
@@ -595,21 +596,21 @@ async def get_test_websocket(
                 fetch_args_outputs(),
             )
 
-    # Build websocket resources (content + config)
+    # Build websocket resources (content only)
     ws_resources = TestWebsocketResources(
-        # Content resources
         evals=data.resources_payload.evals,
         rubrics=data.resources_payload.rubrics,
         names=data.resources_payload.names,
-        # Config resources
-        config_agents=data.config_agent_resources,
-        config_models=data.config_model_resources,
-        config_providers=data.config_provider_resources,
-        config_tools=config_tools,
-        config_args=config_args,
-        config_args_outputs=config_args_outputs,
-        # Profile config (for rate limiting)
-        config_profile=config_profile_result or None,
+    )
+
+    websocket_config = WebsocketConfig(
+        agents=data.config_agent_resources,
+        models=data.config_model_resources,
+        providers=data.config_provider_resources,
+        tools=config_tools,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=config_profile_result or None,
     )
 
     return GetTestWebsocketResponse(
@@ -619,6 +620,7 @@ async def get_test_websocket(
             runs=runs_result,
         ),
         resources=ws_resources,
+        config=websocket_config,
         resource_agent_ids=data.agent_ids if data.agent_ids else None,
         group_id=data.group_id,
     )

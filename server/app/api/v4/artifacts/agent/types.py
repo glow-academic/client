@@ -7,21 +7,17 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.sql.types import (
     QGetAgentDraftsEntriesV4Item,
-    QGetAgentsV4Item,
-    QGetArgsOutputsV4Item,
-    QGetArgsV4Item,
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
     QGetInstructionsV4Item,
     QGetModelsV4Item,
     QGetNamesV4Item,
-    QGetProfilesV4Item,
     QGetPromptsV4Item,
-    QGetProvidersV4Item,
     QGetReasoningLevelsV4Item,
     QGetTemperatureLevelsV4Item,
     QGetToolsV4Item,
@@ -146,16 +142,9 @@ class AgentWebsocketResources(BaseModel):
     instructions: list[QGetInstructionsV4Item] | None = None
     flags: list[AgentFlagConfig] | None = None
     departments: list[QGetDepartmentsV4Item] | None = None
-    config_args: list[QGetArgsV4Item] | None = None
-    config_args_outputs: list[QGetArgsOutputsV4Item] | None = None
     temperature_levels: list[QGetTemperatureLevelsV4Item] | None = None
     reasoning_levels: list[QGetReasoningLevelsV4Item] | None = None
     voices: list[QGetVoicesV4Item] | None = None
-    config_agents: list[QGetAgentsV4Item] | None = None
-    config_models: list[QGetModelsV4Item] | None = None
-    config_providers: list[QGetProvidersV4Item] | None = None
-    config_tools: list[QGetToolsV4Item] | None = None
-    config_profile: list[QGetProfilesV4Item] | None = None
 
 
 class GetAgentWebsocketResponse(BaseModel):
@@ -163,6 +152,7 @@ class GetAgentWebsocketResponse(BaseModel):
 
     entries: AgentWebsocketEntries | None = None
     resources: AgentWebsocketResources
+    config: WebsocketConfig | None = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
 

@@ -31,6 +31,7 @@ from app.api.v4.artifacts.invocation.types import (
     SuiteWebsocketEntries,
     SuiteWebsocketResources,
 )
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.runs.search import get_run_list_entries_internal
 from app.api.v4.entries.suite.get import get_suite_view_internal
@@ -421,29 +422,35 @@ async def get_invocation_websocket(
                 fetch_args_outputs(),
             )
 
+    websocket_resources = SuiteWebsocketResources(
+        departments=data.current_resources.get("departments") or None,
+        models=data.current_resources.get("models") or None,
+        prompts=data.current_resources.get("prompts") or None,
+        instructions=data.current_resources.get("instructions") or None,
+        voices=data.current_resources.get("voices") or None,
+        temperature_levels=data.current_resources.get("temperature_levels") or None,
+        reasoning_levels=data.current_resources.get("reasoning_levels") or None,
+        tools=data.current_resources.get("tools") or None,
+        keys=data.current_resources.get("keys") or None,
+    )
+
+    websocket_config = WebsocketConfig(
+        agents=data.config_agents or None,
+        models=data.config_models or None,
+        providers=data.config_providers or None,
+        tools=data.config_tools or None,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=config_profile_result or None,
+    )
+
     return GetSuiteWebsocketResponse(
         entries=SuiteWebsocketEntries(
             draft_suite=data.draft_item,
             runs=runs_result,
         ),
-        resources=SuiteWebsocketResources(
-            departments=data.current_resources.get("departments") or None,
-            models=data.current_resources.get("models") or None,
-            prompts=data.current_resources.get("prompts") or None,
-            instructions=data.current_resources.get("instructions") or None,
-            voices=data.current_resources.get("voices") or None,
-            temperature_levels=data.current_resources.get("temperature_levels") or None,
-            reasoning_levels=data.current_resources.get("reasoning_levels") or None,
-            tools=data.current_resources.get("tools") or None,
-            keys=data.current_resources.get("keys") or None,
-            config_agents=data.config_agents or None,
-            config_models=data.config_models or None,
-            config_providers=data.config_providers or None,
-            config_tools=data.config_tools or None,
-            config_args=config_args,
-            config_args_outputs=config_args_outputs,
-            config_profile=config_profile_result or None,
-        ),
+        resources=websocket_resources,
+        config=websocket_config,
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
     )

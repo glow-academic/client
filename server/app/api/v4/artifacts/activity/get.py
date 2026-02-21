@@ -23,6 +23,7 @@ from app.api.v4.artifacts.activity.types import (
     ActivityWebsocketResources,
     GetActivityWebsocketResponse,
 )
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.artifacts.session.types import (
     GetSessionListRequest,
     GetSessionListResponse,
@@ -698,6 +699,16 @@ async def get_activity_websocket(
                 fetch_args_outputs(),
             )
 
+    websocket_config = WebsocketConfig(
+        agents=data.config_agents or None,
+        models=data.config_models or None,
+        providers=data.config_providers or None,
+        tools=data.config_tools or None,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=data.config_profile or None,
+    )
+
     return GetActivityWebsocketResponse(
         entries=ActivityWebsocketEntries(
             runs=data.runs_today,
@@ -708,15 +719,8 @@ async def get_activity_websocket(
             problems=data.problems_result.items,
             grants=data.grants_result.items,
         ),
-        resources=ActivityWebsocketResources(
-            config_agents=data.config_agents or None,
-            config_models=data.config_models or None,
-            config_providers=data.config_providers or None,
-            config_tools=data.config_tools or None,
-            config_args=config_args,
-            config_args_outputs=config_args_outputs,
-            config_profile=data.config_profile or None,
-        ),
+        resources=ActivityWebsocketResources(),
+        config=websocket_config,
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
     )

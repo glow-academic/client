@@ -10,10 +10,9 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.api.v4.types import BaseResourceSection
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.sql.types import (
     QGetAgentsV4Item,
-    QGetArgsOutputsV4Item,
-    QGetArgsV4Item,
     QGetAuthItemKeysV4Item,
     QGetAuthsV4Item,
     QGetColorsV4Item,
@@ -26,7 +25,6 @@ from app.sql.types import (
     QGetProvidersV4Item,
     QGetRolesV4Item,
     QGetSettingDraftsEntriesV4Item,
-    QGetToolsV4Item,
 )
 
 # ========== Flag Enrichment ==========
@@ -164,14 +162,6 @@ class SettingWebsocketResources(BaseModel):
     provider_keys: list[QGetProviderKeysV4Item] | None = None
     auth_item_keys: list[QGetAuthItemKeysV4Item] | None = None
     roles: list[QGetRolesV4Item] | None = None
-    # Config resources
-    config_agents: list[QGetAgentsV4Item] | None = None
-    config_models: list[QGetModelsV4Item] | None = None
-    config_providers: list[QGetProvidersV4Item] | None = None
-    config_tools: list[QGetToolsV4Item] | None = None
-    config_args: list[QGetArgsV4Item] | None = None
-    config_args_outputs: list[QGetArgsOutputsV4Item] | None = None
-    config_profile: list[QGetProfilesV4Item] | None = None
 
 
 class GetSettingWebsocketResponse(BaseModel):
@@ -184,6 +174,7 @@ class GetSettingWebsocketResponse(BaseModel):
 
     entries: SettingWebsocketEntries | None = None
     resources: SettingWebsocketResources
+    config: WebsocketConfig | None = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
 

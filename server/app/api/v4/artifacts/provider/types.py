@@ -8,22 +8,19 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.sql.types import (
     QGetAgentsV4Item,
-    QGetArgsOutputsV4Item,
-    QGetArgsV4Item,
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
     QGetEndpointsV4Item,
     QGetKeysV4Item,
     QGetModelsV4Item,
     QGetNamesV4Item,
-    QGetProfilesV4Item,
     QGetProviderDraftsEntriesV4Item,
     QGetProvidersV4Item,
-    QGetToolsV4Item,
     QGetValuesV4Item,
 )
 
@@ -113,7 +110,7 @@ class ProviderWebsocketEntries(BaseModel):
 
 
 class ProviderWebsocketResources(BaseModel):
-    """Hydrated resources for websocket — selected only + config resources."""
+    """Hydrated resources for websocket — selected only."""
 
     names: list[QGetNamesV4Item] | None = None
     descriptions: list[QGetDescriptionsV4Item] | None = None
@@ -122,13 +119,6 @@ class ProviderWebsocketResources(BaseModel):
     values: list[QGetValuesV4Item] | None = None
     endpoints: list[QGetEndpointsV4Item] | None = None
     keys: list[QGetKeysV4Item] | None = None
-    config_agents: list[QGetAgentsV4Item] | None = None
-    config_models: list[QGetModelsV4Item] | None = None
-    config_providers: list[QGetProvidersV4Item] | None = None
-    config_tools: list[QGetToolsV4Item] | None = None
-    config_args: list[QGetArgsV4Item] | None = None
-    config_args_outputs: list[QGetArgsOutputsV4Item] | None = None
-    config_profile: list[QGetProfilesV4Item] | None = None
 
 
 class GetProviderWebsocketResponse(BaseModel):
@@ -136,6 +126,7 @@ class GetProviderWebsocketResponse(BaseModel):
 
     entries: ProviderWebsocketEntries | None = None
     resources: ProviderWebsocketResources
+    config: WebsocketConfig | None = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
 

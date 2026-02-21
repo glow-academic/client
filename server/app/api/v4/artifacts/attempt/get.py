@@ -32,6 +32,7 @@ from app.api.v4.artifacts.attempt.permissions import (
     compute_percentage,
     compute_total_possible_points,
 )
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.artifacts.attempt.types import (
     AggregatedResults,
     AnalysisEntry,
@@ -1756,15 +1757,16 @@ async def get_attempt_websocket(
         rubrics=data.resources_payload.rubrics,
         standard_groups=data.resources_payload.standard_groups,
         standards=data.resources_payload.standards,
-        # Config resources
-        config_agents=data.config_agent_resources,
-        config_models=data.config_model_resources,
-        config_providers=data.config_provider_resources,
-        config_tools=config_tools,
-        config_args=config_args,
-        config_args_outputs=config_args_outputs,
-        # Profile config (for rate limiting)
-        config_profile=config_profile_result or None,
+    )
+
+    websocket_config = WebsocketConfig(
+        agents=data.config_agent_resources,
+        models=data.config_model_resources,
+        providers=data.config_provider_resources,
+        tools=config_tools,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=config_profile_result or None,
     )
 
     return GetAttemptWebsocketResponse(
@@ -1775,6 +1777,7 @@ async def get_attempt_websocket(
             runs=runs_result,
         ),
         resources=ws_resources,
+        config=websocket_config,
         resource_agent_ids=data.agent_ids if data.agent_ids else None,
         group_id=data.group_id,
     )

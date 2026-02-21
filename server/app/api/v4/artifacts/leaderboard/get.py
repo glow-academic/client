@@ -26,7 +26,7 @@ from app.api.v4.artifacts.leaderboard.types import (
     LeaderboardWebsocketEntries,
     LeaderboardWebsocketResources,
 )
-from app.api.v4.artifacts.types import FilterOption
+from app.api.v4.artifacts.types import FilterOption, WebsocketConfig
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.chat.get import get_chats_internal
 from app.api.v4.entries.runs.search import (
@@ -208,19 +208,22 @@ async def get_leaderboard_websocket(
                 fetch_args_outputs(),
             )
 
+    websocket_config = WebsocketConfig(
+        agents=data.config_agents or None,
+        models=data.config_models or None,
+        providers=data.config_providers or None,
+        tools=config_tools or None,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=data.config_profile or None,
+    )
+
     return GetLeaderboardWebsocketResponse(
         entries=LeaderboardWebsocketEntries(
             runs=data.runs_today,
         ),
-        resources=LeaderboardWebsocketResources(
-            config_agents=data.config_agents or None,
-            config_models=data.config_models or None,
-            config_providers=data.config_providers or None,
-            config_tools=config_tools or None,
-            config_args=config_args,
-            config_args_outputs=config_args_outputs,
-            config_profile=data.config_profile or None,
-        ),
+        resources=LeaderboardWebsocketResources(),
+        config=websocket_config,
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
     )

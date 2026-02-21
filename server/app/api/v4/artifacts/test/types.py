@@ -13,17 +13,14 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
-    QGetArgsOutputsV4Item,
-    QGetArgsV4Item,
     QGetModelsV4Item,
-    QGetProfilesV4Item,
     QGetProvidersV4Item,
     QGetTestInvocationViewV4Item,
     QGetTestViewV4Item,
-    QGetToolsV4Item,
 )
 
 # =============================================================================
@@ -156,21 +153,12 @@ class TestInternalData:
 
 
 class TestWebsocketResources(BaseModel):
-    """Content resources + config resources for websocket."""
+    """Content resources for websocket."""
 
     # Content resources
     evals: dict[str, dict] | None = None
     rubrics: dict[str, dict] | None = None
     names: dict[str, str] | None = None
-    # Config resources
-    config_agents: list[QGetAgentsV4Item] | None = None
-    config_models: list[QGetModelsV4Item] | None = None
-    config_providers: list[QGetProvidersV4Item] | None = None
-    config_tools: list[QGetToolsV4Item] | None = None
-    config_args: list[QGetArgsV4Item] | None = None
-    config_args_outputs: list[QGetArgsOutputsV4Item] | None = None
-    # Profile config (for rate limiting)
-    config_profile: list[QGetProfilesV4Item] | None = None
 
 
 class GetTestWebsocketResponse(BaseModel):
@@ -178,6 +166,7 @@ class GetTestWebsocketResponse(BaseModel):
 
     entries: TestEntries | None = None
     resources: TestWebsocketResources | None = None
+    config: WebsocketConfig | None = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
 

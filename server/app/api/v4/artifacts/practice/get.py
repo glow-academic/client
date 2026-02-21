@@ -34,7 +34,7 @@ from app.api.v4.artifacts.practice.types import (
     PracticeWebsocketEntries,
     PracticeWebsocketResources,
 )
-from app.api.v4.artifacts.types import FilterOption, HistoryItem, HistoryResponse
+from app.api.v4.artifacts.types import FilterOption, HistoryItem, HistoryResponse, WebsocketConfig
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.entries.attempt.get import ChatViewItem, get_attempt_chats_internal
 from app.api.v4.entries.attempt.search import get_attempt_list_internal
@@ -936,6 +936,16 @@ async def get_practice_websocket(
                 fetch_args_outputs(),
             )
 
+    websocket_config = WebsocketConfig(
+        agents=data.config_agents or None,
+        models=data.config_models or None,
+        providers=data.config_providers or None,
+        tools=data.config_tools or None,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=config_profile_result or None,
+    )
+
     return GetPracticeWebsocketResponse(
         entries=PracticeWebsocketEntries(
             draft_training=data.draft_item,
@@ -954,14 +964,8 @@ async def get_practice_websocket(
             images=data.current_resources.get("images") or None,
             problem_statements=data.current_resources.get("problem_statements") or None,
             objectives=data.current_resources.get("objectives") or None,
-            config_agents=data.config_agents or None,
-            config_models=data.config_models or None,
-            config_providers=data.config_providers or None,
-            config_tools=data.config_tools or None,
-            config_args=config_args,
-            config_args_outputs=config_args_outputs,
-            config_profile=config_profile_result or None,
         ),
+        config=websocket_config,
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
     )

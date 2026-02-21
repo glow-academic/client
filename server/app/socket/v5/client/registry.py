@@ -34,12 +34,12 @@ class ArtifactGenerateConfig:
     # Jinja context key for the draft view (e.g. "draft_agent")
     draft_view_key: str
 
-    # Attribute names on result.resources for config chain
-    config_agents_attr: str = "config_agents"
-    config_models_attr: str = "config_models"
-    config_providers_attr: str = "config_providers"
-    config_tools_attr: str = "config_tools"
-    config_args_outputs_attr: str = "config_args_outputs"
+    # Attribute names on result.config for config chain
+    config_agents_attr: str = "agents"
+    config_models_attr: str = "models"
+    config_providers_attr: str = "providers"
+    config_tools_attr: str = "tools"
+    config_args_outputs_attr: str = "args_outputs"
 
     # Whether draft_id is required (most artifacts require it)
     requires_draft: bool = True

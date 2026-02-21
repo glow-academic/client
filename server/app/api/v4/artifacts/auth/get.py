@@ -30,6 +30,7 @@ from app.api.v4.artifacts.auth.permissions import (
     compute_show_slugs,
     compute_slugs_required,
 )
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.artifacts.auth.types import (
     AuthDescriptionSection,
     AuthFlagConfig,
@@ -628,6 +629,16 @@ async def get_auth_websocket(
         runs=runs_result,
     )
 
+    websocket_config = WebsocketConfig(
+        agents=data.config_agents,
+        models=data.config_models,
+        providers=data.config_providers,
+        tools=data.config_tools,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=config_profile_result or None,
+    )
+
     return GetAuthWebsocketResponse(
         entries=entries if data.draft_view or runs_result else None,
         resources=AuthWebsocketResources(
@@ -637,14 +648,8 @@ async def get_auth_websocket(
             protocols=data.protocols_current,
             slugs=data.slugs_current,
             items=data.items,
-            config_agents=data.config_agents,
-            config_models=data.config_models,
-            config_providers=data.config_providers,
-            config_tools=data.config_tools,
-            config_args=config_args,
-            config_args_outputs=config_args_outputs,
-            config_profile=config_profile_result or None,
         ),
+        config=websocket_config,
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
     )

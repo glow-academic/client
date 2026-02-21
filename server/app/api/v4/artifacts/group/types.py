@@ -165,13 +165,7 @@ class GroupWebsocketEntries(BaseModel):
 class GroupWebsocketResources(BaseModel):
     """Hydrated resources for group websocket — selected only."""
 
-    config_agents: "list[QGetAgentsV4Item] | None" = None
-    config_models: "list[QGetModelsV4Item] | None" = None
-    config_providers: "list[QGetProvidersV4Item] | None" = None
-    config_tools: "list[QGetToolsV4Item] | None" = None
-    config_args: "list[QGetArgsV4Item] | None" = None
-    config_args_outputs: "list[QGetArgsOutputsV4Item] | None" = None
-    config_profile: "list[QGetProfilesV4Item] | None" = None
+    pass
 
 
 class GetGroupWebsocketResponse(BaseModel):
@@ -179,10 +173,12 @@ class GetGroupWebsocketResponse(BaseModel):
 
     entries: GroupWebsocketEntries | None = None
     resources: GroupWebsocketResources
+    config: "WebsocketConfig | None" = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
 
 
+from app.api.v4.artifacts.types import WebsocketConfig  # noqa: E402
 from app.api.v4.entries.runs.search import (  # noqa: E402
     GetRunListViewResponse,
     RunViewItem,
@@ -206,6 +202,7 @@ from app.sql.types import (  # noqa: E402
 
 GroupWebsocketEntries.model_rebuild()
 GroupWebsocketResources.model_rebuild()
+GetGroupWebsocketResponse.model_rebuild()
 
 
 @dataclass

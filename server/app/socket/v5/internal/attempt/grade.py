@@ -115,10 +115,11 @@ async def attempt_grade_handler(data: dict[str, Any]) -> None:
             )
             return
 
-        # Step 4: Extract agent/model/provider resource IDs
-        config_agents = result.resources.config_agents or []
-        config_models = result.resources.config_models or []
-        config_providers = result.resources.config_providers or []
+        # Step 4: Extract agent/model/provider from config
+        result_config = result.config
+        config_agents = result_config.agents or [] if result_config else []
+        config_models = result_config.models or [] if result_config else []
+        config_providers = result_config.providers or [] if result_config else []
 
         agent_resource = config_agents[0] if config_agents else None
         model_resource = config_models[0] if config_models else None

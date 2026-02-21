@@ -8,12 +8,11 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.sql.types import (
     QGetAgentsV4Item,
-    QGetArgsOutputsV4Item,
-    QGetArgsV4Item,
     QGetColorsV4Item,
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
@@ -26,9 +25,7 @@ from app.sql.types import (
     QGetParameterFieldsV4Item,
     QGetParametersV4Item,
     QGetPersonaDraftsEntriesV4Item,
-    QGetProfilesV4Item,
     QGetProvidersV4Item,
-    QGetToolsV4Item,
 )
 
 
@@ -170,15 +167,6 @@ class PersonaWebsocketResources(BaseModel):
     parameter_fields: list[QGetParameterFieldsV4Item] | None = None
     examples: list[QGetExamplesV4Item] | None = None
     parameters: list[QGetParametersV4Item] | None = None
-    # 4 config resources
-    config_agents: list[QGetAgentsV4Item] | None = None
-    config_models: list[QGetModelsV4Item] | None = None
-    config_providers: list[QGetProvidersV4Item] | None = None
-    config_tools: list[QGetToolsV4Item] | None = None
-    config_args: list[QGetArgsV4Item] | None = None
-    config_args_outputs: list[QGetArgsOutputsV4Item] | None = None
-    # Profile config (for rate limiting)
-    config_profile: list[QGetProfilesV4Item] | None = None
 
 
 class GetPersonaWebsocketResponse(BaseModel):
@@ -191,6 +179,7 @@ class GetPersonaWebsocketResponse(BaseModel):
 
     entries: PersonaWebsocketEntries | None = None
     resources: PersonaWebsocketResources
+    config: WebsocketConfig | None = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
 

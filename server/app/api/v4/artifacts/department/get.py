@@ -32,6 +32,7 @@ from app.api.v4.artifacts.department.permissions import (
     compute_show_settings,
     has_access,
 )
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.artifacts.department.types import (
     DepartmentDescriptionSection,
     DepartmentFlagConfig,
@@ -633,6 +634,16 @@ async def get_department_websocket(
                 fetch_args_outputs(),
             )
 
+    websocket_config = WebsocketConfig(
+        agents=data.config_agents,
+        models=data.config_models,
+        providers=data.config_providers,
+        tools=tools_result or None,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=config_profile_result or None,
+    )
+
     return GetDepartmentWebsocketResponse(
         entries=entries if draft_department or runs_result else None,
         resources=DepartmentWebsocketResources(
@@ -640,14 +651,8 @@ async def get_department_websocket(
             descriptions=data.descriptions_current,
             flags=data.flags_current,
             settings=data.settings_current,
-            config_agents=data.config_agents,
-            config_models=data.config_models,
-            config_providers=data.config_providers,
-            config_tools=tools_result or None,
-            config_args=config_args,
-            config_args_outputs=config_args_outputs,
-            config_profile=config_profile_result or None,
         ),
+        config=websocket_config,
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
     )

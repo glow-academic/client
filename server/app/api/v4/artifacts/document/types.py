@@ -13,21 +13,15 @@ from pydantic import BaseModel
 
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.api.v4.types import BaseResourceSection, ListFilterSection
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.sql.types import (
-    QGetAgentsV4Item,
-    QGetArgsOutputsV4Item,
-    QGetArgsV4Item,
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
     QGetDocumentDraftsEntriesV4Item,
     QGetImagesV4Item,
-    QGetModelsV4Item,
     QGetNamesV4Item,
     QGetParameterFieldsV4Item,
-    QGetProfilesV4Item,
-    QGetProvidersV4Item,
     QGetTextsV4Item,
-    QGetToolsV4Item,
     QGetUploadsV4Item,
 )
 
@@ -160,13 +154,6 @@ class DocumentWebsocketResources(BaseModel):
     uploads: list[QGetUploadsV4Item] | None = None
     images: list[QGetImagesV4Item] | None = None
     texts: list[QGetTextsV4Item] | None = None
-    config_agents: list[QGetAgentsV4Item] | None = None
-    config_models: list[QGetModelsV4Item] | None = None
-    config_providers: list[QGetProvidersV4Item] | None = None
-    config_tools: list[QGetToolsV4Item] | None = None
-    config_args: list[QGetArgsV4Item] | None = None
-    config_args_outputs: list[QGetArgsOutputsV4Item] | None = None
-    config_profile: list[QGetProfilesV4Item] | None = None
 
 
 class GetDocumentWebsocketResponse(BaseModel):
@@ -176,6 +163,7 @@ class GetDocumentWebsocketResponse(BaseModel):
     entries: DocumentWebsocketEntries | None = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     resources: DocumentWebsocketResources
+    config: WebsocketConfig | None = None
 
 
 # ========== List Endpoint Types ==========

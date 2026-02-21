@@ -19,6 +19,7 @@ from app.api.v4.artifacts.chat.permissions import (
     CHAT_BUNDLE_RESOURCES,
     compute_bundle_section_show,
 )
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.artifacts.chat.types import (
     BaseChatSection,
     ChatDepartmentSection,
@@ -559,13 +560,15 @@ async def get_chat_websocket(
             images=data.current_resources.get("images") or None,
             problem_statements=data.current_resources.get("problem_statements") or None,
             objectives=data.current_resources.get("objectives") or None,
-            config_agents=data.config_agents or None,
-            config_models=data.config_models or None,
-            config_providers=data.config_providers or None,
-            config_tools=data.config_tools or None,
-            config_args=config_args,
-            config_args_outputs=config_args_outputs,
-            config_profile=config_profile_result or None,
+        ),
+        config=WebsocketConfig(
+            agents=data.config_agents or None,
+            models=data.config_models or None,
+            providers=data.config_providers or None,
+            tools=data.config_tools or None,
+            args=config_args,
+            args_outputs=config_args_outputs,
+            profile=config_profile_result or None,
         ),
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,

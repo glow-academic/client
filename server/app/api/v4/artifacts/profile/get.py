@@ -50,6 +50,7 @@ from app.api.v4.artifacts.profile.types import (
     ProfileWebsocketEntries,
     ProfileWebsocketResources,
 )
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.profile_drafts.get import get_profile_drafts_entries_internal
@@ -761,6 +762,16 @@ async def get_profile_websocket(
         runs=runs_result,
     )
 
+    websocket_config = WebsocketConfig(
+        agents=data.config_agent_resources,
+        models=data.config_model_resources,
+        providers=data.config_provider_resources,
+        tools=data.config_tool_resources,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=config_profile_result or None,
+    )
+
     return GetProfileWebsocketResponse(
         group_id=data.group_id,
         entries=entries if draft_profile or runs_result else None,
@@ -773,14 +784,8 @@ async def get_profile_websocket(
             flags=[data.selected_flag_resource] if data.selected_flag_resource else [],
             departments=data.selected_department_resources,
             cohorts=data.selected_cohort_resources,
-            config_agents=data.config_agent_resources,
-            config_models=data.config_model_resources,
-            config_providers=data.config_provider_resources,
-            config_tools=data.config_tool_resources,
-            config_args=config_args,
-            config_args_outputs=config_args_outputs,
-            config_profile=config_profile_result or None,
         ),
+        config=websocket_config,
         resource_agent_ids=data.agent_ids,
     )
 

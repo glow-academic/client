@@ -55,6 +55,7 @@ from app.api.v4.artifacts.rubric.types import (
     RubricWebsocketEntries,
     RubricWebsocketResources,
 )
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.rubric_drafts.get import get_rubric_drafts_entries_internal
@@ -778,6 +779,16 @@ async def get_rubric_websocket(
                 fetch_args_outputs(),
             )
 
+    websocket_config = WebsocketConfig(
+        agents=data.config_agents,
+        models=data.config_models,
+        providers=data.config_providers,
+        tools=tools_result or None,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=config_profile_result or None,
+    )
+
     return GetRubricWebsocketResponse(
         entries=RubricWebsocketEntries(
             draft_rubric=draft_rubric,
@@ -792,14 +803,8 @@ async def get_rubric_websocket(
             pass_points=data.pass_points_current,
             standard_groups=data.standard_groups_current,
             standards=data.standards_current,
-            config_agents=data.config_agents,
-            config_models=data.config_models,
-            config_providers=data.config_providers,
-            config_tools=tools_result or None,
-            config_args=config_args,
-            config_args_outputs=config_args_outputs,
-            config_profile=config_profile_result or None,
         ),
+        config=websocket_config,
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
     )

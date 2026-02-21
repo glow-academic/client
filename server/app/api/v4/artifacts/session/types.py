@@ -132,13 +132,7 @@ class SessionWebsocketEntries(BaseModel):
 class SessionWebsocketResources(BaseModel):
     """Hydrated resources for session websocket — selected only."""
 
-    config_agents: "list[QGetAgentsV4Item] | None" = None
-    config_models: "list[QGetModelsV4Item] | None" = None
-    config_providers: "list[QGetProvidersV4Item] | None" = None
-    config_tools: "list[QGetToolsV4Item] | None" = None
-    config_args: "list[QGetArgsV4Item] | None" = None
-    config_args_outputs: "list[QGetArgsOutputsV4Item] | None" = None
-    config_profile: "list[QGetProfilesV4Item] | None" = None
+    pass
 
 
 class GetSessionWebsocketResponse(BaseModel):
@@ -146,18 +140,18 @@ class GetSessionWebsocketResponse(BaseModel):
 
     entries: SessionWebsocketEntries | None = None
     resources: SessionWebsocketResources
+    config: "WebsocketConfig | None" = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
 
 
+from app.api.v4.artifacts.types import WebsocketConfig  # noqa: E402
 from app.api.v4.entries.runs.search import GetRunListViewResponse  # noqa: E402
 from app.sql.types import (  # noqa: E402
     GetAuditListViewSqlRow,
     GetGroupListViewSqlRow,
     GetSessionListViewSqlRow,
     QGetAgentsV4Item,
-    QGetArgsOutputsV4Item,
-    QGetArgsV4Item,
     QGetAuditListViewV4Item,
     QGetGroupListViewV4Item,
     QGetModelsV4Item,
@@ -168,6 +162,7 @@ from app.sql.types import (  # noqa: E402
 
 SessionWebsocketEntries.model_rebuild()
 SessionWebsocketResources.model_rebuild()
+GetSessionWebsocketResponse.model_rebuild()
 
 
 @dataclass

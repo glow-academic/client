@@ -49,6 +49,7 @@ from app.api.v4.artifacts.parameter.types import (
     ParameterWebsocketEntries,
     ParameterWebsocketResources,
 )
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.parameter_drafts.get import (
@@ -557,6 +558,16 @@ async def get_parameter_websocket(
 
     entries = ParameterWebsocketEntries(draft_parameter=draft_view, runs=runs_result)
 
+    websocket_config = WebsocketConfig(
+        agents=data.config_agent_resources,
+        models=data.config_model_resources,
+        providers=data.config_provider_resources,
+        tools=None,
+        args=None,
+        args_outputs=None,
+        profile=config_profile_result or None,
+    )
+
     return GetParameterWebsocketResponse(
         entries=entries if draft_view or runs_result else None,
         resources=ParameterWebsocketResources(
@@ -565,14 +576,8 @@ async def get_parameter_websocket(
             flags=current.flags if current else None,
             departments=current.departments if current else None,
             fields=current.fields if current else None,
-            config_agents=data.config_agent_resources,
-            config_models=data.config_model_resources,
-            config_providers=data.config_provider_resources,
-            config_tools=None,
-            config_args=None,
-            config_args_outputs=None,
-            config_profile=config_profile_result or None,
         ),
+        config=websocket_config,
         resource_agent_ids=data.agent_ids,
         group_id=data.group_id,
     )

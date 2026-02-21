@@ -10,17 +10,11 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.sql.types import (
-    QGetAgentsV4Item,
-    QGetArgsOutputsV4Item,
-    QGetArgsV4Item,
-    QGetModelsV4Item,
-    QGetProfilesV4Item,
-    QGetProvidersV4Item,
     QGetScenarioDraftsEntriesV4Item,
-    QGetToolsV4Item,
 )
 
 # =============================================================================
@@ -391,6 +385,7 @@ class GetScenarioWebsocketResponse(BaseModel):
     resource_agent_ids: dict[str, UUID | None] | None = None
 
     resources: "ScenarioWebsocketResources"
+    config: WebsocketConfig | None = None
 
 
 class ScenarioWebsocketEntries(BaseModel):
@@ -418,16 +413,6 @@ class ScenarioWebsocketResources(BaseModel):
     videos: list[ScenarioVideo] | None = None
     questions: list[ScenarioQuestion] | None = None
     options: list[ScenarioOption] | None = None
-
-    # 4 config resources for generation
-    config_agents: list[QGetAgentsV4Item] | None = None
-    config_models: list[QGetModelsV4Item] | None = None
-    config_providers: list[QGetProvidersV4Item] | None = None
-    config_tools: list[QGetToolsV4Item] | None = None
-    config_args: list[QGetArgsV4Item] | None = None
-    config_args_outputs: list[QGetArgsOutputsV4Item] | None = None
-    # Profile config (for rate limiting)
-    config_profile: list[QGetProfilesV4Item] | None = None
 
 
 # =============================================================================

@@ -6,22 +6,16 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.api.v4.resources.cohorts.types import QGetCohortsV4Item
 from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.sql.types import (
-    QGetAgentsV4Item,
-    QGetArgsOutputsV4Item,
-    QGetArgsV4Item,
     QGetDepartmentsV4Item,
     QGetEmailsV4Item,
-    QGetModelsV4Item,
     QGetNamesV4Item,
     QGetProfileDraftsEntriesV4Item,
-    QGetProfilesV4Item,
-    QGetProvidersV4Item,
     QGetRequestLimitsV4Item,
-    QGetToolsV4Item,
 )
 
 
@@ -119,18 +113,12 @@ class ProfileWebsocketResources(BaseModel):
     flags: list[ProfileFlagConfig] | None = None
     departments: list[QGetDepartmentsV4Item] | None = None
     cohorts: list[QGetCohortsV4Item] | None = None
-    config_agents: list[QGetAgentsV4Item] | None = None
-    config_models: list[QGetModelsV4Item] | None = None
-    config_providers: list[QGetProvidersV4Item] | None = None
-    config_tools: list[QGetToolsV4Item] | None = None
-    config_args: list[QGetArgsV4Item] | None = None
-    config_args_outputs: list[QGetArgsOutputsV4Item] | None = None
-    config_profile: list[QGetProfilesV4Item] | None = None
 
 
 class GetProfileWebsocketResponse(BaseModel):
     entries: ProfileWebsocketEntries | None = None
     resources: ProfileWebsocketResources
+    config: WebsocketConfig | None = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
 

@@ -6,17 +6,8 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.api.v4.artifacts.group.types import GetGroupListResponse
-from app.api.v4.artifacts.types import FilterOption
+from app.api.v4.artifacts.types import FilterOption, WebsocketConfig
 from app.api.v4.entries.runs.search import GetRunListViewResponse, RunViewItem
-from app.sql.types import (
-    QGetAgentsV4Item,
-    QGetArgsOutputsV4Item,
-    QGetArgsV4Item,
-    QGetModelsV4Item,
-    QGetProfilesV4Item,
-    QGetProvidersV4Item,
-    QGetToolsV4Item,
-)
 
 
 class PricingRequest(BaseModel):
@@ -105,13 +96,7 @@ class PricingWebsocketEntries(BaseModel):
 class PricingWebsocketResources(BaseModel):
     """Hydrated resources for pricing websocket — selected only."""
 
-    config_agents: list[QGetAgentsV4Item] | None = None
-    config_models: list[QGetModelsV4Item] | None = None
-    config_providers: list[QGetProvidersV4Item] | None = None
-    config_tools: list[QGetToolsV4Item] | None = None
-    config_args: list[QGetArgsV4Item] | None = None
-    config_args_outputs: list[QGetArgsOutputsV4Item] | None = None
-    config_profile: list[QGetProfilesV4Item] | None = None
+    pass
 
 
 class GetPricingWebsocketResponse(BaseModel):
@@ -119,5 +104,6 @@ class GetPricingWebsocketResponse(BaseModel):
 
     entries: PricingWebsocketEntries | None = None
     resources: PricingWebsocketResources
+    config: WebsocketConfig | None = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None

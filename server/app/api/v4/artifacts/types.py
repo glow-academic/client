@@ -1,8 +1,34 @@
-"""Shared types for analytics artifact endpoints."""
+"""Shared types for artifact endpoints."""
 
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+
+from app.sql.types import (
+    QGetAgentsV4Item,
+    QGetArgsOutputsV4Item,
+    QGetArgsV4Item,
+    QGetModelsV4Item,
+    QGetProfilesV4Item,
+    QGetProvidersV4Item,
+    QGetToolsV4Item,
+)
+
+
+class WebsocketConfig(BaseModel):
+    """Shared config chain for websocket generation context.
+
+    Houses the settings-derived resources needed by the generate pipeline.
+    Identical across all artifacts — defined once here.
+    """
+
+    agents: list[QGetAgentsV4Item] | None = None
+    models: list[QGetModelsV4Item] | None = None
+    providers: list[QGetProvidersV4Item] | None = None
+    tools: list[QGetToolsV4Item] | None = None
+    args: list[QGetArgsV4Item] | None = None
+    args_outputs: list[QGetArgsOutputsV4Item] | None = None
+    profile: list[QGetProfilesV4Item] | None = None
 
 
 class FilterOption(BaseModel):

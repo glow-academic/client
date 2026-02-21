@@ -71,11 +71,17 @@ async def _emit_error(
 
 
 def _build_jinja_context(result: object) -> dict[str, Any]:
-    """Build Jinja context from pre-fetched resources (common across all artifacts)."""
+    """Build Jinja context from pre-fetched resources and config."""
+    context: dict[str, Any] = {}
     resources = getattr(result, "resources", None)
     if resources:
-        return resources.model_dump(mode="json")  # type: ignore[no-any-return, union-attr]
-    return {}
+        context = resources.model_dump(mode="json")  # type: ignore[union-attr]
+    result_config = getattr(result, "config", None)
+    if result_config:
+        config_data = result_config.model_dump(mode="json")  # type: ignore[union-attr]
+        for key, value in config_data.items():
+            context[f"config_{key}"] = value
+    return context
 
 
 def _enrich_tools_with_args_outputs(
@@ -84,13 +90,13 @@ def _enrich_tools_with_args_outputs(
     config: ArtifactGenerateConfig,
 ) -> list[dict[str, Any]]:
     """Attach _args_outputs to tools for output schema resolution."""
-    resources = getattr(result, "resources", None)
-    if not tool_dicts or not resources:
+    result_config = getattr(result, "config", None)
+    if not tool_dicts or not result_config:
         return tool_dicts
 
-    resource_tools = getattr(resources, config.config_tools_attr, None) or []
+    resource_tools = getattr(result_config, config.config_tools_attr, None) or []
     config_args_outputs = (
-        getattr(resources, config.config_args_outputs_attr, None) or []
+        getattr(result_config, config.config_args_outputs_attr, None) or []
     )
 
     if not resource_tools or not config_args_outputs:
@@ -248,11 +254,22 @@ async def generate_handler(data: dict[str, Any]) -> None:
             )
             return
 
-        # Step 7: Extract LLM config from pre-fetched resources
-        config_agents = getattr(result.resources, config.config_agents_attr, None) or []
-        config_models = getattr(result.resources, config.config_models_attr, None) or []
+        # Step 7: Extract LLM config from pre-fetched config
+        result_config = getattr(result, "config", None)
+        config_agents = (
+            getattr(result_config, config.config_agents_attr, None) or []
+            if result_config
+            else []
+        )
+        config_models = (
+            getattr(result_config, config.config_models_attr, None) or []
+            if result_config
+            else []
+        )
         config_providers = (
-            getattr(result.resources, config.config_providers_attr, None) or []
+            getattr(result_config, config.config_providers_attr, None) or []
+            if result_config
+            else []
         )
 
         agent_resource = config_agents[0] if config_agents else None
@@ -313,14 +330,13 @@ async def generate_handler(data: dict[str, Any]) -> None:
             return
 
         # Step 8: Rate limit check (fail fast)
-        config_profile = (
-            result.resources.config_profile[0]
-            if result.resources.config_profile
-            else None
+        config_profile_list = (
+            getattr(result_config, "profile", None) if result_config else None
         )
+        config_profile = config_profile_list[0] if config_profile_list else None
         requests_per_day = config_profile.requests_per_day if config_profile else None
         runs_today = (
-            result.views.runs.total_count if result.views and result.views.runs else 0
+            result.entries.runs.total_count if result.entries and result.entries.runs else 0
         )
 
         if requests_per_day is not None and runs_today >= requests_per_day:
@@ -352,9 +368,11 @@ async def generate_handler(data: dict[str, Any]) -> None:
             if not pool:
                 raise RuntimeError("Database pool not initialized")
 
-            # Step 9: Read tools from pre-fetched config resources
+            # Step 9: Read tools from pre-fetched config
             config_tools = (
-                getattr(result.resources, config.config_tools_attr, None) or []
+                getattr(result_config, config.config_tools_attr, None) or []
+                if result_config
+                else []
             )
 
             async def fetch_system_prompt() -> str:
@@ -449,8 +467,8 @@ async def generate_handler(data: dict[str, Any]) -> None:
                 config_view = {}
 
             draft_view: dict[str, Any] = {}
-            if result.views:
-                draft_attr = getattr(result.views, config.draft_view_key, None)
+            if result.entries:
+                draft_attr = getattr(result.entries, config.draft_view_key, None)
                 if draft_attr:
                     draft_view = draft_attr.model_dump(mode="json")
 

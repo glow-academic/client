@@ -54,6 +54,7 @@ from app.api.v4.artifacts.eval.types import (
     GetEvalApiResponse,
     GetEvalWebsocketResponse,
 )
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.eval_drafts.get import get_eval_drafts_entries_internal
@@ -748,29 +749,35 @@ async def get_eval_websocket(
         runs=runs_result,
     )
 
+    websocket_resources = EvalWebsocketResources(
+        names=[selected_name] if selected_name else [],
+        descriptions=[selected_description] if selected_description else [],
+        flags=selected_flags,
+        departments=selected_departments,
+        eval_agents=selected_agents,
+        rubrics=selected_rubrics,
+        run_positions=None,
+        group_positions=None,
+        run_rubrics=None,
+        group_rubrics=None,
+    )
+
+    websocket_config = WebsocketConfig(
+        agents=data.config_agents,
+        models=data.config_models,
+        providers=data.config_providers,
+        tools=tools_result or None,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=config_profile_result or None,
+    )
+
     return GetEvalWebsocketResponse(
         entries=entries if draft_eval or runs_result else None,
         group_id=data.group_id,
         resource_agent_ids=data.resource_agent_ids,
-        resources=EvalWebsocketResources(
-            names=[selected_name] if selected_name else [],
-            descriptions=[selected_description] if selected_description else [],
-            flags=selected_flags,
-            departments=selected_departments,
-            eval_agents=selected_agents,
-            rubrics=selected_rubrics,
-            run_positions=None,
-            group_positions=None,
-            run_rubrics=None,
-            group_rubrics=None,
-            config_agents=data.config_agents,
-            config_models=data.config_models,
-            config_providers=data.config_providers,
-            config_tools=tools_result or None,
-            config_args=config_args,
-            config_args_outputs=config_args_outputs,
-            config_profile=config_profile_result or None,
-        ),
+        resources=websocket_resources,
+        config=websocket_config,
     )
 
 

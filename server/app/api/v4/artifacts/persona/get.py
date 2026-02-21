@@ -66,6 +66,7 @@ from app.api.v4.artifacts.persona.types import (
     PersonaWebsocketEntries,
     PersonaWebsocketResources,
 )
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.persona_drafts.get import get_persona_drafts_entries_internal
@@ -960,6 +961,16 @@ async def get_persona_websocket(
         runs=runs_result,
     )
 
+    websocket_config = WebsocketConfig(
+        agents=data.config_agent_resources,
+        models=data.config_model_resources,
+        providers=data.config_provider_resources,
+        tools=tools_result or None,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=config_profile_result or None,
+    )
+
     return GetPersonaWebsocketResponse(
         entries=entries if draft_persona or runs_result else None,
         resources=PersonaWebsocketResources(
@@ -973,14 +984,8 @@ async def get_persona_websocket(
             parameter_fields=current.parameter_fields if current else None,
             examples=current.examples if current else None,
             parameters=current.parameters if current else None,
-            config_agents=data.config_agent_resources,
-            config_models=data.config_model_resources,
-            config_providers=data.config_provider_resources,
-            config_tools=tools_result or None,
-            config_args=config_args,
-            config_args_outputs=config_args_outputs,
-            config_profile=config_profile_result or None,
         ),
+        config=websocket_config,
         resource_agent_ids=data.agent_ids,
         group_id=data.group_id,
     )
