@@ -21,8 +21,7 @@ from app.infra.v4.websocket.remove_active_connection import remove_active_connec
 from app.infra.v4.websocket.remove_guest_socket import remove_guest_socket
 from app.infra.v4.websocket.remove_socket_owner import remove_socket_owner
 from app.infra.v4.websocket.set_socket_owner import set_socket_owner
-from app.main import sio
-from app.socket.v5.client.types import ConnectionConfirmedPayload
+from app.main import get_internal_sio, sio
 from app.sql.types import (
     UpdateProfileToActiveSqlParams,
     UpdateProfileToActiveSqlRow,
@@ -30,6 +29,8 @@ from app.sql.types import (
     UpdateProfileToInactiveSqlRow,
 )
 from app.utils.sql_helper import execute_sql_typed
+
+internal_sio = get_internal_sio()
 
 SQL_MARK_INACTIVE = "app/sql/v4/queries/profile/update_profile_to_inactive_complete.sql"
 SQL_MARK_ACTIVE = "app/sql/v4/queries/profile/update_profile_to_active_complete.sql"
@@ -146,15 +147,16 @@ async def connect(
             except Exception:
                 pass
 
-        await sio.emit(
-            "connection_confirmed",
-            ConnectionConfirmedPayload(
-                sid=sid,
-                profile_id=profile_id,
-                guest_id=guest_id,
-                server_time=time.time(),
-            ).model_dump(mode="json"),
-            room=sid,
+        await internal_sio.emit(
+            "connection_progress",
+            {
+                "type": "confirmed",
+                "sid": sid,
+                "payload_sid": sid,
+                "profile_id": profile_id,
+                "guest_id": guest_id,
+                "server_time": time.time(),
+            },
         )
 
     try:
