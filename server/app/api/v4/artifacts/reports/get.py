@@ -22,7 +22,7 @@ from app.api.v4.artifacts.reports.types import (
     ReportsSimulationResource,
     ReportsViews,
     ReportsWebsocketResources,
-    ReportsWebsocketViews,
+    ReportsWebsocketEntries,
 )
 from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.auth.settings import get_auth_settings_internal
@@ -205,7 +205,7 @@ async def get_reports_websocket(
             )
 
     return GetReportsWebsocketResponse(
-        views=ReportsWebsocketViews(
+        entries=ReportsWebsocketEntries(
             runs=data.runs_today,
         ),
         resources=ReportsWebsocketResources(

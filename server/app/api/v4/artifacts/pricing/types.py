@@ -96,8 +96,8 @@ class GetPricingApiRequest(BaseModel):
     draft_id: UUID | None = None
 
 
-class PricingWebsocketViews(BaseModel):
-    """Views data for pricing websocket response."""
+class PricingWebsocketEntries(BaseModel):
+    """Entries data for pricing websocket response."""
 
     runs: GetRunListViewResponse | None = None
 
@@ -117,7 +117,7 @@ class PricingWebsocketResources(BaseModel):
 class GetPricingWebsocketResponse(BaseModel):
     """Websocket-facing pricing response with hydrated resources."""
 
-    views: PricingWebsocketViews | None = None
+    entries: PricingWebsocketEntries | None = None
     resources: PricingWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None

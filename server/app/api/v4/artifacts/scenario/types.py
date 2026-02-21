@@ -387,14 +387,14 @@ class GetScenarioWebsocketResponse(BaseModel):
     """
 
     group_id: UUID | None = None
-    views: "ScenarioWebsocketViews | None" = None
+    entries: "ScenarioWebsocketEntries | None" = None
     resource_agent_ids: dict[str, UUID | None] | None = None
 
     resources: "ScenarioWebsocketResources"
 
 
-class ScenarioWebsocketViews(BaseModel):
-    """Optional websocket views payload."""
+class ScenarioWebsocketEntries(BaseModel):
+    """Optional websocket entries payload."""
 
     draft_scenario: QGetScenarioDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None

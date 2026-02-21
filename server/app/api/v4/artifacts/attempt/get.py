@@ -38,7 +38,7 @@ from app.api.v4.artifacts.attempt.types import (
     AttemptData,
     AttemptInternalData,
     AttemptResources,
-    AttemptViews,
+    AttemptEntries,
     AttemptWebsocketResources,
     ChatData,
     ContentEntry,
@@ -1615,7 +1615,7 @@ async def get_attempt_client(
         training_id=data.training_id,
         training_entry_id=data.training_entry_id,
         resources=data.resources_payload,
-        views=AttemptViews(
+        entries=AttemptEntries(
             attempt=[data.attempt_item] if data.attempt_item else None,
             attempt_chat=data.chats,
             attempt_message=data.messages,
@@ -1768,7 +1768,7 @@ async def get_attempt_websocket(
     )
 
     return GetAttemptWebsocketResponse(
-        views=AttemptViews(
+        entries=AttemptEntries(
             attempt=[data.attempt_item] if data.attempt_item else None,
             attempt_chat=data.chats,
             attempt_message=data.messages,

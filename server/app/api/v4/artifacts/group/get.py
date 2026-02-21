@@ -27,7 +27,7 @@ from app.api.v4.artifacts.group.types import (
     GroupDetailRunWithMessages,
     GroupInternalData,
     GroupWebsocketResources,
-    GroupWebsocketViews,
+    GroupWebsocketEntries,
 )
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.calls.get import get_call_list_view_internal
@@ -293,7 +293,7 @@ async def get_group_websocket(
             )
 
     return GetGroupWebsocketResponse(
-        views=GroupWebsocketViews(
+        entries=GroupWebsocketEntries(
             runs=data.runs_today,
             group_runs=data.runs_result.items if data.runs_result.items else None,
             messages=data.messages_result.items if data.messages_result.items else None,

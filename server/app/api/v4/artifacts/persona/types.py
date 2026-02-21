@@ -149,8 +149,8 @@ class GetPersonaApiResponse(BaseModel):
     fields: list[QGetFieldsV4Item] | None = None
 
 
-class PersonaWebsocketViews(BaseModel):
-    """Views data for websocket response."""
+class PersonaWebsocketEntries(BaseModel):
+    """Entries data for websocket response."""
 
     draft_persona: QGetPersonaDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
@@ -189,7 +189,7 @@ class GetPersonaWebsocketResponse(BaseModel):
     - Resources: hydrated selected objects + config for generation
     """
 
-    views: PersonaWebsocketViews | None = None
+    entries: PersonaWebsocketEntries | None = None
     resources: PersonaWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None

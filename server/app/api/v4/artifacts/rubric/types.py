@@ -107,7 +107,7 @@ class GetRubricApiResponse(BaseModel):
     standards: RubricStandardsSection | None = None
 
 
-class RubricWebsocketViews(BaseModel):
+class RubricWebsocketEntries(BaseModel):
     draft_rubric: QGetRubricDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
 
@@ -132,7 +132,7 @@ class RubricWebsocketResources(BaseModel):
 
 
 class GetRubricWebsocketResponse(BaseModel):
-    views: RubricWebsocketViews | None = None
+    entries: RubricWebsocketEntries | None = None
     resources: RubricWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None

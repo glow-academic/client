@@ -35,7 +35,7 @@ from app.api.v4.artifacts.home.types import (
     GetHomeResponse,
     GetHomeWebsocketResponse,
     HomeWebsocketResources,
-    HomeWebsocketViews,
+    HomeWebsocketEntries,
 )
 from app.api.v4.artifacts.types import FilterOption, HistoryItem, HistoryResponse
 from app.api.v4.auth.profile import get_auth_profile_internal
@@ -1069,7 +1069,7 @@ async def get_home_websocket(
             )
 
     return GetHomeWebsocketResponse(
-        views=HomeWebsocketViews(
+        entries=HomeWebsocketEntries(
             draft_training=data.draft_item,
             runs=runs_result,
         ),

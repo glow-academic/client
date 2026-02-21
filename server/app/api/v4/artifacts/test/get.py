@@ -28,7 +28,7 @@ from app.api.v4.artifacts.test.types import (
     TestResources,
     TestRunItem,
     TestStatusSummary,
-    TestViews,
+    TestEntries,
     TestWebsocketResources,
 )
 from app.api.v4.entries.test_invocation.get import (
@@ -467,7 +467,7 @@ async def get_test_client(
         infinite_mode=data.test.infinite_mode,
         runs=data.runs,
         status_summary=data.status_summary,
-        views=TestViews(
+        entries=TestEntries(
             test=[data.test],
             test_invocation=data.invocations,
         ),
@@ -613,7 +613,7 @@ async def get_test_websocket(
     )
 
     return GetTestWebsocketResponse(
-        views=TestViews(
+        entries=TestEntries(
             test=[data.test],
             test_invocation=data.invocations,
             runs=runs_result,

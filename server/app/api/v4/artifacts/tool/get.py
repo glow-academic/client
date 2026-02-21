@@ -39,7 +39,7 @@ from app.api.v4.artifacts.tool.types import (
     ToolResourceBucket,
     ToolResources,
     ToolWebsocketResources,
-    ToolWebsocketViews,
+    ToolWebsocketEntries,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
@@ -612,14 +612,14 @@ async def get_tool_websocket(
                 fetch_args_outputs(),
             )
 
-    # Build views (always construct — both fields optional now)
-    views = ToolWebsocketViews(
+    # Build entries (always construct — both fields optional now)
+    entries = ToolWebsocketEntries(
         draft_tool=draft_tool,
         runs=runs_result,
     )
 
     return GetToolWebsocketResponse(
-        views=views if draft_tool or runs_result else None,
+        entries=entries if draft_tool or runs_result else None,
         resources=ToolWebsocketResources(
             names=current.names if current else None,
             descriptions=current.descriptions if current else None,

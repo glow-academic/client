@@ -32,7 +32,7 @@ from app.api.v4.artifacts.practice.types import (
     GetPracticeResponse,
     GetPracticeWebsocketResponse,
     PracticeWebsocketResources,
-    PracticeWebsocketViews,
+    PracticeWebsocketEntries,
 )
 from app.api.v4.artifacts.types import FilterOption, HistoryItem, HistoryResponse
 from app.api.v4.auth.profile import get_auth_profile_internal
@@ -937,7 +937,7 @@ async def get_practice_websocket(
             )
 
     return GetPracticeWebsocketResponse(
-        views=PracticeWebsocketViews(
+        entries=PracticeWebsocketEntries(
             draft_training=data.draft_item,
             runs=runs_result,
         ),

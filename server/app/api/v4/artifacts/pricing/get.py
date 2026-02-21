@@ -23,7 +23,7 @@ from app.api.v4.artifacts.pricing.types import (
     PricingResponse,
     PricingViews,
     PricingWebsocketResources,
-    PricingWebsocketViews,
+    PricingWebsocketEntries,
 )
 from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.auth.settings import get_auth_settings_internal
@@ -209,7 +209,7 @@ async def get_pricing_websocket(
             )
 
     return GetPricingWebsocketResponse(
-        views=PricingWebsocketViews(
+        entries=PricingWebsocketEntries(
             runs=data.runs_today,
         ),
         resources=PricingWebsocketResources(

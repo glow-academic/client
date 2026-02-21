@@ -41,7 +41,7 @@ from app.api.v4.artifacts.provider.types import (
     ProviderNameSection,
     ProviderValueSection,
     ProviderWebsocketResources,
-    ProviderWebsocketViews,
+    ProviderWebsocketEntries,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
@@ -575,7 +575,7 @@ async def get_provider_websocket(
     )
 
     # Build views (always construct — both fields optional now)
-    views = ProviderWebsocketViews(
+    entries = ProviderWebsocketEntries(
         draft_provider=draft_view,
         runs=runs_result,
     )
@@ -617,7 +617,7 @@ async def get_provider_websocket(
             )
 
     return GetProviderWebsocketResponse(
-        views=views if draft_view or runs_result else None,
+        entries=entries if draft_view or runs_result else None,
         group_id=data.group_id,
         resource_agent_ids=data.agent_ids,
         resources=ProviderWebsocketResources(

@@ -152,8 +152,8 @@ class GetGroupApiRequest(BaseModel):
     draft_id: UUID | None = None
 
 
-class GroupWebsocketViews(BaseModel):
-    """Views data for group websocket response."""
+class GroupWebsocketEntries(BaseModel):
+    """Entries data for group websocket response."""
 
     runs: "GetRunListViewResponse | None" = None
     # Domain views (from internal layer)
@@ -177,7 +177,7 @@ class GroupWebsocketResources(BaseModel):
 class GetGroupWebsocketResponse(BaseModel):
     """Websocket-facing group response with hydrated resources."""
 
-    views: GroupWebsocketViews | None = None
+    entries: GroupWebsocketEntries | None = None
     resources: GroupWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
@@ -204,7 +204,7 @@ from app.sql.types import (  # noqa: E402
     QGetToolsV4Item,
 )
 
-GroupWebsocketViews.model_rebuild()
+GroupWebsocketEntries.model_rebuild()
 GroupWebsocketResources.model_rebuild()
 
 

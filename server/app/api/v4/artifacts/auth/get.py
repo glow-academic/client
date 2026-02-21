@@ -40,7 +40,7 @@ from app.api.v4.artifacts.auth.types import (
     AuthProtocolSection,
     AuthSlugSection,
     AuthWebsocketResources,
-    AuthWebsocketViews,
+    AuthWebsocketEntries,
     GetAuthApiRequest,
     GetAuthApiResponse,
     GetAuthWebsocketResponse,
@@ -623,13 +623,13 @@ async def get_auth_websocket(
                 fetch_args_outputs(),
             )
 
-    views = AuthWebsocketViews(
+    entries = AuthWebsocketEntries(
         draft_auth=data.draft_view,
         runs=runs_result,
     )
 
     return GetAuthWebsocketResponse(
-        views=views if data.draft_view or runs_result else None,
+        entries=entries if data.draft_view or runs_result else None,
         resources=AuthWebsocketResources(
             names=data.names_current,
             descriptions=data.descriptions_current,

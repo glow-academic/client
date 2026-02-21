@@ -47,7 +47,7 @@ from app.api.v4.artifacts.parameter.types import (
     ParameterResourceBucket,
     ParameterResources,
     ParameterWebsocketResources,
-    ParameterWebsocketViews,
+    ParameterWebsocketEntries,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
@@ -555,10 +555,10 @@ async def get_parameter_websocket(
 
     current = data.resources_payload.current
 
-    views = ParameterWebsocketViews(draft_parameter=draft_view, runs=runs_result)
+    entries = ParameterWebsocketEntries(draft_parameter=draft_view, runs=runs_result)
 
     return GetParameterWebsocketResponse(
-        views=views if draft_view or runs_result else None,
+        entries=entries if draft_view or runs_result else None,
         resources=ParameterWebsocketResources(
             names=current.names if current else None,
             descriptions=current.descriptions if current else None,

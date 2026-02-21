@@ -199,7 +199,7 @@ class GetLeaderboardApiRequest(BaseModel):
     draft_id: UUID | None = None
 
 
-class LeaderboardWebsocketViews(BaseModel):
+class LeaderboardWebsocketEntries(BaseModel):
     """Views data for leaderboard websocket response."""
 
     runs: GetRunListViewResponse | None = None
@@ -220,7 +220,7 @@ class LeaderboardWebsocketResources(BaseModel):
 class GetLeaderboardWebsocketResponse(BaseModel):
     """Websocket-facing leaderboard response with hydrated resources."""
 
-    views: LeaderboardWebsocketViews | None = None
+    entries: LeaderboardWebsocketEntries | None = None
     resources: LeaderboardWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None

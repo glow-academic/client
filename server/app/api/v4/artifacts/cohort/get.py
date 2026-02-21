@@ -53,7 +53,7 @@ from app.api.v4.artifacts.cohort.types import (
     CohortSimulationPositionSection,
     CohortSimulationSection,
     CohortWebsocketResources,
-    CohortWebsocketViews,
+    CohortWebsocketEntries,
     GetCohortApiRequest,
     GetCohortApiResponse,
     GetCohortWebsocketResponse,
@@ -796,15 +796,15 @@ async def get_cohort_websocket(
                 fetch_args_outputs(),
             )
 
-    # Build views (always construct — both fields optional now)
-    views = CohortWebsocketViews(
+    # Build entries (always construct — both fields optional now)
+    entries = CohortWebsocketEntries(
         draft_cohort=draft_view,
         runs=runs_result,
     )
 
     return GetCohortWebsocketResponse(
         group_id=data.group_id,
-        views=views if draft_view or runs_result else None,
+        entries=entries if draft_view or runs_result else None,
         resource_agent_ids=data.agent_ids,
         resources=CohortWebsocketResources(
             names=current.names if current else None,

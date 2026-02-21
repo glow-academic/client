@@ -496,8 +496,8 @@ class AttemptResources(BaseModel):
     standards: dict[str, StandardEntry] | None = None
 
 
-class AttemptViews(BaseModel):
-    """View payloads grouped by view type."""
+class AttemptEntries(BaseModel):
+    """Entry payloads grouped by entry type."""
 
     attempt: list[AttemptViewItem] | None = None
     attempt_chat: list[ChatData] | None = None
@@ -615,7 +615,7 @@ class GetAttemptDetailResponse(BaseModel):
     training_entry_id: UUID | None = None
     # New normalized maps
     resources: AttemptResources | None = None
-    views: AttemptViews | None = None
+    entries: AttemptEntries | None = None
 
 
 # =============================================================================
@@ -718,7 +718,7 @@ class AttemptWebsocketResources(BaseModel):
 class GetAttemptWebsocketResponse(BaseModel):
     """Minimal response for WebSocket handlers."""
 
-    views: AttemptViews | None = None
+    entries: AttemptEntries | None = None
     resources: AttemptWebsocketResources | None = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None

@@ -120,8 +120,8 @@ class GetSessionApiRequest(BaseModel):
     draft_id: UUID | None = None
 
 
-class SessionWebsocketViews(BaseModel):
-    """Views data for session websocket response."""
+class SessionWebsocketEntries(BaseModel):
+    """Entries data for session websocket response."""
 
     runs: "GetRunListViewResponse | None" = None
     # Domain views (from internal layer)
@@ -144,7 +144,7 @@ class SessionWebsocketResources(BaseModel):
 class GetSessionWebsocketResponse(BaseModel):
     """Websocket-facing session response with hydrated resources."""
 
-    views: SessionWebsocketViews | None = None
+    entries: SessionWebsocketEntries | None = None
     resources: SessionWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
@@ -166,7 +166,7 @@ from app.sql.types import (  # noqa: E402
     QGetToolsV4Item,
 )
 
-SessionWebsocketViews.model_rebuild()
+SessionWebsocketEntries.model_rebuild()
 SessionWebsocketResources.model_rebuild()
 
 

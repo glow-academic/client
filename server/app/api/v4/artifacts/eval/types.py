@@ -203,7 +203,7 @@ class GetEvalApiResponse(BaseModel):
     available_groups: list[EvalAvailableGroup] | None = None
 
 
-class EvalWebsocketViews(BaseModel):
+class EvalWebsocketEntries(BaseModel):
     draft_eval: QGetEvalDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
 
@@ -229,7 +229,7 @@ class EvalWebsocketResources(BaseModel):
 
 
 class GetEvalWebsocketResponse(BaseModel):
-    views: EvalWebsocketViews | None = None
+    entries: EvalWebsocketEntries | None = None
     resources: EvalWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None

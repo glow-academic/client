@@ -379,8 +379,8 @@ class GetSimulationApiResponse(BaseModel):
     rubrics: list[QGetRubricsV4Item] | None = None
 
 
-class SimulationWebsocketViews(BaseModel):
-    """Optional websocket views payload."""
+class SimulationWebsocketEntries(BaseModel):
+    """Optional websocket entries payload."""
 
     draft_simulation: QGetSimulationDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
@@ -414,7 +414,7 @@ class GetSimulationWebsocketResponse(BaseModel):
     """Minimal response for simulation websocket generation handlers."""
 
     group_id: UUID | None = None
-    views: SimulationWebsocketViews | None = None
+    entries: SimulationWebsocketEntries | None = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     resources: SimulationWebsocketResources
 

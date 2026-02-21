@@ -108,7 +108,7 @@ class GetAuthApiResponse(BaseModel):
     items: AuthItemSection | None = None
 
 
-class AuthWebsocketViews(BaseModel):
+class AuthWebsocketEntries(BaseModel):
     draft_auth: QGetAuthDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
 
@@ -132,7 +132,7 @@ class AuthWebsocketResources(BaseModel):
 class GetAuthWebsocketResponse(BaseModel):
     """Minimal response for WebSocket handlers."""
 
-    views: AuthWebsocketViews | None = None
+    entries: AuthWebsocketEntries | None = None
     resources: AuthWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None

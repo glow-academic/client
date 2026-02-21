@@ -142,8 +142,8 @@ class DocumentResources(BaseModel):
 # ========== Websocket Types ==========
 
 
-class DocumentWebsocketViews(BaseModel):
-    """Optional websocket views payload."""
+class DocumentWebsocketEntries(BaseModel):
+    """Optional websocket entries payload."""
 
     draft_document: QGetDocumentDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
@@ -173,7 +173,7 @@ class GetDocumentWebsocketResponse(BaseModel):
     """Minimal response for document websocket generation handlers."""
 
     group_id: UUID | None = None
-    views: DocumentWebsocketViews | None = None
+    entries: DocumentWebsocketEntries | None = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     resources: DocumentWebsocketResources
 

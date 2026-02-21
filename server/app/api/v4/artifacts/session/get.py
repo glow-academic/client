@@ -23,7 +23,7 @@ from app.api.v4.artifacts.session.types import (
     GetSessionWebsocketResponse,
     SessionInternalData,
     SessionWebsocketResources,
-    SessionWebsocketViews,
+    SessionWebsocketEntries,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
@@ -448,7 +448,7 @@ async def get_session_websocket(
             )
 
     return GetSessionWebsocketResponse(
-        views=SessionWebsocketViews(
+        entries=SessionWebsocketEntries(
             runs=data.runs_today,
             groups=data.groups_result.items if data.groups_result.items else None,
             audits=data.audits_result.items if data.audits_result.items else None,

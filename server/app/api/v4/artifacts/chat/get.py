@@ -34,10 +34,10 @@ from app.api.v4.artifacts.chat.types import (
     ChatScenarioFlags,
     ChatScenarioSection,
     ChatStartWebsocketResources,
-    ChatStartWebsocketViews,
+    ChatStartWebsocketEntries,
     ChatVideoSection,
     ChatWebsocketResources,
-    ChatWebsocketViews,
+    ChatWebsocketEntries,
     GetChatRequest,
     GetChatResponse,
     GetChatStartWebsocketResponse,
@@ -111,7 +111,7 @@ async def get_chat_start_context(
         raise HTTPException(status_code=404, detail="Chat start context not found")
 
     return GetChatStartWebsocketResponse(
-        views=ChatStartWebsocketViews(
+        entries=ChatStartWebsocketEntries(
             training_entry_id=training_entry_id,
             department_id=department_id,
         ),
@@ -542,7 +542,7 @@ async def get_chat_websocket(
             )
 
     return GetChatWebsocketResponse(
-        views=ChatWebsocketViews(
+        entries=ChatWebsocketEntries(
             draft_training=data.draft_item,
             runs=runs_result,
         ),

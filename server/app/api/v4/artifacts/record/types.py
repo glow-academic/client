@@ -27,8 +27,8 @@ class GetRecordApiRequest(BaseModel):
     draft_id: UUID | None = None
 
 
-class RecordWebsocketViews(BaseModel):
-    """Views data for record websocket response."""
+class RecordWebsocketEntries(BaseModel):
+    """Entries data for record websocket response."""
 
     runs: GetRunListViewResponse | None = None
 
@@ -48,7 +48,7 @@ class RecordWebsocketResources(BaseModel):
 class GetRecordWebsocketResponse(BaseModel):
     """Websocket-facing record response with hydrated resources."""
 
-    views: RecordWebsocketViews | None = None
+    entries: RecordWebsocketEntries | None = None
     resources: RecordWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None

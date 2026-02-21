@@ -40,8 +40,8 @@ from app.sql.types import (
 # =============================================================================
 
 
-class HomeWebsocketViews(BaseModel):
-    """Draft view for home bundle websocket consumers."""
+class HomeWebsocketEntries(BaseModel):
+    """Draft entries for home bundle websocket consumers."""
 
     draft_training: QGetTrainingDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
@@ -76,7 +76,7 @@ class HomeWebsocketResources(BaseModel):
 class GetHomeWebsocketResponse(BaseModel):
     """Websocket-facing home bundle response with hydrated resources."""
 
-    views: HomeWebsocketViews | None = None
+    entries: HomeWebsocketEntries | None = None
     resources: HomeWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None

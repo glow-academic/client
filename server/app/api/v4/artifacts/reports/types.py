@@ -304,7 +304,7 @@ class GetReportsApiRequest(BaseModel):
     draft_id: UUID | None = None
 
 
-class ReportsWebsocketViews(BaseModel):
+class ReportsWebsocketEntries(BaseModel):
     """Views data for reports websocket response."""
 
     runs: GetRunListViewResponse | None = None
@@ -325,7 +325,7 @@ class ReportsWebsocketResources(BaseModel):
 class GetReportsWebsocketResponse(BaseModel):
     """Websocket-facing reports response with hydrated resources."""
 
-    views: ReportsWebsocketViews | None = None
+    entries: ReportsWebsocketEntries | None = None
     resources: ReportsWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None

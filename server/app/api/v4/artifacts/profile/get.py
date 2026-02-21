@@ -48,7 +48,7 @@ from app.api.v4.artifacts.profile.types import (
     ProfileRequestLimitSection,
     ProfileRoleResource,
     ProfileWebsocketResources,
-    ProfileWebsocketViews,
+    ProfileWebsocketEntries,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
@@ -755,15 +755,15 @@ async def get_profile_websocket(
                 fetch_args_outputs(),
             )
 
-    # Build views (always construct — both fields optional now)
-    views = ProfileWebsocketViews(
+    # Build entries (always construct — both fields optional now)
+    entries = ProfileWebsocketEntries(
         draft_profile=draft_profile,
         runs=runs_result,
     )
 
     return GetProfileWebsocketResponse(
         group_id=data.group_id,
-        views=views if draft_profile or runs_result else None,
+        entries=entries if draft_profile or runs_result else None,
         resources=ProfileWebsocketResources(
             names=[data.selected_name_resource] if data.selected_name_resource else [],
             emails=data.selected_email_resources,

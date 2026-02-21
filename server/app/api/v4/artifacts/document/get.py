@@ -48,7 +48,7 @@ from app.api.v4.artifacts.document.types import (
     DocumentTextSection,
     DocumentUploadSection,
     DocumentWebsocketResources,
-    DocumentWebsocketViews,
+    DocumentWebsocketEntries,
     GetDocumentApiRequest,
     GetDocumentApiResponse,
     GetDocumentWebsocketResponse,
@@ -787,7 +787,7 @@ async def get_document_websocket(
     ]
 
     # Build views (always construct — both fields optional now)
-    views = DocumentWebsocketViews(
+    entries = DocumentWebsocketEntries(
         draft_document=draft_view,
         runs=runs_result,
     )
@@ -830,7 +830,7 @@ async def get_document_websocket(
 
     return GetDocumentWebsocketResponse(
         group_id=data.group_id,
-        views=views if draft_view or runs_result else None,
+        entries=entries if draft_view or runs_result else None,
         resource_agent_ids=data.agent_ids,
         resources=DocumentWebsocketResources(
             names=current.names if current else None,

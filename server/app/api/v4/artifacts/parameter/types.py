@@ -93,7 +93,7 @@ class GetParameterApiResponse(BaseModel):
     fields: ParameterFieldSection | None = None
 
 
-class ParameterWebsocketViews(BaseModel):
+class ParameterWebsocketEntries(BaseModel):
     draft_parameter: QGetParameterDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
 
@@ -118,7 +118,7 @@ class ParameterWebsocketResources(BaseModel):
 
 
 class GetParameterWebsocketResponse(BaseModel):
-    views: ParameterWebsocketViews | None = None
+    entries: ParameterWebsocketEntries | None = None
     resources: ParameterWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None

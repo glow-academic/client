@@ -73,7 +73,7 @@ from app.api.v4.artifacts.scenario.types import (
     ScenarioResources,
     ScenarioVideoSection,
     ScenarioWebsocketResources,
-    ScenarioWebsocketViews,
+    ScenarioWebsocketEntries,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
@@ -1288,15 +1288,15 @@ async def get_scenario_websocket(
                 fetch_args_outputs(),
             )
 
-    # Build views (always construct — both fields optional now)
-    views = ScenarioWebsocketViews(
+    # Build entries (always construct — both fields optional now)
+    entries = ScenarioWebsocketEntries(
         draft_scenario=draft_view,
         runs=runs_result,
     )
 
     return GetScenarioWebsocketResponse(
         group_id=data.group_id,
-        views=views if draft_view or runs_result else None,
+        entries=entries if draft_view or runs_result else None,
         resource_agent_ids=data.agent_ids,
         resources=ScenarioWebsocketResources(
             names=current.names if current else None,

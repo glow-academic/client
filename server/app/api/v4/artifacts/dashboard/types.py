@@ -697,8 +697,8 @@ class GetDashboardApiRequest(BaseModel):
     draft_id: UUID | None = None
 
 
-class DashboardWebsocketViews(BaseModel):
-    """Views data for dashboard websocket response."""
+class DashboardWebsocketEntries(BaseModel):
+    """Entries data for dashboard websocket response."""
 
     runs: GetRunListViewResponse | None = None
 
@@ -718,7 +718,7 @@ class DashboardWebsocketResources(BaseModel):
 class GetDashboardWebsocketResponse(BaseModel):
     """Websocket-facing dashboard response with hydrated resources."""
 
-    views: DashboardWebsocketViews | None = None
+    entries: DashboardWebsocketEntries | None = None
     resources: DashboardWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None

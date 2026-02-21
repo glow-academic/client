@@ -68,7 +68,7 @@ from app.api.v4.artifacts.simulation.types import (
     SimulationScenarioSection,
     SimulationScenarioTimeLimitSection,
     SimulationWebsocketResources,
-    SimulationWebsocketViews,
+    SimulationWebsocketEntries,
 )
 from app.api.v4.entries.runs.search import get_run_list_entries_internal
 from app.api.v4.entries.simulation_drafts.get import (
@@ -851,7 +851,7 @@ async def get_simulation_websocket(
     ]
 
     # Build views (always construct — both fields optional now)
-    views = SimulationWebsocketViews(
+    entries = SimulationWebsocketEntries(
         draft_simulation=draft_view,
         runs=runs_result,
     )
@@ -894,7 +894,7 @@ async def get_simulation_websocket(
 
     return GetSimulationWebsocketResponse(
         group_id=data.group_id,
-        views=views if draft_view or runs_result else None,
+        entries=entries if draft_view or runs_result else None,
         resource_agent_ids=data.agent_ids,
         resources=SimulationWebsocketResources(
             names=current.names if current else None,

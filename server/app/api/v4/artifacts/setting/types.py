@@ -143,8 +143,8 @@ class GetSettingApiResponse(BaseModel):
 # ========== Websocket Types ==========
 
 
-class SettingWebsocketViews(BaseModel):
-    """Views data for websocket response."""
+class SettingWebsocketEntries(BaseModel):
+    """Entries data for websocket response."""
 
     draft_setting: QGetSettingDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
@@ -182,7 +182,7 @@ class GetSettingWebsocketResponse(BaseModel):
     - Resources: hydrated selected objects + config for generation
     """
 
-    views: SettingWebsocketViews | None = None
+    entries: SettingWebsocketEntries | None = None
     resources: SettingWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None

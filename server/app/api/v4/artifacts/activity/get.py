@@ -20,7 +20,7 @@ from app.api.v4.artifacts.activity.types import (
     ActivityResponse,
     ActivityViews,
     ActivityWebsocketResources,
-    ActivityWebsocketViews,
+    ActivityWebsocketEntries,
     GetActivityWebsocketResponse,
 )
 from app.api.v4.artifacts.session.types import (
@@ -699,7 +699,7 @@ async def get_activity_websocket(
             )
 
     return GetActivityWebsocketResponse(
-        views=ActivityWebsocketViews(
+        entries=ActivityWebsocketEntries(
             runs=data.runs_today,
             sessions=data.sessions_result.items,
             activity=data.activity_result.items,

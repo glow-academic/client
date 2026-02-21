@@ -78,7 +78,7 @@ class GetDepartmentApiResponse(BaseModel):
     settings: DepartmentSettingSection | None = None
 
 
-class DepartmentWebsocketViews(BaseModel):
+class DepartmentWebsocketEntries(BaseModel):
     draft_department: QGetDepartmentDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
 
@@ -99,7 +99,7 @@ class DepartmentWebsocketResources(BaseModel):
 
 
 class GetDepartmentWebsocketResponse(BaseModel):
-    views: DepartmentWebsocketViews | None = None
+    entries: DepartmentWebsocketEntries | None = None
     resources: DepartmentWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None

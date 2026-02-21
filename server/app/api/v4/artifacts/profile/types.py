@@ -107,7 +107,7 @@ class GetProfileApiResponse(BaseModel):
     cohorts: ProfileCohortSection | None = None
 
 
-class ProfileWebsocketViews(BaseModel):
+class ProfileWebsocketEntries(BaseModel):
     draft_profile: QGetProfileDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
 
@@ -129,7 +129,7 @@ class ProfileWebsocketResources(BaseModel):
 
 
 class GetProfileWebsocketResponse(BaseModel):
-    views: ProfileWebsocketViews | None = None
+    entries: ProfileWebsocketEntries | None = None
     resources: ProfileWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None

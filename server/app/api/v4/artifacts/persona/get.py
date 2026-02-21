@@ -64,7 +64,7 @@ from app.api.v4.artifacts.persona.types import (
     PersonaResourceBucket,
     PersonaResources,
     PersonaWebsocketResources,
-    PersonaWebsocketViews,
+    PersonaWebsocketEntries,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
@@ -954,14 +954,14 @@ async def get_persona_websocket(
                 fetch_args_outputs(),
             )
 
-    # Build views (always construct — both fields optional now)
-    views = PersonaWebsocketViews(
+    # Build entries (always construct — both fields optional now)
+    entries = PersonaWebsocketEntries(
         draft_persona=draft_persona,
         runs=runs_result,
     )
 
     return GetPersonaWebsocketResponse(
-        views=views if draft_persona or runs_result else None,
+        entries=entries if draft_persona or runs_result else None,
         resources=PersonaWebsocketResources(
             names=current.names if current else None,
             descriptions=current.descriptions if current else None,

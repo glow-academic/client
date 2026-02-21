@@ -49,7 +49,7 @@ from app.api.v4.artifacts.eval.types import (
     EvalRunRubricMapping,
     EvalRunSection,
     EvalWebsocketResources,
-    EvalWebsocketViews,
+    EvalWebsocketEntries,
     GetEvalApiRequest,
     GetEvalApiResponse,
     GetEvalWebsocketResponse,
@@ -742,14 +742,14 @@ async def get_eval_websocket(
     if selected_rubric_ids:
         selected_rubrics = [r for r in data.rubrics if r.id in selected_rubric_ids]
 
-    # Build views (always construct -- both fields optional now)
-    views = EvalWebsocketViews(
+    # Build entries (always construct -- both fields optional now)
+    entries = EvalWebsocketEntries(
         draft_eval=draft_eval,
         runs=runs_result,
     )
 
     return GetEvalWebsocketResponse(
-        views=views if draft_eval or runs_result else None,
+        entries=entries if draft_eval or runs_result else None,
         group_id=data.group_id,
         resource_agent_ids=data.resource_agent_ids,
         resources=EvalWebsocketResources(

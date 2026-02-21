@@ -34279,6 +34279,19 @@ export interface components {
             message?: string | null;
         };
         /**
+         * AttemptEntries
+         * @description Entry payloads grouped by entry type.
+         */
+        AttemptEntries: {
+            /** Attempt */
+            attempt?: components["schemas"]["QGetAttemptListViewV4Item"][] | null;
+            /** Attempt Chat */
+            attempt_chat?: components["schemas"]["ChatData"][] | null;
+            /** Attempt Message */
+            attempt_message?: components["schemas"]["MessageData"][] | null;
+            runs?: components["schemas"]["app__api__v4__entries__runs__search__GetRunListViewResponse"] | null;
+        };
+        /**
          * AttemptErrorEvent
          * @description Server-to-client event: attempt_error.
          *
@@ -34866,19 +34879,6 @@ export interface components {
             chat_id: string;
             /** Item Id */
             item_id: string;
-        };
-        /**
-         * AttemptViews
-         * @description View payloads grouped by view type.
-         */
-        AttemptViews: {
-            /** Attempt */
-            attempt?: components["schemas"]["QGetAttemptListViewV4Item"][] | null;
-            /** Attempt Chat */
-            attempt_chat?: components["schemas"]["ChatData"][] | null;
-            /** Attempt Message */
-            attempt_message?: components["schemas"]["MessageData"][] | null;
-            runs?: components["schemas"]["app__api__v4__entries__runs__search__GetRunListViewResponse"] | null;
         };
         /**
          * AudioViewItem
@@ -43172,7 +43172,7 @@ export interface components {
             /** Training Entry Id */
             training_entry_id?: string | null;
             resources?: components["schemas"]["AttemptResources"] | null;
-            views?: components["schemas"]["AttemptViews"] | null;
+            entries?: components["schemas"]["AttemptEntries"] | null;
         };
         /** GetAttemptEntriesApiRequest */
         GetAttemptEntriesApiRequest: {
@@ -46678,7 +46678,7 @@ export interface components {
             /** Runs */
             runs?: components["schemas"]["TestRunItem"][];
             status_summary?: components["schemas"]["TestStatusSummary"] | null;
-            views?: components["schemas"]["TestViews"] | null;
+            entries?: components["schemas"]["TestEntries"] | null;
             resources?: components["schemas"]["TestResources"] | null;
         };
         /** GetTestCompletionEntriesApiRequest */
@@ -67743,6 +67743,17 @@ export interface components {
             arguments_delta?: string | null;
         };
         /**
+         * TestEntries
+         * @description View payloads grouped by view type.
+         */
+        TestEntries: {
+            /** Test */
+            test?: components["schemas"]["QGetTestViewV4Item"][] | null;
+            /** Test Invocation */
+            test_invocation?: components["schemas"]["QGetTestInvocationViewV4Item"][] | null;
+            runs?: components["schemas"]["app__api__v4__entries__runs__search__GetRunListViewResponse"] | null;
+        };
+        /**
          * TestErrorEvent
          * @description Server-to-client event: test_error.
          *
@@ -68414,17 +68425,6 @@ export interface components {
             success: boolean;
             /** Message */
             message?: string | null;
-        };
-        /**
-         * TestViews
-         * @description View payloads grouped by view type.
-         */
-        TestViews: {
-            /** Test */
-            test?: components["schemas"]["QGetTestViewV4Item"][] | null;
-            /** Test Invocation */
-            test_invocation?: components["schemas"]["QGetTestInvocationViewV4Item"][] | null;
-            runs?: components["schemas"]["app__api__v4__entries__runs__search__GetRunListViewResponse"] | null;
         };
         /**
          * TestsGenerationEvent

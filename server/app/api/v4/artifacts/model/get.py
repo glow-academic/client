@@ -68,7 +68,7 @@ from app.api.v4.artifacts.model.types import (
     ModelValueSection,
     ModelVoiceSection,
     ModelWebsocketResources,
-    ModelWebsocketViews,
+    ModelWebsocketEntries,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
@@ -878,15 +878,15 @@ async def get_model_websocket(
                 fetch_args_outputs(),
             )
 
-    # Build views (always construct — both fields optional now)
-    views = ModelWebsocketViews(
+    # Build entries (always construct — both fields optional now)
+    entries = ModelWebsocketEntries(
         draft_model=draft_model,
         runs=runs_result,
     )
 
     return GetModelWebsocketResponse(
         group_id=data.group_id,
-        views=views if draft_model or runs_result else None,
+        entries=entries if draft_model or runs_result else None,
         resource_agent_ids=data.agent_ids,
         resources=ModelWebsocketResources(
             names=[data.name_resource] if data.name_resource else None,

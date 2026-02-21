@@ -34,7 +34,7 @@ from app.api.v4.artifacts.field.types import (
     FieldInternalData,
     FieldNameSection,
     FieldWebsocketResources,
-    FieldWebsocketViews,
+    FieldWebsocketEntries,
     GetFieldApiRequest,
     GetFieldApiResponse,
     GetFieldWebsocketResponse,
@@ -585,8 +585,8 @@ async def get_field_websocket(
         fetch_tools(),
     )
 
-    # Build views (always construct — both fields optional now)
-    views = FieldWebsocketViews(
+    # Build entries (always construct — both fields optional now)
+    entries = FieldWebsocketEntries(
         draft_field=draft_field,
         runs=runs_result,
     )
@@ -628,7 +628,7 @@ async def get_field_websocket(
             )
 
     return GetFieldWebsocketResponse(
-        views=views if draft_field or runs_result else None,
+        entries=entries if draft_field or runs_result else None,
         resources=FieldWebsocketResources(
             names=data.selected_names,
             descriptions=data.selected_descriptions,

@@ -15,7 +15,7 @@ from app.api.v4.artifacts.health.types import (
     HealthResponse,
     HealthViews,
     HealthWebsocketResources,
-    HealthWebsocketViews,
+    HealthWebsocketEntries,
 )
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.health.get import get_health_list_view_internal
@@ -267,7 +267,7 @@ async def get_health_websocket(
             )
 
     return GetHealthWebsocketResponse(
-        views=HealthWebsocketViews(
+        entries=HealthWebsocketEntries(
             runs=data.runs_today,
         ),
         resources=HealthWebsocketResources(

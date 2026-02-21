@@ -46,7 +46,7 @@ class GetInvocationApiRequest(BaseModel):
 # =============================================================================
 
 
-class InvocationWebsocketViews(BaseModel):
+class InvocationWebsocketEntries(BaseModel):
     """Views data for invocation websocket response."""
 
     runs: GetRunListViewResponse | None = None
@@ -68,7 +68,7 @@ class InvocationWebsocketResources(BaseModel):
 class GetInvocationWebsocketResponse(BaseModel):
     """Websocket-facing invocation response with hydrated resources."""
 
-    views: InvocationWebsocketViews | None = None
+    entries: InvocationWebsocketEntries | None = None
     resources: InvocationWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
@@ -204,7 +204,7 @@ class SuiteWebsocketResources(BaseModel):
     config_profile: list[QGetProfilesV4Item] | None = None
 
 
-class SuiteWebsocketViews(BaseModel):
+class SuiteWebsocketEntries(BaseModel):
     """Draft view for bundle websocket consumers."""
 
     draft_suite: Any | None = None
@@ -214,7 +214,7 @@ class SuiteWebsocketViews(BaseModel):
 class GetSuiteWebsocketResponse(BaseModel):
     """Websocket-facing bundle response with hydrated resources."""
 
-    views: SuiteWebsocketViews | None = None
+    entries: SuiteWebsocketEntries | None = None
     resources: SuiteWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None

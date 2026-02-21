@@ -24,7 +24,7 @@ from app.api.v4.artifacts.leaderboard.types import (
     LeaderboardSimulationResource,
     LeaderboardViews,
     LeaderboardWebsocketResources,
-    LeaderboardWebsocketViews,
+    LeaderboardWebsocketEntries,
 )
 from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.auth.settings import get_auth_settings_internal
@@ -209,7 +209,7 @@ async def get_leaderboard_websocket(
             )
 
     return GetLeaderboardWebsocketResponse(
-        views=LeaderboardWebsocketViews(
+        entries=LeaderboardWebsocketEntries(
             runs=data.runs_today,
         ),
         resources=LeaderboardWebsocketResources(

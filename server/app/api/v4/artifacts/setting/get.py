@@ -63,7 +63,7 @@ from app.api.v4.artifacts.setting.types import (
     SettingResources,
     SettingRoleSection,
     SettingWebsocketResources,
-    SettingWebsocketViews,
+    SettingWebsocketEntries,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
@@ -794,14 +794,14 @@ async def get_setting_websocket(
         f for f in all_enriched_flags if f.flag_option_id in selected_flag_ids
     ]
 
-    # Build views (always construct — both fields optional now)
-    views = SettingWebsocketViews(
+    # Build entries (always construct — both fields optional now)
+    entries = SettingWebsocketEntries(
         draft_setting=draft_setting,
         runs=runs_result,
     )
 
     return GetSettingWebsocketResponse(
-        views=views if draft_setting or runs_result else None,
+        entries=entries if draft_setting or runs_result else None,
         resources=SettingWebsocketResources(
             names=current.names if current else None,
             descriptions=current.descriptions if current else None,

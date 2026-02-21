@@ -60,7 +60,7 @@ class TestStatusSummary(BaseModel):
     not_started: int = 0
 
 
-class TestViews(BaseModel):
+class TestEntries(BaseModel):
     """View payloads grouped by view type."""
 
     test: list[QGetTestViewV4Item] | None = None
@@ -96,7 +96,7 @@ class GetTestArtifactResponse(BaseModel):
     status_summary: TestStatusSummary | None = None
 
     # Normalized views and resources
-    views: TestViews | None = None
+    entries: TestEntries | None = None
     resources: TestResources | None = None
 
 
@@ -176,7 +176,7 @@ class TestWebsocketResources(BaseModel):
 class GetTestWebsocketResponse(BaseModel):
     """Minimal response for WebSocket handlers."""
 
-    views: TestViews | None = None
+    entries: TestEntries | None = None
     resources: TestWebsocketResources | None = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None

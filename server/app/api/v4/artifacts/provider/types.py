@@ -105,8 +105,8 @@ class GetProviderApiResponse(BaseModel):
     keys: ProviderKeySection | None = None
 
 
-class ProviderWebsocketViews(BaseModel):
-    """Views data for websocket response."""
+class ProviderWebsocketEntries(BaseModel):
+    """Entries data for websocket response."""
 
     draft_provider: QGetProviderDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
@@ -134,7 +134,7 @@ class ProviderWebsocketResources(BaseModel):
 class GetProviderWebsocketResponse(BaseModel):
     """Minimal response for WebSocket handlers."""
 
-    views: ProviderWebsocketViews | None = None
+    entries: ProviderWebsocketEntries | None = None
     resources: ProviderWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None

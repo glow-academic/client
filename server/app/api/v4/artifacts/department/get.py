@@ -39,7 +39,7 @@ from app.api.v4.artifacts.department.types import (
     DepartmentNameSection,
     DepartmentSettingSection,
     DepartmentWebsocketResources,
-    DepartmentWebsocketViews,
+    DepartmentWebsocketEntries,
     GetDepartmentApiRequest,
     GetDepartmentApiResponse,
     GetDepartmentWebsocketResponse,
@@ -591,8 +591,8 @@ async def get_department_websocket(
         fetch_tools(),
     )
 
-    # Build views (always construct — both fields optional now)
-    views = DepartmentWebsocketViews(
+    # Build entries (always construct — both fields optional now)
+    entries = DepartmentWebsocketEntries(
         draft_department=draft_department,
         runs=runs_result,
     )
@@ -634,7 +634,7 @@ async def get_department_websocket(
             )
 
     return GetDepartmentWebsocketResponse(
-        views=views if draft_department or runs_result else None,
+        entries=entries if draft_department or runs_result else None,
         resources=DepartmentWebsocketResources(
             names=data.names_current,
             descriptions=data.descriptions_current,

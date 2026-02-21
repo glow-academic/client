@@ -94,7 +94,7 @@ class GetToolApiResponse(BaseModel):
     args_outputs: ToolArgOutputSection | None = None
 
 
-class ToolWebsocketViews(BaseModel):
+class ToolWebsocketEntries(BaseModel):
     draft_tool: QGetToolDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
 
@@ -118,7 +118,7 @@ class ToolWebsocketResources(BaseModel):
 
 
 class GetToolWebsocketResponse(BaseModel):
-    views: ToolWebsocketViews | None = None
+    entries: ToolWebsocketEntries | None = None
     resources: ToolWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None

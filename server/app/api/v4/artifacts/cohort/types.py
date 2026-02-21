@@ -184,12 +184,12 @@ class GetCohortWebsocketResponse(BaseModel):
     """
 
     group_id: UUID | None = None
-    views: "CohortWebsocketViews | None" = None
+    entries: "CohortWebsocketEntries | None" = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     resources: "CohortWebsocketResources"
 
 
-class CohortWebsocketViews(BaseModel):
+class CohortWebsocketEntries(BaseModel):
     draft_cohort: QGetCohortDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
 

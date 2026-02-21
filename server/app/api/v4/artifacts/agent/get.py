@@ -64,7 +64,7 @@ from app.api.v4.artifacts.agent.types import (
     AgentToolSection,
     AgentVoiceSection,
     AgentWebsocketResources,
-    AgentWebsocketViews,
+    AgentWebsocketEntries,
     GetAgentApiRequest,
     GetAgentApiResponse,
     GetAgentWebsocketResponse,
@@ -888,13 +888,13 @@ async def get_agent_websocket(
         config_profile=config_profile_result or None,
     )
 
-    views = AgentWebsocketViews(
+    entries = AgentWebsocketEntries(
         draft_agent=data.draft_view,
         runs=runs_result,
     )
 
     return GetAgentWebsocketResponse(
-        views=views if data.draft_view or runs_result else None,
+        entries=entries if data.draft_view or runs_result else None,
         resources=websocket_resources,
         resource_agent_ids=data.agent_ids,
         group_id=data.group_id,

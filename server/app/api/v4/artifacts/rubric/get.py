@@ -53,7 +53,7 @@ from app.api.v4.artifacts.rubric.types import (
     RubricStandardGroupsSection,
     RubricStandardsSection,
     RubricWebsocketResources,
-    RubricWebsocketViews,
+    RubricWebsocketEntries,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
@@ -779,7 +779,7 @@ async def get_rubric_websocket(
             )
 
     return GetRubricWebsocketResponse(
-        views=RubricWebsocketViews(
+        entries=RubricWebsocketEntries(
             draft_rubric=draft_rubric,
             runs=runs_result or None,
         ),

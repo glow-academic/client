@@ -130,8 +130,8 @@ class GetAgentApiResponse(BaseModel):
     voices: AgentVoiceSection | None = None
 
 
-class AgentWebsocketViews(BaseModel):
-    """Views data for websocket response."""
+class AgentWebsocketEntries(BaseModel):
+    """Entries data for websocket response."""
 
     draft_agent: QGetAgentDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
@@ -161,7 +161,7 @@ class AgentWebsocketResources(BaseModel):
 class GetAgentWebsocketResponse(BaseModel):
     """WebSocket response shape for agent generation."""
 
-    views: AgentWebsocketViews | None = None
+    entries: AgentWebsocketEntries | None = None
     resources: AgentWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None

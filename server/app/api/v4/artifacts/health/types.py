@@ -44,7 +44,7 @@ class GetHealthApiRequest(BaseModel):
     draft_id: UUID | None = None
 
 
-class HealthWebsocketViews(BaseModel):
+class HealthWebsocketEntries(BaseModel):
     """Views data for health websocket response."""
 
     runs: "GetRunListViewResponse | None" = None
@@ -65,7 +65,7 @@ class HealthWebsocketResources(BaseModel):
 class GetHealthWebsocketResponse(BaseModel):
     """Websocket-facing health response with hydrated resources."""
 
-    views: HealthWebsocketViews | None = None
+    entries: HealthWebsocketEntries | None = None
     resources: HealthWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
@@ -82,5 +82,5 @@ from app.sql.types import (  # noqa: E402
     QGetToolsV4Item,
 )
 
-HealthWebsocketViews.model_rebuild()
+HealthWebsocketEntries.model_rebuild()
 HealthWebsocketResources.model_rebuild()

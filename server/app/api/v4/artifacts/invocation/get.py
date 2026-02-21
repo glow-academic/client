@@ -29,7 +29,7 @@ from app.api.v4.artifacts.invocation.types import (
     SuiteToolSection,
     SuiteVoiceSection,
     SuiteWebsocketResources,
-    SuiteWebsocketViews,
+    SuiteWebsocketEntries,
 )
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.runs.search import get_run_list_entries_internal
@@ -422,7 +422,7 @@ async def get_invocation_websocket(
             )
 
     return GetSuiteWebsocketResponse(
-        views=SuiteWebsocketViews(
+        entries=SuiteWebsocketEntries(
             draft_suite=data.draft_item,
             runs=runs_result,
         ),

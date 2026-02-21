@@ -140,8 +140,8 @@ class GetActivityApiRequest(BaseModel):
     draft_id: UUID | None = None
 
 
-class ActivityWebsocketViews(BaseModel):
-    """Views data for activity websocket response."""
+class ActivityWebsocketEntries(BaseModel):
+    """Entries data for activity websocket response."""
 
     runs: Any = None  # GetRunListViewResponse — lazy to avoid circular import
     # Domain views (from internal layer)
@@ -168,7 +168,7 @@ class ActivityWebsocketResources(BaseModel):
 class GetActivityWebsocketResponse(BaseModel):
     """Websocket-facing activity response with hydrated resources."""
 
-    views: ActivityWebsocketViews | None = None
+    entries: ActivityWebsocketEntries | None = None
     resources: ActivityWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None

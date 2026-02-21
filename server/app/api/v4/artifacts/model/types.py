@@ -270,8 +270,8 @@ class GetModelApiResponse(BaseModel):
 # =============================================================================
 
 
-class ModelWebsocketViews(BaseModel):
-    """Optional websocket views payload."""
+class ModelWebsocketEntries(BaseModel):
+    """Optional websocket entries payload."""
 
     draft_model: QGetModelDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
@@ -307,7 +307,7 @@ class GetModelWebsocketResponse(BaseModel):
     """Minimal response for model websocket generation handlers."""
 
     group_id: UUID | None = None
-    views: ModelWebsocketViews | None = None
+    entries: ModelWebsocketEntries | None = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     resources: ModelWebsocketResources
 

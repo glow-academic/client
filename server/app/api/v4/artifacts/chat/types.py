@@ -405,7 +405,7 @@ class GetChatResponse(BaseModel):
 # =============================================================================
 
 
-class ChatWebsocketViews(BaseModel):
+class ChatWebsocketEntries(BaseModel):
     """Draft view for chat bundle websocket consumers."""
 
     draft_training: QGetTrainingDraftsEntriesV4Item | None = None
@@ -440,7 +440,7 @@ class ChatWebsocketResources(BaseModel):
 class GetChatWebsocketResponse(BaseModel):
     """Websocket-facing chat bundle response with hydrated resources."""
 
-    views: ChatWebsocketViews | None = None
+    entries: ChatWebsocketEntries | None = None
     resources: ChatWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
@@ -573,7 +573,7 @@ class PatchChatDraftSqlRow(BaseModel):
 # =============================================================================
 
 
-class ChatStartWebsocketViews(BaseModel):
+class ChatStartWebsocketEntries(BaseModel):
     """Thin websocket views payload for chat start."""
 
     training_entry_id: UUID
@@ -612,7 +612,7 @@ class ChatStartWebsocketResources(BaseModel):
 class GetChatStartWebsocketResponse(BaseModel):
     """Websocket-facing chat start response."""
 
-    views: ChatStartWebsocketViews
+    entries: ChatStartWebsocketEntries
     resources: ChatStartWebsocketResources
 
 

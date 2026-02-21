@@ -45,7 +45,7 @@ from app.api.v4.artifacts.dashboard.types import (
     DashboardRequest,
     DashboardSectionRequest,
     DashboardWebsocketResources,
-    DashboardWebsocketViews,
+    DashboardWebsocketEntries,
     GetDashboardWebsocketResponse,
 )
 from app.api.v4.artifacts.types import FilterOption, HistoryItem, HistoryResponse
@@ -1161,7 +1161,7 @@ async def get_dashboard_websocket(
             )
 
     return GetDashboardWebsocketResponse(
-        views=DashboardWebsocketViews(
+        entries=DashboardWebsocketEntries(
             runs=runs_result,
         ),
         resources=DashboardWebsocketResources(

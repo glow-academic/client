@@ -93,7 +93,7 @@ class GetFieldApiResponse(BaseModel):
     conditional_parameters: FieldConditionalParameterSection | None = None
 
 
-class FieldWebsocketViews(BaseModel):
+class FieldWebsocketEntries(BaseModel):
     draft_field: QGetFieldDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
 
@@ -114,7 +114,7 @@ class FieldWebsocketResources(BaseModel):
 
 
 class GetFieldWebsocketResponse(BaseModel):
-    views: FieldWebsocketViews | None = None
+    entries: FieldWebsocketEntries | None = None
     resources: FieldWebsocketResources
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
