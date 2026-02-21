@@ -464,41 +464,69 @@ async def _generate_artifact_impl(
         )
 
         if data.modality in ("image", "video"):
-            if not data.file_path:
+            if data.file_path:
+                # Pre-uploaded media passthrough
+                await _emit_modality_event(
+                    data.modality,
+                    "complete",
+                    {
+                        "modality": data.modality,
+                        "sid": sid,
+                        "artifact_type": data.artifact_type,
+                        "type": "complete",
+                        "event_type": "media_complete",
+                        "resource_type": resource_type,
+                        "resource_id": data.resource_id,
+                        "run_id": data.run_id,
+                        "group_id": data.group_id,
+                        "file_path": data.file_path,
+                        "mime_type": data.mime_type,
+                        "file_size": data.file_size,
+                        "upload_id": data.upload_id,
+                        "metadata": data.metadata,
+                    },
+                )
+                return
+
+            # AI-generated media via adapter
+            from app.infra.v4.websocket.media_lifecycle import get_media_adapter
+
+            adapter = get_media_adapter()
+            prompt = data.messages[-1]["content"] if data.messages else ""
+            context = {
+                "sid": sid,
+                "run_id": data.run_id,
+                "group_id": data.group_id,
+                "artifact_type": data.artifact_type,
+                "resource_type": resource_type,
+                "resource_id": data.resource_id,
+                "metadata": data.metadata,
+            }
+
+            try:
+                await adapter.generate(
+                    modality=data.modality,
+                    prompt=prompt,
+                    model=model_config.model,
+                    api_key=decrypted_api_key or "",
+                    base_url=model_config.base_url,
+                    quality=model_config.quality,
+                    extra_body=extra_body or None,
+                    context=context,
+                )
+            except Exception as e:
                 await _emit_modality_event(
                     data.modality,
                     "error",
                     GenerateErrorApiRequest(
                         sid=sid,
-                        error_message="Missing file_path for media generation",
+                        error_message=f"Media generation failed: {str(e)}",
                         artifact_type=data.artifact_type,
                         group_id=data.group_id,
                         resource_type=resource_type,
                         resource_id=data.resource_id,
                     ).model_dump(),
                 )
-                return
-
-            await _emit_modality_event(
-                data.modality,
-                "complete",
-                {
-                    "modality": data.modality,
-                    "sid": sid,
-                    "artifact_type": data.artifact_type,
-                    "type": "complete",
-                    "event_type": "media_complete",
-                    "resource_type": resource_type,
-                    "resource_id": data.resource_id,
-                    "run_id": data.run_id,
-                    "group_id": data.group_id,
-                    "file_path": data.file_path,
-                    "mime_type": data.mime_type,
-                    "file_size": data.file_size,
-                    "upload_id": data.upload_id,
-                    "metadata": data.metadata,
-                },
-            )
             return
 
         if data.modality == "audio":

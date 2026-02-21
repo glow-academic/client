@@ -341,7 +341,9 @@ async def generate_handler(data: dict[str, Any]) -> None:
         config_profile = config_profile_list[0] if config_profile_list else None
         requests_per_day = config_profile.requests_per_day if config_profile else None
         runs_today = (
-            result.entries.runs.total_count if result.entries and result.entries.runs else 0
+            result.entries.runs.total_count
+            if result.entries and result.entries.runs
+            else 0
         )
 
         if requests_per_day is not None and runs_today >= requests_per_day:
@@ -464,9 +466,9 @@ async def generate_handler(data: dict[str, Any]) -> None:
                         bypass_cache=True,
                     )
                 if config_view_items:
-                    jinja_context["entries"]["generation_config"] = (
-                        config_view_items[0].model_dump(mode="json")
-                    )
+                    jinja_context["entries"]["generation_config"] = config_view_items[
+                        0
+                    ].model_dump(mode="json")
 
             # Step 12: Render developer instructions with Jinja
             rendered_developer_messages = render_developer_instructions(
@@ -553,6 +555,12 @@ async def generate_handler(data: dict[str, Any]) -> None:
                     metadata["chat_id"] = payload.chat_id
                 if payload.save is not None:
                     metadata["save"] = payload.save
+
+                # Inject media agent IDs so generation_media.py can resolve them
+                if resource_agent_ids.get("images"):
+                    metadata["image_agent_id"] = str(resource_agent_ids["images"])
+                if resource_agent_ids.get("videos"):
+                    metadata["video_agent_id"] = str(resource_agent_ids["videos"])
 
                 await internal_sio.emit(
                     "generate_artifact",
