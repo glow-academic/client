@@ -23,11 +23,11 @@ from app.infra.v4.websocket.generation_tracker import (
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, get_pool
-from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.socket.v5.client.registry import REGISTRY, ArtifactGenerateConfig
 from app.socket.v5.client.types import GeneratePayload
 from app.socket.v5.internal.generate_artifact import GenerateArtifactPayload
 from app.socket.v5.internal.generation_types import GenerationStartedData
+from app.socket.v5.types import GenerateErrorApiRequest
 from app.sql.types import (
     PrepareAgentGenerationSqlParams,
     PrepareAgentGenerationSqlRow,

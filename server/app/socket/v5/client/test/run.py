@@ -19,11 +19,11 @@ from app.infra.v4.generation import convert_tools_to_dict, render_developer_inst
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, get_pool, sio
-from app.socket.v4.artifacts.test.run import (
-    _build_messages_from_conversation,
-    _determine_next_run,
-)
 from app.socket.v5.client.types import TestRunPayload
+from app.socket.v5.types import (
+    build_messages_from_conversation,
+    determine_next_run,
+)
 from app.sql.types import (
     GetToolsByResourceIdsSqlParams,
     GetToolsByResourceIdsSqlRow,
@@ -142,7 +142,7 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
             return
 
         # Determine next pending run
-        next_run_resource_id, current_run, total_runs = _determine_next_run(
+        next_run_resource_id, current_run, total_runs = determine_next_run(
             invocation_run_ids=invocation.invocation_run_ids,
             run_ids=invocation.run_ids,
         )
@@ -460,7 +460,7 @@ async def _test_run_impl(sid: str, data: TestRunPayload, profile_id: uuid.UUID) 
             jinja_context={},
         )
 
-        messages = _build_messages_from_conversation(
+        messages = build_messages_from_conversation(
             system_prompt=system_prompt,
             developer_instructions=developer_instructions,
             original_conversation=original_conversation,

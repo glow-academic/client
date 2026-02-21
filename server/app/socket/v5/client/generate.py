@@ -9,8 +9,8 @@ from typing import Any
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
-from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.socket.v5.client.types import GeneratePayload
+from app.socket.v5.types import GenerateErrorApiRequest
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

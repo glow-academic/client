@@ -11,8 +11,7 @@ from typing import Any
 
 from app.api.v4.artifacts.test.get import get_test_websocket
 from app.main import get_internal_sio, get_pool, sio
-from app.socket.v4.artifacts.test.run import _determine_next_run
-from app.socket.v4.artifacts.test.types import TestAllCompleteEvent
+from app.socket.v5.types import TestAllCompleteEvent, determine_next_run
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -68,7 +67,7 @@ async def _find_and_emit_next_run(sid: str, test_id: uuid.UUID) -> None:
 
     # Find first invocation with pending runs
     for invocation in result.views.test_invocation:
-        next_run_resource_id, current_run, total_runs = _determine_next_run(
+        next_run_resource_id, current_run, total_runs = determine_next_run(
             invocation_run_ids=invocation.invocation_run_ids,
             run_ids=invocation.run_ids,
         )

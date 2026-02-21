@@ -180,7 +180,7 @@ async def get_test_internal(
 
         # Dynamic agent fallback: resolve via entry-type bindings (like attempts)
         if not agent_ids.get("primary") and profile_id:
-            from app.socket.v4.artifacts.test.types import TEST_GRADE_ENTRY_TYPES
+            from app.socket.v5.types import TEST_GRADE_ENTRY_TYPES
 
             resolve_rows = await conn.fetch(
                 "SELECT entry_type, agent_id FROM socket_resolve_attempt_entries_v4($1, $2)",

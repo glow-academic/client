@@ -27,7 +27,7 @@ from app.infra.v4.tools.tool_executor import execute_tool_call
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio
-from app.socket.v4.artifacts.types import GenerateErrorApiRequest
+from app.socket.v5.types import GenerateErrorApiRequest
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 
 # Try to import litellm
