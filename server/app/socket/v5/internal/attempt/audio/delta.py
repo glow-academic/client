@@ -7,6 +7,7 @@ from typing import Any
 
 from app.infra.v4.websocket.session_store import get_session_by_group_id
 from app.main import get_internal_sio
+from app.socket.v5.internal.attempt.types import AttemptAssistantProgressData
 
 internal_sio = get_internal_sio()
 
@@ -25,10 +26,10 @@ async def handle_audio_delta(data: dict[str, Any]) -> None:
         return
     await internal_sio.emit(
         "attempt_assistant_progress",
-        {
-            "sid": session.sid,
-            "chat_id": session.chat_id,
-            "content_type": "audio",
-            "audio": audio_data,
-        },
+        AttemptAssistantProgressData(
+            sid=session.sid,
+            chat_id=session.chat_id,
+            content_type="audio",
+            audio=audio_data,
+        ).model_dump(mode="json"),
     )

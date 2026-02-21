@@ -14,6 +14,7 @@ from app.infra.v4.websocket.cancel_active_run import cancel_active_run
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
 from app.socket.v5.client.types import AttemptStopPayload
+from app.socket.v5.internal.attempt.types import AttemptErrorData, AttemptStoppedData
 from app.sql.types import SimulationTextStopRunSqlParams, SimulationTextStopRunSqlRow
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
@@ -54,13 +55,13 @@ async def _attempt_stop_impl(sid: str, data: AttemptStopPayload) -> None:
             # Emit to sid + attempt room via server layer
             await internal_sio.emit(
                 "attempt_stopped",
-                {
-                    "sid": sid,
-                    "rooms": [sid, f"attempt_{chat_id}"],
-                    "chat_id": chat_id,
-                    "success": True,
-                    "message": None,
-                },
+                AttemptStoppedData(
+                    sid=sid,
+                    rooms=[sid, f"attempt_{chat_id}"],
+                    chat_id=chat_id,
+                    success=True,
+                    message=None,
+                ).model_dump(mode="json"),
             )
 
             # Log activity
@@ -78,24 +79,24 @@ async def _attempt_stop_impl(sid: str, data: AttemptStopPayload) -> None:
         else:
             await internal_sio.emit(
                 "attempt_stopped",
-                {
-                    "sid": sid,
-                    "chat_id": chat_id,
-                    "success": False,
-                    "message": "No active message found for this chat",
-                },
+                AttemptStoppedData(
+                    sid=sid,
+                    chat_id=chat_id,
+                    success=False,
+                    message="No active message found for this chat",
+                ).model_dump(mode="json"),
             )
 
     except Exception as e:
         logger.exception(f"Error in attempt_stop_message: {e}")
         await internal_sio.emit(
             "attempt_error",
-            {
-                "sid": sid,
-                "error_type": "stop",
-                "message": f"Failed to stop: {e}",
-                "chat_id": str(data.chat_id) if data else None,
-            },
+            AttemptErrorData(
+                sid=sid,
+                error_type="stop",
+                message=f"Failed to stop: {e}",
+                chat_id=str(data.chat_id) if data else None,
+            ).model_dump(mode="json"),
         )
 
 
@@ -110,10 +111,10 @@ async def attempt_stop_message(sid: str, data: dict[str, Any]) -> None:
         chat_id = data.get("chat_id", "")
         await internal_sio.emit(
             "attempt_error",
-            {
-                "sid": sid,
-                "error_type": "stop",
-                "message": f"Invalid request: {e}",
-                "chat_id": str(chat_id) if chat_id else None,
-            },
+            AttemptErrorData(
+                sid=sid,
+                error_type="stop",
+                message=f"Invalid request: {e}",
+                chat_id=str(chat_id) if chat_id else None,
+            ).model_dump(mode="json"),
         )

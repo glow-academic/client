@@ -9,6 +9,7 @@ from typing import Any
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.main import get_internal_sio, sio
 from app.socket.v5.client.types import AttemptGradePayload
+from app.socket.v5.internal.attempt.types import AttemptErrorData
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -26,11 +27,11 @@ async def attempt_grade(sid: str, data: dict[str, Any]) -> None:
         if not profile_id_str:
             await internal_sio.emit(
                 "attempt_error",
-                {
-                    "sid": sid,
-                    "error_type": "grade",
-                    "message": "Profile not found. Please reconnect.",
-                },
+                AttemptErrorData(
+                    sid=sid,
+                    error_type="grade",
+                    message="Profile not found. Please reconnect.",
+                ).model_dump(mode="json"),
             )
             return
 
@@ -47,9 +48,9 @@ async def attempt_grade(sid: str, data: dict[str, Any]) -> None:
         logger.exception(f"Invalid request in attempt_grade: {e}")
         await internal_sio.emit(
             "attempt_error",
-            {
-                "sid": sid,
-                "error_type": "grade",
-                "message": f"Invalid request: {e}",
-            },
+            AttemptErrorData(
+                sid=sid,
+                error_type="grade",
+                message=f"Invalid request: {e}",
+            ).model_dump(mode="json"),
         )

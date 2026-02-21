@@ -19,6 +19,11 @@ from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio
 from app.socket.v5.client.types import AttemptStartPayload
+from app.socket.v5.internal.attempt.types import (
+    AttemptEndedData,
+    AttemptErrorData,
+    AttemptStartedData,
+)
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -111,11 +116,11 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
             if not payload.training_entry_id:
                 await internal_sio.emit(
                     "attempt_error",
-                    {
-                        "sid": sid,
-                        "error_type": "start",
-                        "message": "training_entry_id is required to create an attempt",
-                    },
+                    AttemptErrorData(
+                        sid=sid,
+                        error_type="start",
+                        message="training_entry_id is required to create an attempt",
+                    ).model_dump(mode="json"),
                 )
                 return
 
@@ -134,11 +139,11 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
             # Emit attempt_started to client via server layer
             await internal_sio.emit(
                 "attempt_started",
-                {
-                    "sid": sid,
-                    "attempt_id": str(attempt_id),
-                    "training_entry_id": str(payload.training_entry_id),
-                },
+                AttemptStartedData(
+                    sid=sid,
+                    attempt_id=str(attempt_id),
+                    training_entry_id=str(payload.training_entry_id),
+                ).model_dump(mode="json"),
             )
 
             # Step 3: GET from MV for training context
@@ -174,11 +179,11 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
                 logger.warning(f"No training context in MV for attempt {attempt_id}")
                 await internal_sio.emit(
                     "attempt_error",
-                    {
-                        "sid": sid,
-                        "error_type": "start",
-                        "message": "Attempt context not found",
-                    },
+                    AttemptErrorData(
+                        sid=sid,
+                        error_type="start",
+                        message="Attempt context not found",
+                    ).model_dump(mode="json"),
                 )
                 return
 
@@ -205,22 +210,22 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
                 # All scenarios complete — emit attempt_ended
                 await internal_sio.emit(
                     "attempt_ended",
-                    {
-                        "sid": sid,
-                        "attempt_id": str(attempt_id),
-                        "success": True,
-                        "all_scenarios_complete": True,
-                        "message": "All scenarios completed",
-                    },
+                    AttemptEndedData(
+                        sid=sid,
+                        attempt_id=str(attempt_id),
+                        success=True,
+                        all_scenarios_complete=True,
+                        message="All scenarios completed",
+                    ).model_dump(mode="json"),
                 )
 
     except Exception as e:
         logger.exception(f"Error in attempt_start: {e}")
         await internal_sio.emit(
             "attempt_error",
-            {
-                "sid": sid,
-                "error_type": "start",
-                "message": f"Failed to start attempt: {e}",
-            },
+            AttemptErrorData(
+                sid=sid,
+                error_type="start",
+                message=f"Failed to start attempt: {e}",
+            ).model_dump(mode="json"),
         )

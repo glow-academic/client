@@ -14,6 +14,11 @@ from typing import Any, cast
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio
+from app.socket.v5.internal.attempt.types import (
+    AttemptChatEndedData,
+    AttemptChatStartedData,
+    AttemptErrorData,
+)
 from app.sql.types import (
     CreateAttemptChatSqlParams,
     CreateAttemptChatSqlRow,
@@ -80,12 +85,12 @@ async def _attempt_chat_impl(sid: str, data: dict[str, Any]) -> None:
             # Emit attempt_chat_ended to client via server layer
             await internal_sio.emit(
                 "attempt_chat_ended",
-                {
-                    "sid": sid,
-                    "chat_id": last_chat_id or "",
-                    "is_attempt_finished": None,
-                    "grade_id": None,
-                },
+                AttemptChatEndedData(
+                    sid=sid,
+                    chat_id=last_chat_id or "",
+                    is_attempt_finished=None,
+                    grade_id=None,
+                ).model_dump(mode="json"),
             )
 
             # Auto-proceed: emit attempt_start in Next mode
@@ -139,22 +144,22 @@ async def _attempt_chat_impl(sid: str, data: dict[str, Any]) -> None:
             # Emit attempt_chat_started to client via server layer
             await internal_sio.emit(
                 "attempt_chat_started",
-                {
-                    "sid": sid,
-                    "attempt_id": str(attempt_id),
-                    "chat_id": str(chat_id),
-                },
+                AttemptChatStartedData(
+                    sid=sid,
+                    attempt_id=str(attempt_id),
+                    chat_id=str(chat_id),
+                ).model_dump(mode="json"),
             )
 
     except Exception as e:
         logger.exception(f"Error in attempt_chat: {str(e)}")
         await internal_sio.emit(
             "attempt_error",
-            {
-                "sid": sid,
-                "error_type": "chat",
-                "message": f"Failed to handle chat lifecycle: {str(e)}",
-            },
+            AttemptErrorData(
+                sid=sid,
+                error_type="chat",
+                message=f"Failed to handle chat lifecycle: {str(e)}",
+            ).model_dump(mode="json"),
         )
 
 

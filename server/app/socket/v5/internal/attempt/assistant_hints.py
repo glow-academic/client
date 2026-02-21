@@ -6,6 +6,7 @@ Fires when a tool result contains hints (entry_type == "hints").
 from typing import Any
 
 from app.main import get_internal_sio
+from app.socket.v5.internal.attempt.types import AttemptAssistantHintsData
 
 internal_sio = get_internal_sio()
 
@@ -25,9 +26,9 @@ async def handle_attempt_assistant_hints(data: dict[str, Any]) -> None:
     result = data.get("result") or {}
     await internal_sio.emit(
         "attempt_assistant_hints",
-        {
-            "sid": data.get("sid", ""),
-            "chat_id": metadata.get("chat_id", ""),
-            "hints": result.get("hints", []),
-        },
+        AttemptAssistantHintsData(
+            sid=data.get("sid", ""),
+            chat_id=metadata.get("chat_id", ""),
+            hints=result.get("hints", []),
+        ).model_dump(mode="json"),
     )

@@ -10,6 +10,7 @@ from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
 from app.socket.v5.client.types import AttemptEndAllPayload
+from app.socket.v5.internal.attempt.types import AttemptEndedData, AttemptErrorData
 from app.sql.types import EndAllAttemptChatsSqlParams, EndAllAttemptChatsSqlRow
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
@@ -52,12 +53,12 @@ async def _attempt_end_all_impl(sid: str, data: AttemptEndAllPayload) -> None:
             # Emit attempt_ended via server layer
             await internal_sio.emit(
                 "attempt_ended",
-                {
-                    "sid": sid,
-                    "attempt_id": attempt_id,
-                    "success": True,
-                    "message": "All chats ended",
-                },
+                AttemptEndedData(
+                    sid=sid,
+                    attempt_id=attempt_id,
+                    success=True,
+                    message="All chats ended",
+                ).model_dump(mode="json"),
             )
 
             # Log activity
@@ -77,11 +78,11 @@ async def _attempt_end_all_impl(sid: str, data: AttemptEndAllPayload) -> None:
         logger.exception(f"Error in attempt_end_all: {e}")
         await internal_sio.emit(
             "attempt_error",
-            {
-                "sid": sid,
-                "error_type": "end",
-                "message": f"Failed to end all chats: {e}",
-            },
+            AttemptErrorData(
+                sid=sid,
+                error_type="end",
+                message=f"Failed to end all chats: {e}",
+            ).model_dump(mode="json"),
         )
 
 
@@ -96,9 +97,9 @@ async def attempt_end_all(sid: str, data: dict[str, Any]) -> None:
         logger.exception(f"Invalid request in attempt_end_all: {e}")
         await internal_sio.emit(
             "attempt_error",
-            {
-                "sid": sid,
-                "error_type": "end",
-                "message": f"Invalid request: {e}",
-            },
+            AttemptErrorData(
+                sid=sid,
+                error_type="end",
+                message=f"Invalid request: {e}",
+            ).model_dump(mode="json"),
         )

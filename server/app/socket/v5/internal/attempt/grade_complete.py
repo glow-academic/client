@@ -6,6 +6,7 @@ Fires on run_complete for attempt-related artifacts when grade_id is present in 
 from typing import Any
 
 from app.main import get_internal_sio
+from app.socket.v5.internal.attempt.types import AttemptGradeCompleteData
 
 internal_sio = get_internal_sio()
 
@@ -24,9 +25,9 @@ async def handle_attempt_grade_complete(data: dict[str, Any]) -> None:
         return
     await internal_sio.emit(
         "attempt_grade_complete",
-        {
-            "sid": data.get("sid", ""),
-            "chat_id": metadata.get("chat_id", ""),
-            "grade_id": metadata.get("grade_id", ""),
-        },
+        AttemptGradeCompleteData(
+            sid=data.get("sid", ""),
+            chat_id=metadata.get("chat_id", ""),
+            grade_id=metadata.get("grade_id", ""),
+        ).model_dump(mode="json"),
     )

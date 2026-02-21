@@ -8,6 +8,7 @@ from typing import Any
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.session_store import get_session_by_group_id
 from app.main import get_internal_sio
+from app.socket.v5.internal.attempt.types import AttemptAudioEndedData
 
 internal_sio = get_internal_sio()
 
@@ -23,12 +24,12 @@ async def handle_audio_complete(data: dict[str, Any]) -> None:
     chat_id = session.chat_id if session else (group_id or "")
     await internal_sio.emit(
         "attempt_audio_ended",
-        {
-            "sid": sid,
-            "chat_id": chat_id,
-            "success": True,
-            "message": "Voice session stopped",
-        },
+        AttemptAudioEndedData(
+            sid=sid,
+            chat_id=chat_id,
+            success=True,
+            message="Voice session stopped",
+        ).model_dump(mode="json"),
     )
 
     # Log activity

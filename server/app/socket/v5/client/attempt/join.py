@@ -8,6 +8,7 @@ from typing import Any
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.main import get_internal_sio, sio
 from app.socket.v5.client.types import AttemptJoinPayload
+from app.socket.v5.internal.attempt.types import AttemptErrorData, AttemptJoinedData
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -25,12 +26,12 @@ async def attempt_join(sid: str, data: dict[str, Any]) -> None:
         if not profile_id_str:
             await internal_sio.emit(
                 "attempt_error",
-                {
-                    "sid": sid,
-                    "error_type": "join",
-                    "message": "Profile not found. Please reconnect.",
-                    "chat_id": str(payload.chat_id),
-                },
+                AttemptErrorData(
+                    sid=sid,
+                    error_type="join",
+                    message="Profile not found. Please reconnect.",
+                    chat_id=str(payload.chat_id),
+                ).model_dump(mode="json"),
             )
             return
 
@@ -40,11 +41,11 @@ async def attempt_join(sid: str, data: dict[str, Any]) -> None:
 
         await internal_sio.emit(
             "attempt_joined",
-            {
-                "sid": sid,
-                "chat_id": chat_id,
-                "success": True,
-            },
+            AttemptJoinedData(
+                sid=sid,
+                chat_id=chat_id,
+                success=True,
+            ).model_dump(mode="json"),
         )
 
     except Exception as e:
@@ -52,10 +53,10 @@ async def attempt_join(sid: str, data: dict[str, Any]) -> None:
         chat_id = data.get("chat_id", "")
         await internal_sio.emit(
             "attempt_error",
-            {
-                "sid": sid,
-                "error_type": "join",
-                "message": f"Failed to join room: {e}",
-                "chat_id": str(chat_id) if chat_id else None,
-            },
+            AttemptErrorData(
+                sid=sid,
+                error_type="join",
+                message=f"Failed to join room: {e}",
+                chat_id=str(chat_id) if chat_id else None,
+            ).model_dump(mode="json"),
         )

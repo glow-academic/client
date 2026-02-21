@@ -7,6 +7,7 @@ Fires on run_complete for attempt-related artifacts when there is no grade_id
 from typing import Any
 
 from app.main import get_internal_sio
+from app.socket.v5.internal.attempt.types import AttemptAssistantCompleteData
 
 internal_sio = get_internal_sio()
 
@@ -25,10 +26,10 @@ async def handle_attempt_assistant_complete(data: dict[str, Any]) -> None:
         return  # Grade completion, not assistant
     await internal_sio.emit(
         "attempt_assistant_complete",
-        {
-            "sid": data.get("sid", ""),
-            "chat_id": metadata.get("chat_id", ""),
-            "message_id": "",
-            "content": data.get("assistant_output", ""),
-        },
+        AttemptAssistantCompleteData(
+            sid=data.get("sid", ""),
+            chat_id=metadata.get("chat_id", ""),
+            message_id="",
+            content=data.get("assistant_output", ""),
+        ).model_dump(mode="json"),
     )

@@ -7,6 +7,7 @@ from typing import Any
 
 from app.infra.v4.websocket.session_store import get_session_by_group_id
 from app.main import get_internal_sio
+from app.socket.v5.internal.attempt.types import AttemptUserProgressData
 
 internal_sio = get_internal_sio()
 
@@ -25,10 +26,10 @@ async def handle_user_speech_delta(data: dict[str, Any]) -> None:
         return
     await internal_sio.emit(
         "attempt_user_progress",
-        {
-            "sid": session.sid,
-            "chat_id": session.chat_id,
-            "item_id": item_id,
-            "transcript": data.get("transcript", ""),
-        },
+        AttemptUserProgressData(
+            sid=session.sid,
+            chat_id=session.chat_id,
+            item_id=item_id,
+            transcript=data.get("transcript", ""),
+        ).model_dump(mode="json"),
     )

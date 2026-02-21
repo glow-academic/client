@@ -12,6 +12,7 @@ from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
 from app.socket.v5.client.types import AttemptUsePreviousPayload
+from app.socket.v5.internal.attempt.types import AttemptChatEndedData, AttemptErrorData
 from app.sql.types import (
     UsePreviousAttemptGradesSqlParams,
     UsePreviousAttemptGradesSqlRow,
@@ -73,12 +74,12 @@ async def _attempt_use_previous_impl(sid: str, data: AttemptUsePreviousPayload) 
             # Emit attempt_chat_ended via server layer
             await internal_sio.emit(
                 "attempt_chat_ended",
-                {
-                    "sid": sid,
-                    "chat_id": last_chat_id or "",
-                    "is_attempt_finished": None,
-                    "grade_id": None,
-                },
+                AttemptChatEndedData(
+                    sid=sid,
+                    chat_id=last_chat_id or "",
+                    is_attempt_finished=None,
+                    grade_id=None,
+                ).model_dump(mode="json"),
             )
 
         # Log activity
@@ -98,11 +99,11 @@ async def _attempt_use_previous_impl(sid: str, data: AttemptUsePreviousPayload) 
         logger.exception(f"Error in attempt_use_previous: {e}")
         await internal_sio.emit(
             "attempt_error",
-            {
-                "sid": sid,
-                "error_type": "end",
-                "message": f"Failed to use previous grades: {e}",
-            },
+            AttemptErrorData(
+                sid=sid,
+                error_type="end",
+                message=f"Failed to use previous grades: {e}",
+            ).model_dump(mode="json"),
         )
 
 
@@ -116,11 +117,11 @@ async def attempt_use_previous(sid: str, data: dict[str, Any]) -> None:
         if not profile_id_str:
             await internal_sio.emit(
                 "attempt_error",
-                {
-                    "sid": sid,
-                    "error_type": "end",
-                    "message": "Profile not found. Please reconnect.",
-                },
+                AttemptErrorData(
+                    sid=sid,
+                    error_type="end",
+                    message="Profile not found. Please reconnect.",
+                ).model_dump(mode="json"),
             )
             return
 
@@ -130,9 +131,9 @@ async def attempt_use_previous(sid: str, data: dict[str, Any]) -> None:
         logger.exception(f"Invalid request in attempt_use_previous: {e}")
         await internal_sio.emit(
             "attempt_error",
-            {
-                "sid": sid,
-                "error_type": "end",
-                "message": f"Invalid request: {e}",
-            },
+            AttemptErrorData(
+                sid=sid,
+                error_type="end",
+                message=f"Invalid request: {e}",
+            ).model_dump(mode="json"),
         )

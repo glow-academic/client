@@ -6,6 +6,7 @@ Fires on per-criterion grade results (tool_result with grade_id in metadata).
 from typing import Any
 
 from app.main import get_internal_sio
+from app.socket.v5.internal.attempt.types import AttemptGradeProgressData
 
 internal_sio = get_internal_sio()
 
@@ -24,11 +25,11 @@ async def handle_attempt_grade_progress(data: dict[str, Any]) -> None:
     result = data.get("result") or {}
     await internal_sio.emit(
         "attempt_grade_progress",
-        {
-            "sid": data.get("sid", ""),
-            "chat_id": metadata.get("chat_id", ""),
-            "grade_id": metadata.get("grade_id", ""),
-            "resource_type": data.get("resource_type", ""),
-            "entry": result,
-        },
+        AttemptGradeProgressData(
+            sid=data.get("sid", ""),
+            chat_id=metadata.get("chat_id", ""),
+            grade_id=metadata.get("grade_id", ""),
+            resource_type=data.get("resource_type", ""),
+            entry=result,
+        ).model_dump(mode="json"),
     )

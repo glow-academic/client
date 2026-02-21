@@ -13,6 +13,7 @@ from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.session_store import get_session_by_group_id
 from app.main import get_internal_sio
+from app.socket.v5.internal.attempt.types import AttemptUserCompleteData
 from app.sql.types import (
     PrepareVoiceUserMessageSqlParams,
     PrepareVoiceUserMessageSqlRow,
@@ -76,16 +77,14 @@ async def handle_user_speech_complete(data: dict[str, Any]) -> None:
 
         await internal_sio.emit(
             "attempt_user_complete",
-            {
-                "sid": session.sid,
-                "chat_id": session.chat_id,
-                "message_id": str(result.user_message_id),
-                "content": transcript.strip(),
-                "created_at": (
-                    result.created_at.isoformat() if result.created_at else ""
-                ),
-                "item_id": item_id,
-            },
+            AttemptUserCompleteData(
+                sid=session.sid,
+                chat_id=session.chat_id,
+                message_id=str(result.user_message_id),
+                content=transcript.strip(),
+                created_at=(result.created_at.isoformat() if result.created_at else ""),
+                item_id=item_id,
+            ).model_dump(mode="json"),
         )
 
         logger.info(

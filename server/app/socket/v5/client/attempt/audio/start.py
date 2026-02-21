@@ -12,6 +12,7 @@ from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
 from app.socket.v5.client.types import AttemptAudioStartPayload
+from app.socket.v5.internal.attempt.types import AttemptErrorData
 from app.sql.types import (
     GetAudioStartContextSqlParams,
     GetAudioStartContextSqlRow,
@@ -46,11 +47,11 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
         if not profile_id_str:
             await internal_sio.emit(
                 "attempt_error",
-                {
-                    "sid": sid,
-                    "error_type": "audio",
-                    "message": "Profile not found. Please reconnect.",
-                },
+                AttemptErrorData(
+                    sid=sid,
+                    error_type="audio",
+                    message="Profile not found. Please reconnect.",
+                ).model_dump(mode="json"),
             )
             return
 
@@ -73,24 +74,24 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
         if not context_row or not context_row.chat_exists:
             await internal_sio.emit(
                 "attempt_error",
-                {
-                    "sid": sid,
-                    "error_type": "audio",
-                    "message": "Chat not found",
-                    "chat_id": chat_id,
-                },
+                AttemptErrorData(
+                    sid=sid,
+                    error_type="audio",
+                    message="Chat not found",
+                    chat_id=chat_id,
+                ).model_dump(mode="json"),
             )
             return
 
         if context_row.chat_is_completed:
             await internal_sio.emit(
                 "attempt_error",
-                {
-                    "sid": sid,
-                    "error_type": "audio",
-                    "message": "Chat is already completed",
-                    "chat_id": chat_id,
-                },
+                AttemptErrorData(
+                    sid=sid,
+                    error_type="audio",
+                    message="Chat is already completed",
+                    chat_id=chat_id,
+                ).model_dump(mode="json"),
             )
             return
 
@@ -107,12 +108,12 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
             )
             await internal_sio.emit(
                 "attempt_error",
-                {
-                    "sid": sid,
-                    "error_type": "audio",
-                    "message": error_msg,
-                    "chat_id": chat_id,
-                },
+                AttemptErrorData(
+                    sid=sid,
+                    error_type="audio",
+                    message=error_msg,
+                    chat_id=chat_id,
+                ).model_dump(mode="json"),
             )
             return
 
@@ -120,12 +121,12 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
         if not attempt_id:
             await internal_sio.emit(
                 "attempt_error",
-                {
-                    "sid": sid,
-                    "error_type": "audio",
-                    "message": "Attempt not found for this chat",
-                    "chat_id": chat_id,
-                },
+                AttemptErrorData(
+                    sid=sid,
+                    error_type="audio",
+                    message="Attempt not found for this chat",
+                    chat_id=chat_id,
+                ).model_dump(mode="json"),
             )
             return
 
@@ -146,12 +147,12 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
         if not prepare_row or not prepare_row.run_id:
             await internal_sio.emit(
                 "attempt_error",
-                {
-                    "sid": sid,
-                    "error_type": "audio",
-                    "message": "Failed to prepare audio session",
-                    "chat_id": chat_id,
-                },
+                AttemptErrorData(
+                    sid=sid,
+                    error_type="audio",
+                    message="Failed to prepare audio session",
+                    chat_id=chat_id,
+                ).model_dump(mode="json"),
             )
             return
 
@@ -194,9 +195,9 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
         logger.exception(f"Error in attempt_audio_start: {e}")
         await internal_sio.emit(
             "attempt_error",
-            {
-                "sid": sid,
-                "error_type": "audio",
-                "message": f"Failed to start voice session: {e}",
-            },
+            AttemptErrorData(
+                sid=sid,
+                error_type="audio",
+                message=f"Failed to start voice session: {e}",
+            ).model_dump(mode="json"),
         )

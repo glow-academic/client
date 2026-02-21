@@ -7,6 +7,7 @@ from typing import Any
 
 from app.infra.v4.websocket.session_store import get_session_by_group_id
 from app.main import get_internal_sio
+from app.socket.v5.internal.attempt.types import AttemptErrorData
 
 internal_sio = get_internal_sio()
 
@@ -22,10 +23,10 @@ async def handle_audio_error(data: dict[str, Any]) -> None:
         return
     await internal_sio.emit(
         "attempt_error",
-        {
-            "sid": session.sid,
-            "error_type": "audio",
-            "message": data.get("error_message", "Unknown audio error"),
-            "chat_id": session.chat_id,
-        },
+        AttemptErrorData(
+            sid=session.sid,
+            error_type="audio",
+            message=data.get("error_message", "Unknown audio error"),
+            chat_id=session.chat_id,
+        ).model_dump(mode="json"),
     )

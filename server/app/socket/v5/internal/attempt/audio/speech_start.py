@@ -7,6 +7,7 @@ from typing import Any
 
 from app.infra.v4.websocket.session_store import get_session_by_group_id
 from app.main import get_internal_sio
+from app.socket.v5.internal.attempt.types import AttemptUserStartData
 
 internal_sio = get_internal_sio()
 
@@ -25,9 +26,9 @@ async def handle_user_speech_start(data: dict[str, Any]) -> None:
         return
     await internal_sio.emit(
         "attempt_user_start",
-        {
-            "sid": session.sid,
-            "chat_id": session.chat_id,
-            "item_id": item_id,
-        },
+        AttemptUserStartData(
+            sid=session.sid,
+            chat_id=session.chat_id,
+            item_id=item_id,
+        ).model_dump(mode="json"),
     )

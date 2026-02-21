@@ -11,6 +11,7 @@ from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.main import get_internal_sio, sio
 from app.socket.v5.client.types import AttemptEndPayload
+from app.socket.v5.internal.attempt.types import AttemptErrorData
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -61,12 +62,12 @@ async def _attempt_end_impl(sid: str, data: AttemptEndPayload) -> None:
         logger.exception(f"Error in attempt_end: {e}")
         await internal_sio.emit(
             "attempt_error",
-            {
-                "sid": sid,
-                "error_type": "end",
-                "message": f"Failed to end chat: {e}",
-                "chat_id": str(data.chat_id) if data.chat_id else None,
-            },
+            AttemptErrorData(
+                sid=sid,
+                error_type="end",
+                message=f"Failed to end chat: {e}",
+                chat_id=str(data.chat_id) if data.chat_id else None,
+            ).model_dump(mode="json"),
         )
 
 
@@ -80,11 +81,11 @@ async def attempt_end(sid: str, data: dict[str, Any]) -> None:
         if not profile_id_str:
             await internal_sio.emit(
                 "attempt_error",
-                {
-                    "sid": sid,
-                    "error_type": "end",
-                    "message": "Profile not found. Please reconnect.",
-                },
+                AttemptErrorData(
+                    sid=sid,
+                    error_type="end",
+                    message="Profile not found. Please reconnect.",
+                ).model_dump(mode="json"),
             )
             return
 
@@ -94,9 +95,9 @@ async def attempt_end(sid: str, data: dict[str, Any]) -> None:
         logger.exception(f"Invalid request in attempt_end: {e}")
         await internal_sio.emit(
             "attempt_error",
-            {
-                "sid": sid,
-                "error_type": "end",
-                "message": f"Invalid request: {e}",
-            },
+            AttemptErrorData(
+                sid=sid,
+                error_type="end",
+                message=f"Invalid request: {e}",
+            ).model_dump(mode="json"),
         )
