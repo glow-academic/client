@@ -260,9 +260,9 @@ async def _attempt_generate_impl(
             return
 
         # Step 2: Extract LLM config from pre-fetched resources
-        config_agents = result.resources.agents or [] if result.resources else []
-        config_models = result.resources.models or [] if result.resources else []
-        config_providers = result.resources.providers or [] if result.resources else []
+        config_agents = result.resources.config_agents or [] if result.resources else []
+        config_models = result.resources.config_models or [] if result.resources else []
+        config_providers = result.resources.config_providers or [] if result.resources else []
 
         agent_resource = config_agents[0] if config_agents else None
         model_resource = config_models[0] if config_models else None
@@ -745,7 +745,7 @@ async def _attempt_generate_impl(
             # Convert tools and attach _args_outputs for output schema resolution
             tool_dicts = convert_tools_to_dict(tools)
             if tool_dicts and result.resources:
-                resource_tools = result.resources.tools or []
+                resource_tools = result.resources.config_tools or []
                 tool_output_ids_by_name: dict[str, list] = {}
                 for rt in resource_tools:
                     if rt.name and rt.args_output_ids:

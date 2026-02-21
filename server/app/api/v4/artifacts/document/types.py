@@ -160,10 +160,10 @@ class DocumentWebsocketResources(BaseModel):
     uploads: list[QGetUploadsV4Item] | None = None
     images: list[QGetImagesV4Item] | None = None
     texts: list[QGetTextsV4Item] | None = None
-    agents: list[QGetAgentsV4Item] | None = None
-    models: list[QGetModelsV4Item] | None = None
-    providers: list[QGetProvidersV4Item] | None = None
-    tools: list[QGetToolsV4Item] | None = None
+    config_agents: list[QGetAgentsV4Item] | None = None
+    config_models: list[QGetModelsV4Item] | None = None
+    config_providers: list[QGetProvidersV4Item] | None = None
+    config_tools: list[QGetToolsV4Item] | None = None
     config_args: list[QGetArgsV4Item] | None = None
     config_args_outputs: list[QGetArgsOutputsV4Item] | None = None
     config_profile: list[QGetProfilesV4Item] | None = None

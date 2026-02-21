@@ -142,19 +142,19 @@ class AgentWebsocketResources(BaseModel):
 
     names: list[QGetNamesV4Item] | None = None
     descriptions: list[QGetDescriptionsV4Item] | None = None
-    models: list[QGetModelsV4Item] | None = None
     prompts: list[QGetPromptsV4Item] | None = None
     instructions: list[QGetInstructionsV4Item] | None = None
     flags: list[AgentFlagConfig] | None = None
     departments: list[QGetDepartmentsV4Item] | None = None
-    tools: list[QGetToolsV4Item] | None = None
     config_args: list[QGetArgsV4Item] | None = None
     config_args_outputs: list[QGetArgsOutputsV4Item] | None = None
     temperature_levels: list[QGetTemperatureLevelsV4Item] | None = None
     reasoning_levels: list[QGetReasoningLevelsV4Item] | None = None
     voices: list[QGetVoicesV4Item] | None = None
-    agents: list[QGetAgentsV4Item] | None = None
-    providers: list[QGetProvidersV4Item] | None = None
+    config_agents: list[QGetAgentsV4Item] | None = None
+    config_models: list[QGetModelsV4Item] | None = None
+    config_providers: list[QGetProvidersV4Item] | None = None
+    config_tools: list[QGetToolsV4Item] | None = None
     config_profile: list[QGetProfilesV4Item] | None = None
 
 

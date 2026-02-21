@@ -912,10 +912,10 @@ async def get_simulation_websocket(
                 if data.resources_payload.resources
                 else None
             ),
-            agents=data.config_agent_resources,
-            models=data.config_model_resources,
-            providers=data.config_provider_resources,
-            tools=tools_result or None,
+            config_agents=data.config_agent_resources,
+            config_models=data.config_model_resources,
+            config_providers=data.config_provider_resources,
+            config_tools=tools_result or None,
             config_args=config_args,
             config_args_outputs=config_args_outputs,
             config_profile=config_profile_result or None,

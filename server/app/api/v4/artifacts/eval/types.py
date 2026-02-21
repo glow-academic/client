@@ -219,10 +219,10 @@ class EvalWebsocketResources(BaseModel):
     group_positions: list[QGetGroupPositionsV4Item] | None = None
     run_rubrics: list[QGetRunRubricsV4Item] | None = None
     group_rubrics: list[QGetGroupRubricsV4Item] | None = None
-    agents: list[QGetAgentsV4Item] | None = None
-    models: list[QGetModelsV4Item] | None = None
-    providers: list[QGetProvidersV4Item] | None = None
-    tools: list[QGetToolsV4Item] | None = None
+    config_agents: list[QGetAgentsV4Item] | None = None
+    config_models: list[QGetModelsV4Item] | None = None
+    config_providers: list[QGetProvidersV4Item] | None = None
+    config_tools: list[QGetToolsV4Item] | None = None
     config_args: list[QGetArgsV4Item] | None = None
     config_args_outputs: list[QGetArgsOutputsV4Item] | None = None
     config_profile: list[QGetProfilesV4Item] | None = None

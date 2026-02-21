@@ -602,10 +602,10 @@ async def get_test_websocket(
         rubrics=data.resources_payload.rubrics,
         names=data.resources_payload.names,
         # Config resources
-        agents=data.config_agent_resources,
-        models=data.config_model_resources,
-        providers=data.config_provider_resources,
-        tools=config_tools,
+        config_agents=data.config_agent_resources,
+        config_models=data.config_model_resources,
+        config_providers=data.config_provider_resources,
+        config_tools=config_tools,
         config_args=config_args,
         config_args_outputs=config_args_outputs,
         # Profile config (for rate limiting)

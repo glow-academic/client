@@ -35,9 +35,9 @@ class ArtifactGenerateConfig:
     draft_view_key: str
 
     # Attribute names on result.resources for config chain
-    config_agents_attr: str = "agents"
-    config_models_attr: str = "models"
-    config_providers_attr: str = "providers"
+    config_agents_attr: str = "config_agents"
+    config_models_attr: str = "config_models"
+    config_providers_attr: str = "config_providers"
     config_tools_attr: str = "config_tools"
     config_args_outputs_attr: str = "config_args_outputs"
 
@@ -1023,8 +1023,6 @@ _register(
         ],
         prepare_sql_path="app/sql/v4/queries/generate/persona/prepare_persona_generation_complete.sql",
         draft_view_key="draft_attempt",
-        config_tools_attr="tools",
-        config_args_outputs_attr="config_args_outputs",
         requires_draft=False,
         entry_types=["insights", "debug_info"],
         fetcher_id_kwarg="attempt_id",
@@ -1047,8 +1045,6 @@ _register(
         ],
         prepare_sql_path="app/sql/v4/queries/generate/persona/prepare_persona_generation_complete.sql",
         draft_view_key="draft_test",
-        config_tools_attr="tools",
-        config_args_outputs_attr="config_args_outputs",
         requires_draft=False,
         entry_types=["insights", "debug_info"],
         fetcher_id_kwarg="test_id",

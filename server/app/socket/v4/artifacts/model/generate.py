@@ -160,8 +160,8 @@ async def _model_generate_impl(
 
         # Step 2: Extract LLM config from pre-fetched resources
         # Note: model uses `config_providers` (not `providers`) for the generation chain
-        config_agents = result.resources.agents or []
-        config_models = result.resources.models or []
+        config_agents = result.resources.config_agents or []
+        config_models = result.resources.config_models or []
         config_providers = result.resources.config_providers or []
 
         agent_resource = config_agents[0] if config_agents else None

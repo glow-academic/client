@@ -872,19 +872,19 @@ async def get_agent_websocket(
     websocket_resources = AgentWebsocketResources(
         names=current.names if current else [],
         descriptions=current.descriptions if current else [],
-        models=current.models if current else [],
         prompts=current.prompts if current else [],
         instructions=current.instructions if current else [],
         flags=current.flags if current else [],
         departments=current.departments if current else [],
-        tools=config_tools,
         config_args=config_args,
         config_args_outputs=config_args_outputs,
         temperature_levels=current.temperature_levels if current else [],
         reasoning_levels=current.reasoning_levels if current else [],
         voices=current.voices if current else [],
-        agents=data.config_agents,
-        providers=data.config_providers,
+        config_agents=data.config_agents,
+        config_models=current.models if current else [],
+        config_providers=data.config_providers,
+        config_tools=config_tools,
         config_profile=config_profile_result or None,
     )
 

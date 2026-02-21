@@ -1757,10 +1757,10 @@ async def get_attempt_websocket(
         standard_groups=data.resources_payload.standard_groups,
         standards=data.resources_payload.standards,
         # Config resources
-        agents=data.config_agent_resources,
-        models=data.config_model_resources,
-        providers=data.config_provider_resources,
-        tools=config_tools,
+        config_agents=data.config_agent_resources,
+        config_models=data.config_model_resources,
+        config_providers=data.config_provider_resources,
+        config_tools=config_tools,
         config_args=config_args,
         config_args_outputs=config_args_outputs,
         # Profile config (for rate limiting)

@@ -165,9 +165,9 @@ async def _tool_generate_impl(
             return
 
         # Step 3: Extract LLM config from pre-fetched resources
-        config_agents = result.resources.agents or []
-        config_models = result.resources.models or []
-        config_providers = result.resources.providers or []
+        config_agents = result.resources.config_agents or []
+        config_models = result.resources.config_models or []
+        config_providers = result.resources.config_providers or []
         agent_resource = config_agents[0] if config_agents else None
         model_resource = config_models[0] if config_models else None
         provider_resource = config_providers[0] if config_providers else None

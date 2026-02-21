@@ -189,9 +189,9 @@ async def _persona_generate_impl(
             return
 
         # Step 2: Extract LLM config from pre-fetched resources
-        config_agents = result.resources.agents or []
-        config_models = result.resources.models or []
-        config_providers = result.resources.providers or []
+        config_agents = result.resources.config_agents or []
+        config_models = result.resources.config_models or []
+        config_providers = result.resources.config_providers or []
 
         # Find the agent resource that matches the selected agent_id's agents_resource
         # The config_agents list has all agents from the settings chain
