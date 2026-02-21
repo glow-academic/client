@@ -462,3 +462,53 @@ class AttemptAudioEndedEvent(BaseModel):
     chat_id: str
     success: bool
     message: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# Generation events (v5 generic — replaces per-artifact event types)
+# ---------------------------------------------------------------------------
+
+
+class GenerationProgressEvent(BaseModel):
+    """Server-to-client: generation resource progress."""
+
+    artifact_type: str
+    group_id: str
+    run_id: str
+    completed_resources: int
+    total_resources: int
+    percentage: int
+    last_completed_resource: str
+
+
+class GenerationCompleteEvent(BaseModel):
+    """Server-to-client: generation complete (all agents finished)."""
+
+    artifact_type: str
+    group_id: str
+    run_id: str
+    success: bool = True
+    message: str = ""
+    artifact_id: str | None = None
+
+
+class GenerationSavedEvent(BaseModel):
+    """Server-to-client: artifact persisted after generation."""
+
+    artifact_type: str
+    group_id: str
+    run_id: str
+    artifact_id: str | None = None
+
+
+class GenerationErrorEvent(BaseModel):
+    """Server-to-client: generation error."""
+
+    artifact_type: str
+    group_id: str | None = None
+    resource_type: str | None = None
+    resource_types: list[str] | None = None
+    resource_id: str | None = None
+    run_id: str | None = None
+    success: bool = False
+    message: str
