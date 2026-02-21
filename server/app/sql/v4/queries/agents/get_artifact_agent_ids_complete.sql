@@ -1,7 +1,7 @@
 -- Get artifact agent IDs in a single pass
 -- Computes general_agent_id for ALL artifact types using TWO paths:
 --   1. Resources path: inline VALUES table (for persona, scenario, training, etc.)
---   2. Bindings path: artifact_view_relation -> view_entry_relation -> bindings (for attempt, test)
+--   2. Bindings path: JSONB parameter -> bindings (for attempt, test)
 -- Parameters: profile_id (uuid), user_department_ids (uuid[])
 -- Returns: artifact_type -> general_agent_id mapping
 
@@ -227,7 +227,7 @@ artifact_resources AS (
 ),
 
 -- ============================================================================
--- PATH 2: Bindings path (artifact_view_relation -> view_entry_relation)
+-- PATH 2: Bindings path (JSONB parameter)
 -- For artifacts like: attempt, test
 -- ============================================================================
 

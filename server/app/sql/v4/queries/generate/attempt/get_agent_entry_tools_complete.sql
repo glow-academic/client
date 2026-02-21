@@ -1,5 +1,5 @@
 -- Get tools for an agent, filtered by entry types
--- Analogous to persona's get_agent_tools_complete.sql but uses entry_tools_relation
+-- Analogous to persona's get_agent_tools_complete.sql but filtered by entry types
 -- Parameters: p_agent_id (uuid), p_entry_types (text[])
 -- Returns: tools array
 
