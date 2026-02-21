@@ -34,7 +34,7 @@ logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
 
-SHOULD_PROCEED = True
+SHOULD_PROCEED = False
 
 SQL_PATH_CREATE_CHAT = (
     "app/sql/v4/queries/generate/attempt/create_attempt_chat_complete.sql"

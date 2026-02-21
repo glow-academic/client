@@ -21,7 +21,6 @@ import type { AttemptChatEndedEvent, AttemptEndedEvent, AttemptResponseResultEve
 import { useAttemptMessages } from "@/hooks/use-attempt-messages";
 import { useAttemptVoice } from "@/hooks/use-attempt-voice";
 import type { AttemptUserStartEvent, AttemptUserDeltaEvent, AttemptAssistantAudioEvent } from "@/hooks/use-attempt-voice";
-import type { ClientToServerEvents } from "@/lib/ws/types";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -85,19 +84,9 @@ type AttemptData = OutputOf<"/api/v4/artifacts/attempt/get", "post"> & {
 /** Message data from OpenAPI schema - used for optimistic messages */
 type MessageData = components["schemas"]["MessageData"];
 
-// Socket event payload types (auto-generated from server OpenAPI schema)
-// Client-to-Server payloads
-type AttemptJoinPayload = Parameters<ClientToServerEvents["attempt_join"]>[0];
-type AttemptLeavePayload = Parameters<ClientToServerEvents["attempt_leave"]>[0];
-type AttemptStopPayload = Parameters<ClientToServerEvents["attempt_stop"]>[0];
-type AttemptAudioStartPayload = Parameters<ClientToServerEvents["attempt_audio_start"]>[0];
-type AttemptAudioStopPayload = Parameters<ClientToServerEvents["attempt_audio_stop"]>[0];
-type AttemptAudioFramePayload = Parameters<ClientToServerEvents["attempt_audio_frame"]>[0];
-type AttemptMicMutePayload = Parameters<ClientToServerEvents["attempt_mic_mute"]>[0];
-type AttemptResponseSubmitPayload = Parameters<ClientToServerEvents["attempt_response_submit"]>[0];
-
 // Server-to-Client event payloads (message streaming types are in useAttemptMessages hook)
 // Lifecycle + voice event types imported from hooks
+// Client-to-Server emissions are handled by hooks (useAttemptMessages, useAttemptVoice, useAttemptLifecycle)
 
 /** Props for the AttemptChat component */
 export interface AttemptChatProps {
@@ -257,6 +246,9 @@ export function AttemptChat({
     setIsSending: setIsSendingMessage,
     setIsStopping: setIsStoppingMessage,
     clearStreamingState,
+    sendMessage,
+    stopMessage,
+    submitResponse,
   } = useAttemptMessages({
     socket,
     chatIdRef: currentChatIdRef,
@@ -689,45 +681,34 @@ export function AttemptChat({
   const handleSendMessage = useCallback(
     async (message: string, _isRetry?: boolean) => {
       const simulationId = attemptData?.simulation?.id;
-      if (!message.trim() || !currentChat || isSendingMessage || !socket || !simulationId) return;
+      if (!message.trim() || !currentChat || isSendingMessage || !simulationId) return;
 
-      setIsSendingMessage(true);
       try {
-        socket.emit("attempt_message", {
-          simulation_id: simulationId,
-          chat_id: currentChat.id,
-          message: message,
-          voice_mode: false,
-        });
+        sendMessage(currentChat.id, simulationId, message, false);
       } catch (err) {
         toast.error(`Failed to send message: ${err}`);
         setIsSendingMessage(false);
       }
     },
-    [currentChat, isSendingMessage, socket, attemptData?.simulation?.id]
+    [currentChat, isSendingMessage, attemptData?.simulation?.id, sendMessage, setIsSendingMessage]
   );
 
   const handleStopMessage = useCallback(async () => {
-    if (!currentChat || isStoppingMessage || !socket) return;
-    setIsStoppingMessage(true);
+    if (!currentChat || isStoppingMessage) return;
     try {
-      socket.emit("attempt_stop", { chat_id: currentChat.id });
+      stopMessage(currentChat.id);
     } catch (error) {
       toast.error(`Failed to stop message: ${error}`);
       setIsStoppingMessage(false);
     }
-  }, [currentChat, isStoppingMessage, socket]);
+  }, [currentChat, isStoppingMessage, stopMessage, setIsStoppingMessage]);
 
   const handleQuizResponse = useCallback(
     (questionId: string, optionIds: string[]) => {
-      if (!currentChat || !socket) return;
-      socket.emit("attempt_response_submit", {
-        chat_id: currentChat.id,
-        question_id: questionId,
-        option_ids: optionIds,
-      });
+      if (!currentChat) return;
+      submitResponse(currentChat.id, questionId, optionIds);
     },
-    [currentChat, socket]
+    [currentChat, submitResponse]
   );
 
   // ---------------------------------------------------------------------------
@@ -736,7 +717,7 @@ export function AttemptChat({
   // ---------------------------------------------------------------------------
 
   // Voice streaming events + promise-based audio session lifecycle
-  const { waitForAudioReady, waitForAudioEnded } = useAttemptVoice({
+  const { startAudio, stopAudio, sendFrame, setMicMute } = useAttemptVoice({
     socket,
     chatIdRef: currentChatIdRef,
     onUserStart: useCallback((data: AttemptUserStartEvent) => {
@@ -827,42 +808,32 @@ export function AttemptChat({
   });
 
   const handleVoiceStart = useCallback(async () => {
-    if (!currentChat?.id || !socket || !isConnected) {
+    if (!currentChat?.id || !isConnected) {
       toast.error("Cannot enable voice mode: chat or connection not available");
       return;
     }
-
-    const chatId = currentChat.id;
-
-    // BFF: Client sends chat_id, server generates group_id internally
-    socket.emit("attempt_audio_start", { chat_id: chatId });
-    await waitForAudioReady(chatId);
-  }, [currentChat?.id, isConnected, socket, waitForAudioReady]);
+    await startAudio(currentChat.id);
+  }, [currentChat?.id, isConnected, startAudio]);
 
   const handleVoiceStop = useCallback(async () => {
-    if (!currentChat?.id || !socket || !isConnected) return;
-
-    const chatId = currentChat.id;
-
-    // BFF: Client sends chat_id, server looks up session by sid
-    socket.emit("attempt_audio_stop", { chat_id: chatId });
-    await waitForAudioEnded(chatId);
-  }, [currentChat?.id, isConnected, socket, waitForAudioEnded]);
+    if (!currentChat?.id || !isConnected) return;
+    await stopAudio(currentChat.id);
+  }, [currentChat?.id, isConnected, stopAudio]);
 
   const handlePcm16Data = useCallback(
     (data: ArrayBuffer) => {
-      if (!socket || !isConnected) return;
-      socket.emit("attempt_audio_frame", { audio: data });
+      if (!isConnected) return;
+      sendFrame(data);
     },
-    [socket, isConnected]
+    [isConnected, sendFrame]
   );
 
   const handleMicMute = useCallback(
     (muted: boolean) => {
-      if (!socket || !isConnected) return;
-      socket.emit("attempt_mic_mute", { muted });
+      if (!isConnected) return;
+      setMicMute(muted);
     },
-    [socket, isConnected]
+    [isConnected, setMicMute]
   );
 
   // ---------------------------------------------------------------------------

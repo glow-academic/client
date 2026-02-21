@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import type { AppSocket } from "@/contexts/socket-context";
 import type { ServerToClientEvents } from "@/lib/ws/types";
 
@@ -32,6 +32,32 @@ interface UseAttemptLifecycleConfig {
   onResponseResult?: (data: AttemptResponseResultEvent) => void;
 }
 
+export interface UseAttemptLifecycleReturn {
+  startAttempt: (
+    trainingEntryId: string,
+    opts?: { infiniteMode?: boolean },
+  ) => void;
+  continueAttempt: (
+    attemptId: string,
+    opts?: { draftId?: string; userInstructions?: string[] },
+  ) => void;
+  endChat: (
+    attemptId: string,
+    chatId: string,
+    opts?: { grade?: boolean },
+  ) => void;
+  endAll: (attemptId: string) => void;
+  usePrevious: (
+    attemptId: string,
+    previousChatMap: Record<string, string>,
+  ) => void;
+  gradeChat: (
+    simulationId: string,
+    attemptId: string,
+    chatId: string,
+  ) => void;
+}
+
 export function useAttemptLifecycle({
   socket,
   attemptId,
@@ -44,7 +70,7 @@ export function useAttemptLifecycle({
   onGradeComplete,
   onError,
   onResponseResult,
-}: UseAttemptLifecycleConfig): void {
+}: UseAttemptLifecycleConfig): UseAttemptLifecycleReturn {
   // Store callbacks in refs to avoid re-registering socket listeners on every render
   const callbacksRef = useRef({
     onStarted,
@@ -120,4 +146,95 @@ export function useAttemptLifecycle({
       socket.off("attempt_response_result", handleResponseResult);
     };
   }, [socket, attemptId, chatId, chatIdRef]);
+
+  // --- Emission methods ---
+
+  const startAttempt = useCallback(
+    (
+      trainingEntryId: string,
+      opts?: { infiniteMode?: boolean },
+    ) => {
+      if (!socket) return;
+      socket.emit("attempt_start", {
+        training_entry_id: trainingEntryId,
+        infinite_mode: opts?.infiniteMode ?? false,
+      });
+    },
+    [socket],
+  );
+
+  const continueAttempt = useCallback(
+    (
+      attemptIdArg: string,
+      opts?: { draftId?: string; userInstructions?: string[] },
+    ) => {
+      if (!socket) return;
+      socket.emit("attempt_continue", {
+        attempt_id: attemptIdArg,
+        ...(opts?.draftId && { draft_id: opts.draftId }),
+        ...(opts?.userInstructions && {
+          user_instructions: opts.userInstructions,
+        }),
+      });
+    },
+    [socket],
+  );
+
+  const endChat = useCallback(
+    (
+      attemptIdArg: string,
+      chatIdArg: string,
+      opts?: { grade?: boolean },
+    ) => {
+      if (!socket) return;
+      socket.emit("attempt_end", {
+        attempt_id: attemptIdArg,
+        chat_id: chatIdArg,
+        grade: opts?.grade ?? true,
+      });
+    },
+    [socket],
+  );
+
+  const endAll = useCallback(
+    (attemptIdArg: string) => {
+      if (!socket) return;
+      socket.emit("attempt_end_all", {
+        attempt_id: attemptIdArg,
+      });
+    },
+    [socket],
+  );
+
+  const usePrevious = useCallback(
+    (attemptIdArg: string, previousChatMap: Record<string, string>) => {
+      if (!socket) return;
+      socket.emit("attempt_use_previous", {
+        attempt_id: attemptIdArg,
+        previous_chat_map: previousChatMap,
+      });
+    },
+    [socket],
+  );
+
+  const gradeChat = useCallback(
+    (simulationId: string, attemptIdArg: string, chatIdArg: string) => {
+      if (!socket) return;
+      socket.emit("attempt_grade", {
+        simulation_id: simulationId,
+        attempt_id: attemptIdArg,
+        chat_id: chatIdArg,
+      });
+    },
+    [socket],
+  );
+
+  return {
+    startAttempt,
+    continueAttempt,
+    endChat,
+    endAll,
+    usePrevious,
+    gradeChat,
+  };
 }

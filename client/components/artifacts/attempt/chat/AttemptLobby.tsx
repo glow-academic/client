@@ -59,7 +59,7 @@ export function AttemptLobby({
   );
 
   // Listen for attempt lifecycle events
-  useAttemptLifecycle({
+  const { continueAttempt, usePrevious } = useAttemptLifecycle({
     socket,
     attemptId,
     onChatStarted: useCallback((data: AttemptChatStartedEvent) => {
@@ -86,7 +86,7 @@ export function AttemptLobby({
     }, [attemptId, router]),
     onError: useCallback((data: AttemptErrorEvent) => {
       if (!isStartingRef.current) return;
-      if (data.type === "end" || data.type === "start") {
+      if (data.type === "end" || data.type === "start" || data.type === "continue") {
         setIsStarting(false);
         isStartingRef.current = false;
         toast.error(data.message || "Failed to start training.");
@@ -103,30 +103,19 @@ export function AttemptLobby({
     setIsStarting(true);
     isStartingRef.current = true;
 
-    const payload: Record<string, unknown> = {
-      training_entry_id: trainingBundleEntryId,
-      attempt_id: attemptId,
-    };
-
-    if (draftId) {
-      payload.draft_id = draftId;
-    }
-    if (infiniteMode) {
-      payload.infinite = true;
-    }
-    if (userInstructions?.trim()) {
-      payload.user_instructions = [userInstructions.trim()];
-    }
-
-    socket.emit("attempt_start", payload);
+    continueAttempt(attemptId, {
+      draftId: draftId ?? undefined,
+      userInstructions: userInstructions?.trim()
+        ? [userInstructions.trim()]
+        : undefined,
+    });
   }, [
     socket,
     isConnected,
-    trainingBundleEntryId,
     attemptId,
     draftId,
-    infiniteMode,
     userInstructions,
+    continueAttempt,
   ]);
 
   const handleUsePrevious = useCallback(() => {
@@ -150,13 +139,8 @@ export function AttemptLobby({
     setIsStarting(true);
     isStartingRef.current = true;
 
-    // Emit attempt_end with previous_chat_map — server creates skipped chats
-    // with copied grades, then client refreshes on attempt_chat_ended
-    socket.emit("attempt_end", {
-      attempt_id: attemptId,
-      previous_chat_map: previousChatMap,
-    });
-  }, [selectedOptionIndex, options, socket, isConnected, attemptId]);
+    usePrevious(attemptId, previousChatMap);
+  }, [selectedOptionIndex, options, socket, isConnected, attemptId, usePrevious]);
 
   const handleCustomize = useCallback(() => {
     router.push(`/chat/${trainingBundleEntryId}?attemptId=${attemptId}`);

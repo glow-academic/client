@@ -161,6 +161,7 @@ class AttemptEndPayload(BaseModel):
     attempt_id: UUID
     chat_id: UUID | None = None  # Single chat end (0 messages)
     previous_chat_map: dict[str, str] | None = None  # {scenario_id: previous_chat_id}
+    grade: bool = True  # Whether to trigger grading after ending
 
 
 class AttemptEndAllPayload(BaseModel):
@@ -338,6 +339,19 @@ class AttemptStartPayload(BaseModel):
     attempt_id: UUID | None = None
     draft_id: UUID | None = None
     infinite_mode: bool = False
+    resource_types: list[str] | None = None
+    user_instructions: list[str] | None = None
+    save: bool = True
+
+
+class AttemptContinuePayload(BaseModel):
+    """Request payload for attempt_continue WebSocket event.
+
+    Proceed to the next scenario in an existing attempt.
+    """
+
+    attempt_id: UUID
+    draft_id: UUID | None = None
     resource_types: list[str] | None = None
     user_instructions: list[str] | None = None
     save: bool = True

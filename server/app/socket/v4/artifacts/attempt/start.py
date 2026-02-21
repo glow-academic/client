@@ -17,6 +17,7 @@ from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.attempt.types import (
+    AttemptContinuePayload,
     AttemptEndedEvent,
     AttemptStartedEvent,
     AttemptStartPayload,
@@ -287,6 +288,12 @@ async def attempt_start_internal(data: dict[str, Any]) -> None:
 @client_router.post("/attempt/start", response_model=dict[str, bool])
 async def attempt_start_api(request: AttemptStartPayload) -> dict[str, bool]:
     """Client-to-server event: Start or proceed with an attempt."""
+    return {"success": True}
+
+
+@client_router.post("/attempt/continue", response_model=dict[str, bool])
+async def attempt_continue_api(request: AttemptContinuePayload) -> dict[str, bool]:
+    """Client-to-server event: Proceed to next scenario in existing attempt."""
     return {"success": True}
 
 

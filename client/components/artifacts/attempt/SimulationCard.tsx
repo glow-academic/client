@@ -141,7 +141,7 @@ export default function SimulationCard({
   const totalRubrics = rubrics?.length ?? 0;
 
   // Listen for attempt lifecycle events to navigate
-  useAttemptLifecycle({
+  const { startAttempt } = useAttemptLifecycle({
     socket,
     onStarted: useCallback((data: AttemptStartedEvent) => {
       if (!isStartingRef.current) return;
@@ -164,7 +164,7 @@ export default function SimulationCard({
     }, []),
   });
 
-  // Start training function - emits attempt_start via WebSocket
+  // Start training function - emits attempt_start via hook
   const handleStartTraining = useCallback(
     (infiniteMode: boolean = false) => {
       if (!trainingBundleEntryId) {
@@ -186,12 +186,9 @@ export default function SimulationCard({
         }
       );
 
-      socket.emit("attempt_start", {
-        training_entry_id: trainingBundleEntryId,
-        infinite_mode: infiniteMode,
-      });
+      startAttempt(trainingBundleEntryId, { infiniteMode });
     },
-    [trainingBundleEntryId, socket, isConnected]
+    [trainingBundleEntryId, socket, isConnected, startAttempt]
   );
 
   // Get persona configuration and icon based on persona data

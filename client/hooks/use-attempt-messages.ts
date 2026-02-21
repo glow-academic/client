@@ -39,6 +39,18 @@ interface UseAttemptMessagesResult {
   setIsSending: React.Dispatch<React.SetStateAction<boolean>>;
   setIsStopping: React.Dispatch<React.SetStateAction<boolean>>;
   clearStreamingState: () => void;
+  sendMessage: (
+    chatId: string,
+    simulationId: string,
+    message: string,
+    voiceMode?: boolean,
+  ) => void;
+  stopMessage: (chatId: string) => void;
+  submitResponse: (
+    chatId: string,
+    questionId: string,
+    optionIds: string[],
+  ) => void;
 }
 
 export function useAttemptMessages({
@@ -215,6 +227,48 @@ export function useAttemptMessages({
     };
   }, [socket, chatIdRef, personas, onRefresh, onUserComplete]);
 
+  // --- Emission methods ---
+
+  const sendMessage = useCallback(
+    (
+      chatId: string,
+      simulationId: string,
+      message: string,
+      voiceMode = false,
+    ) => {
+      if (!socket) return;
+      setIsSending(true);
+      socket.emit("attempt_message", {
+        simulation_id: simulationId,
+        chat_id: chatId,
+        message,
+        voice_mode: voiceMode,
+      });
+    },
+    [socket],
+  );
+
+  const stopMessage = useCallback(
+    (chatId: string) => {
+      if (!socket) return;
+      setIsStopping(true);
+      socket.emit("attempt_stop", { chat_id: chatId });
+    },
+    [socket],
+  );
+
+  const submitResponse = useCallback(
+    (chatId: string, questionId: string, optionIds: string[]) => {
+      if (!socket) return;
+      socket.emit("attempt_response_submit", {
+        chat_id: chatId,
+        question_id: questionId,
+        option_ids: optionIds,
+      });
+    },
+    [socket],
+  );
+
   return {
     streamingContent,
     setStreamingContent,
@@ -225,5 +279,8 @@ export function useAttemptMessages({
     setIsSending,
     setIsStopping,
     clearStreamingState,
+    sendMessage,
+    stopMessage,
+    submitResponse,
   };
 }

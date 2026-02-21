@@ -45,7 +45,7 @@ export function SimulationControls({
   const [endingLoading, setEndingLoading] = useState(false);
 
   // Listen for WebSocket lifecycle events to reset loading state
-  useAttemptLifecycle({
+  const { gradeChat, endChat } = useAttemptLifecycle({
     socket,
     onError: useCallback((data: AttemptErrorEvent) => {
       if (data.type === "end" || data.type === "grade") {
@@ -69,14 +69,10 @@ export function SimulationControls({
     }
 
     // Has messages: just emit attempt_grade (grading handles the rest)
-    if (!simulationId || !currentChatId || !socket) return;
+    if (!simulationId || !currentChatId) return;
     setEndingLoading(true);
-    socket.emit("attempt_grade", {
-      simulation_id: simulationId,
-      attempt_id: attemptId,
-      chat_id: currentChatId,
-    });
-  }, [hasMessages, simulationId, currentChatId, socket, attemptId]);
+    gradeChat(simulationId, attemptId, currentChatId);
+  }, [hasMessages, simulationId, currentChatId, attemptId, gradeChat]);
 
   // Confirm end session with 0 messages
   const handleConfirmEnd = useCallback(() => {
@@ -87,11 +83,8 @@ export function SimulationControls({
 
     setConfirmEndChatOpen(false);
     setEndingLoading(true);
-    socket.emit("attempt_end", {
-      attempt_id: attemptId,
-      chat_id: currentChatId,
-    });
-  }, [attemptId, currentChatId, socket]);
+    endChat(attemptId, currentChatId, { grade: false });
+  }, [attemptId, currentChatId, socket, endChat]);
 
   return (
     <>

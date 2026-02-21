@@ -25,6 +25,10 @@ interface UseAttemptVoiceConfig {
 interface UseAttemptVoiceReturn {
   waitForAudioReady: (chatId: string, timeout?: number) => Promise<void>;
   waitForAudioEnded: (chatId: string, timeout?: number) => Promise<void>;
+  startAudio: (chatId: string) => Promise<void>;
+  stopAudio: (chatId: string) => Promise<void>;
+  sendFrame: (audio: ArrayBuffer) => void;
+  setMicMute: (muted: boolean) => void;
 }
 
 export function useAttemptVoice({
@@ -146,5 +150,47 @@ export function useAttemptVoice({
     [socket],
   );
 
-  return { waitForAudioReady, waitForAudioEnded };
+  // Combined emit + wait methods
+  const startAudio = useCallback(
+    async (chatId: string): Promise<void> => {
+      if (!socket) throw new Error("Socket not available");
+      socket.emit("attempt_audio_start", { chat_id: chatId });
+      await waitForAudioReady(chatId);
+    },
+    [socket, waitForAudioReady],
+  );
+
+  const stopAudio = useCallback(
+    async (chatId: string): Promise<void> => {
+      if (!socket) throw new Error("Socket not available");
+      socket.emit("attempt_audio_stop", { chat_id: chatId });
+      await waitForAudioEnded(chatId);
+    },
+    [socket, waitForAudioEnded],
+  );
+
+  const sendFrame = useCallback(
+    (audio: ArrayBuffer) => {
+      if (!socket) return;
+      socket.emit("attempt_audio_frame", { audio });
+    },
+    [socket],
+  );
+
+  const setMicMute = useCallback(
+    (muted: boolean) => {
+      if (!socket) return;
+      socket.emit("attempt_mic_mute", { muted });
+    },
+    [socket],
+  );
+
+  return {
+    waitForAudioReady,
+    waitForAudioEnded,
+    startAudio,
+    stopAudio,
+    sendFrame,
+    setMicMute,
+  };
 }

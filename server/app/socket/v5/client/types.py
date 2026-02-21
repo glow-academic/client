@@ -249,17 +249,20 @@ class TestErrorEvent(BaseModel):
 
 
 class AttemptStartPayload(BaseModel):
-    """Client-to-server: start or proceed with an attempt.
+    """Client-to-server: create a new attempt."""
 
-    Dual-mode:
-    - Create mode (no attempt_id): creates a new attempt, then generates first chat
-    - Next mode (has attempt_id): checks remaining scenarios and proceeds or ends
-    """
-
-    training_entry_id: UUID | None = None
-    attempt_id: UUID | None = None
-    draft_id: UUID | None = None
+    training_entry_id: UUID
     infinite_mode: bool = False
+    resource_types: list[str] | None = None
+    user_instructions: list[str] | None = None
+    save: bool = True
+
+
+class AttemptContinuePayload(BaseModel):
+    """Client-to-server: proceed to the next scenario in an existing attempt."""
+
+    attempt_id: UUID
+    draft_id: UUID | None = None
     resource_types: list[str] | None = None
     user_instructions: list[str] | None = None
     save: bool = True
@@ -277,6 +280,7 @@ class AttemptEndPayload(BaseModel):
 
     attempt_id: UUID
     chat_id: UUID
+    grade: bool = True
 
 
 class AttemptChatStartedEvent(BaseModel):

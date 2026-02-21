@@ -5,6 +5,7 @@ Importing this module registers all attempt_* events with Socket.IO.
 
 from . import (
     audio,  # noqa: F401 — registers @sio.event on import
+    continue_,  # noqa: F401
     end,  # noqa: F401
     end_all,  # noqa: F401
     grade,  # noqa: F401
