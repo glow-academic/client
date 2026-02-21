@@ -247,6 +247,7 @@ class AttemptUserCompleteEvent(BaseModel):
     message_id: str
     content: str
     created_at: str
+    item_id: str | None = None
 
 
 class AttemptAssistantStartEvent(BaseModel):
@@ -309,3 +310,51 @@ class AttemptResponseResultEvent(BaseModel):
     success: bool
     message: str | None = None
     is_correct: bool | None = None
+
+
+# ---------------------------------------------------------------------------
+# Audio events
+# ---------------------------------------------------------------------------
+
+
+class AttemptAudioStartPayload(BaseModel):
+    """Client-to-server: start a voice session."""
+
+    chat_id: UUID
+
+
+class AttemptAudioStopPayload(BaseModel):
+    """Client-to-server: stop a voice session."""
+
+    chat_id: UUID
+
+
+class AttemptUserStartEvent(BaseModel):
+    """Server-to-client: user speech detected in voice mode."""
+
+    chat_id: str
+    item_id: str
+
+
+class AttemptUserDeltaEvent(BaseModel):
+    """Server-to-client: voice transcription delta."""
+
+    chat_id: str
+    item_id: str
+    transcript: str
+
+
+class AttemptAudioReadyEvent(BaseModel):
+    """Server-to-client: voice session is ready."""
+
+    chat_id: str
+    success: bool
+    message: str | None = None
+
+
+class AttemptAudioEndedEvent(BaseModel):
+    """Server-to-client: voice session ended."""
+
+    chat_id: str
+    success: bool
+    message: str | None = None

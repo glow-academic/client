@@ -8,6 +8,7 @@ Importing this module registers:
 """
 
 from . import (
+    audio,  # noqa: F401 — registers generate_audio_* internal events
     chat,  # noqa: F401 — registers attempt_chat internal event
     grade,  # noqa: F401 — registers attempt_grade internal event
     message,  # noqa: F401 — registers attempt_message internal event
