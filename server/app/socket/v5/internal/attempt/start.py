@@ -17,13 +17,8 @@ from app.api.v4.entries.attempt.get import get_attempt_entries_internal
 from app.api.v4.resources.training.context import get_training_attempt_context_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.main import get_internal_sio, sio
-from app.socket.v5.client.types import (
-    AttemptEndedEvent,
-    AttemptErrorEvent,
-    AttemptStartedEvent,
-    AttemptStartPayload,
-)
+from app.main import get_internal_sio
+from app.socket.v5.client.types import AttemptStartPayload
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -114,13 +109,14 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
         if payload.attempt_id is None:
             # === CREATE MODE ===
             if not payload.training_entry_id:
-                await sio.emit(
-                    "attempt_error",
-                    AttemptErrorEvent(
-                        type="start",
-                        message="training_entry_id is required to create an attempt",
-                    ).model_dump(mode="json"),
-                    room=sid,
+                await internal_sio.emit(
+                    "attempt_progress",
+                    {
+                        "type": "error",
+                        "sid": sid,
+                        "error_type": "start",
+                        "message": "training_entry_id is required to create an attempt",
+                    },
                 )
                 return
 
@@ -136,14 +132,15 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
                     conn, context=ctx, infinite_mode=payload.infinite_mode
                 )
 
-            # Emit attempt_started to client
-            await sio.emit(
-                "attempt_started",
-                AttemptStartedEvent(
-                    attempt_id=str(attempt_id),
-                    training_entry_id=str(payload.training_entry_id),
-                ).model_dump(mode="json"),
-                room=sid,
+            # Emit attempt_started to client via server layer
+            await internal_sio.emit(
+                "attempt_progress",
+                {
+                    "type": "started",
+                    "sid": sid,
+                    "attempt_id": str(attempt_id),
+                    "training_entry_id": str(payload.training_entry_id),
+                },
             )
 
             # Step 3: GET from MV for training context
@@ -177,13 +174,14 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
 
             if not items or not items[0].get("training_entry_id"):
                 logger.warning(f"No training context in MV for attempt {attempt_id}")
-                await sio.emit(
-                    "attempt_error",
-                    AttemptErrorEvent(
-                        type="start",
-                        message="Attempt context not found",
-                    ).model_dump(mode="json"),
-                    room=sid,
+                await internal_sio.emit(
+                    "attempt_progress",
+                    {
+                        "type": "error",
+                        "sid": sid,
+                        "error_type": "start",
+                        "message": "Attempt context not found",
+                    },
                 )
                 return
 
@@ -208,24 +206,26 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
                 )
             else:
                 # All scenarios complete — emit attempt_ended
-                await sio.emit(
-                    "attempt_ended",
-                    AttemptEndedEvent(
-                        attempt_id=str(attempt_id),
-                        success=True,
-                        all_scenarios_complete=True,
-                        message="All scenarios completed",
-                    ).model_dump(mode="json"),
-                    room=sid,
+                await internal_sio.emit(
+                    "attempt_progress",
+                    {
+                        "type": "ended",
+                        "sid": sid,
+                        "attempt_id": str(attempt_id),
+                        "success": True,
+                        "all_scenarios_complete": True,
+                        "message": "All scenarios completed",
+                    },
                 )
 
     except Exception as e:
         logger.exception(f"Error in attempt_start: {e}")
-        await sio.emit(
-            "attempt_error",
-            AttemptErrorEvent(
-                type="start",
-                message=f"Failed to start attempt: {e}",
-            ).model_dump(mode="json"),
-            room=sid,
+        await internal_sio.emit(
+            "attempt_progress",
+            {
+                "type": "error",
+                "sid": sid,
+                "error_type": "start",
+                "message": f"Failed to start attempt: {e}",
+            },
         )

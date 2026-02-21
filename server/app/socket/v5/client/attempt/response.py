@@ -11,15 +11,13 @@ from typing import Any
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
-from app.main import sio
-from app.socket.v5.client.types import (
-    AttemptErrorEvent,
-    AttemptResponsePayload,
-    AttemptResponseResultEvent,
-)
+from app.main import get_internal_sio, sio
+from app.socket.v5.client.types import AttemptResponsePayload
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
+
+internal_sio = get_internal_sio()
 
 
 async def _attempt_response_impl(
@@ -32,14 +30,15 @@ async def _attempt_response_impl(
         option_ids = [str(oid) for oid in data.option_ids]
 
         if not chat_id or not question_id or not option_ids:
-            await sio.emit(
-                "attempt_error",
-                AttemptErrorEvent(
-                    chat_id=chat_id,
-                    type="quiz",
-                    message="Missing required fields",
-                ).model_dump(mode="json"),
-                room=sid,
+            await internal_sio.emit(
+                "attempt_progress",
+                {
+                    "type": "error",
+                    "sid": sid,
+                    "error_type": "quiz",
+                    "message": "Missing required fields",
+                    "chat_id": chat_id,
+                },
             )
             return
 
@@ -50,14 +49,15 @@ async def _attempt_response_impl(
         )
 
         # Emit success (placeholder — actual correctness check needs implementation)
-        await sio.emit(
-            "attempt_response_result",
-            AttemptResponseResultEvent(
-                success=True,
-                message="Response submitted",
-                is_correct=None,
-            ).model_dump(mode="json"),
-            room=sid,
+        await internal_sio.emit(
+            "attempt_progress",
+            {
+                "type": "response_result",
+                "sid": sid,
+                "success": True,
+                "message": "Response submitted",
+                "is_correct": None,
+            },
         )
 
         # Log activity
@@ -75,14 +75,15 @@ async def _attempt_response_impl(
 
     except Exception as e:
         logger.exception(f"Error in attempt_response_submit: {e}")
-        await sio.emit(
-            "attempt_error",
-            AttemptErrorEvent(
-                chat_id=str(data.chat_id) if data else None,
-                type="quiz",
-                message=f"Failed to submit response: {e}",
-            ).model_dump(mode="json"),
-            room=sid,
+        await internal_sio.emit(
+            "attempt_progress",
+            {
+                "type": "error",
+                "sid": sid,
+                "error_type": "quiz",
+                "message": f"Failed to submit response: {e}",
+                "chat_id": str(data.chat_id) if data else None,
+            },
         )
 
 
@@ -94,13 +95,14 @@ async def attempt_response_submit(sid: str, data: dict[str, Any]) -> None:
         profile_id_str = await find_profile_by_socket(sid)
 
         if not profile_id_str:
-            await sio.emit(
-                "attempt_error",
-                AttemptErrorEvent(
-                    type="quiz",
-                    message="Profile not found. Please reconnect.",
-                ).model_dump(mode="json"),
-                room=sid,
+            await internal_sio.emit(
+                "attempt_progress",
+                {
+                    "type": "error",
+                    "sid": sid,
+                    "error_type": "quiz",
+                    "message": "Profile not found. Please reconnect.",
+                },
             )
             return
 
@@ -110,12 +112,13 @@ async def attempt_response_submit(sid: str, data: dict[str, Any]) -> None:
     except Exception as e:
         logger.exception(f"Invalid request in attempt_response_submit: {e}")
         chat_id = data.get("chat_id", "")
-        await sio.emit(
-            "attempt_error",
-            AttemptErrorEvent(
-                chat_id=str(chat_id) if chat_id else None,
-                type="quiz",
-                message=f"Invalid request: {e}",
-            ).model_dump(mode="json"),
-            room=sid,
+        await internal_sio.emit(
+            "attempt_progress",
+            {
+                "type": "error",
+                "sid": sid,
+                "error_type": "quiz",
+                "message": f"Invalid request: {e}",
+                "chat_id": str(chat_id) if chat_id else None,
+            },
         )

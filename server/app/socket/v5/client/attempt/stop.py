@@ -12,17 +12,15 @@ from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.cancel_active_result import cancel_active_result
 from app.infra.v4.websocket.cancel_active_run import cancel_active_run
 from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.main import sio
-from app.socket.v5.client.types import (
-    AttemptErrorEvent,
-    AttemptStopPayload,
-    AttemptStoppedEvent,
-)
+from app.main import get_internal_sio, sio
+from app.socket.v5.client.types import AttemptStopPayload
 from app.sql.types import SimulationTextStopRunSqlParams, SimulationTextStopRunSqlRow
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
+
+internal_sio = get_internal_sio()
 
 SQL_PATH_STOP = "app/sql/v4/queries/simulations/simulation_text_stop_run_complete.sql"
 
@@ -55,16 +53,17 @@ async def _attempt_stop_impl(sid: str, data: AttemptStopPayload) -> None:
         cancelled_message_id = row.cancelled_message_id if row else None
 
         if success and cancelled_message_id:
-            # Emit to sid + attempt room
-            stopped_event = AttemptStoppedEvent(
-                chat_id=chat_id,
-                success=True,
-                message=None,
-            ).model_dump(mode="json")
-
-            await sio.emit("attempt_stopped", stopped_event, room=sid)
-            await sio.emit(
-                "attempt_stopped", stopped_event, room=f"attempt_{chat_id}"
+            # Emit to sid + attempt room via server layer
+            await internal_sio.emit(
+                "attempt_progress",
+                {
+                    "type": "stopped",
+                    "sid": sid,
+                    "rooms": [sid, f"attempt_{chat_id}"],
+                    "chat_id": chat_id,
+                    "success": True,
+                    "message": None,
+                },
             )
 
             # Log activity
@@ -80,26 +79,28 @@ async def _attempt_stop_impl(sid: str, data: AttemptStopPayload) -> None:
             except Exception:
                 pass
         else:
-            await sio.emit(
-                "attempt_stopped",
-                AttemptStoppedEvent(
-                    chat_id=chat_id,
-                    success=False,
-                    message="No active message found for this chat",
-                ).model_dump(mode="json"),
-                room=sid,
+            await internal_sio.emit(
+                "attempt_progress",
+                {
+                    "type": "stopped",
+                    "sid": sid,
+                    "chat_id": chat_id,
+                    "success": False,
+                    "message": "No active message found for this chat",
+                },
             )
 
     except Exception as e:
         logger.exception(f"Error in attempt_stop_message: {e}")
-        await sio.emit(
-            "attempt_error",
-            AttemptErrorEvent(
-                chat_id=str(data.chat_id) if data else None,
-                type="stop",
-                message=f"Failed to stop: {e}",
-            ).model_dump(mode="json"),
-            room=sid,
+        await internal_sio.emit(
+            "attempt_progress",
+            {
+                "type": "error",
+                "sid": sid,
+                "error_type": "stop",
+                "message": f"Failed to stop: {e}",
+                "chat_id": str(data.chat_id) if data else None,
+            },
         )
 
 
@@ -112,12 +113,13 @@ async def attempt_stop_message(sid: str, data: dict[str, Any]) -> None:
     except Exception as e:
         logger.exception(f"Invalid request in attempt_stop_message: {e}")
         chat_id = data.get("chat_id", "")
-        await sio.emit(
-            "attempt_error",
-            AttemptErrorEvent(
-                chat_id=str(chat_id) if chat_id else None,
-                type="stop",
-                message=f"Invalid request: {e}",
-            ).model_dump(mode="json"),
-            room=sid,
+        await internal_sio.emit(
+            "attempt_progress",
+            {
+                "type": "error",
+                "sid": sid,
+                "error_type": "stop",
+                "message": f"Invalid request: {e}",
+                "chat_id": str(chat_id) if chat_id else None,
+            },
         )

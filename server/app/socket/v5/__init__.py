@@ -7,6 +7,6 @@ handlers in v4.
 
 from fastapi import APIRouter
 
-from . import client, internal  # noqa: F401 — registers handlers on import
+from . import client, internal, server  # noqa: F401 — registers handlers on import
 
 router = APIRouter(prefix="/socket/v5", tags=["socket-v5"])

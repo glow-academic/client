@@ -8,17 +8,15 @@ from typing import Any, cast
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.main import sio
-from app.socket.v5.client.types import (
-    AttemptEndAllPayload,
-    AttemptEndedEvent,
-    AttemptErrorEvent,
-)
+from app.main import get_internal_sio, sio
+from app.socket.v5.client.types import AttemptEndAllPayload
 from app.sql.types import EndAllAttemptChatsSqlParams, EndAllAttemptChatsSqlRow
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
+
+internal_sio = get_internal_sio()
 
 SQL_PATH_END_ALL = (
     "app/sql/v4/queries/generate/attempt/end_all_attempt_chats_complete.sql"
@@ -51,15 +49,16 @@ async def _attempt_end_all_impl(sid: str, data: AttemptEndAllPayload) -> None:
             await conn.execute("REFRESH MATERIALIZED VIEW attempt_mv")
             await conn.execute("REFRESH MATERIALIZED VIEW attempt_chat_mv")
 
-            # Emit attempt_ended
-            await sio.emit(
-                "attempt_ended",
-                AttemptEndedEvent(
-                    attempt_id=attempt_id,
-                    success=True,
-                    message="All chats ended",
-                ).model_dump(mode="json"),
-                room=sid,
+            # Emit attempt_ended via server layer
+            await internal_sio.emit(
+                "attempt_progress",
+                {
+                    "type": "ended",
+                    "sid": sid,
+                    "attempt_id": attempt_id,
+                    "success": True,
+                    "message": "All chats ended",
+                },
             )
 
             # Log activity
@@ -77,13 +76,14 @@ async def _attempt_end_all_impl(sid: str, data: AttemptEndAllPayload) -> None:
 
     except Exception as e:
         logger.exception(f"Error in attempt_end_all: {e}")
-        await sio.emit(
-            "attempt_error",
-            AttemptErrorEvent(
-                type="end",
-                message=f"Failed to end all chats: {e}",
-            ).model_dump(mode="json"),
-            room=sid,
+        await internal_sio.emit(
+            "attempt_progress",
+            {
+                "type": "error",
+                "sid": sid,
+                "error_type": "end",
+                "message": f"Failed to end all chats: {e}",
+            },
         )
 
 
@@ -96,11 +96,12 @@ async def attempt_end_all(sid: str, data: dict[str, Any]) -> None:
 
     except Exception as e:
         logger.exception(f"Invalid request in attempt_end_all: {e}")
-        await sio.emit(
-            "attempt_error",
-            AttemptErrorEvent(
-                type="end",
-                message=f"Invalid request: {e}",
-            ).model_dump(mode="json"),
-            room=sid,
+        await internal_sio.emit(
+            "attempt_progress",
+            {
+                "type": "error",
+                "sid": sid,
+                "error_type": "end",
+                "message": f"Invalid request: {e}",
+            },
         )

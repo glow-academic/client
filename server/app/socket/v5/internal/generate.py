@@ -22,7 +22,7 @@ from app.infra.v4.websocket.generation_tracker import (
 )
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
-from app.main import get_internal_sio, get_pool, sio
+from app.main import get_internal_sio, get_pool
 from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.socket.v5.client.registry import REGISTRY, ArtifactGenerateConfig
 from app.socket.v5.client.types import GeneratePayload
@@ -520,16 +520,16 @@ async def generate_handler(data: dict[str, Any]) -> None:
             await init_generation(str(run_id), num_agents)
             await init_resource_progress(str(run_id), len(resource_types))
 
-            # Step 15: Emit {artifact_type}_generation_started to client
-            await sio.emit(
-                f"{artifact_type}_generation_started",
+            # Step 15: Emit generation_started to server layer
+            await internal_sio.emit(
+                "generation_started",
                 {
+                    "sid": sid,
                     "artifact_type": artifact_type,
                     "group_id": str(group_id) if group_id else "",
                     "run_id": str(run_id),
                     "resource_types": resource_types,
                 },
-                room=sid,
             )
 
             # Step 16: Convert tools and enrich with _args_outputs

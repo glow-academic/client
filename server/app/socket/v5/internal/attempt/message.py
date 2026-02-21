@@ -14,13 +14,8 @@ from app.api.v4.artifacts.attempt.get import get_attempt_websocket
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.main import get_internal_sio, sio
-from app.socket.v5.client.types import (
-    AttemptAssistantStartEvent,
-    AttemptErrorEvent,
-    AttemptMessagePayload,
-    AttemptUserCompleteEvent,
-)
+from app.main import get_internal_sio
+from app.socket.v5.client.types import AttemptMessagePayload
 from app.sql.types import PrepareAttemptMessageSqlParams, PrepareAttemptMessageSqlRow
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
@@ -60,14 +55,15 @@ async def attempt_message_handler(data: dict[str, Any]) -> None:
 
         # Step 1: Validate message
         if not message or not message.strip():
-            await sio.emit(
-                "attempt_error",
-                AttemptErrorEvent(
-                    chat_id=str(chat_id),
-                    type="send",
-                    message="Missing or empty message",
-                ).model_dump(mode="json"),
-                room=sid,
+            await internal_sio.emit(
+                "attempt_progress",
+                {
+                    "type": "error",
+                    "sid": sid,
+                    "error_type": "send",
+                    "message": "Missing or empty message",
+                    "chat_id": str(chat_id),
+                },
             )
             return
 
@@ -80,14 +76,15 @@ async def attempt_message_handler(data: dict[str, Any]) -> None:
             )
 
         if not result.resources:
-            await sio.emit(
-                "attempt_error",
-                AttemptErrorEvent(
-                    chat_id=str(chat_id),
-                    type="send",
-                    message="Attempt not found or access denied",
-                ).model_dump(mode="json"),
-                room=sid,
+            await internal_sio.emit(
+                "attempt_progress",
+                {
+                    "type": "error",
+                    "sid": sid,
+                    "error_type": "send",
+                    "message": "Attempt not found or access denied",
+                    "chat_id": str(chat_id),
+                },
             )
             return
 
@@ -97,28 +94,30 @@ async def attempt_message_handler(data: dict[str, Any]) -> None:
             for chat in result.views.attempt_chat:
                 if chat.id == chat_id:
                     if chat.completed:
-                        await sio.emit(
-                            "attempt_error",
-                            AttemptErrorEvent(
-                                chat_id=str(chat_id),
-                                type="send",
-                                message="Chat has already been completed",
-                            ).model_dump(mode="json"),
-                            room=sid,
+                        await internal_sio.emit(
+                            "attempt_progress",
+                            {
+                                "type": "error",
+                                "sid": sid,
+                                "error_type": "send",
+                                "message": "Chat has already been completed",
+                                "chat_id": str(chat_id),
+                            },
                         )
                         return
                     chat_valid = True
                     break
 
         if not chat_valid:
-            await sio.emit(
-                "attempt_error",
-                AttemptErrorEvent(
-                    chat_id=str(chat_id),
-                    type="send",
-                    message="Chat does not exist",
-                ).model_dump(mode="json"),
-                room=sid,
+            await internal_sio.emit(
+                "attempt_progress",
+                {
+                    "type": "error",
+                    "sid": sid,
+                    "error_type": "send",
+                    "message": "Chat does not exist",
+                    "chat_id": str(chat_id),
+                },
             )
             return
 
@@ -132,14 +131,15 @@ async def attempt_message_handler(data: dict[str, Any]) -> None:
         provider_resource = config_providers[0] if config_providers else None
 
         if not agent_resource or not model_resource or not provider_resource:
-            await sio.emit(
-                "attempt_error",
-                AttemptErrorEvent(
-                    chat_id=str(chat_id),
-                    type="send",
-                    message="Missing agent/model/provider configuration",
-                ).model_dump(mode="json"),
-                room=sid,
+            await internal_sio.emit(
+                "attempt_progress",
+                {
+                    "type": "error",
+                    "sid": sid,
+                    "error_type": "send",
+                    "message": "Missing agent/model/provider configuration",
+                    "chat_id": str(chat_id),
+                },
             )
             return
 
@@ -170,14 +170,15 @@ async def attempt_message_handler(data: dict[str, Any]) -> None:
                 f"Attempt message preparation failed - "
                 f"profile_id={profile_id}, chat_id={chat_id}"
             )
-            await sio.emit(
-                "attempt_error",
-                AttemptErrorEvent(
-                    chat_id=str(chat_id),
-                    type="send",
-                    message="Failed to create message",
-                ).model_dump(mode="json"),
-                room=sid,
+            await internal_sio.emit(
+                "attempt_progress",
+                {
+                    "type": "error",
+                    "sid": sid,
+                    "error_type": "send",
+                    "message": "Failed to create message",
+                    "chat_id": str(chat_id),
+                },
             )
             return
 
@@ -188,33 +189,29 @@ async def attempt_message_handler(data: dict[str, Any]) -> None:
         )
 
         # Step 6: Emit attempt_user_complete (to sid + attempt room)
-        user_complete_event = AttemptUserCompleteEvent(
-            chat_id=str(chat_id),
-            message_id=str(msg_prepare_row.user_message_id),
-            content=message,
-            created_at=created_at_str,
-        )
-        await sio.emit(
-            "attempt_user_complete",
-            user_complete_event.model_dump(mode="json"),
-            room=sid,
-        )
-        await sio.emit(
-            "attempt_user_complete",
-            user_complete_event.model_dump(mode="json"),
-            room=f"attempt_{chat_id}",
+        await internal_sio.emit(
+            "attempt_progress",
+            {
+                "type": "user_complete",
+                "sid": sid,
+                "rooms": [sid, f"attempt_{chat_id}"],
+                "chat_id": str(chat_id),
+                "message_id": str(msg_prepare_row.user_message_id),
+                "content": message,
+                "created_at": created_at_str,
+            },
         )
 
         # Step 7: Emit attempt_assistant_start (to sid)
-        assistant_start_event = AttemptAssistantStartEvent(
-            chat_id=str(chat_id),
-            message_id=str(msg_prepare_row.assistant_message_id),
-            created_at=created_at_str,
-        )
-        await sio.emit(
-            "attempt_assistant_start",
-            assistant_start_event.model_dump(mode="json"),
-            room=sid,
+        await internal_sio.emit(
+            "attempt_progress",
+            {
+                "type": "assistant_start",
+                "sid": sid,
+                "chat_id": str(chat_id),
+                "message_id": str(msg_prepare_row.assistant_message_id),
+                "created_at": created_at_str,
+            },
         )
 
         # Step 8: Build chat history from views (completed messages for this chat)
@@ -264,12 +261,13 @@ async def attempt_message_handler(data: dict[str, Any]) -> None:
 
     except Exception as e:
         logger.exception(f"Error in attempt_message: {e}")
-        await sio.emit(
-            "attempt_error",
-            AttemptErrorEvent(
-                chat_id=str(payload.chat_id) if payload.chat_id else None,
-                type="send",
-                message=f"Failed to send message: {e}",
-            ).model_dump(mode="json"),
-            room=sid,
+        await internal_sio.emit(
+            "attempt_progress",
+            {
+                "type": "error",
+                "sid": sid,
+                "error_type": "send",
+                "message": f"Failed to send message: {e}",
+                "chat_id": str(payload.chat_id) if payload.chat_id else None,
+            },
         )

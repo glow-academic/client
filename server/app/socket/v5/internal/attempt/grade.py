@@ -13,8 +13,7 @@ from app.api.v4.artifacts.attempt.get import get_attempt_websocket
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.main import get_internal_sio, sio
-from app.socket.v5.client.types import AttemptErrorEvent
+from app.main import get_internal_sio
 from app.sql.types import PrepareAttemptGradeSqlParams, PrepareAttemptGradeSqlRow
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
@@ -70,14 +69,15 @@ async def attempt_grade_handler(data: dict[str, Any]) -> None:
             )
 
         if not result.resources:
-            await sio.emit(
-                "attempt_error",
-                AttemptErrorEvent(
-                    chat_id=str(chat_id) if chat_id else None,
-                    type="grade",
-                    message="Attempt not found or access denied",
-                ).model_dump(mode="json"),
-                room=sid,
+            await internal_sio.emit(
+                "attempt_progress",
+                {
+                    "type": "error",
+                    "sid": sid,
+                    "error_type": "grade",
+                    "message": "Attempt not found or access denied",
+                    "chat_id": str(chat_id) if chat_id else None,
+                },
             )
             return
 
@@ -87,27 +87,29 @@ async def attempt_grade_handler(data: dict[str, Any]) -> None:
             grade_chat_id = result.views.attempt_chat[0].id
 
         if not grade_chat_id:
-            await sio.emit(
-                "attempt_error",
-                AttemptErrorEvent(
-                    type="grade",
-                    message="No chat found for grading",
-                ).model_dump(mode="json"),
-                room=sid,
+            await internal_sio.emit(
+                "attempt_progress",
+                {
+                    "type": "error",
+                    "sid": sid,
+                    "error_type": "grade",
+                    "message": "No chat found for grading",
+                },
             )
             return
 
         # Step 3: Resolve group_id
         existing_group_id = result.group_id
         if not existing_group_id:
-            await sio.emit(
-                "attempt_error",
-                AttemptErrorEvent(
-                    chat_id=str(grade_chat_id),
-                    type="grade",
-                    message="No group found for grading",
-                ).model_dump(mode="json"),
-                room=sid,
+            await internal_sio.emit(
+                "attempt_progress",
+                {
+                    "type": "error",
+                    "sid": sid,
+                    "error_type": "grade",
+                    "message": "No group found for grading",
+                    "chat_id": str(grade_chat_id),
+                },
             )
             return
 
@@ -121,14 +123,15 @@ async def attempt_grade_handler(data: dict[str, Any]) -> None:
         provider_resource = config_providers[0] if config_providers else None
 
         if not agent_resource or not model_resource or not provider_resource:
-            await sio.emit(
-                "attempt_error",
-                AttemptErrorEvent(
-                    chat_id=str(grade_chat_id),
-                    type="grade",
-                    message="Missing agent/model/provider configuration",
-                ).model_dump(mode="json"),
-                room=sid,
+            await internal_sio.emit(
+                "attempt_progress",
+                {
+                    "type": "error",
+                    "sid": sid,
+                    "error_type": "grade",
+                    "message": "Missing agent/model/provider configuration",
+                    "chat_id": str(grade_chat_id),
+                },
             )
             return
 
@@ -154,14 +157,15 @@ async def attempt_grade_handler(data: dict[str, Any]) -> None:
                 f"Attempt grade preparation failed - "
                 f"profile_id={profile_id}, attempt_id={attempt_id}"
             )
-            await sio.emit(
-                "attempt_error",
-                AttemptErrorEvent(
-                    chat_id=str(grade_chat_id),
-                    type="grade",
-                    message="Failed to prepare grading",
-                ).model_dump(mode="json"),
-                room=sid,
+            await internal_sio.emit(
+                "attempt_progress",
+                {
+                    "type": "error",
+                    "sid": sid,
+                    "error_type": "grade",
+                    "message": "Failed to prepare grading",
+                    "chat_id": str(grade_chat_id),
+                },
             )
             return
 
@@ -201,12 +205,13 @@ async def attempt_grade_handler(data: dict[str, Any]) -> None:
 
     except Exception as e:
         logger.exception(f"Error in attempt_grade: {e}")
-        await sio.emit(
-            "attempt_error",
-            AttemptErrorEvent(
-                chat_id=str(chat_id) if chat_id else None,
-                type="grade",
-                message=f"Failed to start grading: {e}",
-            ).model_dump(mode="json"),
-            room=sid,
+        await internal_sio.emit(
+            "attempt_progress",
+            {
+                "type": "error",
+                "sid": sid,
+                "error_type": "grade",
+                "message": f"Failed to start grading: {e}",
+                "chat_id": str(chat_id) if chat_id else None,
+            },
         )

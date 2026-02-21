@@ -13,12 +13,7 @@ from typing import Any, cast
 
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.main import get_internal_sio, sio
-from app.socket.v5.client.types import (
-    AttemptChatEndedEvent,
-    AttemptChatStartedEvent,
-    AttemptErrorEvent,
-)
+from app.main import get_internal_sio
 from app.sql.types import (
     CreateAttemptChatSqlParams,
     CreateAttemptChatSqlRow,
@@ -82,16 +77,16 @@ async def _attempt_chat_impl(sid: str, data: dict[str, Any]) -> None:
                 await conn.execute("REFRESH MATERIALIZED VIEW attempt_mv")
                 await conn.execute("REFRESH MATERIALIZED VIEW attempt_chat_mv")
 
-            # Emit attempt_chat_ended to client
-            event = AttemptChatEndedEvent(
-                chat_id=last_chat_id or "",
-                is_attempt_finished=None,
-                grade_id=None,
-            )
-            await sio.emit(
-                "attempt_chat_ended",
-                event.model_dump(mode="json"),
-                room=sid,
+            # Emit attempt_chat_ended to client via server layer
+            await internal_sio.emit(
+                "attempt_progress",
+                {
+                    "type": "chat_ended",
+                    "sid": sid,
+                    "chat_id": last_chat_id or "",
+                    "is_attempt_finished": None,
+                    "grade_id": None,
+                },
             )
 
             # Auto-proceed: emit attempt_start in Next mode
@@ -142,26 +137,27 @@ async def _attempt_chat_impl(sid: str, data: dict[str, Any]) -> None:
 
             await invalidate_tags(["attempt", "attempts"])
 
-            # Emit attempt_chat_started to client
-            event_started = AttemptChatStartedEvent(
-                attempt_id=str(attempt_id),
-                chat_id=str(chat_id),
-            )
-            await sio.emit(
-                "attempt_chat_started",
-                event_started.model_dump(mode="json"),
-                room=sid,
+            # Emit attempt_chat_started to client via server layer
+            await internal_sio.emit(
+                "attempt_progress",
+                {
+                    "type": "chat_started",
+                    "sid": sid,
+                    "attempt_id": str(attempt_id),
+                    "chat_id": str(chat_id),
+                },
             )
 
     except Exception as e:
         logger.exception(f"Error in attempt_chat: {str(e)}")
-        await sio.emit(
-            "attempt_error",
-            AttemptErrorEvent(
-                type="chat",
-                message=f"Failed to handle chat lifecycle: {str(e)}",
-            ).model_dump(mode="json"),
-            room=sid,
+        await internal_sio.emit(
+            "attempt_progress",
+            {
+                "type": "error",
+                "sid": sid,
+                "error_type": "chat",
+                "message": f"Failed to handle chat lifecycle: {str(e)}",
+            },
         )
 
 

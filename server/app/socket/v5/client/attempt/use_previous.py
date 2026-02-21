@@ -10,12 +10,8 @@ from typing import Any, cast
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.main import sio
-from app.socket.v5.client.types import (
-    AttemptChatEndedEvent,
-    AttemptErrorEvent,
-    AttemptUsePreviousPayload,
-)
+from app.main import get_internal_sio, sio
+from app.socket.v5.client.types import AttemptUsePreviousPayload
 from app.sql.types import (
     UsePreviousAttemptGradesSqlParams,
     UsePreviousAttemptGradesSqlRow,
@@ -24,6 +20,8 @@ from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
+
+internal_sio = get_internal_sio()
 
 SQL_PATH_USE_PREVIOUS = (
     "app/sql/v4/queries/generate/attempt/use_previous_attempt_grades_complete.sql"
@@ -72,15 +70,16 @@ async def _attempt_use_previous_impl(sid: str, data: AttemptUsePreviousPayload) 
             await conn.execute("REFRESH MATERIALIZED VIEW attempt_mv")
             await conn.execute("REFRESH MATERIALIZED VIEW attempt_chat_mv")
 
-            # Emit attempt_chat_ended
-            await sio.emit(
-                "attempt_chat_ended",
-                AttemptChatEndedEvent(
-                    chat_id=last_chat_id or "",
-                    is_attempt_finished=None,
-                    grade_id=None,
-                ).model_dump(mode="json"),
-                room=sid,
+            # Emit attempt_chat_ended via server layer
+            await internal_sio.emit(
+                "attempt_progress",
+                {
+                    "type": "chat_ended",
+                    "sid": sid,
+                    "chat_id": last_chat_id or "",
+                    "is_attempt_finished": None,
+                    "grade_id": None,
+                },
             )
 
         # Log activity
@@ -98,13 +97,14 @@ async def _attempt_use_previous_impl(sid: str, data: AttemptUsePreviousPayload) 
 
     except Exception as e:
         logger.exception(f"Error in attempt_use_previous: {e}")
-        await sio.emit(
-            "attempt_error",
-            AttemptErrorEvent(
-                type="end",
-                message=f"Failed to use previous grades: {e}",
-            ).model_dump(mode="json"),
-            room=sid,
+        await internal_sio.emit(
+            "attempt_progress",
+            {
+                "type": "error",
+                "sid": sid,
+                "error_type": "end",
+                "message": f"Failed to use previous grades: {e}",
+            },
         )
 
 
@@ -116,13 +116,14 @@ async def attempt_use_previous(sid: str, data: dict[str, Any]) -> None:
         profile_id_str = await find_profile_by_socket(sid)
 
         if not profile_id_str:
-            await sio.emit(
-                "attempt_error",
-                AttemptErrorEvent(
-                    type="end",
-                    message="Profile not found. Please reconnect.",
-                ).model_dump(mode="json"),
-                room=sid,
+            await internal_sio.emit(
+                "attempt_progress",
+                {
+                    "type": "error",
+                    "sid": sid,
+                    "error_type": "end",
+                    "message": "Profile not found. Please reconnect.",
+                },
             )
             return
 
@@ -130,11 +131,12 @@ async def attempt_use_previous(sid: str, data: dict[str, Any]) -> None:
 
     except Exception as e:
         logger.exception(f"Invalid request in attempt_use_previous: {e}")
-        await sio.emit(
-            "attempt_error",
-            AttemptErrorEvent(
-                type="end",
-                message=f"Invalid request: {e}",
-            ).model_dump(mode="json"),
-            room=sid,
+        await internal_sio.emit(
+            "attempt_progress",
+            {
+                "type": "error",
+                "sid": sid,
+                "error_type": "end",
+                "message": f"Invalid request: {e}",
+            },
         )
