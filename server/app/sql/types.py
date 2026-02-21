@@ -34044,6 +34044,8 @@ class GetActivityListViewSqlParams(BaseModel):
 
     profile_id_filter: UUID | None = None
     session_id_filter: UUID | None = None
+    date_from: date | None = None
+    date_to: date | None = None
     page_limit_val: int | None = 10000
     page_offset_val: int | None = 0
 
@@ -34051,6 +34053,8 @@ class GetActivityListViewSqlParams(BaseModel):
         return (
             self.profile_id_filter,
             self.session_id_filter,
+            self.date_from,
+            self.date_to,
             self.page_limit_val,
             self.page_offset_val,
         )
@@ -34072,6 +34076,8 @@ class GetActivityListViewApiRequest(BaseModel):
 
     profile_id_filter: UUID | None = None
     session_id_filter: UUID | None = None
+    date_from: date | None = None
+    date_to: date | None = None
     page_limit_val: int | None = 10000
     page_offset_val: int | None = 0
 

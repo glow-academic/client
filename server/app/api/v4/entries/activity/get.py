@@ -1,5 +1,6 @@
 """Activity entry GET endpoint."""
 
+from datetime import date
 from typing import Annotated, cast
 from uuid import UUID
 
@@ -71,6 +72,8 @@ async def get_activity_list_view_internal(
     conn: asyncpg.Connection,
     profile_id_filter: UUID | None = None,
     session_id_filter: UUID | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     page_limit: int = 10000,
     page_offset: int = 0,
     bypass_cache: bool = False,
@@ -83,6 +86,8 @@ async def get_activity_list_view_internal(
         {
             "profile_id_filter": str(profile_id_filter) if profile_id_filter else None,
             "session_id_filter": str(session_id_filter) if session_id_filter else None,
+            "date_from": str(date_from) if date_from else None,
+            "date_to": str(date_to) if date_to else None,
             "page_limit": page_limit,
             "page_offset": page_offset,
         },
@@ -96,6 +101,8 @@ async def get_activity_list_view_internal(
     params = GetActivityListViewSqlParams(
         profile_id_filter=profile_id_filter,
         session_id_filter=session_id_filter,
+        date_from=date_from,
+        date_to=date_to,
         page_limit_val=page_limit,
         page_offset_val=page_offset,
     )

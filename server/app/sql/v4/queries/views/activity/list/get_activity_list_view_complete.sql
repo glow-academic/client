@@ -64,6 +64,8 @@ CREATE TYPE types.q_get_activity_list_view_v4_item AS (
 CREATE OR REPLACE FUNCTION api_get_activity_list_view_v4(
     profile_id_filter uuid DEFAULT NULL,
     session_id_filter uuid DEFAULT NULL,
+    date_from date DEFAULT NULL,
+    date_to date DEFAULT NULL,
     page_limit_val int DEFAULT 10000,
     page_offset_val int DEFAULT 0
 )
@@ -81,6 +83,8 @@ AS $$
         WHERE
             (profile_id_filter IS NULL OR mv.profile_id = profile_id_filter)
             AND (session_id_filter IS NULL OR mv.session_id = session_id_filter)
+            AND (date_from IS NULL OR mv.created_at >= date_from)
+            AND (date_to IS NULL OR mv.created_at <= date_to)
     ),
     counted AS (
         SELECT COUNT(*)::int AS total FROM filtered
