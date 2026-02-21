@@ -25,6 +25,20 @@ class GeneratePayload(BaseModel):
         attempt_id:    Optional attempt context.
         training_department_id: Optional department context.
         staff_id:      Optional staff ID (profile artifact resolves to target_profile_id).
+
+        # Pre-created IDs (skip prepare step when populated)
+        run_id:        Pre-created run ID from handler prepare SQL.
+        group_id:      Pre-created or existing group ID.
+
+        # Extra pass-through for attempt message/grade
+        chat_id:       Chat ID for message/grade context.
+        grade_id:      Grade ID for grade context.
+        message:       User message text.
+        voice_mode:    Whether message is from voice input.
+        upload_id:     Optional upload attachment ID.
+
+        # Extra messages (chat history, appended after developer msgs)
+        extra_messages: Pre-built messages (e.g. chat history) — not persisted.
     """
 
     artifact_type: str
@@ -38,6 +52,20 @@ class GeneratePayload(BaseModel):
     attempt_id: str | None = None
     training_department_id: str | None = None
     staff_id: str | None = None
+
+    # Pre-created IDs (skip prepare step when populated)
+    run_id: str | None = None
+    group_id: str | None = None
+
+    # Extra pass-through for attempt message/grade
+    chat_id: str | None = None
+    grade_id: str | None = None
+    message: str | None = None
+    voice_mode: bool = False
+    upload_id: str | None = None
+
+    # Extra messages (chat history, appended after developer msgs)
+    extra_messages: list[dict[str, str]] | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -186,3 +214,91 @@ class AttemptErrorEvent(BaseModel):
     chat_id: str | None = None
     type: str | None = None
     message: str
+
+
+# ---------------------------------------------------------------------------
+# Attempt message events
+# ---------------------------------------------------------------------------
+
+
+class AttemptMessagePayload(BaseModel):
+    """Client-to-server: send a message in an attempt chat."""
+
+    attempt_id: UUID
+    chat_id: UUID
+    message: str
+    voice_mode: bool = False
+    upload_id: UUID | None = None
+    resource_types: list[str] | None = None
+    user_instructions: list[str] | None = None
+
+
+class AttemptUserCompleteEvent(BaseModel):
+    """Server-to-client: user message finalized."""
+
+    chat_id: str
+    message_id: str
+    content: str
+    created_at: str
+
+
+class AttemptAssistantStartEvent(BaseModel):
+    """Server-to-client: assistant message generation starting."""
+
+    chat_id: str
+    message_id: str
+    created_at: str
+
+
+# ---------------------------------------------------------------------------
+# Attempt grade events
+# ---------------------------------------------------------------------------
+
+
+class AttemptGradePayload(BaseModel):
+    """Client-to-server: trigger grading for an attempt chat."""
+
+    attempt_id: UUID
+    chat_id: UUID | None = None
+    resource_types: list[str] | None = None
+    user_instructions: list[str] | None = None
+
+
+# ---------------------------------------------------------------------------
+# Attempt stop events
+# ---------------------------------------------------------------------------
+
+
+class AttemptStopPayload(BaseModel):
+    """Client-to-server: stop message generation."""
+
+    chat_id: UUID
+
+
+class AttemptStoppedEvent(BaseModel):
+    """Server-to-client: message generation stopped."""
+
+    chat_id: str
+    success: bool
+    message: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# Attempt response events
+# ---------------------------------------------------------------------------
+
+
+class AttemptResponsePayload(BaseModel):
+    """Client-to-server: submit a video question response."""
+
+    chat_id: UUID
+    question_id: UUID
+    option_ids: list[UUID]
+
+
+class AttemptResponseResultEvent(BaseModel):
+    """Server-to-client: response submission result."""
+
+    success: bool
+    message: str | None = None
+    is_correct: bool | None = None

@@ -34,6 +34,16 @@ async def _attempt_end_impl(sid: str, data: AttemptEndPayload) -> None:
             },
         )
 
+        # Trigger grading via internal bus
+        await internal_sio.emit(
+            "attempt_grade",
+            {
+                "sid": sid,
+                "attempt_id": attempt_id,
+                "chat_id": chat_id,
+            },
+        )
+
         # Log activity
         try:
             await log_websocket_activity(

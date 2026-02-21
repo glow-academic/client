@@ -1,0 +1,123 @@
+"""Attempt stop handler.
+
+Handles: attempt_stop_message — stop active message generation.
+
+Dual cancel (in-process + Redis) → SQL mutation → emit stopped.
+"""
+
+import uuid
+from typing import Any, cast
+
+from app.infra.v4.activity.websocket_logger import log_websocket_activity
+from app.infra.v4.websocket.cancel_active_result import cancel_active_result
+from app.infra.v4.websocket.cancel_active_run import cancel_active_run
+from app.infra.v4.websocket.get_db_connection import get_db_connection
+from app.main import sio
+from app.socket.v5.client.types import (
+    AttemptErrorEvent,
+    AttemptStopPayload,
+    AttemptStoppedEvent,
+)
+from app.sql.types import SimulationTextStopRunSqlParams, SimulationTextStopRunSqlRow
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
+
+logger = get_logger(__name__)
+
+SQL_PATH_STOP = "app/sql/v4/queries/simulations/simulation_text_stop_run_complete.sql"
+
+
+async def _attempt_stop_impl(sid: str, data: AttemptStopPayload) -> None:
+    """Handle attempt_stop_message — cancel active generation and mark complete."""
+    try:
+        chat_id = str(data.chat_id)
+
+        # Step 1: In-process cancel
+        await cancel_active_result(chat_id)
+
+        # Step 2: Redis cooperative cancel
+        await cancel_active_run(chat_id)
+
+        # Step 3: SQL mutation — mark message complete
+        async with get_db_connection() as conn:
+            row = cast(
+                SimulationTextStopRunSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH_STOP,
+                    params=SimulationTextStopRunSqlParams(
+                        chat_id=uuid.UUID(chat_id)
+                    ),
+                ),
+            )
+
+        success = row.success if row else False
+        cancelled_message_id = row.cancelled_message_id if row else None
+
+        if success and cancelled_message_id:
+            # Emit to sid + attempt room
+            stopped_event = AttemptStoppedEvent(
+                chat_id=chat_id,
+                success=True,
+                message=None,
+            ).model_dump(mode="json")
+
+            await sio.emit("attempt_stopped", stopped_event, room=sid)
+            await sio.emit(
+                "attempt_stopped", stopped_event, room=f"attempt_{chat_id}"
+            )
+
+            # Log activity
+            try:
+                await log_websocket_activity(
+                    sid=sid,
+                    event_key="attempt.stop.stopped",
+                    template="{{ actor.name }} stopped attempt",
+                    context={"chat_id": chat_id},
+                    endpoint="/socket/v5/attempt/stop",
+                    error=False,
+                )
+            except Exception:
+                pass
+        else:
+            await sio.emit(
+                "attempt_stopped",
+                AttemptStoppedEvent(
+                    chat_id=chat_id,
+                    success=False,
+                    message="No active message found for this chat",
+                ).model_dump(mode="json"),
+                room=sid,
+            )
+
+    except Exception as e:
+        logger.exception(f"Error in attempt_stop_message: {e}")
+        await sio.emit(
+            "attempt_error",
+            AttemptErrorEvent(
+                chat_id=str(data.chat_id) if data else None,
+                type="stop",
+                message=f"Failed to stop: {e}",
+            ).model_dump(mode="json"),
+            room=sid,
+        )
+
+
+@sio.event  # type: ignore
+async def attempt_stop_message(sid: str, data: dict[str, Any]) -> None:
+    """Handle attempt_stop_message event — stop message generation."""
+    try:
+        payload = AttemptStopPayload(**data)
+        await _attempt_stop_impl(sid, payload)
+    except Exception as e:
+        logger.exception(f"Invalid request in attempt_stop_message: {e}")
+        chat_id = data.get("chat_id", "")
+        await sio.emit(
+            "attempt_error",
+            AttemptErrorEvent(
+                chat_id=str(chat_id) if chat_id else None,
+                type="stop",
+                message=f"Invalid request: {e}",
+            ).model_dump(mode="json"),
+            room=sid,
+        )

@@ -390,37 +390,47 @@ async def _generate_impl(
             )
 
             # Step 10: Prepare generation (create group/run/config)
-            prepare_params = PrepareAgentGenerationSqlParams(
-                p_profile_id=profile_id,
-                p_group_id=existing_group_id,
-                p_agents_resource_id=agent_resource.id,
-                p_models_resource_id=model_resource.id,
-                p_providers_resource_id=provider_resource.id,
-            )
-            prepare_row = cast(
-                PrepareAgentGenerationSqlRow,
-                await execute_sql_typed(
-                    conn, config.prepare_sql_path, params=prepare_params
-                ),
-            )
-
-            if not prepare_row.run_id:
-                logger.error(
-                    f"{artifact_type.capitalize()} generation preparation failed - "
-                    f"profile_id={profile_id}, agent_id={agent_id}"
+            # When run_id is pre-created (e.g. attempt message/grade handlers),
+            # skip the prepare SQL — the handler already did it.
+            if data.run_id:
+                run_id = uuid.UUID(data.run_id)
+                group_id = (
+                    uuid.UUID(data.group_id) if data.group_id else existing_group_id
                 )
-                await _emit_error(
-                    sid,
-                    f"Failed to prepare {artifact_type} generation: Unknown error",
-                    artifact_type,
-                    group_id=str(existing_group_id) if existing_group_id else None,
+                config_id = None  # No config view needed
+            else:
+                prepare_params = PrepareAgentGenerationSqlParams(
+                    p_profile_id=profile_id,
+                    p_group_id=existing_group_id,
+                    p_agents_resource_id=agent_resource.id,
+                    p_models_resource_id=model_resource.id,
+                    p_providers_resource_id=provider_resource.id,
                 )
-                return
+                prepare_row = cast(
+                    PrepareAgentGenerationSqlRow,
+                    await execute_sql_typed(
+                        conn, config.prepare_sql_path, params=prepare_params
+                    ),
+                )
 
-            run_id = prepare_row.run_id
-            group_id = prepare_row.group_id
-            _trace_id = prepare_row.trace_id
-            config_id = prepare_row.config_id
+                if not prepare_row.run_id:
+                    logger.error(
+                        f"{artifact_type.capitalize()} generation preparation failed - "
+                        f"profile_id={profile_id}, agent_id={agent_id}"
+                    )
+                    await _emit_error(
+                        sid,
+                        f"Failed to prepare {artifact_type} generation: Unknown error",
+                        artifact_type,
+                        group_id=str(existing_group_id)
+                        if existing_group_id
+                        else None,
+                    )
+                    return
+
+                run_id = prepare_row.run_id
+                group_id = prepare_row.group_id
+                config_id = prepare_row.config_id
 
             # Step 11: Inject config view + draft view into Jinja context
             if config_id:
@@ -481,6 +491,12 @@ async def _generate_impl(
                     True,
                     False,
                 )
+
+            # Append extra messages (e.g. chat history from attempt handlers)
+            # These are already persisted in DB — don't re-persist.
+            if data.extra_messages:
+                for em in data.extra_messages:
+                    messages.append(em)
 
             if data.user_instructions:
                 for instruction in data.user_instructions:
@@ -548,6 +564,12 @@ async def _generate_impl(
                     value = getattr(data, field_name, None)
                     if value is not None:
                         emit_payload[field_name] = value
+
+                # Forward attempt-specific IDs for complete handler
+                if data.grade_id:
+                    emit_payload["grade_id"] = data.grade_id
+                if data.chat_id:
+                    emit_payload["chat_id"] = data.chat_id
 
                 await internal_sio.emit("generate_artifact", emit_payload)
 
