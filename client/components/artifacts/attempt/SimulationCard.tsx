@@ -29,7 +29,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useSocket } from "@/contexts/socket-context";
-import type { ServerToClientEvents } from "@/lib/ws/types";
+import { useAttemptLifecycle } from "@/hooks/use-attempt-lifecycle";
+import type { AttemptStartedEvent, AttemptErrorEvent } from "@/hooks/use-attempt-lifecycle";
 import { getIconComponent } from "@/utils/icons";
 import {
   ChevronLeft,
@@ -44,7 +45,7 @@ import {
   Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 // ProfileItem type derived from server response (single source of truth)
 import type { ProfileItem } from "@/app/(main)/layout-server";
@@ -139,13 +140,10 @@ export default function SimulationCard({
   const [currentRubricIndex, setCurrentRubricIndex] = useState(0);
   const totalRubrics = rubrics?.length ?? 0;
 
-  // Listen for attempt_started and attempt_chat_started to navigate
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleStarted = (
-      data: Parameters<ServerToClientEvents["attempt_started"]>[0],
-    ) => {
+  // Listen for attempt lifecycle events to navigate
+  useAttemptLifecycle({
+    socket,
+    onStarted: useCallback((data: AttemptStartedEvent) => {
       if (!isStartingRef.current) return;
       router.push(`/attempt/${data.attempt_id}`);
 
@@ -155,25 +153,16 @@ export default function SimulationCard({
           detail: { simulationId: id },
         })
       );
-    };
-
-    const handleError = (data: { type?: string; message: string }) => {
+    }, [router, id]),
+    onError: useCallback((data: AttemptErrorEvent) => {
       if (!isStartingRef.current) return;
       if (data.type === "start") {
         setIsStarting(false);
         isStartingRef.current = false;
         toast.error(data.message || "Failed to start simulation.");
       }
-    };
-
-    socket.on("attempt_started", handleStarted);
-    socket.on("attempt_error", handleError);
-
-    return () => {
-      socket.off("attempt_started", handleStarted);
-      socket.off("attempt_error", handleError);
-    };
-  }, [socket, practice, router, id]);
+    }, []),
+  });
 
   // Start training function - emits attempt_start via WebSocket
   const handleStartTraining = useCallback(

@@ -16,8 +16,12 @@ import {
 } from "lucide-react";
 import type { components } from "@/lib/api/schema";
 import type { OutputOf } from "@/lib/api/types";
+import { useAttemptLifecycle } from "@/hooks/use-attempt-lifecycle";
+import type { AttemptChatEndedEvent, AttemptEndedEvent, AttemptResponseResultEvent } from "@/hooks/use-attempt-lifecycle";
 import { useAttemptMessages } from "@/hooks/use-attempt-messages";
-import type { ClientToServerEvents, ServerToClientEvents } from "@/lib/ws/types";
+import { useAttemptVoice } from "@/hooks/use-attempt-voice";
+import type { AttemptUserStartEvent, AttemptUserDeltaEvent, AttemptAssistantAudioEvent } from "@/hooks/use-attempt-voice";
+import type { ClientToServerEvents } from "@/lib/ws/types";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -93,14 +97,7 @@ type AttemptMicMutePayload = Parameters<ClientToServerEvents["attempt_mic_mute"]
 type AttemptResponseSubmitPayload = Parameters<ClientToServerEvents["attempt_response_submit"]>[0];
 
 // Server-to-Client event payloads (message streaming types are in useAttemptMessages hook)
-type AttemptUserStartEvent = Parameters<ServerToClientEvents["attempt_user_start"]>[0];
-type AttemptUserDeltaEvent = Parameters<ServerToClientEvents["attempt_user_delta"]>[0];
-type AttemptAssistantAudioEvent = Parameters<ServerToClientEvents["attempt_assistant_audio"]>[0];
-type AttemptChatEndedEvent = Parameters<ServerToClientEvents["attempt_chat_ended"]>[0];
-type AttemptEndedEvent = Parameters<ServerToClientEvents["attempt_ended"]>[0];
-type AttemptAudioReadyEvent = Parameters<ServerToClientEvents["attempt_audio_ready"]>[0];
-type AttemptAudioEndedEvent = Parameters<ServerToClientEvents["attempt_audio_ended"]>[0];
-type AttemptResponseResultEvent = Parameters<ServerToClientEvents["attempt_response_result"]>[0];
+// Lifecycle + voice event types imported from hooks
 
 /** Props for the AttemptChat component */
 export interface AttemptChatProps {
@@ -733,103 +730,16 @@ export function AttemptChat({
     [currentChat, socket]
   );
 
-  const handleVoiceStart = useCallback(async () => {
-    if (!currentChat?.id || !socket || !isConnected) {
-      toast.error("Cannot enable voice mode: chat or connection not available");
-      return;
-    }
-
-    const chatId = currentChat.id;
-
-    // BFF: Client sends chat_id, server generates group_id internally
-    socket.emit("attempt_audio_start", { chat_id: chatId });
-
-    await new Promise<void>((resolve, reject) => {
-      const cleanup = () => {
-        socket.off("attempt_audio_ready", handleStartResponse);
-      };
-
-      const timeout = setTimeout(() => {
-        cleanup();
-        reject(new Error("Timeout waiting for voice session start"));
-      }, 10000);
-
-      const handleStartResponse = (data: AttemptAudioReadyEvent) => {
-        if (data.chat_id !== chatId) return;
-        clearTimeout(timeout);
-        cleanup();
-        if (data.success) {
-          resolve();
-        } else {
-          reject(new Error(data.message || "Failed to start voice session"));
-        }
-      };
-
-      socket.on("attempt_audio_ready", handleStartResponse);
-    });
-  }, [currentChat?.id, isConnected, socket]);
-
-  const handleVoiceStop = useCallback(async () => {
-    if (!currentChat?.id || !socket || !isConnected) return;
-
-    const chatId = currentChat.id;
-
-    // BFF: Client sends chat_id, server looks up session by sid
-    socket.emit("attempt_audio_stop", { chat_id: chatId });
-
-    await new Promise<void>((resolve, reject) => {
-      const cleanup = () => {
-        socket.off("attempt_audio_ended", handleStopResponse);
-      };
-
-      const timeout = setTimeout(() => {
-        cleanup();
-        reject(new Error("Timeout waiting for voice session stop"));
-      }, 10000);
-
-      const handleStopResponse = (data: AttemptAudioEndedEvent) => {
-        if (data.chat_id !== chatId) return;
-        clearTimeout(timeout);
-        cleanup();
-        if (data.success) {
-          resolve();
-        } else {
-          reject(new Error(data.message || "Failed to stop voice session"));
-        }
-      };
-
-      socket.on("attempt_audio_ended", handleStopResponse);
-    });
-  }, [currentChat?.id, isConnected, socket]);
-
-  const handlePcm16Data = useCallback(
-    (data: ArrayBuffer) => {
-      if (!socket || !isConnected) return;
-      socket.emit("attempt_audio_frame", { audio: data });
-    },
-    [socket, isConnected]
-  );
-
-  const handleMicMute = useCallback(
-    (muted: boolean) => {
-      if (!socket || !isConnected) return;
-      socket.emit("attempt_mic_mute", { muted });
-    },
-    [socket, isConnected]
-  );
-
   // ---------------------------------------------------------------------------
-  // WEBSOCKET EVENT HANDLERS (voice, navigation, grading, hints, quiz)
+  // WEBSOCKET EVENT HOOKS (voice, navigation, grading, quiz)
   // Message streaming events are handled by useAttemptMessages hook.
   // ---------------------------------------------------------------------------
 
-  useEffect(() => {
-    if (!socket) return;
-
-    // User started speaking (voice)
-    const handleUserStart = (data: AttemptUserStartEvent) => {
-      if (data.chat_id !== currentChatIdRef.current) return;
-
+  // Voice streaming events + promise-based audio session lifecycle
+  const { waitForAudioReady, waitForAudioEnded } = useAttemptVoice({
+    socket,
+    chatIdRef: currentChatIdRef,
+    onUserStart: useCallback((data: AttemptUserStartEvent) => {
       const optimisticMessageId = `optimistic-user-voice-${Date.now()}-${Math.random()}`;
 
       setOptimisticMessages((prev) => {
@@ -864,12 +774,8 @@ export function AttemptChat({
         });
         return newMap;
       });
-    };
-
-    // User transcript delta (voice)
-    const handleUserDelta = (data: AttemptUserDeltaEvent) => {
-      if (data.chat_id !== currentChatIdRef.current) return;
-
+    }, [setOptimisticMessages]),
+    onUserDelta: useCallback((data: AttemptUserDeltaEvent) => {
       transcriptDeltasRef.current.set(data.item_id, data.transcript);
       const optimisticMessageId = itemIdToOptimisticIdRef.current.get(data.item_id);
 
@@ -886,67 +792,78 @@ export function AttemptChat({
           return newMap;
         });
       }
-    };
-
-    // Assistant audio chunk
-    const handleAssistantAudio = (data: AttemptAssistantAudioEvent) => {
-      if (data.chat_id !== currentChatIdRef.current) return;
+    }, [setOptimisticMessages]),
+    onAudioChunk: useCallback((data: AttemptAssistantAudioEvent) => {
       voiceInputRef.current?.enqueue_audio_delta(data.audio);
-    };
+    }, []),
+  });
 
-    // Chat ended
-    const handleChatEnded = async (data: AttemptChatEndedEvent) => {
-      if (data.chat_id === currentChatIdRef.current) {
-        freshlyCompletedChatsRef.current.add(data.chat_id);
-        router.refresh();
-      }
-    };
-
-    // Attempt ended
-    const handleAttemptEnded = async (data: AttemptEndedEvent) => {
+  // Lifecycle events (chat ended, attempt ended, quiz result)
+  useAttemptLifecycle({
+    socket,
+    attemptId: attempt_id,
+    chatIdRef: currentChatIdRef,
+    onChatEnded: useCallback((data: AttemptChatEndedEvent) => {
+      freshlyCompletedChatsRef.current.add(data.chat_id);
+      router.refresh();
+    }, [router]),
+    onEnded: useCallback((data: AttemptEndedEvent) => {
       if (data.attempt_id === attempt_id) {
         router.refresh();
       }
-
       if (data.success) {
         toast.success(data.message);
       } else {
         toast.error(data.message);
       }
-    };
-
-    // Quiz result
-    const handleQuizResult = (data: AttemptResponseResultEvent) => {
+    }, [attempt_id, router]),
+    onResponseResult: useCallback((data: AttemptResponseResultEvent) => {
       if (data.success) {
         router.refresh();
       } else {
         toast.error(data.message || "Failed to process quiz");
       }
-    };
+    }, [router]),
+  });
 
-    // Subscribe to events
-    socket.on("attempt_assistant_audio", handleAssistantAudio);
-    socket.on("attempt_user_start", handleUserStart);
-    socket.on("attempt_user_delta", handleUserDelta);
-    socket.on("attempt_chat_ended", handleChatEnded);
-    socket.on("attempt_ended", handleAttemptEnded);
-    socket.on("attempt_response_result", handleQuizResult);
+  const handleVoiceStart = useCallback(async () => {
+    if (!currentChat?.id || !socket || !isConnected) {
+      toast.error("Cannot enable voice mode: chat or connection not available");
+      return;
+    }
 
-    return () => {
-      socket.off("attempt_assistant_audio", handleAssistantAudio);
-      socket.off("attempt_user_start", handleUserStart);
-      socket.off("attempt_user_delta", handleUserDelta);
-      socket.off("attempt_chat_ended", handleChatEnded);
-      socket.off("attempt_ended", handleAttemptEnded);
-      socket.off("attempt_response_result", handleQuizResult);
-    };
-  }, [
-    socket,
-    setOptimisticMessages,
-    router,
-    attempt_id,
-    chats,
-  ]);
+    const chatId = currentChat.id;
+
+    // BFF: Client sends chat_id, server generates group_id internally
+    socket.emit("attempt_audio_start", { chat_id: chatId });
+    await waitForAudioReady(chatId);
+  }, [currentChat?.id, isConnected, socket, waitForAudioReady]);
+
+  const handleVoiceStop = useCallback(async () => {
+    if (!currentChat?.id || !socket || !isConnected) return;
+
+    const chatId = currentChat.id;
+
+    // BFF: Client sends chat_id, server looks up session by sid
+    socket.emit("attempt_audio_stop", { chat_id: chatId });
+    await waitForAudioEnded(chatId);
+  }, [currentChat?.id, isConnected, socket, waitForAudioEnded]);
+
+  const handlePcm16Data = useCallback(
+    (data: ArrayBuffer) => {
+      if (!socket || !isConnected) return;
+      socket.emit("attempt_audio_frame", { audio: data });
+    },
+    [socket, isConnected]
+  );
+
+  const handleMicMute = useCallback(
+    (muted: boolean) => {
+      if (!socket || !isConnected) return;
+      socket.emit("attempt_mic_mute", { muted });
+    },
+    [socket, isConnected]
+  );
 
   // ---------------------------------------------------------------------------
   // COMPONENT PROPS

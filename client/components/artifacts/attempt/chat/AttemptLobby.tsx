@@ -5,11 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useSocket } from "@/contexts/socket-context";
+import { useAttemptLifecycle } from "@/hooks/use-attempt-lifecycle";
+import type {
+  AttemptChatStartedEvent,
+  AttemptEndedEvent,
+  AttemptErrorEvent,
+} from "@/hooks/use-attempt-lifecycle";
 import type { components } from "@/lib/api/schema";
-import type { ServerToClientEvents } from "@/lib/ws/types";
 import { Play, SlidersHorizontal, SkipForward } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type AvailableContinuationOptions =
@@ -45,6 +50,7 @@ export function AttemptLobby({
   const router = useRouter();
   const { socket, isConnected } = useSocket();
   const [isStarting, setIsStarting] = useState(false);
+  const isStartingRef = useRef(false);
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<string>("");
 
   const options = useMemo(
@@ -52,57 +58,41 @@ export function AttemptLobby({
     [continuationOptions],
   );
 
-  // Listen for attempt_chat_started, attempt_chat_ended, attempt_ended events
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleChatStarted = (
-      data: Parameters<ServerToClientEvents["attempt_chat_started"]>[0],
-    ) => {
-      if (!isStarting) return;
+  // Listen for attempt lifecycle events
+  useAttemptLifecycle({
+    socket,
+    attemptId,
+    onChatStarted: useCallback((data: AttemptChatStartedEvent) => {
+      if (!isStartingRef.current) return;
       setIsStarting(false);
+      isStartingRef.current = false;
       if (data.attempt_id === attemptId) {
         router.refresh();
       }
-    };
-
-    const handleChatEnded = () => {
-      if (!isStarting) return;
+    }, [attemptId, router]),
+    onChatEnded: useCallback(() => {
+      if (!isStartingRef.current) return;
       setIsStarting(false);
+      isStartingRef.current = false;
       router.refresh();
-    };
-
-    const handleAttemptEnded = (
-      data: Parameters<ServerToClientEvents["attempt_ended"]>[0],
-    ) => {
-      if (!isStarting) return;
+    }, [router]),
+    onEnded: useCallback((data: AttemptEndedEvent) => {
+      if (!isStartingRef.current) return;
       setIsStarting(false);
+      isStartingRef.current = false;
       if (data.attempt_id === attemptId) {
-        // All scenarios complete — navigate to results
         router.push(`/attempt/${attemptId}/results`);
       }
-    };
-
-    const handleAttemptError = (data: { type?: string; message: string }) => {
-      if (!isStarting) return;
+    }, [attemptId, router]),
+    onError: useCallback((data: AttemptErrorEvent) => {
+      if (!isStartingRef.current) return;
       if (data.type === "end" || data.type === "start") {
         setIsStarting(false);
+        isStartingRef.current = false;
         toast.error(data.message || "Failed to start training.");
       }
-    };
-
-    socket.on("attempt_chat_started", handleChatStarted);
-    socket.on("attempt_chat_ended", handleChatEnded);
-    socket.on("attempt_ended", handleAttemptEnded);
-    socket.on("attempt_error", handleAttemptError);
-
-    return () => {
-      socket.off("attempt_chat_started", handleChatStarted);
-      socket.off("attempt_chat_ended", handleChatEnded);
-      socket.off("attempt_ended", handleAttemptEnded);
-      socket.off("attempt_error", handleAttemptError);
-    };
-  }, [socket, isStarting, attemptId, mode, router]);
+    }, []),
+  });
 
   const handleStart = useCallback(() => {
     if (!socket || !isConnected) {
@@ -111,6 +101,7 @@ export function AttemptLobby({
     }
 
     setIsStarting(true);
+    isStartingRef.current = true;
 
     const payload: Record<string, unknown> = {
       training_entry_id: trainingBundleEntryId,
@@ -157,6 +148,7 @@ export function AttemptLobby({
     }
 
     setIsStarting(true);
+    isStartingRef.current = true;
 
     // Emit attempt_end with previous_chat_map — server creates skipped chats
     // with copied grades, then client refreshes on attempt_chat_ended

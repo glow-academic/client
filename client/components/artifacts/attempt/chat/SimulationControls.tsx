@@ -18,7 +18,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { useSocket } from "@/contexts/socket-context";
-import { useCallback, useEffect, useState } from "react";
+import { useAttemptLifecycle } from "@/hooks/use-attempt-lifecycle";
+import type { AttemptErrorEvent } from "@/hooks/use-attempt-lifecycle";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 export interface SimulationControlsProps {
@@ -42,45 +44,21 @@ export function SimulationControls({
   // Loading state for End Session button
   const [endingLoading, setEndingLoading] = useState(false);
 
-  // Listen for WebSocket events to reset loading state
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleAttemptError = (data: {
-      chat_id: string | null;
-      type: string;
-      message: string;
-    }) => {
+  // Listen for WebSocket lifecycle events to reset loading state
+  useAttemptLifecycle({
+    socket,
+    onError: useCallback((data: AttemptErrorEvent) => {
       if (data.type === "end" || data.type === "grade") {
         setEndingLoading(false);
       }
-    };
-
-    const handleGraded = (_data: {
-      attempt_id: string;
-      chat_id: string | null;
-      simulation_id: string;
-    }) => {
+    }, []),
+    onGradeComplete: useCallback(() => {
       setEndingLoading(false);
-    };
-
-    const handleChatEnded = (_data: {
-      chat_id: string;
-      is_attempt_finished: boolean;
-    }) => {
+    }, []),
+    onChatEnded: useCallback(() => {
       setEndingLoading(false);
-    };
-
-    socket.on("attempt_error", handleAttemptError);
-    socket.on("attempt_graded", handleGraded);
-    socket.on("attempt_chat_ended", handleChatEnded);
-
-    return () => {
-      socket.off("attempt_error", handleAttemptError);
-      socket.off("attempt_graded", handleGraded);
-      socket.off("attempt_chat_ended", handleChatEnded);
-    };
-  }, [socket]);
+    }, []),
+  });
 
   // Handle End Session button click
   const handleEndSession = useCallback(() => {
