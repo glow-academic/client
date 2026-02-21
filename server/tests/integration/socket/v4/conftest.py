@@ -1,4 +1,4 @@
-"""Pytest configuration for WebSocket v4 integration tests."""
+"""Pytest configuration for WebSocket lifecycle integration tests."""
 
 import importlib
 from typing import Any
@@ -71,8 +71,7 @@ def patch_sio_instance(
     monkeypatch.setattr(main, "sio", mock_sio)
 
     handler_module_paths = [
-        "app.socket.v4.connect",
-        "app.socket.v4.disconnect",
+        "app.socket.v5.client.connect",
     ]
 
     for module_path in handler_module_paths:
@@ -91,17 +90,9 @@ def patch_websocket_logger(monkeypatch: pytest.MonkeyPatch) -> None:
     async def _noop(**kwargs: Any) -> None:
         pass
 
-    import app.socket.v4.connect as connect_mod
+    import app.socket.v5.client.connect as connect_mod
 
     monkeypatch.setattr(connect_mod, "log_websocket_activity", _noop)
-
-    try:
-        import app.socket.v4.disconnect as disconnect_mod
-
-        if hasattr(disconnect_mod, "log_websocket_activity"):
-            monkeypatch.setattr(disconnect_mod, "log_websocket_activity", _noop)
-    except ImportError:
-        pass
 
 
 @pytest.fixture(autouse=True)
@@ -121,8 +112,7 @@ def patch_get_db_connection(
     monkeypatch.setattr(get_db_connection, "get_db_connection", mock_get_db_connection)
 
     import_modules = [
-        "app.socket.v4.connect",
-        "app.socket.v4.disconnect",
+        "app.socket.v5.client.connect",
     ]
 
     for module_path in import_modules:

@@ -29,7 +29,7 @@ from app.infra.v4.websocket.adapters.audio.base import (
     BaseAudioAdapter,
 )
 from app.infra.v4.websocket.session_store import AudioSession
-from app.socket.v4.artifacts.audio_events import (
+from app.socket.v5.internal.attempt.audio.events import (
     emit_audio_delta,
     emit_audio_error,
     emit_audio_response_done,

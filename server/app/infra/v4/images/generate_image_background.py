@@ -21,6 +21,20 @@ except ImportError:
     logger.warning("litellm not available - image generation will not work")
 
 
+async def _mark_image_completed(image_id: str) -> None:
+    """Mark image as completed in database (even on error) to prevent retries."""
+    pool = get_pool()
+    if pool:
+        try:
+            async with pool.acquire() as conn:
+                sql_update_image = load_sql(
+                    "app/sql/v4/queries/images/update_image_completed.sql"
+                )
+                await conn.execute(sql_update_image, image_id, True)
+        except Exception as e:
+            logger.error(f"Failed to update image record: {e}")
+
+
 async def generate_image_background(
     image_id: str,
     storage_key: str,
@@ -36,7 +50,7 @@ async def generate_image_background(
     pool = get_pool()
     if not pool:
         logger.error(f"Database pool not available for image {image_id}")
-        await _emit_image_error(image_id, storage_key, "Database pool not available")
+        await _mark_image_completed(image_id)
         return
 
     try:
@@ -45,22 +59,22 @@ async def generate_image_background(
         name = await storage.get(storage_key, "name")
         prompt = await storage.get(storage_key, "prompt")
         agent_id = await storage.get(storage_key, "agent_id")
-        department_id = await storage.get(storage_key, "department_id")
         profile_id = await storage.get(storage_key, "profile_id")
-        room = await storage.get(storage_key, "room")
 
         if not name or not prompt or not agent_id:
-            await _emit_image_error(
-                image_id, storage_key, "Missing required context for image generation"
+            logger.error(
+                f"Missing required context for image generation: image_id={image_id}"
             )
+            await _mark_image_completed(image_id)
             return
 
         async with pool.acquire() as conn:
             # Get agent's model info inline (profile_id is required for API key resolution)
             if not profile_id:
-                await _emit_image_error(
-                    image_id, storage_key, "profile_id is required for image generation"
+                logger.error(
+                    f"profile_id is required for image generation: image_id={image_id}"
                 )
+                await _mark_image_completed(image_id)
                 return
 
             from app.sql.types import (
@@ -80,25 +94,26 @@ async def generate_image_background(
                 ),
             )
             if not result:
-                await _emit_image_error(
-                    image_id, storage_key, f"Agent {agent_id} not found or inactive"
+                logger.error(
+                    f"Agent {agent_id} not found or inactive for image {image_id}"
                 )
+                await _mark_image_completed(image_id)
                 return
 
             api_key = result.api_key
             if not api_key:
-                await _emit_image_error(
-                    image_id, storage_key, f"API key not found for agent {agent_id}"
+                logger.error(
+                    f"API key not found for agent {agent_id}, image {image_id}"
                 )
+                await _mark_image_completed(image_id)
                 return
 
             # Decrypt API key
             try:
                 decrypted_api_key = decrypt_api_key(api_key)
             except Exception as e:
-                await _emit_image_error(
-                    image_id, storage_key, f"Failed to decrypt API key: {str(e)}"
-                )
+                logger.error(f"Failed to decrypt API key for image {image_id}: {e}")
+                await _mark_image_completed(image_id)
                 return
 
             model_name = result.model_name
@@ -117,9 +132,8 @@ async def generate_image_background(
 
             # Generate image using litellm
             if not LITELLM_AVAILABLE:
-                await _emit_image_error(
-                    image_id, storage_key, "litellm is not available"
-                )
+                logger.error(f"litellm is not available for image {image_id}")
+                await _mark_image_completed(image_id)
                 return
 
             try:
@@ -148,9 +162,10 @@ async def generate_image_background(
                     image_url = response
 
                 if not image_url and not image_bytes:
-                    await _emit_image_error(
-                        image_id, storage_key, "No image data returned from litellm"
+                    logger.error(
+                        f"No image data returned from litellm for image {image_id}"
                     )
+                    await _mark_image_completed(image_id)
                     return
 
                 # Download image if URL provided
@@ -171,18 +186,15 @@ async def generate_image_background(
                         image_bytes = requests_response.content  # type: ignore
 
                 if not image_bytes:
-                    await _emit_image_error(
-                        image_id, storage_key, "Failed to get image bytes"
-                    )
+                    logger.error(f"Failed to get image bytes for image {image_id}")
+                    await _mark_image_completed(image_id)
                     return
 
             except Exception as e:
                 logger.error(
                     f"Image generation failed for {image_id}: {e}", exc_info=True
                 )
-                await _emit_image_error(
-                    image_id, storage_key, f"Image generation failed: {str(e)}"
-                )
+                await _mark_image_completed(image_id)
                 return
 
             # Determine file extension
@@ -226,9 +238,8 @@ async def generate_image_background(
             )
 
             if not upload_row:
-                await _emit_image_error(
-                    image_id, storage_key, "Failed to create upload record"
-                )
+                logger.error(f"Failed to create upload record for image {image_id}")
+                await _mark_image_completed(image_id)
                 # Clean up file
                 try:
                     os.remove(full_path)
@@ -261,16 +272,8 @@ async def generate_image_background(
             await conn.execute(sql_update_image, image_id, True)
 
             logger.info(
-                f"✓ Background image generation completed: image_id={image_id}, "
+                f"Background image generation completed: image_id={image_id}, "
                 f"upload_id={upload_id_str}, file_path={file_path}, size={file_size} bytes"
-            )
-
-            # Emit WebSocket completion event
-            await _emit_image_complete(
-                image_id=image_id,
-                upload_id=upload_id_str,
-                name=name,
-                room=room,
             )
 
             # Clean up storage
@@ -278,86 +281,11 @@ async def generate_image_background(
             await storage.delete(storage_key, "name")
             await storage.delete(storage_key, "prompt")
             await storage.delete(storage_key, "agent_id")
-            await storage.delete(storage_key, "department_id")
             await storage.delete(storage_key, "profile_id")
-            await storage.delete(storage_key, "room")
 
     except Exception as e:
         logger.error(
             f"Error in background image generation for {image_id}: {e}",
             exc_info=True,
         )
-        await _emit_image_error(image_id, storage_key, f"Unexpected error: {str(e)}")
-
-
-async def _emit_image_complete(
-    image_id: str,
-    upload_id: str,
-    name: str,
-    room: str | None,
-) -> None:
-    """Emit WebSocket event for image generation completion."""
-    from app.socket.v4.agents.scenario.generate import (
-        ScenarioImageGenerationCompletePayload,
-        scenario_image_generation_complete,
-    )
-
-    if not room:
-        logger.warning(
-            f"No room specified for image {image_id}, cannot emit WebSocket event"
-        )
-        return
-
-    await scenario_image_generation_complete(
-        ScenarioImageGenerationCompletePayload(
-            success=True,
-            image_id=image_id,
-            upload_id=upload_id,
-            name=name,
-        ),
-        room=room,
-    )
-
-
-async def _emit_image_error(
-    image_id: str,
-    storage_key: str,
-    error_message: str,
-) -> None:
-    """Emit WebSocket event for image generation error."""
-    from app.main import get_image_generation_storage
-    from app.socket.v4.agents.scenario.generate import (
-        ScenarioImageGenerationErrorPayload,
-        scenario_image_generation_error,
-    )
-
-    # Get room from storage
-    storage = get_image_generation_storage()
-    room = await storage.get(storage_key, "room")
-
-    if not room:
-        logger.warning(
-            f"No room specified for image {image_id}, cannot emit WebSocket event"
-        )
-        return
-
-    # Update image record: mark as completed (even on error) to prevent retries
-    pool = get_pool()
-    if pool:
-        try:
-            async with pool.acquire() as conn:
-                sql_update_image = load_sql(
-                    "app/sql/v4/queries/images/update_image_completed.sql"
-                )
-                await conn.execute(sql_update_image, image_id, True)
-        except Exception as e:
-            logger.error(f"Failed to update image record on error: {e}")
-
-    await scenario_image_generation_error(
-        ScenarioImageGenerationErrorPayload(
-            success=False,
-            image_id=image_id,
-            message=error_message,
-        ),
-        room=room,
-    )
+        await _mark_image_completed(image_id)

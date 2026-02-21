@@ -502,40 +502,6 @@ async def transaction(
         raise
 
 
-# Import v4 socket handlers to register decorators
-# TODO: These modules don't exist yet - commented out to allow openapi-gen to pass
-# from app.socket.v4.agents.document.tools.title.call import (
-#     document_tool_title_internal,  # noqa: F401
-# )
-# from app.socket.v4.agents.hint.start import (
-#     simulation_hints_generate_internal,  # noqa: F401
-# )  # Function doesn't exist - commented out
-# from app.socket.v4.agents.image.complete import (
-#     image_generation_complete_internal,  # noqa: F401
-# )
-# from app.socket.v4.agents.image.generate import generate_image  # noqa: F401
-# from app.socket.v4.agents.rubric.tools.title.call import (
-#     rubric_tool_title_internal,  # noqa: F401
-# )
-# from app.socket.v4.agents.scenario.tools.document.call import (
-#     scenario_tool_document,  # noqa: F401
-# )
-# from app.socket.v4.agents.scenario.tools.image.call import (
-#     scenario_tool_image,  # noqa: F401
-# )
-# from app.socket.v4.agents.scenario.tools.objective.call import (
-#     scenario_tool_objectives,  # noqa: F401
-# )
-# from app.socket.v4.agents.scenario.tools.question.call import (
-#     scenario_tool_questions,  # noqa: F401
-# )
-# from app.socket.v4.agents.scenario.tools.title.call import (
-#     scenario_tool_title_internal,  # noqa: F401
-# )
-# from app.socket.v4.agents.scenario.tools.video.call import (
-#     scenario_tool_video,  # noqa: F401
-# )
-
 # Export IMAGE_FOLDER for use in other modules
 __all__ = ["IMAGE_FOLDER"]
 
@@ -832,12 +798,7 @@ from app.api.v4.router import router as api_v4_router  # noqa: E402
 
 fastapi_app.include_router(api_v4_router)
 
-# Include socket v4 router (DHH-style)
-from app.socket.v4 import router as socket_v4_router  # noqa: E402
-
-fastapi_app.include_router(socket_v4_router)
-
-# Include socket v5 unified client layer (alongside v4)
+# Include socket v5 unified layer
 from app.socket.v5 import router as socket_v5_router  # noqa: E402
 
 fastapi_app.include_router(socket_v5_router)
