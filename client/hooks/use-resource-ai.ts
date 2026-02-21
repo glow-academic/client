@@ -29,20 +29,21 @@ export type ResourceEventPayload<R extends string> =
 /**
  * Typed hook for resource-level AI suggestion state management.
  *
- * Listens to `{resourceType}_generation_started/complete/error` socket events,
- * manages isGenerating + suggestion state, and provides clear to reset.
+ * Listens to `{resourceType}_generation_started/progress/complete/error` socket
+ * events, manages isGenerating + suggestion state, and provides clear to reset.
  *
  * The suggestion payload is automatically typed from `ServerToClientEvents` —
  * no manual `extractSuggestion` callback or generic type parameter needed.
  *
  * @example
  * ```ts
- * const { aiSuggestion } = useResourceAi({
+ * const { aiSuggestion, partialSuggestion } = useResourceAi({
  *   resourceType: "names",
  *   groupId: group_id,
  * });
- * // aiSuggestion is typed as NamesGenerationEvent (from OpenAPI)
- * // aiSuggestion?.id, aiSuggestion?.name — fully typed
+ * // aiSuggestion is typed as NamesGenerationEvent (from OpenAPI) — final value
+ * // partialSuggestion streams in during generation with resolved fields so far
+ * const displayName = aiSuggestion?.name ?? partialSuggestion?.name ?? currentName;
  * ```
  */
 export function useResourceAi<R extends string>(config: {
@@ -56,6 +57,7 @@ export function useResourceAi<R extends string>(config: {
   isGenerating: boolean;
   aiSuggestion: ResourceEventPayload<R> | null;
   aiSuggestions: ResourceEventPayload<R>[];
+  partialSuggestion: ResourceEventPayload<R> | null;
   clear: () => void;
 } {
   type Payload = ResourceEventPayload<R>;
@@ -64,6 +66,9 @@ export function useResourceAi<R extends string>(config: {
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<Payload | null>(null);
   const [aiSuggestions, setAiSuggestions] = useState<Payload[]>([]);
+  const [partialSuggestion, setPartialSuggestion] = useState<Payload | null>(
+    null,
+  );
 
   const accumulate = config.accumulate ?? false;
   const resourceType = config.resourceType;
@@ -73,17 +78,25 @@ export function useResourceAi<R extends string>(config: {
     if (!socket || !isConnected) return;
 
     const startedEvent = `${resourceType}_generation_started`;
+    const progressEvent = `${resourceType}_generation_progress`;
     const completeEvent = `${resourceType}_generation_complete`;
     const errorEvent = `${resourceType}_generation_error`;
 
     const handleStarted = (data: Record<string, unknown>) => {
       if (groupId && data.group_id !== groupId) return;
       setIsGenerating(true);
+      setPartialSuggestion(null);
+    };
+
+    const handleProgress = (data: Record<string, unknown>) => {
+      if (groupId && data.group_id !== groupId) return;
+      setPartialSuggestion(data as Payload);
     };
 
     const handleComplete = (data: Record<string, unknown>) => {
       if (groupId && data.group_id !== groupId) return;
       setIsGenerating(false);
+      setPartialSuggestion(null);
       // Auto-filter failed events
       if (data.success === false) return;
       const payload = data as Payload;
@@ -97,20 +110,29 @@ export function useResourceAi<R extends string>(config: {
     const handleError = (data: Record<string, unknown>) => {
       if (groupId && data.group_id !== groupId) return;
       setIsGenerating(false);
+      setPartialSuggestion(null);
     };
 
     // Event names are constructed at runtime so we cast to the generic listener API.
     const s = socket as unknown as {
-      on: (event: string, handler: (data: Record<string, unknown>) => void) => void;
-      off: (event: string, handler: (data: Record<string, unknown>) => void) => void;
+      on: (
+        event: string,
+        handler: (data: Record<string, unknown>) => void,
+      ) => void;
+      off: (
+        event: string,
+        handler: (data: Record<string, unknown>) => void,
+      ) => void;
     };
 
     s.on(startedEvent, handleStarted);
+    s.on(progressEvent, handleProgress);
     s.on(completeEvent, handleComplete);
     s.on(errorEvent, handleError);
 
     return () => {
       s.off(startedEvent, handleStarted);
+      s.off(progressEvent, handleProgress);
       s.off(completeEvent, handleComplete);
       s.off(errorEvent, handleError);
     };
@@ -119,12 +141,14 @@ export function useResourceAi<R extends string>(config: {
   const clear = useCallback(() => {
     setAiSuggestion(null);
     setAiSuggestions([]);
+    setPartialSuggestion(null);
   }, []);
 
   return {
     isGenerating,
     aiSuggestion,
     aiSuggestions,
+    partialSuggestion,
     clear,
   };
 }

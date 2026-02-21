@@ -29,20 +29,20 @@ export type EntryEventPayload<E extends string> =
 /**
  * Typed hook for entry-level AI generation state.
  *
- * Listens to `{entryType}_generation_started/complete/error` socket events,
- * tracks isGenerating state and accumulates typed payloads until clear().
+ * Listens to `{entryType}_generation_started/progress/complete/error` socket
+ * events, tracks isGenerating state and accumulates typed payloads until clear().
  *
  * The event payload is automatically typed from `ServerToClientEvents` —
  * no manual type parameter needed.
  *
  * @example
  * ```ts
- * const { events } = useEntryAi({
+ * const { events, partialEvent } = useEntryAi({
  *   entryType: "contents",
  *   groupId: group_id,
  * });
- * // events is typed as ContentsGenerationEvent[]
- * // events[0]?.content, events[0]?.entry_id — fully typed
+ * // events is typed as ContentsGenerationEvent[] — final values
+ * // partialEvent streams in during generation with resolved fields so far
  * ```
  */
 export function useEntryAi<E extends string>(config: {
@@ -53,6 +53,7 @@ export function useEntryAi<E extends string>(config: {
 }): {
   isGenerating: boolean;
   events: EntryEventPayload<E>[];
+  partialEvent: EntryEventPayload<E> | null;
   clear: () => void;
 } {
   type Payload = EntryEventPayload<E>;
@@ -60,6 +61,7 @@ export function useEntryAi<E extends string>(config: {
   const { socket, isConnected } = useSocket();
   const [isGenerating, setIsGenerating] = useState(false);
   const [events, setEvents] = useState<Payload[]>([]);
+  const [partialEvent, setPartialEvent] = useState<Payload | null>(null);
 
   const entryType = config.entryType;
   const groupId = config.groupId;
@@ -68,17 +70,25 @@ export function useEntryAi<E extends string>(config: {
     if (!socket || !isConnected) return;
 
     const startedEvent = `${entryType}_generation_started`;
+    const progressEvent = `${entryType}_generation_progress`;
     const completeEvent = `${entryType}_generation_complete`;
     const errorEvent = `${entryType}_generation_error`;
 
     const handleStarted = (data: Record<string, unknown>) => {
       if (groupId && data.group_id !== groupId) return;
       setIsGenerating(true);
+      setPartialEvent(null);
+    };
+
+    const handleProgress = (data: Record<string, unknown>) => {
+      if (groupId && data.group_id !== groupId) return;
+      setPartialEvent(data as Payload);
     };
 
     const handleComplete = (data: Record<string, unknown>) => {
       if (groupId && data.group_id !== groupId) return;
       setIsGenerating(false);
+      setPartialEvent(null);
       if (data.success === false) return;
       setEvents((prev) => [...prev, data as Payload]);
     };
@@ -86,20 +96,29 @@ export function useEntryAi<E extends string>(config: {
     const handleError = (data: Record<string, unknown>) => {
       if (groupId && data.group_id !== groupId) return;
       setIsGenerating(false);
+      setPartialEvent(null);
     };
 
     // Event names are constructed at runtime so we cast to the generic listener API.
     const s = socket as unknown as {
-      on: (event: string, handler: (data: Record<string, unknown>) => void) => void;
-      off: (event: string, handler: (data: Record<string, unknown>) => void) => void;
+      on: (
+        event: string,
+        handler: (data: Record<string, unknown>) => void,
+      ) => void;
+      off: (
+        event: string,
+        handler: (data: Record<string, unknown>) => void,
+      ) => void;
     };
 
     s.on(startedEvent, handleStarted);
+    s.on(progressEvent, handleProgress);
     s.on(completeEvent, handleComplete);
     s.on(errorEvent, handleError);
 
     return () => {
       s.off(startedEvent, handleStarted);
+      s.off(progressEvent, handleProgress);
       s.off(completeEvent, handleComplete);
       s.off(errorEvent, handleError);
     };
@@ -107,12 +126,14 @@ export function useEntryAi<E extends string>(config: {
 
   const clear = useCallback(() => {
     setEvents([]);
+    setPartialEvent(null);
     setIsGenerating(false);
   }, []);
 
   return {
     isGenerating,
     events,
+    partialEvent,
     clear,
   };
 }
