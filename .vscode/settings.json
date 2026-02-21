@@ -60,5 +60,12 @@
       "source.fixAll.eslint": "explicit",
       "source.organizeImports": "explicit"
     }
+  },
+  "files.associations": {
+    "*.jinja": "jinja",
+    "*.jinja2": "jinja"
+  },
+  "[jinja]": {
+    "editor.defaultFormatter": "wholroyd.jinja"
   }
 }

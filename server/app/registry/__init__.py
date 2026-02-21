@@ -22,7 +22,12 @@ from app.registry.relations import (
     VIEW_ENTRIES,
     VIEW_RESOURCES,
 )
-from app.registry.resources import RESOURCE_OUTPUT_SCHEMAS, RESOURCE_SCHEMAS, UNIT_NAMES
+from app.registry.resources import (
+    RESOURCE_OUTPUT_SCHEMAS,
+    RESOURCE_SCHEMAS,
+    UNIT_NAMES,
+    UNIT_VALUES,
+)
 from app.registry.routes import ARTIFACT_ROUTES, ROLE_ARTIFACTS
 
 __all__ = [
@@ -50,6 +55,7 @@ __all__ = [
     "ROLE_ARTIFACTS",
     "TOOL_ENTRY_TYPES",
     "UNIT_NAMES",
+    "UNIT_VALUES",
     "VIEW_ENTRIES",
     "VIEW_RESOURCES",
 ]

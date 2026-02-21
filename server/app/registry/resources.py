@@ -605,3 +605,13 @@ UNIT_NAMES: dict[str, str] = {
     "019b3be4-3ced-7acb-afab-19ceef6b410b": "million_text",
     "019b3be4-3ced-7b23-a804-0ab3f0dff208": "second",
 }
+
+# artifact_units_relation (unit_id → unit_value divisor)
+UNIT_VALUES: dict[str, int] = {
+    "019b3be4-3ced-7b19-a313-ffdaa73b65fe": 200000,
+    "019b3be4-3ced-7b2b-8fd2-54556abd3391": 1,
+    "019b3be4-3ced-7b0d-b978-c5a8f6729c49": 1000000,
+    "019b3be4-3ced-7b1c-84f7-4e13f220fdb4": 1000000,
+    "019b3be4-3ced-7acb-afab-19ceef6b410b": 1000000,
+    "019b3be4-3ced-7b23-a804-0ab3f0dff208": 1,
+}
