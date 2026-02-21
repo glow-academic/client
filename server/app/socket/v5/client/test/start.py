@@ -42,10 +42,10 @@ async def test_start(sid: str, data: dict[str, Any]) -> None:
 
         if not profile_id_str:
             await internal_sio.emit(
-                "test_progress",
+                "test_error",
                 {
-                    "type": "error",
                     "sid": sid,
+                    "rooms": [sid],
                     "message": "Profile not found. Please reconnect.",
                     "error_type": "auth",
                 },
@@ -58,10 +58,10 @@ async def test_start(sid: str, data: dict[str, Any]) -> None:
             # === CREATE MODE ===
             if not payload.eval_id:
                 await internal_sio.emit(
-                    "test_progress",
+                    "test_error",
                     {
-                        "type": "error",
                         "sid": sid,
+                        "rooms": [sid],
                         "message": "eval_id is required to create a test",
                         "error_type": "validation",
                     },
@@ -85,10 +85,10 @@ async def test_start(sid: str, data: dict[str, Any]) -> None:
 
                 if not row or not row.test_id:
                     await internal_sio.emit(
-                        "test_progress",
+                        "test_error",
                         {
-                            "type": "error",
                             "sid": sid,
+                            "rooms": [sid],
                             "message": "Failed to create test",
                             "error_type": "create",
                         },
@@ -112,10 +112,10 @@ async def test_start(sid: str, data: dict[str, Any]) -> None:
 
                 if not inv_row or not inv_row.chats:
                     await internal_sio.emit(
-                        "test_progress",
+                        "test_error",
                         {
-                            "type": "error",
                             "sid": sid,
+                            "rooms": [sid],
                             "message": "Failed to create test invocations",
                             "error_type": "create",
                         },
@@ -130,10 +130,10 @@ async def test_start(sid: str, data: dict[str, Any]) -> None:
 
             # Step 5: Emit test_started via internal bus
             await internal_sio.emit(
-                "test_progress",
+                "test_started",
                 {
-                    "type": "started",
                     "sid": sid,
+                    "rooms": [sid],
                     "test_id": str(test_id),
                 },
             )
@@ -148,10 +148,10 @@ async def test_start(sid: str, data: dict[str, Any]) -> None:
     except Exception as e:
         logger.exception(f"Error in test_start: {e}")
         await internal_sio.emit(
-            "test_progress",
+            "test_error",
             {
-                "type": "error",
                 "sid": sid,
+                "rooms": [sid],
                 "message": f"Failed to start test: {e}",
                 "error_type": "internal",
             },
@@ -175,10 +175,10 @@ async def _find_and_emit_next_run(sid: str, test_id: uuid.UUID) -> None:
     if not result.views or not result.views.test_invocation:
         logger.warning(f"No invocations found for test {test_id}")
         await internal_sio.emit(
-            "test_progress",
+            "test_grade_complete",
             {
-                "type": "all_complete",
                 "sid": sid,
+                "rooms": [sid],
                 "invocation_id": "",
                 "total_runs": 0,
             },
@@ -195,10 +195,10 @@ async def _find_and_emit_next_run(sid: str, test_id: uuid.UUID) -> None:
         if next_run_resource_id:
             # Emit started with test_id so client knows which test
             await internal_sio.emit(
-                "test_progress",
+                "test_started",
                 {
-                    "type": "started",
                     "sid": sid,
+                    "rooms": [sid],
                     "test_id": str(test_id),
                 },
             )
@@ -207,14 +207,13 @@ async def _find_and_emit_next_run(sid: str, test_id: uuid.UUID) -> None:
     # All invocations complete
     last_invocation = result.views.test_invocation[-1]
     total = len(last_invocation.run_ids) if last_invocation else 0
+    invocation_id_str = str(last_invocation.invocation_id) if last_invocation else ""
     await internal_sio.emit(
-        "test_progress",
+        "test_grade_complete",
         {
-            "type": "all_complete",
             "sid": sid,
-            "invocation_id": str(last_invocation.invocation_id)
-            if last_invocation
-            else "",
+            "rooms": [sid, f"test_{invocation_id_str}"] if invocation_id_str else [sid],
+            "invocation_id": invocation_id_str,
             "total_runs": total,
         },
     )

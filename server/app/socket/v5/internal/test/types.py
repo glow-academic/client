@@ -13,8 +13,8 @@ from pydantic import BaseModel
 
 
 class TestProgressData(BaseModel):
-    type: str = "progress"
     sid: str | None = None
+    rooms: list[str] = []
     invocation_id: str
     run_id: str | None = None
     current_run: int | None = None
@@ -23,8 +23,8 @@ class TestProgressData(BaseModel):
 
 
 class TestRunCompleteData(BaseModel):
-    type: str = "run_complete"
     sid: str | None = None
+    rooms: list[str] = []
     invocation_id: str
     run_id: str | None = None
     original_run_resource_id: str | None = None
@@ -35,8 +35,8 @@ class TestRunCompleteData(BaseModel):
 
 
 class TestGradedData(BaseModel):
-    type: str = "graded"
     sid: str | None = None
+    rooms: list[str] = []
     invocation_id: str
     grade_id: str | None = None
     score: int | None = None
@@ -45,8 +45,8 @@ class TestGradedData(BaseModel):
 
 
 class TestErrorData(BaseModel):
-    type: str = "error"
     sid: str | None = None
+    rooms: list[str] = []
     invocation_id: str | None = None
     run_id: str | None = None
     message: str

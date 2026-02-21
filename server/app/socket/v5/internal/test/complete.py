@@ -1,7 +1,7 @@
 """Internal handler for test grade completion.
 
 Handles: generate_call_complete (filtered for artifact_type=test, resource_type=grade)
-Extracts score/passed/feedback from tool results and emits test_progress(type=graded).
+Extracts score/passed/feedback from tool results and emits test_grade_progress.
 """
 
 import uuid
@@ -68,12 +68,14 @@ async def handle_test_grade_complete(data: dict[str, Any]) -> None:
             )
 
         invocation_id_str = str(invocation_id) if invocation_id else ""
+        rooms = [sid, f"test_{invocation_id_str}"] if invocation_id_str else [sid]
 
         # Emit graded via internal bus
         await internal_sio.emit(
-            "test_progress",
+            "test_grade_progress",
             TestGradedData(
                 sid=sid,
+                rooms=rooms,
                 invocation_id=invocation_id_str,
                 grade_id=str(grade_id) if grade_id else None,
                 score=score,

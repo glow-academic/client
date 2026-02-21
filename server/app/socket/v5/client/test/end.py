@@ -56,12 +56,15 @@ async def test_end(sid: str, data: dict[str, Any]) -> None:
         profile_id_str = await find_profile_by_socket(sid)
 
         if not profile_id_str:
+            invocation_id_str = str(data.get("invocation_id", ""))
             await internal_sio.emit(
-                "test_progress",
+                "test_error",
                 {
-                    "type": "error",
                     "sid": sid,
-                    "invocation_id": str(data.get("invocation_id", "")),
+                    "rooms": [sid, f"test_{invocation_id_str}"]
+                    if invocation_id_str
+                    else [sid],
+                    "invocation_id": invocation_id_str,
                     "message": "Profile not found. Please reconnect.",
                     "error_type": "auth",
                 },
@@ -73,12 +76,15 @@ async def test_end(sid: str, data: dict[str, Any]) -> None:
 
     except Exception as e:
         logger.exception(f"Invalid request in test_end: {e}")
+        invocation_id_str = str(data.get("invocation_id", ""))
         await internal_sio.emit(
-            "test_progress",
+            "test_error",
             {
-                "type": "error",
                 "sid": sid,
-                "invocation_id": str(data.get("invocation_id", "")),
+                "rooms": [sid, f"test_{invocation_id_str}"]
+                if invocation_id_str
+                else [sid],
+                "invocation_id": invocation_id_str,
                 "message": f"Invalid request: {e}",
                 "error_type": "validation",
             },
@@ -88,6 +94,7 @@ async def test_end(sid: str, data: dict[str, Any]) -> None:
 async def _test_end_impl(sid: str, data: TestEndPayload, profile_id: uuid.UUID) -> None:
     """Handle test grade with all business logic."""
     invocation_id_str = str(data.invocation_id)
+    rooms = [sid, f"test_{invocation_id_str}"]
 
     try:
         pool = get_pool()
@@ -105,10 +112,10 @@ async def _test_end_impl(sid: str, data: TestEndPayload, profile_id: uuid.UUID) 
 
         if not result.resources:
             await internal_sio.emit(
-                "test_progress",
+                "test_error",
                 {
-                    "type": "error",
                     "sid": sid,
+                    "rooms": rooms,
                     "invocation_id": invocation_id_str,
                     "message": "Failed to fetch test data",
                     "error_type": "context",
@@ -122,10 +129,10 @@ async def _test_end_impl(sid: str, data: TestEndPayload, profile_id: uuid.UUID) 
 
         if not agent_id:
             await internal_sio.emit(
-                "test_progress",
+                "test_error",
                 {
-                    "type": "error",
                     "sid": sid,
+                    "rooms": rooms,
                     "invocation_id": invocation_id_str,
                     "message": "No agent found for this test",
                     "error_type": "validation",
@@ -144,10 +151,10 @@ async def _test_end_impl(sid: str, data: TestEndPayload, profile_id: uuid.UUID) 
 
         if not agent_resource:
             await internal_sio.emit(
-                "test_progress",
+                "test_error",
                 {
-                    "type": "error",
                     "sid": sid,
+                    "rooms": rooms,
                     "invocation_id": invocation_id_str,
                     "message": "No agent configuration found. Check test settings.",
                     "error_type": "validation",
@@ -157,10 +164,10 @@ async def _test_end_impl(sid: str, data: TestEndPayload, profile_id: uuid.UUID) 
 
         if not model_resource:
             await internal_sio.emit(
-                "test_progress",
+                "test_error",
                 {
-                    "type": "error",
                     "sid": sid,
+                    "rooms": rooms,
                     "invocation_id": invocation_id_str,
                     "message": f"Agent '{agent_resource.name}' has no model configured",
                     "error_type": "validation",
@@ -170,10 +177,10 @@ async def _test_end_impl(sid: str, data: TestEndPayload, profile_id: uuid.UUID) 
 
         if not provider_resource:
             await internal_sio.emit(
-                "test_progress",
+                "test_error",
                 {
-                    "type": "error",
                     "sid": sid,
+                    "rooms": rooms,
                     "invocation_id": invocation_id_str,
                     "message": f"Model '{model_resource.name}' has no provider configured",
                     "error_type": "validation",
@@ -202,10 +209,10 @@ async def _test_end_impl(sid: str, data: TestEndPayload, profile_id: uuid.UUID) 
 
         if not api_key:
             await internal_sio.emit(
-                "test_progress",
+                "test_error",
                 {
-                    "type": "error",
                     "sid": sid,
+                    "rooms": rooms,
                     "invocation_id": invocation_id_str,
                     "message": f"No API key configured for provider '{provider_name}'",
                     "error_type": "validation",
@@ -216,10 +223,10 @@ async def _test_end_impl(sid: str, data: TestEndPayload, profile_id: uuid.UUID) 
         # Step 3: Find invocation
         if not result.views or not result.views.test_invocation:
             await internal_sio.emit(
-                "test_progress",
+                "test_error",
                 {
-                    "type": "error",
                     "sid": sid,
+                    "rooms": rooms,
                     "invocation_id": invocation_id_str,
                     "message": "No invocations found for this test",
                     "error_type": "context",
@@ -238,10 +245,10 @@ async def _test_end_impl(sid: str, data: TestEndPayload, profile_id: uuid.UUID) 
 
         if not invocation:
             await internal_sio.emit(
-                "test_progress",
+                "test_error",
                 {
-                    "type": "error",
                     "sid": sid,
+                    "rooms": rooms,
                     "invocation_id": invocation_id_str,
                     "message": "Invocation not found for this test",
                     "error_type": "validation",
@@ -252,10 +259,10 @@ async def _test_end_impl(sid: str, data: TestEndPayload, profile_id: uuid.UUID) 
         group_id = invocation.group_id
         if not group_id:
             await internal_sio.emit(
-                "test_progress",
+                "test_error",
                 {
-                    "type": "error",
                     "sid": sid,
+                    "rooms": rooms,
                     "invocation_id": invocation_id_str,
                     "message": "No group found for this invocation",
                     "error_type": "validation",
@@ -337,10 +344,10 @@ async def _test_end_impl(sid: str, data: TestEndPayload, profile_id: uuid.UUID) 
 
             if not prepare_row or not prepare_row.grade_run_id:
                 await internal_sio.emit(
-                    "test_progress",
+                    "test_error",
                     {
-                        "type": "error",
                         "sid": sid,
+                        "rooms": rooms,
                         "invocation_id": invocation_id_str,
                         "message": "Failed to prepare grading",
                         "error_type": "prepare",
@@ -443,10 +450,10 @@ async def _test_end_impl(sid: str, data: TestEndPayload, profile_id: uuid.UUID) 
     except ValueError as e:
         logger.exception(f"Invalid UUID format in test_end: {e}")
         await internal_sio.emit(
-            "test_progress",
+            "test_error",
             {
-                "type": "error",
                 "sid": sid,
+                "rooms": rooms,
                 "invocation_id": invocation_id_str,
                 "message": f"Invalid UUID format: {e}",
                 "error_type": "validation",
@@ -455,10 +462,10 @@ async def _test_end_impl(sid: str, data: TestEndPayload, profile_id: uuid.UUID) 
     except Exception as e:
         logger.exception(f"Failed to grade test: {e}")
         await internal_sio.emit(
-            "test_progress",
+            "test_error",
             {
-                "type": "error",
                 "sid": sid,
+                "rooms": rooms,
                 "invocation_id": invocation_id_str,
                 "message": f"Failed to grade test: {e}",
                 "error_type": "internal",

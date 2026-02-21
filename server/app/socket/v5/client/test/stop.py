@@ -22,10 +22,10 @@ async def test_stop(sid: str, data: dict[str, Any]) -> None:
         invocation_id_str = str(payload.invocation_id)
 
         await internal_sio.emit(
-            "test_progress",
+            "test_stopped",
             {
-                "type": "stopped",
                 "sid": sid,
+                "rooms": [sid, f"test_{invocation_id_str}"],
                 "invocation_id": invocation_id_str,
                 "success": True,
                 "message": "Test execution stopped",
@@ -37,10 +37,10 @@ async def test_stop(sid: str, data: dict[str, Any]) -> None:
     except Exception as e:
         logger.exception(f"Error in test_stop: {e}")
         await internal_sio.emit(
-            "test_progress",
+            "test_error",
             {
-                "type": "error",
                 "sid": sid,
+                "rooms": [sid],
                 "invocation_id": str(data.get("invocation_id", "")),
                 "message": f"Failed to stop test: {e}",
                 "error_type": "stop",

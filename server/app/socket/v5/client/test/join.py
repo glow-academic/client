@@ -24,10 +24,10 @@ async def test_join(sid: str, data: dict[str, Any]) -> None:
 
         if not profile_id_str:
             await internal_sio.emit(
-                "test_progress",
+                "test_error",
                 {
-                    "type": "error",
                     "sid": sid,
+                    "rooms": [sid],
                     "invocation_id": str(payload.invocation_id),
                     "message": "Profile not found. Please reconnect.",
                     "error_type": "join",
@@ -40,10 +40,10 @@ async def test_join(sid: str, data: dict[str, Any]) -> None:
         await sio.enter_room(sid, room_name)
 
         await internal_sio.emit(
-            "test_progress",
+            "test_joined",
             {
-                "type": "joined",
                 "sid": sid,
+                "rooms": [sid, room_name],
                 "invocation_id": invocation_id_str,
                 "success": True,
             },
@@ -53,10 +53,10 @@ async def test_join(sid: str, data: dict[str, Any]) -> None:
         logger.exception(f"Error in test_join: {e}")
         invocation_id = data.get("invocation_id", "")
         await internal_sio.emit(
-            "test_progress",
+            "test_error",
             {
-                "type": "error",
                 "sid": sid,
+                "rooms": [sid],
                 "invocation_id": str(invocation_id) if invocation_id else None,
                 "message": f"Failed to join room: {e}",
                 "error_type": "join",
