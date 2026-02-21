@@ -477,7 +477,7 @@ _register(
         ],
         prepare_sql_path="app/sql/v4/queries/generate/model/prepare_model_generation_complete.sql",
         draft_view_key="draft_model",
-        config_providers_attr="config_providers",
+
         fetcher_id_kwarg="model_id",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.model.get",
@@ -650,9 +650,9 @@ _register(
         ],
         prepare_sql_path="app/sql/v4/queries/generate/training/prepare_training_generation_complete.sql",
         draft_view_key="draft_chat",
-        config_agents_attr="config_agents",
-        config_models_attr="config_models",
-        config_providers_attr="config_providers",
+
+
+
         requires_pool=True,
         fetcher_id_kwarg="chat_entry_id",
         extra_emit_fields=["attempt_id", "training_department_id"],
@@ -681,9 +681,9 @@ _register(
         ],
         prepare_sql_path="app/sql/v4/queries/generate/benchmark/prepare_benchmark_generation_complete.sql",
         draft_view_key="draft_invocation",
-        config_agents_attr="config_agents",
-        config_models_attr="config_models",
-        config_providers_attr="config_providers",
+
+
+
         has_artifact_id=False,
         requires_pool=True,
         fetcher=_make_fetcher(
@@ -711,9 +711,9 @@ _register(
         ],
         prepare_sql_path="app/sql/v4/queries/generate/suite/prepare_suite_generation_complete.sql",
         draft_view_key="draft_invocation",
-        config_agents_attr="config_agents",
-        config_models_attr="config_models",
-        config_providers_attr="config_providers",
+
+
+
         entry_types=["insights", "debug_info"],
         requires_pool=True,
         fetcher_id_kwarg="benchmark_entry_id",
@@ -737,9 +737,9 @@ _register(
         ],
         prepare_sql_path="app/sql/v4/queries/generate/activity/prepare_activity_generation_complete.sql",
         draft_view_key="draft_activity",
-        config_agents_attr="config_agents",
-        config_models_attr="config_models",
-        config_providers_attr="config_providers",
+
+
+
         entry_types=["insights", "debug_info"],
         has_artifact_id=False,
         requires_pool=True,
@@ -763,9 +763,9 @@ _register(
         ],
         prepare_sql_path="app/sql/v4/queries/generate/session/prepare_session_generation_complete.sql",
         draft_view_key="draft_session",
-        config_agents_attr="config_agents",
-        config_models_attr="config_models",
-        config_providers_attr="config_providers",
+
+
+
         entry_types=["insights", "debug_info"],
         requires_pool=True,
         fetcher_id_kwarg="session_id",
@@ -789,9 +789,9 @@ _register(
         ],
         prepare_sql_path="app/sql/v4/queries/generate/pricing/prepare_pricing_generation_complete.sql",
         draft_view_key="draft_pricing",
-        config_agents_attr="config_agents",
-        config_models_attr="config_models",
-        config_providers_attr="config_providers",
+
+
+
         entry_types=["insights", "debug_info"],
         has_artifact_id=False,
         requires_pool=True,
@@ -815,9 +815,9 @@ _register(
         ],
         prepare_sql_path="app/sql/v4/queries/generate/reports/prepare_reports_generation_complete.sql",
         draft_view_key="draft_reports",
-        config_agents_attr="config_agents",
-        config_models_attr="config_models",
-        config_providers_attr="config_providers",
+
+
+
         entry_types=["insights", "debug_info"],
         has_artifact_id=False,
         requires_pool=True,
@@ -841,9 +841,9 @@ _register(
         ],
         prepare_sql_path="app/sql/v4/queries/generate/group/prepare_group_generation_complete.sql",
         draft_view_key="draft_group",
-        config_agents_attr="config_agents",
-        config_models_attr="config_models",
-        config_providers_attr="config_providers",
+
+
+
         entry_types=["insights", "debug_info"],
         requires_pool=True,
         fetcher_id_kwarg="group_id",
@@ -867,9 +867,9 @@ _register(
         ],
         prepare_sql_path="app/sql/v4/queries/generate/health/prepare_health_generation_complete.sql",
         draft_view_key="draft_health",
-        config_agents_attr="config_agents",
-        config_models_attr="config_models",
-        config_providers_attr="config_providers",
+
+
+
         entry_types=["insights", "debug_info"],
         has_artifact_id=False,
         requires_pool=True,
@@ -893,9 +893,9 @@ _register(
         ],
         prepare_sql_path="app/sql/v4/queries/generate/leaderboard/prepare_leaderboard_generation_complete.sql",
         draft_view_key="draft_leaderboard",
-        config_agents_attr="config_agents",
-        config_models_attr="config_models",
-        config_providers_attr="config_providers",
+
+
+
         entry_types=["insights", "debug_info"],
         has_artifact_id=False,
         requires_pool=True,
@@ -919,9 +919,9 @@ _register(
         ],
         prepare_sql_path="app/sql/v4/queries/generate/record/prepare_record_generation_complete.sql",
         draft_view_key="draft_record",
-        config_agents_attr="config_agents",
-        config_models_attr="config_models",
-        config_providers_attr="config_providers",
+
+
+
         entry_types=["insights", "debug_info"],
         requires_pool=True,
         fetcher_id_kwarg="record_id",
@@ -945,9 +945,9 @@ _register(
         ],
         prepare_sql_path="app/sql/v4/queries/generate/dashboard/prepare_dashboard_generation_complete.sql",
         draft_view_key="draft_dashboard",
-        config_agents_attr="config_agents",
-        config_models_attr="config_models",
-        config_providers_attr="config_providers",
+
+
+
         entry_types=["insights", "debug_info"],
         has_artifact_id=False,
         requires_pool=True,
@@ -968,9 +968,9 @@ _register(
         valid_resource_types=[],
         prepare_sql_path="app/sql/v4/queries/generate/training/prepare_training_generation_complete.sql",
         draft_view_key="draft_training",
-        config_agents_attr="config_agents",
-        config_models_attr="config_models",
-        config_providers_attr="config_providers",
+
+
+
         entry_types=["insights", "debug_info"],
         has_artifact_id=False,
         requires_pool=True,
@@ -989,9 +989,9 @@ _register(
         valid_resource_types=[],
         prepare_sql_path="app/sql/v4/queries/generate/training/prepare_training_generation_complete.sql",
         draft_view_key="draft_training",
-        config_agents_attr="config_agents",
-        config_models_attr="config_models",
-        config_providers_attr="config_providers",
+
+
+
         entry_types=["insights", "debug_info"],
         has_artifact_id=False,
         requires_pool=True,
