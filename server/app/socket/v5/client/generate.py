@@ -27,8 +27,6 @@ from app.socket.v4.artifacts.types import GenerateErrorApiRequest
 from app.socket.v5.client.registry import REGISTRY, ArtifactGenerateConfig
 from app.socket.v5.client.types import GeneratePayload
 from app.sql.types import (
-    GetAgentToolsSqlParams,
-    GetAgentToolsSqlRow,
     PrepareAgentGenerationSqlParams,
     PrepareAgentGenerationSqlRow,
 )
@@ -39,10 +37,6 @@ logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
 
-# SQL path shared across all artifacts
-SQL_PATH_AGENT_TOOLS = (
-    "app/sql/v4/queries/generate/persona/get_agent_tools_complete.sql"
-)
 SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
     "app/sql/v4/queries/messages/create_message_with_text_complete.sql"
 )
@@ -83,19 +77,24 @@ def _build_jinja_context(result: object) -> dict[str, Any]:
 
 
 def _enrich_tools_with_args_outputs(
-    tool_dicts: list[dict[str, Any]], result: object
+    tool_dicts: list[dict[str, Any]],
+    result: object,
+    config: ArtifactGenerateConfig,
 ) -> list[dict[str, Any]]:
     """Attach _args_outputs to tools for output schema resolution.
 
-    Looks up each tool's args_output_ids from resources.tools, resolves them
-    against resources.config_args_outputs, and attaches {name, template} dicts.
+    Looks up each tool's args_output_ids from the config tools resource,
+    resolves them against config_args_outputs, and attaches {name, template} dicts.
+    Uses registry attrs (config_tools_attr, config_args_outputs_attr) for the lookup.
     """
     resources = getattr(result, "resources", None)
     if not tool_dicts or not resources:
         return tool_dicts
 
-    resource_tools = getattr(resources, "tools", None) or []
-    config_args_outputs = getattr(resources, "config_args_outputs", None) or []
+    resource_tools = getattr(resources, config.config_tools_attr, None) or []
+    config_args_outputs = (
+        getattr(resources, config.config_args_outputs_attr, None) or []
+    )
 
     if not resource_tools or not config_args_outputs:
         return tool_dicts
@@ -350,23 +349,12 @@ async def _generate_impl(
             if not pool:
                 raise RuntimeError("Database pool not initialized")
 
-            # Step 9: Fetch tools, prompts, instructions in parallel
-            async def fetch_tools() -> list[Any]:
-                async with pool.acquire() as c:  # type: ignore[union-attr]
-                    tools_params = GetAgentToolsSqlParams(
-                        p_agent_id=agent_id,
-                        p_resource_types=resource_types,
-                    )
-                    tools_row = cast(
-                        GetAgentToolsSqlRow,
-                        await execute_sql_typed(
-                            c, SQL_PATH_AGENT_TOOLS, params=tools_params
-                        ),
-                    )
-                    return (
-                        list(tools_row.tools) if tools_row and tools_row.tools else []
-                    )
+            # Step 9: Read tools from pre-fetched config resources
+            config_tools = (
+                getattr(result.resources, config.config_tools_attr, None) or []
+            )
 
+            # Fetch prompts and instructions in parallel
             async def fetch_system_prompt() -> str:
                 prompt_id = (
                     agent_resource.prompt_id
@@ -394,11 +382,9 @@ async def _generate_impl(
                     return [inst.template for inst in instructions if inst.template]
 
             (
-                tools,
                 system_prompt,
                 developer_instruction_templates,
             ) = await asyncio.gather(
-                fetch_tools(),
                 fetch_system_prompt(),
                 fetch_developer_instructions(),
             )
@@ -525,9 +511,9 @@ async def _generate_impl(
                 room=sid,
             )
 
-            # Step 16: Convert tools and enrich with _args_outputs
-            tool_dicts = convert_tools_to_dict(tools)
-            tool_dicts = _enrich_tools_with_args_outputs(tool_dicts, result)
+            # Step 15: Convert tools and enrich with _args_outputs
+            tool_dicts = convert_tools_to_dict(config_tools)
+            tool_dicts = _enrich_tools_with_args_outputs(tool_dicts, result, config)
 
             # Step 17: Dispatch to generate_artifact handler(s)
             for _agent_group_id, agent_resource_types in agent_groups.items():
