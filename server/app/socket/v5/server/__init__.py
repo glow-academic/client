@@ -7,6 +7,8 @@ internal bus; server handlers translate internal events into client events.
 from . import (  # noqa: F401 — registers handlers on import
     attempt,
     connect,
+    entries,
     generate,
+    resources,
     test,
 )
