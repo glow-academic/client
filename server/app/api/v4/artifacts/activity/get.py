@@ -40,6 +40,8 @@ from app.api.v4.entries.runs.search import (
 )
 from app.api.v4.entries.sessions.get import get_session_list_view_internal
 from app.api.v4.permissions import resolve_agents_for_artifact
+from app.api.v4.resources.args.get import get_args_internal
+from app.api.v4.resources.args_outputs.get import get_args_outputs_internal
 from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
@@ -660,6 +662,42 @@ async def get_activity_websocket(
         bypass_cache=bypass_cache,
     )
 
+    # Pre-fetch args and args_outputs from tool IDs (both cached via *_internal)
+    config_tools = data.config_tools or []
+    config_args = None
+    config_args_outputs = None
+    if config_tools and pool:
+        all_args_ids: list[UUID] = []
+        all_args_output_ids: list[UUID] = []
+        for tool in config_tools:
+            if tool.args_ids:
+                all_args_ids.extend(tool.args_ids)
+            if tool.args_output_ids:
+                all_args_output_ids.extend(tool.args_output_ids)
+
+        if all_args_ids or all_args_output_ids:
+
+            async def fetch_args():
+                if not all_args_ids:
+                    return None
+                async with pool.acquire() as c:
+                    return await get_args_internal(
+                        c, list(set(all_args_ids)), bypass_cache=bypass_cache
+                    )
+
+            async def fetch_args_outputs():
+                if not all_args_output_ids:
+                    return None
+                async with pool.acquire() as c:
+                    return await get_args_outputs_internal(
+                        c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
+                    )
+
+            config_args, config_args_outputs = await asyncio.gather(
+                fetch_args(),
+                fetch_args_outputs(),
+            )
+
     return GetActivityWebsocketResponse(
         views=ActivityWebsocketViews(
             runs=data.runs_today,
@@ -675,6 +713,8 @@ async def get_activity_websocket(
             config_models=data.config_models or None,
             config_providers=data.config_providers or None,
             config_tools=data.config_tools or None,
+            config_args=config_args,
+            config_args_outputs=config_args_outputs,
             config_profile=data.config_profile or None,
         ),
         resource_agent_ids=data.resource_agent_ids,

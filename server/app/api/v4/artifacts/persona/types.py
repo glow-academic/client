@@ -12,6 +12,8 @@ from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.sql.types import (
     QGetAgentsV4Item,
+    QGetArgsOutputsV4Item,
+    QGetArgsV4Item,
     QGetColorsV4Item,
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
@@ -173,6 +175,8 @@ class PersonaWebsocketResources(BaseModel):
     models: list[QGetModelsV4Item] | None = None
     providers: list[QGetProvidersV4Item] | None = None
     tools: list[QGetToolsV4Item] | None = None
+    config_args: list[QGetArgsV4Item] | None = None
+    config_args_outputs: list[QGetArgsOutputsV4Item] | None = None
     # Profile config (for rate limiting)
     config_profile: list[QGetProfilesV4Item] | None = None
 

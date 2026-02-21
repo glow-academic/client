@@ -11,6 +11,8 @@ from app.api.v4.resources.cohorts.types import QGetCohortsV4Item
 from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.sql.types import (
     QGetAgentsV4Item,
+    QGetArgsOutputsV4Item,
+    QGetArgsV4Item,
     QGetDepartmentsV4Item,
     QGetEmailsV4Item,
     QGetModelsV4Item,
@@ -121,6 +123,8 @@ class ProfileWebsocketResources(BaseModel):
     models: list[QGetModelsV4Item] | None = None
     providers: list[QGetProvidersV4Item] | None = None
     tools: list[QGetToolsV4Item] | None = None
+    config_args: list[QGetArgsV4Item] | None = None
+    config_args_outputs: list[QGetArgsOutputsV4Item] | None = None
     config_profile: list[QGetProfilesV4Item] | None = None
 
 

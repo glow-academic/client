@@ -57,6 +57,8 @@ from app.api.v4.entries.parameter_drafts.get import (
 from app.api.v4.entries.runs.search import get_run_list_entries_internal
 from app.api.v4.permissions import has_tools_for_resource, resolve_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
+from app.api.v4.resources.args.get import get_args_internal
+from app.api.v4.resources.args_outputs.get import get_args_outputs_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
@@ -569,6 +571,8 @@ async def get_parameter_websocket(
             models=data.config_model_resources,
             providers=data.config_provider_resources,
             tools=None,
+            config_args=None,
+            config_args_outputs=None,
             config_profile=config_profile_result or None,
         ),
         resource_agent_ids=data.agent_ids,

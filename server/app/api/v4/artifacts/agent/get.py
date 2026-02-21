@@ -74,6 +74,8 @@ from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.agent_drafts.get import get_agent_drafts_entries_internal
 from app.api.v4.entries.runs.search import get_run_list_entries_internal
 from app.api.v4.permissions import has_tools_for_resource, resolve_agents_for_artifact
+from app.api.v4.resources.args.get import get_args_internal
+from app.api.v4.resources.args_outputs.get import get_args_outputs_internal
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
@@ -830,6 +832,43 @@ async def get_agent_websocket(
     )
 
     current = data.resources_payload.current
+
+    # Pre-fetch args and args_outputs from tool IDs (both cached via *_internal)
+    config_tools = current.tools if current else []
+    config_args = None
+    config_args_outputs = None
+    if config_tools and pool:
+        all_args_ids: list[UUID] = []
+        all_args_output_ids: list[UUID] = []
+        for tool in config_tools:
+            if tool.args_ids:
+                all_args_ids.extend(tool.args_ids)
+            if tool.args_output_ids:
+                all_args_output_ids.extend(tool.args_output_ids)
+
+        if all_args_ids or all_args_output_ids:
+
+            async def fetch_args():
+                if not all_args_ids:
+                    return None
+                async with pool.acquire() as c:
+                    return await get_args_internal(
+                        c, list(set(all_args_ids)), bypass_cache=bypass_cache
+                    )
+
+            async def fetch_args_outputs():
+                if not all_args_output_ids:
+                    return None
+                async with pool.acquire() as c:
+                    return await get_args_outputs_internal(
+                        c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
+                    )
+
+            config_args, config_args_outputs = await asyncio.gather(
+                fetch_args(),
+                fetch_args_outputs(),
+            )
+
     websocket_resources = AgentWebsocketResources(
         names=current.names if current else [],
         descriptions=current.descriptions if current else [],
@@ -838,7 +877,9 @@ async def get_agent_websocket(
         instructions=current.instructions if current else [],
         flags=current.flags if current else [],
         departments=current.departments if current else [],
-        tools=current.tools if current else [],
+        tools=config_tools,
+        config_args=config_args,
+        config_args_outputs=config_args_outputs,
         temperature_levels=current.temperature_levels if current else [],
         reasoning_levels=current.reasoning_levels if current else [],
         voices=current.voices if current else [],

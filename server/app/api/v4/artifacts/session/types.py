@@ -136,6 +136,8 @@ class SessionWebsocketResources(BaseModel):
     config_models: "list[QGetModelsV4Item] | None" = None
     config_providers: "list[QGetProvidersV4Item] | None" = None
     config_tools: "list[QGetToolsV4Item] | None" = None
+    config_args: "list[QGetArgsV4Item] | None" = None
+    config_args_outputs: "list[QGetArgsOutputsV4Item] | None" = None
     config_profile: "list[QGetProfilesV4Item] | None" = None
 
 
@@ -154,6 +156,8 @@ from app.sql.types import (  # noqa: E402
     GetGroupListViewSqlRow,
     GetSessionListViewSqlRow,
     QGetAgentsV4Item,
+    QGetArgsOutputsV4Item,
+    QGetArgsV4Item,
     QGetAuditListViewV4Item,
     QGetGroupListViewV4Item,
     QGetModelsV4Item,

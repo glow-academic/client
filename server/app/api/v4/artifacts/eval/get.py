@@ -68,6 +68,8 @@ from app.api.v4.resources.flags.search import search_flags_internal
 from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
+from app.api.v4.resources.args.get import get_args_internal
+from app.api.v4.resources.args_outputs.get import get_args_outputs_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
@@ -679,6 +681,41 @@ async def get_eval_websocket(
         fetch_tools(),
     )
 
+    # Pre-fetch args and args_outputs from tool IDs (both cached via *_internal)
+    config_args = None
+    config_args_outputs = None
+    if tools_result and pool:
+        all_args_ids: list[UUID] = []
+        all_args_output_ids: list[UUID] = []
+        for tool in tools_result:
+            if tool.args_ids:
+                all_args_ids.extend(tool.args_ids)
+            if tool.args_output_ids:
+                all_args_output_ids.extend(tool.args_output_ids)
+
+        if all_args_ids or all_args_output_ids:
+
+            async def fetch_args():
+                if not all_args_ids:
+                    return None
+                async with pool.acquire() as c:
+                    return await get_args_internal(
+                        c, list(set(all_args_ids)), bypass_cache=bypass_cache
+                    )
+
+            async def fetch_args_outputs():
+                if not all_args_output_ids:
+                    return None
+                async with pool.acquire() as c:
+                    return await get_args_outputs_internal(
+                        c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
+                    )
+
+            config_args, config_args_outputs = await asyncio.gather(
+                fetch_args(),
+                fetch_args_outputs(),
+            )
+
     selected_name = next((n for n in data.names if n.id == data.name_id), None)
     selected_description = next(
         (d for d in data.descriptions if d.id == data.description_id), None
@@ -730,6 +767,8 @@ async def get_eval_websocket(
             models=data.config_models,
             providers=data.config_providers,
             tools=tools_result or None,
+            config_args=config_args,
+            config_args_outputs=config_args_outputs,
             config_profile=config_profile_result or None,
         ),
     )

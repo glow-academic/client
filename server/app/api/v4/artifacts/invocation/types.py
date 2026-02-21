@@ -14,6 +14,8 @@ from pydantic import BaseModel
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
+    QGetArgsOutputsV4Item,
+    QGetArgsV4Item,
     QGetDepartmentsV4Item,
     QGetInstructionsV4Item,
     QGetKeysV4Item,
@@ -58,6 +60,8 @@ class InvocationWebsocketResources(BaseModel):
     config_models: list[QGetModelsV4Item] | None = None
     config_providers: list[QGetProvidersV4Item] | None = None
     config_tools: list[QGetToolsV4Item] | None = None
+    config_args: list[QGetArgsV4Item] | None = None
+    config_args_outputs: list[QGetArgsOutputsV4Item] | None = None
     config_profile: list[QGetProfilesV4Item] | None = None
 
 
@@ -195,6 +199,8 @@ class SuiteWebsocketResources(BaseModel):
     config_models: list[QGetModelsV4Item] | None = None
     config_providers: list[QGetProvidersV4Item] | None = None
     config_tools: list[QGetToolsV4Item] | None = None
+    config_args: list[QGetArgsV4Item] | None = None
+    config_args_outputs: list[QGetArgsOutputsV4Item] | None = None
     config_profile: list[QGetProfilesV4Item] | None = None
 
 

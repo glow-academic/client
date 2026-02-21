@@ -12,6 +12,8 @@ from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.sql.types import (
     QGetAgentDraftsEntriesV4Item,
     QGetAgentsV4Item,
+    QGetArgsOutputsV4Item,
+    QGetArgsV4Item,
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
     QGetInstructionsV4Item,
@@ -146,6 +148,8 @@ class AgentWebsocketResources(BaseModel):
     flags: list[AgentFlagConfig] | None = None
     departments: list[QGetDepartmentsV4Item] | None = None
     tools: list[QGetToolsV4Item] | None = None
+    config_args: list[QGetArgsV4Item] | None = None
+    config_args_outputs: list[QGetArgsOutputsV4Item] | None = None
     temperature_levels: list[QGetTemperatureLevelsV4Item] | None = None
     reasoning_levels: list[QGetReasoningLevelsV4Item] | None = None
     voices: list[QGetVoicesV4Item] | None = None

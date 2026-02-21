@@ -64,6 +64,8 @@ from app.api.v4.entries.cohort_drafts.get import get_cohort_drafts_entries_inter
 from app.api.v4.entries.runs.search import get_run_list_entries_internal
 from app.api.v4.permissions import resolve_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
+from app.api.v4.resources.args.get import get_args_internal
+from app.api.v4.resources.args_outputs.get import get_args_outputs_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
@@ -759,6 +761,41 @@ async def get_cohort_websocket(
 
     current = data.resources_payload.current
 
+    # Enrich tools with args and args_outputs
+    config_tools = tools_result or []
+    config_args = None
+    config_args_outputs = None
+    if config_tools and pool:
+        all_args_ids: list[UUID] = []
+        all_args_output_ids: list[UUID] = []
+        for tool in config_tools:
+            if tool.args_ids:
+                all_args_ids.extend(tool.args_ids)
+            if tool.args_output_ids:
+                all_args_output_ids.extend(tool.args_output_ids)
+        if all_args_ids or all_args_output_ids:
+
+            async def fetch_args():
+                if not all_args_ids:
+                    return None
+                async with pool.acquire() as c:
+                    return await get_args_internal(
+                        c, list(set(all_args_ids)), bypass_cache=bypass_cache
+                    )
+
+            async def fetch_args_outputs():
+                if not all_args_output_ids:
+                    return None
+                async with pool.acquire() as c:
+                    return await get_args_outputs_internal(
+                        c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
+                    )
+
+            config_args, config_args_outputs = await asyncio.gather(
+                fetch_args(),
+                fetch_args_outputs(),
+            )
+
     # Build views (always construct — both fields optional now)
     views = CohortWebsocketViews(
         draft_cohort=draft_view,
@@ -780,6 +817,8 @@ async def get_cohort_websocket(
             models=data.config_model_resources,
             providers=data.config_provider_resources,
             tools=tools_result or None,
+            config_args=config_args,
+            config_args_outputs=config_args_outputs,
             config_profile=config_profile_result or None,
         ),
     )

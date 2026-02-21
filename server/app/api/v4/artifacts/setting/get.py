@@ -71,6 +71,8 @@ from app.api.v4.entries.runs.search import get_run_list_entries_internal
 from app.api.v4.entries.setting_drafts.get import get_setting_drafts_entries_internal
 from app.api.v4.permissions import resolve_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
+from app.api.v4.resources.args.get import get_args_internal
+from app.api.v4.resources.args_outputs.get import get_args_outputs_internal
 from app.api.v4.resources.auth_item_keys.get import get_auth_item_keys_internal
 from app.api.v4.resources.auth_item_keys.search import search_auth_item_keys_internal
 from app.api.v4.resources.auths.get import get_auths_internal
@@ -738,6 +740,41 @@ async def get_setting_websocket(
         fetch_tools(),
     )
 
+    # Pre-fetch args and args_outputs from tool IDs (both cached via *_internal)
+    config_args = None
+    config_args_outputs = None
+    if tools_result and pool:
+        all_args_ids: list[UUID] = []
+        all_args_output_ids: list[UUID] = []
+        for tool in tools_result:
+            if tool.args_ids:
+                all_args_ids.extend(tool.args_ids)
+            if tool.args_output_ids:
+                all_args_output_ids.extend(tool.args_output_ids)
+
+        if all_args_ids or all_args_output_ids:
+
+            async def fetch_args():
+                if not all_args_ids:
+                    return None
+                async with pool.acquire() as c:
+                    return await get_args_internal(
+                        c, list(set(all_args_ids)), bypass_cache=bypass_cache
+                    )
+
+            async def fetch_args_outputs():
+                if not all_args_output_ids:
+                    return None
+                async with pool.acquire() as c:
+                    return await get_args_outputs_internal(
+                        c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
+                    )
+
+            config_args, config_args_outputs = await asyncio.gather(
+                fetch_args(),
+                fetch_args_outputs(),
+            )
+
     # Extract current (selected) resources from internal data
     current = data.resources_payload.current
 
@@ -780,6 +817,8 @@ async def get_setting_websocket(
             models=data.config_model_resources,
             providers=data.config_provider_resources,
             tools=tools_result or None,
+            config_args=config_args,
+            config_args_outputs=config_args_outputs,
             config_profile=config_profile_result or None,
         ),
         resource_agent_ids=data.resource_agent_ids,
