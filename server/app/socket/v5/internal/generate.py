@@ -71,16 +71,21 @@ async def _emit_error(
 
 
 def _build_jinja_context(result: object) -> dict[str, Any]:
-    """Build Jinja context from pre-fetched resources and config."""
-    context: dict[str, Any] = {}
+    """Build Jinja context with three top-level keys: resources, entries, config."""
+    context: dict[str, Any] = {
+        "resources": {},
+        "entries": {},
+        "config": {},
+    }
     resources = getattr(result, "resources", None)
     if resources:
-        context = resources.model_dump(mode="json")  # type: ignore[union-attr]
+        context["resources"] = resources.model_dump(mode="json")  # type: ignore[union-attr]
+    entries = getattr(result, "entries", None)
+    if entries:
+        context["entries"] = entries.model_dump(mode="json")  # type: ignore[union-attr]
     result_config = getattr(result, "config", None)
     if result_config:
-        config_data = result_config.model_dump(mode="json")  # type: ignore[union-attr]
-        for key, value in config_data.items():
-            context[f"config_{key}"] = value
+        context["config"] = result_config.model_dump(mode="json")  # type: ignore[union-attr]
     return context
 
 
@@ -450,7 +455,7 @@ async def generate_handler(data: dict[str, Any]) -> None:
                 group_id = prepare_row.group_id
                 config_id = prepare_row.config_id
 
-            # Step 11: Inject config view + draft view into Jinja context
+            # Step 11: Inject generation-time config view into entries context
             if config_id:
                 async with pool.acquire() as config_conn:
                     config_view_items = await get_config_entry_internal(
@@ -458,24 +463,10 @@ async def generate_handler(data: dict[str, Any]) -> None:
                         config_id=config_id,
                         bypass_cache=True,
                     )
-                config_view = (
-                    config_view_items[0].model_dump(mode="json")
-                    if config_view_items
-                    else {}
-                )
-            else:
-                config_view = {}
-
-            draft_view: dict[str, Any] = {}
-            if result.entries:
-                draft_attr = getattr(result.entries, config.draft_view_key, None)
-                if draft_attr:
-                    draft_view = draft_attr.model_dump(mode="json")
-
-            jinja_context["views"] = {
-                "config": config_view,
-                config.draft_view_key: draft_view,
-            }
+                if config_view_items:
+                    jinja_context["entries"]["generation_config"] = (
+                        config_view_items[0].model_dump(mode="json")
+                    )
 
             # Step 12: Render developer instructions with Jinja
             rendered_developer_messages = render_developer_instructions(
