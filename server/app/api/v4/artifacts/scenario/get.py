@@ -493,12 +493,12 @@ async def get_scenario_internal(
 
     # Scenario-specific flag names (business logic)
     SCENARIO_FLAG_NAMES = {
-        "scenario_active",
-        "video_enabled",
-        "problem_statement_enabled",
-        "objectives_enabled",
-        "images_enabled",
-        "questions_enabled",
+        "Active",
+        "Video",
+        "Problem Statement",
+        "Objectives",
+        "Images",
+        "Questions",
     }
 
     async def fetch_all_scenario_flags():
@@ -889,7 +889,7 @@ async def get_scenario_internal(
             icon_id=flag.icon,
             flag_option_id=flag.id,
             generated=flag.generated,
-            video_flag=flag.name == "scenario_questions_enabled",
+            video_flag=flag.name == "Questions",
         )
         for flag in all_scenario_flags
         if flag.id and flag.name and flag.name != "scenario_parameter"

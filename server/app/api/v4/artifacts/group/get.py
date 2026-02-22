@@ -46,12 +46,11 @@ from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.api.v4.views.message.list.get import get_message_list_view_internal
-from app.api.v4.views.message.list.types import GetMessageListViewResponse
+from app.api.v4.entries.messages.search import get_message_list_entries_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
-from app.sql.types import GetCallListViewSqlRow
+from app.sql.types import GetCallListViewSqlRow, GetMessageListViewSqlRow
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -193,9 +192,9 @@ async def get_group_internal(
     run_ids = [r.run_id for r in runs_result.items]
 
     # 6. Fetch messages and calls in parallel
-    async def fetch_messages() -> GetMessageListViewResponse:
+    async def fetch_messages() -> GetMessageListViewSqlRow:
         async with pool.acquire() as c:
-            return await get_message_list_view_internal(
+            return await get_message_list_entries_internal(
                 conn=c,
                 run_ids=run_ids,
                 bypass_cache=bypass_cache,

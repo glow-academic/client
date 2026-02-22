@@ -372,7 +372,7 @@ async def get_cohort_internal(
             return (selected, suggestions)
 
     # Cohort-specific flag names (business logic)
-    COHORT_FLAG_NAMES = {"cohort_active"}
+    COHORT_FLAG_NAMES = {"Active"}
 
     async def fetch_flags() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
@@ -486,7 +486,6 @@ async def get_cohort_internal(
             simulation_id=s.simulation_id,
             name=s.name,
             description=s.description,
-            time_limit=s.time_limit,
             generated=s.generated,
         )
         for s in simulations_raw

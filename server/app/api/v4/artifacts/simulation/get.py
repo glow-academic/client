@@ -361,7 +361,7 @@ async def get_simulation_internal(
             )
             return (selected, suggestions)
 
-    SIMULATION_FLAG_NAMES_ORDERED = ["simulation_active", "practice"]
+    SIMULATION_FLAG_NAMES_ORDERED = ["Active", "Practice"]
 
     async def fetch_flags():
         async with pool.acquire() as c:

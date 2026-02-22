@@ -448,7 +448,7 @@ async def get_persona_internal(
             return (selected, suggestions)
 
     # Persona-specific flag names (business logic)
-    PERSONA_FLAG_NAMES = {"persona_active"}
+    PERSONA_FLAG_NAMES = {"Active"}
 
     async def fetch_flags():
         async with pool.acquire() as c:

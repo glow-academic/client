@@ -2,20 +2,7 @@
 -- Creates draft if input_draft_id is NULL, updates if exists
 -- Links resources via junction tables
 
--- Drop function if exists (handles signature variations)
-DO $$
-DECLARE
-    r RECORD;
-BEGIN
-    FOR r IN
-        SELECT oidvectortypes(proargtypes) as sig
-        FROM pg_proc
-        WHERE proname = 'api_patch_persona_draft_v4'
-          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
-    LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS api_patch_persona_draft_v4(%s)', r.sig);
-    END LOOP;
-END $$;
+DROP FUNCTION IF EXISTS api_patch_persona_draft_v4;
 
 -- Ensure persona draft composite types exist before function creation.
 DO $$

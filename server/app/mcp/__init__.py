@@ -97,12 +97,12 @@ Scenario save accepts these fields:
 | `name_id` | UUID | **Yes** | `names.resources[]` or `create_resource("names", ...)` |
 | `description_id` | UUID | No | `descriptions.resources[]` or `create_resource("descriptions", ...)` |
 | `problem_statement_id` | UUID | No | `problem_statements.resources[]` or `create_resource("problem_statements", ...)` |
-| `active_flag_id` | UUID | No | `flags.resources[]` (key: "scenario_active") |
-| `objectives_enabled_flag_id` | UUID | No | `flags.resources[]` (key: "objectives_enabled") |
-| `images_enabled_flag_id` | UUID | No | `flags.resources[]` (key: "images_enabled") |
-| `video_enabled_flag_id` | UUID | No | `flags.resources[]` (key: "video_enabled") |
-| `questions_enabled_flag_id` | UUID | No | `flags.resources[]` (key: "questions_enabled") |
-| `problem_statement_enabled_flag_id` | UUID | No | `flags.resources[]` (key: "problem_statement_enabled") |
+| `active_flag_id` | UUID | No | `flags.resources[]` (key: "Active") |
+| `objectives_enabled_flag_id` | UUID | No | `flags.resources[]` (key: "Objectives") |
+| `images_enabled_flag_id` | UUID | No | `flags.resources[]` (key: "Images") |
+| `video_enabled_flag_id` | UUID | No | `flags.resources[]` (key: "Video") |
+| `questions_enabled_flag_id` | UUID | No | `flags.resources[]` (key: "Questions") |
+| `problem_statement_enabled_flag_id` | UUID | No | `flags.resources[]` (key: "Problem Statement") |
 | `department_ids` | list[UUID] | No | `departments.resources[]` |
 | `persona_ids` | list[UUID] | **Yes** (≥1) | `personas.resources[]` |
 | `document_ids` | list[UUID] | No | `documents.resources[]` |

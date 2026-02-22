@@ -396,13 +396,13 @@ function ScenarioComponent({
         ?.problem_statement_id
         ? String(scenarioData.problem_statements.resource.problem_statement_id)
         : null,
-      active_flag_id: selectedFlagId("scenario_active"),
-      objectives_enabled_flag_id: selectedFlagId("objectives_enabled"),
-      images_enabled_flag_id: selectedFlagId("images_enabled"),
-      video_enabled_flag_id: selectedFlagId("video_enabled"),
-      questions_enabled_flag_id: selectedFlagId("questions_enabled"),
+      active_flag_id: selectedFlagId("Active"),
+      objectives_enabled_flag_id: selectedFlagId("Objectives"),
+      images_enabled_flag_id: selectedFlagId("Images"),
+      video_enabled_flag_id: selectedFlagId("Video"),
+      questions_enabled_flag_id: selectedFlagId("Questions"),
       problem_statement_enabled_flag_id: selectedFlagId(
-        "problem_statement_enabled",
+        "Problem Statement",
       ),
       department_ids: (scenarioData.departments?.current ?? [])
         .map((item) => item.department_id)

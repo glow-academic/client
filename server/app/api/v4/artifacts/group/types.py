@@ -158,7 +158,7 @@ class GroupWebsocketEntries(BaseModel):
     runs: "GetRunListViewResponse | None" = None
     # Domain views (from internal layer)
     group_runs: "list[RunViewItem] | None" = None
-    messages: "list[MessageViewItem] | None" = None
+    messages: "list[QGetMessageListViewV4Item] | None" = None
     calls: "list[QGetCallListViewV4Item] | None" = None
 
 
@@ -183,17 +183,15 @@ from app.api.v4.entries.runs.search import (  # noqa: E402
     GetRunListViewResponse,
     RunViewItem,
 )
-from app.api.v4.views.message.list.types import (  # noqa: E402
-    GetMessageListViewResponse,
-    MessageViewItem,
-)
 from app.sql.types import (  # noqa: E402
     GetCallListViewSqlRow,
     GetGroupListViewSqlRow,
+    GetMessageListViewSqlRow,
     QGetAgentsV4Item,
     QGetArgsOutputsV4Item,
     QGetArgsV4Item,
     QGetCallListViewV4Item,
+    QGetMessageListViewV4Item,
     QGetModelsV4Item,
     QGetProfilesV4Item,
     QGetProvidersV4Item,
@@ -212,7 +210,7 @@ class GroupInternalData:
     # Views
     group_view: GetGroupListViewSqlRow
     runs_result: GetRunListViewResponse
-    messages_result: GetMessageListViewResponse
+    messages_result: GetMessageListViewSqlRow
     calls_result: GetCallListViewSqlRow
     # Config chain
     config_agents: list[QGetAgentsV4Item] = field(default_factory=list)

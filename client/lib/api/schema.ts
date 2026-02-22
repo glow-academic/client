@@ -13522,26 +13522,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/views/message/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Messages
-         * @description Get message data from the materialized view.
-         */
-        post: operations["get_messages_api_v4_views_message_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/auth/login": {
         parameters: {
             query?: never;
@@ -22859,7 +22839,7 @@ export interface components {
          */
         BenchmarkResponse: {
             /** Tests */
-            tests?: components["schemas"]["QGetTestViewV4Item"][];
+            tests?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__21"][];
             /**
              * Total Count
              * @default 0
@@ -23646,8 +23626,6 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
-            /** Time Limit */
-            time_limit?: number | null;
             /** Generated */
             generated?: boolean | null;
         };
@@ -28997,23 +28975,6 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
-        /**
-         * GetMessageListViewResponse
-         * @description Response containing message list data.
-         */
-        GetMessageListViewResponse: {
-            /**
-             * Items
-             * @description Message data items
-             */
-            items?: components["schemas"]["MessageViewItem"][];
-            /**
-             * Total Count
-             * @description Total count before pagination
-             * @default 0
-             */
-            total_count: number;
-        };
         /** GetMessagesCompletionsEntriesApiRequest */
         GetMessagesCompletionsEntriesApiRequest: {
             /** Ids */
@@ -30759,9 +30720,9 @@ export interface components {
          * @description Response for benchmark test artifact detail.
          */
         GetTestArtifactResponse: {
-            test?: components["schemas"]["QGetTestViewV4Item"] | null;
+            test?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__21"] | null;
             /** Invocations */
-            invocations?: components["schemas"]["QGetTestInvocationViewV4Item"][];
+            invocations?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__22"][];
             /**
              * Status
              * @default pending
@@ -33429,27 +33390,6 @@ export interface components {
             highlights?: components["schemas"]["HighlightEntry"][] | null;
             /** Replaces */
             replaces?: components["schemas"]["ReplacementEntry"][] | null;
-        };
-        /**
-         * MessageViewItem
-         * @description Single message from the message list view.
-         */
-        MessageViewItem: {
-            /**
-             * Message Id
-             * Format: uuid
-             */
-            message_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Role */
-            role?: string | null;
-            /** Message Created At */
-            message_created_at?: string | null;
-            /** Contents */
-            contents?: string[];
-            /** Call Ids */
-            call_ids?: string[];
         };
         /** ModalitiesGenerationEvent */
         ModalitiesGenerationEvent: {
@@ -38446,74 +38386,6 @@ export interface components {
             temperature: number | null;
             /** Generated */
             generated: boolean | null;
-        };
-        /** QGetTestInvocationViewV4Item */
-        QGetTestInvocationViewV4Item: {
-            /** Invocation Id */
-            invocation_id: string | null;
-            /** Test Id */
-            test_id: string | null;
-            /** Group Id */
-            group_id: string | null;
-            /** Invocation Resolved Id */
-            invocation_resolved_id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Title */
-            title: string | null;
-            /** Invocation Completed */
-            invocation_completed: boolean | null;
-            /** Grade Score */
-            grade_score: number | null;
-            /** Grade Passed */
-            grade_passed: boolean | null;
-            /** Grade Time Taken */
-            grade_time_taken: number | null;
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Grade Id */
-            grade_id: string | null;
-            /** Invocation Run Ids */
-            invocation_run_ids: string[] | null;
-            /** Run Ids */
-            run_ids: string[] | null;
-            /** Group Ids */
-            group_ids: string[] | null;
-            /** Instruction Ids */
-            instruction_ids: string[] | null;
-            /** Tool Ids */
-            tool_ids: string[] | null;
-            /** Model Id */
-            model_id: string | null;
-            /** Prompt Id */
-            prompt_id: string | null;
-            /** Voice Id */
-            voice_id: string | null;
-            /** Temperature Level Id */
-            temperature_level_id: string | null;
-            /** Reasoning Level Id */
-            reasoning_level_id: string | null;
-            /** Key Id */
-            key_id: string | null;
-            /** Historical Run Ids */
-            historical_run_ids: string[] | null;
-        };
-        /** QGetTestViewV4Item */
-        QGetTestViewV4Item: {
-            /** Test Id */
-            test_id: string | null;
-            /** Eval Id */
-            eval_id: string | null;
-            /** Profile Id */
-            profile_id: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Infinite Mode */
-            infinite_mode: boolean | null;
-            /** Archived */
-            archived: boolean | null;
-            /** Created At */
-            created_at: string | null;
         };
         /** QGetTextsV4Item */
         QGetTextsV4Item: {
@@ -48238,9 +48110,9 @@ export interface components {
          */
         TestEntries: {
             /** Test */
-            test?: components["schemas"]["QGetTestViewV4Item"][] | null;
+            test?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__21"][] | null;
             /** Test Invocation */
-            test_invocation?: components["schemas"]["QGetTestInvocationViewV4Item"][] | null;
+            test_invocation?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__22"][] | null;
             runs?: components["schemas"]["GetRunListViewResponse"] | null;
         };
         /**
@@ -49587,39 +49459,39 @@ export interface components {
         app__sql__types___build_missing_type___locals____MissingSqlType__20: {
             [key: string]: unknown;
         };
-        /** GetAttemptChatEntriesApiResponse */
+        /** QGetTestViewV4Item */
         app__sql__types___build_missing_type___locals____MissingSqlType__21: {
             [key: string]: unknown;
         };
-        /** SearchAttemptChatEntriesApiResponse */
+        /** QGetTestInvocationViewV4Item */
         app__sql__types___build_missing_type___locals____MissingSqlType__22: {
             [key: string]: unknown;
         };
-        /** GetHomeTrainingEntriesApiResponse */
+        /** GetAttemptChatEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__23: {
             [key: string]: unknown;
         };
-        /** SearchHomeTrainingEntriesApiResponse */
+        /** SearchAttemptChatEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__24: {
             [key: string]: unknown;
         };
-        /** GetPracticeTrainingEntriesApiResponse */
+        /** GetHomeTrainingEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__25: {
             [key: string]: unknown;
         };
-        /** SearchPracticeTrainingEntriesApiResponse */
+        /** SearchHomeTrainingEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__26: {
             [key: string]: unknown;
         };
-        /** GetSuiteEntriesApiResponse */
+        /** GetPracticeTrainingEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__27: {
             [key: string]: unknown;
         };
-        /** SearchSuiteEntriesApiResponse */
+        /** SearchPracticeTrainingEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__28: {
             [key: string]: unknown;
         };
-        /** GetSuiteDepartmentEntriesApiResponse */
+        /** GetSuiteEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__29: {
             [key: string]: unknown;
         };
@@ -49627,43 +49499,43 @@ export interface components {
         app__sql__types___build_missing_type___locals____MissingSqlType__3: {
             [key: string]: unknown;
         };
-        /** SearchSuiteDepartmentEntriesApiResponse */
+        /** SearchSuiteEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__30: {
             [key: string]: unknown;
         };
-        /** GetSuiteDraftsEntriesApiResponse */
+        /** GetSuiteDepartmentEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__31: {
             [key: string]: unknown;
         };
-        /** SearchSuiteDraftsEntriesApiResponse */
+        /** SearchSuiteDepartmentEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__32: {
             [key: string]: unknown;
         };
-        /** GetTestInvocationEntriesApiResponse */
+        /** GetSuiteDraftsEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__33: {
             [key: string]: unknown;
         };
-        /** SearchTestInvocationEntriesApiResponse */
+        /** SearchSuiteDraftsEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__34: {
             [key: string]: unknown;
         };
-        /** GetTrainingEntriesApiResponse */
+        /** GetTestInvocationEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__35: {
             [key: string]: unknown;
         };
-        /** SearchTrainingEntriesApiResponse */
+        /** SearchTestInvocationEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__36: {
             [key: string]: unknown;
         };
-        /** GetTrainingDepartmentEntriesApiResponse */
+        /** GetTrainingEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__37: {
             [key: string]: unknown;
         };
-        /** SearchTrainingDepartmentEntriesApiResponse */
+        /** SearchTrainingEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__38: {
             [key: string]: unknown;
         };
-        /** GetTrainingDraftsEntriesApiResponse */
+        /** GetTrainingDepartmentEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__39: {
             [key: string]: unknown;
         };
@@ -49671,8 +49543,16 @@ export interface components {
         app__sql__types___build_missing_type___locals____MissingSqlType__4: {
             [key: string]: unknown;
         };
-        /** SearchTrainingDraftsEntriesApiResponse */
+        /** SearchTrainingDepartmentEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__40: {
+            [key: string]: unknown;
+        };
+        /** GetTrainingDraftsEntriesApiResponse */
+        app__sql__types___build_missing_type___locals____MissingSqlType__41: {
+            [key: string]: unknown;
+        };
+        /** SearchTrainingDraftsEntriesApiResponse */
+        app__sql__types___build_missing_type___locals____MissingSqlType__42: {
             [key: string]: unknown;
         };
         /** GetPracticeTrainingEntriesApiRequest */
@@ -64151,7 +64031,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__21"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__23"];
                 };
             };
             /** @description Validation Error */
@@ -64188,7 +64068,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__22"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__24"];
                 };
             };
             /** @description Validation Error */
@@ -68511,7 +68391,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__23"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__25"];
                 };
             };
             /** @description Validation Error */
@@ -68548,7 +68428,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__24"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__26"];
                 };
             };
             /** @description Validation Error */
@@ -70037,7 +69917,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__25"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__27"];
                 };
             };
             /** @description Validation Error */
@@ -70074,7 +69954,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__26"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__28"];
                 };
             };
             /** @description Validation Error */
@@ -72073,7 +71953,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__27"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__29"];
                 };
             };
             /** @description Validation Error */
@@ -72110,7 +71990,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__28"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__30"];
                 };
             };
             /** @description Validation Error */
@@ -72182,7 +72062,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__29"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__31"];
                 };
             };
             /** @description Validation Error */
@@ -72219,7 +72099,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__30"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__32"];
                 };
             };
             /** @description Validation Error */
@@ -72291,7 +72171,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__31"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__33"];
                 };
             };
             /** @description Validation Error */
@@ -72328,7 +72208,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__32"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__34"];
                 };
             };
             /** @description Validation Error */
@@ -73091,7 +72971,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__33"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__35"];
                 };
             };
             /** @description Validation Error */
@@ -73128,7 +73008,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__34"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__36"];
                 };
             };
             /** @description Validation Error */
@@ -73745,7 +73625,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__35"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__37"];
                 };
             };
             /** @description Validation Error */
@@ -73782,7 +73662,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__36"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__38"];
                 };
             };
             /** @description Validation Error */
@@ -73854,7 +73734,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__37"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__39"];
                 };
             };
             /** @description Validation Error */
@@ -73891,7 +73771,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__38"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__40"];
                 };
             };
             /** @description Validation Error */
@@ -73963,7 +73843,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__39"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__41"];
                 };
             };
             /** @description Validation Error */
@@ -74000,7 +73880,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__40"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__42"];
                 };
             };
             /** @description Validation Error */
@@ -74644,39 +74524,6 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_messages_api_v4_views_message_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetMessageListViewResponse"];
                 };
             };
             /** @description Validation Error */
