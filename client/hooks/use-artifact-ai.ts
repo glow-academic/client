@@ -9,6 +9,10 @@
  *   `generate` event to the server with connection guards and
  *   automatic `startGenerating` bookkeeping.
  *
+ * Toast lifecycle: Each `generate()` call creates a loading toast that
+ *   updates with progress and resolves to success/error. Multiple
+ *   concurrent generations each get their own tracked toast.
+ *
  * Follows the useAttemptLifecycle pattern: one hook owns both directions.
  */
 "use client";
@@ -56,13 +60,23 @@ interface UseArtifactAiReturn {
   generationProgress: number;
   /**
    * Emit the unified `generate` event to the server.
-   * Handles connection guard + marks resources as generating.
+   * Handles connection guard, marks resources as generating,
+   * and creates a lifecycle toast that tracks progress.
    * Returns false if socket is not connected.
    */
   generate: (
     resourceTypes: string[],
     options?: GenerateOptions,
   ) => boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Format resource types for display: ["names", "descriptions"] → "names, descriptions" */
+function formatResourceTypes(types: string[]): string {
+  return types.map((t) => t.replaceAll("_", " ")).join(", ");
 }
 
 // ---------------------------------------------------------------------------
@@ -84,6 +98,26 @@ export function useArtifactAi({
   // listeners when the array reference changes but contents are the same.
   const validResourceTypesRef = useRef(validResourceTypes);
   validResourceTypesRef.current = validResourceTypes;
+
+  // --- Toast lifecycle tracking ---
+  // Queue of toast IDs awaiting their run_id from the server started event.
+  const pendingToastsRef = useRef<(string | number)[]>([]);
+  // Map from run_id to toast ID for correlated progress/complete/error updates.
+  const toastMapRef = useRef<Map<string, string | number>>(new Map());
+
+  /** Look up or fall back to the latest pending toast for a run_id. */
+  const resolveToast = useCallback(
+    (runId: string | null | undefined): string | number | undefined => {
+      if (runId && toastMapRef.current.has(runId)) {
+        return toastMapRef.current.get(runId);
+      }
+      // Fallback: errors can arrive with null run_id (before run was created).
+      // Use the most recent pending toast.
+      const pending = pendingToastsRef.current;
+      return pending.length > 0 ? pending[pending.length - 1] : undefined;
+    },
+    [],
+  );
 
   // --- Derived state ---
 
@@ -135,6 +169,12 @@ export function useArtifactAi({
         return next;
       });
 
+      // Create a lifecycle toast and queue it for run_id correlation
+      const toastId = toast.loading(
+        `Generating ${formatResourceTypes(resourceTypes)}...`,
+      );
+      pendingToastsRef.current.push(toastId);
+
       // Emit the unified `generate` event
       socket.emit("generate", {
         artifact_type: artifactType,
@@ -165,6 +205,7 @@ export function useArtifactAi({
     const handleStarted = (data: {
       group_id?: string;
       artifact_type?: string;
+      run_id?: string;
       resource_types?: string[];
     }) => {
       if (!matchesGroup(data)) return;
@@ -176,11 +217,20 @@ export function useArtifactAi({
         });
       }
       setGenerationProgress(0);
+
+      // Correlate: pop oldest pending toast and bind it to this run_id
+      if (data.run_id) {
+        const toastId = pendingToastsRef.current.shift();
+        if (toastId !== undefined) {
+          toastMapRef.current.set(data.run_id, toastId);
+        }
+      }
     };
 
     const handleComplete = (data: {
       group_id?: string;
       artifact_type?: string;
+      run_id?: string;
       resource_type?: string;
       resource_types?: string[];
       success?: boolean;
@@ -207,11 +257,24 @@ export function useArtifactAi({
         setGeneratingResources(new Set());
         setGenerationProgress(0);
       }
+
+      // Update lifecycle toast
+      const toastId = resolveToast(data.run_id);
+      if (toastId !== undefined) {
+        if (data.success === false) {
+          toast.error(data.message || "Generation failed", { id: toastId });
+        } else {
+          toast.success("Generation complete", { id: toastId });
+        }
+        // Clean up
+        if (data.run_id) toastMapRef.current.delete(data.run_id);
+      }
     };
 
     const handleError = (data: {
       group_id?: string | null;
       artifact_type?: string;
+      run_id?: string | null;
       resource_type?: string | null;
       resource_types?: string[] | null;
       message?: string;
@@ -231,16 +294,43 @@ export function useArtifactAi({
         });
         return next;
       });
-      toast.error(data.message || "Generation failed");
+
+      // Update lifecycle toast
+      const toastId = resolveToast(data.run_id);
+      if (toastId !== undefined) {
+        toast.error(data.message || "Generation failed", { id: toastId });
+        // Clean up
+        if (data.run_id) toastMapRef.current.delete(data.run_id);
+        else pendingToastsRef.current.shift(); // Remove from pending if no run_id
+      } else {
+        // No correlated toast — show a standalone error
+        toast.error(data.message || "Generation failed");
+      }
     };
 
     const handleProgress = (data: {
       group_id?: string;
       artifact_type?: string;
+      run_id?: string;
+      completed_resources?: number;
+      total_resources?: number;
       percentage?: number;
+      last_completed_resource?: string;
     }) => {
       if (!matchesGroup(data)) return;
       setGenerationProgress(data.percentage ?? 0);
+
+      // Update lifecycle toast with progress
+      const toastId = resolveToast(data.run_id);
+      if (toastId !== undefined) {
+        const completed = data.completed_resources ?? 0;
+        const total = data.total_resources ?? 0;
+        const last = data.last_completed_resource;
+        const detail = last
+          ? `Completed ${last.replaceAll("_", " ")} (${completed}/${total})`
+          : `Generating... ${data.percentage ?? 0}%`;
+        toast.loading(detail, { id: toastId });
+      }
     };
 
     const startedEvent = `${artifactType}_generation_started`;
@@ -271,7 +361,7 @@ export function useArtifactAi({
       s.off(errorEvent, handleError);
       s.off(progressEvent, handleProgress);
     };
-  }, [socket, isConnected, groupId, artifactType]);
+  }, [socket, isConnected, groupId, artifactType, resolveToast]);
 
   return {
     generatingResources,

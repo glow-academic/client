@@ -86,11 +86,10 @@ export default function Departments({
     },
     canRegenerate: () => true,
     onGenerate: (selectedResources, instructions) => {
-      const ok = generate(selectedResources, {
+      generate(selectedResources, {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
         save: true,
       });
-      if (ok) toast.success("Generation started for new department");
     },
     isGenerating: () => false,
   });

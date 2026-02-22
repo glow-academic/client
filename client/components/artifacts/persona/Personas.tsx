@@ -143,8 +143,7 @@ export default function Personas({
     },
     canRegenerate: () => true,
     onGenerate: (selectedResources, instructions) => {
-      const ok = generate(selectedResources, { user_instructions: instructions?.trim() ? [instructions.trim()] : null, save: true });
-      if (ok) toast.success("Generation started for new persona");
+      generate(selectedResources, { user_instructions: instructions?.trim() ? [instructions.trim()] : null, save: true });
     },
     isGenerating: () => false,
   });

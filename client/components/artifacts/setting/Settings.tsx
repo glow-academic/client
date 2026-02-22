@@ -7,7 +7,6 @@
 import { Edit, Eye, Settings as SettingsIcon, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
 
 import {
   ColumnDef,
@@ -70,11 +69,10 @@ export default function Settings({ listData: serverListData }: SettingsProps) {
     },
     canRegenerate: () => true,
     onGenerate: (selectedResources, instructions) => {
-      const ok = generate(selectedResources, {
+      generate(selectedResources, {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
         save: true,
       });
-      if (ok) toast.success("Generation started for new setting");
     },
     isGenerating: () => false,
   });
