@@ -279,6 +279,8 @@ class ListPersonaApiPersona(BaseModel):
     scenario_ids: list[UUID] | None = None
     field_ids: list[UUID] | None = None
     is_inactive: bool | None = None
+    generated: bool | None = None
+    mcp: bool | None = None
     num_scenarios: int | None = None
     # Computed in Python
     can_edit: bool | None = None

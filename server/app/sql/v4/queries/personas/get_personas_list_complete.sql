@@ -45,6 +45,8 @@ CREATE TYPE types.q_list_personas_v4_persona AS (
     scenario_ids uuid[],
     field_ids uuid[],
     is_inactive boolean,
+    generated boolean,
+    mcp boolean,
     num_scenarios int,
     active_scenario_count int,
     updated_at timestamptz
@@ -132,7 +134,9 @@ persona_data_base AS (
         COALESCE(pfd.field_ids, ARRAY[]::uuid[]) as field_ids,
         COALESCE(ps.num_scenarios, 0) as num_scenarios,
         -- active_scenario_count from inline scenario count
-        COALESCE(ps.num_scenarios, 0) as active_scenario_count
+        COALESCE(ps.num_scenarios, 0) as active_scenario_count,
+        p.generated,
+        p.mcp
     FROM persona_artifact p
     LEFT JOIN persona_scenarios ps ON ps.persona_id = p.id
     LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
@@ -145,7 +149,7 @@ persona_data_base AS (
         (SELECT i.value FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1),
         EXISTS (SELECT 1 FROM persona_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.type = 'persona_active' AND pf.value = TRUE),
         p.updated_at,
-        pdd.department_ids, ps.scenario_ids, pfd.field_ids, ps.num_scenarios
+        pdd.department_ids, ps.scenario_ids, pfd.field_ids, ps.num_scenarios, p.generated, p.mcp
     HAVING COUNT(pd.persona_id) > 0 OR NOT EXISTS (
         SELECT 1 FROM persona_departments_junction pd2 WHERE pd2.persona_id = p.id
     )
@@ -217,7 +221,7 @@ SELECT
         (SELECT ARRAY_AGG(
             (pd.persona_id, pd.persona_name, pd.description, pd.color, pd.icon,
              pd.department_ids, pd.scenario_ids, pd.field_ids,
-             NOT pd.active, pd.num_scenarios,
+             NOT pd.active, pd.generated, pd.mcp, pd.num_scenarios,
              pd.active_scenario_count,
              pd.updated_at
             )::types.q_list_personas_v4_persona

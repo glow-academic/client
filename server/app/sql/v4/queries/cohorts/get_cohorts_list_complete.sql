@@ -48,6 +48,8 @@ CREATE TYPE types.q_list_cohorts_v4_cohort AS (
     usage_count bigint,
     num_members int,
     is_member boolean,
+    generated boolean,
+    mcp boolean,
     updated_at timestamptz
 );
 
@@ -181,7 +183,9 @@ cohorts_data AS (
         CASE
             WHEN upr.resource_id IS NOT NULL AND cr_res.profile_ids IS NOT NULL AND upr.resource_id = ANY(cr_res.profile_ids) THEN true
             ELSE false
-        END as is_member
+        END as is_member,
+        c.generated,
+        c.mcp
     FROM params x
     JOIN cohort_artifact c ON true
     LEFT JOIN cohort_resource_bridge crb ON crb.cohort_id = c.id
@@ -200,7 +204,7 @@ cohorts_data AS (
         up.role != 'instructional'
     )
     GROUP BY c.id, (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1), (SELECT d.description FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.type = 'cohort_active' AND cf.value = TRUE), c.updated_at,
-             cdd.department_ids, cp.profile_ids, cprf.profile_ids, csa.simulation_ids, cu.usage_count, up.role, upr.resource_id, cr_res.profile_ids, crb.resource_id
+             cdd.department_ids, cp.profile_ids, cprf.profile_ids, csa.simulation_ids, cu.usage_count, up.role, upr.resource_id, cr_res.profile_ids, crb.resource_id, c.generated, c.mcp
     HAVING
         COUNT(cd.cohort_id) FILTER (WHERE cd.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM cohort_departments_junction cd2 WHERE cd2.cohort_id = c.id AND cd2.active = true)
@@ -246,7 +250,7 @@ SELECT
             (cd.cohort_id, cd.name, cd.description, cd.is_inactive, cd.department_ids,
              ARRAY(SELECT unnest(cd.profile_ids)::text),
              ARRAY(SELECT unnest(cd.simulation_ids)::text),
-             cd.usage_count, cd.num_members, cd.is_member,
+             cd.usage_count, cd.num_members, cd.is_member, cd.generated, cd.mcp,
              cd.updated_at)::types.q_list_cohorts_v4_cohort
             ORDER BY cd.updated_at DESC NULLS LAST
         ) FROM paginated_cohorts cd),

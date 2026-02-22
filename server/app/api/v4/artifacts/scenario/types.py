@@ -428,6 +428,7 @@ class ListScenarioApiScenario(BaseModel):
     problem_statement: str | None = None
     is_inactive: bool | None = None
     generated: bool | None = None
+    mcp: bool | None = None
     department_ids: list[str] | None = None
     objective_ids: list[str] | None = None
     persona_ids: list[str] | None = None
@@ -661,6 +662,7 @@ class ListScenarioSqlScenario(BaseModel):
     problem_statement: str | None = None
     is_inactive: bool | None = None
     generated: bool | None = None
+    mcp: bool | None = None
     department_ids: list[str] | None = None
     objective_ids: list[str] | None = None
     persona_ids: list[str] | None = None

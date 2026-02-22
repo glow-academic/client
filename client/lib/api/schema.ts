@@ -32463,6 +32463,10 @@ export interface components {
             description?: string | null;
             /** Is Inactive */
             is_inactive?: boolean | null;
+            /** Generated */
+            generated?: boolean | null;
+            /** Mcp */
+            mcp?: boolean | null;
             /** Department Ids */
             department_ids?: string[] | null;
             /** Profile Ids */
@@ -32872,6 +32876,10 @@ export interface components {
             field_ids?: string[] | null;
             /** Is Inactive */
             is_inactive?: boolean | null;
+            /** Generated */
+            generated?: boolean | null;
+            /** Mcp */
+            mcp?: boolean | null;
             /** Num Scenarios */
             num_scenarios?: number | null;
             /** Can Edit */
@@ -33118,6 +33126,8 @@ export interface components {
             is_inactive?: boolean | null;
             /** Generated */
             generated?: boolean | null;
+            /** Mcp */
+            mcp?: boolean | null;
             /** Department Ids */
             department_ids?: string[] | null;
             /** Objective Ids */
@@ -33271,6 +33281,10 @@ export interface components {
             is_inactive?: boolean | null;
             /** Practice Simulation */
             practice_simulation?: boolean | null;
+            /** Generated */
+            generated?: boolean | null;
+            /** Mcp */
+            mcp?: boolean | null;
             /** Scenario Ids */
             scenario_ids?: string[] | null;
             /** Num Cohorts */

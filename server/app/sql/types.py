@@ -2610,6 +2610,8 @@ class QListCohortsV4Cohort(BaseModel):
     usage_count: int | None
     num_members: int | None
     is_member: bool | None
+    generated: bool | None
+    mcp: bool | None
     updated_at: datetime | None
 
 
@@ -19983,6 +19985,8 @@ class QListPersonasV4Persona(BaseModel):
     scenario_ids: list[UUID] | None
     field_ids: list[UUID] | None
     is_inactive: bool | None
+    generated: bool | None
+    mcp: bool | None
     num_scenarios: int | None
     active_scenario_count: int | None
     updated_at: datetime | None
@@ -30654,6 +30658,7 @@ class QListScenariosV4Scenario(BaseModel):
     problem_statement: str | None
     is_inactive: bool | None
     generated: bool | None
+    mcp: bool | None
     department_ids: list[str] | None
     objective_ids: list[str] | None
     persona_ids: list[str] | None
@@ -32240,6 +32245,8 @@ class QListSimulationsV4Simulation(BaseModel):
     num_cohorts: int | None
     cohort_usage_count: int | None
     cohort_ids: list[str] | None
+    generated: bool | None
+    mcp: bool | None
     updated_at: datetime | None
 
 class GetSimulationsListSqlRow(BaseModel):

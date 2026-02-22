@@ -12,6 +12,7 @@ import {
   Copy,
   Edit,
   Eye,
+  Sparkles,
   Trash2,
   Users,
   X,
@@ -651,9 +652,15 @@ export function Scenarios({
                 {scenario.name || "Unnamed Scenario"}
               </CardTitle>
               <div className="flex gap-1 flex-wrap flex-shrink-0">
+                {scenario.generated && (
+                  <Badge variant="default">
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    {scenario.mcp ? "MCP" : "AI"}
+                  </Badge>
+                )}
                 {scenario.is_inactive && (
-                    <Badge variant="secondary">Inactive</Badge>
-                  )}
+                  <Badge variant="secondary">Inactive</Badge>
+                )}
               </div>
             </div>
           </div>

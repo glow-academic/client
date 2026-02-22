@@ -159,6 +159,8 @@ async def get_cohort_list(
                     name=getattr(c, "name", None),
                     description=getattr(c, "description", None),
                     is_inactive=getattr(c, "is_inactive", None),
+                    generated=getattr(c, "generated", None),
+                    mcp=getattr(c, "mcp", None),
                     department_ids=getattr(c, "department_ids", None),
                     profile_ids=getattr(c, "profile_ids", None),
                     simulation_ids=getattr(c, "simulation_ids", None),

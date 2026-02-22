@@ -170,6 +170,8 @@ async def get_persona_list(
                     scenario_ids=persona.scenario_ids,
                     field_ids=persona.field_ids,
                     is_inactive=persona.is_inactive,
+                    generated=getattr(persona, "generated", None),
+                    mcp=getattr(persona, "mcp", None),
                     num_scenarios=persona.num_scenarios,
                     can_edit=can_edit_val,
                     can_duplicate=can_duplicate_val,

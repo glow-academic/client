@@ -5,7 +5,7 @@
  * 06/07/2025
  */
 "use client";
-import { Brain, Copy, Edit, Eye, Trash2, X } from "lucide-react";
+import { Brain, Copy, Edit, Eye, Sparkles, Trash2, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -679,9 +679,17 @@ export default function Personas({
                   {persona.name || "Unnamed Persona"}
                 </CardTitle>
               </div>
-              {persona.is_inactive && (
-                <div className="mt-1">
-                  <Badge variant="secondary">Inactive</Badge>
+              {(persona.generated || persona.is_inactive) && (
+                <div className="mt-1 flex items-center gap-2">
+                  {persona.generated && (
+                    <Badge variant="default">
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      {persona.mcp ? "MCP" : "AI"}
+                    </Badge>
+                  )}
+                  {persona.is_inactive && (
+                    <Badge variant="secondary">Inactive</Badge>
+                  )}
                 </div>
               )}
             </div>

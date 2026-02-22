@@ -272,6 +272,8 @@ class ListCohortApiCohort(BaseModel):
     name: str | None = None
     description: str | None = None
     is_inactive: bool | None = None
+    generated: bool | None = None
+    mcp: bool | None = None
     department_ids: list[str] | None = None
     profile_ids: list[str] | None = None
     simulation_ids: list[str] | None = None
@@ -614,4 +616,6 @@ class ListCohortSqlCohort(BaseModel):
     usage_count: int | None = None
     num_members: int | None = None
     is_member: bool | None = None
+    generated: bool | None = None
+    mcp: bool | None = None
     updated_at: datetime | None = None

@@ -409,6 +409,8 @@ class ListSimulationApiSimulation(BaseModel):
     department_ids: list[str] | None = None
     is_inactive: bool | None = None
     practice_simulation: bool | None = None
+    generated: bool | None = None
+    mcp: bool | None = None
     scenario_ids: list[str] | None = None
     num_cohorts: int | None = None
     cohort_usage_count: int | None = None
@@ -737,6 +739,8 @@ class ListSimulationSqlSimulation(BaseModel):
     num_cohorts: int | None = None
     cohort_usage_count: int | None = None
     cohort_ids: list[str] | None = None
+    generated: bool | None = None
+    mcp: bool | None = None
     updated_at: datetime | None = None
 
 

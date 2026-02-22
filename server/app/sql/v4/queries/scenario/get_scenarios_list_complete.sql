@@ -40,6 +40,7 @@ CREATE TYPE types.q_list_scenarios_v4_scenario AS (
     problem_statement text,
     is_inactive boolean,
     generated boolean,
+    mcp boolean,
     department_ids text[],
     objective_ids text[],
     persona_ids text[],
@@ -169,6 +170,7 @@ scenario_data AS (
         COALESCE(ps.problem_statement, '') as problem_statement,
         NOT EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.type = 'scenario_active' AND sf.value = TRUE) as is_inactive,
         s.generated as generated,
+        s.mcp as mcp,
         s.updated_at,
         COALESCE(sdd.department_ids, NULL) as department_ids,
         COALESCE(so.objective_ids, ARRAY[]::text[]) as objective_ids,
@@ -201,7 +203,7 @@ scenario_data AS (
         (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
         ps.problem_statement,
         EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.type = 'scenario_active' AND sf.value = TRUE),
-        s.generated, s.updated_at, sr.persona_ids,
+        s.generated, s.mcp, s.updated_at, sr.persona_ids,
         sdd.department_ids, so.objective_ids, sfd.field_ids,
         ss.simulation_ids, ss.num_simulations, sc.cohort_ids,
         su.active_simulation_count, up.role
@@ -249,7 +251,7 @@ SELECT
     -- Scenarios (paginated roots + children)
     COALESCE(
         ARRAY_AGG(
-            (sd.scenario_id, sd.name, sd.problem_statement, sd.is_inactive, sd.generated,
+            (sd.scenario_id, sd.name, sd.problem_statement, sd.is_inactive, sd.generated, sd.mcp,
              sd.department_ids, sd.objective_ids, sd.persona_ids,
              sd.field_ids, sd.simulation_ids, sd.num_simulations,
              sd.active_simulation_count,

@@ -6,7 +6,7 @@
  * 06/18/2025
  */
 "use client";
-import { Copy, Edit, Eye, Play, Search, Trash2, Users, X } from "lucide-react";
+import { Copy, Edit, Eye, Play, Search, Sparkles, Trash2, Users, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -484,9 +484,17 @@ export default function Cohorts({
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <CardTitle className="text-lg">{cohort.name}</CardTitle>
-            {cohort.is_inactive && (
+            {(cohort.generated || cohort.is_inactive) && (
               <div className="mt-1 flex items-center gap-2">
-                <Badge variant="secondary">Inactive</Badge>
+                {cohort.generated && (
+                  <Badge variant="default">
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    {cohort.mcp ? "MCP" : "AI"}
+                  </Badge>
+                )}
+                {cohort.is_inactive && (
+                  <Badge variant="secondary">Inactive</Badge>
+                )}
               </div>
             )}
           </div>

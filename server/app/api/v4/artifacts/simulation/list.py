@@ -221,6 +221,8 @@ async def get_simulation_list(
                     department_ids=sim.department_ids,
                     is_inactive=sim.is_inactive,
                     practice_simulation=sim.practice_simulation,
+                    generated=getattr(sim, "generated", None),
+                    mcp=getattr(sim, "mcp", None),
                     scenario_ids=sim.scenario_ids,
                     num_cohorts=sim.num_cohorts,
                     cohort_usage_count=sim.cohort_usage_count,

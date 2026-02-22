@@ -6,7 +6,7 @@
  * 06/07/2025
  */
 "use client";
-import { Copy, Edit, Eye, Search, Trash2, Users, X } from "lucide-react";
+import { Copy, Edit, Eye, Search, Sparkles, Trash2, Users, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -502,16 +502,24 @@ export function Simulations({
             <CardTitle className="text-lg truncate">
               {simulation.name}
             </CardTitle>
+            {(simulation.generated || simulation.is_inactive || simulation.practice_simulation) && (
             <div className="mt-1 flex flex-wrap items-center gap-2">
-              {simulation.is_inactive && (
-                <Badge variant="secondary">Inactive</Badge>
+              {simulation.generated && (
+                <Badge variant="default">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  {simulation.mcp ? "MCP" : "AI"}
+                </Badge>
               )}
               {simulation.practice_simulation && (
-                <Badge variant="default" className="text-xs">
+                <Badge variant="outline" className="text-xs">
                   Practice
                 </Badge>
               )}
+              {simulation.is_inactive && (
+                <Badge variant="secondary">Inactive</Badge>
+              )}
             </div>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-1">
             {simulation.can_edit ? (
