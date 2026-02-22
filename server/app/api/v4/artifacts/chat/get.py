@@ -19,7 +19,6 @@ from app.api.v4.artifacts.chat.permissions import (
     CHAT_BUNDLE_RESOURCES,
     compute_bundle_section_show,
 )
-from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.artifacts.chat.types import (
     BaseChatSection,
     ChatDepartmentSection,
@@ -44,6 +43,7 @@ from app.api.v4.artifacts.chat.types import (
     GetChatStartWebsocketResponse,
     GetChatWebsocketResponse,
 )
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.runs.search import get_run_list_entries_internal
 from app.api.v4.entries.training.get import get_training_view_internal

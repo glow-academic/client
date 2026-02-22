@@ -188,8 +188,6 @@ from app.sql.types import (  # noqa: E402
     GetGroupListViewSqlRow,
     GetMessageListViewSqlRow,
     QGetAgentsV4Item,
-    QGetArgsOutputsV4Item,
-    QGetArgsV4Item,
     QGetCallListViewV4Item,
     QGetMessageListViewV4Item,
     QGetModelsV4Item,

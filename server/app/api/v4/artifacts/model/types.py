@@ -21,7 +21,6 @@ from app.sql.types import (
     QGetDescriptionsV4Item,
     QGetModalitiesV4Item,
     QGetModelDraftsEntriesV4Item,
-    QGetModelsV4Item,
     QGetNamesV4Item,
     QGetPricingV4Item,
     QGetProvidersV4Item,

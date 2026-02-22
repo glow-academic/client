@@ -24,7 +24,6 @@ from app.api.v4.artifacts.tool.permissions import (
     compute_show_name,
     has_access,
 )
-from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.artifacts.tool.types import (
     GetToolApiRequest,
     GetToolApiResponse,
@@ -42,6 +41,7 @@ from app.api.v4.artifacts.tool.types import (
     ToolWebsocketEntries,
     ToolWebsocketResources,
 )
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.runs.search import get_run_list_entries_internal

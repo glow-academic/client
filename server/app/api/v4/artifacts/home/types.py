@@ -10,9 +10,8 @@ from app.api.v4.artifacts.chat.types import (
     StandardGroupMapping,
     StandardMapping,
 )
-from app.api.v4.artifacts.types import HistoryResponse
+from app.api.v4.artifacts.types import HistoryResponse, WebsocketConfig
 from app.api.v4.entries.runs.search import GetRunListViewResponse
-from app.api.v4.artifacts.types import WebsocketConfig
 from app.sql.types import (
     QGetDepartmentsV4Item,
     QGetDocumentsV4Item,

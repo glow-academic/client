@@ -105,7 +105,6 @@ class ParameterWebsocketResources(BaseModel):
     fields: list[QGetParameterFieldsV4Item] | None = None
 
 
-
 class GetParameterWebsocketResponse(BaseModel):
     entries: ParameterWebsocketEntries | None = None
     resources: ParameterWebsocketResources

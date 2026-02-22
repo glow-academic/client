@@ -10,9 +10,9 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.api.v4.types import BaseResourceSection, ListFilterSection
-from app.api.v4.artifacts.types import WebsocketConfig
 from app.sql.types import (
     QGetCohortDraftsEntriesV4Item,
 )
@@ -89,6 +89,16 @@ class CohortSimulationAvailability(BaseModel):
     mcp: bool | None = None
 
 
+class CohortProfile(BaseModel):
+    """Profile for cohort."""
+
+    profile_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    generated: bool | None = None
+    mcp: bool | None = None
+
+
 # =============================================================================
 # Resource Buckets (for WebSocket Jinja context)
 # =============================================================================
@@ -104,6 +114,7 @@ class CohortResourceBucket(BaseModel):
     simulations: list[CohortSimulation] | None = None
     simulation_positions: list[CohortSimulationPosition] | None = None
     simulation_availability: list[CohortSimulationAvailability] | None = None
+    profiles: list[CohortProfile] | None = None
 
 
 class CohortResources(BaseModel):
@@ -163,6 +174,11 @@ class CohortSimulationAvailabilitySection(BaseResourceSection):
     resources: list[CohortSimulationAvailability] | None = None
 
 
+class CohortProfileSection(BaseResourceSection):
+    current: list[CohortProfile] | None = None
+    resources: list[CohortProfile] | None = None
+
+
 class GetCohortApiResponse(BaseModel):
     """Response for getting a single cohort."""
 
@@ -177,6 +193,7 @@ class GetCohortApiResponse(BaseModel):
     # Step-level AI generation flags
     basic_show_ai_generate: bool | None = None
     simulations_step_show_ai_generate: bool | None = None
+    profiles_step_show_ai_generate: bool | None = None
 
     names: CohortNameSection | None = None
     descriptions: CohortDescriptionSection | None = None
@@ -185,6 +202,7 @@ class GetCohortApiResponse(BaseModel):
     simulations: CohortSimulationSection | None = None
     simulation_positions: CohortSimulationPositionSection | None = None
     simulation_availability: CohortSimulationAvailabilitySection | None = None
+    profiles: CohortProfileSection | None = None
 
 
 class GetCohortWebsocketResponse(BaseModel):
@@ -219,6 +237,7 @@ class CohortWebsocketResources(BaseModel):
     simulations: list[CohortSimulation] | None = None
     simulation_positions: list[CohortSimulationPosition] | None = None
     simulation_availability: list[CohortSimulationAvailability] | None = None
+    profiles: list[CohortProfile] | None = None
 
 
 # =============================================================================
@@ -315,6 +334,7 @@ class SaveCohortApiRequest(BaseModel):
     simulation_ids: list[UUID] | None = None
     simulation_position_ids: list[UUID] | None = None
     simulation_availability_ids: list[UUID] | None = None
+    profile_ids: list[UUID] | None = None
 
 
 class SaveCohortApiResponse(BaseModel):
@@ -339,6 +359,7 @@ class SaveCohortSqlParams(BaseModel):
     simulations: "CohortMultiResourceAction"
     simulation_positions: "CohortMultiResourceAction"
     simulation_availability: "CohortMultiResourceAction"
+    profiles: "CohortMultiResourceAction"
 
     @classmethod
     def from_request(
@@ -362,6 +383,7 @@ class SaveCohortSqlParams(BaseModel):
             simulation_availability=CohortMultiResourceAction(
                 resource_ids=request.simulation_availability_ids
             ),
+            profiles=CohortMultiResourceAction(resource_ids=request.profile_ids),
         )
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -388,6 +410,7 @@ class SaveCohortSqlParams(BaseModel):
             multi(self.simulations),
             multi(self.simulation_positions),
             multi(self.simulation_availability),
+            multi(self.profiles),
         )
 
 
@@ -454,6 +477,7 @@ class PatchCohortDraftApiRequest(BaseModel):
     simulation_ids: list[UUID] | None = None
     simulation_position_ids: list[UUID] | None = None
     simulation_availability_ids: list[UUID] | None = None
+    profile_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
 
@@ -478,6 +502,7 @@ class PatchCohortDraftSqlParams(BaseModel):
     simulations: "CohortMultiResourceAction | None" = None
     simulation_positions: "CohortMultiResourceAction | None" = None
     simulation_availability: "CohortMultiResourceAction | None" = None
+    profiles: "CohortMultiResourceAction | None" = None
     expected_version: int | None = 0
 
     @classmethod
@@ -499,6 +524,7 @@ class PatchCohortDraftSqlParams(BaseModel):
             simulation_availability=CohortMultiResourceAction(
                 resource_ids=request.simulation_availability_ids
             ),
+            profiles=CohortMultiResourceAction(resource_ids=request.profile_ids),
             expected_version=request.expected_version,
         )
 
@@ -524,6 +550,7 @@ class PatchCohortDraftSqlParams(BaseModel):
             multi(self.simulations),
             multi(self.simulation_positions),
             multi(self.simulation_availability),
+            multi(self.profiles),
             self.expected_version,
         )
 

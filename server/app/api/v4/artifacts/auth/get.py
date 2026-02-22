@@ -30,7 +30,6 @@ from app.api.v4.artifacts.auth.permissions import (
     compute_show_slugs,
     compute_slugs_required,
 )
-from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.artifacts.auth.types import (
     AuthDescriptionSection,
     AuthFlagConfig,
@@ -46,6 +45,7 @@ from app.api.v4.artifacts.auth.types import (
     GetAuthApiResponse,
     GetAuthWebsocketResponse,
 )
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.auth_drafts.get import get_auth_drafts_entries_internal

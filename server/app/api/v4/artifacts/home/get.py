@@ -37,8 +37,12 @@ from app.api.v4.artifacts.home.types import (
     HomeWebsocketEntries,
     HomeWebsocketResources,
 )
-from app.api.v4.artifacts.types import WebsocketConfig
-from app.api.v4.artifacts.types import FilterOption, HistoryItem, HistoryResponse
+from app.api.v4.artifacts.types import (
+    FilterOption,
+    HistoryItem,
+    HistoryResponse,
+    WebsocketConfig,
+)
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.entries.attempt.get import ChatViewItem, get_attempt_chats_internal
 from app.api.v4.entries.attempt.search import get_attempt_list_internal
@@ -881,9 +885,7 @@ async def get_home_internal(
                 [str(sg_id) for sg_id in item_sg_ids] if item_sg_ids else None
             )
 
-            training_entry_id = (
-                item.chat_entry_ids[0] if item.chat_entry_ids else None
-            )
+            training_entry_id = item.chat_entry_ids[0] if item.chat_entry_ids else None
 
             attempt_count = ps.get("attempt_count", 0)
             if is_instructional and instructional_stats is not None:

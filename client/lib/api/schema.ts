@@ -23606,6 +23606,48 @@ export interface components {
             resources?: components["schemas"]["CohortNameResource"][] | null;
         };
         /**
+         * CohortProfile
+         * @description Profile for cohort.
+         */
+        CohortProfile: {
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+            /** Mcp */
+            mcp?: boolean | null;
+        };
+        /** CohortProfileSection */
+        CohortProfileSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Tool Id */
+            tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["CohortProfile"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["CohortProfile"][] | null;
+        };
+        /**
          * CohortSimulation
          * @description Simulation for cohort.
          */
@@ -28061,6 +28103,8 @@ export interface components {
             basic_show_ai_generate?: boolean | null;
             /** Simulations Step Show Ai Generate */
             simulations_step_show_ai_generate?: boolean | null;
+            /** Profiles Step Show Ai Generate */
+            profiles_step_show_ai_generate?: boolean | null;
             names?: components["schemas"]["CohortNameSection"] | null;
             descriptions?: components["schemas"]["CohortDescriptionSection"] | null;
             flags?: components["schemas"]["CohortFlagSection"] | null;
@@ -28068,6 +28112,7 @@ export interface components {
             simulations?: components["schemas"]["CohortSimulationSection"] | null;
             simulation_positions?: components["schemas"]["CohortSimulationPositionSection"] | null;
             simulation_availability?: components["schemas"]["CohortSimulationAvailabilitySection"] | null;
+            profiles?: components["schemas"]["CohortProfileSection"] | null;
         };
         /** GetCohortDraftsEntriesApiRequest */
         GetCohortDraftsEntriesApiRequest: {
@@ -34552,6 +34597,8 @@ export interface components {
             simulation_position_ids?: string[] | null;
             /** Simulation Availability Ids */
             simulation_availability_ids?: string[] | null;
+            /** Profile Ids */
+            profile_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -35703,6 +35750,26 @@ export interface components {
             /** Pricing Id */
             pricing_id?: string | null;
         };
+        /**
+         * PricingDailyItem
+         * @description A single day+model aggregation bucket.
+         */
+        PricingDailyItem: {
+            /** Date Key */
+            date_key: string;
+            /** Model Id */
+            model_id?: string | null;
+            /**
+             * Total Cost
+             * @default 0
+             */
+            total_cost: string;
+            /**
+             * Run Count
+             * @default 0
+             */
+            run_count: number;
+        };
         /** PricingGenerationEvent */
         PricingGenerationEvent: {
             /**
@@ -35841,6 +35908,8 @@ export interface components {
         PricingViews: {
             /** Runs */
             runs?: components["schemas"]["RunViewItem"][];
+            /** Daily */
+            daily?: components["schemas"]["PricingDailyItem"][];
         };
         /** PrimaryPersonaPerformance */
         PrimaryPersonaPerformance: {
@@ -40453,6 +40522,8 @@ export interface components {
             simulation_position_ids?: string[] | null;
             /** Simulation Availability Ids */
             simulation_availability_ids?: string[] | null;
+            /** Profile Ids */
+            profile_ids?: string[] | null;
         };
         /**
          * SaveCohortApiResponse

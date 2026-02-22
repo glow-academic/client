@@ -84,7 +84,10 @@ CRUD_ARTIFACTS = {
             ("departments", "department assignment (department_id)"),
             ("scenarios", "scenario binding (scenario_id)"),
             ("scenario_flags", "scenario flag override (flag value per scenario)"),
-            ("scenario_personas", "scenario persona override (persona_id per scenario)"),
+            (
+                "scenario_personas",
+                "scenario persona override (persona_id per scenario)",
+            ),
             ("scenario_positions", "scenario ordering (position per scenario)"),
             ("scenario_rubrics", "scenario rubric binding (rubric_id per scenario)"),
             ("scenario_time_limits", "scenario time limit (minutes per scenario)"),
@@ -145,7 +148,10 @@ CRUD_ARTIFACTS = {
             ("descriptions", "description (description text)"),
             ("flags", "flag setting (flag value)"),
             ("departments", "department assignment (department_id)"),
-            ("conditional_parameters", "conditional parameter rule (parameter_id, condition)"),
+            (
+                "conditional_parameters",
+                "conditional parameter rule (parameter_id, condition)",
+            ),
         ],
         "desc": "fields with conditional parameter logic for dynamic forms",
     },
@@ -339,25 +345,52 @@ ANALYTICAL_ARTIFACTS = {
 SPECIALIZED_ARTIFACTS = {
     "attempt-chat": {
         "tools": [
-            ("create_content", "Make a persona speak — generate the in-character response as a content block"),
-            ("create_hint", "Create a strategic hint for the user when they are struggling"),
+            (
+                "create_content",
+                "Make a persona speak — generate the in-character response as a content block",
+            ),
+            (
+                "create_hint",
+                "Create a strategic hint for the user when they are struggling",
+            ),
         ],
         "desc": "the conversational portion of a training attempt — the AI acts as the persona conducting the training dialogue",
     },
     "attempt-grade": {
         "tools": [
-            ("create_feedback", "Create a grade for a specific standard group with a 1-5 score and feedback"),
-            ("create_strength", "Highlight what was strong about a specific message with optional text highlights"),
-            ("create_improvement", "Suggest improvements for a specific message with optional strikethrough/replace"),
-            ("create_analysis", "Create an analysis of audio messages from the conversation"),
-            ("create_highlight", "Create a highlight for a notable strength in the simulation"),
-            ("create_replacement", "Create a replacement suggestion for an improvement"),
+            (
+                "create_feedback",
+                "Create a grade for a specific standard group with a 1-5 score and feedback",
+            ),
+            (
+                "create_strength",
+                "Highlight what was strong about a specific message with optional text highlights",
+            ),
+            (
+                "create_improvement",
+                "Suggest improvements for a specific message with optional strikethrough/replace",
+            ),
+            (
+                "create_analysis",
+                "Create an analysis of audio messages from the conversation",
+            ),
+            (
+                "create_highlight",
+                "Create a highlight for a notable strength in the simulation",
+            ),
+            (
+                "create_replacement",
+                "Create a replacement suggestion for an improvement",
+            ),
         ],
         "desc": "the grading/evaluation portion of a training attempt — analyzing performance and providing structured feedback",
     },
     "test": {
         "tools": [
-            ("create_feedback", "Create a grade for a specific standard group with a 1-5 score and feedback"),
+            (
+                "create_feedback",
+                "Create a grade for a specific standard group with a 1-5 score and feedback",
+            ),
         ],
         "desc": "benchmark test grading — evaluating model outputs against rubric standards",
     },
@@ -517,29 +550,29 @@ def write_crud_instructions(name: str, info: dict) -> str:
     for r_name, _ in resources:
         display = r_name.replace("_", " ").title()
         if r_name == "names":
-            line = f"- id: {{{{ item.id }}}} | name: {{{{ item.name }}}}"
+            line = "- id: {{ item.id }} | name: {{ item.name }}"
         elif r_name == "descriptions":
-            line = f"- id: {{{{ item.id }}}} | description: {{{{ item.description[:100] }}}}{{% if item.description|length > 100 %}}...{{% endif %}}"
+            line = "- id: {{ item.id }} | description: {{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}"
         elif r_name == "colors":
-            line = f"- id: {{{{ item.id }}}} | name: {{{{ item.name }}}} | hex_code: {{{{ item.hex_code }}}}"
+            line = "- id: {{ item.id }} | name: {{ item.name }} | hex_code: {{ item.hex_code }}"
         elif r_name == "icons":
-            line = f"- id: {{{{ item.id }}}} | name: {{{{ item.name }}}} | value: {{{{ item.value }}}}"
+            line = "- id: {{ item.id }} | name: {{ item.name }} | value: {{ item.value }}"
         elif r_name == "instructions":
-            line = f"- id: {{{{ item.id }}}} | template: {{{{ item.template[:80] }}}}{{% if item.template|length > 80 %}}...{{% endif %}}"
+            line = "- id: {{ item.id }} | template: {{ item.template[:80] }}{% if item.template|length > 80 %}...{% endif %}"
         elif r_name == "examples":
-            line = f"- id: {{{{ item.id }}}} | example: {{{{ item.example[:80] }}}}{{% if item.example|length > 80 %}}...{{% endif %}}"
+            line = "- id: {{ item.id }} | example: {{ item.example[:80] }}{% if item.example|length > 80 %}...{% endif %}"
         elif r_name == "prompts":
-            line = f"- id: {{{{ item.id }}}} | name: {{{{ item.name }}}} | prompt: {{{{ item.system_prompt[:60] }}}}{{% if item.system_prompt|length > 60 %}}...{{% endif %}}"
+            line = "- id: {{ item.id }} | name: {{ item.name }} | prompt: {{ item.system_prompt[:60] }}{% if item.system_prompt|length > 60 %}...{% endif %}"
         elif r_name == "texts":
-            line = f"- id: {{{{ item.id }}}} | text: {{{{ item.text[:80] }}}}{{% if item.text|length > 80 %}}...{{% endif %}}"
+            line = "- id: {{ item.id }} | text: {{ item.text[:80] }}{% if item.text|length > 80 %}...{% endif %}"
         elif r_name in ("points", "pricing", "request_limits", "thresholds"):
-            line = f"- id: {{{{ item.id }}}} | value: {{{{ item.value }}}}"
+            line = "- id: {{ item.id }} | value: {{ item.value }}"
         elif r_name in ("args", "args_outputs"):
-            line = f"- id: {{{{ item.id }}}} | name: {{{{ item.name }}}}{{% if item.description %}} | {{{{ item.description[:50] }}}}{{% endif %}}"
+            line = "- id: {{ item.id }} | name: {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}"
         elif r_name in ("emails", "slugs", "values", "endpoints"):
-            line = f"- id: {{{{ item.id }}}} | value: {{{{ item.value if item.value is defined else item.id }}}}"
+            line = "- id: {{ item.id }} | value: {{ item.value if item.value is defined else item.id }}"
         else:
-            line = f"- id: {{{{ item.id }}}} | name: {{{{ item.name }}}}{{% if item.description is defined and item.description %}} | {{{{ item.description[:50] }}}}{{% endif %}}"
+            line = "- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}"
 
         available_blocks.append(
             f"""{{% if {r_name} and {r_name}|length > 0 %}}
@@ -720,7 +753,7 @@ You are conducting the training dialogue as the assigned persona. You must:
 
 ## Tools
 
-{chr(10).join(f'- **{t[0]}**: {t[1]}' for t in tools)}
+{chr(10).join(f"- **{t[0]}**: {t[1]}" for t in tools)}
 
 ## Output
 
@@ -736,7 +769,7 @@ You analyze a completed training conversation and produce structured evaluation 
 
 ## Tools
 
-{chr(10).join(f'- **{t[0]}**: {t[1]}' for t in tools)}
+{chr(10).join(f"- **{t[0]}**: {t[1]}" for t in tools)}
 
 ## Evaluation Framework
 
@@ -771,7 +804,7 @@ You evaluate model outputs against rubric standards and assign grades. You provi
 
 ## Tools
 
-{chr(10).join(f'- **{t[0]}**: {t[1]}' for t in tools)}
+{chr(10).join(f"- **{t[0]}**: {t[1]}" for t in tools)}
 
 ## Grading Guidelines
 
@@ -919,35 +952,35 @@ Use **create_feedback** for each standard group. Score 1-5 with specific evidenc
 """
 
     if name == "benchmark":
-        return f"""## Context
+        return """## Context
 
-{{% set draft = views.draft_invocation if views and views.draft_invocation else None %}}
+{% set draft = views.draft_invocation if views and views.draft_invocation else None %}
 
-{{% if draft %}}
+{% if draft %}
 ### Current State
-{{{{ draft | tojson }}}}
-{{% endif %}}
+{{ draft | tojson }}
+{% endif %}
 
-{{% if models and models|length > 0 %}}
+{% if models and models|length > 0 %}
 ### Available Models
-{{% for item in models %}}
-- id: {{{{ item.id }}}} | name: {{{{ item.name }}}}
-{{% endfor %}}
-{{% endif %}}
+{% for item in models %}
+- id: {{ item.id }} | name: {{ item.name }}
+{% endfor %}
+{% endif %}
 
-{{% if instructions and instructions|length > 0 %}}
+{% if instructions and instructions|length > 0 %}
 ### Available Instructions
-{{% for item in instructions %}}
-- id: {{{{ item.id }}}} | template: {{{{ item.template[:80] }}}}{{% if item.template|length > 80 %}}...{{% endif %}}
-{{% endfor %}}
-{{% endif %}}
+{% for item in instructions %}
+- id: {{ item.id }} | template: {{ item.template[:80] }}{% if item.template|length > 80 %}...{% endif %}
+{% endfor %}
+{% endif %}
 
-{{% if departments and departments|length > 0 %}}
+{% if departments and departments|length > 0 %}
 ### Available Departments
-{{% for item in departments %}}
-- id: {{{{ item.id }}}} | name: {{{{ item.name }}}}
-{{% endfor %}}
-{{% endif %}}
+{% for item in departments %}
+- id: {{ item.id }} | name: {{ item.name }}
+{% endfor %}
+{% endif %}
 
 ## Tool Usage
 

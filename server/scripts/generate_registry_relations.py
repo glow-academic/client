@@ -107,7 +107,17 @@ def format_frozenset(values: list[str], indent: int = 8) -> str:
         items = ", ".join(f'"{v}"' for v in values)
         return f"frozenset({{{items}}})"
     lines = [f'{pad}"{v}",' for v in values]
-    return "frozenset(\n" + " " * (indent) + "{\n" + "\n".join(lines) + "\n" + " " * indent + "}\n" + " " * (indent - 4) + ")"
+    return (
+        "frozenset(\n"
+        + " " * (indent)
+        + "{\n"
+        + "\n".join(lines)
+        + "\n"
+        + " " * indent
+        + "}\n"
+        + " " * (indent - 4)
+        + ")"
+    )
 
 
 def format_dict(name: str, type_hint: str, grouped: dict[str, list[str]]) -> str:
@@ -125,7 +135,9 @@ def format_dict(name: str, type_hint: str, grouped: dict[str, list[str]]) -> str
     return _format_dict_clean(name, type_hint, grouped)
 
 
-def _format_dict_clean(comment: str, type_hint: str, grouped: dict[str, list[str]]) -> str:
+def _format_dict_clean(
+    comment: str, type_hint: str, grouped: dict[str, list[str]]
+) -> str:
     var_name = comment.upper()
     parts = [f"# {comment}"]
     parts.append(f"{var_name}: {type_hint} = {{")
@@ -179,23 +191,29 @@ def main():
 
     type_hint = "dict[str, frozenset[str]]"
 
-    print(_format_dict_clean(
-        "ARTIFACT_RESOURCES",
-        type_hint,
-        ar_grouped,
-    ))
+    print(
+        _format_dict_clean(
+            "ARTIFACT_RESOURCES",
+            type_hint,
+            ar_grouped,
+        )
+    )
     print()
-    print(_format_dict_clean(
-        "ENTRY_RESOURCES",
-        type_hint,
-        er_grouped,
-    ))
+    print(
+        _format_dict_clean(
+            "ENTRY_RESOURCES",
+            type_hint,
+            er_grouped,
+        )
+    )
     print()
-    print(_format_dict_clean(
-        "RESOURCE_ENTRIES",
-        type_hint,
-        re_grouped,
-    ))
+    print(
+        _format_dict_clean(
+            "RESOURCE_ENTRIES",
+            type_hint,
+            re_grouped,
+        )
+    )
 
 
 if __name__ == "__main__":

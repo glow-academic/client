@@ -19,6 +19,7 @@ __all__ = [
     "select_multi_resource_agent",
     "COHORT_RESOURCES",
     "COHORT_BASIC_RESOURCES",
+    "COHORT_PROFILES_RESOURCES",
     # Permission functions
     "compute_can_edit",
     "compute_disabled_reason",
@@ -31,6 +32,7 @@ __all__ = [
     "compute_show_simulations",
     "compute_show_simulation_positions",
     "compute_show_simulation_availability",
+    "compute_show_profiles",
     # Required field flags
     "compute_name_required",
     "compute_description_required",
@@ -39,6 +41,7 @@ __all__ = [
     "compute_simulations_required",
     "compute_simulation_positions_required",
     "compute_simulation_availability_required",
+    "compute_profiles_required",
 ]
 
 # ========== Agent Scoring - Cohort-specific Constants ==========
@@ -50,11 +53,17 @@ COHORT_RESOURCES: set[str] = {
     "flags",
     "departments",
     "simulations",
+    "profiles",
 }
 
 # Multi-resource agent definitions for cohort
 COHORT_BASIC_RESOURCES: set[str] = {"names", "descriptions", "flags", "departments"}
-COHORT_SIMULATIONS_RESOURCES: set[str] = {"simulations", "simulation_positions", "simulation_availability"}
+COHORT_SIMULATIONS_RESOURCES: set[str] = {
+    "simulations",
+    "simulation_positions",
+    "simulation_availability",
+}
+COHORT_PROFILES_RESOURCES: set[str] = {"profiles"}
 
 # ========== Domain Metadata - for client-side display in modals ==========
 
@@ -93,6 +102,11 @@ COHORT_DOMAIN_METADATA: dict[str, dict[str, str | bool]] = {
         "name": "Simulation Availability",
         "description": "Availability windows for simulations",
         "icon": "calendar",
+    },
+    "profiles": {
+        "name": "Profiles",
+        "description": "Profiles assigned to cohort",
+        "icon": "user",
     },
 }
 
@@ -290,6 +304,11 @@ def compute_show_simulation_availability(simulation_availability_count: int) -> 
     return simulation_availability_count > 0
 
 
+def compute_show_profiles(profiles_count: int) -> bool:
+    """Show profiles section if there are profiles available."""
+    return profiles_count > 0
+
+
 # =============================================================================
 # Required Field Flags
 # =============================================================================
@@ -327,6 +346,11 @@ def compute_simulation_positions_required() -> bool:
 
 def compute_simulation_availability_required() -> bool:
     """Simulation availability is optional."""
+    return False
+
+
+def compute_profiles_required() -> bool:
+    """Profiles are optional."""
     return False
 
 

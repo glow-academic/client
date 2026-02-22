@@ -1,6 +1,7 @@
 """Types for pricing artifact."""
 
 from datetime import datetime
+from decimal import Decimal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -8,6 +9,15 @@ from pydantic import BaseModel, Field
 from app.api.v4.artifacts.group.types import GetGroupListResponse
 from app.api.v4.artifacts.types import FilterOption, WebsocketConfig
 from app.api.v4.entries.runs.search import GetRunListViewResponse, RunViewItem
+
+
+class PricingDailyItem(BaseModel):
+    """A single day+model aggregation bucket."""
+
+    date_key: str
+    model_id: str | None = None
+    total_cost: Decimal = Decimal("0")
+    run_count: int = 0
 
 
 class PricingRequest(BaseModel):
@@ -51,6 +61,7 @@ class PricingViews(BaseModel):
     """Pricing view data."""
 
     runs: list[RunViewItem] = Field(default_factory=list)
+    daily: list[PricingDailyItem] = Field(default_factory=list)
 
 
 class PricingResources(BaseModel):

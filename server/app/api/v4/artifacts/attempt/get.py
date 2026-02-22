@@ -32,7 +32,6 @@ from app.api.v4.artifacts.attempt.permissions import (
     compute_percentage,
     compute_total_possible_points,
 )
-from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.artifacts.attempt.types import (
     AggregatedResults,
     AnalysisEntry,
@@ -73,6 +72,7 @@ from app.api.v4.artifacts.attempt.types import (
     TimerData,
     VideoEntry,
 )
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.entries.attempt.get import (
     get_attempt_chats_internal,
     get_attempt_messages_internal,

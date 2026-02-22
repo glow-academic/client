@@ -2537,6 +2537,7 @@ class GetCohortIdsSqlRow(BaseModel):
     simulation_ids: list[UUID] | None = None
     simulation_position_values: list[int] | None = None
     simulation_availability_ids: list[UUID] | None = None
+    profile_ids: list[UUID] | None = None
     name_suggestions: list[UUID] | None = None
     description_suggestions: list[UUID] | None = None
     department_suggestions: list[UUID] | None = None
@@ -2558,6 +2559,7 @@ class GetCohortIdsApiResponse(BaseModel):
     simulation_ids: list[UUID] | None = None
     simulation_position_values: list[int] | None = None
     simulation_availability_ids: list[UUID] | None = None
+    profile_ids: list[UUID] | None = None
     name_suggestions: list[UUID] | None = None
     description_suggestions: list[UUID] | None = None
     department_suggestions: list[UUID] | None = None
@@ -2676,6 +2678,7 @@ class PatchCohortDraftSqlParams(BaseModel):
     simulations: CohortMultiResourceAction | None = None
     simulation_positions: CohortMultiResourceAction | None = None
     simulation_availability: CohortMultiResourceAction | None = None
+    profiles: CohortMultiResourceAction | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -2690,6 +2693,7 @@ class PatchCohortDraftSqlParams(BaseModel):
             self.simulations,
             self.simulation_positions,
             self.simulation_availability,
+            self.profiles,
             self.expected_version,
         )
 
@@ -2710,6 +2714,7 @@ class PatchCohortDraftApiRequest(BaseModel):
     simulations: CohortMultiResourceAction | None = None
     simulation_positions: CohortMultiResourceAction | None = None
     simulation_availability: CohortMultiResourceAction | None = None
+    profiles: CohortMultiResourceAction | None = None
     expected_version: int | None = 0
 
 class PatchCohortDraftApiResponse(BaseModel):
@@ -2734,6 +2739,7 @@ class SaveCohortSqlParams(BaseModel):
     simulations: CohortMultiResourceAction | None = None
     simulation_positions: CohortMultiResourceAction | None = None
     simulation_availability: CohortMultiResourceAction | None = None
+    profiles: CohortMultiResourceAction | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -2747,6 +2753,7 @@ class SaveCohortSqlParams(BaseModel):
             self.simulations,
             self.simulation_positions,
             self.simulation_availability,
+            self.profiles,
         )
 
 class SaveCohortSqlRow(BaseModel):
@@ -2764,6 +2771,7 @@ class SaveCohortApiRequest(BaseModel):
     simulations: CohortMultiResourceAction | None = None
     simulation_positions: CohortMultiResourceAction | None = None
     simulation_availability: CohortMultiResourceAction | None = None
+    profiles: CohortMultiResourceAction | None = None
 
 class SaveCohortApiResponse(BaseModel):
 

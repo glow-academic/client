@@ -18,6 +18,7 @@ from app.api.v4.artifacts.group.types import (
 )
 from app.api.v4.artifacts.pricing.types import (
     GetPricingWebsocketResponse,
+    PricingDailyItem,
     PricingRequest,
     PricingResources,
     PricingResponse,
@@ -440,15 +441,16 @@ async def get_pricing(
         effective_date_from = request.effective_date_from
         effective_date_to = request.effective_date_to
 
-        # Step 1: Fetch runs from runs_mv (+ optional group history in parallel)
+        # Step 1: Fetch ALL runs for aggregation (no pagination — runs are
+        # only used for daily aggregation + ID extraction, not displayed raw)
         async def fetch_runs():
             async with pool.acquire() as c:
                 return await get_run_list_entries_internal(
                     conn=c,
                     date_from=effective_date_from,
                     date_to=effective_date_to,
-                    page_limit=request.page_limit,
-                    page_offset=request.page_offset,
+                    page_limit=100000,
+                    page_offset=0,
                     bypass_cache=bypass_cache,
                 )
 
@@ -498,9 +500,42 @@ async def get_pricing(
             FilterOption(value=str(a.id), label=a.name) for a in agents_list if a.id
         ]
 
+        # Step 4: Aggregate runs into daily buckets by (date, model_id)
+        run_costs = await compute_costs_from_runs(conn, runs_result.items, bypass_cache)
+        daily_buckets: dict[tuple[str, str | None], dict] = {}
+        for run in runs_result.items:
+            date_key = (
+                run.run_created_at.strftime("%Y-%m-%d")
+                if run.run_created_at
+                else "unknown"
+            )
+            model_id = str(run.model_ids[0]) if run.model_ids else None
+            bucket_key = (date_key, model_id)
+            if bucket_key not in daily_buckets:
+                daily_buckets[bucket_key] = {
+                    "total_cost": Decimal("0"),
+                    "run_count": 0,
+                }
+            daily_buckets[bucket_key]["total_cost"] += run_costs.get(
+                run.run_id, Decimal("0")
+            )
+            daily_buckets[bucket_key]["run_count"] += 1
+
+        daily_items = [
+            PricingDailyItem(
+                date_key=dk,
+                model_id=mid,
+                total_cost=bucket["total_cost"],
+                run_count=bucket["run_count"],
+            )
+            for (dk, mid), bucket in sorted(
+                daily_buckets.items(), key=lambda x: (x[0][0], x[0][1] or "")
+            )
+        ]
+
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return PricingResponse(
-            views=PricingViews(runs=runs_result.items),
+            views=PricingViews(runs=runs_result.items, daily=daily_items),
             resources=PricingResources(agents=agent_map, models=model_map),
             total_count=runs_result.total_count,
             model_options=model_options,

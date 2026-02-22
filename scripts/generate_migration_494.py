@@ -8,8 +8,9 @@ Usage:
     python scripts/generate_migration_494.py
 """
 
-import psycopg2
 from pathlib import Path
+
+import psycopg2
 
 ROOT = Path(__file__).resolve().parent.parent
 PROMPTS_DIR = ROOT / "prompts"
@@ -34,41 +35,63 @@ FIELD_AGENT_ID = "ffffffff-ffff-ffff-ffff-ffffffffffff"
 
 # ─── New agent artifact UUIDs ────────────────────────────────────────────────
 NEW_AGENTS = {
-    "Invocation":   "ab000001-0000-0000-0000-000000000001",
+    "Invocation": "ab000001-0000-0000-0000-000000000001",
     "Attempt Chat": "ab000002-0000-0000-0000-000000000002",
-    "Attempt Grade":"ab000003-0000-0000-0000-000000000003",
-    "Test":         "ab000004-0000-0000-0000-000000000004",
-    "Home":         "ab000005-0000-0000-0000-000000000005",
-    "Practice":     "ab000006-0000-0000-0000-000000000006",
-    "Dashboard":    "ab000007-0000-0000-0000-000000000007",
-    "Reports":      "ab000008-0000-0000-0000-000000000008",
-    "Record":       "ab000009-0000-0000-0000-000000000009",
-    "Activity":     "ab00000a-0000-0000-0000-00000000000a",
-    "Session":      "ab00000b-0000-0000-0000-00000000000b",
-    "Pricing":      "ab00000c-0000-0000-0000-00000000000c",
-    "Health":       "ab00000d-0000-0000-0000-00000000000d",
-    "Leaderboard":  "ab00000e-0000-0000-0000-00000000000e",
-    "Group":        "ab00000f-0000-0000-0000-00000000000f",
+    "Attempt Grade": "ab000003-0000-0000-0000-000000000003",
+    "Test": "ab000004-0000-0000-0000-000000000004",
+    "Home": "ab000005-0000-0000-0000-000000000005",
+    "Practice": "ab000006-0000-0000-0000-000000000006",
+    "Dashboard": "ab000007-0000-0000-0000-000000000007",
+    "Reports": "ab000008-0000-0000-0000-000000000008",
+    "Record": "ab000009-0000-0000-0000-000000000009",
+    "Activity": "ab00000a-0000-0000-0000-00000000000a",
+    "Session": "ab00000b-0000-0000-0000-00000000000b",
+    "Pricing": "ab00000c-0000-0000-0000-00000000000c",
+    "Health": "ab00000d-0000-0000-0000-00000000000d",
+    "Leaderboard": "ab00000e-0000-0000-0000-00000000000e",
+    "Group": "ab00000f-0000-0000-0000-00000000000f",
 }
 
 # ─── Agent → prompt file stem ────────────────────────────────────────────────
 PROMPT_FILE = {
     # Existing agents (display name → file stem)
-    "Agent": "agent", "Auth": "auth", "Benchmark": "benchmark",
+    "Agent": "agent",
+    "Auth": "auth",
+    "Benchmark": "benchmark",
     "Chat": "chat",  # renamed from Training
-    "Cohort": "cohort", "Department": "department", "Document": "document",
-    "Eval": "eval", "Field": "field", "Model": "model",
-    "Parameter": "parameter", "Persona": "persona", "Profile": "profile",
-    "Provider": "provider", "Rubric": "rubric", "Scenario": "scenario",
-    "Setting": "setting", "Simulation": "simulation", "Tool": "tool",
+    "Cohort": "cohort",
+    "Department": "department",
+    "Document": "document",
+    "Eval": "eval",
+    "Field": "field",
+    "Model": "model",
+    "Parameter": "parameter",
+    "Persona": "persona",
+    "Profile": "profile",
+    "Provider": "provider",
+    "Rubric": "rubric",
+    "Scenario": "scenario",
+    "Setting": "setting",
+    "Simulation": "simulation",
+    "Tool": "tool",
     # New agents
-    "Invocation": "invocation", "Attempt Chat": "attempt-chat",
-    "Attempt Grade": "attempt-grade", "Test": "test",
-    "Home": "home", "Practice": "practice", "Dashboard": "dashboard",
-    "Reports": "reports", "Record": "record", "Activity": "activity",
-    "Session": "session", "Pricing": "pricing", "Health": "health",
-    "Leaderboard": "leaderboard", "Group": "group",
+    "Invocation": "invocation",
+    "Attempt Chat": "attempt-chat",
+    "Attempt Grade": "attempt-grade",
+    "Test": "test",
+    "Home": "home",
+    "Practice": "practice",
+    "Dashboard": "dashboard",
+    "Reports": "reports",
+    "Record": "record",
+    "Activity": "activity",
+    "Session": "session",
+    "Pricing": "pricing",
+    "Health": "health",
+    "Leaderboard": "leaderboard",
+    "Group": "group",
 }
+
 
 # ─── Agent → expected tools_resource.name list ───────────────────────────────
 # Derived from each agent's system prompt tool listings
@@ -80,73 +103,260 @@ def _crud(resources: list[str]) -> list[str]:
         tools.append(f"use_{r}")
     return tools
 
+
 AGENT_TOOLS: dict[str, list[str]] = {
-    "Agent": _crud(["names", "descriptions", "models", "prompts", "instructions",
-                     "flags", "departments", "tools", "temperature_levels",
-                     "reasoning_levels", "voices"]),
-    "Auth": _crud(["names", "descriptions", "flags", "departments",
-                    "items", "protocols", "slugs"]),
+    "Agent": _crud(
+        [
+            "names",
+            "descriptions",
+            "models",
+            "prompts",
+            "instructions",
+            "flags",
+            "departments",
+            "tools",
+            "temperature_levels",
+            "reasoning_levels",
+            "voices",
+        ]
+    ),
+    "Auth": _crud(
+        ["names", "descriptions", "flags", "departments", "items", "protocols", "slugs"]
+    ),
     "Benchmark": [
-        "create_names", "create_descriptions", "create_instructions",
-        "create_models", "create_prompt", "create_keys",
-        "create_reasoning_levels", "create_temperature_levels", "create_voices",
-        "use_names", "use_descriptions", "use_flags", "use_departments",
+        "create_names",
+        "create_descriptions",
+        "create_instructions",
+        "create_models",
+        "create_prompt",
+        "create_keys",
+        "create_reasoning_levels",
+        "create_temperature_levels",
+        "create_voices",
+        "use_names",
+        "use_descriptions",
+        "use_flags",
+        "use_departments",
         "use_instructions",
     ],
-    "Chat": _crud(["names", "descriptions", "flags", "departments", "personas",
-                    "documents", "scenarios", "parameter_fields", "parameters",
-                    "fields", "questions", "options", "videos", "images",
-                    "objectives", "problem_statements"]),
-    "Cohort": _crud(["names", "descriptions", "flags", "departments",
-                      "simulations", "simulation_positions", "simulation_availability"]),
+    "Chat": _crud(
+        [
+            "names",
+            "descriptions",
+            "flags",
+            "departments",
+            "personas",
+            "documents",
+            "scenarios",
+            "parameter_fields",
+            "parameters",
+            "fields",
+            "questions",
+            "options",
+            "videos",
+            "images",
+            "objectives",
+            "problem_statements",
+        ]
+    ),
+    "Cohort": _crud(
+        [
+            "names",
+            "descriptions",
+            "flags",
+            "departments",
+            "simulations",
+            "simulation_positions",
+            "simulation_availability",
+        ]
+    ),
     "Department": _crud(["names", "descriptions", "flags", "settings"]),
-    "Document": _crud(["names", "descriptions", "flags", "departments",
-                        "images", "parameter_fields", "parameters", "texts", "uploads"]),
-    "Eval": _crud(["names", "descriptions", "flags", "departments",
-                    "runs", "run_positions", "runs_rubrics", "groups",
-                    "group_positions", "groups_rubrics"]),
-    "Field": _crud(["names", "descriptions", "flags", "departments",
-                     "conditional_parameters"]),
-    "Model": _crud(["names", "descriptions", "values", "providers", "flags",
-                     "departments", "modalities", "temperature_levels", "pricing",
-                     "reasoning_levels", "qualities", "voices"]),
+    "Document": _crud(
+        [
+            "names",
+            "descriptions",
+            "flags",
+            "departments",
+            "images",
+            "parameter_fields",
+            "parameters",
+            "texts",
+            "uploads",
+        ]
+    ),
+    "Eval": _crud(
+        [
+            "names",
+            "descriptions",
+            "flags",
+            "departments",
+            "runs",
+            "run_positions",
+            "runs_rubrics",
+            "groups",
+            "group_positions",
+            "groups_rubrics",
+        ]
+    ),
+    "Field": _crud(
+        ["names", "descriptions", "flags", "departments", "conditional_parameters"]
+    ),
+    "Model": _crud(
+        [
+            "names",
+            "descriptions",
+            "values",
+            "providers",
+            "flags",
+            "departments",
+            "modalities",
+            "temperature_levels",
+            "pricing",
+            "reasoning_levels",
+            "qualities",
+            "voices",
+        ]
+    ),
     "Parameter": _crud(["names", "descriptions", "flags", "departments", "fields"]),
-    "Persona": _crud(["names", "descriptions", "colors", "icons", "instructions",
-                       "flags", "examples", "parameter_fields", "departments",
-                       "parameters"]),
-    "Profile": _crud(["names", "flags", "departments", "emails", "cohorts",
-                       "request_limits", "roles"]),
-    "Provider": _crud(["names", "descriptions", "flags", "departments",
-                        "values", "endpoints", "keys"]),
-    "Rubric": _crud(["names", "descriptions", "flags", "departments",
-                      "points", "standard_groups", "standards"]),
-    "Scenario": _crud(["names", "descriptions", "flags", "departments",
-                        "documents", "images", "objectives", "options",
-                        "parameter_fields", "parameters", "personas",
-                        "problem_statements", "questions", "videos"]),
-    "Setting": _crud(["names", "descriptions", "colors", "flags", "departments",
-                       "agents", "auths", "auth_item_keys", "auth_values",
-                       "profiles", "provider_keys", "thresholds"]),
-    "Simulation": _crud(["names", "descriptions", "flags", "departments",
-                          "scenarios", "scenario_flags", "scenario_personas",
-                          "scenario_positions", "scenario_rubrics",
-                          "scenario_time_limits"]),
-    "Tool": _crud(["names", "descriptions", "flags", "departments",
-                    "args", "arg_positions", "args_outputs", "bindings", "domains"]),
+    "Persona": _crud(
+        [
+            "names",
+            "descriptions",
+            "colors",
+            "icons",
+            "instructions",
+            "flags",
+            "examples",
+            "parameter_fields",
+            "departments",
+            "parameters",
+        ]
+    ),
+    "Profile": _crud(
+        [
+            "names",
+            "flags",
+            "departments",
+            "emails",
+            "cohorts",
+            "request_limits",
+            "roles",
+        ]
+    ),
+    "Provider": _crud(
+        ["names", "descriptions", "flags", "departments", "values", "endpoints", "keys"]
+    ),
+    "Rubric": _crud(
+        [
+            "names",
+            "descriptions",
+            "flags",
+            "departments",
+            "points",
+            "standard_groups",
+            "standards",
+        ]
+    ),
+    "Scenario": _crud(
+        [
+            "names",
+            "descriptions",
+            "flags",
+            "departments",
+            "documents",
+            "images",
+            "objectives",
+            "options",
+            "parameter_fields",
+            "parameters",
+            "personas",
+            "problem_statements",
+            "questions",
+            "videos",
+        ]
+    ),
+    "Setting": _crud(
+        [
+            "names",
+            "descriptions",
+            "colors",
+            "flags",
+            "departments",
+            "agents",
+            "auths",
+            "auth_item_keys",
+            "auth_values",
+            "profiles",
+            "provider_keys",
+            "thresholds",
+        ]
+    ),
+    "Simulation": _crud(
+        [
+            "names",
+            "descriptions",
+            "flags",
+            "departments",
+            "scenarios",
+            "scenario_flags",
+            "scenario_personas",
+            "scenario_positions",
+            "scenario_rubrics",
+            "scenario_time_limits",
+        ]
+    ),
+    "Tool": _crud(
+        [
+            "names",
+            "descriptions",
+            "flags",
+            "departments",
+            "args",
+            "arg_positions",
+            "args_outputs",
+            "bindings",
+            "domains",
+        ]
+    ),
     # New agents
-    "Invocation": _crud(["names", "descriptions", "flags", "departments",
-                          "models", "prompts", "instructions", "runs", "groups",
-                          "keys", "tools", "temperature_levels", "reasoning_levels",
-                          "voices"]),
+    "Invocation": _crud(
+        [
+            "names",
+            "descriptions",
+            "flags",
+            "departments",
+            "models",
+            "prompts",
+            "instructions",
+            "runs",
+            "groups",
+            "keys",
+            "tools",
+            "temperature_levels",
+            "reasoning_levels",
+            "voices",
+        ]
+    ),
     "Attempt Chat": ["create_content", "create_hint", "end_conversation"],
-    "Attempt Grade": ["create_feedback", "create_strength", "create_improvement",
-                      "create_analysis", "create_highlight", "create_replacement"],
+    "Attempt Grade": [
+        "create_feedback",
+        "create_strength",
+        "create_improvement",
+        "create_analysis",
+        "create_highlight",
+        "create_replacement",
+    ],
     "Test": ["create_feedback"],
-    "Home": ["create_insights"], "Practice": ["create_insights"],
-    "Dashboard": ["create_insights"], "Reports": ["create_insights"],
-    "Record": ["create_insights"], "Activity": ["create_insights"],
-    "Session": ["create_insights"], "Pricing": ["create_insights"],
-    "Health": ["create_insights"], "Leaderboard": ["create_insights"],
+    "Home": ["create_insights"],
+    "Practice": ["create_insights"],
+    "Dashboard": ["create_insights"],
+    "Reports": ["create_insights"],
+    "Record": ["create_insights"],
+    "Activity": ["create_insights"],
+    "Session": ["create_insights"],
+    "Pricing": ["create_insights"],
+    "Health": ["create_insights"],
+    "Leaderboard": ["create_insights"],
     "Group": ["create_insights"],
 }
 
@@ -191,6 +401,7 @@ AGENT_DESC: dict[str, str] = {
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
+
 def dollar_quote(text: str) -> str:
     """Wrap text in a dollar-quoted string, choosing a safe tag."""
     tag = "body"
@@ -214,6 +425,7 @@ def read_prompt(stem: str, kind: str) -> str:
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
+
 def main():
     conn = psycopg2.connect(DB_DSN)
     cur = conn.cursor()
@@ -225,8 +437,8 @@ def main():
         JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
         JOIN tool_artifact ta ON ta.id = ttj.tool_id
     """)
-    tools_res_id: dict[str, str] = {}   # tool name → tools_resource.id
-    tools_art_id: dict[str, str] = {}   # tool name → tool_artifact.id
+    tools_res_id: dict[str, str] = {}  # tool name → tools_resource.id
+    tools_art_id: dict[str, str] = {}  # tool name → tool_artifact.id
     for tr_id, name, ta_id in cur.fetchall():
         tools_res_id[name] = str(tr_id)
         tools_art_id[name] = str(ta_id)
@@ -304,7 +516,9 @@ def main():
     sql.append("")
 
     # ═══ STEP 1: Fix tool naming gap from migration 493 ═══════════
-    sql.append("-- ═══ STEP 1: Add names/descriptions/flags for tools from migration 493 ═══")
+    sql.append(
+        "-- ═══ STEP 1: Add names/descriptions/flags for tools from migration 493 ═══"
+    )
     sql.append("")
     sql.append("""DO $$
 DECLARE
@@ -387,9 +601,21 @@ WHERE agent_id IN ('{CHAT_AGENT_ID}', '{GRADE_AGENT_ID}')
     # Map existing agent display names to prompt file stems
     # Training is now "Chat" but its agent_id is TRAINING_AGENT_ID
     existing_crud_agents = {
-        "Agent", "Auth", "Cohort", "Department", "Document",
-        "Model", "Parameter", "Persona", "Profile", "Provider",
-        "Rubric", "Scenario", "Setting", "Simulation", "Tool",
+        "Agent",
+        "Auth",
+        "Cohort",
+        "Department",
+        "Document",
+        "Model",
+        "Parameter",
+        "Persona",
+        "Profile",
+        "Provider",
+        "Rubric",
+        "Scenario",
+        "Setting",
+        "Simulation",
+        "Tool",
     }
 
     for agent_name in sorted(existing_crud_agents):
@@ -402,13 +628,17 @@ WHERE agent_id IN ('{CHAT_AGENT_ID}', '{GRADE_AGENT_ID}')
 
         if info["prompt_id"] and sys_content:
             sql.append(f"-- Update prompt for {agent_name}")
-            sql.append(f"UPDATE prompts_resource SET system_prompt = {dollar_quote(sys_content)}")
+            sql.append(
+                f"UPDATE prompts_resource SET system_prompt = {dollar_quote(sys_content)}"
+            )
             sql.append(f"WHERE id = '{info['prompt_id']}';")
             sql.append("")
 
         if info["instruction_ids"] and instr_content:
             sql.append(f"-- Update instruction for {agent_name}")
-            sql.append(f"UPDATE instructions_resource SET template = {dollar_quote(instr_content)}")
+            sql.append(
+                f"UPDATE instructions_resource SET template = {dollar_quote(instr_content)}"
+            )
             sql.append(f"WHERE id = '{info['instruction_ids'][0]}';")
             sql.append("")
 
@@ -419,8 +649,11 @@ WHERE agent_id IN ('{CHAT_AGENT_ID}', '{GRADE_AGENT_ID}')
 
     # Handle Benchmark — needs prompt+instruction created if missing
     _emit_update_or_create_prompt(
-        sql, "Benchmark", existing.get("Benchmark", {}).get("agent_id", ""),
-        existing.get("Benchmark", {}), tools_res_id
+        sql,
+        "Benchmark",
+        existing.get("Benchmark", {}).get("agent_id", ""),
+        existing.get("Benchmark", {}),
+        tools_res_id,
     )
 
     # ═══ STEP 8: Update tool bindings for existing agents ═════════
@@ -448,8 +681,10 @@ WHERE agent_id IN ('{CHAT_AGENT_ID}', '{GRADE_AGENT_ID}')
                 sql.append(f"-- SKIP {tool_name} (not found in DB)")
                 continue
             tid = tools_res_id[tool_name]
-            sql.append(f"INSERT INTO agent_tools_junction (agent_id, tool_id) "
-                        f"VALUES ('{agent_id}', '{tid}') ON CONFLICT DO NOTHING;")
+            sql.append(
+                f"INSERT INTO agent_tools_junction (agent_id, tool_id) "
+                f"VALUES ('{agent_id}', '{tid}') ON CONFLICT DO NOTHING;"
+            )
         sql.append("")
 
         # Also update agents_resource.tool_ids if the agent has one
@@ -515,6 +750,7 @@ END $$;""")
 
 # ─── SQL Generation Helpers ──────────────────────────────────────────────────
 
+
 def _tool_ids_array(tool_names: list[str], tools_res_id: dict[str, str]) -> str:
     """Build a ARRAY[...]::uuid[] literal from tool names."""
     ids = []
@@ -548,7 +784,7 @@ def _emit_fix_agent(
     old_agents_res = info.get("agents_resource_id")
 
     sql.append("")
-    sql.append(f"DO $$")
+    sql.append("DO $$")
     sql.append("DECLARE")
     sql.append("    v_prompt_id uuid;")
     sql.append("    v_instruction_id uuid;")
@@ -556,55 +792,75 @@ def _emit_fix_agent(
     sql.append("BEGIN")
 
     # Create new prompt
-    sql.append(f"    INSERT INTO prompts_resource (system_prompt, name, description)")
-    sql.append(f"    VALUES ({dollar_quote(sys_content)}, {sql_literal(agent_name + ' Prompt')}, {sql_literal(desc)})")
-    sql.append(f"    RETURNING id INTO v_prompt_id;")
+    sql.append("    INSERT INTO prompts_resource (system_prompt, name, description)")
+    sql.append(
+        f"    VALUES ({dollar_quote(sys_content)}, {sql_literal(agent_name + ' Prompt')}, {sql_literal(desc)})"
+    )
+    sql.append("    RETURNING id INTO v_prompt_id;")
     sql.append("")
 
     # Create new instruction
-    sql.append(f"    INSERT INTO instructions_resource (template)")
+    sql.append("    INSERT INTO instructions_resource (template)")
     sql.append(f"    VALUES ({dollar_quote(instr_content)})")
-    sql.append(f"    RETURNING id INTO v_instruction_id;")
+    sql.append("    RETURNING id INTO v_instruction_id;")
     sql.append("")
 
     # Create new agents_resource
-    sql.append(f"    INSERT INTO agents_resource (model_id, prompt_id, tool_ids, instruction_ids, department_ids)")
-    sql.append(f"    VALUES (")
+    sql.append(
+        "    INSERT INTO agents_resource (model_id, prompt_id, tool_ids, instruction_ids, department_ids)"
+    )
+    sql.append("    VALUES (")
     sql.append(f"        '{GPT41_MODEL_ID}',")
-    sql.append(f"        v_prompt_id,")
+    sql.append("        v_prompt_id,")
     sql.append(f"        {tool_ids_arr},")
-    sql.append(f"        ARRAY[v_instruction_id]::uuid[],")
-    sql.append(f"        ARRAY[]::uuid[]")
-    sql.append(f"    ) RETURNING id INTO v_agents_res_id;")
+    sql.append("        ARRAY[v_instruction_id]::uuid[],")
+    sql.append("        ARRAY[]::uuid[]")
+    sql.append("    ) RETURNING id INTO v_agents_res_id;")
     sql.append("")
 
     # Remove old junctions
     if old_agents_res:
-        sql.append(f"    DELETE FROM agent_agents_junction WHERE agent_id = '{agent_id}';")
+        sql.append(
+            f"    DELETE FROM agent_agents_junction WHERE agent_id = '{agent_id}';"
+        )
     sql.append(f"    DELETE FROM agent_prompts_junction WHERE agent_id = '{agent_id}';")
-    sql.append(f"    DELETE FROM agent_instructions_junction WHERE agent_id = '{agent_id}';")
+    sql.append(
+        f"    DELETE FROM agent_instructions_junction WHERE agent_id = '{agent_id}';"
+    )
     sql.append(f"    DELETE FROM agent_tools_junction WHERE agent_id = '{agent_id}';")
     sql.append("")
 
     # Insert new junctions
-    sql.append(f"    INSERT INTO agent_agents_junction (agent_id, agents_id) VALUES ('{agent_id}', v_agents_res_id);")
-    sql.append(f"    INSERT INTO agent_prompts_junction (agent_id, prompt_id) VALUES ('{agent_id}', v_prompt_id);")
-    sql.append(f"    INSERT INTO agent_instructions_junction (agent_id, instruction_id) VALUES ('{agent_id}', v_instruction_id);")
+    sql.append(
+        f"    INSERT INTO agent_agents_junction (agent_id, agents_id) VALUES ('{agent_id}', v_agents_res_id);"
+    )
+    sql.append(
+        f"    INSERT INTO agent_prompts_junction (agent_id, prompt_id) VALUES ('{agent_id}', v_prompt_id);"
+    )
+    sql.append(
+        f"    INSERT INTO agent_instructions_junction (agent_id, instruction_id) VALUES ('{agent_id}', v_instruction_id);"
+    )
     sql.append("")
 
     # Insert tool junctions
     for t in tool_names:
         if t in tools_res_id:
-            sql.append(f"    INSERT INTO agent_tools_junction (agent_id, tool_id) VALUES ('{agent_id}', '{tools_res_id[t]}') ON CONFLICT DO NOTHING;")
+            sql.append(
+                f"    INSERT INTO agent_tools_junction (agent_id, tool_id) VALUES ('{agent_id}', '{tools_res_id[t]}') ON CONFLICT DO NOTHING;"
+            )
     sql.append("")
 
     # Remove old agents_resource from settings (if it was shared)
     # and add new one
     if old_agents_res:
-        sql.append(f"    -- Remove old shared agents_resource from settings for this agent")
-        sql.append(f"    -- (Keep it for the other agent that shares it)")
+        sql.append(
+            "    -- Remove old shared agents_resource from settings for this agent"
+        )
+        sql.append("    -- (Keep it for the other agent that shares it)")
     for s in SETTINGS:
-        sql.append(f"    INSERT INTO setting_agents_junction (setting_id, agents_id) VALUES ('{s}', v_agents_res_id) ON CONFLICT DO NOTHING;")
+        sql.append(
+            f"    INSERT INTO setting_agents_junction (setting_id, agents_id) VALUES ('{s}', v_agents_res_id) ON CONFLICT DO NOTHING;"
+        )
 
     sql.append("END $$;")
     sql.append("")
@@ -625,7 +881,7 @@ def _emit_new_agent(
     tool_ids_arr = _tool_ids_array(tool_names, tools_res_id)
 
     sql.append(f"-- ── New Agent: {agent_name} ──")
-    sql.append(f"DO $$")
+    sql.append("DO $$")
     sql.append("DECLARE")
     sql.append("    v_prompt_id uuid;")
     sql.append("    v_instruction_id uuid;")
@@ -636,43 +892,57 @@ def _emit_new_agent(
 
     # Create prompt
     if sys_content:
-        sql.append(f"    INSERT INTO prompts_resource (system_prompt, name, description)")
-        sql.append(f"    VALUES ({dollar_quote(sys_content)}, {sql_literal(agent_name + ' Prompt')}, {sql_literal(desc)})")
-        sql.append(f"    RETURNING id INTO v_prompt_id;")
+        sql.append(
+            "    INSERT INTO prompts_resource (system_prompt, name, description)"
+        )
+        sql.append(
+            f"    VALUES ({dollar_quote(sys_content)}, {sql_literal(agent_name + ' Prompt')}, {sql_literal(desc)})"
+        )
+        sql.append("    RETURNING id INTO v_prompt_id;")
     else:
-        sql.append(f"    v_prompt_id := NULL;")
+        sql.append("    v_prompt_id := NULL;")
     sql.append("")
 
     # Create instruction
     if instr_content:
-        sql.append(f"    INSERT INTO instructions_resource (template)")
+        sql.append("    INSERT INTO instructions_resource (template)")
         sql.append(f"    VALUES ({dollar_quote(instr_content)})")
-        sql.append(f"    RETURNING id INTO v_instruction_id;")
+        sql.append("    RETURNING id INTO v_instruction_id;")
     else:
-        sql.append(f"    v_instruction_id := NULL;")
+        sql.append("    v_instruction_id := NULL;")
     sql.append("")
 
     # Create agents_resource
-    instr_arr = "ARRAY[v_instruction_id]::uuid[]" if instr_content else "ARRAY[]::uuid[]"
-    sql.append(f"    INSERT INTO agents_resource (model_id, prompt_id, tool_ids, instruction_ids, department_ids)")
-    sql.append(f"    VALUES (")
+    instr_arr = (
+        "ARRAY[v_instruction_id]::uuid[]" if instr_content else "ARRAY[]::uuid[]"
+    )
+    sql.append(
+        "    INSERT INTO agents_resource (model_id, prompt_id, tool_ids, instruction_ids, department_ids)"
+    )
+    sql.append("    VALUES (")
     sql.append(f"        '{GPT41_MODEL_ID}',")
-    sql.append(f"        v_prompt_id,")
+    sql.append("        v_prompt_id,")
     sql.append(f"        {tool_ids_arr},")
     sql.append(f"        {instr_arr},")
-    sql.append(f"        ARRAY[]::uuid[]")
-    sql.append(f"    ) RETURNING id INTO v_agents_res_id;")
+    sql.append("        ARRAY[]::uuid[]")
+    sql.append("    ) RETURNING id INTO v_agents_res_id;")
     sql.append("")
 
     # Create name (reuse if exists due to unique constraint)
-    sql.append(f"    SELECT id INTO v_name_id FROM names_resource WHERE name = {sql_literal(agent_name)} LIMIT 1;")
-    sql.append(f"    IF v_name_id IS NULL THEN")
-    sql.append(f"        INSERT INTO names_resource (name) VALUES ({sql_literal(agent_name)}) RETURNING id INTO v_name_id;")
-    sql.append(f"    END IF;")
+    sql.append(
+        f"    SELECT id INTO v_name_id FROM names_resource WHERE name = {sql_literal(agent_name)} LIMIT 1;"
+    )
+    sql.append("    IF v_name_id IS NULL THEN")
+    sql.append(
+        f"        INSERT INTO names_resource (name) VALUES ({sql_literal(agent_name)}) RETURNING id INTO v_name_id;"
+    )
+    sql.append("    END IF;")
     sql.append("")
 
     # Create description
-    sql.append(f"    INSERT INTO descriptions_resource (description) VALUES ({sql_literal(desc)}) RETURNING id INTO v_desc_id;")
+    sql.append(
+        f"    INSERT INTO descriptions_resource (description) VALUES ({sql_literal(desc)}) RETURNING id INTO v_desc_id;"
+    )
     sql.append("")
 
     # Create artifact
@@ -680,22 +950,38 @@ def _emit_new_agent(
     sql.append("")
 
     # Create junctions
-    sql.append(f"    INSERT INTO agent_agents_junction (agent_id, agents_id) VALUES ('{agent_id}', v_agents_res_id);")
-    sql.append(f"    INSERT INTO agent_names_junction (agent_id, name_id) VALUES ('{agent_id}', v_name_id);")
-    sql.append(f"    INSERT INTO agent_descriptions_junction (agent_id, description_id) VALUES ('{agent_id}', v_desc_id);")
-    sql.append(f"    INSERT INTO agent_flags_junction (agent_id, flag_id, value) VALUES ('{agent_id}', '{AGENT_ACTIVE_FLAG}', true);")
-    sql.append(f"    INSERT INTO agent_models_junction (agent_id, model_id) VALUES ('{agent_id}', '{GPT41_MODEL_ID}');")
+    sql.append(
+        f"    INSERT INTO agent_agents_junction (agent_id, agents_id) VALUES ('{agent_id}', v_agents_res_id);"
+    )
+    sql.append(
+        f"    INSERT INTO agent_names_junction (agent_id, name_id) VALUES ('{agent_id}', v_name_id);"
+    )
+    sql.append(
+        f"    INSERT INTO agent_descriptions_junction (agent_id, description_id) VALUES ('{agent_id}', v_desc_id);"
+    )
+    sql.append(
+        f"    INSERT INTO agent_flags_junction (agent_id, flag_id, value) VALUES ('{agent_id}', '{AGENT_ACTIVE_FLAG}', true);"
+    )
+    sql.append(
+        f"    INSERT INTO agent_models_junction (agent_id, model_id) VALUES ('{agent_id}', '{GPT41_MODEL_ID}');"
+    )
 
     if sys_content:
-        sql.append(f"    INSERT INTO agent_prompts_junction (agent_id, prompt_id) VALUES ('{agent_id}', v_prompt_id);")
+        sql.append(
+            f"    INSERT INTO agent_prompts_junction (agent_id, prompt_id) VALUES ('{agent_id}', v_prompt_id);"
+        )
     if instr_content:
-        sql.append(f"    INSERT INTO agent_instructions_junction (agent_id, instruction_id) VALUES ('{agent_id}', v_instruction_id);")
+        sql.append(
+            f"    INSERT INTO agent_instructions_junction (agent_id, instruction_id) VALUES ('{agent_id}', v_instruction_id);"
+        )
     sql.append("")
 
     # Tool junctions
     for t in tool_names:
         if t in tools_res_id:
-            sql.append(f"    INSERT INTO agent_tools_junction (agent_id, tool_id) VALUES ('{agent_id}', '{tools_res_id[t]}');")
+            sql.append(
+                f"    INSERT INTO agent_tools_junction (agent_id, tool_id) VALUES ('{agent_id}', '{tools_res_id[t]}');"
+            )
     sql.append("")
 
     sql.append("END $$;")
@@ -723,44 +1009,60 @@ def _emit_update_or_create_prompt(
     if info.get("prompt_id") and sys_content:
         # Update existing prompt
         sql.append(f"-- Update prompt for {agent_name}")
-        sql.append(f"UPDATE prompts_resource SET system_prompt = {dollar_quote(sys_content)}")
+        sql.append(
+            f"UPDATE prompts_resource SET system_prompt = {dollar_quote(sys_content)}"
+        )
         sql.append(f"WHERE id = '{info['prompt_id']}';")
         sql.append("")
     elif sys_content and not info.get("prompt_id"):
         # Create new prompt and junction
         sql.append(f"-- Create prompt for {agent_name} (had none)")
-        sql.append(f"DO $$")
-        sql.append(f"DECLARE v_prompt_id uuid;")
-        sql.append(f"BEGIN")
-        sql.append(f"    INSERT INTO prompts_resource (system_prompt, name, description)")
-        sql.append(f"    VALUES ({dollar_quote(sys_content)}, {sql_literal(agent_name + ' Prompt')}, {sql_literal(desc)})")
-        sql.append(f"    RETURNING id INTO v_prompt_id;")
-        sql.append(f"    INSERT INTO agent_prompts_junction (agent_id, prompt_id) VALUES ('{agent_id}', v_prompt_id);")
+        sql.append("DO $$")
+        sql.append("DECLARE v_prompt_id uuid;")
+        sql.append("BEGIN")
+        sql.append(
+            "    INSERT INTO prompts_resource (system_prompt, name, description)"
+        )
+        sql.append(
+            f"    VALUES ({dollar_quote(sys_content)}, {sql_literal(agent_name + ' Prompt')}, {sql_literal(desc)})"
+        )
+        sql.append("    RETURNING id INTO v_prompt_id;")
+        sql.append(
+            f"    INSERT INTO agent_prompts_junction (agent_id, prompt_id) VALUES ('{agent_id}', v_prompt_id);"
+        )
         # Also set on agents_resource
         agents_res = info.get("agents_resource_id")
         if agents_res:
-            sql.append(f"    UPDATE agents_resource SET prompt_id = v_prompt_id WHERE id = '{agents_res}';")
-        sql.append(f"END $$;")
+            sql.append(
+                f"    UPDATE agents_resource SET prompt_id = v_prompt_id WHERE id = '{agents_res}';"
+            )
+        sql.append("END $$;")
         sql.append("")
 
     if info.get("instruction_ids") and instr_content:
         sql.append(f"-- Update instruction for {agent_name}")
-        sql.append(f"UPDATE instructions_resource SET template = {dollar_quote(instr_content)}")
+        sql.append(
+            f"UPDATE instructions_resource SET template = {dollar_quote(instr_content)}"
+        )
         sql.append(f"WHERE id = '{info['instruction_ids'][0]}';")
         sql.append("")
     elif instr_content and not info.get("instruction_ids"):
         sql.append(f"-- Create instruction for {agent_name} (had none)")
-        sql.append(f"DO $$")
-        sql.append(f"DECLARE v_instr_id uuid;")
-        sql.append(f"BEGIN")
-        sql.append(f"    INSERT INTO instructions_resource (template)")
+        sql.append("DO $$")
+        sql.append("DECLARE v_instr_id uuid;")
+        sql.append("BEGIN")
+        sql.append("    INSERT INTO instructions_resource (template)")
         sql.append(f"    VALUES ({dollar_quote(instr_content)})")
-        sql.append(f"    RETURNING id INTO v_instr_id;")
-        sql.append(f"    INSERT INTO agent_instructions_junction (agent_id, instruction_id) VALUES ('{agent_id}', v_instr_id);")
+        sql.append("    RETURNING id INTO v_instr_id;")
+        sql.append(
+            f"    INSERT INTO agent_instructions_junction (agent_id, instruction_id) VALUES ('{agent_id}', v_instr_id);"
+        )
         agents_res = info.get("agents_resource_id")
         if agents_res:
-            sql.append(f"    UPDATE agents_resource SET instruction_ids = ARRAY[v_instr_id]::uuid[] WHERE id = '{agents_res}';")
-        sql.append(f"END $$;")
+            sql.append(
+                f"    UPDATE agents_resource SET instruction_ids = ARRAY[v_instr_id]::uuid[] WHERE id = '{agents_res}';"
+            )
+        sql.append("END $$;")
         sql.append("")
 
 

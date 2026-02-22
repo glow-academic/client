@@ -33,6 +33,7 @@ from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.calls.get import get_call_list_view_internal
 from app.api.v4.entries.groups.get import get_group_list_view_internal
+from app.api.v4.entries.messages.search import get_message_list_entries_internal
 from app.api.v4.entries.runs.search import (
     GetRunListViewResponse,
     get_run_list_entries_internal,
@@ -46,7 +47,6 @@ from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.api.v4.entries.messages.search import get_message_list_entries_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool

@@ -23,12 +23,12 @@ from app.api.v4.artifacts.activity.types import (
     ActivityWebsocketResources,
     GetActivityWebsocketResponse,
 )
-from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.artifacts.session.types import (
     GetSessionListRequest,
     GetSessionListResponse,
     SessionListItem,
 )
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.activity.get import get_activity_list_view_internal
 from app.api.v4.entries.audits.get import get_audit_list_view_internal

@@ -44,6 +44,9 @@ RETURNS TABLE (
     -- Simulation availability IDs
     simulation_availability_ids uuid[],
 
+    -- Profile IDs
+    profile_ids uuid[],
+
     -- Suggestion IDs (computed in resource search endpoints)
     name_suggestions uuid[],
     description_suggestions uuid[],
@@ -226,6 +229,42 @@ simulation_availability_combined_data AS (
         END as simulation_availability_ids
     FROM params
     LIMIT 1
+),
+-- Profiles (from draft or cohort junction)
+draft_profiles_data AS (
+    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(dp.profiles_id ORDER BY dp.created_at), NULL), ARRAY[]::uuid[]) as profile_ids
+    FROM params x
+    LEFT JOIN cohort_drafts_profiles_connection dp ON dp.draft_id = x.draft_id AND dp.active = true AND dp.profiles_id != (
+        SELECT pp.profiles_id FROM profile_profiles_junction pp WHERE pp.profile_id = x.profile_id LIMIT 1
+    )
+    LIMIT 1
+),
+cohort_profiles_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT cohort_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(cp.profiles_id ORDER BY cp.created_at)
+                 FROM cohort_profiles_junction cp
+                 WHERE cp.cohort_id = (SELECT cohort_id FROM params) AND cp.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as profile_ids
+    FROM params
+    LIMIT 1
+),
+profiles_combined_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NOT NULL
+                AND COALESCE(array_length((SELECT profile_ids FROM draft_profiles_data), 1), 0) > 0
+                THEN (SELECT profile_ids FROM draft_profiles_data)
+            WHEN COALESCE(array_length((SELECT profile_ids FROM cohort_profiles_data), 1), 0) > 0
+                THEN (SELECT profile_ids FROM cohort_profiles_data)
+            ELSE ARRAY[]::uuid[]
+        END as profile_ids
+    FROM params
+    LIMIT 1
 )
 SELECT
     -- Single-select resource IDs
@@ -242,6 +281,9 @@ SELECT
 
     -- Simulation availability
     (SELECT simulation_availability_ids FROM simulation_availability_combined_data) as simulation_availability_ids,
+
+    -- Profiles
+    (SELECT profile_ids FROM profiles_combined_data) as profile_ids,
 
     -- Suggestion IDs (computed in resource search endpoints)
     ARRAY[]::uuid[] as name_suggestions,

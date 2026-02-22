@@ -73,7 +73,6 @@ from app.api.v4.entries import router as entries_router
 # Resources
 # ============================================================================
 from app.api.v4.resources import router as resources_router
-
 from app.utils.mcp.get_mcp import get_mcp
 from app.utils.profile.get_profile_id import get_profile_id
 from app.utils.session.get_session_id import get_session_id

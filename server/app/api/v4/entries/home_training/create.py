@@ -12,9 +12,7 @@ from app.sql.types import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = (
-    "app/sql/v4/queries/entries/home_chat/create_home_chat_entries_complete.sql"
-)
+SQL_PATH = "app/sql/v4/queries/entries/home_chat/create_home_chat_entries_complete.sql"
 
 
 async def create_home_training_entry_internal(

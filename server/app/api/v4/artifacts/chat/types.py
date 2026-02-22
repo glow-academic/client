@@ -15,8 +15,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.api.v4.artifacts.types import WebsocketConfig
+from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetDepartmentsV4Item,

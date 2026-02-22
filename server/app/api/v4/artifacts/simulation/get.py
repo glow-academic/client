@@ -44,7 +44,6 @@ from app.api.v4.artifacts.simulation.permissions import (
     compute_show_scenarios,
     has_access,
 )
-from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.artifacts.simulation.types import (
     GetSimulationAccessSqlParams,
     GetSimulationAccessSqlRow,
@@ -71,6 +70,7 @@ from app.api.v4.artifacts.simulation.types import (
     SimulationWebsocketEntries,
     SimulationWebsocketResources,
 )
+from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.entries.runs.search import get_run_list_entries_internal
 from app.api.v4.entries.simulation_drafts.get import (
     get_simulation_drafts_entries_internal,

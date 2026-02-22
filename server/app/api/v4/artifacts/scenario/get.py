@@ -141,7 +141,6 @@ QUERY2_SQL_PATH = "app/sql/v4/queries/scenarios/get_scenario_ids_complete.sql"
 router = APIRouter()
 
 
-
 def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
     """Preserve order while deduplicating by id attribute."""
     seen: set[UUID] = set()
