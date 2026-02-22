@@ -31,7 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
-import { useSocket } from "@/contexts/socket-context";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 import { useProfile } from "@/contexts/profile-context";
 
@@ -41,12 +41,16 @@ export interface SettingsProps {
 }
 
 export default function Settings({ listData: serverListData }: SettingsProps) {
-  const { socket, isConnected } = useSocket();
   const { departmentIds } = useProfile();
   const router = useRouter();
 
   // Generation modal via shared hook
   type SettingResourceType = "names" | "descriptions" | "colors" | "flags" | "departments" | "profiles" | "auths" | "provider_keys" | "auth_item_keys" | "roles" | "role_routes";
+  const { generate } = useArtifactAi({
+    artifactType: "setting",
+    groupId: null,
+    validResourceTypes: ["names", "descriptions", "colors", "flags", "departments", "profiles", "auths", "provider_keys", "auth_item_keys", "roles", "role_routes"],
+  });
   const { handleOpenStepCardModal, modalProps } = useGenerationModal<SettingResourceType>({
     stepResources: {
       all: ["names", "descriptions", "colors", "flags", "departments", "profiles", "auths", "provider_keys", "auth_item_keys", "roles", "role_routes"],
@@ -66,15 +70,11 @@ export default function Settings({ listData: serverListData }: SettingsProps) {
     },
     canRegenerate: () => true,
     onGenerate: (selectedResources, instructions) => {
-      if (!socket || !isConnected) return;
-      socket.emit("setting_generate", {
-        resource_types: selectedResources,
+      const ok = generate(selectedResources, {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-        setting_id: null,
-        draft_id: null,
         save: true,
       });
-      toast.success("Generation started for new setting");
+      if (ok) toast.success("Generation started for new setting");
     },
     isGenerating: () => false,
   });

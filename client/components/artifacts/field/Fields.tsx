@@ -49,7 +49,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
-import { useSocket } from "@/contexts/socket-context";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 
 export interface FieldsProps {
@@ -67,11 +67,15 @@ export default function Fields({
   duplicateFieldAction,
   deleteFieldAction,
 }: FieldsProps) {
-  const { socket, isConnected } = useSocket();
   const router = useRouter();
 
   // Generation modal via shared hook
   type FieldResourceType = "names" | "descriptions" | "flags" | "departments" | "conditional_parameters";
+  const { generate } = useArtifactAi({
+    artifactType: "field",
+    groupId: null,
+    validResourceTypes: ["names", "descriptions", "flags", "departments", "conditional_parameters"],
+  });
   const { handleOpenStepCardModal, modalProps } = useGenerationModal<FieldResourceType>({
     stepResources: {
       all: ["names", "descriptions", "flags", "departments", "conditional_parameters"],
@@ -85,15 +89,11 @@ export default function Fields({
     },
     canRegenerate: () => true,
     onGenerate: (selectedResources, instructions) => {
-      if (!socket || !isConnected) return;
-      socket.emit("field_generate", {
-        resource_types: selectedResources,
+      const ok = generate(selectedResources, {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-        field_id: null,
-        draft_id: null,
         save: true,
       });
-      toast.success("Generation started for new field");
+      if (ok) toast.success("Generation started for new field");
     },
     isGenerating: () => false,
   });

@@ -24,8 +24,7 @@ import { Parameters } from "@/components/resources/Parameters";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
-import { useSocket } from "@/contexts/socket-context";
-import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
@@ -126,7 +125,6 @@ function FieldComponent({
   const router = useRouter();
   const isEditMode = !!fieldId;
   const { profile } = useProfile();
-  const { socket, isConnected } = useSocket();
   const { isAutosaveEnabled, setSelectedDraftId } = useDrafts();
 
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
@@ -207,7 +205,7 @@ function FieldComponent({
 
   const groupId = fieldData?.group_id;
 
-  const { isGenerating, startGenerating } = useArtifactGeneration({
+  const { isGenerating, generate } = useArtifactAi({
     artifactType: "field",
     groupId: groupId,
     validResourceTypes: [
@@ -335,11 +333,6 @@ function FieldComponent({
 
   const handleGenerateResources = useCallback(
     async (resourceTypes: FieldResourceType[], userInstructions?: string) => {
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected");
-        return;
-      }
-
       let draftIdToUse =
         (formDataRef.current["draftId"] as string | undefined) ?? null;
       if (!draftIdToUse) {
@@ -350,16 +343,13 @@ function FieldComponent({
         return;
       }
 
-      startGenerating(resourceTypes);
-
-      socket.emit("field_generate", {
-        resource_types: resourceTypes,
+      generate(resourceTypes, {
         user_instructions: userInstructions ? [userInstructions] : null,
         draft_id: draftIdToUse,
-        field_id: fieldId || null,
+        artifact_id: fieldId || null,
       });
     },
-    [fieldId, flushAllAndSave, formDataRef, isConnected, startGenerating, socket],
+    [fieldId, flushAllAndSave, formDataRef, generate],
   );
 
   const stepResources = useMemo(

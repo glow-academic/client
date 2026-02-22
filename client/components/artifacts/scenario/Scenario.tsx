@@ -40,9 +40,8 @@ import { Questions } from "@/components/resources/Questions";
 import { Videos } from "@/components/resources/Videos";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import { useSocket } from "@/contexts/socket-context";
 import { useDrafts } from "@/contexts/draft-context";
-import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useConditionalParameterToggle } from "@/hooks/use-conditional-parameter-toggle";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
@@ -309,7 +308,6 @@ function ScenarioComponent({
   const router = useRouter();
   const isEditMode = !!scenarioId;
   const { profile } = useProfile();
-  const { socket, isConnected } = useSocket();
   const { setSelectedDraftId, isAutosaveEnabled } = useDrafts();
 
   // Use scenarioDetail for edit mode, scenarioDetailDefault for new mode
@@ -322,8 +320,8 @@ function ScenarioComponent({
     useFlushRegistry<FlushResult>(FLUSH_KEYS);
 
   // --- AI Generation State ---
-  const { isGenerating, makeOnGenerationComplete, startGenerating } =
-    useArtifactGeneration({
+  const { isGenerating, makeOnGenerationComplete, generate } =
+    useArtifactAi({
       artifactType: "scenario",
       groupId: scenarioData?.group_id,
       validResourceTypes: VALID_RESOURCE_TYPES as string[],
@@ -965,16 +963,6 @@ function ScenarioComponent({
       resourceTypes: ScenarioResourceType[],
       userInstructions?: string,
     ) => {
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected");
-        return;
-      }
-
-      if (resourceTypes.length === 0) {
-        toast.error("No resource types specified for generation");
-        return;
-      }
-
       let draftIdValue =
         (formDataRef.current["draftId"] as string | undefined) ?? null;
       if (!draftIdValue) {
@@ -985,72 +973,15 @@ function ScenarioComponent({
         return;
       }
 
-      startGenerating(resourceTypes);
-
-      const formData = formDataRef.current;
-      const personaSearch =
-        (formData["personaSearch"] as string | undefined) ?? null;
-      const documentSearch =
-        (formData["documentSearch"] as string | undefined) ?? null;
-      const parameterSearch =
-        (formData["parameterSearch"] as string | undefined) ?? null;
-      const personaShowSelected =
-        (formData["personaShowSelected"] as boolean | undefined) ?? false;
-      const documentShowSelected =
-        (formData["documentShowSelected"] as boolean | undefined) ?? false;
-      const parameterShowSelected =
-        (formData["parameterShowSelected"] as boolean | undefined) ?? false;
-
-      socket.emit("scenario_generate", {
-        resource_types: resourceTypes,
+      generate(resourceTypes, {
         user_instructions: userInstructions ? [userInstructions] : null,
-        scenario_id: scenarioId || null,
-        use_image: !!formState.images_enabled_flag_id,
-        use_objectives: !!formState.objectives_enabled_flag_id,
-        use_video: !!formState.video_enabled_flag_id,
-        document_ids: formState.document_ids.length
-          ? formState.document_ids
-          : null,
-        problem_statement_ids: formState.problem_statement_id
-          ? [formState.problem_statement_id]
-          : null,
-        filter_department_ids: formState.department_ids.length
-          ? formState.department_ids
-          : null,
-        filter_persona_ids: formState.persona_ids.length
-          ? formState.persona_ids
-          : null,
-        filter_document_ids: formState.document_ids.length
-          ? formState.document_ids
-          : null,
-        filter_parameter_ids: formState.parameter_ids.length
-          ? formState.parameter_ids
-          : null,
-        persona_search: personaSearch,
-        document_search: documentSearch,
-        parameter_search: parameterSearch,
-        persona_show_selected: personaShowSelected,
-        document_show_selected: documentShowSelected,
-        parameter_show_selected: parameterShowSelected,
         draft_id: draftIdValue,
-        mcp: false,
       });
     },
     [
-      socket,
-      isConnected,
-      scenarioId,
       flushAllAndSave,
-      formState.images_enabled_flag_id,
-      formState.objectives_enabled_flag_id,
-      formState.video_enabled_flag_id,
-      formState.document_ids,
-      formState.problem_statement_id,
-      formState.department_ids,
-      formState.persona_ids,
-      formState.parameter_ids,
       formDataRef,
-      startGenerating,
+      generate,
     ],
   );
 

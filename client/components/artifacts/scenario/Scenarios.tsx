@@ -22,7 +22,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
-import { useSocket } from "@/contexts/socket-context";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 
 import type {
@@ -108,10 +108,14 @@ export function Scenarios({
     new Set(),
   );
 
-  // Generation modal via shared hook
-  const { socket, isConnected } = useSocket();
-
+  // Generation via useArtifactAi hook
   type ScenarioResourceType = "names" | "descriptions" | "problem_statements" | "objectives" | "scenario_flags" | "departments" | "personas" | "documents" | "parameters" | "fields" | "images" | "videos" | "questions";
+
+  const { generate } = useArtifactAi({
+    artifactType: "scenario",
+    groupId: null,
+    validResourceTypes: ["names", "descriptions", "problem_statements", "objectives", "scenario_flags", "departments", "personas", "documents", "parameters", "fields", "images", "videos", "questions"],
+  });
 
   const { handleOpenStepCardModal, modalProps } = useGenerationModal<ScenarioResourceType>({
     stepResources: {
@@ -134,14 +138,11 @@ export function Scenarios({
     },
     canRegenerate: () => true,
     onGenerate: (selectedResources, instructions) => {
-      if (!socket || !isConnected) return;
-      socket.emit("scenario_generate", {
-        resource_types: selectedResources,
+      const ok = generate(selectedResources, {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-        scenario_id: null,
-        mcp: false,
+        save: true,
       });
-      toast.success("Generation started for new scenario");
+      if (ok) toast.success("Generation started for new scenario");
     },
     isGenerating: () => false,
   });

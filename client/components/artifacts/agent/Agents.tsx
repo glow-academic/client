@@ -43,7 +43,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
-import { useSocket } from "@/contexts/socket-context";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 import { useProfile } from "@/contexts/profile-context";
 
@@ -76,7 +76,6 @@ export default function Agents({
   modelSearch,
   toolSearch,
 }: AgentsProps) {
-  const { socket, isConnected } = useSocket();
   const { profile } = useProfile();
   const router = useRouter();
   const pathname = usePathname();
@@ -84,6 +83,11 @@ export default function Agents({
 
   // Generation modal via shared hook
   type AgentResourceType = "names" | "descriptions" | "models" | "prompts" | "instructions" | "flags" | "departments" | "tools" | "temperature_levels" | "reasoning_levels" | "voices";
+  const { generate } = useArtifactAi({
+    artifactType: "agent",
+    groupId: null,
+    validResourceTypes: ["names", "descriptions", "models", "prompts", "instructions", "flags", "departments", "tools", "temperature_levels", "reasoning_levels", "voices"],
+  });
   const { handleOpenStepCardModal, modalProps } = useGenerationModal<AgentResourceType>({
     stepResources: {
       all: ["names", "descriptions", "models", "prompts", "instructions", "flags", "departments", "tools", "temperature_levels", "reasoning_levels", "voices"],
@@ -103,14 +107,10 @@ export default function Agents({
     },
     canRegenerate: () => true,
     onGenerate: (selectedResources, instructions) => {
-      if (!socket || !isConnected) return;
-      socket.emit("agent_generate", {
-        resource_types: selectedResources,
+      const ok = generate(selectedResources, {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-        agent_id: null,
-        draft_id: null,
       });
-      toast.success("Generation started for new agent");
+      if (ok) toast.success("Generation started for new agent");
     },
     isGenerating: () => false,
   });

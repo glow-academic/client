@@ -50,7 +50,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
-import { useSocket } from "@/contexts/socket-context";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 
 export interface RubricsProps {
@@ -81,7 +81,6 @@ export default function Rubrics({
   departmentSearch,
   simulationSearch,
 }: RubricsProps) {
-  const { socket, isConnected } = useSocket();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -89,6 +88,11 @@ export default function Rubrics({
 
   // Generation modal via shared hook
   type RubricResourceType = "names" | "descriptions" | "departments" | "flags" | "points" | "pass_points" | "standard_groups" | "standards";
+  const { generate } = useArtifactAi({
+    artifactType: "rubric",
+    groupId: null,
+    validResourceTypes: ["names", "descriptions", "departments", "flags", "points", "pass_points", "standard_groups", "standards"],
+  });
   const { handleOpenStepCardModal, modalProps } = useGenerationModal<RubricResourceType>({
     stepResources: {
       all: ["names", "descriptions", "departments", "flags", "points", "pass_points", "standard_groups", "standards"],
@@ -105,15 +109,11 @@ export default function Rubrics({
     },
     canRegenerate: () => true,
     onGenerate: (selectedResources, instructions) => {
-      if (!socket || !isConnected) return;
-      socket.emit("rubric_generate", {
-        resource_types: selectedResources,
+      const ok = generate(selectedResources, {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-        rubric_id: null,
-        draft_id: null,
         save: true,
       });
-      toast.success("Generation started for new rubric");
+      if (ok) toast.success("Generation started for new rubric");
     },
     isGenerating: () => false,
   });

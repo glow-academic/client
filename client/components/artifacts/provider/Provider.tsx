@@ -20,8 +20,7 @@ import { Keys } from "@/components/resources/Keys";
 import { Names } from "@/components/resources/Names";
 import { Values } from "@/components/resources/Values";
 import { useDrafts } from "@/contexts/draft-context";
-import { useSocket } from "@/contexts/socket-context";
-import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
@@ -131,7 +130,6 @@ export default function Provider({
 }: ProviderProps) {
   const isEditMode = !!providerId;
   const router = useRouter();
-  const { socket, isConnected } = useSocket();
   const { isAutosaveEnabled, setSelectedDraftId } = useDrafts();
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<Record<string, unknown>>(FLUSH_KEYS);
@@ -176,7 +174,7 @@ export default function Provider({
     referenceStateRef.current = initial;
   }, [getInitialFormState]);
 
-  const { isGenerating, startGenerating } = useArtifactGeneration({
+  const { isGenerating, generate } = useArtifactAi({
     artifactType: "provider",
     groupId: groupId,
     validResourceTypes: PROVIDER_RESOURCES as string[],
@@ -244,11 +242,6 @@ export default function Provider({
 
   const handleGenerateResources = useCallback(
     async (resourceTypes: ResourceType[], userInstructions?: string) => {
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected");
-        return;
-      }
-      startGenerating(resourceTypes);
       let currentDraftId =
         (formDataRef.current["draftId"] as string | undefined) ?? null;
       if (!currentDraftId) currentDraftId = await flushAllAndSave();
@@ -256,17 +249,14 @@ export default function Provider({
         toast.error("Please save a draft before generating");
         return;
       }
-      socket.emit("provider_generate", {
-        resource_types: resourceTypes,
+      generate(resourceTypes, {
         user_instructions: userInstructions ? [userInstructions] : null,
         draft_id: currentDraftId,
-        provider_id: providerId ?? null,
+        artifact_id: providerId ?? null,
       });
     },
     [
-      socket,
-      isConnected,
-      startGenerating,
+      generate,
       formDataRef,
       flushAllAndSave,
       providerId,

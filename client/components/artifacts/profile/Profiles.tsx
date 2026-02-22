@@ -86,7 +86,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
-import { useSocket } from "@/contexts/socket-context";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 import { useProfile } from "@/contexts/profile-context";
 import { cn } from "@/lib/utils";
@@ -369,7 +369,6 @@ export default function Staff({
   processCSVAction,
   bulkCreateOrUpdateStaffAction,
 }: ProfilesProps) {
-  const { socket, isConnected } = useSocket();
   const router = useRouter();
   const {
     profile,
@@ -379,6 +378,11 @@ export default function Staff({
 
   // Generation modal via shared hook
   type ProfileResourceType = "names" | "flags" | "request_limits" | "departments" | "emails";
+  const { generate } = useArtifactAi({
+    artifactType: "profile",
+    groupId: null,
+    validResourceTypes: ["names", "flags", "request_limits", "departments", "emails"],
+  });
   const { handleOpenStepCardModal, modalProps } = useGenerationModal<ProfileResourceType>({
     stepResources: {
       all: ["names", "flags", "request_limits", "departments", "emails"],
@@ -392,14 +396,11 @@ export default function Staff({
     },
     canRegenerate: () => true,
     onGenerate: (selectedResources, instructions) => {
-      if (!socket || !isConnected) return;
-      socket.emit("profile_generate", {
-        resource_types: selectedResources,
+      const ok = generate(selectedResources, {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-        staff_id: null,
         save: true,
       });
-      toast.success("Generation started for new profile");
+      if (ok) toast.success("Generation started for new profile");
     },
     isGenerating: () => false,
   });

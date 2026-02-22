@@ -26,7 +26,7 @@ import type {
 } from "@/app/(main)/training/simulations/page";
 import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
-import { useSocket } from "@/contexts/socket-context";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import {
@@ -83,7 +83,6 @@ export function Simulations({
   cohortSearch,
   departmentSearch,
 }: SimulationsProps) {
-  const { socket, isConnected } = useSocket();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -95,8 +94,15 @@ export function Simulations({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
 
-  // Generation modal via shared hook
+  // Generation via useArtifactAi hook
   type SimulationResourceType = "names" | "descriptions" | "flags" | "departments" | "scenarios" | "scenario_flags" | "scenario_positions" | "scenario_rubrics" | "scenario_time_limits";
+
+  const { generate } = useArtifactAi({
+    artifactType: "simulation",
+    groupId: null,
+    validResourceTypes: ["names", "descriptions", "flags", "departments", "scenarios", "scenario_flags", "scenario_positions", "scenario_rubrics", "scenario_time_limits"],
+  });
+
   const { handleOpenStepCardModal, modalProps } = useGenerationModal<SimulationResourceType>({
     stepResources: {
       all: ["names", "descriptions", "flags", "departments", "scenarios", "scenario_flags", "scenario_positions", "scenario_rubrics", "scenario_time_limits"],
@@ -114,14 +120,11 @@ export function Simulations({
     },
     canRegenerate: () => true,
     onGenerate: (selectedResources, instructions) => {
-      if (!socket || !isConnected) return;
-      socket.emit("simulation_generate", {
-        resource_types: selectedResources,
+      const ok = generate(selectedResources, {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-        simulation_id: null,
-        mcp: false,
+        save: true,
       });
-      toast.success("Generation started for new simulation");
+      if (ok) toast.success("Generation started for new simulation");
     },
     isGenerating: () => false,
   });

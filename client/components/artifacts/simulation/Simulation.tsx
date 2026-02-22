@@ -30,9 +30,8 @@ import { Scenarios } from "@/components/resources/Scenarios";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 import { useProfile } from "@/contexts/profile-context";
-import { useSocket } from "@/contexts/socket-context";
 import { useDrafts } from "@/contexts/draft-context";
-import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
@@ -242,7 +241,6 @@ function SimulationComponent({
   const router = useRouter();
   const isEditMode = !!simulationId;
   const { profile } = useProfile();
-  const { socket, isConnected } = useSocket();
   const { setSelectedDraftId, isAutosaveEnabled } = useDrafts();
 
   // --- Flush Registry ---
@@ -329,7 +327,7 @@ function SimulationComponent({
   // --- AI Generation ---
   const groupId = stableSimulationDataFields?.group_id ?? null;
 
-  const { isGenerating, startGenerating, makeOnGenerationComplete } = useArtifactGeneration({
+  const { isGenerating, makeOnGenerationComplete, generate } = useArtifactAi({
     artifactType: "simulation",
     groupId,
     validResourceTypes: VALID_RESOURCE_TYPES,
@@ -576,32 +574,15 @@ function SimulationComponent({
       resourceTypes: SimulationResourceType[],
       userInstructions?: string,
     ) => {
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected");
-        return;
-      }
-
-      // Set all resources as generating
-      startGenerating(resourceTypes);
-
-      // Read search params from formData
       const formData = formDataRef.current;
       const draftId = (formData["draftId"] as string | undefined) ?? null;
-      const scenarioSearch =
-        (formData["scenarioSearch"] as string | undefined) ?? null;
-      const filterScenarioIds =
-        (formData["filterScenarioIds"] as string[] | undefined) ?? null;
 
-      socket.emit("simulation_generate", {
-        resource_types: resourceTypes,
+      generate(resourceTypes, {
         user_instructions: userInstructions ? [userInstructions] : null,
         draft_id: draftId || null,
-        scenario_search: scenarioSearch || null,
-        filter_scenario_ids: filterScenarioIds || null,
-        simulation_id: simulationId || null,
       });
     },
-    [socket, isConnected, simulationId, startGenerating, formDataRef],
+    [generate, formDataRef],
   );
 
   // Individual generation handlers - generate directly without modals

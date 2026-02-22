@@ -9,6 +9,9 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.simulation.permissions import compute_can_draft
+from app.api.v4.entries.simulation_drafts.refresh import (
+    refresh_simulation_drafts_internal,
+)
 from app.api.v4.artifacts.simulation.types import (
     PatchSimulationDraftApiRequest,
     PatchSimulationDraftApiResponse,
@@ -107,6 +110,9 @@ async def patch_simulation_draft(
         api_response = PatchSimulationDraftApiResponse.model_validate(
             result.model_dump()
         )
+
+        # Refresh MV so /auth/drafts can see the new draft immediately
+        await refresh_simulation_drafts_internal(conn)
 
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

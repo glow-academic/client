@@ -22,8 +22,7 @@ import { Switch } from "@/components/ui/switch";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
-import { useSocket } from "@/contexts/socket-context";
-import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
@@ -200,7 +199,6 @@ function ParameterComponent({
   const isEditMode = mode === "edit" && !!parameterId;
   const s = (parameterData ?? null) as unknown as ParameterSectionData | null;
   const { profile } = useProfile();
-  const { socket, isConnected } = useSocket();
   const { isAutosaveEnabled, setSelectedDraftId } = useDrafts();
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<FlushResult>(FLUSH_KEYS);
@@ -395,7 +393,7 @@ function ParameterComponent({
     },
   });
 
-  const { isGenerating, startGenerating } = useArtifactGeneration({
+  const { isGenerating, generate } = useArtifactAi({
     artifactType: "parameter",
     groupId: s?.group_id,
     validResourceTypes: VALID_RESOURCE_TYPES,
@@ -403,13 +401,6 @@ function ParameterComponent({
 
   const handleGenerateResources = useCallback(
     async (resourceTypes: ResourceType[], userInstructions?: string) => {
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected");
-        return;
-      }
-
-      startGenerating(resourceTypes);
-
       let draftId = (formDataRef.current["draftId"] as string | undefined) ?? null;
       if (!draftId) {
         draftId = await flushAllAndSave();
@@ -419,14 +410,13 @@ function ParameterComponent({
         return;
       }
 
-      socket.emit("parameter_generate", {
-        resource_types: resourceTypes,
-        user_instructions: userInstructions ? [userInstructions] : null,
+      generate(resourceTypes, {
         draft_id: draftId,
-        parameter_id: parameterId || null,
+        artifact_id: parameterId || null,
+        user_instructions: userInstructions ? [userInstructions] : null,
       });
     },
-    [socket, isConnected, flushAllAndSave, formDataRef, parameterId, startGenerating]
+    [flushAllAndSave, formDataRef, parameterId, generate]
   );
 
   const canRegenerate = useCallback(

@@ -42,7 +42,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
-import { useSocket } from "@/contexts/socket-context";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 
 export interface ToolsProps {
@@ -70,13 +70,17 @@ export default function Tools({
   departmentSearch,
   agentSearch,
 }: ToolsProps) {
-  const { socket, isConnected } = useSocket();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   // Generation modal via shared hook
   type ToolResourceType = "names" | "descriptions" | "args" | "arg_positions" | "args_outputs" | "flags";
+  const { generate } = useArtifactAi({
+    artifactType: "tool",
+    groupId: null,
+    validResourceTypes: ["names", "descriptions", "args", "arg_positions", "args_outputs", "flags"],
+  });
   const { handleOpenStepCardModal, modalProps } = useGenerationModal<ToolResourceType>({
     stepResources: {
       all: ["names", "descriptions", "args", "arg_positions", "args_outputs", "flags"],
@@ -91,14 +95,10 @@ export default function Tools({
     },
     canRegenerate: () => true,
     onGenerate: (selectedResources, instructions) => {
-      if (!socket || !isConnected) return;
-      socket.emit("tool_generate", {
-        resource_types: selectedResources,
+      const ok = generate(selectedResources, {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-        tool_id: null,
-        draft_id: null,
       });
-      toast.success("Generation started for new tool");
+      if (ok) toast.success("Generation started for new tool");
     },
     isGenerating: () => false,
   });

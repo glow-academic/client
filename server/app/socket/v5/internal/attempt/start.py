@@ -7,6 +7,8 @@ then emit "generate" to kick off the first chat.
 Next-scenario logic is handled by attempt_next.
 """
 
+from __future__ import annotations
+
 import uuid
 from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID

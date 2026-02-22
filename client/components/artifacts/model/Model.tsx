@@ -40,7 +40,6 @@ import { Voices } from "@/components/resources/Voices";
 import { Label } from "@/components/ui/label";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
-import { useSocket } from "@/contexts/socket-context";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
@@ -55,7 +54,7 @@ import type { ResourceType } from "@/lib/resources/types";
 import { getDefaultDepartmentIds } from "@/utils/department-picker-helpers";
 import { parseAsString, type Parser } from "nuqs";
 
-import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 
 const MODEL_VALID_RESOURCE_TYPES: ResourceType[] = [
   "names",
@@ -183,7 +182,6 @@ function ModelComponent({
   const router = useRouter();
   const isEditMode = !!modelId;
   const { profile } = useProfile();
-  const { socket, isConnected } = useSocket();
   const { isAutosaveEnabled, setSelectedDraftId } = useDrafts();
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<FlushResult>(FLUSH_KEYS);
@@ -312,7 +310,7 @@ function ModelComponent({
   const [formState, setFormState] = useState(getInitialFormState);
 
   // AI generation via shared hook
-  const { isGenerating, startGenerating } = useArtifactGeneration({
+  const { isGenerating, generate } = useArtifactAi({
     artifactType: "model",
     groupId: s?.group_id,
     validResourceTypes: MODEL_VALID_RESOURCE_TYPES as string[],
@@ -562,13 +560,6 @@ function ModelComponent({
   // Generation handler - uses resource_types directly (no domain_ids)
   const handleGenerateResources = useCallback(
     async (resourceTypes: ResourceType[], userInstructions?: string) => {
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected");
-        return;
-      }
-
-      startGenerating(resourceTypes);
-
       let currentDraftId =
         (formDataRef.current["draftId"] as string | undefined) ?? null;
       if (!currentDraftId) {
@@ -579,15 +570,13 @@ function ModelComponent({
         return;
       }
 
-      // Emit model_generate with resource_types (gold standard pattern)
-      socket.emit("model_generate", {
-        resource_types: resourceTypes,
-        user_instructions: userInstructions ? [userInstructions] : null,
+      generate(resourceTypes, {
         draft_id: currentDraftId,
-        model_id: modelId || null,
+        artifact_id: modelId || null,
+        user_instructions: userInstructions ? [userInstructions] : null,
       });
     },
-    [socket, isConnected, modelId, startGenerating, flushAllAndSave],
+    [modelId, generate, flushAllAndSave],
   );
 
   const handleGenerateName = useCallback(

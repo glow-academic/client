@@ -41,8 +41,7 @@ import { Label } from "@/components/ui/label";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useDrafts } from "@/contexts/draft-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useSocket } from "@/contexts/socket-context";
-import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
@@ -213,7 +212,6 @@ function ProfileComponent({
   const isEditMode = !!staffId;
   const { profile } = useProfile();
   const { isAutosaveEnabled, setSelectedDraftId } = useDrafts();
-  const { socket, isConnected } = useSocket();
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<Record<string, unknown>>(FLUSH_KEYS);
 
@@ -567,7 +565,7 @@ function ProfileComponent({
     onPatchSuccess,
   });
 
-  const { isGenerating, startGenerating } = useArtifactGeneration({
+  const { isGenerating, generate } = useArtifactAi({
     artifactType: "profile",
     groupId: currentStaffData?.group_id,
     validResourceTypes: [...VALID_RESOURCE_TYPES],
@@ -578,13 +576,6 @@ function ProfileComponent({
       resourceTypes: ProfileResourceType[],
       userInstructions?: string
     ) => {
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected");
-        return;
-      }
-
-      startGenerating(resourceTypes);
-
       const formData = formDataRef.current;
       let draftId = (formData["draftId"] as string | undefined) ?? null;
       if (!draftId) {
@@ -595,18 +586,15 @@ function ProfileComponent({
         return;
       }
 
-      socket.emit("profile_generate", {
-        resource_types: resourceTypes,
-        user_instructions: userInstructions ? [userInstructions] : null,
+      generate(resourceTypes, {
         draft_id: draftId,
-        target_profile_id: staffId || null,
+        artifact_id: staffId || null,
+        user_instructions: userInstructions ? [userInstructions] : null,
       });
     },
     [
-      socket,
-      isConnected,
       staffId,
-      startGenerating,
+      generate,
       formDataRef,
       flushAllAndSave,
     ]

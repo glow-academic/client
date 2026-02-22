@@ -71,7 +71,7 @@ import {
 } from "@/components/ui/table";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
-import { useSocket } from "@/contexts/socket-context";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 import { useRouter } from "next/navigation";
 
@@ -125,11 +125,15 @@ export default function Documents({
   listData: serverListData,
   deleteDocumentAction,
 }: DocumentsProps) {
-  const { socket, isConnected } = useSocket();
   const router = useRouter();
 
   // Generation modal via shared hook
   type DocumentResourceType = "names" | "descriptions" | "flags" | "departments" | "fields" | "uploads" | "images" | "texts";
+  const { generate } = useArtifactAi({
+    artifactType: "document",
+    groupId: null,
+    validResourceTypes: ["names", "descriptions", "flags", "departments", "fields", "uploads", "images", "texts"],
+  });
   const { handleOpenStepCardModal, modalProps } = useGenerationModal<DocumentResourceType>({
     stepResources: {
       all: ["names", "descriptions", "flags", "departments", "fields", "uploads", "images", "texts"],
@@ -146,14 +150,11 @@ export default function Documents({
     },
     canRegenerate: () => true,
     onGenerate: (selectedResources, instructions) => {
-      if (!socket || !isConnected) return;
-      socket.emit("document_generate", {
-        resource_types: selectedResources,
+      const ok = generate(selectedResources, {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-        document_id: null,
-        draft_id: null,
+        save: true,
       });
-      toast.success("Generation started for new document");
+      if (ok) toast.success("Generation started for new document");
     },
     isGenerating: () => false,
   });

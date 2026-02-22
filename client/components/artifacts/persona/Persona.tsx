@@ -37,10 +37,9 @@ import { Parameters } from "@/components/resources/Parameters";
 import { Voices } from "@/components/resources/Voices";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import { useSocket } from "@/contexts/socket-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
-import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useConditionalParameterToggle } from "@/hooks/use-conditional-parameter-toggle";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
@@ -245,7 +244,6 @@ function PersonaComponent({
   const router = useRouter();
   const isEditMode = !!personaId;
   const { profile } = useProfile();
-  const { socket, isConnected } = useSocket();
   const { setSelectedDraftId, isAutosaveEnabled } = useDrafts();
 
   // --- Flush Registry ---
@@ -253,8 +251,8 @@ function PersonaComponent({
     useFlushRegistry<FlushResult>(FLUSH_KEYS);
 
   // --- AI Generation State ---
-  const { isGenerating, makeOnGenerationComplete, startGenerating } =
-    useArtifactGeneration({
+  const { isGenerating, makeOnGenerationComplete, generate } =
+    useArtifactAi({
       artifactType: "persona",
       groupId: personaData?.group_id,
       validResourceTypes: VALID_RESOURCE_TYPES as string[],
@@ -680,16 +678,6 @@ function PersonaComponent({
   // --- Generation Handlers ---
   const handleGenerateResources = useCallback(
     async (resourceTypes: ResourceType[], userInstructions?: string) => {
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected");
-        return;
-      }
-
-      if (resourceTypes.length === 0) {
-        toast.error("No resource types specified for generation");
-        return;
-      }
-
       let draftIdToUse =
         (formDataRef.current["draftId"] as string | undefined) ?? null;
       if (!draftIdToUse) {
@@ -700,35 +688,15 @@ function PersonaComponent({
         return;
       }
 
-      startGenerating(resourceTypes);
-
-      const formData = formDataRef.current;
-      socket.emit("persona_generate", {
-        resource_types: resourceTypes,
+      generate(resourceTypes, {
         user_instructions: userInstructions ? [userInstructions] : null,
         draft_id: draftIdToUse,
-        color_search: (formData["colorSearch"] as string | undefined) ?? null,
-        icon_search: (formData["iconSearch"] as string | undefined) ?? null,
-        descriptions_search:
-          (formData["descriptionSearch"] as string | undefined) ?? null,
-        instructions_search:
-          (formData["instructionsSearch"] as string | undefined) ?? null,
-        color_show_selected:
-          (formData["colorShowSelected"] as boolean | undefined) ?? false,
-        icon_show_selected:
-          (formData["iconShowSelected"] as boolean | undefined) ?? false,
-        mcp: false,
-        persona_id: personaId || null,
-        save: false,
       });
     },
     [
-      socket,
-      isConnected,
-      personaId,
       flushAllAndSave,
       formDataRef,
-      startGenerating,
+      generate,
     ],
   );
 

@@ -29,8 +29,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
-import { useSocket } from "@/contexts/socket-context";
-import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
@@ -124,14 +123,13 @@ function ToolComponent({
   const router = useRouter();
   const isEditMode = !!toolId;
   const { profile } = useProfile();
-  const { socket, isConnected } = useSocket();
   const { selectedDraftId, setSelectedDraftId, isAutosaveEnabled } = useDrafts();
   const { registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<Record<string, unknown>>(TOOL_FLUSH_KEYS);
   // Generation state for AI workflows
   const VALID_TOOL_RESOURCE_TYPES: ToolResourceType[] = ["args", "arg_positions", "args_outputs"];
-  const { isGenerating, startGenerating, makeOnGenerationComplete } =
-    useArtifactGeneration({
+  const { isGenerating, makeOnGenerationComplete, generate } =
+    useArtifactAi({
       artifactType: "tool",
       groupId: toolData?.group_id,
       validResourceTypes: VALID_TOOL_RESOURCE_TYPES,
@@ -587,27 +585,17 @@ function ToolComponent({
       _agentType: string | null,
       userInstructions?: string
     ) => {
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected");
-        return;
-      }
-
-      // Set all resources as generating
-      startGenerating(resourceTypes);
-
       // Read draftId from formData
       const formData = formDataRef.current;
       const draftId = (formData["draftId"] as string | undefined) ?? null;
 
-      // Emit tool_generate event with resource_types
-      socket.emit("tool_generate", {
-        resource_types: resourceTypes,
+      generate(resourceTypes, {
         user_instructions: userInstructions ? [userInstructions] : null,
         draft_id: draftId || null,
-        tool_id: toolId || null,
+        artifact_id: toolId || null,
       });
     },
-    [socket, isConnected, toolId]
+    [generate, toolId]
   );
 
   // Disabled logic based on can_edit flag - check in both new and edit modes

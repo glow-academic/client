@@ -40,7 +40,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
-import { useSocket } from "@/contexts/socket-context";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 
 export interface ProvidersProps {
@@ -68,13 +68,17 @@ export default function Providers({
   departmentSearch,
   modelSearch,
 }: ProvidersProps) {
-  const { socket, isConnected } = useSocket();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   // Generation modal via shared hook
   type ProviderResourceType = "names" | "descriptions" | "flags" | "departments" | "values" | "endpoints";
+  const { generate } = useArtifactAi({
+    artifactType: "provider",
+    groupId: null,
+    validResourceTypes: ["names", "descriptions", "flags", "departments", "values", "endpoints"],
+  });
   const { handleOpenStepCardModal, modalProps } = useGenerationModal<ProviderResourceType>({
     stepResources: {
       all: ["names", "descriptions", "flags", "departments", "values", "endpoints"],
@@ -89,14 +93,10 @@ export default function Providers({
     },
     canRegenerate: () => true,
     onGenerate: (selectedResources, instructions) => {
-      if (!socket || !isConnected) return;
-      socket.emit("provider_generate", {
-        resource_types: selectedResources,
+      const ok = generate(selectedResources, {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-        provider_id: null,
-        draft_id: null,
       });
-      toast.success("Generation started for new provider");
+      if (ok) toast.success("Generation started for new provider");
     },
     isGenerating: () => false,
   });

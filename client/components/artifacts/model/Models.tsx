@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/card";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
-import { useSocket } from "@/contexts/socket-context";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 import { useProfile } from "@/contexts/profile-context";
 import {
@@ -87,7 +87,6 @@ export default function Models({
   departmentSearch,
   agentSearch,
 }: ModelsProps) {
-  const { socket, isConnected } = useSocket();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -95,6 +94,11 @@ export default function Models({
 
   // Generation modal via shared hook
   type ModelResourceType = "names" | "descriptions" | "values" | "providers" | "flags" | "departments" | "modalities" | "temperature_levels" | "pricing" | "reasoning_levels";
+  const { generate } = useArtifactAi({
+    artifactType: "model",
+    groupId: null,
+    validResourceTypes: ["names", "descriptions", "values", "providers", "flags", "departments", "modalities", "temperature_levels", "pricing", "reasoning_levels"],
+  });
   const { handleOpenStepCardModal, modalProps } = useGenerationModal<ModelResourceType>({
     stepResources: {
       all: ["names", "descriptions", "values", "providers", "flags", "departments", "modalities", "temperature_levels", "pricing", "reasoning_levels"],
@@ -113,14 +117,10 @@ export default function Models({
     },
     canRegenerate: () => true,
     onGenerate: (selectedResources, instructions) => {
-      if (!socket || !isConnected) return;
-      socket.emit("model_generate", {
-        resource_types: selectedResources,
+      const ok = generate(selectedResources, {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-        model_id: null,
-        draft_id: null,
       });
-      toast.success("Generation started for new model");
+      if (ok) toast.success("Generation started for new model");
     },
     isGenerating: () => false,
   });

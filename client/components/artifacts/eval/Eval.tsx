@@ -41,8 +41,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useDrafts } from "@/contexts/draft-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useSocket } from "@/contexts/socket-context";
-import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
 import { Loader2, Sparkles } from "lucide-react";
@@ -192,7 +191,6 @@ function EvalComponent({
   const isEditMode = !!evalId;
   const { profile } = useProfile();
   const { selectedDraftId, setSelectedDraftId } = useDrafts();
-  const { socket, isConnected } = useSocket();
   const evalData = isEditMode ? evalDetail : evalDetailDefault;
   const s = useMemo(() => {
     if (!evalData) return null;
@@ -224,8 +222,8 @@ function EvalComponent({
     "names", "descriptions", "flags", "departments", "agents",
     "rubrics", "run_positions", "group_positions", "run_rubrics", "group_rubrics",
   ];
-  const { isGenerating, startGenerating, makeOnGenerationComplete } =
-    useArtifactGeneration({
+  const { isGenerating, makeOnGenerationComplete, generate } =
+    useArtifactAi({
       artifactType: "eval",
       groupId: s?.group_id,
       validResourceTypes: VALID_EVAL_RESOURCE_TYPES,
@@ -721,24 +719,15 @@ function EvalComponent({
       _agentType?: string | null,
       userInstructions?: string
     ) => {
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected");
-        return;
-      }
-
-      startGenerating(resourceTypes);
-
       const formData = formDataRef.current;
       const draftId = (formData["draftId"] as string | undefined) ?? null;
 
-      socket.emit("eval_generate", {
-        resource_types: resourceTypes,
+      generate(resourceTypes, {
         user_instructions: userInstructions ? [userInstructions] : null,
         draft_id: draftId || null,
-        eval_id: evalId || null,
       });
     },
-    [socket, isConnected, evalId]
+    [generate]
   );
 
   // Individual generation handlers

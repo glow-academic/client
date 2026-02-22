@@ -6,6 +6,7 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.persona.permissions import compute_can_draft
+from app.api.v4.entries.persona_drafts.refresh import refresh_persona_drafts_internal
 from app.api.v4.artifacts.persona.types import (
     PatchPersonaDraftApiRequest,
     PatchPersonaDraftApiResponse,
@@ -104,6 +105,9 @@ async def patch_persona_draft(
                 else "Draft created successfully",
             }
         )
+
+        # Refresh MV so /auth/drafts can see the new draft immediately
+        await refresh_persona_drafts_internal(conn)
 
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

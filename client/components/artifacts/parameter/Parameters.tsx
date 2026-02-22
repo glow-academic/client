@@ -35,7 +35,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
-import { useSocket } from "@/contexts/socket-context";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 import { useProfile } from "@/contexts/profile-context";
 
@@ -81,13 +81,17 @@ export default function Parameters({
   duplicateParameterAction,
   deleteParameterAction,
 }: ParametersProps) {
-  const { socket, isConnected } = useSocket();
   const router = useRouter();
   const { profile } = useProfile();
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
 
   // Generation modal via shared hook
   type ParameterResourceType = "names" | "descriptions" | "flags" | "departments" | "fields";
+  const { generate } = useArtifactAi({
+    artifactType: "parameter",
+    groupId: null,
+    validResourceTypes: ["names", "descriptions", "flags", "departments", "fields"],
+  });
   const { handleOpenStepCardModal, modalProps } = useGenerationModal<ParameterResourceType>({
     stepResources: {
       all: ["names", "descriptions", "flags", "departments", "fields"],
@@ -101,14 +105,10 @@ export default function Parameters({
     },
     canRegenerate: () => true,
     onGenerate: (selectedResources, instructions) => {
-      if (!socket || !isConnected) return;
-      socket.emit("parameter_generate", {
-        resource_types: selectedResources,
+      const ok = generate(selectedResources, {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-        parameter_id: null,
-        draft_id: null,
       });
-      toast.success("Generation started for new parameter");
+      if (ok) toast.success("Generation started for new parameter");
     },
     isGenerating: () => false,
   });

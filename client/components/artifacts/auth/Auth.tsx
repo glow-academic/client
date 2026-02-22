@@ -24,8 +24,7 @@ import { Slugs } from "@/components/resources/Slugs";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
-import { useSocket } from "@/contexts/socket-context";
-import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
@@ -164,12 +163,11 @@ function AuthComponent({
   });
 
   const { profile } = useProfile();
-  const { socket, isConnected } = useSocket();
   const { isAutosaveEnabled, setSelectedDraftId } = useDrafts();
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<FlushResult>(FLUSH_KEYS);
 
-  const { isGenerating, startGenerating } = useArtifactGeneration({
+  const { isGenerating, generate } = useArtifactAi({
     artifactType: "auth",
     groupId: s?.group_id,
     validResourceTypes: VALID_RESOURCE_TYPES as string[],
@@ -283,11 +281,6 @@ function AuthComponent({
 
   const handleGenerateResources = useCallback(
     async (resourceTypes: AuthResourceType[], userInstructions?: string) => {
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected");
-        return;
-      }
-      startGenerating(resourceTypes);
       let currentDraftId =
         (formDataRef.current["draftId"] as string | undefined) ?? null;
       if (!currentDraftId) currentDraftId = await flushAllAndSave();
@@ -295,18 +288,15 @@ function AuthComponent({
         toast.error("Please save a draft before generating with AI");
         return;
       }
-      socket.emit("auth_generate", {
-        resource_types: resourceTypes,
-        user_instructions: userInstructions ? [userInstructions] : null,
+      generate(resourceTypes, {
         draft_id: currentDraftId,
-        auth_id: authId || null,
+        artifact_id: authId || null,
+        user_instructions: userInstructions ? [userInstructions] : null,
       });
     },
     [
-      socket,
-      isConnected,
       authId,
-      startGenerating,
+      generate,
       formDataRef,
       flushAllAndSave,
     ],

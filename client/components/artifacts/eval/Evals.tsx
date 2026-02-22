@@ -34,6 +34,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { useSocket } from "@/contexts/socket-context";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 import {
   ColumnDef,
@@ -67,10 +68,17 @@ export default function Evals({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { socket, isConnected } = useSocket();
+  const { socket } = useSocket();
 
-  // Generation modal via shared hook
+  // Generation via useArtifactAi hook
   type EvalResourceType = "names" | "descriptions" | "flags" | "departments" | "agents" | "run_positions" | "group_positions" | "run_rubrics" | "group_rubrics";
+
+  const { generate } = useArtifactAi({
+    artifactType: "eval",
+    groupId: null,
+    validResourceTypes: ["names", "descriptions", "flags", "departments", "agents", "run_positions", "group_positions", "run_rubrics", "group_rubrics"],
+  });
+
   const { handleOpenStepCardModal, modalProps } = useGenerationModal<EvalResourceType>({
     stepResources: {
       all: ["names", "descriptions", "flags", "departments", "agents", "run_positions", "group_positions", "run_rubrics", "group_rubrics"],
@@ -88,15 +96,11 @@ export default function Evals({
     },
     canRegenerate: () => true,
     onGenerate: (selectedResources, instructions) => {
-      if (!socket || !isConnected) return;
-      socket.emit("eval_generate", {
-        resource_types: selectedResources,
+      const ok = generate(selectedResources, {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-        eval_id: null,
-        draft_id: null,
         save: true,
       });
-      toast.success("Generation started for new eval");
+      if (ok) toast.success("Generation started for new eval");
     },
     isGenerating: () => false,
   });

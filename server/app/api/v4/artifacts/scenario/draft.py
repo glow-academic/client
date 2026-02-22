@@ -6,6 +6,7 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.scenario.permissions import compute_can_draft
+from app.api.v4.entries.scenario_drafts.refresh import refresh_scenario_drafts_internal
 from app.api.v4.artifacts.scenario.types import (
     PatchScenarioDraftApiRequest,
     PatchScenarioDraftApiResponse,
@@ -100,6 +101,9 @@ async def patch_scenario_draft(
                 else "Draft created successfully",
             }
         )
+
+        # Refresh MV so /auth/drafts can see the new draft immediately
+        await refresh_scenario_drafts_internal(conn)
 
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

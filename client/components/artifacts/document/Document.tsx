@@ -30,8 +30,7 @@ import { Uploads } from "@/components/resources/Uploads";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
-import { useSocket } from "@/contexts/socket-context";
-import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
@@ -172,7 +171,6 @@ function DocumentComponent({
   const isEditMode = mode === "edit" && !!documentId;
   const documentDetail = documentDetailProp ?? documentDetailDefault;
   const { profile } = useProfile();
-  const { socket, isConnected } = useSocket();
   const { isAutosaveEnabled, setSelectedDraftId } = useDrafts();
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<Record<string, unknown>>(FLUSH_KEYS);
@@ -375,7 +373,7 @@ function DocumentComponent({
   });
 
   // AI generation via shared hook
-  const { isGenerating, startGenerating } = useArtifactGeneration({
+  const { isGenerating, generate } = useArtifactAi({
     artifactType: "document",
     groupId: documentDetail?.group_id,
     validResourceTypes: [...VALID_RESOURCE_TYPES],
@@ -386,14 +384,6 @@ function DocumentComponent({
       resourceTypes: ResourceType[],
       userInstructions?: string,
     ) => {
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected");
-        return;
-      }
-
-      // Set all resources as generating
-      startGenerating(resourceTypes);
-
       // Read search params from formData
       const formData = formDataRef.current;
       let currentDraftId = (formData["draftId"] as string | undefined) ?? null;
@@ -405,19 +395,15 @@ function DocumentComponent({
         return;
       }
 
-      // Emit document_generate event with resource_types (gold standard pattern)
-      socket.emit("document_generate", {
-        resource_types: resourceTypes,
-        user_instructions: userInstructions ? [userInstructions] : null,
+      generate(resourceTypes, {
         draft_id: currentDraftId,
-        document_id: documentId || null,
+        artifact_id: documentId || null,
+        user_instructions: userInstructions ? [userInstructions] : null,
       });
     },
     [
-      socket,
-      isConnected,
       documentId,
-      startGenerating,
+      generate,
       flushAllAndSave,
     ],
   );

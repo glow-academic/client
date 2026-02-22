@@ -37,8 +37,7 @@ import { Tools } from "@/components/resources/Tools";
 import { Voices } from "@/components/resources/Voices";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
-import { useSocket } from "@/contexts/socket-context";
-import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
@@ -160,7 +159,6 @@ export default function Agent({
   const router = useRouter();
   const isEditMode = !!agentId;
   const { profile } = useProfile();
-  const { socket, isConnected } = useSocket();
   const { isAutosaveEnabled, selectedDraftId, setSelectedDraftId } = useDrafts();
   const isSuperadmin = true;
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
@@ -890,7 +888,7 @@ export default function Agent({
   );
 
   // AI generation hook
-  const { isGenerating, startGenerating } = useArtifactGeneration({
+  const { isGenerating, generate } = useArtifactAi({
     artifactType: "agent",
     groupId: sectionData?.group_id,
     validResourceTypes: AGENT_VALID_RESOURCE_TYPES,
@@ -906,14 +904,6 @@ export default function Agent({
       resourceTypes: ResourceType[],
       userInstructions?: string,
     ) => {
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected");
-        return;
-      }
-
-      // Set all resources as generating
-      startGenerating(resourceTypes);
-
       let currentDraftId =
         (formDataRef.current["draftId"] as string | undefined) ?? null;
       if (!currentDraftId) currentDraftId = await flushAllAndSave();
@@ -922,20 +912,15 @@ export default function Agent({
         return;
       }
 
-      // Emit agent_generate event
-      socket.emit("agent_generate", {
-        resource_types: resourceTypes,
-        user_instructions: userInstructions ? [userInstructions] : null,
-        agent_id: agentId || null,
+      generate(resourceTypes, {
         draft_id: currentDraftId,
-        mcp: false,
+        artifact_id: agentId || null,
+        user_instructions: userInstructions ? [userInstructions] : null,
       });
     },
     [
-      socket,
-      isConnected,
       agentId,
-      startGenerating,
+      generate,
       formDataRef,
       flushAllAndSave,
     ],

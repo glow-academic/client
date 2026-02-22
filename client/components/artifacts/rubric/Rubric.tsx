@@ -25,9 +25,8 @@ import { Standards } from "@/components/resources/Standards";
 import { StandardGroups } from "@/components/resources/StandardGroups";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import { useSocket } from "@/contexts/socket-context";
 import { useDrafts } from "@/contexts/draft-context";
-import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
@@ -194,12 +193,11 @@ function RubricComponent({
   });
 
   const { profile } = useProfile();
-  const { socket, isConnected } = useSocket();
   const { setSelectedDraftId, isAutosaveEnabled } = useDrafts();
   const { flushRegistryRef, registerFlushCallbacks } =
     useFlushRegistry<Record<string, unknown>>(FLUSH_KEYS);
 
-  const { isGenerating, startGenerating } = useArtifactGeneration({
+  const { isGenerating, generate } = useArtifactAi({
     artifactType: "rubric",
     groupId: s?.group_id,
     validResourceTypes: VALID_RESOURCE_TYPES as string[],
@@ -312,11 +310,6 @@ function RubricComponent({
 
   const handleGenerateResources = useCallback(
     async (resourceTypes: RubricResourceType[], userInstructions?: string) => {
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected");
-        return;
-      }
-      startGenerating(resourceTypes);
       let currentDraftId =
         (formDataRef.current["draftId"] as string | undefined) ?? null;
       if (!currentDraftId) currentDraftId = await flushAllAndSave();
@@ -324,18 +317,15 @@ function RubricComponent({
         toast.error("Please save a draft before generating with AI");
         return;
       }
-      socket.emit("rubric_generate", {
-        resource_types: resourceTypes,
+      generate(resourceTypes, {
         user_instructions: userInstructions ? [userInstructions] : null,
         draft_id: currentDraftId,
-        rubric_id: rubricId || null,
+        artifact_id: rubricId || null,
       });
     },
     [
-      socket,
-      isConnected,
       rubricId,
-      startGenerating,
+      generate,
       formDataRef,
       flushAllAndSave,
     ],

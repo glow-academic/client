@@ -24,7 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
-import { useSocket } from "@/contexts/socket-context";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 
 import type {
@@ -65,11 +65,15 @@ export default function Departments({
   duplicateDepartmentAction,
   deleteDepartmentAction,
 }: DepartmentsProps) {
-  const { socket, isConnected } = useSocket();
   const router = useRouter();
 
   // Generation modal via shared hook
   type DepartmentResourceType = "names" | "descriptions" | "flags" | "settings";
+  const { generate } = useArtifactAi({
+    artifactType: "department",
+    groupId: null,
+    validResourceTypes: ["names", "descriptions", "flags", "settings"],
+  });
   const { handleOpenStepCardModal, modalProps } = useGenerationModal<DepartmentResourceType>({
     stepResources: {
       all: ["names", "descriptions", "flags", "settings"],
@@ -82,15 +86,11 @@ export default function Departments({
     },
     canRegenerate: () => true,
     onGenerate: (selectedResources, instructions) => {
-      if (!socket || !isConnected) return;
-      socket.emit("department_generate", {
-        resource_types: selectedResources,
+      const ok = generate(selectedResources, {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-        department_id: null,
-        draft_id: null,
         save: true,
       });
-      toast.success("Generation started for new department");
+      if (ok) toast.success("Generation started for new department");
     },
     isGenerating: () => false,
   });

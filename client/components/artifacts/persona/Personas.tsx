@@ -52,7 +52,7 @@ import {
 } from "@/components/ui/tooltip";
 import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { useProfile } from "@/contexts/profile-context";
-import { useSocket } from "@/contexts/socket-context";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
 
 // Utility function to generate gradient from hex color
@@ -106,7 +106,6 @@ export default function Personas({
   departmentSearch,
 }: PersonasProps) {
   const { profile } = useProfile();
-  const { socket, isConnected } = useSocket();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -120,6 +119,12 @@ export default function Personas({
 
   // Generation modal via shared hook
   type PersonaResourceType = "names" | "descriptions" | "colors" | "icons" | "instructions" | "flags" | "examples" | "fields" | "departments";
+
+  const { generate } = useArtifactAi({
+    artifactType: "persona",
+    groupId: null,
+    validResourceTypes: ["names", "descriptions", "colors", "icons", "instructions", "flags", "examples", "fields", "departments"],
+  });
 
   const { handleOpenStepCardModal, modalProps } = useGenerationModal<PersonaResourceType>({
     stepResources: {
@@ -138,15 +143,8 @@ export default function Personas({
     },
     canRegenerate: () => true,
     onGenerate: (selectedResources, instructions) => {
-      if (!socket || !isConnected) return;
-      socket.emit("persona_generate", {
-        resource_types: selectedResources,
-        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-        persona_id: null,
-        mcp: false,
-        save: true,
-      });
-      toast.success("Generation started for new persona");
+      const ok = generate(selectedResources, { user_instructions: instructions?.trim() ? [instructions.trim()] : null, save: true });
+      if (ok) toast.success("Generation started for new persona");
     },
     isGenerating: () => false,
   });
