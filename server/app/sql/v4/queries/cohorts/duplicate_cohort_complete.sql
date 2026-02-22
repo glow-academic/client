@@ -119,7 +119,7 @@ link_cohort_active_flag AS (
         NOW()
     FROM new_cohort nc
     CROSS JOIN flags_resource f
-    WHERE f.name = 'cohort_active'
+    WHERE f.type = 'cohort_active'
 ),
 cohort_with_title AS (
     -- Get cohort with title for return (name from names_resource via name_resource_id)

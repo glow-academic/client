@@ -371,8 +371,8 @@ async def get_cohort_internal(
             )
             return (selected, suggestions)
 
-    # Cohort-specific flag names (business logic)
-    COHORT_FLAG_NAMES = {"Active"}
+    # Cohort-specific flag types (business logic)
+    COHORT_FLAG_TYPES = {"cohort_active"}
 
     async def fetch_flags() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
@@ -387,7 +387,7 @@ async def get_cohort_internal(
                 cohort=True,
             )
             # Filter to only cohort-specific flags (business logic in Python)
-            suggestions = [f for f in all_flags if f.name in COHORT_FLAG_NAMES]
+            suggestions = [f for f in all_flags if f.type in COHORT_FLAG_TYPES]
             return (selected, suggestions)
 
     async def fetch_departments() -> tuple[list[Any], list[Any]]:

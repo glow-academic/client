@@ -145,7 +145,7 @@ description_resource_data AS (
 flag_resource_data AS (
     SELECT COALESCE(
         (SELECT df.flags_id FROM cohort_drafts_flags_connection df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-        (SELECT cf.flag_id FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = (SELECT cohort_id FROM params) AND f.name = 'cohort_active' AND cf.value = TRUE LIMIT 1)
+        (SELECT cf.flag_id FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = (SELECT cohort_id FROM params) AND f.type = 'cohort_active' AND cf.value = TRUE LIMIT 1)
     ) as active_flag_id
     FROM params
 ),

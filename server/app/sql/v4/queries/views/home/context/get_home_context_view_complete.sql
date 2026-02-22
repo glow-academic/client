@@ -96,7 +96,7 @@ active_simulations AS (
         FROM simulation_flags_junction sf
         JOIN flags_resource f ON f.id = sf.flag_id
         WHERE sf.simulation_id = sa.id
-          AND f.name = 'simulation_active'
+          AND f.name = 'Active'
           AND sf.value = true
     )
 ),
