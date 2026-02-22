@@ -185,31 +185,31 @@ BEGIN
     IF v_name_id IS NOT NULL THEN
         INSERT INTO cohort_drafts_names_connection (draft_id, names_id, version)
         VALUES (v_draft_id, v_name_id, v_new_version)
-        ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE SET version = v_new_version;
+        ON CONFLICT ON CONSTRAINT cohort_drafts_names_connection_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF v_description_id IS NOT NULL THEN
         INSERT INTO cohort_drafts_descriptions_connection (draft_id, descriptions_id, version)
         VALUES (v_draft_id, v_description_id, v_new_version)
-        ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE SET version = v_new_version;
+        ON CONFLICT ON CONSTRAINT cohort_drafts_descriptions_connection_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF v_active_flag_id IS NOT NULL THEN
         INSERT INTO cohort_drafts_flags_connection (draft_id, flags_id, version)
         VALUES (v_draft_id, v_active_flag_id, v_new_version)
-        ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE SET version = v_new_version;
+        ON CONFLICT ON CONSTRAINT cohort_drafts_flags_connection_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     INSERT INTO cohort_drafts_departments_connection (draft_id, departments_id, version)
     SELECT v_draft_id, dept_id, v_new_version
     FROM UNNEST(v_department_ids) AS dept_id
-    ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE
+    ON CONFLICT ON CONSTRAINT cohort_drafts_departments_connection_pkey DO UPDATE
     SET version = v_new_version;
 
     INSERT INTO cohort_drafts_simulations_connection (draft_id, simulations_id, version)
     SELECT v_draft_id, sim_id, v_new_version
     FROM UNNEST(v_simulation_ids) AS sim_id
-    ON CONFLICT ON CONSTRAINT simulations_draft_pkey DO UPDATE
+    ON CONFLICT ON CONSTRAINT cohort_drafts_simulations_connection_pkey DO UPDATE
     SET version = v_new_version;
 
     INSERT INTO cohort_drafts_simulation_positions_connection (
@@ -224,7 +224,7 @@ BEGIN
         COALESCE(v_simulation_position_values[sim.ordinality], sim.ordinality),
         v_new_version
     FROM UNNEST(v_simulation_position_simulation_ids) WITH ORDINALITY AS sim(simulation_id, ordinality)
-    ON CONFLICT ON CONSTRAINT simulation_positions_draft_pkey DO UPDATE
+    ON CONFLICT ON CONSTRAINT cohort_drafts_simulation_positions_connection_pkey DO UPDATE
     SET value = EXCLUDED.value,
         version = v_new_version;
 
