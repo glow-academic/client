@@ -64,7 +64,7 @@ usage_check AS (
               JOIN flags_resource f ON sfr.flag_id = f.id
               WHERE ssf.simulation_id = ss.simulation_id
                 AND sfr.scenario_id = ss.scenario_id
-                AND f.name = 'scenario_active'
+                AND f.type = 'scenario_active'
                 AND ssf.value = true
           )
     ) + (

@@ -424,7 +424,7 @@ available_resources AS (
                 'description', (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = pa.id LIMIT 1)
              ))
              FROM persona_artifact pa
-             WHERE EXISTS (SELECT 1 FROM persona_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = pa.id AND f.name = 'persona_active' AND pf.value = true)
+             WHERE EXISTS (SELECT 1 FROM persona_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = pa.id AND f.type = 'persona_active' AND pf.value = true)
              LIMIT 20),
             '[]'::jsonb
         ) as personas

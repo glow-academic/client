@@ -62,7 +62,7 @@ cohort_usage AS (
     JOIN flags_resource f ON f.id = cfj.flag_id
     WHERE csj.simulation_id = (SELECT simulation_id FROM params)
       AND csj.active = true
-      AND f.name = 'cohort_active'
+      AND f.type = 'cohort_active'
       AND cfj.value = true
 )
 SELECT

@@ -80,7 +80,7 @@ WHERE pr.id = $1
       SELECT 1 FROM persona_flags_junction pf
       JOIN flags_resource f ON pf.flag_id = f.id
       WHERE pf.persona_id = p.id
-        AND f.name = 'persona_active'
+        AND f.type = 'persona_active'
         AND pf.value = true
   );
 $$;

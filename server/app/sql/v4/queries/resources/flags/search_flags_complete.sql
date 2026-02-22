@@ -51,13 +51,13 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.id, q.name, q.description, q.icon, q.generated)::types.q_get_flags_v4_item
+        (q.id, q.name, q.description, q.icon, q.generated, q.type)::types.q_get_flags_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_flags_v4_item[]
 ) as items
 FROM (
-    SELECT f.id, f.name, f.description, f.icon, COALESCE(f.generated, false) AS generated
+    SELECT f.id, f.name, f.description, f.icon, COALESCE(f.generated, false) AS generated, f.type::text
     FROM flags_resource f
     WHERE (search IS NULL OR search = '' OR LOWER(f.name) LIKE '%' || LOWER(search) || '%')
       AND (exclude_ids IS NULL OR NOT (f.id = ANY(exclude_ids)))

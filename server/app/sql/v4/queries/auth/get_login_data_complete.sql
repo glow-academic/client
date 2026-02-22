@@ -82,7 +82,7 @@ dept_settings AS (
 default_settings AS (
     SELECT s.id as settings_id, EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'guest_login_enabled' AND sf.value = TRUE) as guest_login_enabled
     FROM setting_artifact s
-    WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = true)
+    WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.type = 'scenario_active' AND sf.value = true)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings_junction ds
           WHERE ds.settings_id = s.id AND ds.active = true

@@ -149,7 +149,7 @@ link_persona_active_flag AS (
         NOW()
     FROM new_persona np
     CROSS JOIN flags_resource f
-    WHERE f.name = 'persona_active'
+    WHERE f.type = 'persona_active'
 ),
 copy_departments AS (
     -- Link to existing department IDs from original persona

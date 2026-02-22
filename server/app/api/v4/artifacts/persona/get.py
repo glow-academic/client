@@ -390,7 +390,7 @@ async def get_persona_internal(
                 20,
                 0,
                 effective_group_id,
-                "recent",
+                "all",
                 description_ids,
                 bypass_cache,
                 persona=True,
@@ -440,15 +440,15 @@ async def get_persona_internal(
                 20,
                 0,
                 effective_group_id,
-                "recent",
+                "all",
                 instructions_ids,
                 bypass_cache,
                 persona=True,
             )
             return (selected, suggestions)
 
-    # Persona-specific flag names (business logic)
-    PERSONA_FLAG_NAMES = {"Active"}
+    # Persona-specific flag types (business logic)
+    PERSONA_FLAG_TYPES = {"persona_active"}
 
     async def fetch_flags():
         async with pool.acquire() as c:
@@ -463,7 +463,7 @@ async def get_persona_internal(
                 persona=True,
             )
             # Filter to only persona-specific flags (business logic in Python)
-            suggestions = [f for f in all_flags if f.name in PERSONA_FLAG_NAMES]
+            suggestions = [f for f in all_flags if f.type in PERSONA_FLAG_TYPES]
             return (selected, suggestions)
 
     async def fetch_departments():
@@ -503,7 +503,6 @@ async def get_persona_internal(
     async def fetch_examples():
         async with pool.acquire() as c:
             selected = await get_examples_internal(c, example_ids, bypass_cache)
-            example_source = "all" if persona_id is None else "recent"
             suggestions = await search_examples_internal(
                 c,
                 None,
@@ -512,7 +511,7 @@ async def get_persona_internal(
                 persona_id,
                 user_department_ids,
                 effective_group_id,
-                example_source,
+                "all",
                 example_ids,
                 bypass_cache,
                 persona=True,

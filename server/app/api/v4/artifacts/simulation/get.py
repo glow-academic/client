@@ -361,7 +361,7 @@ async def get_simulation_internal(
             )
             return (selected, suggestions)
 
-    SIMULATION_FLAG_NAMES_ORDERED = ["Active", "Practice"]
+    SIMULATION_FLAG_TYPES_ORDERED = ["simulation_active", "practice"]
 
     async def fetch_flags():
         async with pool.acquire() as c:
@@ -375,11 +375,11 @@ async def get_simulation_internal(
                 bypass_cache=bypass_cache,
                 simulation=True,
             )
-            flags_by_name = {f.name: f for f in all_flags}
+            flags_by_type = {f.type: f for f in all_flags}
             available = [
-                flags_by_name[name]
-                for name in SIMULATION_FLAG_NAMES_ORDERED
-                if name in flags_by_name
+                flags_by_type[t]
+                for t in SIMULATION_FLAG_TYPES_ORDERED
+                if t in flags_by_type
             ]
             return (selected, available)
 

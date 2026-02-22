@@ -62,11 +62,11 @@ source_scenario AS (
 source_flags AS (
     SELECT
         ss.source_id,
-        (SELECT sf.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.name = 'objectives_enabled' LIMIT 1) as objectives_enabled,
-        (SELECT sf.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.name = 'images_enabled' LIMIT 1) as images_enabled,
-        (SELECT sf.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.name = 'video_enabled' LIMIT 1) as video_enabled,
-        (SELECT sf.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.name = 'questions_enabled' LIMIT 1) as questions_enabled,
-        (SELECT sf.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.name = 'problem_statement_enabled' LIMIT 1) as problem_statement_enabled
+        (SELECT sf.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.type = 'objectives_enabled' LIMIT 1) as objectives_enabled,
+        (SELECT sf.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.type = 'images_enabled' LIMIT 1) as images_enabled,
+        (SELECT sf.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.type = 'video_enabled' LIMIT 1) as video_enabled,
+        (SELECT sf.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.type = 'questions_enabled' LIMIT 1) as questions_enabled,
+        (SELECT sf.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.type = 'problem_statement_enabled' LIMIT 1) as problem_statement_enabled
     FROM source_scenario ss
 ),
 -- Get multi-select resource IDs from source

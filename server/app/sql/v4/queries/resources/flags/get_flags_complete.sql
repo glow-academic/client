@@ -54,7 +54,8 @@ CREATE TYPE types.q_get_flags_v4_item AS (
     name text,
     description text,
     icon text,
-    generated boolean
+    generated boolean,
+    type text
 );
 
 -- Create function
@@ -69,7 +70,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_flags_v4_item
+        (f.id, f.name, f.description, f.icon, COALESCE(f.generated, false), f.type::text)::types.q_get_flags_v4_item
         ORDER BY array_position(ids, f.id)
     ),
     ARRAY[]::types.q_get_flags_v4_item[]

@@ -153,11 +153,11 @@ description_agg AS (
 flag_pivot AS (
     SELECT
         ss.chat_id,
-        COALESCE(BOOL_OR(CASE WHEN fr.name = 'video_enabled' THEN sfj.value END), false) AS video_enabled,
-        COALESCE(BOOL_OR(CASE WHEN fr.name = 'problem_statement_enabled' THEN sfj.value END), false) AS problem_statement_enabled,
-        COALESCE(BOOL_OR(CASE WHEN fr.name = 'objectives_enabled' THEN sfj.value END), false) AS objectives_enabled,
-        COALESCE(BOOL_OR(CASE WHEN fr.name = 'images_enabled' THEN sfj.value END), false) AS images_enabled,
-        COALESCE(BOOL_OR(CASE WHEN fr.name = 'questions_enabled' THEN sfj.value END), false) AS questions_enabled
+        COALESCE(BOOL_OR(CASE WHEN fr.type = 'video_enabled' THEN sfj.value END), false) AS video_enabled,
+        COALESCE(BOOL_OR(CASE WHEN fr.type = 'problem_statement_enabled' THEN sfj.value END), false) AS problem_statement_enabled,
+        COALESCE(BOOL_OR(CASE WHEN fr.type = 'objectives_enabled' THEN sfj.value END), false) AS objectives_enabled,
+        COALESCE(BOOL_OR(CASE WHEN fr.type = 'images_enabled' THEN sfj.value END), false) AS images_enabled,
+        COALESCE(BOOL_OR(CASE WHEN fr.type = 'questions_enabled' THEN sfj.value END), false) AS questions_enabled
     FROM scenario_single ss
     JOIN scenario_scenarios_junction ssj
       ON ssj.scenarios_id = ss.scenario_id AND ssj.active = true
@@ -165,7 +165,7 @@ flag_pivot AS (
       ON sfj.scenario_id = ssj.scenario_id AND sfj.active = true
     JOIN flags_resource fr
       ON fr.id = sfj.flag_id
-    WHERE fr.name IN (
+    WHERE fr.type IN (
           'video_enabled',
           'problem_statement_enabled',
           'objectives_enabled',

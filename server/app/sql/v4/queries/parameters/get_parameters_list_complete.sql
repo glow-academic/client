@@ -105,7 +105,7 @@ parameter_active_scenario_links AS (
     JOIN scenarios_resource sr ON pr.id = ANY(sr.parameter_ids)
     JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = sr.id
     JOIN scenario_flags_junction sf ON sf.scenario_id = ssj.scenario_id
-    JOIN flags_resource f ON sf.flag_id = f.id AND f.name = 'scenario_active' AND sf.value = true
+    JOIN flags_resource f ON sf.flag_id = f.id AND f.type = 'scenario_active' AND sf.value = true
     GROUP BY ppj.parameter_id
 ),
 parameter_departments_data AS (

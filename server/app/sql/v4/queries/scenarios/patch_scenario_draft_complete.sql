@@ -103,37 +103,37 @@ BEGIN
     problem_statement_id := (problem_statements).resource_id;
     active_flag_id := (
         SELECT fr.id FROM flags_resource fr
-        WHERE fr.name = 'scenario_active'
+        WHERE fr.type = 'scenario_active'
           AND fr.id = ANY(COALESCE((flags).resource_ids, ARRAY[]::uuid[]))
         LIMIT 1
     );
     objectives_enabled_flag_id := (
         SELECT fr.id FROM flags_resource fr
-        WHERE fr.name = 'scenario_objectives_enabled'
+        WHERE fr.type = 'objectives_enabled'
           AND fr.id = ANY(COALESCE((flags).resource_ids, ARRAY[]::uuid[]))
         LIMIT 1
     );
     images_enabled_flag_id := (
         SELECT fr.id FROM flags_resource fr
-        WHERE fr.name = 'scenario_images_enabled'
+        WHERE fr.type = 'images_enabled'
           AND fr.id = ANY(COALESCE((flags).resource_ids, ARRAY[]::uuid[]))
         LIMIT 1
     );
     video_enabled_flag_id := (
         SELECT fr.id FROM flags_resource fr
-        WHERE fr.name = 'scenario_video_enabled'
+        WHERE fr.type = 'video_enabled'
           AND fr.id = ANY(COALESCE((flags).resource_ids, ARRAY[]::uuid[]))
         LIMIT 1
     );
     questions_enabled_flag_id := (
         SELECT fr.id FROM flags_resource fr
-        WHERE fr.name = 'scenario_questions_enabled'
+        WHERE fr.type = 'questions_enabled'
           AND fr.id = ANY(COALESCE((flags).resource_ids, ARRAY[]::uuid[]))
         LIMIT 1
     );
     problem_statement_enabled_flag_id := (
         SELECT fr.id FROM flags_resource fr
-        WHERE fr.name = 'scenario_problem_statement_enabled'
+        WHERE fr.type = 'problem_statement_enabled'
           AND fr.id = ANY(COALESCE((flags).resource_ids, ARRAY[]::uuid[]))
         LIMIT 1
     );

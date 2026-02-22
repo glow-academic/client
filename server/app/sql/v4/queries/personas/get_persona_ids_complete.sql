@@ -158,7 +158,7 @@ flag_resource_data AS (
          JOIN flags_resource f ON pf.flag_id = f.id
          WHERE pf.persona_id = (SELECT persona_id FROM params)
            AND pf.active = true
-           AND f.name = 'persona_active'
+           AND f.type = 'persona_active'
            AND pf.value = TRUE
          LIMIT 1) as active_flag_id
     FROM params

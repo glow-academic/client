@@ -65,8 +65,8 @@ get_or_create_description AS (
 ),
 get_flag_ids AS (
     SELECT 
-        (SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1) as active_flag_id,
-        (SELECT id FROM flags_resource WHERE name = 'practice' LIMIT 1) as practice_flag_id
+        (SELECT id FROM flags_resource WHERE type = 'active' LIMIT 1) as active_flag_id,
+        (SELECT id FROM flags_resource WHERE type = 'practice' LIMIT 1) as practice_flag_id
 ),
 new_simulation AS (
     INSERT INTO simulation_artifact (

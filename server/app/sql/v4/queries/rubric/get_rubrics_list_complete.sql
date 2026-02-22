@@ -113,7 +113,7 @@ rubric_active_simulation_links AS (
     JOIN simulation_scenario_rubrics_junction ssr ON ssr.simulation_id = ss.simulation_id
     JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
     JOIN simulation_artifact s ON s.id = ss.simulation_id
-    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'scenario_active' AND ssf.value = true) AND EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = true) AND srr.rubric_id IS NOT NULL
+    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.type = 'scenario_active' AND ssf.value = true) AND EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.type = 'scenario_active' AND sf.value = true) AND srr.rubric_id IS NOT NULL
     GROUP BY srr.rubric_id
 ),
 simulation_department_access_for_rubrics AS (
@@ -126,7 +126,7 @@ simulation_department_access_for_rubrics AS (
         END as has_access
     FROM simulation_artifact s
     LEFT JOIN simulation_departments_junction sd ON sd.simulation_id = s.id AND sd.active = true
-    WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = true)
+    WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.type = 'scenario_active' AND sf.value = true)
     GROUP BY s.id
 ),
 rubric_simulations_distinct AS (
@@ -135,10 +135,10 @@ rubric_simulations_distinct AS (
         s.id as simulation_id
     FROM simulation_artifact s
     INNER JOIN simulation_department_access_for_rubrics sdar ON sdar.simulation_id = s.id AND sdar.has_access = true
-    INNER JOIN simulation_scenarios_junction ss ON ss.simulation_id = s.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.name = 'scenario_active' AND ssf.value = true)
+    INNER JOIN simulation_scenarios_junction ss ON ss.simulation_id = s.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.type = 'scenario_active' AND ssf.value = true)
     INNER JOIN simulation_scenario_rubrics_junction ssr ON ssr.simulation_id = ss.simulation_id
     INNER JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
-    WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = true) AND srr.rubric_id IS NOT NULL
+    WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.type = 'scenario_active' AND sf.value = true) AND srr.rubric_id IS NOT NULL
     ORDER BY srr.rubric_id, s.id
 ),
 rubric_simulations_data AS (

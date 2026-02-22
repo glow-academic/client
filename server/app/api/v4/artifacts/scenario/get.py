@@ -491,14 +491,14 @@ async def get_scenario_internal(
             )
             return (selected, suggestions)
 
-    # Scenario-specific flag names (business logic)
-    SCENARIO_FLAG_NAMES = {
-        "Active",
-        "Video",
-        "Problem Statement",
-        "Objectives",
-        "Images",
-        "Questions",
+    # Scenario-specific flag types (business logic)
+    SCENARIO_FLAG_TYPES = {
+        "scenario_active",
+        "video_enabled",
+        "problem_statement_enabled",
+        "objectives_enabled",
+        "images_enabled",
+        "questions_enabled",
     }
 
     async def fetch_all_scenario_flags():
@@ -529,7 +529,7 @@ async def get_scenario_internal(
                 scenario=True,
             )
             # Filter to only scenario-specific flags (business logic in Python)
-            suggestions = [f for f in all_flags if f.name in SCENARIO_FLAG_NAMES]
+            suggestions = [f for f in all_flags if f.type in SCENARIO_FLAG_TYPES]
             return (selected, suggestions)
 
     async def fetch_departments():
@@ -889,10 +889,10 @@ async def get_scenario_internal(
             icon_id=flag.icon,
             flag_option_id=flag.id,
             generated=flag.generated,
-            video_flag=flag.name == "Questions",
+            video_flag=flag.type == "questions_enabled",
         )
         for flag in all_scenario_flags
-        if flag.id and flag.name and flag.name != "scenario_parameter"
+        if flag.id and flag.type and flag.type != "scenario_parameter"
     ]
     scenario_flags.sort(key=lambda f: f.video_flag or False)
 

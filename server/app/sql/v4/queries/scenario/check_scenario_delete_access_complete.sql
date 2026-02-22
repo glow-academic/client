@@ -79,7 +79,7 @@ usage_check AS (
               JOIN flags_resource f ON sfr.flag_id = f.id
               WHERE ssf.simulation_id = ssj_bridge.simulation_id
                 AND sfr.scenario_id = (SELECT scenarios_id FROM scenario_resource)
-                AND f.name = 'scenario_active'
+                AND f.type = 'scenario_active'
                 AND ssf.value = true
           )
     ) + (

@@ -48,7 +48,7 @@ parameter_scenario_links AS (
     LEFT JOIN parameter_fields_resource pfr ON pfr.parameter_id = x.parameter_id AND pfr.active = true
     LEFT JOIN scenario_parameter_fields_junction spf ON spf.parameter_field_id = pfr.id
     LEFT JOIN scenario_flags_junction sf ON sf.scenario_id = spf.scenario_id
-    LEFT JOIN flags_resource f ON sf.flag_id = f.id AND f.name = 'scenario_active' AND sf.value = true
+    LEFT JOIN flags_resource f ON sf.flag_id = f.id AND f.type = 'scenario_active' AND sf.value = true
     WHERE x.parameter_id IS NOT NULL AND f.id IS NOT NULL
 )
 SELECT

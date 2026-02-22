@@ -110,7 +110,7 @@ dept_specific_settings AS (
     JOIN department_settings_junction sd ON sd.settings_id = s.id
     JOIN resolve_department_id rdi ON sd.department_id = rdi.resolved_department_id
     WHERE rdi.resolved_department_id IS NOT NULL
-      AND EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.name = 'scenario_active' AND sf.value = true) 
+      AND EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.type = 'scenario_active' AND sf.value = true) 
       AND sd.active = true
     LIMIT 1
 ),
