@@ -72,6 +72,7 @@ DECLARE
     v_profile_ids uuid[] := COALESCE((profiles).resource_ids, ARRAY[]::uuid[]);
     v_profile_persona_ids uuid[] := COALESCE((profile_personas).resource_ids, ARRAY[]::uuid[]);
 
+    v_user_role text;
     v_cohort_id uuid;
     v_object_department_ids text[];
     v_user_department_ids text[];
@@ -83,6 +84,15 @@ BEGIN
     IF v_group_id IS NULL THEN
         RAISE EXCEPTION 'group_id is required';
     END IF;
+
+    -- Resolve user role from profile
+    SELECT r.role::text INTO v_user_role
+    FROM profile_roles_junction prj
+    JOIN roles_resource r ON r.id = prj.role_id
+    WHERE prj.profile_id = v_profile_id
+      AND prj.active = true
+    LIMIT 1;
+
     IF v_user_role IS NULL THEN
         RAISE EXCEPTION 'User context not found for profile: %', v_profile_id;
     END IF;

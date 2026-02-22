@@ -41,6 +41,7 @@ async def execute_tool_call(
     arguments: dict[str, Any],
     run_id: uuid.UUID | None = None,
     external_call_id: str | None = None,
+    tool_id: uuid.UUID | None = None,
 ) -> str:
     """Execute a tool call and return result as JSON string for model.
 
@@ -53,6 +54,8 @@ async def execute_tool_call(
         tool_name: Name of the tool (e.g., "create_names", "use_names")
         arguments: Tool arguments from the model
         run_id: Optional run ID for linking calls
+        external_call_id: Optional external call ID for tracking
+        tool_id: Optional pre-resolved tool ID to skip name-based DB lookup
 
     Returns:
         JSON string with result:
@@ -60,24 +63,25 @@ async def execute_tool_call(
         - Error: {"success": false, "message": "Error description"}
     """
     try:
-        # Get tool_id by name
-        tool_params = InfraToolsGetToolIdByNameSqlParams(tool_name=tool_name)
-        tool_result = await execute_sql_typed(
-            conn,
-            "app/sql/v4/queries/infrastructure/tools/get_tool_id_by_name_complete.sql",
-            params=tool_params,
-        )
-
-        if not tool_result or not getattr(tool_result, "tool_id", None):
-            return json.dumps(
-                {
-                    "success": False,
-                    "message": f"Tool not found: {tool_name}",
-                    "error_stage": "tool_resolve",
-                }
+        # Use pre-resolved tool_id if available, otherwise fall back to name lookup
+        if tool_id is None:
+            tool_params = InfraToolsGetToolIdByNameSqlParams(tool_name=tool_name)
+            tool_result = await execute_sql_typed(
+                conn,
+                "app/sql/v4/queries/infrastructure/tools/get_tool_id_by_name_complete.sql",
+                params=tool_params,
             )
 
-        tool_id = tool_result.tool_id
+            if not tool_result or not getattr(tool_result, "tool_id", None):
+                return json.dumps(
+                    {
+                        "success": False,
+                        "message": f"Tool not found: {tool_name}",
+                        "error_stage": "tool_resolve",
+                    }
+                )
+
+            tool_id = tool_result.tool_id
 
         # First, check if this is an entry-based tool (has binding with entry type)
         entry_params = InfraToolsGetEntryTypeByToolIdSqlParams(tool_id=tool_id)

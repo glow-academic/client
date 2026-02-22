@@ -85,9 +85,9 @@ async def save_cohort_internal(
             departments=_multi("departments"),
             simulations=_multi("simulations"),
             simulation_positions=_multi("simulation_positions"),
-            simulation_position_values=resource_actions.get(
-                "simulation_position_values"
-            ),
+            simulation_availability=_multi("simulation_availability"),
+            profiles=_multi("profiles"),
+            profile_personas=_multi("profile_personas"),
         )
 
         async with conn.transaction():

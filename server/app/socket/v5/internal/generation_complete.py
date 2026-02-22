@@ -82,10 +82,8 @@ async def handle_run_complete(data: dict[str, Any]) -> None:
             if input_tokens or output_tokens:
                 await conn.execute(
                     """
-                    UPDATE runs_entry
-                    SET input_tokens = COALESCE($2, input_tokens),
-                        output_tokens = COALESCE($3, output_tokens)
-                    WHERE id = $1
+                    INSERT INTO tokens_entry (run_id, input_tokens, output_tokens)
+                    VALUES ($1, COALESCE($2, 0), COALESCE($3, 0))
                     """,
                     uuid.UUID(run_id),
                     input_tokens,

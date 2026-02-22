@@ -423,6 +423,8 @@ async def _generate_artifact_impl(
         responses_tools = None
         # Build output schema lookup: tool_name -> {output_column: argument_name}
         tool_output_schemas: dict[str, dict[str, str]] = {}
+        # Build name -> tool_id lookup from pre-fetched config to avoid redundant DB lookups
+        tool_id_by_name: dict[str, uuid.UUID] = {}
         if data.tools:
             openai_tools = convert_tools_to_openai_format(data.tools)
             responses_tools = convert_tools_to_responses_format(data.tools)
@@ -430,6 +432,14 @@ async def _generate_artifact_impl(
                 if not isinstance(tool_def, dict):
                     continue
                 t_name = tool_def.get("name")
+                t_id = tool_def.get("id")
+                if t_name and t_id:
+                    try:
+                        tool_id_by_name[t_name] = (
+                            t_id if isinstance(t_id, uuid.UUID) else uuid.UUID(str(t_id))
+                        )
+                    except (ValueError, AttributeError):
+                        pass
                 t_args_outputs = tool_def.get("_args_outputs")
                 if t_name and isinstance(t_args_outputs, list):
                     resolved: dict[str, str] = {}
@@ -886,6 +896,7 @@ async def _generate_artifact_impl(
                             arguments=arguments_dict,
                             run_id=uuid.UUID(data.run_id) if data.run_id else None,
                             external_call_id=tool_call_id,
+                            tool_id=tool_id_by_name.get(tool_name),
                         )
 
                     # Parse result for internal tracking
