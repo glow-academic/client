@@ -755,19 +755,18 @@ async def get_cohort_internal(
                     if m is not None
                 }
             )
-            provider_ids = list(
-                {
-                    p
-                    for agent in config_agents_result
-                    for p in [getattr(agent, "provider_id", None)]
-                    if p is not None
-                }
-            )
             if model_ids:
                 async with pool.acquire() as c:
                     config_models_result = await get_models_internal(
                         c, model_ids, bypass_cache
                     )
+            provider_ids = list(
+                dict.fromkeys(
+                    m.provider_id
+                    for m in config_models_result
+                    if getattr(m, "provider_id", None) is not None
+                )
+            )
             if provider_ids:
                 async with pool.acquire() as c:
                     config_providers_result = await get_providers_internal(
