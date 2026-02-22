@@ -13570,6 +13570,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/auth/insights": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Insights
+         * @description Return historical insights for the current page's artifact type.
+         */
+        post: operations["get_insights_api_v4_auth_insights_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/auth/email": {
         parameters: {
             query?: never;
@@ -28558,6 +28578,14 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
+        /**
+         * GetInsightsApiResponse
+         * @description Response model for /auth/insights endpoint.
+         */
+        GetInsightsApiResponse: {
+            /** Insights */
+            insights?: components["schemas"]["InsightItem"][] | null;
+        };
         /** GetInstructionsApiRequest */
         GetInstructionsApiRequest: {
             /** Ids */
@@ -31554,6 +31582,20 @@ export interface components {
             updated_at?: string | null;
             /** Call Id */
             call_id?: string | null;
+        };
+        /**
+         * InsightItem
+         * @description A single historical insight entry.
+         */
+        InsightItem: {
+            /** Id */
+            id?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Content */
+            content?: string | null;
         };
         /** InstructionsApiRequest */
         InstructionsApiRequest: {
@@ -74243,6 +74285,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_insights_api_v4_auth_insights_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetInsightsApiResponse"];
                 };
             };
             /** @description Validation Error */

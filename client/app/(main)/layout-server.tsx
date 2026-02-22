@@ -18,6 +18,8 @@ type AuthPageIn = InputOf<"/api/v4/auth/page", "post">;
 type AuthPageOut = OutputOf<"/api/v4/auth/page", "post">;
 type DraftsIn = InputOf<"/api/v4/auth/drafts", "post">;
 type DraftsOut = OutputOf<"/api/v4/auth/drafts", "post">;
+type InsightsIn = InputOf<"/api/v4/auth/insights", "post">;
+type InsightsOut = OutputOf<"/api/v4/auth/insights", "post">;
 type AnalyticsFiltersOut = OutputOf<"/api/v4/auth/analytics", "post">;
 type CreateEmulationGrantIn = InputOf<"/api/v4/auth/emulate", "post">;
 type CreateEmulationGrantOut = OutputOf<"/api/v4/auth/emulate", "post">;
@@ -88,6 +90,14 @@ export const getDrafts = cache(
   }
 );
 
+/** ---- Cached insights fetch (parallel with context) ---- */
+export const getInsights = cache(
+  async (): Promise<InsightsOut> => {
+    const extraHeaders = await buildAuthHeaders();
+    return api.post("/auth/insights", { body: {} } as InsightsIn, { headers: extraHeaders });
+  }
+);
+
 /** ---- Cached analytics filters fetch (parallel with context) ---- */
 export const getAnalyticsFilters = cache(
   async (): Promise<AnalyticsFiltersOut | null> => {
@@ -120,6 +130,7 @@ export const getAuthAttempt = cache(
 
 /** ---- Export type for client (type-only imports) ---- */
 export type DraftsResponse = DraftsOut;
+export type InsightsResponse = InsightsOut;
 export type AnalyticsFiltersResponse = AnalyticsFiltersOut;
 
 /** ---- Helper to get validated profile ID (reusable for API calls) ----
@@ -179,15 +190,17 @@ export async function getLayoutContextData(session?: Session | null) {
   let settingsData: AuthSettingsOut | null = null;
   let pageData: AuthPageOut | null = null;
   let draftsResult: DraftsOut | null = null;
+  let insightsResult: InsightsOut | null = null;
   let analyticsFilters: AnalyticsFiltersOut | null = null;
   let attemptControls: AuthAttemptOut | null = null;
 
   try {
-    const [profileRes, settingsRes, pageRes, draftsRes, filtersRes, attemptRes] = await Promise.all([
+    const [profileRes, settingsRes, pageRes, draftsRes, insightsRes, filtersRes, attemptRes] = await Promise.all([
       getAuthProfile(),
       getAuthSettings(),
       getAuthPage(),
       getDrafts(),
+      getInsights(),
       getAnalyticsFilters(),
       getAuthAttempt(),
     ]);
@@ -195,6 +208,7 @@ export async function getLayoutContextData(session?: Session | null) {
     settingsData = settingsRes;
     pageData = pageRes;
     draftsResult = draftsRes;
+    insightsResult = insightsRes;
     analyticsFilters = filtersRes;
     attemptControls = attemptRes;
   } catch {
@@ -206,6 +220,7 @@ export async function getLayoutContextData(session?: Session | null) {
       snapshot,
       attemptControls: null,
       drafts: [],
+      insights: [],
       analyticsFilters: null,
     };
   }
@@ -219,6 +234,7 @@ export async function getLayoutContextData(session?: Session | null) {
       snapshot,
       attemptControls: null,
       drafts: [],
+      insights: [],
       analyticsFilters: null,
     };
   }
@@ -230,6 +246,7 @@ export async function getLayoutContextData(session?: Session | null) {
     snapshot,
     attemptControls,
     drafts: draftsResult?.drafts ?? [],
+    insights: insightsResult?.insights ?? [],
     analyticsFilters,
   };
 }

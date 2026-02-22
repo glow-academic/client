@@ -803,7 +803,7 @@ def compute_page_metadata(
     for sp in ROUTE_PERMISSIONS:
         for rp in sp.routes:
             if _match_route_pattern(rp.path, pathname):
-                artifact_type = rp.artifact_type
+                artifact_type = rp.artifact_type or rp.artifact
                 if is_list and rp.create_label and section in _CORE_ARTIFACT_SECTIONS:
                     create_label = rp.create_label
                     # Check if the /new route is available in user's routes
@@ -817,7 +817,8 @@ def compute_page_metadata(
             break
 
     # Derive artifact_type from pathname if not found in route config
-    if not artifact_type and (is_detail or is_create):
+    if not artifact_type and (is_list or is_detail or is_create):
+        # e.g., /training/personas → "persona"
         # e.g., /training/personas/[id] → "persona"
         # e.g., /management/staff/[id] → "profile"
         subsection_map = {

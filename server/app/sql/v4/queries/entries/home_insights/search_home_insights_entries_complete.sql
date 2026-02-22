@@ -24,6 +24,7 @@ CREATE OR REPLACE FUNCTION public.api_search_home_insights_entries_v4(
 )
 LANGUAGE plpgsql STABLE
 AS $$
+#variable_conflict use_variable
 BEGIN
     RETURN QUERY
     SELECT jsonb_agg(row_data) AS items

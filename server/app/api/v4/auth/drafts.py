@@ -8,6 +8,7 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request
 
+from app.api.v4.auth.route_permissions import compute_page_metadata
 from app.api.v4.auth.types import GetDraftsApiResponse, QGetProfileContextV4Draft
 from app.api.v4.entries.agent_drafts.get import get_agent_drafts_entries_internal
 from app.api.v4.entries.auth_drafts.get import get_auth_drafts_entries_internal
@@ -33,7 +34,6 @@ from app.api.v4.entries.simulation_drafts.get import (
 )
 from app.api.v4.entries.tool_drafts.get import get_tool_drafts_entries_internal
 from app.api.v4.entries.training_drafts.get import get_training_drafts_entries_internal
-from app.api.v4.auth.route_permissions import compute_page_metadata
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 

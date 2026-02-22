@@ -6,7 +6,6 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.scenario.permissions import compute_can_draft
-from app.api.v4.entries.scenario_drafts.refresh import refresh_scenario_drafts_internal
 from app.api.v4.artifacts.scenario.types import (
     PatchScenarioDraftApiRequest,
     PatchScenarioDraftApiResponse,
@@ -14,6 +13,7 @@ from app.api.v4.artifacts.scenario.types import (
     PatchScenarioDraftSqlRow,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
+from app.api.v4.entries.scenario_drafts.refresh import refresh_scenario_drafts_internal
 from app.infra.v4.activity.audit import audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool

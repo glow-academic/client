@@ -15,6 +15,7 @@ import React, { useEffect, useMemo } from "react";
 
 import { SimulationControls } from "@/components/artifacts/attempt/chat/SimulationControls";
 import { FullPageGenerateButton } from "@/components/common/drafts/FullPageGenerateButton";
+import { InsightsButton } from "@/components/common/insights/InsightsButton";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
@@ -24,6 +25,10 @@ import {
   DraftProviderClient,
   type DraftItem,
 } from "@/contexts/draft-context";
+import {
+  InsightsProviderClient,
+  type InsightItem,
+} from "@/contexts/insights-context";
 import { ProfileProviderClient } from "@/contexts/profile-context";
 import { SettingsProviderClient } from "@/contexts/settings-context";
 import { SocketProviderClient } from "@/contexts/socket-context";
@@ -68,6 +73,18 @@ function MainLayoutContent({
   const pathname = usePathname() || "/";
 
   const router = useRouter();
+
+  // Force layout server component to re-render when pathname changes.
+  // Without this, pageData (breadcrumbs, action buttons, drafts) goes stale
+  // on soft navigation because Next.js reuses cached layout RSC payloads.
+  const prevPathnameRef = React.useRef(pathname);
+  useEffect(() => {
+    if (prevPathnameRef.current !== pathname) {
+      prevPathnameRef.current = pathname;
+      router.refresh();
+    }
+  }, [pathname, router]);
+
   const serverBreadcrumbs = pageData?.breadcrumbs ?? null;
   const pageMetadata = pageData?.page_metadata ?? null;
   // Use server-driven breadcrumbs, falling back to empty array
@@ -168,6 +185,7 @@ function MainLayoutContent({
               </div>
             ) : (
               <>
+                <InsightsButton artifactType={artifactType} />
                 <FullPageGenerateButton artifactType={artifactType} />
                 {showDrafts && artifactType ? (
                   <SaveToolbar artifactType={artifactType} />
@@ -195,6 +213,7 @@ export function MainLayoutClient({
   sessionSnapshot,
   attemptControls,
   drafts,
+  insights,
   analyticsFilters,
   initialAutosave,
   switchEffectiveProfileAction,
@@ -209,6 +228,7 @@ export function MainLayoutClient({
   sessionSnapshot: SafeSessionSnapshot;
   attemptControls: AuthAttemptOut | null;
   drafts: DraftItem[];
+  insights: InsightItem[];
   analyticsFilters: AnalyticsFiltersResponse | null;
   /** Initial autosave preference from SSR cookie */
   initialAutosave?: boolean;
@@ -258,26 +278,28 @@ export function MainLayoutClient({
         sessionId={profileData?.session_id ?? null}
       >
         <DraftProviderClient drafts={drafts} initialAutosave={initialAutosave}>
-          <ProfileProviderClient
-            initial={profileData}
-            sessionSnapshot={sessionSnapshot}
-            analyticsFilters={analyticsFilters}
-          >
-            <SettingsProviderClient settings={settingsData}>
-              <MainLayoutContent
-                pageData={pageData}
-                attemptControls={attemptControls}
-                switchEffectiveProfileAction={switchEffectiveProfileAction}
-                createFeedbackAction={createFeedbackAction}
-                refreshPageAction={refreshPageAction}
-                searchSimulatableProfilesAction={
-                  searchSimulatableProfilesAction
-                }
-              >
-                {children}
-              </MainLayoutContent>
-            </SettingsProviderClient>
-          </ProfileProviderClient>
+          <InsightsProviderClient insights={insights}>
+            <ProfileProviderClient
+              initial={profileData}
+              sessionSnapshot={sessionSnapshot}
+              analyticsFilters={analyticsFilters}
+            >
+              <SettingsProviderClient settings={settingsData}>
+                <MainLayoutContent
+                  pageData={pageData}
+                  attemptControls={attemptControls}
+                  switchEffectiveProfileAction={switchEffectiveProfileAction}
+                  createFeedbackAction={createFeedbackAction}
+                  refreshPageAction={refreshPageAction}
+                  searchSimulatableProfilesAction={
+                    searchSimulatableProfilesAction
+                  }
+                >
+                  {children}
+                </MainLayoutContent>
+              </SettingsProviderClient>
+            </ProfileProviderClient>
+          </InsightsProviderClient>
         </DraftProviderClient>
       </SocketProviderClient>
     </>

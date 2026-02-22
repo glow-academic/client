@@ -9,6 +9,7 @@ from app.api.v4.auth.decrypt import router as decrypt_router
 from app.api.v4.auth.drafts import router as drafts_router
 from app.api.v4.auth.email import router as email_router
 from app.api.v4.auth.emulate import router as emulate_router
+from app.api.v4.auth.insights import router as insights_router
 from app.api.v4.auth.login import router as login_router
 from app.api.v4.auth.page import router as page_router
 from app.api.v4.auth.profile import router as profile_router
@@ -26,6 +27,7 @@ router.include_router(settings_router)
 router.include_router(page_router)
 router.include_router(analytics_router)
 router.include_router(drafts_router)
+router.include_router(insights_router)
 router.include_router(email_router)
 router.include_router(upsert_router)
 router.include_router(simulatable_router)

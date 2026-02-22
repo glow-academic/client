@@ -185,6 +185,21 @@ class GetDraftsApiResponse(BaseModel):
     drafts: list[QGetProfileContextV4Draft] | None = None
 
 
+class InsightItem(BaseModel):
+    """A single historical insight entry."""
+
+    id: str | None = None
+    created_at: str | None = None
+    group_id: str | None = None
+    content: str | None = None
+
+
+class GetInsightsApiResponse(BaseModel):
+    """Response model for /auth/insights endpoint."""
+
+    insights: list[InsightItem] | None = None
+
+
 # ---------------------------------------------------------------------------
 # Analytics filters types
 # ---------------------------------------------------------------------------
