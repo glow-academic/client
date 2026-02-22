@@ -144,7 +144,7 @@ const COHORT_RESOURCES: ResourceConfig[] = [
   },
   {
     key: "simulation_positions",
-    formKey: "simulation_ids",
+    formKey: "simulation_position_ids",
     flushKey: null,
     type: "multi",
   },
@@ -459,15 +459,6 @@ function CohortComponent({
           >,
           flushResults: (flushResults ?? {}) as Record<string, unknown>,
         }),
-        simulation_position_values:
-          currentFormState.simulation_positions.length > 0
-            ? currentFormState.simulation_ids.map(
-                (simulationId, index) =>
-                  currentFormState.simulation_positions.find(
-                    (position) => position.simulation_id === simulationId,
-                  )?.value ?? index + 1,
-              )
-            : null,
         expected_version: expectedVersion,
       };
     },

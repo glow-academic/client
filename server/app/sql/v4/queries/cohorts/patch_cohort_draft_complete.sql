@@ -46,7 +46,6 @@ CREATE OR REPLACE FUNCTION api_patch_cohort_draft_v4(
     departments types.cohort_multi_resource_action DEFAULT NULL,
     simulations types.cohort_multi_resource_action DEFAULT NULL,
     simulation_positions types.cohort_multi_resource_action DEFAULT NULL,
-    simulation_position_values integer[] DEFAULT NULL,
     expected_version int DEFAULT 0
 )
 RETURNS TABLE (
@@ -71,12 +70,10 @@ DECLARE
     v_active_flag_id uuid := (flags).resource_id;
     v_department_ids uuid[] := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
     v_simulation_ids uuid[] := COALESCE((simulations).resource_ids, ARRAY[]::uuid[]);
-    v_simulation_position_simulation_ids uuid[] := COALESCE((simulation_positions).resource_ids, COALESCE((simulations).resource_ids, ARRAY[]::uuid[]));
-    v_simulation_position_values integer[] := COALESCE(simulation_position_values, ARRAY[]::int[]);
+    v_simulation_position_ids uuid[] := COALESCE((simulation_positions).resource_ids, ARRAY[]::uuid[]);
 
     v_run_id uuid;
     v_call_id uuid;
-    v_simulation_position_ids uuid[] := ARRAY[]::uuid[];
 BEGIN
     SELECT pp.profiles_id INTO v_profile_resource_id
     FROM profile_profiles_junction pp
@@ -212,33 +209,19 @@ BEGIN
     ON CONFLICT ON CONSTRAINT cohort_drafts_simulations_connection_pkey DO UPDATE
     SET version = v_new_version;
 
-    INSERT INTO cohort_drafts_simulation_positions_connection (
-        draft_id,
-        simulation_id,
-        value,
-        version
-    )
-    SELECT
-        v_draft_id,
-        sim.simulation_id,
-        COALESCE(v_simulation_position_values[sim.ordinality], sim.ordinality),
-        v_new_version
-    FROM UNNEST(v_simulation_position_simulation_ids) WITH ORDINALITY AS sim(simulation_id, ordinality)
+    INSERT INTO cohort_drafts_simulation_positions_connection (draft_id, simulation_positions_id, version)
+    SELECT v_draft_id, spid, v_new_version
+    FROM UNNEST(v_simulation_position_ids) AS spid
     ON CONFLICT ON CONSTRAINT cohort_drafts_simulation_positions_connection_pkey DO UPDATE
-    SET value = EXCLUDED.value,
-        version = v_new_version;
+    SET version = v_new_version;
 
-    SELECT COALESCE(
-        ARRAY_AGG(DISTINCT spr.id),
-        ARRAY[]::uuid[]
-    )
-    INTO v_simulation_position_ids
-    FROM simulation_positions_resource spr
-    WHERE spr.simulation_id = ANY(v_simulation_position_simulation_ids)
-      AND (
-          COALESCE(array_length(v_simulation_position_values, 1), 0) = 0
-          OR spr.value = ANY(v_simulation_position_values)
-      );
+    IF EXISTS (
+        SELECT 1
+        FROM unnest(v_simulation_position_ids) AS sp_id
+        WHERE NOT EXISTS (SELECT 1 FROM simulation_positions_resource spr WHERE spr.id = sp_id)
+    ) THEN
+        RAISE EXCEPTION 'Simulation position resource not found';
+    END IF;
 
     IF (
         (names).create_tool_id IS NOT NULL OR (names).link_tool_id IS NOT NULL OR

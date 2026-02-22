@@ -34505,8 +34505,6 @@ export interface components {
             simulation_ids?: string[] | null;
             /** Simulation Position Ids */
             simulation_position_ids?: string[] | null;
-            /** Simulation Position Values */
-            simulation_position_values?: number[] | null;
             /**
              * Expected Version
              * @default 0

@@ -45,7 +45,7 @@ WITH position_data AS (
         COALESCE(spr.generated, false) as generated,
         COALESCE(spr.mcp, false) as mcp
     FROM simulation_positions_resource spr
-    WHERE spr.id = ANY(simulation_ids)
+    WHERE spr.simulation_id = ANY(simulation_ids)
 )
 SELECT
     COALESCE(

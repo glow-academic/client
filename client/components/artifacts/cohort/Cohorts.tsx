@@ -484,7 +484,7 @@ export default function Cohorts({
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <CardTitle className="text-lg">{cohort.name}</CardTitle>
-            {!cohort.active && (
+            {cohort.is_inactive && (
               <div className="mt-1 flex items-center gap-2">
                 <Badge variant="secondary">Inactive</Badge>
               </div>

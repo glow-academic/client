@@ -289,12 +289,12 @@ export function Scenarios({
   const columns: ColumnDef<(typeof scenarios)[number]>[] = useMemo(() => {
     return [
       {
-        accessorKey: "title",
+        accessorKey: "name",
         header: "Title",
         cell: ({ row }) => {
           return (
             <div className="font-medium">
-              {row.original.title || "Unnamed Scenario"}
+              {row.original.name || "Unnamed Scenario"}
             </div>
           );
         },
@@ -648,12 +648,10 @@ export function Scenarios({
                 </Button>
               )}
               <CardTitle className="text-lg flex-1 min-w-0 truncate">
-                {scenario.title || "Unnamed Scenario"}
+                {scenario.name || "Unnamed Scenario"}
               </CardTitle>
               <div className="flex gap-1 flex-wrap flex-shrink-0">
-                {!scenario.generated &&
-                  !(scenario.department_ids?.length === 0) &&
-                  !scenario.active && (
+                {scenario.is_inactive && (
                     <Badge variant="secondary">Inactive</Badge>
                   )}
               </div>
@@ -692,7 +690,7 @@ export function Scenarios({
                           scenario.scenario_id &&
                           handleDuplicate(
                             scenario.scenario_id,
-                            scenario.title || "Unnamed Scenario"
+                            scenario.name || "Unnamed Scenario"
                           )
                         }
                         disabled={
@@ -770,7 +768,7 @@ export function Scenarios({
                           scenario.scenario_id &&
                           handleDuplicate(
                             scenario.scenario_id,
-                            scenario.title || "Unnamed Scenario"
+                            scenario.name || "Unnamed Scenario"
                           )
                         }
                         disabled={
@@ -806,7 +804,7 @@ export function Scenarios({
                           scenario.scenario_id &&
                           handleDeleteClick(
                             scenario.scenario_id,
-                            scenario.title || "Unnamed Scenario"
+                            scenario.name || "Unnamed Scenario"
                           )
                         }
                         className="h-9 px-3"

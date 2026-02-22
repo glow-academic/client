@@ -2673,7 +2673,6 @@ class PatchCohortDraftSqlParams(BaseModel):
     departments: CohortMultiResourceAction | None = None
     simulations: CohortMultiResourceAction | None = None
     simulation_positions: CohortMultiResourceAction | None = None
-    simulation_position_values: list[int] | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -2687,7 +2686,6 @@ class PatchCohortDraftSqlParams(BaseModel):
             self.departments,
             self.simulations,
             self.simulation_positions,
-            self.simulation_position_values,
             self.expected_version,
         )
 
@@ -2707,7 +2705,6 @@ class PatchCohortDraftApiRequest(BaseModel):
     departments: CohortMultiResourceAction | None = None
     simulations: CohortMultiResourceAction | None = None
     simulation_positions: CohortMultiResourceAction | None = None
-    simulation_position_values: list[int] | None = None
     expected_version: int | None = 0
 
 class PatchCohortDraftApiResponse(BaseModel):

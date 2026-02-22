@@ -503,7 +503,7 @@ export function Simulations({
               {simulation.name}
             </CardTitle>
             <div className="mt-1 flex flex-wrap items-center gap-2">
-              {!simulation.active && (
+              {simulation.is_inactive && (
                 <Badge variant="secondary">Inactive</Badge>
               )}
               {simulation.practice_simulation && (

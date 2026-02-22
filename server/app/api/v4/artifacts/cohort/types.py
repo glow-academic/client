@@ -432,7 +432,6 @@ class PatchCohortDraftApiRequest(BaseModel):
     department_ids: list[UUID] | None = None
     simulation_ids: list[UUID] | None = None
     simulation_position_ids: list[UUID] | None = None
-    simulation_position_values: list[int] | None = None
     expected_version: int | None = 0
 
 
@@ -456,7 +455,6 @@ class PatchCohortDraftSqlParams(BaseModel):
     departments: "CohortMultiResourceAction | None" = None
     simulations: "CohortMultiResourceAction | None" = None
     simulation_positions: "CohortMultiResourceAction | None" = None
-    simulation_position_values: list[int] | None = None
     expected_version: int | None = 0
 
     @classmethod
@@ -475,7 +473,6 @@ class PatchCohortDraftSqlParams(BaseModel):
             simulation_positions=CohortMultiResourceAction(
                 resource_ids=request.simulation_position_ids
             ),
-            simulation_position_values=request.simulation_position_values,
             expected_version=request.expected_version,
         )
 
@@ -500,7 +497,6 @@ class PatchCohortDraftSqlParams(BaseModel):
             multi(self.departments),
             multi(self.simulations),
             multi(self.simulation_positions),
-            self.simulation_position_values,
             self.expected_version,
         )
 
