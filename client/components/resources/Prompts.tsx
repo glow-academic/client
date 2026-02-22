@@ -412,7 +412,7 @@ export function Prompts({
   const MarkdownRenderer = dynamic(
     () =>
       import(
-        "@/components/artifacts/attempt/chat/markdown/Markdown"
+        "@/components/common/markdown/Markdown"
       ).then((mod) => ({
         default: ({ content }: { content: string }) => (
           <mod.default>{content}</mod.default>

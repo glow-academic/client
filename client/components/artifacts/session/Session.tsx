@@ -1,5 +1,5 @@
 /**
- * SessionTimeline.tsx
+ * Session.tsx
  * Chat-style timeline interleaving audits and pricing groups chronologically.
  * @AshokSaravanan222
  * 02/06/2026
@@ -23,7 +23,7 @@ import { AlertCircle, Layers, ScrollText } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
 
-export interface SessionTimelineProps {
+export interface SessionProps {
   sessionDetail: SessionDetailOut;
 }
 
@@ -68,9 +68,9 @@ const formatCost = (cost: string): string => {
   return `$${num.toFixed(6)}`;
 };
 
-export default function SessionTimeline({
+export default function Session({
   sessionDetail,
-}: SessionTimelineProps) {
+}: SessionProps) {
   const audits = (sessionDetail.audits ?? []) as AuditItem[];
   const groups = (sessionDetail.groups ?? []) as GroupItem[];
 

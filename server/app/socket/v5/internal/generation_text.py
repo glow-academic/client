@@ -42,7 +42,6 @@ async def handle_text_complete(data: dict[str, Any]) -> None:
                 "assistant",
                 final_content,
                 True,
-                False,
             )
     except Exception as e:
         logger.exception(f"Failed to save text_complete message: {e}")

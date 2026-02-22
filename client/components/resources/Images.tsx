@@ -7,7 +7,7 @@
 
 "use client";
 
-import ImageViewer from "@/components/artifacts/attempt/chat/viewers/ImageViewer";
+import ImageViewer from "@/components/common/viewers/ImageViewer";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";

@@ -13,7 +13,7 @@ import { Plus } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useEffect, useMemo } from "react";
 
-import { SimulationControls } from "@/components/artifacts/attempt/chat/SimulationControls";
+import { SimulationControls } from "@/components/common/SimulationControls";
 import { FullPageGenerateButton } from "@/components/common/drafts/FullPageGenerateButton";
 import { InsightsButton } from "@/components/common/insights/InsightsButton";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";

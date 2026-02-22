@@ -5,7 +5,7 @@
  * 02/2025
  */
 
-import EvalAttemptStatus from "@/components/artifacts/benchmark/EvalAttemptStatus";
+import Test from "@/components/artifacts/test/Test";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -61,7 +61,7 @@ export default async function TestPage({
 
     return (
       <div className="space-y-6">
-        <EvalAttemptStatus
+        <Test
           attemptId={testId}
           attemptData={testData}
         />

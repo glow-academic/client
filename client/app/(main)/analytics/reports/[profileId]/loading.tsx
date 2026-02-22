@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
  */
-import { HistorySkeleton } from "@/components/artifacts/attempt/history/SimulationHistory";
+import { HistorySkeleton } from "@/components/common/SimulationHistory";
 import FooterSkeleton from "@/components/artifacts/dashboard/skeletons/FooterSkeleton";
 import HeaderSkeleton from "@/components/artifacts/dashboard/skeletons/HeaderSkeleton";
 import PrimarySkeleton from "@/components/artifacts/dashboard/skeletons/PrimarySkeleton";

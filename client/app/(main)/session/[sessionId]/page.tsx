@@ -6,7 +6,7 @@
  */
 
 import { getSession } from "@/auth";
-import SessionTimeline from "@/components/artifacts/activity/SessionTimeline";
+import Session from "@/components/artifacts/session/Session";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -77,7 +77,7 @@ export default async function SessionDetailPage({
 
   return (
     <div className="space-y-6 max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col">
-      <SessionTimeline sessionDetail={sessionDetail} />
+      <Session sessionDetail={sessionDetail} />
     </div>
   );
 }

@@ -77,7 +77,6 @@ async def handle_run_complete(data: dict[str, Any]) -> None:
                         "assistant",
                         assistant_output,
                         True,
-                        False,
                     )
 
             if input_tokens or output_tokens:

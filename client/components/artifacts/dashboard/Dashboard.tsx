@@ -10,7 +10,7 @@ import DashboardHeader from "./DashboardHeader";
 import DashboardPrimary from "./DashboardPrimary";
 import DashboardSecondary from "./DashboardSecondary";
 import DashboardFooter from "./DashboardFooter";
-import SimulationHistory from "@/components/artifacts/attempt/history/SimulationHistory";
+import SimulationHistory from "@/components/common/SimulationHistory";
 import { InsightsModal } from "@/components/common/insights/InsightsModal";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useInsightsModal } from "@/hooks/use-insights-modal";

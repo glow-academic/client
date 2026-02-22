@@ -488,7 +488,6 @@ async def generate_handler(data: dict[str, Any]) -> None:
                     "system",
                     system_prompt,
                     True,
-                    False,
                 )
 
             for m in rendered_developer_messages:
@@ -499,7 +498,6 @@ async def generate_handler(data: dict[str, Any]) -> None:
                     "developer",
                     m,
                     True,
-                    False,
                 )
 
             if payload.extra_messages:
@@ -515,7 +513,6 @@ async def generate_handler(data: dict[str, Any]) -> None:
                         "user",
                         instruction,
                         True,
-                        False,
                     )
 
             # Step 14: Initialize generation tracker

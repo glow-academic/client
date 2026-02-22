@@ -21,7 +21,7 @@ type GetBenchmarkBundleOut = OutputOf<
   "/api/v4/artifacts/invocation/get",
   "post"
 >;
-export type BenchmarkBundleData = GetBenchmarkBundleOut;
+export type InvocationData = GetBenchmarkBundleOut;
 type PatchBenchmarkBundleDraftIn = InputOf<
   "/api/v4/artifacts/invocation/draft",
   "patch"
@@ -53,7 +53,7 @@ function extractIds<T>(
     .filter((id): id is string => !!id);
 }
 
-interface BenchmarkBundleProps {
+interface InvocationProps {
   bundleData: GetBenchmarkBundleOut;
   testId: string;
   patchBenchmarkDraftAction: (
@@ -61,11 +61,11 @@ interface BenchmarkBundleProps {
   ) => Promise<PatchBenchmarkBundleDraftOut>;
 }
 
-export default function BenchmarkBundle({
+export default function Invocation({
   bundleData,
   testId,
   patchBenchmarkDraftAction,
-}: BenchmarkBundleProps) {
+}: InvocationProps) {
   const router = useRouter();
   const s = bundleData;
 

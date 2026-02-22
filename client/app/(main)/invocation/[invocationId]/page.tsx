@@ -5,9 +5,9 @@
  * 02/2025
  */
 
-import BenchmarkBundle, {
-  type BenchmarkBundleData,
-} from "@/components/artifacts/benchmark/BenchmarkBundle";
+import Invocation, {
+  type InvocationData,
+} from "@/components/artifacts/invocation/Invocation";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -89,8 +89,8 @@ export default async function InvocationPage({
   const bundleData = await getBenchmarkBundle(invocationId, draftId);
 
   return (
-    <BenchmarkBundle
-      bundleData={bundleData as BenchmarkBundleData}
+    <Invocation
+      bundleData={bundleData as InvocationData}
       testId={testId ?? ""}
       patchBenchmarkDraftAction={patchBenchmarkDraft}
     />

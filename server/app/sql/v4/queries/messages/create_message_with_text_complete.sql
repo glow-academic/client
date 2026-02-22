@@ -27,7 +27,6 @@ new_message AS (
         run_id,
         role,
         text_id,
-        audio,
         created_at,
         updated_at
     )
@@ -35,7 +34,6 @@ new_message AS (
         $1::uuid,
         $2::message_type,
         rt.id,
-        COALESCE($5::boolean, FALSE),
         NOW(),
         NOW()
     FROM resolved_text rt

@@ -22,7 +22,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import DocumentViewer from "@/components/artifacts/attempt/chat/viewers/DocumentViewer";
+import DocumentViewer from "@/components/common/viewers/DocumentViewer";
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
 import {
   AlertDialog,

@@ -6,7 +6,7 @@ import DashboardHeader from "@/components/artifacts/dashboard/DashboardHeader";
 import DashboardPrimary from "@/components/artifacts/dashboard/DashboardPrimary";
 import DashboardSecondary from "@/components/artifacts/dashboard/DashboardSecondary";
 import DashboardFooter from "@/components/artifacts/dashboard/DashboardFooter";
-import SimulationHistory from "@/components/artifacts/attempt/history/SimulationHistory";
+import SimulationHistory from "@/components/common/SimulationHistory";
 import ProfileHeader from "@/components/artifacts/reports/ProfileHeader";
 import { InsightsModal } from "@/components/common/insights/InsightsModal";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";

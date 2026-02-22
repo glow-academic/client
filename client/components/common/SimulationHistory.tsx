@@ -70,7 +70,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
-import { SingleProfileCertificateButton } from "./SingleProfileCertificateButton";
+import { SingleProfileCertificateButton } from "@/components/artifacts/attempt/history/SingleProfileCertificateButton";
 
 // Use strong server types directly
 import type { components } from "@/lib/api/schema";

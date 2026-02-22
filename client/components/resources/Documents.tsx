@@ -9,7 +9,7 @@
 
 import DocumentViewer, {
   type DocumentItem as DocumentViewerItem,
-} from "@/components/artifacts/attempt/chat/viewers/DocumentViewer";
+} from "@/components/common/viewers/DocumentViewer";
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Button } from "@/components/ui/button";
 import {

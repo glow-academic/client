@@ -6,7 +6,7 @@
  */
 
 import { getSession } from "@/auth";
-import GroupMessages from "@/components/artifacts/pricing/GroupMessages";
+import Group from "@/components/artifacts/group/Group";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -72,7 +72,7 @@ export default async function PricingGroupPage({
 
   return (
     <div className="space-y-6 max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col">
-      <GroupMessages groupDetail={groupDetail} />
+      <Group groupDetail={groupDetail} />
     </div>
   );
 }

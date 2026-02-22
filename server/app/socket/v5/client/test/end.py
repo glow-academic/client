@@ -399,7 +399,6 @@ async def _test_end_impl(sid: str, data: TestEndPayload, profile_id: uuid.UUID) 
                     "system",
                     system_prompt,
                     True,
-                    False,
                 )
 
             for m in rendered_developer_messages:
@@ -410,7 +409,6 @@ async def _test_end_impl(sid: str, data: TestEndPayload, profile_id: uuid.UUID) 
                     "developer",
                     m,
                     True,
-                    False,
                 )
 
             # Step 9: Emit to generate_artifact

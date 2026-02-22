@@ -1,5 +1,5 @@
 /**
- * GroupMessages.tsx
+ * Group.tsx
  * Display multiple runs with messages stacked vertically.
  * Each run is shown in its own section with summary and messages.
  * @AshokSaravanan222 & @siladiea
@@ -8,7 +8,7 @@
 "use client";
 
 import type { PricingGroupDetailOut } from "@/app/(main)/group/[groupId]/page";
-import Markdown from "@/components/artifacts/attempt/chat/markdown/Markdown";
+import Markdown from "@/components/common/markdown/Markdown";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -35,7 +35,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
-export interface GroupMessagesProps {
+export interface GroupProps {
   groupDetail: PricingGroupDetailOut;
 }
 
@@ -87,7 +87,7 @@ const formatCost = (cost: number): string => {
   return `$${cost.toFixed(6)}`;
 };
 
-export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
+export default function Group({ groupDetail }: GroupProps) {
   const [currentRunIndex, setCurrentRunIndex] = useState(0);
   const [showSystemPrompt, setShowSystemPrompt] = useState(false);
   const [showDeveloperPrompt, setShowDeveloperPrompt] = useState(false);

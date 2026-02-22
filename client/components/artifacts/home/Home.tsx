@@ -11,7 +11,7 @@ import { useProfile } from "@/contexts/profile-context";
 
 import SimulationCard, {
   SimulationCardSkeleton,
-} from "@/components/artifacts/attempt/SimulationCard";
+} from "@/components/common/SimulationCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";

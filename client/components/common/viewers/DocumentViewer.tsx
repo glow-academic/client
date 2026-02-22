@@ -1,6 +1,6 @@
 "use client";
-import Markdown from "@/components/artifacts/attempt/chat/markdown/Markdown";
-import CodeViewer from "@/components/artifacts/attempt/chat/viewers/CodeViewer";
+import Markdown from "@/components/common/markdown/Markdown";
+import CodeViewer from "@/components/common/viewers/CodeViewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";

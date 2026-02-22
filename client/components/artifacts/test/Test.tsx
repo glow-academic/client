@@ -1,6 +1,6 @@
 /**
- * EvalAttemptStatus.tsx
- * Eval attempt status component showing runs table with progress
+ * Test.tsx
+ * Test artifact component showing runs table with progress
  * @AshokSaravanan222 & @siladiea
  * 01/XX/2025
  */
@@ -33,15 +33,15 @@ type TestArtifactOut = OutputOf<"/api/v4/artifacts/test/get", "post">;
 
 type RunItem = NonNullable<TestArtifactOut["runs"]>[number];
 
-export interface EvalAttemptStatusProps {
+export interface TestProps {
   attemptId: string;
   attemptData: TestArtifactOut;
 }
 
-export default function EvalAttemptStatus({
+export default function Test({
   attemptId,
   attemptData,
-}: EvalAttemptStatusProps) {
+}: TestProps) {
   const router = useRouter();
   const { profile } = useProfile();
   const { socket, isConnected } = useSocket();

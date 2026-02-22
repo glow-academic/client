@@ -5,7 +5,7 @@
  */
 "use client";
 
-import DocumentViewer from "@/components/artifacts/attempt/chat/viewers/DocumentViewer";
+import DocumentViewer from "@/components/common/viewers/DocumentViewer";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
