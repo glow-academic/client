@@ -46,8 +46,7 @@ CREATE OR REPLACE FUNCTION api_save_cohort_v4(
     flags types.cohort_resource_action DEFAULT NULL,
     departments types.cohort_multi_resource_action DEFAULT NULL,
     simulations types.cohort_multi_resource_action DEFAULT NULL,
-    simulation_positions types.cohort_multi_resource_action DEFAULT NULL,
-    simulation_position_values int[] DEFAULT NULL
+    simulation_positions types.cohort_multi_resource_action DEFAULT NULL
 )
 RETURNS TABLE (
     cohort_id uuid
@@ -65,8 +64,7 @@ DECLARE
     v_active_flag_id uuid := (flags).resource_id;
     v_department_ids uuid[] := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
     v_simulation_ids uuid[] := COALESCE((simulations).resource_ids, ARRAY[]::uuid[]);
-    v_simulation_position_simulation_ids uuid[] := COALESCE((simulation_positions).resource_ids, COALESCE((simulations).resource_ids, ARRAY[]::uuid[]));
-    v_simulation_position_values int[] := COALESCE(simulation_position_values, ARRAY[]::int[]);
+    v_simulation_position_ids uuid[] := COALESCE((simulation_positions).resource_ids, ARRAY[]::uuid[]);
 
     v_cohort_id uuid;
     v_object_department_ids text[];
@@ -75,7 +73,6 @@ DECLARE
 
     v_run_id uuid;
     v_call_id uuid;
-    v_simulation_position_ids uuid[] := ARRAY[]::uuid[];
 BEGIN
     IF v_group_id IS NULL THEN
         RAISE EXCEPTION 'group_id is required';
@@ -219,29 +216,13 @@ BEGIN
     ON CONFLICT ON CONSTRAINT cohort_simulations_pkey DO UPDATE
     SET active = true;
 
-    WITH simulation_positions_upsert AS (
-        INSERT INTO simulation_positions_resource (
-            simulation_id,
-            value,
-            created_at,
-            generated,
-            mcp,
-            call_id
-        )
-        SELECT
-            sim.simulation_id,
-            COALESCE(v_simulation_position_values[sim.ordinality], sim.ordinality),
-            NOW(),
-            false,
-            false,
-            (SELECT id FROM view_calls_entry LIMIT 1)
-        FROM UNNEST(v_simulation_position_simulation_ids) WITH ORDINALITY AS sim(simulation_id, ordinality)
-        ON CONFLICT (simulation_id, value) DO UPDATE SET created_at = EXCLUDED.created_at
-        RETURNING id
-    )
-    SELECT COALESCE(ARRAY_AGG(id), ARRAY[]::uuid[])
-    INTO v_simulation_position_ids
-    FROM simulation_positions_upsert;
+    IF EXISTS (
+        SELECT 1
+        FROM unnest(v_simulation_position_ids) AS sp_id
+        WHERE NOT EXISTS (SELECT 1 FROM simulation_positions_resource spr WHERE spr.id = sp_id)
+    ) THEN
+        RAISE EXCEPTION 'Simulation position resource not found';
+    END IF;
 
     INSERT INTO cohort_simulation_positions_junction (
         cohort_id,

@@ -2728,7 +2728,6 @@ class SaveCohortSqlParams(BaseModel):
     departments: CohortMultiResourceAction | None = None
     simulations: CohortMultiResourceAction | None = None
     simulation_positions: CohortMultiResourceAction | None = None
-    simulation_position_values: list[int] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -2741,7 +2740,6 @@ class SaveCohortSqlParams(BaseModel):
             self.departments,
             self.simulations,
             self.simulation_positions,
-            self.simulation_position_values,
         )
 
 class SaveCohortSqlRow(BaseModel):
@@ -2758,7 +2756,6 @@ class SaveCohortApiRequest(BaseModel):
     departments: CohortMultiResourceAction | None = None
     simulations: CohortMultiResourceAction | None = None
     simulation_positions: CohortMultiResourceAction | None = None
-    simulation_position_values: list[int] | None = None
 
 class SaveCohortApiResponse(BaseModel):
 

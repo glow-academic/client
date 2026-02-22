@@ -78,6 +78,7 @@ type CohortData = OutputOf<"/api/v4/artifacts/cohorts/get", "post">;
 type FlushResult = {
   name_id?: string | null;
   description_id?: string | null;
+  simulation_position_ids?: string[] | null;
 };
 
 type CohortFormState = {
@@ -86,6 +87,7 @@ type CohortFormState = {
   active_flag_id: string | null;
   department_ids: string[];
   simulation_ids: string[];
+  simulation_position_ids: string[];
   simulation_positions: SimulationPositionItem[];
 };
 
@@ -110,7 +112,7 @@ export interface CohortProps {
   ) => Promise<CreateDraftSimulationPositionsOut>;
 }
 
-const FLUSH_KEYS = ["names", "descriptions"] as const;
+const FLUSH_KEYS = ["names", "descriptions", "simulation_positions"] as const;
 
 const VALID_RESOURCE_TYPES: ResourceType[] = [
   "names",
@@ -145,7 +147,7 @@ const COHORT_RESOURCES: ResourceConfig[] = [
   {
     key: "simulation_positions",
     formKey: "simulation_position_ids",
-    flushKey: null,
+    flushKey: "simulation_position_ids",
     type: "multi",
   },
 ];
@@ -278,6 +280,7 @@ function CohortComponent({
         active_flag_id: null as string | null,
         department_ids: [] as string[],
         simulation_ids: [] as string[],
+        simulation_position_ids: [] as string[],
         simulation_positions: [] as SimulationPositionItem[],
       };
     }
@@ -293,6 +296,7 @@ function CohortComponent({
       simulation_ids: (data.simulations?.current ?? [])
         .map((s) => s.simulation_id)
         .filter((id): id is string => !!id),
+      simulation_position_ids: [] as string[],
       simulation_positions: (data.simulation_positions?.current ?? []).map(
         (p) => ({
           simulation_id: p.simulation_id ?? "",
@@ -425,6 +429,7 @@ function CohortComponent({
         active_flag_id: formState.active_flag_id,
         department_ids: formState.department_ids,
         simulation_ids: formState.simulation_ids,
+        simulation_position_ids: formState.simulation_position_ids,
         simulation_positions: formState.simulation_positions,
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -699,16 +704,7 @@ function CohortComponent({
             flag_id: effectiveFormState.active_flag_id || null,
             department_ids: effectiveFormState.department_ids.length > 0 ? effectiveFormState.department_ids : null,
             simulation_ids: effectiveFormState.simulation_ids.length > 0 ? effectiveFormState.simulation_ids : null,
-            simulation_position_ids: null,
-            simulation_position_values:
-              effectiveFormState.simulation_positions.length > 0
-                ? effectiveFormState.simulation_ids.map(
-                    (simulationId, index) =>
-                      effectiveFormState.simulation_positions.find(
-                        (position) => position.simulation_id === simulationId,
-                      )?.value ?? index + 1,
-                  )
-                : undefined,
+            simulation_position_ids: effectiveFormState.simulation_position_ids?.length > 0 ? effectiveFormState.simulation_position_ids : null,
           },
         } as SaveCohortIn);
         toast.success(
@@ -815,6 +811,7 @@ function CohortComponent({
           return {
             ...prev,
             simulation_ids: [],
+            simulation_position_ids: [],
             simulation_positions: [],
           };
         default:
@@ -1125,6 +1122,8 @@ function CohortComponent({
                   isEditMode ? handleGenerateSimulationPositions : undefined
                 }
                 createSimulationPositionsAction={simulationPositionsAction}
+                isAutosaveEnabled={isAutosaveEnabled}
+                registerFlush={registerFlushCallbacks["simulation_positions"]}
               />
             </StepCard>
           );
