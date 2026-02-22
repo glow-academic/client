@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.auth.access import get_access_internal
 from app.api.v4.auth.permissions import (
-    build_artifact_has_generation_map,
+    build_artifact_generation_maps,
     derive_theme_tokens,
 )
 from app.api.v4.auth.types import (
@@ -149,6 +149,10 @@ async def get_auth_settings_internal(
         "chart5": settings_theme.chart5 or "",
     }
 
+    has_generate, has_insights = build_artifact_generation_maps(
+        access.artifact_agent_ids
+    )
+
     return AuthSettingsInternalData(
         settings_id=settings_id,
         settings=settings_item,
@@ -156,9 +160,8 @@ async def get_auth_settings_internal(
         settings_tools=settings_tools,
         settings_theme=settings_theme,
         settings_tokens=derive_theme_tokens(theme_primitives),
-        artifact_has_generation=build_artifact_has_generation_map(
-            access.artifact_agent_ids
-        ),
+        artifact_has_generate=has_generate,
+        artifact_has_insights=has_insights,
         agent_tool_entries=agent_tool_entries,
     )
 
@@ -203,7 +206,8 @@ async def get_auth_settings(
             tokens=data.settings_tokens,
             agents=data.settings_agents,
             tools=data.settings_tools,
-            artifact_has_generation=data.artifact_has_generation,
+            artifact_has_generate=data.artifact_has_generate,
+            artifact_has_insights=data.artifact_has_insights,
         )
 
     except HTTPException:

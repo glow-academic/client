@@ -27549,8 +27549,12 @@ export interface components {
             agents?: components["schemas"]["QGetAgentsV4Item"][] | null;
             /** Tools */
             tools?: components["schemas"]["QGetToolsV4Item"][] | null;
-            /** Artifact Has Generation */
-            artifact_has_generation?: {
+            /** Artifact Has Generate */
+            artifact_has_generate?: {
+                [key: string]: boolean;
+            } | null;
+            /** Artifact Has Insights */
+            artifact_has_insights?: {
                 [key: string]: boolean;
             } | null;
         };

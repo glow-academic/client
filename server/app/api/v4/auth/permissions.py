@@ -138,11 +138,57 @@ def convert_role(role: Any) -> QGetProfileContextV4RoleResource:
     )
 
 
-def build_artifact_has_generation_map(
+OPERATIONAL_ARTIFACTS = frozenset(
+    {
+        "agent",
+        "auth",
+        "chat",
+        "cohort",
+        "department",
+        "document",
+        "eval",
+        "field",
+        "invocation",
+        "model",
+        "parameter",
+        "persona",
+        "profile",
+        "provider",
+        "rubric",
+        "scenario",
+        "setting",
+        "simulation",
+        "tool",
+    }
+)
+
+ANALYTICAL_ARTIFACTS = frozenset(
+    {
+        "activity",
+        "attempt",
+        "benchmark",
+        "dashboard",
+        "health",
+        "home",
+        "leaderboard",
+        "practice",
+        "pricing",
+        "record",
+        "reports",
+        "test",
+    }
+)
+
+
+def build_artifact_generation_maps(
     items: list[QGetProfileContextAccessV4ArtifactAgent] | None,
-) -> dict[str, bool]:
-    mapping: dict[str, bool] = {}
+) -> tuple[dict[str, bool], dict[str, bool]]:
+    has_generate: dict[str, bool] = {}
+    has_insights: dict[str, bool] = {}
     for item in items or []:
         if item.artifact and item.has_generation:
-            mapping[item.artifact] = True
-    return mapping
+            if item.artifact in OPERATIONAL_ARTIFACTS:
+                has_generate[item.artifact] = True
+            elif item.artifact in ANALYTICAL_ARTIFACTS:
+                has_insights[item.artifact] = True
+    return has_generate, has_insights

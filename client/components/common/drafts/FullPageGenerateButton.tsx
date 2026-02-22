@@ -3,7 +3,7 @@
  * Button component for triggering full page generation
  * Shows next to DraftPicker when generation is available
  *
- * Uses artifact_has_generation from profile context (SSR) to determine visibility.
+ * Uses artifact_has_generate from profile context (SSR) to determine visibility.
  * Dispatches a simple event that page components listen to.
  */
 
@@ -19,9 +19,9 @@ interface FullPageGenerateButtonProps {
 }
 
 export function FullPageGenerateButton({ artifactType }: FullPageGenerateButtonProps) {
-  const { artifactHasGeneration } = useSettings();
+  const { artifactHasGenerate } = useSettings();
 
-  const hasGeneration = artifactType ? artifactHasGeneration[artifactType] ?? false : false;
+  const hasGeneration = artifactType ? artifactHasGenerate[artifactType] ?? false : false;
 
   const handleGenerate = useCallback(() => {
     window.dispatchEvent(new CustomEvent("full-page-generate"));

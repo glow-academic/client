@@ -67,7 +67,8 @@ class AuthSettingsInternalData:
     settings_tools: list[QGetToolsV4Item]
     settings_theme: GetSettingsThemeDataSqlRow
     settings_tokens: QGetProfileContextV4ThemeTokens
-    artifact_has_generation: dict[str, bool]
+    artifact_has_generate: dict[str, bool]
+    artifact_has_insights: dict[str, bool]
     agent_tool_entries: list[SettingsAgentToolEntry]
 
 
@@ -100,7 +101,8 @@ class GetProfileContextApiResponse(BaseModel):
     session_id: UUID | None = None
     actor_name: str | None = None
     # Artifact generation capability
-    artifact_has_generation: dict[str, bool] | None = None
+    artifact_has_generate: dict[str, bool] | None = None
+    artifact_has_insights: dict[str, bool] | None = None
     # Server-driven routing
     sidebar_routes: list[SidebarSection] | None = None
     breadcrumbs: list[BreadcrumbItem] | None = None
@@ -125,7 +127,8 @@ class ProfileContextInternalData:
     settings_theme: GetSettingsThemeDataSqlRow
     settings_tokens: QGetProfileContextV4ThemeTokens
     session_id: UUID | None
-    artifact_has_generation: dict[str, bool]
+    artifact_has_generate: dict[str, bool]
+    artifact_has_insights: dict[str, bool]
     pass1_time_ms: float
     pass2_time_ms: float
 
@@ -157,7 +160,8 @@ class GetAuthSettingsApiResponse(BaseModel):
     tokens: QGetProfileContextV4ThemeTokens | None = None
     agents: list[QGetAgentsV4Item] | None = None
     tools: list[QGetToolsV4Item] | None = None
-    artifact_has_generation: dict[str, bool] | None = None
+    artifact_has_generate: dict[str, bool] | None = None
+    artifact_has_insights: dict[str, bool] | None = None
 
 
 class GetAuthPageApiResponse(BaseModel):

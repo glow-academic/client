@@ -10,16 +10,15 @@ interface InsightsButtonProps {
 }
 
 export function InsightsButton({ artifactType }: InsightsButtonProps) {
-  const { artifactHasGeneration } = useSettings();
+  const { artifactHasInsights } = useSettings();
 
-  // Only show for artifact types that have insights generation capability
-  const hasGeneration = artifactType ? artifactHasGeneration[artifactType] ?? false : false;
+  const hasInsights = artifactType ? artifactHasInsights[artifactType] ?? false : false;
 
   const handleClick = useCallback(() => {
     window.dispatchEvent(new CustomEvent("open-insights-modal"));
   }, []);
 
-  if (!hasGeneration) {
+  if (!hasInsights) {
     return null;
   }
 
