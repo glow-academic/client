@@ -168,13 +168,9 @@ function MainLayoutContent({
               />
             </div>
 
-            {/* Analytics Filters - Show in top right for analytics pages */}
-            {canShowAnalyticsFilters && (
-              <AnalyticsFilters refreshPage={refreshPageAction} />
-            )}
-
-            {/* Mutual exclusivity: End Session > Drafts > New X */}
-            {attemptControls?.show_controls ? (
+            <InsightsButton artifactType={artifactType} />
+            <FullPageGenerateButton artifactType={artifactType} />
+            {attemptControls?.show_controls && (
               <div className="pr-4">
                 <SimulationControls
                   attemptId={attemptControls.attempt_id!}
@@ -183,16 +179,16 @@ function MainLayoutContent({
                   hasMessages={attemptControls.has_messages ?? false}
                 />
               </div>
-            ) : (
-              <>
-                <InsightsButton artifactType={artifactType} />
-                <FullPageGenerateButton artifactType={artifactType} />
-                {showDrafts && artifactType ? (
-                  <SaveToolbar artifactType={artifactType} />
-                ) : (
-                  actionButton && <div className="pr-4">{actionButton}</div>
-                )}
-              </>
+            )}
+            {canShowAnalyticsFilters && (
+              <AnalyticsFilters refreshPage={refreshPageAction} />
+            )}
+            {!attemptControls?.show_controls && (
+              showDrafts && artifactType ? (
+                <SaveToolbar artifactType={artifactType} />
+              ) : (
+                actionButton && <div className="pr-4">{actionButton}</div>
+              )
             )}
           </header>
 
