@@ -52,7 +52,7 @@ import {
 } from "@/components/ui/tooltip";
 import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
-import { useSocket } from "@/contexts/socket-context";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 
 export interface CohortsProps {
   // Server-provided data (for server-side rendering)
@@ -82,7 +82,11 @@ export default function Cohorts({
   profileSearch,
   departmentSearch,
 }: CohortsProps) {
-  const { socket, isConnected } = useSocket();
+  const { generate } = useArtifactAi({
+    artifactType: "cohort",
+    groupId: null,
+    validResourceTypes: ["names", "descriptions", "flags", "departments", "simulations", "simulation_positions"],
+  });
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -110,14 +114,10 @@ export default function Cohorts({
     },
     canRegenerate: () => true,
     onGenerate: (selectedResources, instructions) => {
-      if (!socket || !isConnected) return;
-      socket.emit("cohort_generate", {
-        resource_types: selectedResources,
+      const ok = generate(selectedResources, {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-        cohort_id: null,
-        mcp: false,
       });
-      toast.success("Generation started for new cohort");
+      if (ok) toast.success("Generation started for new cohort");
     },
     isGenerating: () => false,
   });

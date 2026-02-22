@@ -5,12 +5,8 @@ from __future__ import annotations
 from typing import Annotated, Any
 from uuid import UUID
 
-import logging
-
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request
-
-logger = logging.getLogger(__name__)
 
 from app.api.v4.auth.types import GetDraftsApiResponse, QGetProfileContextV4Draft
 from app.api.v4.entries.agent_drafts.get import get_agent_drafts_entries_internal
@@ -84,12 +80,14 @@ async def get_drafts(
     """Return drafts for the current page's artifact type."""
     try:
         try:
-            profile_id = http_request.state.profile_id
+            profile_id_str = http_request.state.profile_id
         except AttributeError:
-            profile_id = None
+            profile_id_str = None
 
-        if not profile_id:
+        if not profile_id_str:
             return GetDraftsApiResponse(drafts=[])
+
+        profile_id = UUID(profile_id_str)
 
         pathname = http_request.headers.get("X-Pathname", "")
         metadata = compute_page_metadata(pathname, [])

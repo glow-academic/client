@@ -8,9 +8,11 @@ Next-scenario logic is handled by attempt_next.
 """
 
 import uuid
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
+from uuid import UUID
 
-from app.api.v4.entries.attempt.create import create_attempt_with_context_internal
+import asyncpg  # type: ignore
+
 from app.api.v4.entries.attempt.get import get_attempt_entries_internal
 from app.api.v4.resources.training.context import get_training_attempt_context_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
@@ -22,7 +24,13 @@ from app.socket.v5.internal.attempt.types import (
     AttemptStartedData,
     GenerateRequestData,
 )
+from app.sql.types import CreateAttemptSqlParams, CreateAttemptSqlRow
+from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
+
+if TYPE_CHECKING:
+    from app.api.v4.resources.training.context import TrainingAttemptContext
 
 logger = get_logger(__name__)
 
@@ -54,6 +62,48 @@ SQL_REMAINING_SCENARIOS = """
         (SELECT cnt FROM completed_chats)::int AS completed_scenarios,
         (GREATEST((SELECT COUNT(*) FROM expected_scenarios) - (SELECT cnt FROM completed_chats), 0))::int AS remaining_scenarios
 """
+
+
+SQL_PATH_CREATE_ATTEMPT = (
+    "app/sql/v4/queries/artifacts/attempt/create_attempt_complete.sql"
+)
+
+
+async def create_attempt_with_context_internal(
+    conn: asyncpg.Connection,
+    context: TrainingAttemptContext,
+    infinite_mode: bool = False,
+) -> UUID:
+    """Create attempt entry using pre-resolved training context.
+
+    Used by socket handlers (home/practice/attempt).
+    Returns the new attempt_id.
+    """
+    row = cast(
+        CreateAttemptSqlRow,
+        await execute_sql_typed(
+            conn,
+            SQL_PATH_CREATE_ATTEMPT,
+            params=CreateAttemptSqlParams(
+                p_practice=context.is_practice,
+                p_infinite_mode=infinite_mode,
+                p_practice_id=context.practice_id,
+                p_home_id=context.home_id,
+                p_simulations_resource_id=context.simulations_resource_id,
+                p_profiles_resource_id=context.profiles_resource_id,
+                p_cohorts_resource_id=context.cohorts_resource_id,
+                p_departments_resource_id=context.departments_resource_id,
+                p_roles_resource_id=context.roles_resource_id,
+            ),
+        ),
+    )
+
+    if not row or not row.out_attempt_id:
+        raise ValueError("Failed to create attempt entry")
+
+    await invalidate_tags(["attempt", "attempts"])
+
+    return row.out_attempt_id
 
 
 async def _emit_chat_generate(

@@ -38,9 +38,8 @@ import {
 import { Simulations } from "@/components/resources/Simulations";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import { useSocket } from "@/contexts/socket-context";
 import { useDrafts } from "@/contexts/draft-context";
-import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
@@ -220,7 +219,6 @@ function CohortComponent({
   const router = useRouter();
   const isEditMode = !!cohortId;
   const { profile } = useProfile();
-  const { socket, isConnected } = useSocket();
   const { setSelectedDraftId, isAutosaveEnabled } = useDrafts();
 
   // --- Flush Registry ---
@@ -228,7 +226,7 @@ function CohortComponent({
     useFlushRegistry<FlushResult>(FLUSH_KEYS);
 
   // --- AI Generation ---
-  const { isGenerating, startGenerating, makeOnGenerationComplete } = useArtifactGeneration({
+  const { isGenerating, makeOnGenerationComplete, generate } = useArtifactAi({
     artifactType: "cohort",
     groupId: cohortData?.group_id,
     validResourceTypes: VALID_RESOURCE_TYPES,
@@ -653,16 +651,6 @@ function CohortComponent({
 
   const handleGenerateResources = useCallback(
     async (resourceTypes: ResourceType[], userInstructions?: string) => {
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected");
-        return;
-      }
-
-      if (resourceTypes.length === 0) {
-        toast.error("No resource types specified for generation");
-        return;
-      }
-
       let draftIdToUse =
         (formDataRef.current["draftId"] as string | undefined) ?? null;
       if (!draftIdToUse) {
@@ -673,44 +661,13 @@ function CohortComponent({
         return;
       }
 
-      // Set all resources as generating
-      startGenerating(resourceTypes);
-
-      // Read search params from formData
-      const formData = formDataRef.current;
-      const descriptionSearch =
-        (formData["descriptionSearch"] as string | undefined) ?? null;
-      const simulationSearch =
-        (formData["simulationSearch"] as string | undefined) ?? null;
-      const simulationShowSelected =
-        (formData["simulationShowSelected"] as boolean | undefined) ?? false;
-      const profileSearch =
-        (formData["profileSearch"] as string | undefined) ?? null;
-      const profileShowSelected =
-        (formData["profileShowSelected"] as boolean | undefined) ?? false;
-
-      // Emit cohort_generate with resource_types
-      socket.emit("cohort_generate", {
-        resource_types: resourceTypes,
-        user_instructions: userInstructions ? [userInstructions] : null,
-        // GetCohortApiRequest fields from formData
+      generate(resourceTypes, {
         draft_id: draftIdToUse,
-        descriptions_search: descriptionSearch || null,
-        simulation_search: simulationSearch || null,
-        simulation_show_selected: simulationShowSelected || false,
-        profile_search: profileSearch || null,
-        profile_show_selected: profileShowSelected || false,
-        cohort_id: cohortId || null,
+        artifact_id: cohortId || null,
+        user_instructions: userInstructions ? [userInstructions] : null,
       });
     },
-    [
-      socket,
-      isConnected,
-      cohortId,
-      flushAllAndSave,
-      formDataRef,
-      startGenerating,
-    ],
+    [cohortId, flushAllAndSave, formDataRef, generate],
   );
 
   // Individual generation handlers - generate directly without modals

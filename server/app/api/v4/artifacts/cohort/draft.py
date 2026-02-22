@@ -6,6 +6,7 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.cohort.permissions import compute_can_draft
+from app.api.v4.entries.cohort_drafts.refresh import refresh_cohort_drafts_internal
 from app.api.v4.artifacts.cohort.types import (
     PatchCohortDraftApiRequest,
     PatchCohortDraftApiResponse,
@@ -90,6 +91,9 @@ async def patch_cohort_draft(
             )
 
         api_response = PatchCohortDraftApiResponse.model_validate(result.model_dump())
+
+        # Refresh MV so /auth/drafts can see the new draft immediately
+        await refresh_cohort_drafts_internal(conn)
 
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
