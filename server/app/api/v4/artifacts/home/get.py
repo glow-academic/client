@@ -87,15 +87,14 @@ async def _fetch_cohort_member_profiles(
         return {}
     async with pool.acquire() as c:
         rows = await c.fetch(
-            "SELECT id, cohort_ids FROM profiles_resource"
-            " WHERE active = true AND cohort_ids && $1::uuid[]",
+            "SELECT id, profile_ids FROM cohorts_resource"
+            " WHERE id = ANY($1::uuid[])",
             cohort_ids,
         )
     result: dict[UUID, set[UUID]] = {cid: set() for cid in cohort_ids}
     for row in rows:
-        for cid in row["cohort_ids"]:
-            if cid in result:
-                result[cid].add(row["id"])
+        for pid in (row["profile_ids"] or []):
+            result[row["id"]].add(pid)
     return result
 
 
