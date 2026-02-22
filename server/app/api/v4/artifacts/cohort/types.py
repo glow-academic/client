@@ -99,6 +99,16 @@ class CohortProfile(BaseModel):
     mcp: bool | None = None
 
 
+class CohortProfilePersona(BaseModel):
+    """Profile persona for cohort."""
+
+    id: UUID | None = None
+    profile_id: UUID | None = None
+    persona_id: UUID | None = None
+    generated: bool | None = None
+    mcp: bool | None = None
+
+
 # =============================================================================
 # Resource Buckets (for WebSocket Jinja context)
 # =============================================================================
@@ -115,6 +125,7 @@ class CohortResourceBucket(BaseModel):
     simulation_positions: list[CohortSimulationPosition] | None = None
     simulation_availability: list[CohortSimulationAvailability] | None = None
     profiles: list[CohortProfile] | None = None
+    profile_personas: list[CohortProfilePersona] | None = None
 
 
 class CohortResources(BaseModel):
@@ -179,6 +190,11 @@ class CohortProfileSection(BaseResourceSection):
     resources: list[CohortProfile] | None = None
 
 
+class CohortProfilePersonaSection(BaseResourceSection):
+    current: list[CohortProfilePersona] | None = None
+    resources: list[CohortProfilePersona] | None = None
+
+
 class GetCohortApiResponse(BaseModel):
     """Response for getting a single cohort."""
 
@@ -203,6 +219,7 @@ class GetCohortApiResponse(BaseModel):
     simulation_positions: CohortSimulationPositionSection | None = None
     simulation_availability: CohortSimulationAvailabilitySection | None = None
     profiles: CohortProfileSection | None = None
+    profile_personas: CohortProfilePersonaSection | None = None
 
 
 class GetCohortWebsocketResponse(BaseModel):
@@ -238,6 +255,7 @@ class CohortWebsocketResources(BaseModel):
     simulation_positions: list[CohortSimulationPosition] | None = None
     simulation_availability: list[CohortSimulationAvailability] | None = None
     profiles: list[CohortProfile] | None = None
+    profile_personas: list[CohortProfilePersona] | None = None
 
 
 # =============================================================================
@@ -335,6 +353,7 @@ class SaveCohortApiRequest(BaseModel):
     simulation_position_ids: list[UUID] | None = None
     simulation_availability_ids: list[UUID] | None = None
     profile_ids: list[UUID] | None = None
+    profile_persona_ids: list[UUID] | None = None
 
 
 class SaveCohortApiResponse(BaseModel):
@@ -360,6 +379,7 @@ class SaveCohortSqlParams(BaseModel):
     simulation_positions: "CohortMultiResourceAction"
     simulation_availability: "CohortMultiResourceAction"
     profiles: "CohortMultiResourceAction"
+    profile_personas: "CohortMultiResourceAction"
 
     @classmethod
     def from_request(
@@ -384,6 +404,9 @@ class SaveCohortSqlParams(BaseModel):
                 resource_ids=request.simulation_availability_ids
             ),
             profiles=CohortMultiResourceAction(resource_ids=request.profile_ids),
+            profile_personas=CohortMultiResourceAction(
+                resource_ids=request.profile_persona_ids
+            ),
         )
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -411,6 +434,7 @@ class SaveCohortSqlParams(BaseModel):
             multi(self.simulation_positions),
             multi(self.simulation_availability),
             multi(self.profiles),
+            multi(self.profile_personas),
         )
 
 
@@ -478,6 +502,7 @@ class PatchCohortDraftApiRequest(BaseModel):
     simulation_position_ids: list[UUID] | None = None
     simulation_availability_ids: list[UUID] | None = None
     profile_ids: list[UUID] | None = None
+    profile_persona_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
 
@@ -503,6 +528,7 @@ class PatchCohortDraftSqlParams(BaseModel):
     simulation_positions: "CohortMultiResourceAction | None" = None
     simulation_availability: "CohortMultiResourceAction | None" = None
     profiles: "CohortMultiResourceAction | None" = None
+    profile_personas: "CohortMultiResourceAction | None" = None
     expected_version: int | None = 0
 
     @classmethod
@@ -525,6 +551,9 @@ class PatchCohortDraftSqlParams(BaseModel):
                 resource_ids=request.simulation_availability_ids
             ),
             profiles=CohortMultiResourceAction(resource_ids=request.profile_ids),
+            profile_personas=CohortMultiResourceAction(
+                resource_ids=request.profile_persona_ids
+            ),
             expected_version=request.expected_version,
         )
 
@@ -551,6 +580,7 @@ class PatchCohortDraftSqlParams(BaseModel):
             multi(self.simulation_positions),
             multi(self.simulation_availability),
             multi(self.profiles),
+            multi(self.profile_personas),
             self.expected_version,
         )
 

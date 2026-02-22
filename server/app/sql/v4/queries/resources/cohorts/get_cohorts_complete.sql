@@ -54,7 +54,9 @@ CREATE TYPE types.q_get_cohorts_v4_item AS (
     title text,
     description text,
     active boolean,
-    department_ids text[]
+    department_ids text[],
+    profile_ids text[],
+    profile_persona_ids text[]
 );
 
 -- Create function - query cohorts_resource directly (department_ids denormalized)
@@ -76,6 +78,14 @@ SELECT COALESCE(
             cr.active,
             COALESCE(
                 (SELECT ARRAY_AGG(d::text) FROM unnest(cr.department_ids) d),
+                ARRAY[]::text[]
+            ),
+            COALESCE(
+                (SELECT ARRAY_AGG(p::text) FROM unnest(cr.profile_ids) p),
+                ARRAY[]::text[]
+            ),
+            COALESCE(
+                (SELECT ARRAY_AGG(pp::text) FROM unnest(cr.profile_persona_ids) pp),
                 ARRAY[]::text[]
             )
         )::types.q_get_cohorts_v4_item

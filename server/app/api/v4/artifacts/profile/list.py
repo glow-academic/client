@@ -141,8 +141,6 @@ async def get_profile_list(
         for s in result.staff or []:
             target_is_self = getattr(s, "target_is_self", False) or False
             target_role = getattr(s, "role", None)
-            active_cohort_count = int(getattr(s, "active_cohort_count", 0) or 0)
-
             can_edit_val = compute_can_edit(
                 user_role=user_role,
                 target_is_self=target_is_self,
@@ -154,7 +152,6 @@ async def get_profile_list(
                 user_role=user_role,
                 target_is_self=target_is_self,
                 target_role=target_role,
-                active_cohort_count=active_cohort_count,
             )
             can_duplicate_val = compute_can_duplicate(user_role)
 
@@ -166,7 +163,6 @@ async def get_profile_list(
                     name=s.name,
                     role=target_role,
                     initials=s.initials,
-                    cohort_ids=s.cohort_ids,
                     department_ids=s.department_ids,
                     primary_department_id=s.primary_department_id,
                     requests_per_day=s.requests_per_day,
@@ -180,11 +176,6 @@ async def get_profile_list(
         api_response = ListStaffApiResponse(
             actor_name=actor_name,
             staff=staff_with_permissions,
-            cohort_filter=ListFilterSection.from_sql_options(
-                result.cohort_options,
-                request.cohort_ids,
-                request.cohort_search,
-            ),
             department_filter=ListFilterSection.from_sql_options(
                 result.department_options,
                 request.filter_department_ids,

@@ -57,13 +57,6 @@ CREATE TYPE types.q_get_profile_v4_department AS (
     generated boolean
 );
 
-CREATE TYPE types.q_get_profile_v4_cohort AS (
-    cohort_id uuid,
-    name text,
-    description text,
-    generated boolean
-);
-
 CREATE TYPE types.q_get_profile_v4_name_resource AS (
     id uuid,
     name text,
@@ -158,14 +151,6 @@ RETURNS TABLE (
     departments_required boolean,
     department_suggestions uuid[],
     departments types.q_get_profile_v4_department[],
-    -- Multi-select resources: cohorts
-    cohort_ids uuid[],
-    cohort_resources types.q_get_profile_v4_cohort[],
-    show_cohorts boolean,
-    cohorts_agent_id uuid,
-    cohorts_required boolean,
-    cohort_suggestions uuid[],
-    cohorts types.q_get_profile_v4_cohort[],
     -- Multi-resource combination agent IDs (after all individual resources)
     basic_agent_id uuid,
     general_agent_id uuid
@@ -648,90 +633,6 @@ department_suggestions_data AS (
     FROM params
     LIMIT 1
 ),
--- Cohorts mapping data (only active cohorts)
-cohort_mapping_data AS (
-    SELECT 
-        c.id as cohort_id,
-        (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name,
-        COALESCE((SELECT d.description FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), '') as description,
-        COALESCE(pc.generated, false) as generated
-    FROM params x
-    CROSS JOIN user_profile up
-    JOIN cohort_artifact c ON EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.name = 'cohort_active' AND cf.value = true)
-    LEFT JOIN profile_cohorts_junction pc ON pc.cohort_id = c.id AND pc.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id) AND pc.active = true
-),
--- Cohort IDs (selected cohort IDs for profile)
-cohort_ids_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT ARRAY_AGG(dc.cohorts_id ORDER BY dc.created_at)
-             FROM profile_drafts_cohorts_connection dc
-             WHERE dc.draft_id = (SELECT draft_id FROM params)
-               AND dc.active = true),
-            (SELECT ARRAY_AGG(pc.cohort_id ORDER BY pc.created_at)
-             FROM profile_cohorts_junction pc
-             WHERE pc.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)
-               AND pc.active = true),
-            ARRAY[]::uuid[]
-        ) as cohort_ids
-    FROM params
-    LIMIT 1
-),
--- Cohort resources (selected cohorts filtered by cohort_ids)
-cohort_resources_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT ARRAY_AGG(
-                (cmd.cohort_id, cmd.name, cmd.description, cmd.generated)::types.q_get_profile_v4_cohort
-                ORDER BY cmd.name
-            )
-            FROM cohort_mapping_data cmd
-            CROSS JOIN cohort_ids_data cid
-            WHERE cmd.cohort_id = ANY(cid.cohort_ids)),
-            ARRAY[]::types.q_get_profile_v4_cohort[]
-        ) as cohort_resources
-    FROM params
-    LIMIT 1
-),
--- Cohort suggestions: linked to profiles with active=true OR same group with generated=true
-cohort_suggestions_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT ARRAY_AGG(c.id ORDER BY c.created_at DESC)
-             FROM cohort_artifact c
-             CROSS JOIN group_id_data gid
-             WHERE EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.name = 'cohort_active' AND cf.value = true)
-               AND (
-                   -- Option 1: Linked to profiles (profile_cohorts_junction junction table means it's validated/used)
-                   EXISTS (
-                       SELECT 1 FROM profile_cohorts_junction pc
-                       WHERE pc.cohort_id = c.id
-                         AND pc.active = true
-                   )
-                   OR
-                   -- Option 2: OR linked to same group with generated=true (cohorts don't have call_id, so skip this check)
-                   false
-               )
-             LIMIT 20),
-            ARRAY[]::uuid[]
-        ) as cohort_suggestions
-    FROM params
-    LIMIT 1
-),
--- Cohorts (all available cohort options - only active cohorts)
-cohorts_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT ARRAY_AGG(
-                (cmd.cohort_id, cmd.name, cmd.description, cmd.generated)::types.q_get_profile_v4_cohort
-                ORDER BY cmd.name
-            )
-            FROM cohort_mapping_data cmd),
-            ARRAY[]::types.q_get_profile_v4_cohort[]
-        ) as cohorts
-    FROM params
-    LIMIT 1
-),
 -- UI flags
 ui_flags AS (
     SELECT 
@@ -741,14 +642,10 @@ ui_flags AS (
         true as show_request_limit,  -- Always show request limit picker
         true as show_flag,  -- Flag is a boolean toggle that should be shown
         -- Multi-select resource flags (based on business logic)
-        CASE 
+        CASE
             WHEN (SELECT COUNT(*) FROM department_mapping_data) > 0 THEN true
             ELSE false
-        END as show_departments,
-        CASE 
-            WHEN (SELECT COUNT(*) FROM cohort_mapping_data) > 0 THEN true
-            ELSE false
-        END as show_cohorts
+        END as show_departments
     FROM params x
     CROSS JOIN user_profile up
 ),
@@ -775,8 +672,8 @@ user_departments_for_agents AS (
 agent_artifact_tool_counts AS (
     SELECT 
         a.id as agent_id,
-        COUNT(DISTINCT CASE WHEN dr_rt.resource = ANY(ARRAY['cohorts','departments','emails','flags','names','profiles','request_limits','roles','routes']::resource_type[]) THEN dr_rt.resource::text END) as matched_artifact_count,
-        COUNT(DISTINCT CASE WHEN dr_rt.resource IS NOT NULL AND NOT (dr_rt.resource = ANY(ARRAY['cohorts','departments','emails','flags','names','profiles','request_limits','roles','routes']::resource_type[])) THEN dr_rt.resource::text END) as extra_outside_count
+        COUNT(DISTINCT CASE WHEN dr_rt.resource = ANY(ARRAY['departments','emails','flags','names','profiles','request_limits','roles','routes']::resource_type[]) THEN dr_rt.resource::text END) as matched_artifact_count,
+        COUNT(DISTINCT CASE WHEN dr_rt.resource IS NOT NULL AND NOT (dr_rt.resource = ANY(ARRAY['departments','emails','flags','names','profiles','request_limits','roles','routes']::resource_type[])) THEN dr_rt.resource::text END) as extra_outside_count
     FROM agent_artifact a
     LEFT JOIN agent_tools_junction at ON at.agent_id = a.id AND at.active = true
     LEFT JOIN tools_resource tr ON tr.id = at.tool_id
@@ -809,7 +706,7 @@ name_agent_data AS (
             JOIN domains_resource dr_rt ON dr_rt.id = tdj_rt.domain_id AND dr_rt.active = true
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND dr_rt.resource = ANY(ARRAY['cohorts','departments','emails','flags','names','profiles','request_limits','roles','routes']::resource_type[])
+              AND dr_rt.resource = ANY(ARRAY['departments','emails','flags','names','profiles','request_limits','roles','routes']::resource_type[])
         )
         AND (
             EXISTS (
@@ -886,7 +783,7 @@ emails_agent_data AS (
             JOIN domains_resource dr_rt ON dr_rt.id = tdj_rt.domain_id AND dr_rt.active = true
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND dr_rt.resource = ANY(ARRAY['cohorts','departments','emails','flags','names','profiles','request_limits','roles','routes']::resource_type[])
+              AND dr_rt.resource = ANY(ARRAY['departments','emails','flags','names','profiles','request_limits','roles','routes']::resource_type[])
         )
         AND (
             EXISTS (
@@ -963,7 +860,7 @@ request_limit_agent_data AS (
             JOIN domains_resource dr_rt ON dr_rt.id = tdj_rt.domain_id AND dr_rt.active = true
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND dr_rt.resource = ANY(ARRAY['cohorts','departments','emails','flags','names','profiles','request_limits','roles','routes']::resource_type[])
+              AND dr_rt.resource = ANY(ARRAY['departments','emails','flags','names','profiles','request_limits','roles','routes']::resource_type[])
         )
         AND (
             EXISTS (
@@ -1040,7 +937,7 @@ flag_agent_data AS (
             JOIN domains_resource dr_rt ON dr_rt.id = tdj_rt.domain_id AND dr_rt.active = true
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND dr_rt.resource = ANY(ARRAY['cohorts','departments','emails','flags','names','profiles','request_limits','roles','routes']::resource_type[])
+              AND dr_rt.resource = ANY(ARRAY['departments','emails','flags','names','profiles','request_limits','roles','routes']::resource_type[])
         )
         AND (
             EXISTS (
@@ -1117,7 +1014,7 @@ departments_agent_data AS (
             JOIN domains_resource dr_rt ON dr_rt.id = tdj_rt.domain_id AND dr_rt.active = true
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND dr_rt.resource = ANY(ARRAY['cohorts','departments','emails','flags','names','profiles','request_limits','roles','routes']::resource_type[])
+              AND dr_rt.resource = ANY(ARRAY['departments','emails','flags','names','profiles','request_limits','roles','routes']::resource_type[])
         )
         AND (
             EXISTS (
@@ -1176,10 +1073,6 @@ departments_agent_data AS (
         adp.agent_id ASC
     LIMIT 1
 ),
--- Agent selection for 'cohorts' resource (cohorts don't have agents, return NULL)
-cohorts_agent_data AS (
-    SELECT NULL::uuid as agent_id
-),
 -- Agent selection for 'basic' multi-resource combination (names + flags + departments + emails)
 basic_agent_data AS (
     WITH eligible_agents AS (
@@ -1198,7 +1091,7 @@ basic_agent_data AS (
             JOIN domains_resource dr_rt ON dr_rt.id = tdj_rt.domain_id AND dr_rt.active = true
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND dr_rt.resource = ANY(ARRAY['cohorts','departments','emails','flags','names','profiles','request_limits','roles','routes']::resource_type[])
+              AND dr_rt.resource = ANY(ARRAY['departments','emails','flags','names','profiles','request_limits','roles','routes']::resource_type[])
         )
         AND (
             EXISTS (
@@ -1281,7 +1174,7 @@ basic_agent_data AS (
         adp.agent_id ASC
     LIMIT 1
 ),
--- Agent selection for 'general' - agent with ALL profile tools (names, flags, request_limits, departments, emails, cohorts)
+-- Agent selection for 'general' - agent with ALL profile tools (names, flags, request_limits, departments, emails)
 general_agent_data AS (
     WITH eligible_agents AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
@@ -1299,7 +1192,7 @@ general_agent_data AS (
             JOIN domains_resource dr_rt ON dr_rt.id = tdj_rt.domain_id AND dr_rt.active = true
             WHERE at.agent_id = a.id
               AND at.active = TRUE
-              AND dr_rt.resource = ANY(ARRAY['cohorts','departments','emails','flags','names','profiles','request_limits','roles','routes']::resource_type[])
+              AND dr_rt.resource = ANY(ARRAY['departments','emails','flags','names','profiles','request_limits','roles','routes']::resource_type[])
         )
         AND (
             EXISTS (
@@ -1338,13 +1231,13 @@ general_agent_data AS (
                 ARRAY(
                     SELECT unnest(atr.tool_resources)
                     EXCEPT
-                    SELECT unnest(ARRAY['names', 'flags', 'request_limits', 'departments', 'emails', 'cohorts']::text[])
+                    SELECT unnest(ARRAY['names', 'flags', 'request_limits', 'departments', 'emails']::text[])
                 ),
                 1
             ) as unmatched_count,
             atr.updated_at
         FROM agent_tool_resources atr
-        WHERE ARRAY['names', 'flags', 'request_limits', 'departments', 'emails', 'cohorts']::text[] <@ atr.tool_resources
+        WHERE ARRAY['names', 'flags', 'request_limits', 'departments', 'emails']::text[] <@ atr.tool_resources
     ),
     agent_department_preference AS (
         SELECT 
@@ -1581,14 +1474,6 @@ SELECT
         ) FROM (SELECT DISTINCT department_id, name, description, generated FROM department_mapping_data) dmd),
         '{}'::types.q_get_profile_v4_department[]
     ) as departments,
-    -- Multi-select resources: cohorts
-    COALESCE((SELECT cohort_ids FROM cohort_ids_data), ARRAY[]::uuid[]) as cohort_ids,
-    COALESCE((SELECT cohort_resources FROM cohort_resources_data), ARRAY[]::types.q_get_profile_v4_cohort[]) as cohort_resources,
-    uf.show_cohorts,
-    (SELECT agent_id FROM cohorts_agent_data) as cohorts_agent_id,
-    false as cohorts_required,
-    COALESCE((SELECT cohort_suggestions FROM cohort_suggestions_data), ARRAY[]::uuid[]) as cohort_suggestions,
-    COALESCE((SELECT cohorts FROM cohorts_data), ARRAY[]::types.q_get_profile_v4_cohort[]) as cohorts,
     (SELECT agent_id FROM basic_agent_data) as basic_agent_id,
     (SELECT agent_id FROM general_agent_data) as general_agent_id
 FROM user_profile up
@@ -1612,10 +1497,6 @@ CROSS JOIN flag_resource_data frd
 CROSS JOIN department_ids_data did
 CROSS JOIN department_resources_data drd
 CROSS JOIN department_suggestions_data dsd
-CROSS JOIN cohort_ids_data cid
-CROSS JOIN cohort_resources_data crd
-CROSS JOIN cohort_suggestions_data csd
-CROSS JOIN cohorts_data cd
 CROSS JOIN draft_version_data dvd
 $$;
 

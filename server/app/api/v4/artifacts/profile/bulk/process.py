@@ -107,7 +107,6 @@ async def process_staff(
             emails: list[str] = []
             role = None
             department_ids: list[str] = []
-            cohort_ids: list[str] = []
 
             for header in headers:
                 field = column_to_field.get(header)
@@ -129,13 +128,6 @@ async def process_staff(
                     if value:
                         dept_values = [d.strip() for d in value.split(",") if d.strip()]
                         department_ids.extend(dept_values)
-                elif field == "cohort":
-                    # Support comma-separated values for multiple cohorts
-                    if value:
-                        cohort_values = [
-                            c.strip() for c in value.split(",") if c.strip()
-                        ]
-                        cohort_ids.extend(cohort_values)
 
             # Validate required fields
             if not name:
@@ -167,7 +159,6 @@ async def process_staff(
                     primary_email_index=0,  # First email is primary by default
                     role=role,
                     department_ids=department_ids if department_ids else None,
-                    cohort_ids=cohort_ids if cohort_ids else None,
                     errors=errors if errors else None,
                 )
             )

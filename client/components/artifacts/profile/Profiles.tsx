@@ -222,12 +222,6 @@ const TARGET_FIELDS = [
     description: "Department assignment (optional if scoped)",
     required: false,
   },
-  {
-    value: "cohort",
-    label: "Cohort",
-    description: "Cohort assignment (optional if scoped)",
-    required: false,
-  },
 ] as const;
 
 const unparseCSV = (data: Record<string, string>[]): string => {
@@ -271,9 +265,6 @@ const autoMapColumn = (columnName: string): string | null => {
   }
   if (["department", "dept", "department_id", "dept_id"].includes(lower)) {
     return "department";
-  }
-  if (["cohort", "cohort_id", "cohort_name", "cohort name"].includes(lower)) {
-    return "cohort";
   }
   return null;
 };
@@ -387,10 +378,10 @@ export default function Staff({
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Generation modal via shared hook
-  type ProfileResourceType = "names" | "flags" | "request_limits" | "departments" | "emails" | "cohorts";
+  type ProfileResourceType = "names" | "flags" | "request_limits" | "departments" | "emails";
   const { handleOpenStepCardModal, modalProps } = useGenerationModal<ProfileResourceType>({
     stepResources: {
-      all: ["names", "flags", "request_limits", "departments", "emails", "cohorts"],
+      all: ["names", "flags", "request_limits", "departments", "emails"],
     },
     resourceLabels: {
       names: "Names",
@@ -398,7 +389,6 @@ export default function Staff({
       request_limits: "Request Limits",
       departments: "Departments",
       emails: "Emails",
-      cohorts: "Cohorts",
     },
     canRegenerate: () => true,
     onGenerate: (selectedResources, instructions) => {
@@ -449,7 +439,6 @@ export default function Staff({
     name: true,
     search: false,
     department_ids: true,
-    cohort_ids: false,
   });
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([
@@ -460,14 +449,6 @@ export default function Staff({
   const staff = useMemo(
     () => serverListData?.staff || [],
     [serverListData?.staff]
-  );
-  const cohorts = useMemo(
-    () =>
-      (serverListData?.cohort_filter?.options || []).map((opt) => ({
-        cohort_id: opt.id,
-        name: opt.name,
-      })),
-    [serverListData?.cohort_filter],
   );
   const departments = useMemo(
     () =>
@@ -491,17 +472,6 @@ export default function Staff({
   };
 
   // Use server-provided filter options directly (ListFilterSection pattern)
-  const cohortOptions = useMemo(
-    () =>
-      (serverListData?.cohort_filter?.options || [])
-        .map((opt) => ({
-          value: opt.id as string,
-          label: opt.name as string,
-          count: opt.count ?? 0,
-        }))
-        .filter((opt) => opt.value && opt.label),
-    [serverListData?.cohort_filter],
-  );
   const departmentOptions = useMemo(
     () =>
       (serverListData?.department_filter?.options || [])
@@ -546,33 +516,9 @@ export default function Staff({
     return mapping;
   }, [initialCreateStaffData]);
 
-  const cohortMappingForCSV = useMemo(() => {
-    const createStaffData = initialCreateStaffData;
-    const mapping: Record<string, { name: string; description: string }> = {};
-    if (
-      createStaffData &&
-      "cohorts" in createStaffData &&
-      Array.isArray(createStaffData.cohorts)
-    ) {
-      createStaffData.cohorts.forEach((cohort) => {
-        if (cohort && cohort.cohort_id) {
-          mapping[cohort.cohort_id] = {
-            name: cohort.name ?? "",
-            description: cohort.description ?? "",
-          };
-        }
-      });
-    }
-    return mapping;
-  }, [initialCreateStaffData]);
-
   const validDepartmentIdsForCSV = useMemo(
     () => Object.keys(departmentMappingForCSV),
     [departmentMappingForCSV]
-  );
-  const validCohortIdsForCSV = useMemo(
-    () => Object.keys(cohortMappingForCSV),
-    [cohortMappingForCSV]
   );
   const roleOptionsForCSV = useMemo(
     () => initialCreateStaffData?.role_options || [],
@@ -613,7 +559,7 @@ export default function Staff({
   const csvRequirements = useMemo(() => {
     return {
       required: ["First Name", "Last Name", "Email"],
-      optional: ["Role", "Department", "Cohort"],
+      optional: ["Role", "Department"],
     };
   }, []);
 
@@ -762,21 +708,18 @@ export default function Staff({
         email: "redacted@purdue.edu",
         role: "instructional",
         department: "",
-        cohort: "",
       },
       {
         name: "Jane Smith", // snake_case
         email: "redacted@purdue.edu",
         role: "instructional",
         department: "",
-        cohort: "",
       },
       {
         name: "John Doe", // snake_case
         email: "redacted@purdue.edu",
         role: "member",
         department: "",
-        cohort: "",
       },
     ];
 
@@ -872,7 +815,7 @@ export default function Staff({
         const updated = { ...current } as ProcessedCSVRow &
           Record<string, string | null | string[]>;
 
-        if (field === "department_ids" || field === "cohort_ids") {
+        if (field === "department_ids") {
           updated[field] = Array.isArray(value) ? value : [];
         } else if (field === "emails") {
           if (Array.isArray(value)) {
@@ -976,20 +919,6 @@ export default function Staff({
           })
           .filter((id): id is string => id !== null);
 
-        const rowCohortIds = row.cohort_ids || [];
-        const cohortIds = rowCohortIds
-          .map((cohortIdOrName) => {
-            if (validCohortIdsForCSV.includes(cohortIdOrName)) {
-              return cohortIdOrName;
-            }
-            const found = Object.entries(cohortMappingForCSV).find(
-              ([_, cohort]) =>
-                cohort.name.toLowerCase() === cohortIdOrName.toLowerCase()
-            );
-            return found ? found[0] : null;
-          })
-          .filter((id): id is string => id !== null);
-
         const emails = (row.emails || [])
           .map((e) => normalizeEmail(e))
           .filter((e) => e.length > 0);
@@ -1008,7 +937,6 @@ export default function Staff({
           role: row.role ?? "member",
           active: true, // Default to active for new staff
           department_ids: deptIds,
-          cohort_ids: cohortIds,
         };
       });
 
@@ -1049,8 +977,6 @@ export default function Staff({
     editableRows,
     departmentMappingForCSV,
     validDepartmentIdsForCSV,
-    cohortMappingForCSV,
-    validCohortIdsForCSV,
     validRoles,
     bulkCreateOrUpdateStaffAction,
     router,
@@ -1151,39 +1077,6 @@ export default function Staff({
         },
       },
       {
-        id: "cohort_ids",
-        accessorFn: (row: ProfileListItem) => row.cohort_ids ?? [],
-        filterFn: (row, _, value: string[]) => {
-          const rowIds = (row.getValue("cohort_ids") as string[]) ?? [];
-          return value.some((v) => rowIds.includes(v));
-        },
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Cohorts" />
-        ),
-        cell: ({ row }) => {
-          const staff = row.original;
-          const cohortIds = staff.cohort_ids ?? [];
-
-          if (!cohortIds.length) {
-            return <span className="text-xs text-muted-foreground">None</span>;
-          }
-
-          return (
-            <div className="flex gap-1 overflow-x-auto max-w-[150px] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-              {cohortIds.map((id) => (
-                <Badge
-                  key={id}
-                  variant="secondary"
-                  className="text-xs whitespace-nowrap flex-shrink-0"
-                >
-                  {cohorts.find((c) => c.cohort_id === id)?.name || id}
-                </Badge>
-              ))}
-            </div>
-          );
-        },
-      },
-      {
         id: "department_ids",
         accessorFn: (row: ProfileListItem) => row.department_ids ?? [],
         filterFn: (row, _, value: string[]) => {
@@ -1217,7 +1110,7 @@ export default function Staff({
         },
       },
     ],
-    [cohorts, departments]
+    [departments]
   );
 
   // Build columns with checkbox + actions
@@ -1414,7 +1307,6 @@ export default function Staff({
   // Toolbar state
   const isFiltered = table.getState().columnFilters.length > 0;
   const nameColumn = table.getColumn("search");
-  const cohortIdsColumn = table.getColumn("cohort_ids");
   const roleColumn = table.getColumn("role");
   const departmentIdsColumn = table.getColumn("department_ids");
   const selectedCount = selectedStaffIds.length;
@@ -1450,15 +1342,6 @@ export default function Staff({
               </div>
 
               <div className="flex items-center space-x-2 flex-wrap mb-2">
-                {/* Cohort Filter */}
-                {cohortIdsColumn && cohortOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={cohortIdsColumn}
-                    title="Cohort"
-                    options={cohortOptions}
-                  />
-                )}
-
                 {/* Role Filter */}
                 {roleColumn && roleOptions.length > 0 && (
                   <DataTableFacetedFilter
@@ -1535,7 +1418,7 @@ export default function Staff({
 
               <DataTableViewOptions
                 table={table}
-                hiddenColumns={["cohort_ids"]}
+                hiddenColumns={[]}
               />
             </div>
           </div>
@@ -1942,7 +1825,6 @@ export default function Staff({
                             {validDepartmentIdsForCSV.length > 1 && (
                               <TableHead>Department</TableHead>
                             )}
-                            <TableHead>Cohort</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -1977,12 +1859,6 @@ export default function Staff({
                                     e.field === "department_ids" ||
                                     e.field === "department_id"
                                 );
-                              const hasCohortError = errors.some(
-                                (e) =>
-                                  e.field === "cohort_ids" ||
-                                  e.field === "cohort_id"
-                              );
-
                               return (
                                 <TableRow
                                   key={index}
@@ -2170,39 +2046,6 @@ export default function Staff({
                                       />
                                     </TableCell>
                                   )}
-                                  <TableCell
-                                    className={
-                                      hasCohortError ? "bg-destructive/10" : ""
-                                    }
-                                  >
-                                    <GenericPicker
-                                      items={cohortMappingForCSV}
-                                      itemIds={validCohortIdsForCSV}
-                                      selectedIds={
-                                        (editableRow.cohort_ids ||
-                                          row.cohort_ids ||
-                                          []) as string[]
-                                      }
-                                      onSelect={(ids) =>
-                                        updateEditableRow(
-                                          index,
-                                          "cohort_ids",
-                                          ids
-                                        )
-                                      }
-                                      getId={(cohort) =>
-                                        (cohort as unknown as { id: string }).id
-                                      }
-                                      getLabel={(cohort) => cohort.name || ""}
-                                      getSearchText={(cohort) =>
-                                        `${cohort.name} ${cohort.description || ""}`
-                                      }
-                                      placeholder="Select cohorts"
-                                      multiSelect={true}
-                                      hideSelectedChips={true}
-                                      compact={true}
-                                    />
-                                  </TableCell>
                                 </TableRow>
                               );
                             })}
@@ -2256,41 +2099,26 @@ export default function Staff({
               );
               const nonDeletable = selected.filter((s) => !s.can_delete);
               const deletable = selected.filter((s) => s.can_delete);
-              const impactedCohorts = deletable.map((s) => ({
-                staff: s,
-                cohortCount: s.cohort_ids?.length ?? 0,
-              }));
               return (
                 <div className="space-y-3">
                   {deletable.length > 0 && (
                     <div>
                       <p className="font-medium text-red-700 dark:text-red-400">
-                        The following accounts and their cohort memberships will
-                        be removed:
+                        The following accounts will be removed:
                       </p>
                       <div className="mt-1 ml-4 max-h-32 overflow-y-auto border rounded-md p-2 bg-gray-50 dark:bg-gray-900">
                         <ul className="text-sm space-y-2">
-                          {impactedCohorts.map(({ staff, cohortCount }) => (
+                          {deletable.map((s) => (
                             <li
-                              key={staff.profile_id ?? `staff-${cohortCount}`}
+                              key={s.profile_id}
                               className="text-red-600 dark:text-red-300"
                             >
-                              • {staff.name} (
-                              {staff.primary_email ||
-                                (staff.emails && staff.emails.length > 0
-                                  ? staff.emails[0]
+                              • {s.name} (
+                              {s.primary_email ||
+                                (s.emails && s.emails.length > 0
+                                  ? s.emails[0]
                                   : "")}
-                              ){" "}
-                              {cohortCount > 0 ? (
-                                <span className="text-xs text-muted-foreground">
-                                  – affects {cohortCount} cohort
-                                  {cohortCount > 1 ? "s" : ""}
-                                </span>
-                              ) : (
-                                <span className="text-xs text-muted-foreground">
-                                  – no cohort memberships
-                                </span>
-                              )}
+                              )
                             </li>
                           ))}
                         </ul>
@@ -2388,7 +2216,6 @@ export default function Staff({
               (() => {
                 const staffMember = deleteStaffMember;
                 const canDelete = staffMember.can_delete;
-                const cohortCount = staffMember.cohort_ids?.length ?? 0;
 
                 if (!canDelete) {
                   return (
@@ -2420,8 +2247,7 @@ export default function Staff({
                   <div className="space-y-3">
                     <div>
                       <p className="font-medium text-red-700 dark:text-red-400">
-                        The following account and its cohort memberships will be
-                        removed:
+                        The following account will be removed:
                       </p>
                       <div className="mt-1 ml-4 border rounded-md p-2 bg-gray-50 dark:bg-gray-900">
                         <ul className="text-sm space-y-2">
@@ -2432,17 +2258,7 @@ export default function Staff({
                               staffMember.emails.length > 0
                                 ? staffMember.emails[0]
                                 : "")}
-                            ){" "}
-                            {cohortCount > 0 ? (
-                              <span className="text-xs text-muted-foreground">
-                                – affects {cohortCount} cohort
-                                {cohortCount > 1 ? "s" : ""}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">
-                                – no cohort memberships
-                              </span>
-                            )}
+                            )
                           </li>
                         </ul>
                       </div>

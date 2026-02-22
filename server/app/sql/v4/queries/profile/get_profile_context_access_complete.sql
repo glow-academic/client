@@ -142,20 +142,18 @@ department_ids_data AS (
       )
 ),
 cohort_ids_internal AS (
-    -- Get cohort artifact and resource IDs for the profile
-    -- artifact_id is used for junction lookups (cohort_simulations_junction.cohort_id FK -> cohort_artifact)
-    -- resource_id is returned for analytics (matches mv_chat_facts.cohort_id)
-    -- NOTE: profile_cohorts_junction.cohort_id is a RESOURCE ID (FK -> cohorts_resource.id)
-    --   so we join via cohort_cohorts_junction.cohorts_id (resource) to get the artifact_id
+    -- Get cohort artifact and resource IDs for the profile via REVERSE junction
+    -- Goes through profile_profiles_junction -> cohort_profiles_junction (reverse)
+    -- Then joins cohort_cohorts_junction for resource IDs (analytics)
     SELECT
-        ccj.cohort_id AS artifact_id,
-        pc.cohort_id AS resource_id,
-        pc.created_at
-    FROM profile_cohorts_junction pc
-    JOIN cohort_cohorts_junction ccj ON ccj.cohorts_id = pc.cohort_id AND ccj.active = true
-    WHERE pc.profile_id = (SELECT profile_id FROM params)
-      AND pc.active = true
-      AND EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = ccj.cohort_id AND f.name = 'cohort_active' AND cf.value = true)
+        cpj.cohort_id AS artifact_id,
+        ccj.cohorts_id AS resource_id,
+        cpj.created_at
+    FROM profile_profiles_junction ppj
+    JOIN cohort_profiles_junction cpj ON cpj.profiles_id = ppj.profiles_id AND cpj.active = true
+    JOIN cohort_cohorts_junction ccj ON ccj.cohort_id = cpj.cohort_id AND ccj.active = true
+    WHERE ppj.profile_id = (SELECT profile_id FROM params)
+      AND EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = cpj.cohort_id AND f.name = 'cohort_active' AND cf.value = true)
 ),
 cohort_ids_data AS (
     -- Return resource IDs for analytics (matches mv_chat_facts.cohort_id)
@@ -333,7 +331,6 @@ artifact_agent_ids_data AS (
             ('persona'::artifact_type, 'names'::resource_type),
             ('persona'::artifact_type, 'parameter_fields'::resource_type),
             ('persona'::artifact_type, 'parameters'::resource_type),
-            ('profile'::artifact_type, 'cohorts'::resource_type),
             ('profile'::artifact_type, 'departments'::resource_type),
             ('profile'::artifact_type, 'emails'::resource_type),
             ('profile'::artifact_type, 'flags'::resource_type),

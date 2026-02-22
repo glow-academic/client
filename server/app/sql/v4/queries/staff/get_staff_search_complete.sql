@@ -44,7 +44,6 @@ CREATE TYPE types.q_search_staff_v4_staff AS (
     initials text,
     active boolean,
     last_active timestamptz,
-    cohort_ids text[],
     department_ids text[],
     primary_department_id text,
     requests_per_day integer,
@@ -52,12 +51,6 @@ CREATE TYPE types.q_search_staff_v4_staff AS (
     requests_in_last_day integer,
     can_edit boolean,
     can_delete boolean
-);
-
-CREATE TYPE types.q_search_staff_v4_cohort AS (
-    cohort_id uuid,
-    name text,
-    description text
 );
 
 CREATE TYPE types.q_search_staff_v4_department AS (
@@ -70,13 +63,11 @@ CREATE TYPE types.q_search_staff_v4_department AS (
 CREATE OR REPLACE FUNCTION api_search_staff_v4(
     query text,
     profile_id uuid,
-    cohort_ids uuid[],
     department_ids uuid[],
     limit_count integer DEFAULT 200
 )
 RETURNS TABLE (
     staff types.q_search_staff_v4_staff[],
-    cohorts types.q_search_staff_v4_cohort[],
     departments types.q_search_staff_v4_department[]
 )
 LANGUAGE sql
@@ -86,7 +77,6 @@ WITH params AS (
     SELECT 
         COALESCE(NULLIF(TRIM(query), ''), NULL) AS query,
         profile_id AS profile_id,
-        COALESCE(cohort_ids, ARRAY[]::uuid[]) AS cohort_ids,
         COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
         COALESCE(limit_count, 200) AS limit_count
 ),
@@ -98,15 +88,6 @@ user_profile AS (
     JOIN roles_resource r ON prj.role_id = r.id
     WHERE prj.profile_id = (SELECT profile_id FROM params)
     LIMIT 1
-),
-profile_cohorts_junction AS (
-    SELECT
-        cp.profile_id,
-        ARRAY_AGG(cp.cohort_id::text ORDER BY (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1)) as cohort_ids
-    FROM profile_cohorts_junction cp
-    JOIN cohort_artifact c ON c.id = cp.cohort_id
-    WHERE cp.active = true
-    GROUP BY cp.profile_id
 ),
 profile_departments_agg AS (
     SELECT
@@ -134,19 +115,6 @@ profile_total_runs AS (
     FROM profiles_runs_connection prj
     JOIN runs_entry r ON r.id = prj.run_id
     GROUP BY prj.profiles_id
-),
-all_cohort_ids AS (
-    SELECT DISTINCT c.id as cohort_id
-    FROM cohort_artifact c
-    WHERE EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.name = 'cohort_active' AND cf.value = true)
-),
-cohorts_data AS (
-    SELECT 
-        c.id as cohort_id,
-        (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name,
-        COALESCE((SELECT d.description FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), '') as description
-    FROM cohort_artifact c
-    WHERE c.id IN (SELECT cohort_id FROM all_cohort_ids)
 ),
 departments_data AS (
     SELECT 
@@ -186,10 +154,6 @@ staff_rows AS (
         EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE) as active,
         pa.last_active,
         COALESCE(
-            ARRAY(SELECT unnest(pc.cohort_ids)::text),
-            ARRAY[]::text[]
-        ) as cohort_ids,
-        COALESCE(
             ARRAY(SELECT unnest(pda.department_ids)::text),
             ARRAY[]::text[]
         ) as department_ids,
@@ -201,7 +165,6 @@ staff_rows AS (
     JOIN profile_departments_junction pd ON pd.profile_id = p.id AND pd.active = true
     LEFT JOIN profile_emails_junction pe ON pe.profile_id = p.id AND pe.active = true
     LEFT JOIN emails_resource e ON pe.email_id = e.id
-    LEFT JOIN profile_cohorts_junction pc ON pc.profile_id = p.id
     LEFT JOIN profile_departments_agg pda ON pda.profile_id = p.id
     LEFT JOIN profile_total_runs ptr ON ptr.profiles_id = p.id
     LEFT JOIN recent_runs rr ON rr.profiles_id = p.id
@@ -239,17 +202,6 @@ staff_rows AS (
         )
     )
     AND (
-        -- Cohort exclusion filter (if provided)
-        (SELECT array_length(cohort_ids, 1) FROM params) IS NULL
-        OR (SELECT array_length(cohort_ids, 1) FROM params) = 0
-        OR NOT EXISTS (
-            SELECT 1 FROM public.profile_cohorts_junction pce_table 
-            WHERE pce_table.profile_id = p.id 
-            AND pce_table.cohort_id = ANY((SELECT cohort_ids FROM params)::uuid[])
-            AND pce_table.active = true
-        )
-    )
-    AND (
         -- Department exclusion filter (if provided)
         (SELECT array_length(department_ids, 1) FROM params) IS NULL
         OR (SELECT array_length(department_ids, 1) FROM params) = 0
@@ -261,7 +213,7 @@ staff_rows AS (
         )
     )
     GROUP BY p.id, (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE),
-             pa.last_active, rl.requests_per_day, pc.cohort_ids, pda.department_ids,
+             pa.last_active, rl.requests_per_day, pda.department_ids,
              ptr.total_requests, rr.run_count
     ORDER BY p.id, (SELECT n2.name FROM profile_names_junction pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id LIMIT 1), (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1)
     LIMIT (SELECT limit_count FROM params)
@@ -269,20 +221,12 @@ staff_rows AS (
 SELECT 
     COALESCE(
         (SELECT ARRAY_AGG(
-            (sr.profile_id, sr.emails, sr.primary_email, sr.name, sr.role, sr.initials, sr.active, sr.last_active, sr.cohort_ids, sr.department_ids, sr.primary_department_id, sr.requests_per_day, sr.total_requests, sr.requests_in_last_day, false, false)::types.q_search_staff_v4_staff
+            (sr.profile_id, sr.emails, sr.primary_email, sr.name, sr.role, sr.initials, sr.active, sr.last_active, sr.department_ids, sr.primary_department_id, sr.requests_per_day, sr.total_requests, sr.requests_in_last_day, false, false)::types.q_search_staff_v4_staff
             ORDER BY sr.name NULLS LAST
         )
         FROM staff_rows sr),
         '{}'::types.q_search_staff_v4_staff[]
     ) as staff,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (cd.cohort_id, cd.name, cd.description)::types.q_search_staff_v4_cohort
-            ORDER BY cd.name
-        )
-        FROM cohorts_data cd),
-        '{}'::types.q_search_staff_v4_cohort[]
-    ) as cohorts,
     COALESCE(
         (SELECT ARRAY_AGG(
             (dd.department_id, dd.name, dd.description)::types.q_search_staff_v4_department

@@ -105,9 +105,10 @@ BEGIN
                 SELECT unnest(cohort_ids) as cohort_id
                 WHERE cardinality(cohort_ids) > 0
                 UNION
-                SELECT cp.cohort_id
-                FROM profile_cohorts_junction cp
-                WHERE cp.profile_id = profile_id AND (profile_id::text IS NOT NULL AND profile_id::text != '')
+                SELECT cpj.cohort_id
+                FROM profile_profiles_junction ppj
+                JOIN cohort_profiles_junction cpj ON cpj.profiles_id = ppj.profiles_id AND cpj.active = true
+                WHERE ppj.profile_id = profile_id AND ppj.active = true AND (profile_id::text IS NOT NULL AND profile_id::text != '')
             ) combined
         ),
         history_attempts AS (
@@ -162,8 +163,9 @@ BEGIN
                 ha.attempt_id,
                 COALESCE(ARRAY_AGG(DISTINCT c.id) FILTER (WHERE c.id IS NOT NULL AND cs.simulation_id = ha.simulation_id), ARRAY[]::uuid[]) AS cohort_ids
             FROM history_attempts ha
-            LEFT JOIN profile_cohorts_junction cp ON cp.profile_id = ha.profile_id
-            LEFT JOIN cohort_artifact c ON c.id = cp.cohort_id AND c.active = TRUE
+            LEFT JOIN profile_profiles_junction ppj ON ppj.profile_id = ha.profile_id AND ppj.active = true
+            LEFT JOIN cohort_profiles_junction cpj ON cpj.profiles_id = ppj.profiles_id AND cpj.active = true
+            LEFT JOIN cohort_artifact c ON c.id = cpj.cohort_id AND c.active = TRUE
             LEFT JOIN cohort_simulations_junction cs ON cs.cohort_id = c.id
             WHERE (
                 (SELECT COUNT(*) FROM expanded_history_cohort_ids) = 0

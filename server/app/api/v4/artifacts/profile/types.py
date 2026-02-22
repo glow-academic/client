@@ -8,7 +8,6 @@ from pydantic import BaseModel
 
 from app.api.v4.artifacts.types import WebsocketConfig
 from app.api.v4.entries.runs.search import GetRunListViewResponse
-from app.api.v4.resources.cohorts.types import QGetCohortsV4Item
 from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.sql.types import (
     QGetDepartmentsV4Item,
@@ -57,11 +56,6 @@ class ProfileDepartmentSection(BaseResourceSection):
     resources: list[QGetDepartmentsV4Item] | None = None
 
 
-class ProfileCohortSection(BaseResourceSection):
-    current: list[QGetCohortsV4Item] | None = None
-    resources: list[QGetCohortsV4Item] | None = None
-
-
 class ProfileRoleResource(BaseModel):
     """Role resource for profile."""
 
@@ -98,7 +92,6 @@ class GetProfileApiResponse(BaseModel):
     request_limits: ProfileRequestLimitSection | None = None
     flags: ProfileFlagSection | None = None
     departments: ProfileDepartmentSection | None = None
-    cohorts: ProfileCohortSection | None = None
 
 
 class ProfileWebsocketEntries(BaseModel):
@@ -112,7 +105,6 @@ class ProfileWebsocketResources(BaseModel):
     request_limits: list[QGetRequestLimitsV4Item] | None = None
     flags: list[ProfileFlagConfig] | None = None
     departments: list[QGetDepartmentsV4Item] | None = None
-    cohorts: list[QGetCohortsV4Item] | None = None
 
 
 class GetProfileWebsocketResponse(BaseModel):
@@ -133,7 +125,6 @@ class SaveProfileRouteApiRequest(BaseModel):
     request_limit_id: UUID | None = None
     email_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
-    cohort_ids: list[UUID] | None = None
     expected_version: int = 0
 
 
@@ -154,7 +145,6 @@ class SaveProfileSqlParams(BaseModel):
     request_limits: ProfileResourceAction
     emails: ProfileMultiResourceAction
     departments: ProfileMultiResourceAction
-    cohorts: ProfileMultiResourceAction
 
     @classmethod
     def from_request(
@@ -173,7 +163,6 @@ class SaveProfileSqlParams(BaseModel):
             request_limits=ProfileResourceAction(resource_id=request.request_limit_id),
             emails=ProfileMultiResourceAction(resource_ids=request.email_ids),
             departments=ProfileMultiResourceAction(resource_ids=request.department_ids),
-            cohorts=ProfileMultiResourceAction(resource_ids=request.cohort_ids),
         )
 
     def to_tuple(self) -> tuple:
@@ -195,7 +184,6 @@ class SaveProfileSqlParams(BaseModel):
             single(self.request_limits),
             multi(self.emails),
             multi(self.departments),
-            multi(self.cohorts),
         )
 
 
@@ -248,7 +236,6 @@ class PatchProfileDraftApiRequest(BaseModel):
     request_limit_id: UUID | None = None
     email_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
-    cohort_ids: list[UUID] | None = None
     expected_version: int = 0
 
 
@@ -269,7 +256,6 @@ class PatchProfileDraftSqlParams(BaseModel):
     request_limits: ProfileResourceAction
     emails: ProfileMultiResourceAction
     departments: ProfileMultiResourceAction
-    cohorts: ProfileMultiResourceAction
     expected_version: int = 0
 
     @classmethod
@@ -286,7 +272,6 @@ class PatchProfileDraftSqlParams(BaseModel):
             request_limits=ProfileResourceAction(resource_id=request.request_limit_id),
             emails=ProfileMultiResourceAction(resource_ids=request.email_ids),
             departments=ProfileMultiResourceAction(resource_ids=request.department_ids),
-            cohorts=ProfileMultiResourceAction(resource_ids=request.cohort_ids),
             expected_version=request.expected_version,
         )
 
@@ -306,7 +291,6 @@ class PatchProfileDraftSqlParams(BaseModel):
             single(self.request_limits),
             multi(self.departments),
             multi(self.emails),
-            multi(self.cohorts),
             self.role,
             self.expected_version,
         )
@@ -330,7 +314,6 @@ class ListStaffApiStaff(BaseModel):
     name: str | None = None
     role: str | None = None
     initials: str | None = None
-    cohort_ids: list[str] | None = None
     department_ids: list[str] | None = None
     primary_department_id: str | None = None
     requests_per_day: int | None = None
@@ -345,7 +328,6 @@ class ListStaffApiResponse(BaseModel):
 
     actor_name: str | None = None
     staff: list[ListStaffApiStaff] | None = None
-    cohort_filter: ListFilterSection | None = None
     department_filter: ListFilterSection | None = None
     role_filter: ListFilterSection | None = None
     total_count: int | None = None

@@ -37,7 +37,7 @@ END $$;
 
 -- 3) Recreate types
 -- Staff: NO can_edit/can_delete (moved to Python)
--- Added target_is_self + active_cohort_count for Python permission computation
+-- Added target_is_self for Python permission computation
 CREATE TYPE types.q_list_staff_v4_staff AS (
     profile_id uuid,
     emails text[],
@@ -45,12 +45,10 @@ CREATE TYPE types.q_list_staff_v4_staff AS (
     name text,
     role text,
     initials text,
-    cohort_ids text[],
     department_ids text[],
     primary_department_id text,
     requests_per_day integer,
-    target_is_self boolean,
-    active_cohort_count bigint
+    target_is_self boolean
 );
 
 -- Filter option type: value/label/count (names resolved in SQL)
@@ -64,10 +62,8 @@ CREATE TYPE types.q_list_staff_v4_option AS (
 CREATE OR REPLACE FUNCTION api_list_staff_v4(
     profile_id uuid,
     search text DEFAULT NULL,
-    cohort_ids uuid[] DEFAULT NULL,
     filter_department_ids uuid[] DEFAULT NULL,
     role_filter text DEFAULT NULL,
-    cohort_search text DEFAULT NULL,
     department_search text DEFAULT NULL,
     role_search text DEFAULT NULL,
     page_size int DEFAULT 12,
@@ -75,7 +71,6 @@ CREATE OR REPLACE FUNCTION api_list_staff_v4(
 )
 RETURNS TABLE (
     staff types.q_list_staff_v4_staff[],
-    cohort_options types.q_list_staff_v4_option[],
     department_options types.q_list_staff_v4_option[],
     role_options types.q_list_staff_v4_option[],
     total_count bigint
@@ -99,25 +94,6 @@ user_profile AS (
     JOIN roles_resource r ON prj.role_id = r.id
     WHERE prj.profile_id = (SELECT profile_id FROM params)
     LIMIT 1
-),
--- Profile's cohort links: bridge through cohort_cohorts_junction to get resource IDs
-profile_cohorts_data AS (
-    SELECT
-        cp.profile_id,
-        ARRAY_AGG(ccj.cohorts_id::text ORDER BY ccj.created_at) as cohort_ids
-    FROM profile_cohorts_junction cp
-    JOIN cohort_cohorts_junction ccj ON ccj.cohort_id = cp.cohort_id AND ccj.active = true
-    WHERE cp.active = true
-    GROUP BY cp.profile_id
-),
--- Active cohort links (for delete permission - only active links)
-profile_active_cohort_links AS (
-    SELECT
-        profile_id,
-        COUNT(*) as active_cohort_count
-    FROM profile_cohorts_junction
-    WHERE active = true
-    GROUP BY profile_id
 ),
 -- Profile's department IDs (already resource IDs)
 profile_departments_agg AS (
@@ -164,19 +140,15 @@ staff_rows AS (
         COALESCE(SUBSTRING((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1) FROM 1 FOR 1), '') ||
         COALESCE(NULLIF(SUBSTRING(SPLIT_PART((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ' ', 2) FROM 1 FOR 1), ''), '') as initials,
         rl.requests_per_day,
-        COALESCE(pc.cohort_ids, ARRAY[]::text[]) as cohort_ids,
         COALESCE(pda.department_ids, ARRAY[]::text[]) as department_ids,
         COALESCE(ppd.department_id, '') as primary_department_id,
         -- For Python permission computation
         p.id = (SELECT profile_id FROM params) as target_is_self,
-        COALESCE(pacl.active_cohort_count, 0) as active_cohort_count,
         p.updated_at
     FROM profile_artifact p
     LEFT JOIN profile_departments_junction pd ON pd.profile_id = p.id AND pd.active = true
-    LEFT JOIN profile_cohorts_data pc ON pc.profile_id = p.id
     LEFT JOIN profile_departments_agg pda ON pda.profile_id = p.id
     LEFT JOIN profile_primary_department ppd ON ppd.profile_id = p.id
-    LEFT JOIN profile_active_cohort_links pacl ON pacl.profile_id = p.id
     LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = p.id AND prl.active = true
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
     CROSS JOIN user_profile up
@@ -196,8 +168,8 @@ staff_rows AS (
     GROUP BY p.id, p.updated_at,
         (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1),
         rl.requests_per_day,
-        pc.cohort_ids, pda.department_ids, ppd.department_id,
-        pacl.active_cohort_count, up.role
+        pda.department_ids, ppd.department_id,
+        up.role
     ORDER BY p.id, (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1)
 ),
 -- Apply server-side filters
@@ -207,8 +179,6 @@ filtered_staff AS (
     WHERE
         -- Search filter: match name or email (case-insensitive)
         (search IS NULL OR LOWER(sr.name) LIKE '%' || LOWER(search) || '%' OR LOWER(sr.primary_email) LIKE '%' || LOWER(search) || '%')
-        -- Cohort filter: staff must be linked to at least one selected cohort (resource IDs)
-        AND (api_list_staff_v4.cohort_ids IS NULL OR sr.cohort_ids && api_list_staff_v4.cohort_ids::text[])
         -- Department filter: staff must belong to at least one selected department
         AND (filter_department_ids IS NULL OR sr.department_ids && filter_department_ids::text[])
         -- Role filter: match role
@@ -226,10 +196,6 @@ paginated_staff AS (
     LIMIT page_size OFFSET page_offset
 ),
 -- Filter options with value/label/count (names resolved in SQL)
-all_cohort_ids AS (
-    SELECT DISTINCT unnest(cohort_ids)::uuid as cohort_id
-    FROM staff_rows
-),
 all_department_ids AS (
     SELECT DISTINCT unnest(department_ids)::uuid as department_id
     FROM staff_rows
@@ -254,27 +220,14 @@ SELECT
     -- Aggregate paginated staff (no can_edit/can_delete — computed in Python)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (sr.profile_id, sr.emails, sr.primary_email, sr.name, sr.role, sr.initials, sr.cohort_ids, sr.department_ids, sr.primary_department_id, sr.requests_per_day,
-             sr.target_is_self, sr.active_cohort_count
+            (sr.profile_id, sr.emails, sr.primary_email, sr.name, sr.role, sr.initials, sr.department_ids, sr.primary_department_id, sr.requests_per_day,
+             sr.target_is_self
             )::types.q_list_staff_v4_staff
             ORDER BY sr.name ASC NULLS LAST
         )
         FROM paginated_staff sr),
         '{}'::types.q_list_staff_v4_staff[]
     ) as staff,
-    -- Cohort filter options (value/label/count resolved in SQL)
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (cr.id::text, cn_name.name, (SELECT COUNT(*) FROM staff_rows sr WHERE cr.id::text = ANY(sr.cohort_ids)))::types.q_list_staff_v4_option
-            ORDER BY cn_name.name
-         )
-         FROM cohorts_resource cr
-         JOIN cohort_cohorts_junction ccj ON ccj.cohorts_id = cr.id
-         JOIN (SELECT cn.cohort_id, n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id) cn_name ON cn_name.cohort_id = ccj.cohort_id
-         WHERE cr.id IN (SELECT cohort_id FROM all_cohort_ids)
-           AND (cohort_search IS NULL OR LOWER(cn_name.name) LIKE '%' || LOWER(cohort_search) || '%')),
-        '{}'::types.q_list_staff_v4_option[]
-    ) as cohort_options,
     -- Department filter options (value/label/count resolved in SQL)
     COALESCE(
         (SELECT ARRAY_AGG(

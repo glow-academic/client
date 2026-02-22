@@ -50,8 +50,7 @@ CREATE OR REPLACE FUNCTION api_save_profile_v4(
     flags types.profile_resource_action DEFAULT NULL,
     request_limits types.profile_resource_action DEFAULT NULL,
     emails types.profile_multi_resource_action DEFAULT NULL,
-    departments types.profile_multi_resource_action DEFAULT NULL,
-    cohorts types.profile_multi_resource_action DEFAULT NULL
+    departments types.profile_multi_resource_action DEFAULT NULL
 )
 RETURNS TABLE (
     out_profile_id uuid,
@@ -74,7 +73,6 @@ DECLARE
     v_request_limit_id uuid;
     v_email_ids uuid[];
     v_department_ids uuid[];
-    v_cohort_ids uuid[];
     -- Derived values
     v_name text;
     v_email_texts text[];
@@ -93,7 +91,6 @@ BEGIN
     v_request_limit_id := (request_limits).resource_id;
     v_email_ids := COALESCE((emails).resource_ids, ARRAY[]::uuid[]);
     v_department_ids := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
-    v_cohort_ids := COALESCE((cohorts).resource_ids, ARRAY[]::uuid[]);
     v_role := role;
 
     is_create := (input_profile_id IS NULL);
@@ -142,25 +139,6 @@ BEGIN
         WHERE NOT EXISTS (SELECT 1 FROM emails_resource WHERE id = email_id)
     ) THEN
         RAISE EXCEPTION 'Email resource not found';
-    END IF;
-
-    -- Resolve cohort IDs (accept both cohort_artifact IDs and cohorts_resource IDs)
-    IF COALESCE(array_length(v_cohort_ids, 1), 0) > 0 THEN
-        SELECT ARRAY_AGG(COALESCE(ca.id, cr.cohort_id) ORDER BY ord)
-        INTO v_cohort_ids
-        FROM unnest(v_cohort_ids) WITH ORDINALITY AS input_id(id, ord)
-        LEFT JOIN cohort_artifact ca ON ca.id = input_id.id
-        LEFT JOIN cohorts_resource cr ON cr.id = input_id.id;
-
-        IF EXISTS (
-            SELECT 1
-            FROM unnest(v_cohort_ids) WITH ORDINALITY AS input_id(id, ord)
-            LEFT JOIN cohort_artifact ca ON ca.id = input_id.id
-            LEFT JOIN cohorts_resource cr ON cr.id = input_id.id
-            WHERE ca.id IS NULL AND cr.id IS NULL
-        ) THEN
-            RAISE EXCEPTION 'Cohort not found';
-        END IF;
     END IF;
 
     -- === RESOLVE DERIVED VALUES ===
@@ -369,34 +347,6 @@ BEGIN
         END IF;
     END IF;
 
-    -- cohorts (multi-select)
-    IF v_run_id IS NOT NULL AND COALESCE(array_length(v_cohort_ids, 1), 0) > 0 THEN
-        IF (cohorts).create_tool_id IS NOT NULL THEN
-            v_call_id := uuidv7();
-            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-            VALUES (v_call_id, 'profile_create_cohorts_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((cohorts).create_tool_id, v_call_id);
-            INSERT INTO cohorts_calls_connection (cohorts_id, call_id)
-            SELECT COALESCE(cr.id, ca.cohort_id), v_call_id
-            FROM UNNEST(v_cohort_ids) cid
-            LEFT JOIN cohorts_resource cr ON cr.id = cid
-            LEFT JOIN cohort_artifact ca ON ca.id = cid
-            WHERE COALESCE(cr.id, ca.cohort_id) IS NOT NULL;
-        END IF;
-        IF (cohorts).link_tool_id IS NOT NULL THEN
-            v_call_id := uuidv7();
-            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-            VALUES (v_call_id, 'profile_link_cohorts_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((cohorts).link_tool_id, v_call_id);
-            INSERT INTO cohorts_calls_connection (cohorts_id, call_id)
-            SELECT COALESCE(cr.id, ca.cohort_id), v_call_id
-            FROM UNNEST(v_cohort_ids) cid
-            LEFT JOIN cohorts_resource cr ON cr.id = cid
-            LEFT JOIN cohort_artifact ca ON ca.id = cid
-            WHERE COALESCE(cr.id, ca.cohort_id) IS NOT NULL;
-        END IF;
-    END IF;
-
     -- === JUNCTION LINKING ===
     RETURN QUERY
     WITH params AS (
@@ -409,7 +359,6 @@ BEGIN
             v_role AS role,
             v_role_id AS role_id,
             COALESCE(v_active, true) AS active,
-            COALESCE(v_cohort_ids, ARRAY[]::uuid[]) AS cohort_ids,
             COALESCE(v_department_ids, ARRAY[]::uuid[]) AS department_ids,
             v_primary_email_index AS primary_email_index,
             v_primary_department_index AS primary_department_index,
@@ -532,30 +481,6 @@ BEGIN
         ON CONFLICT (profile_id, email_id) DO UPDATE SET
             email = EXCLUDED.email,
             is_primary = EXCLUDED.is_primary,
-            active = true
-    ),
-    -- Handle cohorts if provided
-    cohort_deactivate AS (
-        UPDATE profile_cohorts_junction SET
-            active = false
-        WHERE profile_id = (SELECT target_profile_id FROM params)
-          AND EXISTS (SELECT 1 FROM params WHERE NOT is_create)
-          AND array_length((SELECT cohort_ids FROM params), 1) >= 0
-          AND (
-              array_length((SELECT cohort_ids FROM params), 1) IS NULL
-              OR cohort_id NOT IN (SELECT unnest((SELECT cohort_ids FROM params)))
-          )
-    ),
-    cohort_insert AS (
-        INSERT INTO profile_cohorts_junction (profile_id, cohort_id, active)
-        SELECT
-            x.target_profile_id,
-            cohort_id,
-            true
-        FROM params x
-        CROSS JOIN unnest(x.cohort_ids) as cohort_id
-        WHERE array_length(x.cohort_ids, 1) > 0
-        ON CONFLICT (profile_id, cohort_id) DO UPDATE SET
             active = true
     ),
     -- Handle departments if provided

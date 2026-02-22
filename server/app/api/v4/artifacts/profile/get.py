@@ -20,14 +20,12 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.api.v4.artifacts.profile.permissions import (
     PROFILE_RESOURCES,
     compute_can_edit,
-    compute_cohorts_required,
     compute_departments_required,
     compute_disabled_reason,
     compute_emails_required,
     compute_flag_required,
     compute_name_required,
     compute_request_limit_required,
-    compute_show_cohorts,
     compute_show_departments,
     compute_show_emails,
     compute_show_flag,
@@ -39,7 +37,6 @@ from app.api.v4.artifacts.profile.types import (
     GetProfileApiRequest,
     GetProfileApiResponse,
     GetProfileWebsocketResponse,
-    ProfileCohortSection,
     ProfileDepartmentSection,
     ProfileEmailSection,
     ProfileFlagConfig,
@@ -59,8 +56,6 @@ from app.api.v4.permissions import has_tools_for_resource, resolve_agents_for_ar
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.args.get import get_args_internal
 from app.api.v4.resources.args_outputs.get import get_args_outputs_internal
-from app.api.v4.resources.cohorts.get import get_cohorts_internal
-from app.api.v4.resources.cohorts.search import search_cohorts_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.departments.search import search_departments_internal
 from app.api.v4.resources.emails.get import get_emails_internal
@@ -137,14 +132,12 @@ class ProfileInternalData:
     selected_request_limit_resource: Any | None
     selected_email_resources: list[Any]
     selected_department_resources: list[Any]
-    selected_cohort_resources: list[Any]
     # All resources (selected + suggestions)
     all_name_resources: list[Any]
     all_email_resources: list[Any]
     all_request_limit_resources: list[Any]
     all_flag_resources: list[ProfileFlagConfig]
     all_department_resources: list[Any]
-    all_cohort_resources: list[Any]
     # Config resources (selected agents -> models/providers/tools)
     config_agent_resources: list[Any] | None
     config_model_resources: list[Any] | None
@@ -269,7 +262,6 @@ async def get_profile_internal(
 
     selected_email_ids = ids_result.email_ids or []
     selected_department_ids = ids_result.department_ids or []
-    selected_cohort_ids = ids_result.cohort_ids or []
 
     selected_role = ids_result.role
 
@@ -310,7 +302,6 @@ async def get_profile_internal(
     request_limits_show_ai_generate = compute_show_ai_generate("request_limits")
     flag_show_ai_generate = compute_show_ai_generate("flags")
     departments_show_ai_generate = compute_show_ai_generate("departments")
-    cohorts_show_ai_generate = compute_show_ai_generate("cohorts")
 
     # Step-level show_ai_generate flags
     basic_show_ai_generate = any(
@@ -328,7 +319,6 @@ async def get_profile_internal(
             request_limits_show_ai_generate,
             flag_show_ai_generate,
             departments_show_ai_generate,
-            cohorts_show_ai_generate,
         ]
     )
 
@@ -352,7 +342,6 @@ async def get_profile_internal(
     flag_ids = [selected_active_flag_id] if selected_active_flag_id else []
     email_ids = selected_email_ids
     department_ids = selected_department_ids
-    cohort_ids = selected_cohort_ids
 
     PROFILE_FLAG_NAMES = {"profile_active"}
 
@@ -434,20 +423,6 @@ async def get_profile_internal(
             )
             return (selected, suggestions)
 
-    async def fetch_cohorts():
-        async with pool.acquire() as c:
-            selected = await get_cohorts_internal(c, cohort_ids, bypass_cache)
-            suggestions = await search_cohorts_internal(
-                c,
-                search=None,
-                limit_count=20,
-                offset_count=0,
-                exclude_ids=cohort_ids,
-                bypass_cache=bypass_cache,
-                profile=True,
-            )
-            return (selected, suggestions)
-
     async def fetch_generation_config():
         config_agent_ids = [a.id for a in settings_data.settings_agents if a.id]
         config_model_ids = [
@@ -490,7 +465,6 @@ async def get_profile_internal(
         (request_limits_selected, request_limits_suggestions),
         (flags_selected, flags_suggestions),
         (departments_selected, departments_suggestions),
-        (cohorts_selected, cohorts_suggestions),
         (
             config_agent_resources,
             config_model_resources,
@@ -503,7 +477,6 @@ async def get_profile_internal(
         fetch_request_limits(),
         fetch_flags(),
         fetch_departments(),
-        fetch_cohorts(),
         fetch_generation_config(),
     )
 
@@ -516,7 +489,6 @@ async def get_profile_internal(
     departments = _dedupe_by_id(
         departments_selected + departments_suggestions, "department_id"
     )
-    cohorts = _dedupe_by_id(cohorts_selected + cohorts_suggestions, "cohort_id")
 
     # Compute final show flags based on actual data
     show_name = compute_show_name(names_has_tools)
@@ -524,7 +496,6 @@ async def get_profile_internal(
     show_request_limit = compute_show_request_limit(request_limits_has_tools)
     show_flag = compute_show_flag()
     show_departments_flag = compute_show_departments(len(departments))
-    show_cohorts_flag = compute_show_cohorts(len(cohorts))
 
     # Build show and required flags maps
     show_flags_map = {
@@ -533,7 +504,6 @@ async def get_profile_internal(
         "request_limits": show_request_limit,
         "flags": show_flag,
         "departments": show_departments_flag,
-        "cohorts": show_cohorts_flag,
     }
 
     required_flags_map = {
@@ -542,7 +512,6 @@ async def get_profile_internal(
         "request_limits": compute_request_limit_required(),
         "flags": compute_flag_required(),
         "departments": compute_departments_required(),
-        "cohorts": compute_cohorts_required(),
     }
 
     # Transform flags to enriched format for client
@@ -566,7 +535,6 @@ async def get_profile_internal(
     email_suggestions = [e.id for e in emails_suggestions]
     request_limit_suggestions = [r.id for r in request_limits_suggestions]
     department_suggestions = [d.department_id for d in departments_suggestions]
-    cohort_suggestions = [c.cohort_id for c in cohorts_suggestions]
 
     # Build show_ai_generate map
     show_ai_generate_map = {
@@ -575,7 +543,6 @@ async def get_profile_internal(
         "request_limits": request_limits_show_ai_generate,
         "flags": flag_show_ai_generate,
         "departments": departments_show_ai_generate,
-        "cohorts": cohorts_show_ai_generate,
     }
 
     # Build suggestions map
@@ -584,7 +551,6 @@ async def get_profile_internal(
         "emails": email_suggestions,
         "request_limits": request_limit_suggestions,
         "departments": department_suggestions,
-        "cohorts": cohort_suggestions,
     }
 
     # === Construct Resources Payload ===
@@ -596,7 +562,6 @@ async def get_profile_internal(
     department_resources = [
         d for d in departments if d.department_id in selected_department_ids
     ]
-    cohort_resources = [c for c in cohorts if c.cohort_id in selected_cohort_ids]
 
     selected_flag_resource = (
         next(
@@ -635,13 +600,11 @@ async def get_profile_internal(
         selected_request_limit_resource=request_limit_resource,
         selected_email_resources=email_resources,
         selected_department_resources=department_resources,
-        selected_cohort_resources=cohort_resources,
         all_name_resources=names,
         all_email_resources=emails,
         all_request_limit_resources=request_limits,
         all_flag_resources=profile_flags,
         all_department_resources=departments,
-        all_cohort_resources=cohorts,
         # Config resources
         config_agent_resources=config_agent_resources,
         config_model_resources=config_model_resources,
@@ -783,7 +746,6 @@ async def get_profile_websocket(
             else [],
             flags=[data.selected_flag_resource] if data.selected_flag_resource else [],
             departments=data.selected_department_resources,
-            cohorts=data.selected_cohort_resources,
         ),
         config=websocket_config,
         resource_agent_ids=data.agent_ids,
@@ -869,16 +831,6 @@ async def get_profile_client(
             link_tool_id=data.link_tool_ids_map.get("departments"),
             current=data.selected_department_resources,
             resources=data.all_department_resources,
-        ),
-        cohorts=ProfileCohortSection(
-            show=data.show_flags_map.get("cohorts", False),
-            required=data.required_flags_map.get("cohorts", False),
-            suggestions=data.suggestions_map.get("cohorts"),
-            show_ai_generate=data.show_ai_generate_map.get("cohorts", False),
-            create_tool_id=data.create_tool_ids_map.get("cohorts"),
-            link_tool_id=data.link_tool_ids_map.get("cohorts"),
-            current=data.selected_cohort_resources,
-            resources=data.all_cohort_resources,
         ),
     )
 

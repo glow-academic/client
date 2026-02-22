@@ -22,6 +22,7 @@ import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegen
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
+import { ProfilePersonas } from "@/components/resources/ProfilePersonas";
 import { Profiles } from "@/components/resources/Profiles";
 import { Flags, type FlagConfig } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
@@ -82,6 +83,14 @@ type CreateDraftSimulationAvailabilityOut = OutputOf<
   "/api/v4/resources/simulation_availability",
   "post"
 >;
+type CreateDraftProfilePersonasIn = InputOf<
+  "/api/v4/resources/profile_personas",
+  "post"
+>;
+type CreateDraftProfilePersonasOut = OutputOf<
+  "/api/v4/resources/profile_personas",
+  "post"
+>;
 type PatchCohortDraftIn = InputOf<"/api/v4/artifacts/cohorts/draft", "patch">;
 type PatchCohortDraftOut = OutputOf<"/api/v4/artifacts/cohorts/draft", "patch">;
 
@@ -93,6 +102,7 @@ type FlushResult = {
   description_id?: string | null;
   simulation_position_ids?: string[] | null;
   simulation_availability_ids?: string[] | null;
+  profile_persona_ids?: string[] | null;
 };
 
 type CohortFormState = {
@@ -105,6 +115,7 @@ type CohortFormState = {
   simulation_availability_ids: string[];
   simulation_positions: SimulationPositionItem[];
   profile_ids: string[];
+  profile_persona_ids: string[];
 };
 
 export interface CohortProps {
@@ -129,9 +140,12 @@ export interface CohortProps {
   createSimulationAvailabilityAction?: (
     input: CreateDraftSimulationAvailabilityIn,
   ) => Promise<CreateDraftSimulationAvailabilityOut>;
+  createProfilePersonasAction?: (
+    input: CreateDraftProfilePersonasIn,
+  ) => Promise<CreateDraftProfilePersonasOut>;
 }
 
-const FLUSH_KEYS = ["names", "descriptions", "simulation_positions", "simulation_availability"] as const;
+const FLUSH_KEYS = ["names", "descriptions", "simulation_positions", "simulation_availability", "profile_personas"] as const;
 
 const VALID_RESOURCE_TYPES: ResourceType[] = [
   "names",
@@ -142,6 +156,7 @@ const VALID_RESOURCE_TYPES: ResourceType[] = [
   "simulation_positions",
   "simulation_availability",
   "profiles",
+  "profile_personas",
 ];
 
 const COHORT_RESOURCES: ResourceConfig[] = [
@@ -183,6 +198,12 @@ const COHORT_RESOURCES: ResourceConfig[] = [
     flushKey: null,
     type: "multi",
   },
+  {
+    key: "profile_personas",
+    formKey: "profile_persona_ids",
+    flushKey: "profile_persona_ids",
+    type: "multi",
+  },
 ];
 
 function CohortComponent({
@@ -194,6 +215,7 @@ function CohortComponent({
   createDescriptionsAction,
   createSimulationPositionsAction,
   createSimulationAvailabilityAction,
+  createProfilePersonasAction,
 }: CohortProps) {
   const router = useRouter();
   const isEditMode = !!cohortId;
@@ -249,6 +271,7 @@ function CohortComponent({
       simulation_positions: cohortData.simulation_positions,
       simulation_availability: cohortData.simulation_availability,
       profiles: cohortData.profiles,
+      profile_personas: cohortData.profile_personas,
       basic_show_ai_generate: cohortData.basic_show_ai_generate,
       simulations_step_show_ai_generate:
         cohortData.simulations_step_show_ai_generate,
@@ -268,6 +291,7 @@ function CohortComponent({
     cohortData?.simulation_positions,
     cohortData?.simulation_availability,
     cohortData?.profiles,
+    cohortData?.profile_personas,
     cohortData?.basic_show_ai_generate,
     cohortData?.simulations_step_show_ai_generate,
     cohortData?.profiles_step_show_ai_generate,
@@ -317,6 +341,12 @@ function CohortComponent({
               (p) => p.generated,
             ) ?? false
           );
+        case "profile_personas":
+          return (
+            stableCohortDataFields.profile_personas?.current?.some(
+              (pp) => pp.generated,
+            ) ?? false
+          );
         default:
           return false;
       }
@@ -337,6 +367,7 @@ function CohortComponent({
         simulation_availability_ids: [] as string[],
         simulation_positions: [] as SimulationPositionItem[],
         profile_ids: [] as string[],
+        profile_persona_ids: [] as string[],
       };
     }
     // Extract resource IDs from server data
@@ -357,6 +388,9 @@ function CohortComponent({
         .filter((id): id is string => !!id),
       profile_ids: (data.profiles?.current ?? [])
         .map((p) => p.profile_id)
+        .filter((id): id is string => !!id),
+      profile_persona_ids: (data.profile_personas?.current ?? [])
+        .map((pp) => pp.id)
         .filter((id): id is string => !!id),
       simulation_positions: (data.simulation_positions?.current ?? []).map(
         (p) => ({
@@ -424,6 +458,15 @@ function CohortComponent({
       ),
     [cohortData?.profiles],
   );
+  const profilePersonaIdsStr = React.useMemo(
+    () =>
+      JSON.stringify(
+        (cohortData?.profile_personas?.current ?? [])
+          .map((pp) => pp.id)
+          .filter(Boolean),
+      ),
+    [cohortData?.profile_personas],
+  );
 
   // Update form state when server data changes
   // Use cohortData directly in dependency array, not getInitialFormState
@@ -444,7 +487,9 @@ function CohortComponent({
         JSON.stringify(prev.simulation_availability_ids) !==
           JSON.stringify(newState.simulation_availability_ids) ||
         JSON.stringify(prev.profile_ids) !==
-          JSON.stringify(newState.profile_ids)
+          JSON.stringify(newState.profile_ids) ||
+        JSON.stringify(prev.profile_persona_ids) !==
+          JSON.stringify(newState.profile_persona_ids)
       ) {
         serverSyncPendingRef.current = true;
         return newState;
@@ -464,6 +509,7 @@ function CohortComponent({
     simulationPositionsStr,
     simulationAvailabilityIdsStr,
     profileIdsStr,
+    profilePersonaIdsStr,
   ]);
 
   // --- Draft Lifecycle ---
@@ -511,6 +557,10 @@ function CohortComponent({
   const formStateProfileIdsStr = React.useMemo(
     () => JSON.stringify(formState.profile_ids),
     [formState.profile_ids],
+  );
+  const formStateProfilePersonaIdsStr = React.useMemo(
+    () => JSON.stringify(formState.profile_persona_ids),
+    [formState.profile_persona_ids],
   );
 
   // formStateKey excludes draftId -- the hook prepends it

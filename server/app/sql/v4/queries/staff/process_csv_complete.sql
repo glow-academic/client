@@ -80,7 +80,6 @@ CREATE TYPE types.q_process_csv_v4_processed_row AS (
     primary_email_index integer,
     role text,
     department_ids text[],
-    cohort_ids text[],
     errors types.q_process_csv_v4_csv_row_error[]
 );
 

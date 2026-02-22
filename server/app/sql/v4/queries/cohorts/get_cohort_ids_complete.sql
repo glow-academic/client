@@ -47,6 +47,9 @@ RETURNS TABLE (
     -- Profile IDs
     profile_ids uuid[],
 
+    -- Profile Persona IDs
+    profile_persona_ids uuid[],
+
     -- Suggestion IDs (computed in resource search endpoints)
     name_suggestions uuid[],
     description_suggestions uuid[],
@@ -265,6 +268,40 @@ profiles_combined_data AS (
         END as profile_ids
     FROM params
     LIMIT 1
+),
+-- Profile personas (from draft or cohort junction)
+draft_profile_personas_data AS (
+    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(dpp.profile_personas_id ORDER BY dpp.created_at), NULL), ARRAY[]::uuid[]) as profile_persona_ids
+    FROM params x
+    LEFT JOIN cohort_drafts_profile_personas_connection dpp ON dpp.draft_id = x.draft_id AND dpp.active = true
+    LIMIT 1
+),
+cohort_profile_personas_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT cohort_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(cpp.profile_persona_id ORDER BY cpp.created_at)
+                 FROM cohort_profile_personas_junction cpp
+                 WHERE cpp.cohort_id = (SELECT cohort_id FROM params) AND cpp.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as profile_persona_ids
+    FROM params
+    LIMIT 1
+),
+profile_personas_combined_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NOT NULL
+                AND COALESCE(array_length((SELECT profile_persona_ids FROM draft_profile_personas_data), 1), 0) > 0
+                THEN (SELECT profile_persona_ids FROM draft_profile_personas_data)
+            WHEN COALESCE(array_length((SELECT profile_persona_ids FROM cohort_profile_personas_data), 1), 0) > 0
+                THEN (SELECT profile_persona_ids FROM cohort_profile_personas_data)
+            ELSE ARRAY[]::uuid[]
+        END as profile_persona_ids
+    FROM params
+    LIMIT 1
 )
 SELECT
     -- Single-select resource IDs
@@ -284,6 +321,9 @@ SELECT
 
     -- Profiles
     (SELECT profile_ids FROM profiles_combined_data) as profile_ids,
+
+    -- Profile Personas
+    (SELECT profile_persona_ids FROM profile_personas_combined_data) as profile_persona_ids,
 
     -- Suggestion IDs (computed in resource search endpoints)
     ARRAY[]::uuid[] as name_suggestions,

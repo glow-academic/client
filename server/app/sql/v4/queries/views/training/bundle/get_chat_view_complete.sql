@@ -76,11 +76,14 @@ access_check AS (
         SELECT 1
         FROM params p
         JOIN parent_cohorts pc ON TRUE
-        JOIN profile_cohorts_junction pcj
-          ON pcj.profile_id = p.profile_id
-         AND pcj.active = true
+        JOIN profile_profiles_junction ppj
+          ON ppj.profile_id = p.profile_id
+         AND ppj.active = true
+        JOIN cohort_profiles_junction cpj
+          ON cpj.profiles_id = ppj.profiles_id
+         AND cpj.active = true
         JOIN cohort_cohorts_junction ccj
-          ON ccj.cohorts_id = pcj.cohort_id
+          ON ccj.cohort_id = cpj.cohort_id
          AND ccj.active = true
         WHERE ccj.cohorts_id = ANY(pc.cohort_ids)
     ) AS profile_has_access

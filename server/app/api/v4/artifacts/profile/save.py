@@ -88,7 +88,6 @@ async def save_profile_internal(
             request_limits=_single("request_limits"),
             emails=_multi("emails"),
             departments=_multi("departments"),
-            cohorts=_multi("cohorts"),
         )
 
         async with conn.transaction():

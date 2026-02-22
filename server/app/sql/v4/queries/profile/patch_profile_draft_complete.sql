@@ -45,7 +45,6 @@ CREATE OR REPLACE FUNCTION api_patch_profile_draft_v4(
     request_limits types.profile_resource_action DEFAULT NULL,
     departments types.profile_multi_resource_action DEFAULT NULL,
     emails types.profile_multi_resource_action DEFAULT NULL,
-    cohorts types.profile_multi_resource_action DEFAULT NULL,
     role text DEFAULT NULL,
     expected_version int DEFAULT 0
 )
@@ -71,7 +70,6 @@ DECLARE
     v_request_limit_id uuid := (request_limits).resource_id;
     v_department_ids uuid[] := (departments).resource_ids;
     v_email_ids uuid[] := (emails).resource_ids;
-    v_cohort_ids uuid[] := (cohorts).resource_ids;
 
     v_run_id uuid;
     v_call_id uuid;
@@ -114,24 +112,6 @@ BEGIN
         WHERE NOT EXISTS (SELECT 1 FROM emails_resource WHERE id = email_id)
     ) THEN
         RAISE EXCEPTION 'Email resource not found';
-    END IF;
-
-    IF v_cohort_ids IS NOT NULL THEN
-        SELECT ARRAY_AGG(COALESCE(ca.id, cr.cohort_id) ORDER BY ord)
-        INTO v_cohort_ids
-        FROM unnest(v_cohort_ids) WITH ORDINALITY AS input_id(id, ord)
-        LEFT JOIN cohort_artifact ca ON ca.id = input_id.id
-        LEFT JOIN cohorts_resource cr ON cr.id = input_id.id;
-
-        IF EXISTS (
-            SELECT 1
-            FROM unnest(v_cohort_ids) WITH ORDINALITY AS input_id(id, ord)
-            LEFT JOIN cohort_artifact ca ON ca.id = input_id.id
-            LEFT JOIN cohorts_resource cr ON cr.id = input_id.id
-            WHERE ca.id IS NULL AND cr.id IS NULL
-        ) THEN
-            RAISE EXCEPTION 'Cohort not found';
-        END IF;
     END IF;
 
     IF role IS NOT NULL THEN
@@ -218,7 +198,6 @@ BEGIN
     DELETE FROM profile_drafts_request_limits_connection WHERE draft_id = v_draft_id;
     DELETE FROM profile_drafts_departments_connection WHERE draft_id = v_draft_id;
     DELETE FROM profile_drafts_emails_connection WHERE draft_id = v_draft_id;
-    DELETE FROM profile_drafts_cohorts_connection WHERE draft_id = v_draft_id;
     DELETE FROM profile_drafts_roles_connection WHERE draft_id = v_draft_id;
 
     IF v_name_id IS NOT NULL THEN
@@ -255,14 +234,6 @@ BEGIN
         SET version = v_new_version;
     END IF;
 
-    IF v_cohort_ids IS NOT NULL THEN
-        INSERT INTO profile_drafts_cohorts_connection (draft_id, cohorts_id, version)
-        SELECT v_draft_id, cohort_id, v_new_version
-        FROM UNNEST(v_cohort_ids) AS cohort_id
-        ON CONFLICT ON CONSTRAINT cohorts_draft_pkey DO UPDATE
-        SET version = v_new_version;
-    END IF;
-
     IF v_role_id IS NOT NULL THEN
         INSERT INTO profile_drafts_roles_connection (draft_id, roles_id, version)
         VALUES (v_draft_id, v_role_id, v_new_version)
@@ -275,8 +246,7 @@ BEGIN
         (flags).create_tool_id IS NOT NULL OR (flags).link_tool_id IS NOT NULL OR
         (request_limits).create_tool_id IS NOT NULL OR (request_limits).link_tool_id IS NOT NULL OR
         (departments).create_tool_id IS NOT NULL OR (departments).link_tool_id IS NOT NULL OR
-        (emails).create_tool_id IS NOT NULL OR (emails).link_tool_id IS NOT NULL OR
-        (cohorts).create_tool_id IS NOT NULL OR (cohorts).link_tool_id IS NOT NULL
+        (emails).create_tool_id IS NOT NULL OR (emails).link_tool_id IS NOT NULL
     ) THEN
         v_run_id := uuidv7();
         INSERT INTO runs_entry (id, group_id, created_at, updated_at)
@@ -366,31 +336,6 @@ BEGIN
             SELECT eid, v_call_id FROM UNNEST(v_email_ids) eid;
         END IF;
 
-        IF COALESCE(array_length(v_cohort_ids, 1), 0) > 0 AND (cohorts).create_tool_id IS NOT NULL THEN
-            v_call_id := uuidv7();
-            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-            VALUES (v_call_id, 'profile_draft_create_cohorts_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((cohorts).create_tool_id, v_call_id);
-            INSERT INTO cohorts_calls_connection (cohorts_id, call_id)
-            SELECT COALESCE(cr.id, ca.cohort_id), v_call_id
-            FROM UNNEST(v_cohort_ids) cid
-            LEFT JOIN cohorts_resource cr ON cr.id = cid
-            LEFT JOIN cohort_artifact ca ON ca.id = cid
-            WHERE COALESCE(cr.id, ca.cohort_id) IS NOT NULL;
-        END IF;
-
-        IF COALESCE(array_length(v_cohort_ids, 1), 0) > 0 AND (cohorts).link_tool_id IS NOT NULL THEN
-            v_call_id := uuidv7();
-            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-            VALUES (v_call_id, 'profile_draft_link_cohorts_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((cohorts).link_tool_id, v_call_id);
-            INSERT INTO cohorts_calls_connection (cohorts_id, call_id)
-            SELECT COALESCE(cr.id, ca.cohort_id), v_call_id
-            FROM UNNEST(v_cohort_ids) cid
-            LEFT JOIN cohorts_resource cr ON cr.id = cid
-            LEFT JOIN cohort_artifact ca ON ca.id = cid
-            WHERE COALESCE(cr.id, ca.cohort_id) IS NOT NULL;
-        END IF;
     END IF;
 
     RETURN QUERY

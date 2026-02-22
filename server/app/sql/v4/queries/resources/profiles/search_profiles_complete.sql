@@ -57,7 +57,9 @@ FROM (
       AND (search IS NULL OR search = '' OR LOWER(p.name) LIKE '%' || LOWER(search) || '%' OR LOWER(COALESCE(p.description, '')) LIKE '%' || LOWER(search) || '%')
       AND (exclude_ids IS NULL OR NOT (p.id = ANY(exclude_ids)))
       AND (COALESCE(array_length(department_ids, 1), 0) = 0 OR p.department_ids && department_ids)
-      AND (COALESCE(array_length(cohort_ids, 1), 0) = 0 OR p.cohort_ids && cohort_ids)
+      AND (COALESCE(array_length(cohort_ids, 1), 0) = 0 OR EXISTS (
+          SELECT 1 FROM cohorts_resource cr WHERE p.id = ANY(cr.profile_ids) AND cr.id = ANY(cohort_ids)
+      ))
       AND (COALESCE(array_length(role_ids, 1), 0) = 0 OR p.role_id = ANY(role_ids))
       AND (api_search_profiles_v4.role IS NULL OR p.role::text = api_search_profiles_v4.role)
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)

@@ -1,30 +1,30 @@
--- Materialized View: persona_mv
--- Grain: One row per persona_entry.id
+-- Materialized View: profile_personas_mv
+-- Grain: One row per profile_personas_entry.id
 -- Filter: active = TRUE only
--- Purpose: persona_entry data for view layer
--- Dependencies: persona_entry
+-- Purpose: profile_personas_entry data for view layer
+-- Dependencies: profile_personas_entry
 
 -- Step 1: Drop indexes
 DO $$ DECLARE r RECORD; BEGIN
     FOR r IN SELECT indexname FROM pg_indexes
-        WHERE schemaname = 'public' AND tablename = 'persona_mv'
+        WHERE schemaname = 'public' AND tablename = 'profile_personas_mv'
     LOOP EXECUTE format('DROP INDEX IF EXISTS %I', r.indexname); END LOOP;
 END $$;
 
 -- Step 2: Drop MV
-DROP MATERIALIZED VIEW IF EXISTS persona_mv CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS profile_personas_mv CASCADE;
 
 -- Step 3: Create MV
-CREATE MATERIALIZED VIEW persona_mv AS
-SELECT * FROM persona_entry WHERE active = true
+CREATE MATERIALIZED VIEW profile_personas_mv AS
+SELECT * FROM profile_personas_entry WHERE active = true
 WITH NO DATA;
 
 -- Step 4: Unique index
-CREATE UNIQUE INDEX persona_mv_pk ON persona_mv (id);
+CREATE UNIQUE INDEX profile_personas_mv_pk ON profile_personas_mv (id);
 
 -- Step 5: Filter indexes
-CREATE INDEX persona_mv_created_at_idx ON persona_mv (created_at DESC);
-CREATE INDEX persona_mv_chat_id_idx ON persona_mv (chat_id);
+CREATE INDEX profile_personas_mv_created_at_idx ON profile_personas_mv (created_at DESC);
+CREATE INDEX profile_personas_mv_chat_id_idx ON profile_personas_mv (chat_id);
 
 -- Step 6: Refresh
-REFRESH MATERIALIZED VIEW persona_mv;
+REFRESH MATERIALIZED VIEW profile_personas_mv;

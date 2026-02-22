@@ -95,8 +95,9 @@ access_data AS (
     SELECT EXISTS (
         SELECT 1
         FROM params p
-        JOIN profile_cohorts_junction pc ON pc.profile_id = p.profile_id AND pc.active = true
-        JOIN cohort_simulations_junction cs ON cs.cohort_id = pc.cohort_id AND cs.active = true
+        JOIN profile_profiles_junction ppj ON ppj.profile_id = p.profile_id AND ppj.active = true
+        JOIN cohort_profiles_junction cpj ON cpj.profiles_id = ppj.profiles_id AND cpj.active = true
+        JOIN cohort_simulations_junction cs ON cs.cohort_id = cpj.cohort_id AND cs.active = true
         WHERE cs.simulation_id = p.simulation_id
     ) as has_access
 ),

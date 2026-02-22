@@ -39,7 +39,7 @@ SELECT
     sce.id AS content_id,
     sce.message_id,
     sce.content,
-    sce.persona_entry_id,
+    sce.profile_personas_entry_id,
     (ROW_NUMBER() OVER (PARTITION BY sce.message_id ORDER BY sce.created_at) - 1)::int AS idx,
     sce.created_at
 FROM attempt_content_entry sce

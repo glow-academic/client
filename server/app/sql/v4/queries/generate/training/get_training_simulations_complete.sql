@@ -63,12 +63,15 @@ WITH params AS (
 ),
 user_cohorts AS (
     SELECT ARRAY_AGG(DISTINCT ccj.cohorts_id) AS cohort_ids
-    FROM profile_cohorts_junction pcj
+    FROM profile_profiles_junction ppj
+    JOIN cohort_profiles_junction cpj
+      ON cpj.profiles_id = ppj.profiles_id
+     AND cpj.active = true
     JOIN cohort_cohorts_junction ccj
-      ON ccj.cohorts_id = pcj.cohort_id
+      ON ccj.cohort_id = cpj.cohort_id
      AND ccj.active = true
-    WHERE pcj.profile_id = (SELECT profile_id FROM params)
-      AND pcj.active = true
+    WHERE ppj.profile_id = (SELECT profile_id FROM params)
+      AND ppj.active = true
 ),
 accessible_training AS (
     SELECT

@@ -49,7 +49,7 @@ CREATE TYPE types.q_get_simulation_contents_view_v4_item AS (
     content_id uuid,
     message_id uuid,
     content text,
-    persona_entry_id uuid,
+    profile_personas_entry_id uuid,
     idx int,
     created_at timestamptz
 );
@@ -80,7 +80,7 @@ AS $$
                     mv.content_id,
                     mv.message_id,
                     mv.content,
-                    mv.persona_entry_id,
+                    mv.profile_personas_entry_id,
                     mv.idx,
                     mv.created_at
                 )::types.q_get_simulation_contents_view_v4_item

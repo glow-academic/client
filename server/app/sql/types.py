@@ -2538,6 +2538,7 @@ class GetCohortIdsSqlRow(BaseModel):
     simulation_position_values: list[int] | None = None
     simulation_availability_ids: list[UUID] | None = None
     profile_ids: list[UUID] | None = None
+    profile_persona_ids: list[UUID] | None = None
     name_suggestions: list[UUID] | None = None
     description_suggestions: list[UUID] | None = None
     department_suggestions: list[UUID] | None = None
@@ -2560,6 +2561,7 @@ class GetCohortIdsApiResponse(BaseModel):
     simulation_position_values: list[int] | None = None
     simulation_availability_ids: list[UUID] | None = None
     profile_ids: list[UUID] | None = None
+    profile_persona_ids: list[UUID] | None = None
     name_suggestions: list[UUID] | None = None
     description_suggestions: list[UUID] | None = None
     department_suggestions: list[UUID] | None = None
@@ -2679,6 +2681,7 @@ class PatchCohortDraftSqlParams(BaseModel):
     simulation_positions: CohortMultiResourceAction | None = None
     simulation_availability: CohortMultiResourceAction | None = None
     profiles: CohortMultiResourceAction | None = None
+    profile_personas: CohortMultiResourceAction | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -2694,6 +2697,7 @@ class PatchCohortDraftSqlParams(BaseModel):
             self.simulation_positions,
             self.simulation_availability,
             self.profiles,
+            self.profile_personas,
             self.expected_version,
         )
 
@@ -2715,6 +2719,7 @@ class PatchCohortDraftApiRequest(BaseModel):
     simulation_positions: CohortMultiResourceAction | None = None
     simulation_availability: CohortMultiResourceAction | None = None
     profiles: CohortMultiResourceAction | None = None
+    profile_personas: CohortMultiResourceAction | None = None
     expected_version: int | None = 0
 
 class PatchCohortDraftApiResponse(BaseModel):
@@ -2740,6 +2745,7 @@ class SaveCohortSqlParams(BaseModel):
     simulation_positions: CohortMultiResourceAction | None = None
     simulation_availability: CohortMultiResourceAction | None = None
     profiles: CohortMultiResourceAction | None = None
+    profile_personas: CohortMultiResourceAction | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -2754,6 +2760,7 @@ class SaveCohortSqlParams(BaseModel):
             self.simulation_positions,
             self.simulation_availability,
             self.profiles,
+            self.profile_personas,
         )
 
 class SaveCohortSqlRow(BaseModel):
@@ -2772,6 +2779,7 @@ class SaveCohortApiRequest(BaseModel):
     simulation_positions: CohortMultiResourceAction | None = None
     simulation_availability: CohortMultiResourceAction | None = None
     profiles: CohortMultiResourceAction | None = None
+    profile_personas: CohortMultiResourceAction | None = None
 
 class SaveCohortApiResponse(BaseModel):
 
@@ -20302,7 +20310,6 @@ class CheckProfileDeleteAccessSqlRow(BaseModel):
     target_is_self: bool | None = None
     profile_name: str | None = None
     target_role: str | None = None
-    active_cohort_count: int | None = None
 
 class CheckProfileDeleteAccessApiRequest(BaseModel):
 
@@ -20314,7 +20321,6 @@ class CheckProfileDeleteAccessApiResponse(BaseModel):
     target_is_self: bool | None = None
     profile_name: str | None = None
     target_role: str | None = None
-    active_cohort_count: int | None = None
 
 
 
@@ -20383,7 +20389,6 @@ class CreateOrUpdateProfileSqlParams(BaseModel):
     primary_email_index: int | None = 0
     active: bool | None = True
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     profile_id_new: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -20395,7 +20400,6 @@ class CreateOrUpdateProfileSqlParams(BaseModel):
             self.primary_email_index,
             self.active,
             self.department_ids,
-            self.cohort_ids,
             self.profile_id_new,
         )
 
@@ -20414,7 +20418,6 @@ class CreateOrUpdateProfileApiRequest(BaseModel):
     primary_email_index: int | None = 0
     active: bool | None = True
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     profile_id_new: UUID | None = None
 
 class CreateOrUpdateProfileApiResponse(BaseModel):
@@ -20645,16 +20648,6 @@ class GetProfileSqlParams(BaseModel):
             self.draft_version,
         )
 
-class QGetProfileV4Cohort(BaseModel):
-
-    cohort_id: UUID | None
-    name: str | None
-    description: str | None
-    generated: bool | None
-
-
-
-
 class QGetProfileV4Department(BaseModel):
 
     department_id: UUID | None
@@ -20747,13 +20740,6 @@ class GetProfileSqlRow(BaseModel):
     departments_required: bool | None = None
     department_suggestions: list[UUID] | None = None
     departments: list[QGetProfileV4Department] | None = None
-    cohort_ids: list[UUID] | None = None
-    cohort_resources: list[QGetProfileV4Cohort] | None = None
-    show_cohorts: bool | None = None
-    cohorts_agent_id: UUID | None = None
-    cohorts_required: bool | None = None
-    cohort_suggestions: list[UUID] | None = None
-    cohorts: list[QGetProfileV4Cohort] | None = None
     basic_agent_id: UUID | None = None
     general_agent_id: UUID | None = None
 
@@ -20808,13 +20794,6 @@ class GetProfileApiResponse(BaseModel):
     departments_required: bool | None = None
     department_suggestions: list[UUID] | None = None
     departments: list[QGetProfileV4Department] | None = None
-    cohort_ids: list[UUID] | None = None
-    cohort_resources: list[QGetProfileV4Cohort] | None = None
-    show_cohorts: bool | None = None
-    cohorts_agent_id: UUID | None = None
-    cohorts_required: bool | None = None
-    cohort_suggestions: list[UUID] | None = None
-    cohorts: list[QGetProfileV4Cohort] | None = None
     basic_agent_id: UUID | None = None
     general_agent_id: UUID | None = None
 
@@ -20904,17 +20883,6 @@ class QGetProfileContextV4Auth(BaseModel):
     name: str | None
     description: str | None
     slug: str | None
-
-
-
-
-class QGetProfileContextV4Cohort(BaseModel):
-
-    cohort_id: UUID | None
-    title: str | None
-    description: str | None
-    active: bool | None
-    department_ids: list[str] | None
 
 
 
@@ -21021,7 +20989,6 @@ class GetProfileContextSqlRow(BaseModel):
     updated_at: datetime | None = None
     primary_department_id: UUID | None = None
     departments: list[QGetProfileContextV4Department] | None = None
-    cohorts: list[QGetProfileContextV4Cohort] | None = None
     simulations: list[QGetProfileContextV4Simulation] | None = None
     earliest_attempt_date: datetime | None = None
     scoped_roles: list[str] | None = None
@@ -21054,7 +21021,6 @@ class GetProfileContextSqlRow(BaseModel):
     settings_provider_key_ids: list[UUID] | None = None
     redirect_path: str | None = None
     department_ids: list[str] | None = None
-    cohort_ids: list[str] | None = None
     simulation_ids: list[str] | None = None
     drafts: list[QGetProfileContextV4Draft] | None = None
     settings_tokens: QGetProfileContextV4ThemeTokens | None = None
@@ -21081,7 +21047,6 @@ class GetProfileContextApiResponse(BaseModel):
     updated_at: datetime | None = None
     primary_department_id: UUID | None = None
     departments: list[QGetProfileContextV4Department] | None = None
-    cohorts: list[QGetProfileContextV4Cohort] | None = None
     simulations: list[QGetProfileContextV4Simulation] | None = None
     earliest_attempt_date: datetime | None = None
     scoped_roles: list[str] | None = None
@@ -21114,7 +21079,6 @@ class GetProfileContextApiResponse(BaseModel):
     settings_provider_key_ids: list[UUID] | None = None
     redirect_path: str | None = None
     department_ids: list[str] | None = None
-    cohort_ids: list[str] | None = None
     simulation_ids: list[str] | None = None
     drafts: list[QGetProfileContextV4Draft] | None = None
     settings_tokens: QGetProfileContextV4ThemeTokens | None = None
@@ -21174,7 +21138,6 @@ class GetProfileIdsSqlRow(BaseModel):
     active_flag_id: UUID | None = None
     email_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
-    cohort_ids: list[UUID] | None = None
     role: str | None = None
 
 class GetProfileIdsApiRequest(BaseModel):
@@ -21191,7 +21154,6 @@ class GetProfileIdsApiResponse(BaseModel):
     active_flag_id: UUID | None = None
     email_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
-    cohort_ids: list[UUID] | None = None
     role: str | None = None
 
 
@@ -21222,7 +21184,6 @@ class GetProfileResourceIdsByGroupIdSqlRow(BaseModel):
     request_limit_id: UUID | None = None
     department_ids: list[UUID] | None = None
     email_ids: list[UUID] | None = None
-    cohort_ids: list[UUID] | None = None
 
 class GetProfileResourceIdsByGroupIdApiRequest(BaseModel):
 
@@ -21238,7 +21199,6 @@ class GetProfileResourceIdsByGroupIdApiResponse(BaseModel):
     request_limit_id: UUID | None = None
     department_ids: list[UUID] | None = None
     email_ids: list[UUID] | None = None
-    cohort_ids: list[UUID] | None = None
 
 
 
@@ -21269,7 +21229,6 @@ class PatchProfileDraftSqlParams(BaseModel):
     request_limits: ProfileResourceAction | None = None
     departments: ProfileMultiResourceAction | None = None
     emails: ProfileMultiResourceAction | None = None
-    cohorts: ProfileMultiResourceAction | None = None
     role: str | None = None
     expected_version: int | None = 0
 
@@ -21283,7 +21242,6 @@ class PatchProfileDraftSqlParams(BaseModel):
             self.request_limits,
             self.departments,
             self.emails,
-            self.cohorts,
             self.role,
             self.expected_version,
         )
@@ -21303,7 +21261,6 @@ class PatchProfileDraftApiRequest(BaseModel):
     request_limits: ProfileResourceAction | None = None
     departments: ProfileMultiResourceAction | None = None
     emails: ProfileMultiResourceAction | None = None
-    cohorts: ProfileMultiResourceAction | None = None
     role: str | None = None
     expected_version: int | None = 0
 
@@ -21328,7 +21285,6 @@ class SaveProfileSqlParams(BaseModel):
     request_limits: ProfileResourceAction | None = None
     emails: ProfileMultiResourceAction | None = None
     departments: ProfileMultiResourceAction | None = None
-    cohorts: ProfileMultiResourceAction | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -21341,7 +21297,6 @@ class SaveProfileSqlParams(BaseModel):
             self.request_limits,
             self.emails,
             self.departments,
-            self.cohorts,
         )
 
 class SaveProfileSqlRow(BaseModel):
@@ -21359,7 +21314,6 @@ class SaveProfileApiRequest(BaseModel):
     request_limits: ProfileResourceAction | None = None
     emails: ProfileMultiResourceAction | None = None
     departments: ProfileMultiResourceAction | None = None
-    cohorts: ProfileMultiResourceAction | None = None
 
 class SaveProfileApiResponse(BaseModel):
 
@@ -22747,6 +22701,8 @@ class QGetCohortsV4Item(BaseModel):
     description: str | None
     active: bool | None
     department_ids: list[str] | None
+    profile_ids: list[str] | None
+    profile_persona_ids: list[str] | None
 
 class GetCohortsSqlRow(BaseModel):
 
@@ -22772,6 +22728,8 @@ class SearchCohortsSqlParams(BaseModel):
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    profile_persona_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     cohort: bool | None = False
     profile: bool | None = False
 
@@ -22783,6 +22741,8 @@ class SearchCohortsSqlParams(BaseModel):
             self.exclude_ids,
             self.department_ids,
             self.simulation_ids,
+            self.profile_ids,
+            self.profile_persona_ids,
             self.cohort,
             self.profile,
         )
@@ -22799,6 +22759,8 @@ class SearchCohortsApiRequest(BaseModel):
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    profile_persona_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     cohort: bool | None = False
     profile: bool | None = False
 
@@ -26173,6 +26135,108 @@ class ProblemStatementsApiRequest(BaseModel):
 class ProblemStatementsApiResponse(BaseModel):
 
     problem_statement_id: UUID | None = None
+
+
+
+# Generated from: get_profile_personas
+
+class GetProfilePersonasSqlParams(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.ids,
+        )
+
+class QGetProfilePersonasV4Item(BaseModel):
+
+    id: UUID | None
+    profile_id: UUID | None
+    persona_id: UUID | None
+    generated: bool | None
+
+class GetProfilePersonasSqlRow(BaseModel):
+
+    items: list[QGetProfilePersonasV4Item] | None = None
+
+class GetProfilePersonasApiRequest(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetProfilePersonasApiResponse(BaseModel):
+
+    items: list[QGetProfilePersonasV4Item] | None = None
+
+
+
+# Generated from: search_profile_personas
+
+class SearchProfilePersonasSqlParams(BaseModel):
+
+    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    persona_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    cohort: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_ids,
+            self.persona_ids,
+            self.cohort,
+        )
+
+class SearchProfilePersonasSqlRow(BaseModel):
+
+    items: list[QGetProfilePersonasV4Item] | None = None
+
+class SearchProfilePersonasApiRequest(BaseModel):
+
+    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    persona_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    cohort: bool | None = False
+
+class SearchProfilePersonasApiResponse(BaseModel):
+
+    items: list[QGetProfilePersonasV4Item] | None = None
+
+
+
+# Generated from: profile_personas
+
+class ProfilePersonasSqlParams(BaseModel):
+
+    cohort_id: UUID
+    profile_id: UUID
+    persona_id: UUID
+    mcp: bool | None = False
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.cohort_id,
+            self.profile_id,
+            self.persona_id,
+            self.mcp,
+            self.group_id,
+            self.tool_id,
+        )
+
+class ProfilePersonasSqlRow(BaseModel):
+
+    id: UUID | None = None
+
+class ProfilePersonasApiRequest(BaseModel):
+
+    cohort_id: UUID
+    persona_id: UUID
+    mcp: bool | None = False
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+class ProfilePersonasApiResponse(BaseModel):
+
+    id: UUID | None = None
 
 
 
@@ -32573,10 +32637,8 @@ class GetStaffListSqlParams(BaseModel):
 
     profile_id: UUID
     search: str | None = None
-    cohort_ids: list[UUID] | None = None
     filter_department_ids: list[UUID] | None = None
     role_filter: str | None = None
-    cohort_search: str | None = None
     department_search: str | None = None
     role_search: str | None = None
     page_size: int | None = 12
@@ -32586,10 +32648,8 @@ class GetStaffListSqlParams(BaseModel):
         return (
             self.profile_id,
             self.search,
-            self.cohort_ids,
             self.filter_department_ids,
             self.role_filter,
-            self.cohort_search,
             self.department_search,
             self.role_search,
             self.page_size,
@@ -32613,17 +32673,14 @@ class QListStaffV4Staff(BaseModel):
     name: str | None
     role: str | None
     initials: str | None
-    cohort_ids: list[str] | None
     department_ids: list[str] | None
     primary_department_id: str | None
     requests_per_day: int | None
     target_is_self: bool | None
-    active_cohort_count: int | None
 
 class GetStaffListSqlRow(BaseModel):
 
     staff: list[QListStaffV4Staff] | None = None
-    cohort_options: list[QListStaffV4Option] | None = None
     department_options: list[QListStaffV4Option] | None = None
     role_options: list[QListStaffV4Option] | None = None
     total_count: int | None = None
@@ -32631,10 +32688,8 @@ class GetStaffListSqlRow(BaseModel):
 class GetStaffListApiRequest(BaseModel):
 
     search: str | None = None
-    cohort_ids: list[UUID] | None = None
     filter_department_ids: list[UUID] | None = None
     role_filter: str | None = None
-    cohort_search: str | None = None
     department_search: str | None = None
     role_search: str | None = None
     page_size: int | None = 12
@@ -32643,7 +32698,6 @@ class GetStaffListApiRequest(BaseModel):
 class GetStaffListApiResponse(BaseModel):
 
     staff: list[QListStaffV4Staff] | None = None
-    cohort_options: list[QListStaffV4Option] | None = None
     department_options: list[QListStaffV4Option] | None = None
     role_options: list[QListStaffV4Option] | None = None
     total_count: int | None = None
@@ -32656,7 +32710,6 @@ class GetStaffSearchSqlParams(BaseModel):
 
     query: str
     profile_id: UUID
-    cohort_ids: list[UUID]
     department_ids: list[UUID]
     limit_count: int | None = 200
 
@@ -32664,19 +32717,9 @@ class GetStaffSearchSqlParams(BaseModel):
         return (
             self.query,
             self.profile_id,
-            self.cohort_ids,
             self.department_ids,
             self.limit_count,
         )
-
-class QSearchStaffV4Cohort(BaseModel):
-
-    cohort_id: UUID | None
-    name: str | None
-    description: str | None
-
-
-
 
 class QSearchStaffV4Department(BaseModel):
 
@@ -32697,7 +32740,6 @@ class QSearchStaffV4Staff(BaseModel):
     initials: str | None
     active: bool | None
     last_active: datetime | None
-    cohort_ids: list[str] | None
     department_ids: list[str] | None
     primary_department_id: str | None
     requests_per_day: int | None
@@ -32709,20 +32751,17 @@ class QSearchStaffV4Staff(BaseModel):
 class GetStaffSearchSqlRow(BaseModel):
 
     staff: list[QSearchStaffV4Staff] | None = None
-    cohorts: list[QSearchStaffV4Cohort] | None = None
     departments: list[QSearchStaffV4Department] | None = None
 
 class GetStaffSearchApiRequest(BaseModel):
 
     query: str
-    cohort_ids: list[UUID]
     department_ids: list[UUID]
     limit_count: int | None = 200
 
 class GetStaffSearchApiResponse(BaseModel):
 
     staff: list[QSearchStaffV4Staff] | None = None
-    cohorts: list[QSearchStaffV4Cohort] | None = None
     departments: list[QSearchStaffV4Department] | None = None
 
 
@@ -32766,7 +32805,6 @@ class QProcessCsvV4ProcessedRow(BaseModel):
     primary_email_index: int | None
     role: str | None
     department_ids: list[str] | None
-    cohort_ids: list[str] | None
     errors: list[QProcessCsvV4CsvRowError] | None
 
 class ProcessCsvSqlRow(BaseModel):
@@ -32798,7 +32836,6 @@ class IUpsertStaffV4Profile(BaseModel):
     role: str | None
     active: bool | None
     department_ids: list[UUID] | None
-    cohort_ids: list[UUID] | None
 
 class UpsertStaffSqlParams(BaseModel):
 
@@ -32809,7 +32846,7 @@ class UpsertStaffSqlParams(BaseModel):
     def to_tuple(self) -> tuple[Any, ...]:
         # Convert profiles composite array to tuples for asyncpg
         profiles_tuples = [
-            (conn.name, conn.emails, conn.primary_email_index, conn.role, conn.active, conn.department_ids, conn.cohort_ids)
+            (conn.name, conn.emails, conn.primary_email_index, conn.role, conn.active, conn.department_ids)
             for conn in (self.profiles or [])
         ]
         return (
@@ -35259,7 +35296,7 @@ class QGetSimulationContentsViewV4Item(BaseModel):
     content_id: UUID | None
     message_id: UUID | None
     content: str | None
-    persona_entry_id: UUID | None
+    profile_personas_entry_id: UUID | None
     idx: int | None
     created_at: datetime | None
 
@@ -39836,6 +39873,24 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ProblemStatementsSqlRow",
         "ProblemStatementsApiRequest",
         "ProblemStatementsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/profile_personas/get_profile_personas_complete.sql": (
+        "GetProfilePersonasSqlParams",
+        "GetProfilePersonasSqlRow",
+        "GetProfilePersonasApiRequest",
+        "GetProfilePersonasApiResponse",
+    ),
+    "app/sql/v4/queries/resources/profile_personas/search_profile_personas_complete.sql": (
+        "SearchProfilePersonasSqlParams",
+        "SearchProfilePersonasSqlRow",
+        "SearchProfilePersonasApiRequest",
+        "SearchProfilePersonasApiResponse",
+    ),
+    "app/sql/v4/queries/resources/profile_personas_complete.sql": (
+        "ProfilePersonasSqlParams",
+        "ProfilePersonasSqlRow",
+        "ProfilePersonasApiRequest",
+        "ProfilePersonasApiResponse",
     ),
     "app/sql/v4/queries/resources/profiles/get_profiles_complete.sql": (
         "GetProfilesSqlParams",
@@ -44680,6 +44735,21 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/problem_statements_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/profile_personas/get_profile_personas_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/profile_personas/search_profile_personas_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/profile_personas_complete.sql"]
     ) -> SqlString: ...
 
     @overload

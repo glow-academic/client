@@ -37,7 +37,6 @@ RETURNS TABLE (
     -- Multi-select resource IDs
     email_ids uuid[],
     department_ids uuid[],
-    cohort_ids uuid[],
 
     -- Role (from draft or junction)
     role text
@@ -131,22 +130,6 @@ department_ids_data AS (
     FROM params
     LIMIT 1
 ),
-cohort_ids_data AS (
-    SELECT
-        COALESCE(
-            (SELECT ARRAY_AGG(dc.cohorts_id ORDER BY dc.created_at)
-             FROM profile_drafts_cohorts_connection dc
-             WHERE dc.draft_id = (SELECT draft_id FROM params)
-               AND dc.active = true),
-            (SELECT ARRAY_AGG(pc.cohort_id ORDER BY pc.created_at)
-             FROM profile_cohorts_junction pc
-             WHERE pc.profile_id = (SELECT target_profile_id FROM params)
-               AND pc.active = true),
-            ARRAY[]::uuid[]
-        ) as cohort_ids
-    FROM params
-    LIMIT 1
-),
 -- Role (from draft or junction)
 target_role_data AS (
     SELECT
@@ -183,7 +166,6 @@ SELECT
     -- Multi-select resource IDs
     (SELECT email_ids FROM email_ids_data) as email_ids,
     (SELECT department_ids FROM department_ids_data) as department_ids,
-    (SELECT cohort_ids FROM cohort_ids_data) as cohort_ids,
 
     -- Role
     (SELECT role FROM target_role_data) as role

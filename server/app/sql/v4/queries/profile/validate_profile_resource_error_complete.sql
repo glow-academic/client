@@ -51,8 +51,7 @@ DECLARE
         'flags',
         'request_limits',
         'departments',
-        'emails',
-        'cohorts'
+        'emails'
     ];
     is_profile_resource boolean := FALSE;
 BEGIN

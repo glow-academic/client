@@ -1,5 +1,5 @@
 -- Duplicate profile (without cloning login email bindings)
--- Copies role/flags/departments/cohorts/request-limits and creates a new name with " Copy".
+-- Copies role/flags/departments/request-limits and creates a new name with " Copy".
 DO $$
 DECLARE
     r RECORD;
@@ -105,16 +105,6 @@ copy_departments AS (
     JOIN profile_departments_junction pd ON pd.profile_id = (SELECT id FROM source_profile)
     ON CONFLICT (profile_id, department_id) DO UPDATE
     SET is_primary = EXCLUDED.is_primary, active = EXCLUDED.active
-),
-copy_cohorts AS (
-    INSERT INTO profile_cohorts_junction (profile_id, cohort_id, active)
-    SELECT
-        np.id,
-        pc.cohort_id,
-        pc.active
-    FROM new_profile np
-    JOIN profile_cohorts_junction pc ON pc.profile_id = (SELECT id FROM source_profile)
-    ON CONFLICT (profile_id, cohort_id) DO UPDATE SET active = EXCLUDED.active
 ),
 copy_request_limits AS (
     INSERT INTO profile_request_limits_junction (

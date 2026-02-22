@@ -478,6 +478,19 @@ from app.api.v4.resources.scenario_personas.search import (
 router.include_router(scenario_personas_router)
 router.include_router(scenario_personas_get_router)
 router.include_router(scenario_personas_search_router)
+from app.api.v4.resources.profile_personas.create import (
+    router as profile_personas_router,
+)
+from app.api.v4.resources.profile_personas.get import (
+    router as profile_personas_get_router,
+)
+from app.api.v4.resources.profile_personas.search import (
+    router as profile_personas_search_router,
+)
+
+router.include_router(profile_personas_router)
+router.include_router(profile_personas_get_router)
+router.include_router(profile_personas_search_router)
 from app.api.v4.resources.scenario_positions.create import (
     router as scenario_positions_router,
 )

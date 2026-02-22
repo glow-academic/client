@@ -6,7 +6,7 @@
 -- 1. Profile Resolution: Uses provided profile_id directly
 -- 2. Scoped Roles: Computes roles that profile has scope to see (for UI filtering)
 -- 3. Settings Resolution: Resolves settings with priority: department-specific → default → any active
--- 4. Collections: Returns arrays of composite types (departments, cohorts, simulations) - NO JSONB
+-- 4. Collections: Returns arrays of composite types (departments, simulations) - NO JSONB
 --
 -- NOTE: Theme derivation (converting primitives to tokens) stays in Python because it requires
 -- complex color math utilities (hex_to_oklch, ensure_contrast, shade, tint) that are not available
@@ -52,14 +52,6 @@ CREATE TYPE types.q_get_profile_context_v4_department AS (
     description text,
     active boolean,
     is_primary boolean
-);
-
-CREATE TYPE types.q_get_profile_context_v4_cohort AS (
-    cohort_id uuid,
-    title text,
-    description text,
-    active boolean,
-    department_ids text[]
 );
 
 CREATE TYPE types.q_get_profile_context_v4_simulation AS (
@@ -164,7 +156,6 @@ RETURNS TABLE (
     primary_department_id uuid,
     -- Context data (based on effective profile)
     departments types.q_get_profile_context_v4_department[],
-    cohorts types.q_get_profile_context_v4_cohort[],
     simulations types.q_get_profile_context_v4_simulation[],
     earliest_attempt_date timestamptz,
     scoped_roles text[],
@@ -199,7 +190,6 @@ RETURNS TABLE (
     -- Computed fields
     redirect_path text,
     department_ids text[],
-    cohort_ids text[],
     simulation_ids text[],
     drafts types.q_get_profile_context_v4_draft[],
     settings_tokens types.q_get_profile_context_v4_theme_tokens,
@@ -309,28 +299,6 @@ dept_data AS (
       AND pd.active = true
       AND EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true)
 ),
-cohort_data AS (
-    -- Cohorts for the effective profile
-    SELECT DISTINCT
-        c.id,
-        (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1),
-        (SELECT d.description FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1),
-        EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.name = 'cohort_active' AND cf.value = TRUE),
-        COALESCE(cdd.department_ids, ARRAY[]::text[]) as department_ids
-    FROM profile_cohorts_junction pc
-    JOIN cohort_artifact c ON c.id = pc.cohort_id
-    LEFT JOIN (
-        SELECT 
-            cd.cohort_id,
-            ARRAY_AGG(cd.department_id::text ORDER BY cd.created_at) as department_ids
-        FROM cohort_departments_junction cd
-        WHERE cd.active = true
-        GROUP BY cd.cohort_id
-    ) cdd ON cdd.cohort_id = c.id
-    WHERE pc.profile_id = (SELECT profile_id FROM params)
-      AND pc.active = true
-      AND EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.name = 'cohort_active' AND cf.value = true)
-),
 sim_data AS (
     -- Simulations for the effective profile's cohorts
     SELECT DISTINCT
@@ -350,9 +318,13 @@ sim_data AS (
         EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'practice' AND sf.value = TRUE)
     FROM simulation_artifact s
     JOIN cohort_simulations_junction cs ON cs.simulation_id = s.id
-    JOIN cohort_data cd ON cd.id = cs.cohort_id
+    JOIN cohort_artifact ca ON ca.id = cs.cohort_id
+    JOIN cohort_cohorts_junction ccj ON ccj.cohort_id = ca.id
+    JOIN cohorts_resource cr ON cr.id = ccj.cohorts_id
+    JOIN profile_profiles_junction ppj_sim ON ppj_sim.profile_id = (SELECT profile_id FROM params)
+    JOIN profiles_resource pr_sim ON pr_sim.id = ppj_sim.profiles_id AND pr_sim.id = ANY(cr.profile_ids)
     LEFT JOIN (
-        SELECT 
+        SELECT
             sd.simulation_id,
             ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at) as department_ids
         FROM simulation_departments_junction sd
@@ -372,18 +344,6 @@ departments_aggregated AS (
             '{}'::types.q_get_profile_context_v4_department[]
         ) as departments
     FROM dept_data d
-),
-cohorts_aggregated AS (
-    -- Aggregate cohorts into composite type array
-    SELECT 
-        COALESCE(
-            ARRAY_AGG(
-                (c.id, (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1), (SELECT d.description FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.name = 'cohort_active' AND cf.value = TRUE), c.department_ids)::types.q_get_profile_context_v4_cohort
-                ORDER BY (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1)
-            ),
-            '{}'::types.q_get_profile_context_v4_cohort[]
-        ) as cohorts
-    FROM cohort_data c
 ),
 simulations_aggregated AS (
     -- Aggregate simulations into composite type array
@@ -579,15 +539,6 @@ department_ids_computed AS (
         ) as department_ids
     FROM dept_data d
 ),
-cohort_ids_computed AS (
-    -- Extract cohort IDs from cohort_data
-    SELECT 
-        COALESCE(
-            ARRAY_AGG(c.id::text ORDER BY (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1)),
-            ARRAY[]::text[]
-        ) as cohort_ids
-    FROM cohort_data c
-),
 simulation_ids_computed AS (
     -- Extract simulation IDs from sim_data
     SELECT 
@@ -668,7 +619,6 @@ SELECT
     pd.primary_department_id,
     -- Context data (based on effective profile) - using composite types
     da.departments as departments,
-    ca.cohorts as cohorts,
     sa.simulations as simulations,
     (SELECT earliest FROM earliest_attempt) as earliest_attempt_date,
     (SELECT scoped_roles FROM scoped_roles_computed) as scoped_roles,
@@ -703,7 +653,6 @@ SELECT
     -- Computed fields
     (SELECT redirect_path FROM redirect_path_computed) as redirect_path,
     (SELECT department_ids FROM department_ids_computed) as department_ids,
-    (SELECT cohort_ids FROM cohort_ids_computed) as cohort_ids,
     (SELECT simulation_ids FROM simulation_ids_computed) as simulation_ids,
     (SELECT drafts FROM drafts_aggregated) as drafts,
     -- Return empty theme tokens struct for type introspection (Python will override with computed values)
@@ -716,12 +665,10 @@ CROSS JOIN profile_data pd
 CROSS JOIN scoped_roles_computed src
 CROSS JOIN settings_resolution sr
 CROSS JOIN departments_aggregated da
-CROSS JOIN cohorts_aggregated ca
 CROSS JOIN simulations_aggregated sa
 CROSS JOIN actor_name_computed anc
 CROSS JOIN redirect_path_computed rpc
 CROSS JOIN department_ids_computed dic
-CROSS JOIN cohort_ids_computed cic
 CROSS JOIN simulation_ids_computed sic
 CROSS JOIN drafts_aggregated da_drafts
 WHERE (

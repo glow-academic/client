@@ -50,8 +50,7 @@ DECLARE
         'flags',
         'request_limits',
         'departments',
-        'emails',
-        'cohorts'
+        'emails'
     ];
 BEGIN
     -- Validate artifact_type (all validation in SQL)

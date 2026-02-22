@@ -19,8 +19,7 @@ DROP MATERIALIZED VIEW IF EXISTS profile_drafts_mv CASCADE;
 
 CREATE MATERIALIZED VIEW profile_drafts_mv AS
 WITH draft_links AS (
-    SELECT draft_id, 'cohorts'::text AS resource_type, cohorts_id AS resource_id FROM profile_drafts_cohorts_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'departments'::text AS resource_type, departments_id AS resource_id FROM profile_drafts_departments_connection WHERE active = true
+    SELECT draft_id, 'departments'::text AS resource_type, departments_id AS resource_id FROM profile_drafts_departments_connection WHERE active = true
     UNION ALL SELECT draft_id, 'emails'::text AS resource_type, emails_id AS resource_id FROM profile_drafts_emails_connection WHERE active = true
     UNION ALL SELECT draft_id, 'flags'::text AS resource_type, flags_id AS resource_id FROM profile_drafts_flags_connection WHERE active = true
     UNION ALL SELECT draft_id, 'names'::text AS resource_type, names_id AS resource_id FROM profile_drafts_names_connection WHERE active = true
@@ -37,7 +36,6 @@ SELECT
     d.mcp,
     d.active,
     (SELECT ggc.groups_id FROM groups_groups_connection ggc WHERE ggc.group_id = d.group_id AND ggc.active = true LIMIT 1) AS group_id,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'cohorts'), ARRAY[]::uuid[]) AS cohort_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'departments'), ARRAY[]::uuid[]) AS department_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'emails'), ARRAY[]::uuid[]) AS email_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'flags'), ARRAY[]::uuid[]) AS flag_ids,

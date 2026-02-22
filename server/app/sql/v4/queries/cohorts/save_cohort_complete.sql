@@ -48,7 +48,8 @@ CREATE OR REPLACE FUNCTION api_save_cohort_v4(
     simulations types.cohort_multi_resource_action DEFAULT NULL,
     simulation_positions types.cohort_multi_resource_action DEFAULT NULL,
     simulation_availability types.cohort_multi_resource_action DEFAULT NULL,
-    profiles types.cohort_multi_resource_action DEFAULT NULL
+    profiles types.cohort_multi_resource_action DEFAULT NULL,
+    profile_personas types.cohort_multi_resource_action DEFAULT NULL
 )
 RETURNS TABLE (
     cohort_id uuid
@@ -69,6 +70,7 @@ DECLARE
     v_simulation_position_ids uuid[] := COALESCE((simulation_positions).resource_ids, ARRAY[]::uuid[]);
     v_simulation_availability_ids uuid[] := COALESCE((simulation_availability).resource_ids, ARRAY[]::uuid[]);
     v_profile_ids uuid[] := COALESCE((profiles).resource_ids, ARRAY[]::uuid[]);
+    v_profile_persona_ids uuid[] := COALESCE((profile_personas).resource_ids, ARRAY[]::uuid[]);
 
     v_cohort_id uuid;
     v_object_department_ids text[];
@@ -190,6 +192,10 @@ BEGIN
         UPDATE cohort_profiles_junction
         SET active = false
         WHERE cohort_id = v_cohort_id AND active = true;
+
+        UPDATE cohort_profile_personas_junction
+        SET active = false
+        WHERE cohort_id = v_cohort_id AND active = true;
     END IF;
 
     INSERT INTO cohort_groups_junction (cohort_id, group_id, created_at, active)
@@ -291,6 +297,27 @@ BEGIN
     ON CONFLICT ON CONSTRAINT cohort_profiles_junction_pkey DO UPDATE
     SET active = true;
 
+    IF EXISTS (
+        SELECT 1
+        FROM unnest(v_profile_persona_ids) AS pp_id
+        WHERE NOT EXISTS (SELECT 1 FROM profile_personas_resource ppr WHERE ppr.id = pp_id)
+    ) THEN
+        RAISE EXCEPTION 'Profile persona resource not found';
+    END IF;
+
+    INSERT INTO cohort_profile_personas_junction (
+        cohort_id,
+        profile_persona_id,
+        active,
+        created_at,
+        generated,
+        mcp
+    )
+    SELECT v_cohort_id, pp_id, true, NOW(), false, false
+    FROM UNNEST(v_profile_persona_ids) AS pp_id
+    ON CONFLICT ON CONSTRAINT cohort_profile_personas_junction_pkey DO UPDATE
+    SET active = true;
+
     UPDATE cohorts_resource r
     SET name = n.name,
         description = d.description
@@ -308,7 +335,8 @@ BEGIN
         (simulations).create_tool_id IS NOT NULL OR (simulations).link_tool_id IS NOT NULL OR
         (simulation_positions).create_tool_id IS NOT NULL OR (simulation_positions).link_tool_id IS NOT NULL OR
         (simulation_availability).create_tool_id IS NOT NULL OR (simulation_availability).link_tool_id IS NOT NULL OR
-        (profiles).create_tool_id IS NOT NULL OR (profiles).link_tool_id IS NOT NULL
+        (profiles).create_tool_id IS NOT NULL OR (profiles).link_tool_id IS NOT NULL OR
+        (profile_personas).create_tool_id IS NOT NULL OR (profile_personas).link_tool_id IS NOT NULL
     ) THEN
         v_run_id := uuidv7();
         INSERT INTO runs_entry (id, group_id, created_at, updated_at)
@@ -450,6 +478,24 @@ BEGIN
             INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((profiles).link_tool_id, v_call_id);
             INSERT INTO profiles_calls_connection (profiles_id, call_id)
             SELECT pid, v_call_id FROM UNNEST(v_profile_ids) pid;
+        END IF;
+
+        IF COALESCE(array_length(v_profile_persona_ids, 1), 0) > 0 AND (profile_personas).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'cohort_save_create_profile_personas_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((profile_personas).create_tool_id, v_call_id);
+            INSERT INTO profile_personas_calls_connection (profile_personas_id, call_id)
+            SELECT ppid, v_call_id FROM UNNEST(v_profile_persona_ids) ppid;
+        END IF;
+
+        IF COALESCE(array_length(v_profile_persona_ids, 1), 0) > 0 AND (profile_personas).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'cohort_save_link_profile_personas_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((profile_personas).link_tool_id, v_call_id);
+            INSERT INTO profile_personas_calls_connection (profile_personas_id, call_id)
+            SELECT ppid, v_call_id FROM UNNEST(v_profile_persona_ids) ppid;
         END IF;
     END IF;
 

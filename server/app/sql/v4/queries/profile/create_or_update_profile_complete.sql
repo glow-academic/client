@@ -1,4 +1,4 @@
--- Create or UPDATE profile_artifact with departments, cohorts, and all emails in single function
+-- Create or UPDATE profile_artifact with departments and all emails in single function
 -- Converted to PostgreSQL function
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- 1) Drop function first (breaks dependency on types)
@@ -29,7 +29,6 @@ CREATE OR REPLACE FUNCTION api_create_or_update_profile_v4(
     primary_email_index integer DEFAULT 0,
     active boolean DEFAULT true,
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    cohort_ids uuid[] DEFAULT ARRAY[]::uuid[],
     profile_id_new uuid DEFAULT NULL  -- New UUID for create (generated if NULL), will be ignored if profile exists
 )
 RETURNS TABLE (
@@ -49,7 +48,6 @@ WITH params AS (
         role AS role,
         COALESCE(active, true) AS active,
         COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
-        COALESCE(cohort_ids, ARRAY[]::uuid[]) AS cohort_ids,
         current_profile_id AS current_profile_id
 ),
 -- User context: actor_name comes from get_profile_context_internal() in Python
@@ -248,26 +246,6 @@ dept_insert AS (
       AND EXISTS (SELECT 1 FROM profile_upsert)
     ON CONFLICT (profile_id, department_id) DO UPDATE SET
         is_primary = EXCLUDED.is_primary,
-        active = true
-),
-cohort_cleanup AS (
-    -- Delete existing cohort relationships
-    DELETE FROM profile_cohorts_junction
-    WHERE profile_id = (SELECT id FROM profile_upsert LIMIT 1)
-      AND EXISTS (SELECT 1 FROM profile_upsert)
-),
-cohort_insert AS (
-    -- Insert cohort relationships
-    INSERT INTO profile_cohorts_junction (profile_id, cohort_id, active)
-    SELECT
-        pu.id,
-        cohort_id,
-        true
-    FROM profile_upsert pu
-    CROSS JOIN unnest((SELECT cohort_ids FROM params)) as cohort_id
-    WHERE cardinality((SELECT cohort_ids FROM params)) > 0
-      AND EXISTS (SELECT 1 FROM profile_upsert)
-    ON CONFLICT (cohort_id, profile_id) DO UPDATE SET
         active = true
 ),
 deactivate_old_sessions AS (

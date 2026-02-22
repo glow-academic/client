@@ -44,8 +44,7 @@ RETURNS TABLE (
     active_flag_id uuid,
     request_limit_id uuid,
     department_ids uuid[],
-    email_ids uuid[],
-    cohort_ids uuid[]
+    email_ids uuid[]
 )
 LANGUAGE plpgsql
 STABLE
@@ -56,8 +55,7 @@ DECLARE
         'flags',
         'request_limits',
         'departments',
-        'emails',
-        'cohorts'
+        'emails'
     ];
 BEGIN
     -- Validate artifact_type (all validation in SQL)
@@ -77,7 +75,6 @@ BEGIN
         CASE WHEN resource_type = 'flags' THEN resource_id ELSE NULL::uuid END as active_flag_id,
         CASE WHEN resource_type = 'request_limits' THEN resource_id ELSE NULL::uuid END as request_limit_id,
         CASE WHEN resource_type = 'departments' THEN ARRAY[resource_id] ELSE ARRAY[]::uuid[] END as department_ids,
-        CASE WHEN resource_type = 'emails' THEN ARRAY[resource_id] ELSE ARRAY[]::uuid[] END as email_ids,
-        CASE WHEN resource_type = 'cohorts' THEN ARRAY[resource_id] ELSE ARRAY[]::uuid[] END as cohort_ids;
+        CASE WHEN resource_type = 'emails' THEN ARRAY[resource_id] ELSE ARRAY[]::uuid[] END as email_ids;
 END;
 $$;

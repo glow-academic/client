@@ -25,7 +25,6 @@ import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { StepCard } from "@/components/common/forms/StepCard";
 import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
-import { Cohorts, type CohortsProps } from "@/components/resources/Cohorts";
 import {
   Departments,
   type DepartmentsProps,
@@ -90,7 +89,6 @@ type DepartmentItem = NonNullable<DepartmentsProps["departments"]>[number];
 type DepartmentResource = NonNullable<DepartmentsProps["department_resources"]>[number];
 type EmailItem = NonNullable<EmailsProps["emails"]>[number];
 type EmailResource = NonNullable<EmailsProps["email_resources"]>[number];
-type CohortItem = NonNullable<CohortsProps["cohorts"]>[number];
 type RoleItem = NonNullable<RolesProps["roles"]>[number];
 
 type StaffData = OutputOf<"/api/v4/artifacts/profiles/get", "post"> &
@@ -136,13 +134,6 @@ type StaffData = OutputOf<"/api/v4/artifacts/profiles/get", "post"> &
     current?: EmailResource[];
     resources?: EmailItem[];
   } | null;
-  cohorts?: {
-    show?: boolean;
-    required?: boolean;
-    suggestions?: string[];
-    current?: CohortItem[];
-    resources?: CohortItem[];
-  } | null;
   };
 
 const VALID_RESOURCE_TYPES = [
@@ -151,7 +142,6 @@ const VALID_RESOURCE_TYPES = [
   "request_limits",
   "departments",
   "emails",
-  "cohorts",
 ] as const;
 type ProfileResourceType = (typeof VALID_RESOURCE_TYPES)[number];
 type ProfileFormState = {
@@ -161,7 +151,6 @@ type ProfileFormState = {
   department_ids: string[];
   email_ids: string[];
   primary_email_index: number;
-  cohort_ids: string[];
   role: string;
   primary_department_id: string | null;
 };
@@ -170,8 +159,7 @@ const STEP_RESOURCES = {
   basic: ["names", "flags", "departments"],
   contact: ["emails", "request_limits"],
   roles: [],
-  cohorts: ["cohorts"],
-  all: ["names", "flags", "request_limits", "departments", "emails", "cohorts"],
+  all: ["names", "flags", "request_limits", "departments", "emails"],
 } as const;
 
 const FLUSH_KEYS = ["names", "emails", "request_limits"] as const;
@@ -192,7 +180,6 @@ const PROFILE_RESOURCES: ResourceConfig[] = [
     type: "multi",
   },
   { key: "emails", formKey: "email_ids", flushKey: null, type: "multi" },
-  { key: "cohorts", formKey: "cohort_ids", flushKey: null, type: "multi" },
 ];
 
 export interface ProfileProps {
@@ -235,8 +222,6 @@ function ProfileComponent({
       draftId: parseAsString,
       roleSearch: parseAsString,
       roleShowSelected: parseAsBoolean,
-      cohortSearch: parseAsString,
-      cohortShowSelected: parseAsBoolean,
     }),
     []
   );
@@ -249,17 +234,12 @@ function ProfileComponent({
     const requestLimitResource = s.request_limits?.resource ?? null;
     const departmentResources = s.departments?.current ?? [];
     const emailResources = s.emails?.current ?? [];
-    const cohortResources = s.cohorts?.current ?? [];
     const departmentIds = departmentResources
       .map((d) => d.department_id)
       .filter((id): id is string => !!id);
     const emailIds = emailResources
       .map((e) => e.id)
       .filter((id): id is string => !!id);
-    const cohortIds = cohortResources
-      .map((c) => c.cohort_id)
-      .filter((id): id is string => !!id);
-
     return {
       disabled_reason: s.disabled_reason ?? null,
       group_id: s.group_id ?? null,
@@ -271,7 +251,6 @@ function ProfileComponent({
       request_limit_id: requestLimitResource?.id ?? null,
       department_ids: departmentIds,
       email_ids: emailIds,
-      cohort_ids: cohortIds,
       primary_email_index: 0,
       primary_department_id: departmentIds[0] ?? null,
       name: nameResource?.name ?? null,
@@ -299,7 +278,6 @@ function ProfileComponent({
       email_suggestions: s.emails?.suggestions ?? [],
       emails_required: s.emails?.required ?? false,
       emails: s.emails?.resources ?? [],
-      cohorts: s.cohorts?.resources ?? [],
       role_options: s.role_options ?? [],
       roles: s.roles ?? [],
     };
@@ -335,8 +313,6 @@ function ProfileComponent({
             stableStaffDataFields.email_resources?.some((e) => e.generated) ??
             false
           );
-        case "cohorts":
-          return false;
         default:
           return false;
       }
@@ -354,7 +330,6 @@ function ProfileComponent({
         department_ids: [] as string[],
         email_ids: [] as string[],
         primary_email_index: 0 as number,
-        cohort_ids: [] as string[],
         role: "instructional" as string,
         primary_department_id: null as string | null,
       };
@@ -370,7 +345,6 @@ function ProfileComponent({
       department_ids: data.department_ids ?? [],
       email_ids: data.email_ids ?? [],
       primary_email_index: data.primary_email_index ?? 0,
-      cohort_ids: data.cohort_ids ?? [],
       role: data.role ?? "instructional",
       primary_department_id: primaryDepartmentId,
     };
@@ -396,11 +370,6 @@ function ProfileComponent({
     () => JSON.stringify(currentStaffData?.email_ids ?? []),
     [currentStaffData?.email_ids]
   );
-  const cohortIdsStr = React.useMemo(
-    () => JSON.stringify(currentStaffData?.cohort_ids ?? []),
-    [currentStaffData?.cohort_ids]
-  );
-
   useEffect(() => {
     const newState = getInitialFormState();
     setFormState((prev) => {
@@ -412,8 +381,6 @@ function ProfileComponent({
           JSON.stringify(newState.department_ids) ||
         JSON.stringify(prev.email_ids) !== JSON.stringify(newState.email_ids) ||
         prev.primary_email_index !== newState.primary_email_index ||
-        JSON.stringify(prev.cohort_ids) !==
-          JSON.stringify(newState.cohort_ids) ||
         prev.role !== newState.role ||
         prev.primary_department_id !== newState.primary_department_id
       ) {
@@ -428,7 +395,6 @@ function ProfileComponent({
     currentStaffData?.request_limit_id,
     departmentIdsStr,
     emailIdsStr,
-    cohortIdsStr,
     currentStaffData?.role,
   ]);
 
@@ -495,7 +461,6 @@ function ProfileComponent({
         primary_department_id: formState.primary_department_id,
         email_ids: formState.email_ids,
         primary_email_index: formState.primary_email_index,
-        cohort_ids: formState.cohort_ids,
         role: formState.role || null,
       }),
     [
@@ -506,7 +471,6 @@ function ProfileComponent({
       formState.primary_department_id,
       formState.email_ids,
       formState.primary_email_index,
-      formState.cohort_ids,
       formState.role,
     ]
   );
@@ -673,11 +637,6 @@ function ProfileComponent({
     [handleGenerateResources]
   );
 
-  const handleGenerateCohorts = useCallback(
-    async () => handleGenerateResources(["cohorts"]),
-    [handleGenerateResources]
-  );
-
   const disabled = useMemo(() => {
     if (!currentStaffData) return false;
     return !currentStaffData.can_edit;
@@ -690,7 +649,6 @@ function ProfileComponent({
       departments: "Departments",
       emails: "Emails",
       request_limits: "Request Limits",
-      cohorts: "Cohorts",
     }),
     []
   );
@@ -700,7 +658,6 @@ function ProfileComponent({
       basic: [...STEP_RESOURCES.basic],
       contact: [...STEP_RESOURCES.contact],
       roles: [...STEP_RESOURCES.roles],
-      cohorts: [...STEP_RESOURCES.cohorts],
       all: [...STEP_RESOURCES.all],
     }),
     []
@@ -795,9 +752,6 @@ function ProfileComponent({
             department_ids: effectiveFormState.department_ids?.length
               ? effectiveFormState.department_ids
               : null,
-            cohort_ids: effectiveFormState.cohort_ids?.length
-              ? effectiveFormState.cohort_ids
-              : null,
             expected_version: currentStaffData?.draft_version ?? 0,
           },
         });
@@ -836,7 +790,6 @@ function ProfileComponent({
       const hasName = !!formState.name_id;
       const hasDepartments = formState.department_ids.length > 0;
       const hasRole = !!formState.role;
-      const hasCohorts = formState.cohort_ids.length > 0;
       const hasPrimaryDepartment = !!formState.primary_department_id;
       const hasEmails = formState.email_ids.length > 0;
       const needsDepartments = currentStaffData?.departments_required ?? false;
@@ -856,9 +809,6 @@ function ProfileComponent({
         case "roles":
           if (!hasName) return "pending";
           return hasRole ? "completed" : "active";
-        case "cohorts":
-          if (!hasName) return "pending";
-          return hasCohorts ? "completed" : "active";
         default:
           return "pending";
       }
@@ -888,13 +838,6 @@ function ProfileComponent({
         description: "Select the staff member's role.",
         resetFields: ["role", "roleSearch", "roleShowSelected"],
       },
-      {
-        id: "cohorts",
-        title: "Cohorts",
-        description: "Assign cohorts to this staff member (optional).",
-        optional: true,
-        resetFields: ["cohort_ids", "cohortSearch", "cohortShowSelected"],
-      },
     ],
     []
   );
@@ -906,7 +849,6 @@ function ProfileComponent({
       "emails",
       "request_limit",
       "department_ids",
-      "cohort_ids",
       "role",
       "primary_department_id",
     ],
@@ -921,8 +863,6 @@ function ProfileComponent({
         return "Contact information reset";
       case "roles":
         return "Roles reset";
-      case "cohorts":
-        return "Cohorts reset";
       default:
         return "Reset";
     }
@@ -951,11 +891,6 @@ function ProfileComponent({
           return {
             ...prev,
             role: "",
-          };
-        case "cohorts":
-          return {
-            ...prev,
-            cohort_ids: [],
           };
         default:
           return prev;
@@ -1365,85 +1300,6 @@ function ProfileComponent({
           );
         }
 
-        case "cohorts": {
-          const cohortShowSelected =
-            (stepFormData["cohortShowSelected"] as
-              | boolean
-              | null
-              | undefined) ?? false;
-          const cohortSearch =
-            (stepFormData["cohortSearch"] as string | null | undefined) || "";
-
-          return (
-            <StepCard
-              stepStatus={stepStatus}
-              stepNumber={stepNumber}
-              stepTitle={stepTitle}
-              stepDescription={stepDescription}
-              isReadonly={disabled}
-              isEditMode={isEditMode}
-              searchTerm={cohortSearch}
-              onSearchChange={(term: string) =>
-                setStepFormData({ cohortSearch: term || null })
-              }
-              searchPlaceholder="Search cohorts..."
-              debounceMs={300}
-              filters={[
-                {
-                  key: "showSelected",
-                  label: "Show selected",
-                  value: cohortShowSelected,
-                  onChange: (value) =>
-                    setStepFormData({ cohortShowSelected: value }),
-                },
-              ]}
-              resetFields={["cohort_ids", "cohortSearch", "cohortShowSelected"]}
-              {...(onReset ? { onReset } : {})}
-              resetLabel="Reset"
-              actions={
-                STEP_RESOURCES.cohorts.length > 0 ? (
-                  <StepCardAiButton
-                    stepId="cohorts"
-                    resourceTypes={[...STEP_RESOURCES.cohorts]}
-                    canRegenerate={(rt) =>
-                      canRegenerate(rt as ProfileResourceType)
-                    }
-                    isGenerating={(rt) => isGenerating(rt as ProfileResourceType)}
-                    onOpenModal={handleOpenStepCardModal}
-                    disabled={disabled}
-                  />
-                ) : undefined
-              }
-            >
-              <Cohorts
-                cohort_ids={formState.cohort_ids ?? []}
-                cohort_resources={[]}
-                show_cohorts={(currentStaffData?.cohorts?.length ?? 0) > 0}
-                cohort_suggestions={[]}
-                cohorts={
-                  (currentStaffData?.cohorts ?? []).map((c) => ({
-                    cohort_id: c.cohort_id ?? null,
-                    name:
-                      ("name" in c
-                        ? (c.name as string | null | undefined)
-                        : (c.title as string | null | undefined)) ?? null,
-                    ...(c.description ? { description: c.description } : {}),
-                    generated: false,
-                  }))
-                }
-                disabled={disabled}
-                onChange={(ids) =>
-                  setFormState((prev) => ({ ...prev, cohort_ids: ids }))
-                }
-                onGenerate={handleGenerateCohorts}
-                group_id={currentStaffData?.group_id ?? null}
-                searchTerm={cohortSearch}
-                showSelectedFilter={cohortShowSelected}
-              />
-            </StepCard>
-          );
-        }
-
         default:
           return null;
       }
@@ -1457,7 +1313,6 @@ function ProfileComponent({
       handleGenerateFlags,
       handleGenerateEmails,
       handleGenerateRequestLimits,
-      handleGenerateCohorts,
       isGenerating,
       formState.name_id,
       formState.active_flag_id,
@@ -1465,7 +1320,6 @@ function ProfileComponent({
       formState.email_ids,
       formState.primary_email_index,
       formState.department_ids,
-      formState.cohort_ids,
       formState.role,
       formState.primary_department_id,
       createNamesAction,

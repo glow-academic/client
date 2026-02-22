@@ -1,4 +1,4 @@
--- Create or update staff profile with departments, cohorts, and all emails in single function
+-- Create or update staff profile with departments and all emails in single function
 -- Converted to PostgreSQL function (single profile, called in loop for bulk)
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- 1) Drop function first (breaks dependency on types)
@@ -41,8 +41,7 @@ CREATE TYPE types.i_upsert_staff_v4_profile AS (
     primary_email_index integer,  -- Index in emails array for primary (defaults to 0)
     role text,
     active boolean,
-    department_ids uuid[],  -- Array of department IDs
-    cohort_ids uuid[]  -- Array of cohort IDs
+    department_ids uuid[]  -- Array of department IDs
 );
 
 -- 4) Recreate function
@@ -77,8 +76,7 @@ profiles_expanded AS (
         profile_data.emails[COALESCE(profile_data.primary_email_index, 0) + 1] AS primary_email,  -- PostgreSQL arrays are 1-indexed
         profile_data.role AS role,
         COALESCE(profile_data.active, true) AS active,
-        COALESCE(profile_data.department_ids, ARRAY[]::uuid[]) AS department_ids,
-        COALESCE(profile_data.cohort_ids, ARRAY[]::uuid[]) AS cohort_ids
+        COALESCE(profile_data.department_ids, ARRAY[]::uuid[]) AS department_ids
     FROM params p
     CROSS JOIN LATERAL unnest(p.profiles) AS profile_data
 ),
@@ -293,21 +291,6 @@ dept_insert AS (
     WHERE cardinality(pe.department_ids) > 0
     ON CONFLICT (profile_id, department_id) DO UPDATE SET
         is_primary = EXCLUDED.is_primary,
-        active = true
-),
-cohort_insert AS (
-    -- Insert cohort relationships for all profiles
-    INSERT INTO profile_cohorts_junction (profile_id, cohort_id, active)
-    SELECT 
-        pu.id,
-        cohort_id,
-        true
-    FROM profile_upsert pu
-    JOIN profile_upsert_with_idx pwi ON pwi.profile_id = pu.id
-    JOIN profiles_expanded pe ON pe.profile_idx = pwi.profile_idx
-    CROSS JOIN unnest(pe.cohort_ids) as cohort_id
-    WHERE cardinality(pe.cohort_ids) > 0
-    ON CONFLICT (profile_id, cohort_id) DO UPDATE SET
         active = true
 ),
 results AS (

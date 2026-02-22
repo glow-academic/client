@@ -33,6 +33,7 @@ __all__ = [
     "compute_show_simulation_positions",
     "compute_show_simulation_availability",
     "compute_show_profiles",
+    "compute_show_profile_personas",
     # Required field flags
     "compute_name_required",
     "compute_description_required",
@@ -42,6 +43,7 @@ __all__ = [
     "compute_simulation_positions_required",
     "compute_simulation_availability_required",
     "compute_profiles_required",
+    "compute_profile_personas_required",
 ]
 
 # ========== Agent Scoring - Cohort-specific Constants ==========
@@ -54,6 +56,7 @@ COHORT_RESOURCES: set[str] = {
     "departments",
     "simulations",
     "profiles",
+    "profile_personas",
 }
 
 # Multi-resource agent definitions for cohort
@@ -63,7 +66,7 @@ COHORT_SIMULATIONS_RESOURCES: set[str] = {
     "simulation_positions",
     "simulation_availability",
 }
-COHORT_PROFILES_RESOURCES: set[str] = {"profiles"}
+COHORT_PROFILES_RESOURCES: set[str] = {"profiles", "profile_personas"}
 
 # ========== Domain Metadata - for client-side display in modals ==========
 
@@ -107,6 +110,11 @@ COHORT_DOMAIN_METADATA: dict[str, dict[str, str | bool]] = {
         "name": "Profiles",
         "description": "Profiles assigned to cohort",
         "icon": "user",
+    },
+    "profile_personas": {
+        "name": "Profile Personas",
+        "description": "Persona assignments for profiles in cohort",
+        "icon": "user-check",
     },
 }
 
@@ -309,6 +317,11 @@ def compute_show_profiles(profiles_count: int) -> bool:
     return profiles_count > 0
 
 
+def compute_show_profile_personas(profile_personas_count: int) -> bool:
+    """Show profile personas section if there are profile personas available."""
+    return profile_personas_count > 0
+
+
 # =============================================================================
 # Required Field Flags
 # =============================================================================
@@ -351,6 +364,11 @@ def compute_simulation_availability_required() -> bool:
 
 def compute_profiles_required() -> bool:
     """Profiles are optional."""
+    return False
+
+
+def compute_profile_personas_required() -> bool:
+    """Profile personas are optional."""
     return False
 
 

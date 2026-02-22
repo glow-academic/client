@@ -169,11 +169,6 @@ def compute_show_departments(departments_count: int) -> bool:
     return departments_count > 0
 
 
-def compute_show_cohorts(cohorts_count: int) -> bool:
-    """Determine if cohorts picker should be shown."""
-    return cohorts_count > 0
-
-
 def compute_name_required() -> bool:
     """Determine if name is required."""
     return True
@@ -199,11 +194,6 @@ def compute_departments_required() -> bool:
     return False
 
 
-def compute_cohorts_required() -> bool:
-    """Determine if cohorts is required."""
-    return False
-
-
 # ========== List Endpoint Permission Functions ==========
 
 
@@ -211,13 +201,11 @@ def compute_can_delete(
     user_role: str | None,
     target_is_self: bool,
     target_role: str | None = None,
-    active_cohort_count: int = 0,
 ) -> bool:
     """Compute can_delete permission.
 
     Business logic:
     - Cannot delete own profile
-    - Profiles with active cohort links cannot be deleted (prevent orphaned data)
     - Only admin/superadmin can delete (can only delete lower ranks)
     """
     if target_is_self:
@@ -225,10 +213,6 @@ def compute_can_delete(
 
     # Only admin/superadmin can delete
     if user_role not in ("admin", "superadmin"):
-        return False
-
-    # Profiles with active cohort links cannot be deleted
-    if active_cohort_count > 0:
         return False
 
     # Superadmin can delete anyone (except self, checked above)
@@ -289,8 +273,6 @@ def get_missing_tools(
     request_limits_has_tools: bool,
     show_departments: bool,
     departments_has_tools: bool,
-    show_cohorts: bool,
-    cohorts_has_tools: bool,
 ) -> list[str]:
     """Get list of missing required tools."""
     missing = []
@@ -303,8 +285,6 @@ def get_missing_tools(
         missing.append("request_limits")
     if show_departments and not departments_has_tools:
         missing.append("departments")
-    if show_cohorts and not cohorts_has_tools:
-        missing.append("cohorts")
 
     return missing
 
@@ -318,7 +298,6 @@ PROFILE_RESOURCES: set[str] = {
     "request_limits",
     "flags",
     "departments",
-    "cohorts",
 }
 
 # Multi-resource agent definitions for profile
@@ -353,11 +332,6 @@ PROFILE_DOMAIN_METADATA: dict[str, dict[str, str | bool]] = {
         "name": "Departments",
         "description": "Which departments this profile belongs to",
         "icon": "building",
-    },
-    "cohorts": {
-        "name": "Cohorts",
-        "description": "Cohort memberships for this profile",
-        "icon": "users",
     },
 }
 

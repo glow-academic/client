@@ -26,8 +26,7 @@ RETURNS TABLE (
     target_department_ids text[],
     target_is_self boolean,
     profile_name text,
-    target_role text,
-    active_cohort_count bigint
+    target_role text
 )
 LANGUAGE sql
 STABLE
@@ -62,19 +61,12 @@ target_role_data AS (
     JOIN profile_roles_junction prj ON prj.profile_id = x.target_profile_id
     JOIN roles_resource r ON r.id = prj.role_id
     LIMIT 1
-),
--- Count active cohort links
-cohort_links AS (
-    SELECT COUNT(cp.profile_id)::bigint as active_count
-    FROM params x
-    LEFT JOIN profile_cohorts_junction cp ON cp.profile_id = x.target_profile_id AND cp.active = true
 )
 SELECT
     (SELECT department_ids FROM target_departments_data) as target_department_ids,
     ((SELECT profile_id FROM params) = (SELECT target_profile_id FROM params)) as target_is_self,
     (SELECT name FROM profile_name_data) as profile_name,
-    (SELECT role FROM target_role_data) as target_role,
-    (SELECT active_count FROM cohort_links) as active_cohort_count
+    (SELECT role FROM target_role_data) as target_role
 FROM params x
 $$;
 
