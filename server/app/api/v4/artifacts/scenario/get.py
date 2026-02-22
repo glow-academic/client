@@ -141,27 +141,6 @@ QUERY2_SQL_PATH = "app/sql/v4/queries/scenarios/get_scenario_ids_complete.sql"
 router = APIRouter()
 
 
-# Flag key to label mapping for scenarios
-SCENARIO_FLAG_LABELS = {
-    "active": "Active",
-    "video_enabled": "Video",
-    "problem_statement_enabled": "Problem Statement",
-    "objectives_enabled": "Objectives",
-    "images_enabled": "Images",
-    "questions_enabled": "Questions",
-}
-
-
-def derive_scenario_flag_key_and_label(name: str | None) -> tuple[str, str]:
-    """Derive key and label from flag name like 'scenario_active' -> ('active', 'Active')"""
-    if not name:
-        return ("unknown", "Unknown")
-    # Remove artifact prefix (e.g., 'scenario_active' -> 'active')
-    key = name.replace("scenario_", "")
-    # Use mapping for label, fallback to title case
-    label = SCENARIO_FLAG_LABELS.get(key, key.replace("_", " ").title())
-    return (key, label)
-
 
 def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
     """Preserve order while deduplicating by id attribute."""
@@ -901,16 +880,14 @@ async def get_scenario_internal(
         "options": False,
     }
 
-    # Build enriched flags list from ALL available scenario flags
+    # Build enriched flags list from ALL available scenario flags (canonical pattern)
     scenario_flags: list[ScenarioFlagConfig] = [
         ScenarioFlagConfig(
-            key=derive_scenario_flag_key_and_label(flag.name)[0],
-            label=derive_scenario_flag_key_and_label(flag.name)[1],
+            key=flag.name,
+            label=flag.name,
             description=flag.description,
             icon_id=flag.icon,
             flag_option_id=flag.id,
-            show=show_flag,
-            required=compute_flag_required(),
             generated=flag.generated,
             video_flag=flag.name == "scenario_questions_enabled",
         )

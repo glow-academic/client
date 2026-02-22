@@ -97,7 +97,7 @@ Scenario save accepts these fields:
 | `name_id` | UUID | **Yes** | `names.resources[]` or `create_resource("names", ...)` |
 | `description_id` | UUID | No | `descriptions.resources[]` or `create_resource("descriptions", ...)` |
 | `problem_statement_id` | UUID | No | `problem_statements.resources[]` or `create_resource("problem_statements", ...)` |
-| `active_flag_id` | UUID | No | `flags.resources[]` (key: "active") |
+| `active_flag_id` | UUID | No | `flags.resources[]` (key: "scenario_active") |
 | `objectives_enabled_flag_id` | UUID | No | `flags.resources[]` (key: "objectives_enabled") |
 | `images_enabled_flag_id` | UUID | No | `flags.resources[]` (key: "images_enabled") |
 | `video_enabled_flag_id` | UUID | No | `flags.resources[]` (key: "video_enabled") |

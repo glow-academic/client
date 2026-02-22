@@ -34096,50 +34096,6 @@ class GetAttemptMessagesViewApiResponse(BaseModel):
 
 
 
-# Generated from: get_audio_list_view
-
-class GetAudioListViewSqlParams(BaseModel):
-
-    uploads_id_filter: UUID | None = None
-    page_limit_val: int | None = 10000
-    page_offset_val: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.uploads_id_filter,
-            self.page_limit_val,
-            self.page_offset_val,
-        )
-
-class QGetAudioListViewV4Item(BaseModel):
-
-    audio_id: UUID | None
-    uploads_id: UUID | None
-    file_path: str | None
-    mime_type: str | None
-    size: int | None
-    length_seconds: int | None
-    voice_id: UUID | None
-    created_at: datetime | None
-
-class GetAudioListViewSqlRow(BaseModel):
-
-    items: list[QGetAudioListViewV4Item] | None = None
-    total_count: int | None = None
-
-class GetAudioListViewApiRequest(BaseModel):
-
-    uploads_id_filter: UUID | None = None
-    page_limit_val: int | None = 10000
-    page_offset_val: int | None = 0
-
-class GetAudioListViewApiResponse(BaseModel):
-
-    items: list[QGetAudioListViewV4Item] | None = None
-    total_count: int | None = None
-
-
-
 # Generated from: get_audit_list_view
 
 class GetAuditListViewSqlParams(BaseModel):
@@ -34193,226 +34149,6 @@ class GetAuditListViewApiRequest(BaseModel):
 class GetAuditListViewApiResponse(BaseModel):
 
     items: list[QGetAuditListViewV4Item] | None = None
-    total_count: int | None = None
-
-
-
-# Generated from: get_invocation_view
-
-class GetInvocationViewSqlParams(BaseModel):
-
-    profile_id_filter: UUID
-    invocation_entry_id_filter: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id_filter,
-            self.invocation_entry_id_filter,
-        )
-
-class GetInvocationViewSqlRow(BaseModel):
-
-    profile_has_access: bool | None = None
-    invocation_entry_id: UUID | None = None
-    benchmark_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    model_ids: list[UUID] | None = None
-    prompt_ids: list[UUID] | None = None
-    instruction_ids: list[UUID] | None = None
-    voice_ids: list[UUID] | None = None
-    temperature_level_ids: list[UUID] | None = None
-    reasoning_level_ids: list[UUID] | None = None
-    tool_ids: list[UUID] | None = None
-    key_ids: list[UUID] | None = None
-    flag_ids: list[UUID] | None = None
-    name_ids: list[UUID] | None = None
-    description_ids: list[UUID] | None = None
-
-class GetInvocationViewApiRequest(BaseModel):
-
-    profile_id_filter: UUID
-    invocation_entry_id_filter: UUID
-
-class GetInvocationViewApiResponse(BaseModel):
-
-    profile_has_access: bool | None = None
-    invocation_entry_id: UUID | None = None
-    benchmark_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    model_ids: list[UUID] | None = None
-    prompt_ids: list[UUID] | None = None
-    instruction_ids: list[UUID] | None = None
-    voice_ids: list[UUID] | None = None
-    temperature_level_ids: list[UUID] | None = None
-    reasoning_level_ids: list[UUID] | None = None
-    tool_ids: list[UUID] | None = None
-    key_ids: list[UUID] | None = None
-    flag_ids: list[UUID] | None = None
-    name_ids: list[UUID] | None = None
-    description_ids: list[UUID] | None = None
-
-
-
-# Generated from: get_benchmark_context_view
-
-class GetBenchmarkContextViewSqlParams(BaseModel):
-
-    profile_id_filter: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id_filter,
-        )
-
-class QGetBenchmarkContextViewV4Item(BaseModel):
-
-    benchmark_id: UUID | None
-    eval_ids: list[UUID] | None
-    invocation_entry_ids: list[UUID] | None
-    department_ids: list[UUID] | None
-    profile_ids: list[UUID] | None
-    run_rubric_ids: list[UUID] | None
-    group_rubric_ids: list[UUID] | None
-    run_position_ids: list[UUID] | None
-    group_position_ids: list[UUID] | None
-    use_groups: bool | None
-    dynamic: bool | None
-
-class GetBenchmarkContextViewSqlRow(BaseModel):
-
-    items: list[QGetBenchmarkContextViewV4Item] | None = None
-
-class GetBenchmarkContextViewApiRequest(BaseModel):
-
-    profile_id_filter: UUID
-
-class GetBenchmarkContextViewApiResponse(BaseModel):
-
-    items: list[QGetBenchmarkContextViewV4Item] | None = None
-
-
-
-# Generated from: get_benchmark_invocations_view
-
-class GetBenchmarkInvocationsViewSqlParams(BaseModel):
-
-    test_id_filter: UUID | None = None
-    invocation_ids_filter: list[UUID] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.test_id_filter,
-            self.invocation_ids_filter,
-        )
-
-class QGetTestInvocationViewV4Item(BaseModel):
-
-    invocation_id: UUID | None
-    test_id: UUID | None
-    group_id: UUID | None
-    invocation_resolved_id: UUID | None
-    created_at: datetime | None
-    title: str | None
-    invocation_completed: bool | None
-    grade_score: int | None
-    grade_passed: bool | None
-    grade_time_taken: int | None
-    rubric_id: UUID | None
-    grade_id: UUID | None
-    invocation_run_ids: list[UUID] | None
-    run_ids: list[UUID] | None
-    group_ids: list[UUID] | None
-    instruction_ids: list[UUID] | None
-    tool_ids: list[UUID] | None
-    model_id: UUID | None
-    prompt_id: UUID | None
-    voice_id: UUID | None
-    temperature_level_id: UUID | None
-    reasoning_level_id: UUID | None
-    key_id: UUID | None
-    historical_run_ids: list[UUID] | None
-
-class GetBenchmarkInvocationsViewSqlRow(BaseModel):
-
-    items: list[QGetTestInvocationViewV4Item] | None = None
-
-class GetBenchmarkInvocationsViewApiRequest(BaseModel):
-
-    test_id_filter: UUID | None = None
-    invocation_ids_filter: list[UUID] | None = None
-
-class GetBenchmarkInvocationsViewApiResponse(BaseModel):
-
-    items: list[QGetTestInvocationViewV4Item] | None = None
-
-
-
-# Generated from: get_benchmark_tests_view
-
-class GetBenchmarkTestsViewSqlParams(BaseModel):
-
-    test_ids: list[UUID] | None = None
-    eval_id_filter: UUID | None = None
-    eval_ids_filter: list[UUID] | None = None
-    profile_id_filter: UUID | None = None
-    archived_filter: bool | None = None
-    department_ids_filter: list[UUID] | None = None
-    date_from_filter: datetime
-    date_to_filter: datetime
-    sort_by_field: str | None = None
-    sort_order_field: str | None = None
-    page_limit_val: int | None = 50
-    page_offset_val: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.test_ids,
-            self.eval_id_filter,
-            self.eval_ids_filter,
-            self.profile_id_filter,
-            self.archived_filter,
-            self.department_ids_filter,
-            self.date_from_filter,
-            self.date_to_filter,
-            self.sort_by_field,
-            self.sort_order_field,
-            self.page_limit_val,
-            self.page_offset_val,
-        )
-
-class QGetTestViewV4Item(BaseModel):
-
-    test_id: UUID | None
-    eval_id: UUID | None
-    profile_id: UUID | None
-    department_ids: list[UUID] | None
-    infinite_mode: bool | None
-    archived: bool | None
-    created_at: datetime | None
-
-class GetBenchmarkTestsViewSqlRow(BaseModel):
-
-    items: list[QGetTestViewV4Item] | None = None
-    total_count: int | None = None
-
-class GetBenchmarkTestsViewApiRequest(BaseModel):
-
-    test_ids: list[UUID] | None = None
-    eval_id_filter: UUID | None = None
-    eval_ids_filter: list[UUID] | None = None
-    profile_id_filter: UUID | None = None
-    archived_filter: bool | None = None
-    department_ids_filter: list[UUID] | None = None
-    date_from_filter: datetime
-    date_to_filter: datetime
-    sort_by_field: str | None = None
-    sort_order_field: str | None = None
-    page_limit_val: int | None = 50
-    page_offset_val: int | None = 0
-
-class GetBenchmarkTestsViewApiResponse(BaseModel):
-
-    items: list[QGetTestViewV4Item] | None = None
     total_count: int | None = None
 
 
@@ -35804,49 +35540,6 @@ class GetHomeContextViewApiResponse(BaseModel):
 
 
 
-# Generated from: get_image_list_view
-
-class GetImageListViewSqlParams(BaseModel):
-
-    uploads_id_filter: UUID | None = None
-    page_limit_val: int | None = 10000
-    page_offset_val: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.uploads_id_filter,
-            self.page_limit_val,
-            self.page_offset_val,
-        )
-
-class QGetImageListViewV4Item(BaseModel):
-
-    image_id: UUID | None
-    uploads_id: UUID | None
-    file_path: str | None
-    mime_type: str | None
-    size: int | None
-    quality_id: UUID | None
-    created_at: datetime | None
-
-class GetImageListViewSqlRow(BaseModel):
-
-    items: list[QGetImageListViewV4Item] | None = None
-    total_count: int | None = None
-
-class GetImageListViewApiRequest(BaseModel):
-
-    uploads_id_filter: UUID | None = None
-    page_limit_val: int | None = 10000
-    page_offset_val: int | None = 0
-
-class GetImageListViewApiResponse(BaseModel):
-
-    items: list[QGetImageListViewV4Item] | None = None
-    total_count: int | None = None
-
-
-
 # Generated from: get_login_list_view
 
 class GetLoginListViewSqlParams(BaseModel):
@@ -36669,50 +36362,6 @@ class GetSimulationStrengthsViewApiResponse(BaseModel):
 
 
 
-# Generated from: get_text_list_view
-
-class GetTextListViewSqlParams(BaseModel):
-
-    texts_id_filter: UUID | None = None
-    content_hash_filter: str | None = None
-    page_limit_val: int | None = 10000
-    page_offset_val: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.texts_id_filter,
-            self.content_hash_filter,
-            self.page_limit_val,
-            self.page_offset_val,
-        )
-
-class QGetTextListViewV4Item(BaseModel):
-
-    texts_id: UUID | None
-    text_id: UUID | None
-    content: str | None
-    content_hash: str | None
-    created_at: datetime | None
-
-class GetTextListViewSqlRow(BaseModel):
-
-    items: list[QGetTextListViewV4Item] | None = None
-    total_count: int | None = None
-
-class GetTextListViewApiRequest(BaseModel):
-
-    texts_id_filter: UUID | None = None
-    content_hash_filter: str | None = None
-    page_limit_val: int | None = 10000
-    page_offset_val: int | None = 0
-
-class GetTextListViewApiResponse(BaseModel):
-
-    items: list[QGetTextListViewV4Item] | None = None
-    total_count: int | None = None
-
-
-
 # Generated from: get_chat_view
 
 
@@ -36754,49 +36403,6 @@ class GetUploadListViewApiRequest(BaseModel):
 class GetUploadListViewApiResponse(BaseModel):
 
     items: list[QGetUploadListViewV4Item] | None = None
-    total_count: int | None = None
-
-
-
-# Generated from: get_video_list_view
-
-class GetVideoListViewSqlParams(BaseModel):
-
-    uploads_id_filter: UUID | None = None
-    page_limit_val: int | None = 10000
-    page_offset_val: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.uploads_id_filter,
-            self.page_limit_val,
-            self.page_offset_val,
-        )
-
-class QGetVideoListViewV4Item(BaseModel):
-
-    video_id: UUID | None
-    uploads_id: UUID | None
-    file_path: str | None
-    mime_type: str | None
-    size: int | None
-    length_seconds: int | None
-    created_at: datetime | None
-
-class GetVideoListViewSqlRow(BaseModel):
-
-    items: list[QGetVideoListViewV4Item] | None = None
-    total_count: int | None = None
-
-class GetVideoListViewApiRequest(BaseModel):
-
-    uploads_id_filter: UUID | None = None
-    page_limit_val: int | None = 10000
-    page_offset_val: int | None = 0
-
-class GetVideoListViewApiResponse(BaseModel):
-
-    items: list[QGetVideoListViewV4Item] | None = None
     total_count: int | None = None
 
 
@@ -42081,41 +41687,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAttemptMessagesViewApiRequest",
         "GetAttemptMessagesViewApiResponse",
     ),
-    "app/sql/v4/queries/views/audio/list/get_audio_list_view_complete.sql": (
-        "GetAudioListViewSqlParams",
-        "GetAudioListViewSqlRow",
-        "GetAudioListViewApiRequest",
-        "GetAudioListViewApiResponse",
-    ),
     "app/sql/v4/queries/views/audit/list/get_audit_list_view_complete.sql": (
         "GetAuditListViewSqlParams",
         "GetAuditListViewSqlRow",
         "GetAuditListViewApiRequest",
         "GetAuditListViewApiResponse",
-    ),
-    "app/sql/v4/queries/views/benchmark/bundle/get_invocation_view_complete.sql": (
-        "GetInvocationViewSqlParams",
-        "GetInvocationViewSqlRow",
-        "GetInvocationViewApiRequest",
-        "GetInvocationViewApiResponse",
-    ),
-    "app/sql/v4/queries/views/benchmark/context/get_benchmark_context_view_complete.sql": (
-        "GetBenchmarkContextViewSqlParams",
-        "GetBenchmarkContextViewSqlRow",
-        "GetBenchmarkContextViewApiRequest",
-        "GetBenchmarkContextViewApiResponse",
-    ),
-    "app/sql/v4/queries/views/benchmark/invocations/get_benchmark_invocations_view_complete.sql": (
-        "GetBenchmarkInvocationsViewSqlParams",
-        "GetBenchmarkInvocationsViewSqlRow",
-        "GetBenchmarkInvocationsViewApiRequest",
-        "GetBenchmarkInvocationsViewApiResponse",
-    ),
-    "app/sql/v4/queries/views/benchmark/tests/get_benchmark_tests_view_complete.sql": (
-        "GetBenchmarkTestsViewSqlParams",
-        "GetBenchmarkTestsViewSqlRow",
-        "GetBenchmarkTestsViewApiRequest",
-        "GetBenchmarkTestsViewApiResponse",
     ),
     "app/sql/v4/queries/views/call/list/get_call_list_view_complete.sql": (
         "GetCallListViewSqlParams",
@@ -42291,12 +41867,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetHomeContextViewApiRequest",
         "GetHomeContextViewApiResponse",
     ),
-    "app/sql/v4/queries/views/image/list/get_image_list_view_complete.sql": (
-        "GetImageListViewSqlParams",
-        "GetImageListViewSqlRow",
-        "GetImageListViewApiRequest",
-        "GetImageListViewApiResponse",
-    ),
     "app/sql/v4/queries/views/login/list/get_login_list_view_complete.sql": (
         "GetLoginListViewSqlParams",
         "GetLoginListViewSqlRow",
@@ -42417,12 +41987,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSimulationStrengthsViewApiRequest",
         "GetSimulationStrengthsViewApiResponse",
     ),
-    "app/sql/v4/queries/views/text/list/get_text_list_view_complete.sql": (
-        "GetTextListViewSqlParams",
-        "GetTextListViewSqlRow",
-        "GetTextListViewApiRequest",
-        "GetTextListViewApiResponse",
-    ),
     "app/sql/v4/queries/views/training/bundle/get_chat_view_complete.sql": (
         "GetChatViewSqlParams",
         "GetChatViewSqlRow",
@@ -42434,12 +41998,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetUploadListViewSqlRow",
         "GetUploadListViewApiRequest",
         "GetUploadListViewApiResponse",
-    ),
-    "app/sql/v4/queries/views/video/list/get_video_list_view_complete.sql": (
-        "GetVideoListViewSqlParams",
-        "GetVideoListViewSqlRow",
-        "GetVideoListViewApiRequest",
-        "GetVideoListViewApiResponse",
     ),
 }
 
@@ -46900,32 +46458,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/views/audio/list/get_audio_list_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/views/audit/list/get_audit_list_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/views/benchmark/bundle/get_invocation_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/views/benchmark/context/get_benchmark_context_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/views/benchmark/invocations/get_benchmark_invocations_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/views/benchmark/tests/get_benchmark_tests_view_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -47075,11 +46608,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/views/image/list/get_image_list_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/views/login/list/get_login_list_view_complete.sql"]
     ) -> SqlString: ...
 
@@ -47180,22 +46708,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/views/text/list/get_text_list_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/views/training/bundle/get_chat_view_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/views/upload/list/get_upload_list_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/views/video/list/get_video_list_view_complete.sql"]
     ) -> SqlString: ...
 
     @overload

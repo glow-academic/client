@@ -387,7 +387,6 @@ artifact_agent_ids_data AS (
             ('simulation'::artifact_type, 'flags'::resource_type),
             ('simulation'::artifact_type, 'names'::resource_type),
             ('simulation'::artifact_type, 'scenario_flags'::resource_type),
-            ('simulation'::artifact_type, 'scenario_personas'::resource_type),
             ('simulation'::artifact_type, 'scenario_positions'::resource_type),
             ('simulation'::artifact_type, 'scenario_rubrics'::resource_type),
             ('simulation'::artifact_type, 'scenario_time_limits'::resource_type),

@@ -13522,226 +13522,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/views/activity/list/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Activity
-         * @description Get activity data from the materialized view.
-         */
-        post: operations["get_activity_api_v4_views_activity_list_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/health/list/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Health
-         * @description Get health data from the materialized view.
-         */
-        post: operations["get_health_api_v4_views_health_list_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/benchmark/context/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Benchmark Context View
-         * @description Get benchmark context view for current profile.
-         */
-        post: operations["get_benchmark_context_view_api_v4_views_benchmark_context_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/benchmark/tests/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Test
-         * @description Get benchmark tests view rows from test_mv.
-         */
-        post: operations["get_test_api_v4_views_benchmark_tests_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/benchmark/invocations/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Test Invocation
-         * @description Get benchmark invocation rows from test_invocation_mv.
-         */
-        post: operations["get_test_invocation_api_v4_views_benchmark_invocations_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/benchmark/bundle/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Suite View
-         * @description Get thin bundle scope for a single benchmark bundle entry.
-         */
-        post: operations["get_suite_view_api_v4_views_benchmark_bundle_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/training/bundle/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Training View
-         * @description Get thin bundle scope for a single training bundle entry.
-         */
-        post: operations["get_training_view_api_v4_views_training_bundle_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/session/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Sessions
-         * @description Get session data from the materialized view.
-         */
-        post: operations["get_sessions_api_v4_views_session_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/group/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Groups
-         * @description Get group data from the materialized view.
-         */
-        post: operations["get_groups_api_v4_views_group_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/audit/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Audits
-         * @description Get audit data from the materialized view.
-         */
-        post: operations["get_audits_api_v4_views_audit_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/run/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Runs
-         * @description Get run data from the materialized view.
-         */
-        post: operations["get_runs_api_v4_views_run_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/views/message/get": {
         parameters: {
             query?: never;
@@ -13756,246 +13536,6 @@ export interface paths {
          * @description Get message data from the materialized view.
          */
         post: operations["get_messages_api_v4_views_message_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/call/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Calls
-         * @description Get call data from the materialized view.
-         */
-        post: operations["get_calls_api_v4_views_call_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/problem/list/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Problems
-         * @description Get problem data from the materialized view.
-         */
-        post: operations["get_problems_api_v4_views_problem_list_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/login/list/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Logins
-         * @description Get login data from the materialized view.
-         */
-        post: operations["get_logins_api_v4_views_login_list_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/metric/list/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Metrics
-         * @description Get metric data from the materialized view.
-         */
-        post: operations["get_metrics_api_v4_views_metric_list_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/text/list/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Texts
-         * @description Get text data from the materialized view.
-         */
-        post: operations["get_texts_api_v4_views_text_list_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/upload/list/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Uploads
-         * @description Get upload data from the materialized view.
-         */
-        post: operations["get_uploads_api_v4_views_upload_list_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/image/list/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Images
-         * @description Get image data from the materialized view.
-         */
-        post: operations["get_images_api_v4_views_image_list_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/video/list/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Videos
-         * @description Get video data from the materialized view.
-         */
-        post: operations["get_videos_api_v4_views_video_list_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/grant/list/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Grants
-         * @description Get grant data from the materialized view.
-         */
-        post: operations["get_grants_api_v4_views_grant_list_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/audio/list/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Audios
-         * @description Get audio data from the materialized view.
-         */
-        post: operations["get_audios_api_v4_views_audio_list_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/home/context/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Home Context View
-         * @description Get home context view for current profile.
-         */
-        post: operations["get_home_context_view_api_v4_views_home_context_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/views/practice/context/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Practice Context View
-         * @description Get practice context view for current profile.
-         */
-        post: operations["get_practice_context_view_api_v4_views_practice_context_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -21563,25 +21103,6 @@ export interface components {
             history?: components["schemas"]["GetSessionListResponse"] | null;
         };
         /**
-         * ActivityViewItem
-         * @description Single activity from the activity list view.
-         */
-        ActivityViewItem: {
-            /**
-             * Activity Id
-             * Format: uuid
-             */
-            activity_id: string;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Session Id */
-            session_id?: string | null;
-            /** Last Active */
-            last_active?: string | null;
-            /** Created At */
-            created_at?: string | null;
-        };
-        /**
          * ActivityViews
          * @description Activity view data.
          */
@@ -22590,7 +22111,7 @@ export interface components {
             attempt_chat?: components["schemas"]["ChatData"][] | null;
             /** Attempt Message */
             attempt_message?: components["schemas"]["MessageData"][] | null;
-            runs?: components["schemas"]["app__api__v4__entries__runs__search__GetRunListViewResponse"] | null;
+            runs?: components["schemas"]["GetRunListViewResponse"] | null;
         };
         /**
          * AttemptErrorEvent
@@ -22927,58 +22448,6 @@ export interface components {
             /** Item Id */
             item_id: string;
         };
-        /**
-         * AudioViewItem
-         * @description Single audio from the audio list view.
-         */
-        AudioViewItem: {
-            /**
-             * Audio Id
-             * Format: uuid
-             */
-            audio_id: string;
-            /** Uploads Id */
-            uploads_id?: string | null;
-            /** File Path */
-            file_path?: string | null;
-            /** Mime Type */
-            mime_type?: string | null;
-            /** Size */
-            size?: number | null;
-            /**
-             * Length Seconds
-             * @default 0
-             */
-            length_seconds: number;
-            /** Voice Id */
-            voice_id?: string | null;
-            /** Created At */
-            created_at?: string | null;
-        };
-        /**
-         * AuditViewItem
-         * @description Single audit from the audit list view.
-         */
-        AuditViewItem: {
-            /**
-             * Audit Id
-             * Format: uuid
-             */
-            audit_id: string;
-            /** Session Id */
-            session_id?: string | null;
-            /** Audit Created At */
-            audit_created_at?: string | null;
-            /** Message */
-            message?: string | null;
-            /** Endpoint */
-            endpoint?: string | null;
-            /**
-             * Error
-             * @default false
-             */
-            error: boolean;
-        };
         /** AuthDescriptionSection */
         AuthDescriptionSection: {
             /**
@@ -23314,43 +22783,6 @@ export interface components {
             options: components["schemas"]["ContinuationOption"][];
         };
         /**
-         * BenchmarkContextViewItem
-         * @description IDs-first benchmark item -- raw IDs only, no computed fields.
-         */
-        BenchmarkContextViewItem: {
-            /**
-             * Benchmark Id
-             * Format: uuid
-             */
-            benchmark_id: string;
-            /** Eval Ids */
-            eval_ids?: string[] | null;
-            /** Suite Entry Ids */
-            suite_entry_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Profile Ids */
-            profile_ids?: string[] | null;
-            /** Run Rubric Ids */
-            run_rubric_ids?: string[] | null;
-            /** Group Rubric Ids */
-            group_rubric_ids?: string[] | null;
-            /** Run Position Ids */
-            run_position_ids?: string[] | null;
-            /** Group Position Ids */
-            group_position_ids?: string[] | null;
-            /**
-             * Use Groups
-             * @default false
-             */
-            use_groups: boolean;
-            /**
-             * Dynamic
-             * @default false
-             */
-            dynamic: boolean;
-        };
-        /**
          * BenchmarkDepartmentItem
          * @description Department resource for benchmark.
          */
@@ -23375,72 +22807,6 @@ export interface components {
             description?: string | null;
             /** Department Ids */
             department_ids?: string[];
-        };
-        /**
-         * BenchmarkInvocationViewItem
-         * @description Single benchmark invocation row from test_invocation_mv.
-         *
-         *     Lean: entry attrs + resource IDs + grade scalars only. Feedbacks
-         *     fetched via simulation/test_feedback view.
-         */
-        BenchmarkInvocationViewItem: {
-            /**
-             * Invocation Id
-             * Format: uuid
-             */
-            invocation_id: string;
-            /**
-             * Test Id
-             * Format: uuid
-             */
-            test_id: string;
-            /** Group Id */
-            group_id?: string | null;
-            /** Suite Department Id */
-            suite_department_id?: string | null;
-            /** Created At */
-            created_at?: string | null;
-            /** Title */
-            title?: string | null;
-            /**
-             * Invocation Completed
-             * @default false
-             */
-            invocation_completed: boolean;
-            /** Grade Score */
-            grade_score?: number | null;
-            /** Grade Passed */
-            grade_passed?: boolean | null;
-            /** Grade Time Taken */
-            grade_time_taken?: number | null;
-            /** Rubric Id */
-            rubric_id?: string | null;
-            /** Grade Id */
-            grade_id?: string | null;
-            /** Invocation Run Ids */
-            invocation_run_ids?: string[];
-            /** Run Ids */
-            run_ids?: string[];
-            /** Group Ids */
-            group_ids?: string[];
-            /** Instruction Ids */
-            instruction_ids?: string[];
-            /** Tool Ids */
-            tool_ids?: string[];
-            /** Model Id */
-            model_id?: string | null;
-            /** Prompt Id */
-            prompt_id?: string | null;
-            /** Voice Id */
-            voice_id?: string | null;
-            /** Temperature Level Id */
-            temperature_level_id?: string | null;
-            /** Reasoning Level Id */
-            reasoning_level_id?: string | null;
-            /** Key Id */
-            key_id?: string | null;
-            /** Historical Run Ids */
-            historical_run_ids?: string[];
         };
         /**
          * BenchmarkRequest
@@ -23510,35 +22876,6 @@ export interface components {
             /** Date Range Latest */
             date_range_latest?: string | null;
             history?: components["schemas"]["TestHistoryResponse"] | null;
-        };
-        /**
-         * BenchmarkTestViewItem
-         * @description Single benchmark test row from test_mv.
-         */
-        BenchmarkTestViewItem: {
-            /**
-             * Test Id
-             * Format: uuid
-             */
-            test_id: string;
-            /** Eval Id */
-            eval_id?: string | null;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[];
-            /**
-             * Infinite Mode
-             * @default false
-             */
-            infinite_mode: boolean;
-            /**
-             * Archived
-             * @default false
-             */
-            archived: boolean;
-            /** Created At */
-            created_at?: string | null;
         };
         /** BindingsGenerationEvent */
         BindingsGenerationEvent: {
@@ -23646,25 +22983,6 @@ export interface components {
         BulkDeleteStaffApiResponse: {
             /** Deleted Count */
             deleted_count?: number | null;
-        };
-        /**
-         * CallViewItem
-         * @description Single call from the call list view.
-         */
-        CallViewItem: {
-            /**
-             * Call Id
-             * Format: uuid
-             */
-            call_id: string;
-            /** Run Id */
-            run_id?: string | null;
-            /** Call Created At */
-            call_created_at?: string | null;
-            /** Arguments Raw */
-            arguments_raw?: string | null;
-            /** Tool Id */
-            tool_id?: string | null;
         };
         /**
          * ChatData
@@ -28013,23 +27331,6 @@ export interface components {
             items?: unknown | null;
         };
         /**
-         * GetActivityListViewResponse
-         * @description Response containing activity list data.
-         */
-        GetActivityListViewResponse: {
-            /**
-             * Items
-             * @description Activity data items
-             */
-            items?: components["schemas"]["ActivityViewItem"][];
-            /**
-             * Total Count
-             * @description Total count before pagination
-             * @default 0
-             */
-            total_count: number;
-        };
-        /**
          * GetAgentApiRequest
          * @description Request model for get agent endpoint.
          */
@@ -28402,23 +27703,6 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
-        /**
-         * GetAudioListViewResponse
-         * @description Response containing audio list data.
-         */
-        GetAudioListViewResponse: {
-            /**
-             * Items
-             * @description Audio data items
-             */
-            items?: components["schemas"]["AudioViewItem"][];
-            /**
-             * Total Count
-             * @description Total count before pagination
-             * @default 0
-             */
-            total_count: number;
-        };
         /** GetAudiosEntriesApiRequest */
         GetAudiosEntriesApiRequest: {
             /** Ids */
@@ -28428,23 +27712,6 @@ export interface components {
         GetAudiosEntriesApiResponse: {
             /** Items */
             items?: unknown | null;
-        };
-        /**
-         * GetAuditListViewResponse
-         * @description Response containing audit list data.
-         */
-        GetAuditListViewResponse: {
-            /**
-             * Items
-             * @description Audit data items
-             */
-            items?: components["schemas"]["AuditViewItem"][];
-            /**
-             * Total Count
-             * @description Total count before pagination
-             * @default 0
-             */
-            total_count: number;
         };
         /** GetAuditsEntriesApiRequest */
         GetAuditsEntriesApiRequest: {
@@ -28633,14 +27900,6 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetAuthsV4Item"][] | null;
         };
-        /**
-         * GetBenchmarkContextViewResponse
-         * @description View-layer response for benchmark context.
-         */
-        GetBenchmarkContextViewResponse: {
-            /** Items */
-            items?: components["schemas"]["BenchmarkContextViewItem"][];
-        };
         /** GetBenchmarkEntriesApiRequest */
         GetBenchmarkEntriesApiRequest: {
             /** Ids */
@@ -28661,81 +27920,6 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
-        /**
-         * GetBenchmarkInvocationsRequest
-         * @description Request for benchmark invocations view filtering.
-         */
-        GetBenchmarkInvocationsRequest: {
-            /** Test Id */
-            test_id?: string | null;
-            /** Invocation Ids */
-            invocation_ids?: string[];
-            /** Chat Ids */
-            chat_ids?: string[];
-        };
-        /**
-         * GetBenchmarkInvocationsResponse
-         * @description Response for benchmark invocations view.
-         */
-        GetBenchmarkInvocationsResponse: {
-            /** Items */
-            items?: components["schemas"]["BenchmarkInvocationViewItem"][];
-        };
-        /**
-         * GetBenchmarkTestsRequest
-         * @description Request for benchmark tests view filtering.
-         */
-        GetBenchmarkTestsRequest: {
-            /** Test Ids */
-            test_ids?: string[];
-            /** Eval Id */
-            eval_id?: string | null;
-            /** Eval Ids */
-            eval_ids?: string[] | null;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Archived */
-            archived?: boolean | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Date From */
-            date_from?: string | null;
-            /** Date To */
-            date_to?: string | null;
-            /**
-             * Sort By
-             * @default date
-             */
-            sort_by: string;
-            /**
-             * Sort Order
-             * @default desc
-             */
-            sort_order: string;
-            /**
-             * Page Limit
-             * @default 50
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @default 0
-             */
-            page_offset: number;
-        };
-        /**
-         * GetBenchmarkTestsResponse
-         * @description Response for benchmark tests view.
-         */
-        GetBenchmarkTestsResponse: {
-            /** Items */
-            items?: components["schemas"]["BenchmarkTestViewItem"][];
-            /**
-             * Total Count
-             * @default 0
-             */
-            total_count: number;
-        };
         /** GetBindingsApiRequest */
         GetBindingsApiRequest: {
             /** Ids */
@@ -28755,23 +27939,6 @@ export interface components {
         GetBindingsEntriesApiResponse: {
             /** Items */
             items?: unknown | null;
-        };
-        /**
-         * GetCallListViewResponse
-         * @description Response containing call list data.
-         */
-        GetCallListViewResponse: {
-            /**
-             * Items
-             * @description Call data items
-             */
-            items?: components["schemas"]["CallViewItem"][];
-            /**
-             * Total Count
-             * @description Total count before pagination
-             * @default 0
-             */
-            total_count: number;
         };
         /** GetCallsEntriesApiRequest */
         GetCallsEntriesApiRequest: {
@@ -29479,23 +28646,6 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetFlagsV4Item"][] | null;
         };
-        /**
-         * GetGrantListViewResponse
-         * @description Response containing grant list data.
-         */
-        GetGrantListViewResponse: {
-            /**
-             * Items
-             * @description Grant data items
-             */
-            items?: components["schemas"]["GrantViewItem"][];
-            /**
-             * Total Count
-             * @description Total count before pagination
-             * @default 0
-             */
-            total_count: number;
-        };
         /** GetGrantsEntriesApiRequest */
         GetGrantsEntriesApiRequest: {
             /** Ids */
@@ -29549,23 +28699,6 @@ export interface components {
             items?: components["schemas"]["GroupListItem"][];
             /**
              * Total Count
-             * @default 0
-             */
-            total_count: number;
-        };
-        /**
-         * GetGroupListViewResponse
-         * @description Response containing group list data.
-         */
-        GetGroupListViewResponse: {
-            /**
-             * Items
-             * @description Group data items
-             */
-            items?: components["schemas"]["GroupViewItem"][];
-            /**
-             * Total Count
-             * @description Total count before pagination
              * @default 0
              */
             total_count: number;
@@ -29630,23 +28763,6 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
-        /**
-         * GetHealthListViewResponse
-         * @description Response containing health list data.
-         */
-        GetHealthListViewResponse: {
-            /**
-             * Items
-             * @description Health data items
-             */
-            items?: components["schemas"]["HealthViewItem"][];
-            /**
-             * Total Count
-             * @description Total count before pagination
-             * @default 0
-             */
-            total_count: number;
-        };
         /** GetHighlightsEntriesApiRequest */
         GetHighlightsEntriesApiRequest: {
             /** Ids */
@@ -29656,18 +28772,6 @@ export interface components {
         GetHighlightsEntriesApiResponse: {
             /** Items */
             items?: unknown | null;
-        };
-        /**
-         * GetHomeContextViewResponse
-         * @description View-layer response for home context.
-         */
-        GetHomeContextViewResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** User Role */
-            user_role?: string | null;
-            /** Items */
-            items?: components["schemas"]["HomeContextViewItem"][];
         };
         /** GetHomeEntriesApiRequest */
         GetHomeEntriesApiRequest: {
@@ -29781,23 +28885,6 @@ export interface components {
             item?: components["schemas"]["GetImageV4Item"] | null;
         };
         /**
-         * GetImageListViewResponse
-         * @description Response containing image list data.
-         */
-        GetImageListViewResponse: {
-            /**
-             * Items
-             * @description Image data items
-             */
-            items?: components["schemas"]["ImageViewItem"][];
-            /**
-             * Total Count
-             * @description Total count before pagination
-             * @default 0
-             */
-            total_count: number;
-        };
-        /**
          * GetImageV4Item
          * @description Image item returned from get endpoint.
          */
@@ -29900,23 +28987,6 @@ export interface components {
             /** Organization Id */
             organization_id?: string | null;
         };
-        /**
-         * GetLoginListViewResponse
-         * @description Response containing login list data.
-         */
-        GetLoginListViewResponse: {
-            /**
-             * Items
-             * @description Login data items
-             */
-            items?: components["schemas"]["LoginViewItem"][];
-            /**
-             * Total Count
-             * @description Total count before pagination
-             * @default 0
-             */
-            total_count: number;
-        };
         /** GetLoginsEntriesApiRequest */
         GetLoginsEntriesApiRequest: {
             /** Ids */
@@ -29963,23 +29033,6 @@ export interface components {
         GetMessagesEntriesApiResponse: {
             /** Items */
             items?: unknown | null;
-        };
-        /**
-         * GetMetricListViewResponse
-         * @description Response containing metric list data.
-         */
-        GetMetricListViewResponse: {
-            /**
-             * Items
-             * @description Metric data items
-             */
-            items?: components["schemas"]["MetricViewItem"][];
-            /**
-             * Total Count
-             * @description Total count before pagination
-             * @default 0
-             */
-            total_count: number;
         };
         /** GetMetricsEntriesApiRequest */
         GetMetricsEntriesApiRequest: {
@@ -30388,18 +29441,6 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetPointsV4Item"][] | null;
         };
-        /**
-         * GetPracticeContextViewResponse
-         * @description View-layer response for practice context.
-         */
-        GetPracticeContextViewResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** User Role */
-            user_role?: string | null;
-            /** Items */
-            items?: components["schemas"]["PracticeContextViewItem"][];
-        };
         /** GetPracticeEntriesApiRequest */
         GetPracticeEntriesApiRequest: {
             /** Ids */
@@ -30502,23 +29543,6 @@ export interface components {
         GetPricingInsightsEntriesApiResponse: {
             /** Items */
             items?: unknown | null;
-        };
-        /**
-         * GetProblemListViewResponse
-         * @description Response containing problem list data.
-         */
-        GetProblemListViewResponse: {
-            /**
-             * Items
-             * @description Problem data items
-             */
-            items?: components["schemas"]["ProblemViewItem"][];
-            /**
-             * Total Count
-             * @description Total count before pagination
-             * @default 0
-             */
-            total_count: number;
         };
         /**
          * GetProblemStatementApiRequest
@@ -30993,6 +30017,23 @@ export interface components {
              */
             page_offset: number | null;
         };
+        /**
+         * GetRunListViewResponse
+         * @description Response containing run list data.
+         */
+        GetRunListViewResponse: {
+            /**
+             * Items
+             * @description Run data items
+             */
+            items?: components["schemas"]["RunViewItem"][];
+            /**
+             * Total Count
+             * @description Total count before pagination
+             * @default 0
+             */
+            total_count: number;
+        };
         /** GetRunPositionsApiRequest */
         GetRunPositionsApiRequest: {
             /** Ids */
@@ -31325,23 +30366,6 @@ export interface components {
              * @default 0
              */
             total_pages: number;
-        };
-        /**
-         * GetSessionListViewResponse
-         * @description Response containing session list data.
-         */
-        GetSessionListViewResponse: {
-            /**
-             * Items
-             * @description Session data items
-             */
-            items?: components["schemas"]["SessionViewItem"][];
-            /**
-             * Total Count
-             * @description Total count before pagination
-             * @default 0
-             */
-            total_count: number;
         };
         /** GetSessionsEntriesApiRequest */
         GetSessionsEntriesApiRequest: {
@@ -31699,45 +30723,6 @@ export interface components {
              */
             items: components["schemas"]["QGetStandardsV4Item"][];
         };
-        /**
-         * GetSuiteViewResponse
-         * @description Thin MV-backed view response for a single benchmark bundle.
-         */
-        GetSuiteViewResponse: {
-            /**
-             * Profile Has Access
-             * @default false
-             */
-            profile_has_access: boolean;
-            /** Suite Entry Id */
-            suite_entry_id?: string | null;
-            /** Benchmark Id */
-            benchmark_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[];
-            /** Model Ids */
-            model_ids?: string[];
-            /** Prompt Ids */
-            prompt_ids?: string[];
-            /** Instruction Ids */
-            instruction_ids?: string[];
-            /** Voice Ids */
-            voice_ids?: string[];
-            /** Temperature Level Ids */
-            temperature_level_ids?: string[];
-            /** Reasoning Level Ids */
-            reasoning_level_ids?: string[];
-            /** Tool Ids */
-            tool_ids?: string[];
-            /** Key Ids */
-            key_ids?: string[];
-            /** Flag Ids */
-            flag_ids?: string[];
-            /** Name Ids */
-            name_ids?: string[];
-            /** Description Ids */
-            description_ids?: string[];
-        };
         /** GetTemperatureLevelsApiRequest */
         GetTemperatureLevelsApiRequest: {
             /** Ids */
@@ -31869,23 +30854,6 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
-        /**
-         * GetTextListViewResponse
-         * @description Response containing text list data.
-         */
-        GetTextListViewResponse: {
-            /**
-             * Items
-             * @description Text data items
-             */
-            items?: components["schemas"]["TextViewItem"][];
-            /**
-             * Total Count
-             * @description Total count before pagination
-             * @default 0
-             */
-            total_count: number;
-        };
         /** GetTextsApiRequest */
         GetTextsApiRequest: {
             /** P Ids */
@@ -32007,93 +30975,6 @@ export interface components {
              */
             page_offset: number | null;
         };
-        /**
-         * GetTrainingViewResponse
-         * @description Thin MV-backed view response for a single training bundle.
-         */
-        GetTrainingViewResponse: {
-            /**
-             * Profile Has Access
-             * @default false
-             */
-            profile_has_access: boolean;
-            /** Training Entry Id */
-            training_entry_id?: string | null;
-            /** Parent Id */
-            parent_id?: string | null;
-            /** Scenario Id */
-            scenario_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[];
-            /** Persona Ids */
-            persona_ids?: string[];
-            /** Document Ids */
-            document_ids?: string[];
-            /** Parameter Field Ids */
-            parameter_field_ids?: string[];
-            /** Parameter Ids */
-            parameter_ids?: string[];
-            /** Question Ids */
-            question_ids?: string[];
-            /** Option Ids */
-            option_ids?: string[];
-            /** Video Ids */
-            video_ids?: string[];
-            /** Image Ids */
-            image_ids?: string[];
-            /** Problem Statement Ids */
-            problem_statement_ids?: string[];
-            /** Objective Ids */
-            objective_ids?: string[];
-            /** Flag Ids */
-            flag_ids?: string[];
-            /** Name Ids */
-            name_ids?: string[];
-            /** Description Ids */
-            description_ids?: string[];
-            /**
-             * Video Enabled
-             * @default false
-             */
-            video_enabled: boolean;
-            /**
-             * Problem Statement Enabled
-             * @default false
-             */
-            problem_statement_enabled: boolean;
-            /**
-             * Objectives Enabled
-             * @default false
-             */
-            objectives_enabled: boolean;
-            /**
-             * Images Enabled
-             * @default false
-             */
-            images_enabled: boolean;
-            /**
-             * Questions Enabled
-             * @default false
-             */
-            questions_enabled: boolean;
-        };
-        /**
-         * GetUploadListViewResponse
-         * @description Response containing upload list data.
-         */
-        GetUploadListViewResponse: {
-            /**
-             * Items
-             * @description Upload data items
-             */
-            items?: components["schemas"]["UploadViewItem"][];
-            /**
-             * Total Count
-             * @description Total count before pagination
-             * @default 0
-             */
-            total_count: number;
-        };
         /** GetUploadsApiRequest */
         GetUploadsApiRequest: {
             /** Ids */
@@ -32151,23 +31032,6 @@ export interface components {
          */
         GetVideoApiResponse: {
             item?: components["schemas"]["GetVideoV4Item"] | null;
-        };
-        /**
-         * GetVideoListViewResponse
-         * @description Response containing video list data.
-         */
-        GetVideoListViewResponse: {
-            /**
-             * Items
-             * @description Video data items
-             */
-            items?: components["schemas"]["VideoViewItem"][];
-            /**
-             * Total Count
-             * @description Total count before pagination
-             * @default 0
-             */
-            total_count: number;
         };
         /**
          * GetVideoV4Item
@@ -32296,35 +31160,6 @@ export interface components {
             feedback_by_standard_id?: {
                 [key: string]: string;
             } | null;
-        };
-        /**
-         * GrantViewItem
-         * @description Single grant from the grant list view.
-         */
-        GrantViewItem: {
-            /**
-             * Grant Id
-             * Format: uuid
-             */
-            grant_id: string;
-            /** Grantor Id */
-            grantor_id?: string | null;
-            /** Emulation Id */
-            emulation_id?: string | null;
-            /** Emulated Id */
-            emulated_id?: string | null;
-            /** Grant Session Id */
-            grant_session_id?: string | null;
-            /** Emulation Session Id */
-            emulation_session_id?: string | null;
-            /** Expires At */
-            expires_at?: string | null;
-            /** Used At */
-            used_at?: string | null;
-            /** Revoked At */
-            revoked_at?: string | null;
-            /** Created At */
-            created_at?: string | null;
         };
         /**
          * GroupDetailCallItem
@@ -32633,30 +31468,6 @@ export interface components {
             /** Rubric Id */
             rubric_id?: string | null;
         };
-        /**
-         * GroupViewItem
-         * @description Single group from the group list view.
-         */
-        GroupViewItem: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /** Session Id */
-            session_id?: string | null;
-            /** Group Created At */
-            group_created_at?: string | null;
-            /** Trace Id */
-            trace_id?: string | null;
-            /** Group Name */
-            group_name?: string | null;
-            /**
-             * Active
-             * @default false
-             */
-            active: boolean;
-        };
         /** GroupsGenerationEvent */
         GroupsGenerationEvent: {
             /**
@@ -32730,46 +31541,6 @@ export interface components {
              * @default 0
              */
             total_count: number;
-        };
-        /**
-         * HealthViewItem
-         * @description Single health row from the health list view.
-         */
-        HealthViewItem: {
-            /**
-             * Date Hour
-             * Format: date-time
-             */
-            date_hour: string;
-            /** Service */
-            service?: string | null;
-            /**
-             * Check Count
-             * @default 0
-             */
-            check_count: number;
-            /**
-             * Ok Count
-             * @default 0
-             */
-            ok_count: number;
-            /**
-             * Fail Count
-             * @default 0
-             */
-            fail_count: number;
-            /** Uptime Percent */
-            uptime_percent?: number | null;
-            /** Avg Latency Ms */
-            avg_latency_ms?: number | null;
-            /** Min Latency Ms */
-            min_latency_ms?: number | null;
-            /** Max Latency Ms */
-            max_latency_ms?: number | null;
-            /** Latest Ok */
-            latest_ok?: boolean | null;
-            /** Latest Error */
-            latest_error?: string | null;
         };
         /**
          * HealthViews
@@ -32976,29 +31747,6 @@ export interface components {
             /** Profile Options */
             profile_options?: components["schemas"]["FilterOption"][] | null;
         };
-        /**
-         * HomeContextViewItem
-         * @description IDs-first home simulation item — raw IDs only, no computed fields.
-         */
-        HomeContextViewItem: {
-            /**
-             * Simulation Id
-             * Format: uuid
-             */
-            simulation_id: string;
-            /** Chat Entry Ids */
-            chat_entry_ids?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-            /** Rubric Ids */
-            rubric_ids?: string[] | null;
-            /** Time Limit Ids */
-            time_limit_ids?: string[] | null;
-        };
         /** IProcessCsvV4ColumnMapping */
         IProcessCsvV4ColumnMapping: {
             /** Csv Column */
@@ -33084,29 +31832,6 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
-        };
-        /**
-         * ImageViewItem
-         * @description Single image from the image list view.
-         */
-        ImageViewItem: {
-            /**
-             * Image Id
-             * Format: uuid
-             */
-            image_id: string;
-            /** Uploads Id */
-            uploads_id?: string | null;
-            /** File Path */
-            file_path?: string | null;
-            /** Mime Type */
-            mime_type?: string | null;
-            /** Size */
-            size?: number | null;
-            /** Quality Id */
-            quality_id?: string | null;
-            /** Created At */
-            created_at?: string | null;
         };
         /** ImagesApiRequest */
         ImagesApiRequest: {
@@ -34655,33 +33380,6 @@ export interface components {
             can_delete?: boolean | null;
         };
         /**
-         * LoginViewItem
-         * @description Single login from the login list view.
-         */
-        LoginViewItem: {
-            /**
-             * Login Id
-             * Format: uuid
-             */
-            login_id: string;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Session Id */
-            session_id?: string | null;
-            /** Last Login */
-            last_login?: string | null;
-            /** Login Created At */
-            login_created_at?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Generated */
-            generated?: boolean | null;
-            /** Mcp */
-            mcp?: boolean | null;
-            /** Call Id */
-            call_id?: string | null;
-        };
-        /**
          * MessageData
          * @description Message with contents, feedbacks, and hints.
          *
@@ -34752,44 +33450,6 @@ export interface components {
             contents?: string[];
             /** Call Ids */
             call_ids?: string[];
-        };
-        /**
-         * MetricViewItem
-         * @description Single metric row from the metric list view.
-         */
-        MetricViewItem: {
-            /**
-             * Date Hour
-             * Format: date-time
-             */
-            date_hour: string;
-            /**
-             * Sample Count
-             * @default 0
-             */
-            sample_count: number;
-            /** Avg Cpu Percent */
-            avg_cpu_percent?: number | null;
-            /** Min Cpu Percent */
-            min_cpu_percent?: number | null;
-            /** Max Cpu Percent */
-            max_cpu_percent?: number | null;
-            /** Avg Latency Ms */
-            avg_latency_ms?: number | null;
-            /** Min Latency Ms */
-            min_latency_ms?: number | null;
-            /** Max Latency Ms */
-            max_latency_ms?: number | null;
-            /** Avg Memory Bytes */
-            avg_memory_bytes?: number | null;
-            /** Min Memory Bytes */
-            min_memory_bytes?: number | null;
-            /** Max Memory Bytes */
-            max_memory_bytes?: number | null;
-            /** Max Requests Total */
-            max_requests_total?: number | null;
-            /** Max Errors Total */
-            max_errors_total?: number | null;
         };
         /** ModalitiesGenerationEvent */
         ModalitiesGenerationEvent: {
@@ -37052,29 +35712,6 @@ export interface components {
             value?: number | null;
         };
         /**
-         * PracticeContextViewItem
-         * @description IDs-first practice simulation item — raw IDs only, no computed fields.
-         */
-        PracticeContextViewItem: {
-            /**
-             * Simulation Id
-             * Format: uuid
-             */
-            simulation_id: string;
-            /** Chat Entry Ids */
-            chat_entry_ids?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-            /** Rubric Ids */
-            rubric_ids?: string[] | null;
-            /** Time Limit Ids */
-            time_limit_ids?: string[] | null;
-        };
-        /**
          * PreviousChatOption
          * @description A single scenario's best previous graded chat.
          */
@@ -37253,7 +35890,7 @@ export interface components {
          */
         PricingViews: {
             /** Runs */
-            runs?: components["schemas"]["app__api__v4__entries__runs__search__RunViewItem"][];
+            runs?: components["schemas"]["RunViewItem"][];
         };
         /** PrimaryPersonaPerformance */
         PrimaryPersonaPerformance: {
@@ -37373,31 +36010,6 @@ export interface components {
             name?: string | null;
             /** Problem Statement */
             problem_statement?: string | null;
-        };
-        /**
-         * ProblemViewItem
-         * @description Single problem from the problem list view.
-         */
-        ProblemViewItem: {
-            /**
-             * Problem Id
-             * Format: uuid
-             */
-            problem_id: string;
-            /** Type */
-            type?: string | null;
-            /** Message */
-            message?: string | null;
-            /** Resolved */
-            resolved?: boolean | null;
-            /** Session Id */
-            session_id?: string | null;
-            /** Problem Created At */
-            problem_created_at?: string | null;
-            /** Problem Updated At */
-            problem_updated_at?: string | null;
-            /** Profile Id */
-            profile_id?: string | null;
         };
         /** ProcessCsvApiRequest */
         ProcessCsvApiRequest: {
@@ -41744,6 +40356,44 @@ export interface components {
             runs_id?: string | null;
             /** Rubric Id */
             rubric_id?: string | null;
+        };
+        /**
+         * RunViewItem
+         * @description Single run from the run list.
+         */
+        RunViewItem: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Input Tokens
+             * @default 0
+             */
+            input_tokens: number;
+            /**
+             * Output Tokens
+             * @default 0
+             */
+            output_tokens: number;
+            /**
+             * Cached Input Tokens
+             * @default 0
+             */
+            cached_input_tokens: number;
+            /** Run Created At */
+            run_created_at?: string | null;
+            /** Agent Ids */
+            agent_ids?: string[] | null;
+            /** Model Ids */
+            model_ids?: string[] | null;
+            /** Provider Ids */
+            provider_ids?: string[] | null;
+            /** Pricing */
+            pricing?: components["schemas"]["RunPricingItem"][];
         };
         /** RunsGenerationEvent */
         RunsGenerationEvent: {
@@ -48284,26 +46934,6 @@ export interface components {
              */
             error_count: number;
         };
-        /**
-         * SessionViewItem
-         * @description Single session from the session list view.
-         */
-        SessionViewItem: {
-            /**
-             * Session Id
-             * Format: uuid
-             */
-            session_id: string;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Session Created At */
-            session_created_at?: string | null;
-            /**
-             * Active
-             * @default false
-             */
-            active: boolean;
-        };
         /** SettingAuthItemKeySection */
         SettingAuthItemKeySection: {
             /**
@@ -49611,7 +48241,7 @@ export interface components {
             test?: components["schemas"]["QGetTestViewV4Item"][] | null;
             /** Test Invocation */
             test_invocation?: components["schemas"]["QGetTestInvocationViewV4Item"][] | null;
-            runs?: components["schemas"]["app__api__v4__entries__runs__search__GetRunListViewResponse"] | null;
+            runs?: components["schemas"]["GetRunListViewResponse"] | null;
         };
         /**
          * TestErrorEvent
@@ -49957,28 +48587,6 @@ export interface components {
             /** Message */
             message?: string | null;
         };
-        /**
-         * TextViewItem
-         * @description Single text from the text list view.
-         */
-        TextViewItem: {
-            /**
-             * Texts Id
-             * Format: uuid
-             */
-            texts_id: string;
-            /**
-             * Text Id
-             * Format: uuid
-             */
-            text_id: string;
-            /** Content */
-            content?: string | null;
-            /** Content Hash */
-            content_hash?: string | null;
-            /** Created At */
-            created_at?: string | null;
-        };
         /** TextsApiRequest */
         TextsApiRequest: {
             /** Content */
@@ -50316,30 +48924,6 @@ export interface components {
             /** Args Output Ids */
             args_output_ids?: unknown[] | null;
         };
-        /**
-         * UploadViewItem
-         * @description Single upload from the upload list view.
-         */
-        UploadViewItem: {
-            /**
-             * Uploads Id
-             * Format: uuid
-             */
-            uploads_id: string;
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
-            /** File Path */
-            file_path?: string | null;
-            /** Mime Type */
-            mime_type?: string | null;
-            /** Size */
-            size?: number | null;
-            /** Created At */
-            created_at?: string | null;
-        };
         /** UploadsApiRequest */
         UploadsApiRequest: {
             /**
@@ -50498,32 +49082,6 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
-        };
-        /**
-         * VideoViewItem
-         * @description Single video from the video list view.
-         */
-        VideoViewItem: {
-            /**
-             * Video Id
-             * Format: uuid
-             */
-            video_id: string;
-            /** Uploads Id */
-            uploads_id?: string | null;
-            /** File Path */
-            file_path?: string | null;
-            /** Mime Type */
-            mime_type?: string | null;
-            /** Size */
-            size?: number | null;
-            /**
-             * Length Seconds
-             * @default 0
-             */
-            length_seconds: number;
-            /** Created At */
-            created_at?: string | null;
         };
         /** VideosApiRequest */
         VideosApiRequest: {
@@ -50737,61 +49295,6 @@ export interface components {
             parameter_ids?: string[] | null;
         };
         /**
-         * GetRunListViewResponse
-         * @description Response containing run list data.
-         */
-        app__api__v4__entries__runs__search__GetRunListViewResponse: {
-            /**
-             * Items
-             * @description Run data items
-             */
-            items?: components["schemas"]["app__api__v4__entries__runs__search__RunViewItem"][];
-            /**
-             * Total Count
-             * @description Total count before pagination
-             * @default 0
-             */
-            total_count: number;
-        };
-        /**
-         * RunViewItem
-         * @description Single run from the run list.
-         */
-        app__api__v4__entries__runs__search__RunViewItem: {
-            /**
-             * Run Id
-             * Format: uuid
-             */
-            run_id: string;
-            /** Group Id */
-            group_id?: string | null;
-            /**
-             * Input Tokens
-             * @default 0
-             */
-            input_tokens: number;
-            /**
-             * Output Tokens
-             * @default 0
-             */
-            output_tokens: number;
-            /**
-             * Cached Input Tokens
-             * @default 0
-             */
-            cached_input_tokens: number;
-            /** Run Created At */
-            run_created_at?: string | null;
-            /** Agent Ids */
-            agent_ids?: string[] | null;
-            /** Model Ids */
-            model_ids?: string[] | null;
-            /** Provider Ids */
-            provider_ids?: string[] | null;
-            /** Pricing */
-            pricing?: components["schemas"]["RunPricingItem"][];
-        };
-        /**
          * QGetRolesV4Item
          * @description Role item returned from get endpoint.
          */
@@ -50882,61 +49385,6 @@ export interface components {
             provider_ids?: string[] | null;
             /** Providers */
             providers?: components["schemas"]["QGetSettingsV4Provider"][] | null;
-        };
-        /**
-         * GetRunListViewResponse
-         * @description Response containing run list data.
-         */
-        app__api__v4__views__run__list__types__GetRunListViewResponse: {
-            /**
-             * Items
-             * @description Run data items
-             */
-            items?: components["schemas"]["app__api__v4__views__run__list__types__RunViewItem"][];
-            /**
-             * Total Count
-             * @description Total count before pagination
-             * @default 0
-             */
-            total_count: number;
-        };
-        /**
-         * RunViewItem
-         * @description Single run from the run list view.
-         */
-        app__api__v4__views__run__list__types__RunViewItem: {
-            /**
-             * Run Id
-             * Format: uuid
-             */
-            run_id: string;
-            /** Group Id */
-            group_id?: string | null;
-            /**
-             * Input Tokens
-             * @default 0
-             */
-            input_tokens: number;
-            /**
-             * Output Tokens
-             * @default 0
-             */
-            output_tokens: number;
-            /**
-             * Cached Input Tokens
-             * @default 0
-             */
-            cached_input_tokens: number;
-            /** Run Created At */
-            run_created_at?: string | null;
-            /** Agent Ids */
-            agent_ids?: string[] | null;
-            /** Model Ids */
-            model_ids?: string[] | null;
-            /** Provider Ids */
-            provider_ids?: string[] | null;
-            /** Pricing */
-            pricing?: components["schemas"]["RunPricingItem"][];
         };
         /** DeleteDocumentApiRequest */
         app__sql__types__DeleteDocumentApiRequest: {
@@ -76209,381 +74657,6 @@ export interface operations {
             };
         };
     };
-    get_activity_api_v4_views_activity_list_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetActivityListViewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_health_api_v4_views_health_list_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetHealthListViewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_benchmark_context_view_api_v4_views_benchmark_context_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetBenchmarkContextViewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_test_api_v4_views_benchmark_tests_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetBenchmarkTestsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetBenchmarkTestsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_test_invocation_api_v4_views_benchmark_invocations_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetBenchmarkInvocationsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetBenchmarkInvocationsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_suite_view_api_v4_views_benchmark_bundle_get_post: {
-        parameters: {
-            query: {
-                suite_entry_id: string;
-            };
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetSuiteViewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_training_view_api_v4_views_training_bundle_get_post: {
-        parameters: {
-            query: {
-                training_entry_id: string;
-            };
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetTrainingViewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_sessions_api_v4_views_session_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetSessionListViewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_groups_api_v4_views_group_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetGroupListViewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_audits_api_v4_views_audit_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetAuditListViewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_runs_api_v4_views_run_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__api__v4__views__run__list__types__GetRunListViewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_messages_api_v4_views_message_get_post: {
         parameters: {
             query?: never;
@@ -76604,402 +74677,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetMessageListViewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_calls_api_v4_views_call_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetCallListViewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_problems_api_v4_views_problem_list_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetProblemListViewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_logins_api_v4_views_login_list_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetLoginListViewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_metrics_api_v4_views_metric_list_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetMetricListViewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_texts_api_v4_views_text_list_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetTextListViewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_uploads_api_v4_views_upload_list_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetUploadListViewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_images_api_v4_views_image_list_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetImageListViewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_videos_api_v4_views_video_list_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetVideoListViewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_grants_api_v4_views_grant_list_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetGrantListViewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_audios_api_v4_views_audio_list_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetAudioListViewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_home_context_view_api_v4_views_home_context_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetHomeContextViewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_practice_context_view_api_v4_views_practice_context_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetPracticeContextViewResponse"];
                 };
             };
             /** @description Validation Error */

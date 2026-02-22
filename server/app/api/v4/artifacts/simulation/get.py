@@ -138,15 +138,6 @@ def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
     return output
 
 
-def derive_simulation_flag_key_and_label(name: str | None) -> tuple[str, str]:
-    """Derive key and label from flag name like 'simulation_active' -> ('active', 'Active')."""
-    if not name:
-        return ("unknown", "Unknown")
-    key = name.replace("simulation_", "")
-    label = key.replace("_", " ").title()
-    return (key, label)
-
-
 @dataclass
 class SimulationInternalData:
     """Internal data from core simulation fetching (cacheable layer)."""
@@ -543,7 +534,6 @@ async def get_simulation_internal(
     description_resource = next(
         (d for d in descriptions if d.id == ids_result.description_id), None
     )
-    flag_resources = list(flags_selected)
     department_resources = [d for d in departments if d.department_id in department_ids]
 
     # Convert scenarios to SimulationScenario type with computed show_* flags
@@ -566,22 +556,22 @@ async def get_simulation_internal(
     scenario_resources_current = [convert_scenario(s) for s in scenarios_selected]
     scenarios_typed = [convert_scenario(s) for s in scenarios_combined]
 
-    # Build flag configs
+    # Build flag configs (canonical pattern: direct field mapping from flags_resource)
     show_flag = compute_show_flag()
     simulation_flags = [
         SimulationFlagConfig(
-            key=derive_simulation_flag_key_and_label(flag.name)[0],
-            label=derive_simulation_flag_key_and_label(flag.name)[1],
+            key=flag.name,
+            label=flag.name,
             description=flag.description,
             icon_id=flag.icon,
             flag_option_id=flag.id,
-            show=show_flag,
-            required=compute_flag_required(),
             generated=flag.generated,
         )
         for flag in flags_available
         if flag.id
     ]
+    flag_ids_set = set(flag_ids)
+    flag_resources = [f for f in simulation_flags if f.flag_option_id in flag_ids_set]
 
     # Suggestion IDs
     name_suggestions_ids = [n.id for n in names_suggestions]

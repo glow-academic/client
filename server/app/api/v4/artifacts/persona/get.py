@@ -42,7 +42,6 @@ from app.api.v4.artifacts.persona.permissions import (
     compute_show_name,
     compute_show_parameter_fields,
     compute_show_parameters,
-    derive_flag_key_and_label,
     has_access,
 )
 from app.api.v4.artifacts.persona.types import (
@@ -687,33 +686,29 @@ async def get_persona_internal(
         "parameters": compute_parameters_required(),
     }
 
-    # Transform flags to enriched format for client
+    # Transform flags to enriched format for client (canonical pattern)
     persona_flags = [
         PersonaFlagConfig(
-            key=derive_flag_key_and_label(flag.name)[0],
-            label=derive_flag_key_and_label(flag.name)[1],
+            key=flag.name,
+            label=flag.name,
             description=flag.description,
             icon_id=flag.icon,
             flag_option_id=flag.id,
-            show=show_flag,
-            required=compute_flag_required(),
             generated=flag.generated,
         )
         for flag in flags
         if flag.id
     ]
 
-    # Convert current flag_resource to PersonaFlagConfig for the current bucket
+    # Convert current flag_resource to PersonaFlagConfig for the current bucket (canonical pattern)
     current_flag_config: PersonaFlagConfig | None = None
     if flag_resource and flag_resource.id:
         current_flag_config = PersonaFlagConfig(
-            key=derive_flag_key_and_label(flag_resource.name)[0],
-            label=derive_flag_key_and_label(flag_resource.name)[1],
+            key=flag_resource.name,
+            label=flag_resource.name,
             description=flag_resource.description,
             icon_id=flag_resource.icon,
             flag_option_id=flag_resource.id,
-            show=show_flag,
-            required=compute_flag_required(),
             generated=flag_resource.generated,
         )
 

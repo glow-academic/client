@@ -624,7 +624,6 @@ ARTIFACT_RESOURCES: dict[str, frozenset[str]] = {
             "flags",
             "names",
             "scenario_flags",
-            "scenario_personas",
             "scenario_positions",
             "scenario_rubrics",
             "scenario_time_limits",
@@ -660,7 +659,12 @@ ARTIFACT_VIEWS: dict[str, frozenset[str]] = {
             "benchmark_overview",
         }
     ),
-    "dashboard": frozenset({"simulation_history", "simulation_overview"}),
+    "chat": frozenset(
+        {"simulation_attempts", "simulation_chats", "simulation_messages"}
+    ),
+    "dashboard": frozenset(
+        {"simulation_history", "simulation_messages", "simulation_overview"}
+    ),
     "home": frozenset(
         {
             "simulation_attempts",
@@ -670,7 +674,7 @@ ARTIFACT_VIEWS: dict[str, frozenset[str]] = {
             "simulation_overview",
         }
     ),
-    "leaderboard": frozenset({"simulation_overview"}),
+    "leaderboard": frozenset({"simulation_messages", "simulation_overview"}),
     "practice": frozenset(
         {
             "simulation_attempts",
