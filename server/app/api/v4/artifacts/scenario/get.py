@@ -804,6 +804,28 @@ async def get_scenario_internal(
         else:
             doc_to_params = {}
 
+    # === RESOLVE UPLOAD IDs (uploads_resource -> uploads_entry) ===
+    all_upload_ids: list[UUID] = []
+    for img in images_selected + images_suggestions:
+        if img.upload_id:
+            all_upload_ids.append(img.upload_id)
+    for vid in videos_selected + videos_suggestions:
+        if vid.upload_id:
+            all_upload_ids.append(vid.upload_id)
+    for doc in documents_selected + documents_suggestions:
+        if doc.upload_id:
+            all_upload_ids.append(doc.upload_id)
+
+    upload_id_map: dict[UUID, UUID] = {}
+    if all_upload_ids:
+        async with pool.acquire() as c:
+            rows = await c.fetch(
+                "SELECT id, upload_id FROM uploads_resource WHERE id = ANY($1) AND upload_id IS NOT NULL",
+                list(set(all_upload_ids)),
+            )
+            for row in rows:
+                upload_id_map[row["id"]] = row["upload_id"]
+
     # Combine selected and suggestions (dedupe)
     names = _dedupe_by_id(names_selected + names_suggestions, "id")
     descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
@@ -937,6 +959,18 @@ async def get_scenario_internal(
         d["non_video_persona"] = non_video_persona
         return d
 
+    def _image_to_dict(image: Any) -> dict[str, Any]:
+        d = _to_dict(image)
+        if image.upload_id and image.upload_id in upload_id_map:
+            d["upload_id"] = upload_id_map[image.upload_id]
+        return d
+
+    def _video_to_dict(video: Any) -> dict[str, Any]:
+        d = _to_dict(video)
+        if video.upload_id and video.upload_id in upload_id_map:
+            d["upload_id"] = upload_id_map[video.upload_id]
+        return d
+
     def _document_to_dict(document: Any) -> dict[str, Any]:
         d = _to_dict(document)
         video_document, non_video_document = compute_document_video_flags(
@@ -944,6 +978,8 @@ async def get_scenario_internal(
         )
         d["video_document"] = video_document
         d["non_video_document"] = non_video_document
+        if document.upload_id and document.upload_id in upload_id_map:
+            d["upload_id"] = upload_id_map[document.upload_id]
         return d
 
     def _parameter_to_dict(param: Any) -> dict[str, Any]:
@@ -996,8 +1032,8 @@ async def get_scenario_internal(
             parameters=[_parameter_to_dict(p) for p in parameters],
             parameter_fields=[_to_dict(f) for f in parameter_fields],
             objectives=[_to_dict(o) for o in objectives],
-            images=[_to_dict(i) for i in images],
-            videos=[_to_dict(v) for v in videos],
+            images=[_image_to_dict(i) for i in images],
+            videos=[_video_to_dict(v) for v in videos],
             questions=[_to_dict(q) for q in questions],
             options=[_to_dict(o) for o in options],
         ),
@@ -1029,8 +1065,8 @@ async def get_scenario_internal(
             parameters=[_parameter_to_dict(p) for p in parameter_resources],
             parameter_fields=[_to_dict(f) for f in parameter_field_resources],
             objectives=[_to_dict(o) for o in objective_resources],
-            images=[_to_dict(i) for i in image_resources],
-            videos=[_to_dict(v) for v in video_resources],
+            images=[_image_to_dict(i) for i in image_resources],
+            videos=[_video_to_dict(v) for v in video_resources],
             questions=[_to_dict(q) for q in question_resources],
             options=[_to_dict(o) for o in option_resources],
         ),
