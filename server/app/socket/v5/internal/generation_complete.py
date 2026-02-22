@@ -17,7 +17,7 @@ from app.infra.v4.websocket.generation_tracker import (
 )
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio
-from app.socket.v5.internal.attempt.types import AttemptChatRequestData
+from app.socket.v5.internal.attempt.types import AttemptChatStartedData
 from app.socket.v5.internal.generation_save_registry import save_artifact
 from app.socket.v5.internal.generation_types import (
     GenerationCompleteData,
@@ -113,6 +113,13 @@ async def handle_run_complete(data: dict[str, Any]) -> None:
             if rt and rid:
                 resource_actions[rt] = {"resource_id": rid}
 
+    # 4a-chat: Inject _chat_resolved_id into resource_actions for chat saves
+    metadata = data.get("metadata") or {}
+    if artifact_type == "chat":
+        chat_resolved_id_meta = metadata.get("chat_resolved_id")
+        if chat_resolved_id_meta:
+            resource_actions["_chat_resolved_id"] = chat_resolved_id_meta
+
     # 4b: Auto-save if applicable
     if should_save and profile_id_str and group_id_str:
         try:
@@ -160,26 +167,42 @@ async def handle_run_complete(data: dict[str, Any]) -> None:
         ).model_dump(mode="json"),
     )
 
-    # 4e: Special case — chat emits attempt_chat after completion
+    # 4e: Special case — chat: link attempt_chat_entry + emit attempt events
     if artifact_type == "chat":
-        metadata = data.get("metadata") or {}
         attempt_id_data = metadata.get("attempt_id")
-        training_department_id_data = metadata.get("training_department_id")
+        chat_resolved_id_data = metadata.get("chat_resolved_id")
         if (
             should_save
             and profile_id_str
             and attempt_id_data
-            and training_department_id_data
+            and chat_resolved_id_data
+            and artifact_id  # save_chat_internal returned the chat_resolved_id
         ):
-            await internal_sio.emit(
-                "attempt_chat",
-                AttemptChatRequestData(
-                    sid=sid,
-                    attempt_id=attempt_id_data,
-                    training_department_id=training_department_id_data,
-                    profile_id=profile_id_str,
-                ).model_dump(mode="json"),
-            )
+            try:
+                from app.socket.v5.internal.attempt.start import _link_attempt_chat
+
+                attempt_uuid = uuid.UUID(attempt_id_data)
+                profile_uuid = uuid.UUID(profile_id_str)
+                cr_uuid = uuid.UUID(chat_resolved_id_data)
+
+                async with get_db_connection() as conn:
+                    chat_id = await _link_attempt_chat(
+                        conn, profile_uuid, attempt_uuid, cr_uuid
+                    )
+
+                if chat_id:
+                    # Emit attempt_chat_started (for subsequent chats)
+                    # or attempt_started (for first chat)
+                    await internal_sio.emit(
+                        "attempt_chat_started",
+                        AttemptChatStartedData(
+                            sid=sid,
+                            attempt_id=attempt_id_data,
+                            chat_id=str(chat_id),
+                        ).model_dump(mode="json"),
+                    )
+            except Exception as e:
+                logger.exception(f"Failed to link attempt_chat after chat save: {e}")
 
     # 4f: Cleanup
     await cleanup_generation(run_id)

@@ -11,6 +11,8 @@ import asyncpg  # type: ignore
 
 from app.sql.types import (
     GetTrainingAttemptContextSqlParams,
+    PrepareTrainingStartSqlParams,
+    PrepareTrainingStartSqlRow,
 )
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -21,12 +23,16 @@ SQL_PATH = (
     "app/sql/v4/queries/resources/training/get_training_attempt_context_complete.sql"
 )
 
+SQL_PATH_PREPARE_START = (
+    "app/sql/v4/queries/generate/training/prepare_training_start_complete.sql"
+)
+
 
 @dataclass
 class TrainingAttemptContext:
     """Pre-resolved IDs for attempt creation."""
 
-    training_entry_id: UUID
+    chat_entry_id: UUID
     is_practice: bool
     practice_id: UUID | None
     home_id: UUID | None
@@ -40,7 +46,7 @@ class TrainingAttemptContext:
 async def get_training_attempt_context_internal(
     conn: asyncpg.Connection,
     profile_id: UUID,
-    training_entry_id: UUID,
+    chat_entry_id: UUID,
     bypass_cache: bool = False,
 ) -> TrainingAttemptContext:
     """Resolve all IDs needed before attempt creation.
@@ -48,7 +54,7 @@ async def get_training_attempt_context_internal(
     Args:
         conn: Database connection
         profile_id: The profile creating the attempt
-        training_entry_id: The training entry to resolve context for
+        chat_entry_id: The training entry to resolve context for
         bypass_cache: Whether to bypass cache
 
     Returns:
@@ -56,14 +62,14 @@ async def get_training_attempt_context_internal(
     """
     ck = cache_key(
         "resources/training/attempt_context",
-        {"profile_id": str(profile_id), "training_entry_id": str(training_entry_id)},
+        {"profile_id": str(profile_id), "chat_entry_id": str(chat_entry_id)},
     )
 
     if not bypass_cache:
         cached = await get_cached(ck)
         if cached:
             return TrainingAttemptContext(
-                training_entry_id=UUID(cached["training_entry_id"]),
+                chat_entry_id=UUID(cached["chat_entry_id"]),
                 is_practice=cached["is_practice"],
                 practice_id=UUID(cached["practice_id"])
                 if cached.get("practice_id")
@@ -86,17 +92,17 @@ async def get_training_attempt_context_internal(
 
     params = GetTrainingAttemptContextSqlParams(
         p_profile_id=profile_id,
-        p_chat_entry_id=training_entry_id,
+        p_chat_entry_id=chat_entry_id,
     )
     row = await execute_sql_typed(conn, SQL_PATH, params=params)
 
     if not row or not row.profiles_resource_id:
         raise ValueError(
-            f"Training context not found for training_entry_id={training_entry_id}"
+            f"Training context not found for chat_entry_id={chat_entry_id}"
         )
 
     ctx = TrainingAttemptContext(
-        training_entry_id=row.chat_entry_id,
+        chat_entry_id=row.chat_entry_id,
         is_practice=row.is_practice or False,
         practice_id=row.practice_id,
         home_id=row.home_id,
@@ -110,7 +116,7 @@ async def get_training_attempt_context_internal(
     await set_cached(
         ck,
         {
-            "training_entry_id": str(ctx.training_entry_id),
+            "chat_entry_id": str(ctx.chat_entry_id),
             "is_practice": ctx.is_practice,
             "practice_id": str(ctx.practice_id) if ctx.practice_id else None,
             "home_id": str(ctx.home_id) if ctx.home_id else None,
@@ -133,3 +139,60 @@ async def get_training_attempt_context_internal(
     )
 
     return ctx
+
+
+async def prepare_training_start_internal(
+    conn: asyncpg.Connection,
+    profile_id: UUID,
+    chat_entry_id: UUID,
+    department_id: UUID,
+    draft_id: UUID | None = None,
+) -> tuple[UUID | None, UUID | None]:
+    """Call prepare_training_start SQL function.
+
+    Creates a chat_resolved_entry (if missing) and populates canonical scope links
+    (scenarios, rubrics, documents, etc.) from the scenario config.
+
+    Returns (chat_resolved_id, scenario_id).
+    """
+    from typing import cast
+
+    row = cast(
+        PrepareTrainingStartSqlRow,
+        await execute_sql_typed(
+            conn,
+            SQL_PATH_PREPARE_START,
+            params=PrepareTrainingStartSqlParams(
+                p_profile_id=profile_id,
+                p_chat_entry_id=chat_entry_id,
+                p_department_id=department_id,
+                p_draft_id=draft_id,
+            ),
+        ),
+    )
+
+    if not row:
+        return None, None
+
+    return row.chat_resolved_id, row.scenario_id
+
+
+async def check_resolved_needs_generation(
+    conn: asyncpg.Connection,
+    chat_resolved_id: UUID,
+) -> bool:
+    """Return True if the resolved entry is missing generated persona connections.
+
+    The prepare_training_start SQL copies canonical scope links (scenarios, rubrics,
+    documents, etc.) but does NOT create persona or parameter connections — those
+    come from generation. If personas are empty, generation is needed.
+    """
+    row = await conn.fetchval(
+        """
+        SELECT COUNT(*) = 0
+        FROM chat_resolved_personas_connection
+        WHERE chat_resolved_id = $1 AND active = true
+        """,
+        chat_resolved_id,
+    )
+    return bool(row)

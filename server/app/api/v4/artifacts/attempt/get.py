@@ -669,7 +669,7 @@ async def get_attempt_internal(
                 profile_name=None,
                 simulation_name=None,
                 training_id=None,
-                training_entry_id=None,
+                chat_entry_id=None,
                 group_id=None,
             )
 
@@ -686,7 +686,7 @@ async def get_attempt_internal(
                 profile_name=None,
                 simulation_name=None,
                 training_id=None,
-                training_entry_id=None,
+                chat_entry_id=None,
                 group_id=None,
             )
 
@@ -747,7 +747,7 @@ async def get_attempt_internal(
                 profile_name=profile_name,
                 simulation_name=simulation_name,
                 training_id=None,
-                training_entry_id=None,
+                chat_entry_id=None,
                 group_id=None,
             )
 
@@ -759,10 +759,10 @@ async def get_attempt_internal(
 
         # === RESOLVE TRAINING CONTEXT (for lobby flow) ===
         training_id: UUID | None = None
-        training_entry_id: UUID | None = None
+        chat_entry_id: UUID | None = None
         training_row = await conn.fetchrow(
             """
-            SELECT COALESCE(pte.chat_id, hte.chat_id) AS training_entry_id
+            SELECT COALESCE(pte.chat_id, hte.chat_id) AS chat_entry_id
             FROM attempt_entry a
             LEFT JOIN attempt_practice_entry apc ON apc.attempt_id = a.id AND apc.active = true
             LEFT JOIN practice_chat_entry pte ON pte.practice_id = apc.practice_id AND pte.active = true
@@ -773,8 +773,8 @@ async def get_attempt_internal(
             attempt_id,
         )
         if training_row:
-            training_entry_id = training_row["training_entry_id"]
-            training_id = training_entry_id
+            chat_entry_id = training_row["chat_entry_id"]
+            training_id = chat_entry_id
 
         # === RESOLVE CONFIG CHAIN (group_id -> agent/model/provider) ===
         first_chat_item = chats_result[0] if chats_result else None
@@ -1458,7 +1458,7 @@ async def get_attempt_internal(
             all_chats_completed
             and bool(has_remaining)
             and is_active
-            and bool(training_entry_id)
+            and bool(chat_entry_id)
         )
 
         # Fetch continuation options only when in lobby (non-practice only)
@@ -1506,7 +1506,7 @@ async def get_attempt_internal(
             profile_name=profile_name,
             simulation_name=simulation_name,
             training_id=training_id,
-            training_entry_id=training_entry_id,
+            chat_entry_id=chat_entry_id,
             group_id=group_id,
             agent_ids=agent_ids,
             attempt_item=attempt_item,
@@ -1614,7 +1614,7 @@ async def get_attempt_client(
         available_continuation_options=data.continuation_options,
         rubric_structure=data.rubric_structure,
         training_id=data.training_id,
-        training_entry_id=data.training_entry_id,
+        chat_entry_id=data.chat_entry_id,
         resources=data.resources_payload,
         entries=AttemptEntries(
             attempt=[data.attempt_item] if data.attempt_item else None,

@@ -70,14 +70,14 @@ async def get_training_entries_internal(
 async def get_training_view_internal(
     conn: asyncpg.Connection,
     profile_id: UUID,
-    training_entry_id: UUID,
+    chat_entry_id: UUID,
 ) -> GetTrainingViewSqlRow:
     """Thin MV-backed bundle scope lookup used by training artifacts."""
     from app.sql.types import GetTrainingViewSqlParams
 
     params = GetTrainingViewSqlParams(
         profile_id_filter=profile_id,
-        training_entry_id_filter=training_entry_id,
+        chat_entry_id_filter=chat_entry_id,
     )
     row = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
 
@@ -86,7 +86,7 @@ async def get_training_view_internal(
 
     return GetTrainingViewSqlRow(
         profile_has_access=row.profile_has_access or False,
-        training_entry_id=row.training_entry_id,
+        chat_entry_id=row.chat_entry_id,
         parent_id=row.parent_id,
         scenario_id=row.scenario_id,
         department_ids=list(row.department_ids or []),

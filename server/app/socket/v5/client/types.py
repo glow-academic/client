@@ -16,7 +16,7 @@ class GeneratePayload(BaseModel):
 
     Fields:
         artifact_type: Registry key (e.g. "agent", "training", "auth").
-        artifact_id:   Generic artifact ID — maps to agent_id, training_entry_id, etc.
+        artifact_id:   Generic artifact ID — maps to agent_id, chat_entry_id, etc.
         draft_id:      Optional draft ID (required for most artifacts).
         resource_types: Which resources to generate.
         user_instructions: Optional user instructions forwarded to LLM.
@@ -256,28 +256,21 @@ class TestErrorEvent(BaseModel):
 class AttemptStartPayload(BaseModel):
     """Client-to-server: create a new attempt."""
 
-    training_entry_id: UUID
+    chat_entry_id: UUID
     infinite_mode: bool = False
-    resource_types: list[str] | None = None
-    user_instructions: list[str] | None = None
-    save: bool = True
 
 
 class AttemptNextPayload(BaseModel):
     """Client-to-server: proceed to the next scenario in an existing attempt."""
 
     attempt_id: UUID
-    draft_id: UUID | None = None
-    resource_types: list[str] | None = None
-    user_instructions: list[str] | None = None
-    save: bool = True
 
 
 class AttemptStartedEvent(BaseModel):
     """Server-to-client: new attempt created."""
 
     attempt_id: str
-    training_entry_id: str
+    chat_entry_id: str
 
 
 class AttemptEndPayload(BaseModel):

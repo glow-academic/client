@@ -16,7 +16,7 @@ async def attempt_started_server_handler(data: dict[str, Any]) -> None:
         return
     event = AttemptStartedEvent(
         attempt_id=data.get("attempt_id", ""),
-        training_entry_id=data.get("training_entry_id", ""),
+        chat_entry_id=data.get("chat_entry_id", ""),
     )
     for room in data.get("rooms") or [sid]:
         await sio.emit("attempt_started", event.model_dump(mode="json"), room=room)

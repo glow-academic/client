@@ -17,6 +17,7 @@ logger = get_logger(__name__)
 # artifact_type → module path containing save_{artifact_type}_internal
 SAVE_REGISTRY: dict[str, str] = {
     "agent": "app.api.v4.artifacts.agent.save",
+    "chat": "app.api.v4.artifacts.chat.save",
     "auth": "app.api.v4.artifacts.auth.save",
     "cohort": "app.api.v4.artifacts.cohort.save",
     "department": "app.api.v4.artifacts.department.save",

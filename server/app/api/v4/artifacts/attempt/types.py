@@ -609,7 +609,7 @@ class GetAttemptDetailResponse(BaseModel):
     rubric_structure: RubricStructureData | None = None
     # Training context (for lobby flow)
     training_id: UUID | None = None
-    training_entry_id: UUID | None = None
+    chat_entry_id: UUID | None = None
     # New normalized maps
     resources: AttemptResources | None = None
     entries: AttemptEntries | None = None
@@ -641,7 +641,7 @@ class AttemptInternalData:
     profile_name: str | None
     simulation_name: str | None
     training_id: UUID | None
-    training_entry_id: UUID | None
+    chat_entry_id: UUID | None
 
     # Config chain
     group_id: UUID | None

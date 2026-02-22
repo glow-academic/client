@@ -235,7 +235,7 @@ class ChatSimulationOperational(BaseModel):
     simulation_name: str | None = None
     simulation_description: str | None = None
     time_limit: int | None = None
-    training_entry_id: UUID | None = None
+    chat_entry_id: UUID | None = None
     scenario_ids: list[UUID] | None = None  # Ordered list of scenario IDs
     cohort_ids: list[UUID] | None = None  # Cohorts this simulation belongs to
     # Display metadata
@@ -270,7 +270,7 @@ class ChatSimulationOperational(BaseModel):
 class GetChatRequest(BaseModel):
     """Client API request for one chat bundle customization payload."""
 
-    training_entry_id: UUID
+    chat_entry_id: UUID
     draft_id: UUID | None = None
 
 
@@ -367,7 +367,7 @@ class ChatScenarioFlags(BaseModel):
 class GetChatResponse(BaseModel):
     """Client-facing chat bundle response — section-first pattern."""
 
-    training_entry_id: UUID
+    chat_entry_id: UUID
     parent_id: UUID | None = None
     simulation_id: UUID | None = None
     simulation_name: str | None = None
@@ -567,7 +567,7 @@ class PatchChatDraftSqlRow(BaseModel):
 class ChatStartWebsocketEntries(BaseModel):
     """Thin websocket views payload for chat start."""
 
-    training_entry_id: UUID
+    chat_entry_id: UUID
     department_id: UUID
 
 

@@ -1151,19 +1151,19 @@ def register_endpoints(server: FastMCP) -> None:
 
     @server.tool()
     async def chat(
-        training_entry_id: str | None = None,
+        chat_entry_id: str | None = None,
         draft_id: str | None = None,
     ) -> dict[str, Any]:
         """Get chat data — conversation messages for a training session or draft.
 
         Args:
-            training_entry_id: Training entry ID to fetch chat for.
+            chat_entry_id: Training entry ID to fetch chat for.
             draft_id: Draft ID to fetch chat for.
         """
         payload = {
             k: v
             for k, v in {
-                "training_entry_id": training_entry_id,
+                "chat_entry_id": chat_entry_id,
                 "draft_id": draft_id,
             }.items()
             if v is not None

@@ -25,7 +25,7 @@ class AttemptChatRequestData(BaseModel):
 
     sid: str
     attempt_id: str
-    training_department_id: str
+    chat_resolved_id: str
     profile_id: str
 
 
@@ -52,7 +52,7 @@ class GenerateRequestData(BaseModel):
 class AttemptStartedData(BaseModel):
     sid: str
     attempt_id: str
-    training_entry_id: str
+    chat_entry_id: str
 
 
 class AttemptEndedData(BaseModel):

@@ -92,14 +92,14 @@ SQL_PATH_START_CONTEXT = (
 async def get_chat_start_context(
     conn: asyncpg.Connection,
     profile_id: UUID,
-    training_entry_id: UUID,
+    chat_entry_id: UUID,
     department_id: UUID,
     draft_id: UUID | None = None,
 ) -> GetChatStartWebsocketResponse:
     """Thin websocket fetch for chat start flow."""
     params = GetTrainingStartContextSqlParams(
         p_profile_id=profile_id,
-        p_training_entry_id=training_entry_id,
+        p_chat_entry_id=chat_entry_id,
         p_department_id=department_id,
         p_draft_id=draft_id,
     )
@@ -113,7 +113,7 @@ async def get_chat_start_context(
 
     return GetChatStartWebsocketResponse(
         entries=ChatStartWebsocketEntries(
-            training_entry_id=training_entry_id,
+            chat_entry_id=chat_entry_id,
             department_id=department_id,
         ),
         resources=ChatStartWebsocketResources(
@@ -152,7 +152,7 @@ async def get_chat_start_context(
 
 @dataclass
 class ChatInternalData:
-    training_entry_id: UUID
+    chat_entry_id: UUID
     parent_id: UUID | None
     simulation_id: UUID | None
     simulation_name: str | None
@@ -271,7 +271,7 @@ RESOURCE_CONFIG: list[tuple[str, str, str, Any, str]] = [
 async def get_chat_internal(
     pool: asyncpg.Pool,
     profile_id: UUID,
-    training_entry_id: UUID,
+    chat_entry_id: UUID,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> ChatInternalData:
@@ -281,10 +281,10 @@ async def get_chat_internal(
         view_data = await get_training_view_internal(
             conn=conn,
             profile_id=profile_id,
-            training_entry_id=training_entry_id,
+            chat_entry_id=chat_entry_id,
         )
 
-    if not view_data.training_entry_id:
+    if not view_data.chat_entry_id:
         raise HTTPException(status_code=404, detail="Chat bundle not found")
 
     if not view_data.profile_has_access:
@@ -412,7 +412,7 @@ async def get_chat_internal(
             start_ctx = await get_chat_start_context(
                 conn=conn,
                 profile_id=profile_id,
-                training_entry_id=training_entry_id,
+                chat_entry_id=chat_entry_id,
                 department_id=selected_department_id,
                 draft_id=draft_id,
             )
@@ -437,7 +437,7 @@ async def get_chat_internal(
     resource_agent_ids = agent_ids
 
     return ChatInternalData(
-        training_entry_id=view_data.training_entry_id,
+        chat_entry_id=view_data.chat_entry_id,
         parent_id=view_data.parent_id,
         simulation_id=simulation_id,
         simulation_name=simulation_name,
@@ -466,7 +466,7 @@ async def get_chat_internal(
 async def get_chat_websocket(
     pool: asyncpg.Pool,
     profile_id: UUID,
-    training_entry_id: UUID,
+    chat_entry_id: UUID,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> GetChatWebsocketResponse:
@@ -476,7 +476,7 @@ async def get_chat_websocket(
         return await get_chat_internal(
             pool=pool,
             profile_id=profile_id,
-            training_entry_id=training_entry_id,
+            chat_entry_id=chat_entry_id,
             draft_id=draft_id,
             bypass_cache=bypass_cache,
         )
@@ -600,7 +600,7 @@ _SECTION_CLASSES: dict[str, type] = {
 async def get_chat_client(
     pool: asyncpg.Pool,
     profile_id: UUID,
-    training_entry_id: UUID,
+    chat_entry_id: UUID,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> GetChatResponse:
@@ -608,7 +608,7 @@ async def get_chat_client(
     data = await get_chat_internal(
         pool=pool,
         profile_id=profile_id,
-        training_entry_id=training_entry_id,
+        chat_entry_id=chat_entry_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
     )
@@ -624,7 +624,7 @@ async def get_chat_client(
         )
 
     return GetChatResponse(
-        training_entry_id=data.training_entry_id,
+        chat_entry_id=data.chat_entry_id,
         parent_id=data.parent_id,
         simulation_id=data.simulation_id,
         simulation_name=data.simulation_name,
@@ -680,7 +680,7 @@ async def chat_get(
         return await get_chat_client(
             pool=pool,
             profile_id=cast(UUID, profile_id),
-            training_entry_id=request.training_entry_id,
+            chat_entry_id=request.chat_entry_id,
             draft_id=request.draft_id,
             bypass_cache=bypass_cache,
         )

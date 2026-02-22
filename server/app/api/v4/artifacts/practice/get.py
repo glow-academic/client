@@ -765,7 +765,7 @@ async def get_practice_internal(
                 [str(sg_id) for sg_id in item_sg_ids] if item_sg_ids else None
             )
 
-            training_entry_id = item.chat_entry_ids[0] if item.chat_entry_ids else None
+            chat_entry_id = item.chat_entry_ids[0] if item.chat_entry_ids else None
 
             attempt_count = ps.get("attempt_count", 0)
             status = compute_status(has_passed, attempt_count)
@@ -778,7 +778,7 @@ async def get_practice_internal(
                         simulation.description if simulation else None
                     ),
                     time_limit=time_limit_minutes,
-                    training_entry_id=training_entry_id,
+                    chat_entry_id=chat_entry_id,
                     scenario_ids=item.scenario_ids,
                     cohort_ids=item.cohort_ids,
                     color=color,
@@ -863,7 +863,7 @@ async def get_practice_internal(
 async def get_practice_websocket(
     pool: asyncpg.Pool,
     profile_id: UUID,
-    training_entry_id: UUID,
+    chat_entry_id: UUID,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> GetPracticeWebsocketResponse:
@@ -873,7 +873,7 @@ async def get_practice_websocket(
         return await get_chat_internal(
             pool=pool,
             profile_id=profile_id,
-            training_entry_id=training_entry_id,
+            chat_entry_id=chat_entry_id,
             draft_id=draft_id,
             bypass_cache=bypass_cache,
         )

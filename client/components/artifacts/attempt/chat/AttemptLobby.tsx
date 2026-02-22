@@ -30,7 +30,7 @@ function formatTime(seconds: number): string {
 
 interface AttemptLobbyProps {
   attemptId: string;
-  trainingBundleEntryId: string;
+  chatEntryId: string;
   simulationName: string | null;
   draftId: string | null;
   infiniteMode?: boolean;
@@ -40,7 +40,7 @@ interface AttemptLobbyProps {
 
 export function AttemptLobby({
   attemptId,
-  trainingBundleEntryId,
+  chatEntryId,
   simulationName,
   draftId,
   infiniteMode,
@@ -103,12 +103,7 @@ export function AttemptLobby({
     setIsStarting(true);
     isStartingRef.current = true;
 
-    nextScenario(attemptId, {
-      draftId: draftId ?? undefined,
-      userInstructions: userInstructions?.trim()
-        ? [userInstructions.trim()]
-        : undefined,
-    });
+    nextScenario(attemptId);
   }, [
     socket,
     isConnected,
@@ -143,8 +138,8 @@ export function AttemptLobby({
   }, [selectedOptionIndex, options, socket, isConnected, attemptId, usePrevious]);
 
   const handleCustomize = useCallback(() => {
-    router.push(`/chat/${trainingBundleEntryId}?attemptId=${attemptId}`);
-  }, [router, attemptId, trainingBundleEntryId]);
+    router.push(`/attempt/${attemptId}/${chatEntryId}`);
+  }, [router, attemptId, chatEntryId]);
 
   return (
     <div className="flex flex-col items-center justify-center h-full min-h-[400px] gap-6">

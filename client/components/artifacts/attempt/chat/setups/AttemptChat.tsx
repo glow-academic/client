@@ -1142,7 +1142,7 @@ export function AttemptChat({
     return (
       <AttemptLobby
         attemptId={attempt_id}
-        trainingBundleEntryId={attemptData.training_entry_id ?? ""}
+        chatEntryId={attemptData.training_entry_id ?? ""}
         simulationName={attemptData?.simulation?.name ?? null}
         draftId={draftIdProp ?? null}
         infiniteMode={infiniteModeProp}

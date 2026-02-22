@@ -22174,24 +22174,15 @@ export interface components {
          */
         AttemptStartPayload: {
             /**
-             * Training Entry Id
+             * Chat Entry Id
              * Format: uuid
              */
-            training_entry_id: string;
+            chat_entry_id: string;
             /**
              * Infinite Mode
              * @default false
              */
             infinite_mode: boolean;
-            /** Resource Types */
-            resource_types?: string[] | null;
-            /** User Instructions */
-            user_instructions?: string[] | null;
-            /**
-             * Save
-             * @default true
-             */
-            save: boolean;
         };
         /**
          * AttemptStartedEvent
@@ -22200,8 +22191,8 @@ export interface components {
         AttemptStartedEvent: {
             /** Attempt Id */
             attempt_id: string;
-            /** Training Entry Id */
-            training_entry_id: string;
+            /** Chat Entry Id */
+            chat_entry_id: string;
         };
         /**
          * AttemptStopPayload
@@ -23237,8 +23228,8 @@ export interface components {
             simulation_description?: string | null;
             /** Time Limit */
             time_limit?: number | null;
-            /** Training Entry Id */
-            training_entry_id?: string | null;
+            /** Chat Entry Id */
+            chat_entry_id?: string | null;
             /** Scenario Ids */
             scenario_ids?: string[] | null;
             /** Cohort Ids */
@@ -26822,7 +26813,7 @@ export interface components {
          *
          *     Fields:
          *         artifact_type: Registry key (e.g. "agent", "training", "auth").
-         *         artifact_id:   Generic artifact ID — maps to agent_id, training_entry_id, etc.
+         *         artifact_id:   Generic artifact ID — maps to agent_id, chat_entry_id, etc.
          *         draft_id:      Optional draft ID (required for most artifacts).
          *         resource_types: Which resources to generate.
          *         user_instructions: Optional user instructions forwarded to LLM.
@@ -27252,8 +27243,8 @@ export interface components {
             rubric_structure?: components["schemas"]["RubricStructureData"] | null;
             /** Training Id */
             training_id?: string | null;
-            /** Training Entry Id */
-            training_entry_id?: string | null;
+            /** Chat Entry Id */
+            chat_entry_id?: string | null;
             resources?: components["schemas"]["AttemptResources"] | null;
             entries?: components["schemas"]["AttemptEntries"] | null;
         };
@@ -27634,10 +27625,10 @@ export interface components {
          */
         GetChatRequest: {
             /**
-             * Training Entry Id
+             * Chat Entry Id
              * Format: uuid
              */
-            training_entry_id: string;
+            chat_entry_id: string;
             /** Draft Id */
             draft_id?: string | null;
         };
@@ -27647,10 +27638,10 @@ export interface components {
          */
         GetChatResponse: {
             /**
-             * Training Entry Id
+             * Chat Entry Id
              * Format: uuid
              */
-            training_entry_id: string;
+            chat_entry_id: string;
             /** Parent Id */
             parent_id?: string | null;
             /** Simulation Id */
