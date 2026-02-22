@@ -7,6 +7,9 @@
 "use client";
 
 import { useMemo } from "react";
+import { InsightsModal } from "@/components/common/insights/InsightsModal";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useInsightsModal } from "@/hooks/use-insights-modal";
 import AuthenticationKPI from "./kpis/AuthenticationKPI";
 import DatabaseKPI from "./kpis/DatabaseKPI";
 import DocumentKPI from "./kpis/DocumentKPI";
@@ -32,6 +35,21 @@ export interface LogsProps {
 }
 
 export default function Logs({ bundleData: serverBundleData }: LogsProps) {
+  // --- Insights modal wiring ---
+  const { generate, isAnyGenerating } = useArtifactAi({
+    artifactType: "health",
+    groupId: null,
+    validResourceTypes: [],
+  });
+  const insightsModalProps = useInsightsModal({
+    onGenerate: (instructions) => {
+      generate(["insights"], {
+        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
+      });
+    },
+    isGenerating: isAnyGenerating,
+  });
+
   // Extract data from bundle
   const healthKPIs = useMemo(
     () => serverBundleData?.health_kpis,
@@ -230,6 +248,8 @@ export default function Logs({ bundleData: serverBundleData }: LogsProps) {
           </div>
         </CardContent>
       </Card>
+
+      <InsightsModal {...insightsModalProps} />
     </div>
   );
 }

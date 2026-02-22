@@ -15,6 +15,9 @@ import { useProfile } from "@/contexts/profile-context";
 import { useSocket } from "@/contexts/socket-context";
 import { useTestLifecycle } from "@/hooks/use-test-lifecycle";
 import BenchmarkZone, { BenchmarkZoneSkeleton } from "./BenchmarkZone";
+import { InsightsModal } from "@/components/common/insights/InsightsModal";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useInsightsModal } from "@/hooks/use-insights-modal";
 
 // Rubric mapping types
 type RubricMapping = {
@@ -41,6 +44,21 @@ export default function Benchmark({
   const router = useRouter();
 
   const { profile } = useProfile();
+
+  // --- Insights modal wiring ---
+  const { generate: generateInsights, isAnyGenerating: isInsightsGenerating } = useArtifactAi({
+    artifactType: "benchmark",
+    groupId: null,
+    validResourceTypes: [],
+  });
+  const insightsModalProps = useInsightsModal({
+    onGenerate: (instructions) => {
+      generateInsights(["insights"], {
+        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
+      });
+    },
+    isGenerating: isInsightsGenerating,
+  });
   const { socket, isConnected } = useSocket();
   const [startingEvalId, setStartingEvalId] = useState<string | null>(null);
 
@@ -171,6 +189,7 @@ export default function Benchmark({
           rubricMappings={rubricMappings}
         />
       </div>
+      <InsightsModal {...insightsModalProps} />
     </TooltipProvider>
   );
 }

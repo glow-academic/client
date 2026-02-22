@@ -211,8 +211,9 @@ create_run AS (
 ),
 link_run_to_profile AS (
     INSERT INTO profiles_runs_connection (profiles_id, run_id)
-    SELECT p.profile_id, cr.run_id
+    SELECT ppj.profiles_id, cr.run_id
     FROM params p
+    JOIN profile_profiles_junction ppj ON ppj.profile_id = p.profile_id
     CROSS JOIN create_run cr
     WHERE p.profile_id IS NOT NULL
 ),

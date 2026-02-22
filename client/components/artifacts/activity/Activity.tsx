@@ -33,6 +33,9 @@ import ActiveProfilesMetric from "./header/ActiveProfilesMetric";
 import LoginsMetric from "./header/LoginsMetric";
 import EmulationsMetric from "./header/ContentCreatedMetric";
 import ActivityMetricsGraph from "./ActivityMetricsGraph";
+import { InsightsModal } from "@/components/common/insights/InsightsModal";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useInsightsModal } from "@/hooks/use-insights-modal";
 
 interface ActivityProps {
   activityData: ActivityOut;
@@ -53,6 +56,21 @@ export default function Activity({
 }: ActivityProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // --- Insights modal wiring ---
+  const { generate, isAnyGenerating } = useArtifactAi({
+    artifactType: "activity",
+    groupId: null,
+    validResourceTypes: [],
+  });
+  const insightsModalProps = useInsightsModal({
+    onGenerate: (instructions) => {
+      generate(["insights"], {
+        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
+      });
+    },
+    isGenerating: isAnyGenerating,
+  });
 
   const bundleData = activityData.bundleData;
   const sessionsList = useMemo(() => {
@@ -449,6 +467,8 @@ export default function Activity({
         {/* Pagination */}
         <DataTablePagination table={sessionsTable} />
       </div>
+
+      <InsightsModal {...insightsModalProps} />
     </div>
   );
 }

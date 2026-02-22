@@ -45,6 +45,9 @@ import { QuestionTakingInput } from "../inputAreas/QuestionTakingInput";
 import type { HybridInputProps, HybridInputHandle } from "../inputAreas/HybridInput";
 import { HybridInput } from "../inputAreas/HybridInput";
 import { AttemptLobby } from "../AttemptLobby";
+import { InsightsModal } from "@/components/common/insights/InsightsModal";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useInsightsModal } from "@/hooks/use-insights-modal";
 
 // ============================================================================
 // TYPES
@@ -110,6 +113,21 @@ export function AttemptChat({
 }: AttemptChatProps) {
   const router = useRouter();
   const { socket, isConnected } = useSocket();
+
+  // --- Insights modal wiring ---
+  const { generate: generateInsights, isAnyGenerating: isInsightsGenerating } = useArtifactAi({
+    artifactType: "attempt",
+    groupId: null,
+    validResourceTypes: [],
+  });
+  const insightsModalProps = useInsightsModal({
+    onGenerate: (instructions) => {
+      generateInsights(["insights"], {
+        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
+      });
+    },
+    isGenerating: isInsightsGenerating,
+  });
 
   // ---------------------------------------------------------------------------
   // STATE MANAGEMENT
@@ -1238,6 +1256,7 @@ export function AttemptChat({
   ) : null;
 
   return (
+    <>
       <GenericChatInterface
       chat_header={AttemptChatHeader}
       chat_area={ChatAreaComponent}
@@ -1261,5 +1280,7 @@ export function AttemptChat({
       document_area_props={documentAreaProps}
       input_area_props={inputAreaProps}
     />
+      <InsightsModal {...insightsModalProps} />
+    </>
   );
 }

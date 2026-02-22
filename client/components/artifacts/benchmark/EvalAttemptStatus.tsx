@@ -22,6 +22,9 @@ import { useSocket } from "@/contexts/socket-context";
 import { useTestLifecycle } from "@/hooks/use-test-lifecycle";
 import type { OutputOf } from "@/lib/api/types";
 import { AlertCircle, CheckCircle2, Clock, Play, Square, Settings } from "lucide-react";
+import { InsightsModal } from "@/components/common/insights/InsightsModal";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useInsightsModal } from "@/hooks/use-insights-modal";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -47,6 +50,21 @@ export default function EvalAttemptStatus({
   const [stoppingRunIds, setStoppingRunIds] = useState<Set<string>>(new Set());
 
   const [infiniteMode] = useState(attemptData.infinite_mode || false);
+
+  // --- Insights modal wiring ---
+  const { generate: generateInsights, isAnyGenerating: isInsightsGenerating } = useArtifactAi({
+    artifactType: "test",
+    groupId: null,
+    validResourceTypes: [],
+  });
+  const insightsModalProps = useInsightsModal({
+    onGenerate: (instructions) => {
+      generateInsights(["insights"], {
+        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
+      });
+    },
+    isGenerating: isInsightsGenerating,
+  });
 
   // Derive invocation ID from first run
   const invocationId = useMemo(() => {
@@ -330,6 +348,8 @@ export default function EvalAttemptStatus({
           </Table>
         </CardContent>
       </Card>
+
+      <InsightsModal {...insightsModalProps} />
     </div>
   );
 }

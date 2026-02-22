@@ -45,6 +45,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { AnalyticsFilters } from "@/lib/search-params/analytics-defaults";
+import { InsightsModal } from "@/components/common/insights/InsightsModal";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useInsightsModal } from "@/hooks/use-insights-modal";
 import {
   ColumnFiltersState,
   SortingState,
@@ -75,6 +78,21 @@ export default function Reports({
 }: ReportsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // --- Insights modal wiring ---
+  const { generate, isAnyGenerating } = useArtifactAi({
+    artifactType: "reports",
+    groupId: null,
+    validResourceTypes: [],
+  });
+  const insightsModalProps = useInsightsModal({
+    onGenerate: (instructions) => {
+      generate(["insights"], {
+        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
+      });
+    },
+    isGenerating: isAnyGenerating,
+  });
 
   // Extract data from API response - read from normalized three-layer structure
   const profiles = useMemo(() => {
@@ -1808,6 +1826,8 @@ export default function Reports({
           </TableBody>
         </Table>
       </div>
+
+      <InsightsModal {...insightsModalProps} />
 
       {/* Pagination */}
       {isLoading ? (

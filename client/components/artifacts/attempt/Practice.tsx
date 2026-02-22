@@ -13,6 +13,9 @@ import { useProfile } from "@/contexts/profile-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HistorySkeleton } from "@/components/artifacts/attempt/history/SimulationHistory";
 import PracticeZone, { PracticeZoneSkeleton } from "./PracticeZone";
+import { InsightsModal } from "@/components/common/insights/InsightsModal";
+import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useInsightsModal } from "@/hooks/use-insights-modal";
 
 export interface PracticeProps {
   practiceData: PracticeOut;
@@ -25,6 +28,21 @@ export default function Practice({
   isGuest = false,
 }: PracticeProps) {
   const { profile } = useProfile();
+
+  // --- Insights modal wiring ---
+  const { generate, isAnyGenerating } = useArtifactAi({
+    artifactType: "practice",
+    groupId: null,
+    validResourceTypes: [],
+  });
+  const insightsModalProps = useInsightsModal({
+    onGenerate: (instructions) => {
+      generate(["insights"], {
+        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
+      });
+    },
+    isGenerating: isAnyGenerating,
+  });
 
   // Extract data from practiceData
   const bundle = practiceData;
@@ -128,6 +146,7 @@ export default function Practice({
           }}
         />
       </div>
+      <InsightsModal {...insightsModalProps} />
     </TooltipProvider>
   );
 }

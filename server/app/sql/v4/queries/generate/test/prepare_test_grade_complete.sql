@@ -70,7 +70,10 @@ BEGIN
 
     -- Link run to profile
     INSERT INTO profiles_runs_connection (profiles_id, run_id)
-    VALUES (p_profile_id, v_grade_run_id);
+    SELECT ppj.profiles_id, v_grade_run_id
+    FROM profile_profiles_junction ppj
+    WHERE ppj.profile_id = p_profile_id
+    LIMIT 1;
 
     -- Create benchmark grade entry
     INSERT INTO test_grade_entry (

@@ -32,6 +32,7 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 VOLATILE
 AS $$
+#variable_conflict use_column
 DECLARE
     v_group_id uuid;
     v_trace_id text;
@@ -89,7 +90,10 @@ BEGIN
 
     -- Link run to profile
     INSERT INTO profiles_runs_connection (profiles_id, run_id)
-    VALUES (p_profile_id, v_run_id);
+    SELECT ppj.profiles_id, v_run_id
+    FROM profile_profiles_junction ppj
+    WHERE ppj.profile_id = p_profile_id
+    LIMIT 1;
 
     RETURN QUERY SELECT v_run_id, v_group_id, v_trace_id::text, v_config_id;
 END;
