@@ -147,6 +147,8 @@ class GetCohortApiRequest(BaseModel):
     descriptions_search: str | None = None
     simulation_search: str | None = None
     simulation_show_selected: bool | None = None
+    profile_search: str | None = None
+    profile_show_selected: bool | None = None
     draft_id: UUID | None = None
 
 

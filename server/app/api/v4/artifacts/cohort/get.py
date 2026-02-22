@@ -90,6 +90,7 @@ from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.resources.profile_personas.get import get_profile_personas_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
+from app.api.v4.resources.profiles.search import search_profiles_internal
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.simulation_availability.get import (
     get_simulation_availability_internal,
@@ -488,21 +489,21 @@ async def get_cohort_internal(
                 for item in items
             ]
 
-    async def fetch_profiles() -> list[CohortProfile]:
-        if not profile_ids:
-            return []
+    async def fetch_profiles() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            items = await get_profiles_internal(
+            selected = await get_profiles_internal(
                 c, profile_ids, bypass_cache=bypass_cache
+            ) if profile_ids else []
+            suggestions = await search_profiles_internal(
+                c,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=profile_ids or [],
+                department_ids=user_department_ids,
+                bypass_cache=bypass_cache,
             )
-            return [
-                CohortProfile(
-                    profile_id=item.profile_id,
-                    name=item.name,
-                    description=item.description,
-                )
-                for item in items
-            ]
+            return (selected, suggestions)
 
     async def fetch_profile_personas() -> list[CohortProfilePersona]:
         if not profile_persona_ids:
@@ -530,7 +531,7 @@ async def get_cohort_internal(
         (simulations_selected, simulations_suggestions),
         simulation_positions,
         simulation_availability,
-        profiles_fetched,
+        (profiles_selected, profiles_suggestions),
         profile_personas_fetched,
     ) = await asyncio.gather(
         fetch_names(),
@@ -555,6 +556,9 @@ async def get_cohort_internal(
     )
     simulations_raw = _dedupe_by_id(
         simulations_selected + simulations_suggestions, "simulation_id"
+    )
+    profiles_raw = _dedupe_by_id(
+        profiles_selected + profiles_suggestions, "profile_id"
     )
 
     # Convert to response types
@@ -586,6 +590,14 @@ async def get_cohort_internal(
         )
         for s in simulations_raw
     ]
+    profiles = [
+        CohortProfile(
+            profile_id=p.profile_id,
+            name=p.name,
+            description=p.description,
+        )
+        for p in profiles_raw
+    ]
 
     # Convert flags to CohortFlagConfig format (matches client FlagConfig)
     # show/required are set at the section level via section_common(), not per-flag
@@ -615,12 +627,14 @@ async def get_cohort_internal(
     # Selected multi-select resources
     department_resources = [d for d in departments if d.department_id in department_ids]
     simulation_resources = [s for s in simulations if s.simulation_id in simulation_ids]
+    profile_resources = [p for p in profiles if p.profile_id and p.profile_id in profile_ids]
 
     # Suggestion IDs
     name_suggestions_ids = [n.id for n in names_suggestions]
     description_suggestions_ids = [d.id for d in descriptions_suggestions]
     department_suggestions_ids = [d.department_id for d in departments_suggestions]
     simulation_suggestions_ids = [s.simulation_id for s in simulations_suggestions]
+    profile_suggestions_ids = [p.profile_id for p in profiles_suggestions if p.profile_id]
 
     # Compute final show flags based on actual data
     show_name = compute_show_name()
@@ -634,7 +648,7 @@ async def get_cohort_internal(
     show_simulation_availability_flag = compute_show_simulation_availability(
         len(simulation_availability or [])
     )
-    show_profiles_flag = compute_show_profiles(len(profiles_fetched or []))
+    show_profiles_flag = compute_show_profiles(len(profiles))
     show_profile_personas_flag = compute_show_profile_personas(
         len(profile_personas_fetched or [])
     )
@@ -676,6 +690,7 @@ async def get_cohort_internal(
         "descriptions": description_suggestions_ids,
         "departments": department_suggestions_ids,
         "simulations": simulation_suggestions_ids,
+        "profiles": profile_suggestions_ids,
     }
 
     # Build resources payload
@@ -688,7 +703,7 @@ async def get_cohort_internal(
             simulations=simulations,
             simulation_positions=simulation_positions or [],
             simulation_availability=simulation_availability or [],
-            profiles=profiles_fetched or [],
+            profiles=profiles,
             profile_personas=profile_personas_fetched or [],
         ),
         current=CohortResourceBucket(
@@ -699,7 +714,7 @@ async def get_cohort_internal(
             simulations=simulation_resources or [],
             simulation_positions=simulation_positions or [],
             simulation_availability=simulation_availability or [],
-            profiles=profiles_fetched or [],
+            profiles=profile_resources,
             profile_personas=profile_personas_fetched or [],
         ),
     )
@@ -795,7 +810,7 @@ async def get_cohort_internal(
         simulation_resources=simulation_resources,
         simulation_positions=simulation_positions or [],
         simulation_availability=simulation_availability or [],
-        profile_resources=profiles_fetched or [],
+        profile_resources=profile_resources,
         profile_persona_resources=profile_personas_fetched or [],
         config_agent_resources=config_agents_result or None,
         config_model_resources=config_models_result or None,

@@ -243,8 +243,10 @@ function CohortComponent({
       // Search params (URL-backed, updated via debounced callback in StepCard)
       descriptionSearch: parseAsString,
       simulationSearch: parseAsString,
+      profileSearch: parseAsString,
       // Filter params (URL-backed)
       simulationShowSelected: parseAsBoolean,
+      profileShowSelected: parseAsBoolean,
     }),
     [],
   );
@@ -682,6 +684,10 @@ function CohortComponent({
         (formData["simulationSearch"] as string | undefined) ?? null;
       const simulationShowSelected =
         (formData["simulationShowSelected"] as boolean | undefined) ?? false;
+      const profileSearch =
+        (formData["profileSearch"] as string | undefined) ?? null;
+      const profileShowSelected =
+        (formData["profileShowSelected"] as boolean | undefined) ?? false;
 
       // Emit cohort_generate with resource_types
       socket.emit("cohort_generate", {
@@ -692,6 +698,8 @@ function CohortComponent({
         descriptions_search: descriptionSearch || null,
         simulation_search: simulationSearch || null,
         simulation_show_selected: simulationShowSelected || false,
+        profile_search: profileSearch || null,
+        profile_show_selected: profileShowSelected || false,
         cohort_id: cohortId || null,
       });
     },
@@ -1361,7 +1369,15 @@ function CohortComponent({
           );
         }
 
-        case "profiles":
+        case "profiles": {
+          const profileSearchTerm =
+            (stepFormData["profileSearch"] as string | null | undefined) ||
+            "";
+          const profileShowSelected =
+            (stepFormData["profileShowSelected"] as
+              | boolean
+              | null
+              | undefined) ?? false;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1370,7 +1386,24 @@ function CohortComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              resetFields={["profile_ids"]}
+              searchTerm={profileSearchTerm}
+              onSearchChange={(term: string) =>
+                setStepFormData({ profileSearch: term || null })
+              }
+              searchPlaceholder="Search profiles..."
+              debounceMs={300}
+              filters={[
+                {
+                  key: "showSelected",
+                  label: "Show selected",
+                  value: profileShowSelected,
+                  onChange: (value: boolean) =>
+                    setStepFormData({
+                      profileShowSelected: value || null,
+                    }),
+                },
+              ]}
+              resetFields={["profile_ids", "profileSearch", "profileShowSelected"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
               actions={
@@ -1403,6 +1436,7 @@ function CohortComponent({
                   generated: p.generated ?? false,
                 }))}
                 show_profiles={s?.profiles?.show ?? false}
+                profile_suggestions={s?.profiles?.suggestions ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState((prev) => ({ ...prev, profile_ids: ids }))
@@ -1411,6 +1445,8 @@ function CohortComponent({
                 group_id={s?.group_id ?? null}
                 showAiGenerate={s?.profiles?.show_ai_generate ?? false}
                 onGenerate={handleGenerateProfiles}
+                searchTerm={profileSearchTerm}
+                showSelectedFilter={profileShowSelected}
               />
               <ProfilePersonas
                 profile_persona_ids={formState.profile_persona_ids ?? []}
@@ -1457,6 +1493,7 @@ function CohortComponent({
               />
             </StepCard>
           );
+        }
 
         default:
           return null;

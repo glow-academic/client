@@ -153,6 +153,8 @@ export default async function CohortEditPage({
     descriptionSearch: parseAsString,
     simulationSearch: parseAsString,
     simulationShowSelected: parseAsBoolean,
+    profileSearch: parseAsString,
+    profileShowSelected: parseAsBoolean,
   };
   const loadCohortSearchParams = createLoader(cohortSearchParams);
   const q = loadCohortSearchParams(searchParamsObj);
@@ -167,6 +169,8 @@ export default async function CohortEditPage({
         descriptions_search: q.descriptionSearch ?? null,
         simulation_search: q.simulationSearch ?? null,
         simulation_show_selected: q.simulationShowSelected ?? null,
+        profile_search: q.profileSearch ?? null,
+        profile_show_selected: q.profileShowSelected ?? null,
         mcp: false,
       } as GetCohortIn["body"],
     };

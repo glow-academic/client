@@ -1,13 +1,13 @@
 /**
  * Profiles.tsx
  * Resource component for profiles selection
- * Uses GenericPicker to select existing profiles artifacts
+ * Uses SelectableGrid for horizontal grid card layout (like Simulations.tsx)
  * Manages profile_ids array and reports to parent
  */
 
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -58,6 +58,8 @@ export interface ProfilesProps {
   group_id?: string | null; // Group ID for linking resources
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
+  searchTerm?: string; // Search term for filtering profiles
+  showSelectedFilter?: boolean; // Whether to show only selected profiles
   aiProfileResources?: Array<{
     profile_id?: string | null;
     name?: string | null;
@@ -75,15 +77,20 @@ export function Profiles({
   label = "Profiles",
   id = "profiles",
   required = false,
-  placeholder = "Select profiles...",
   description,
   group_id,
   onGenerate,
   showAiGenerate = false,
+  searchTerm = "",
+  showSelectedFilter = false,
 }: ProfilesProps) {
   const ids = useMemo(() => profile_ids ?? [], [profile_ids]);
   const show = show_profiles ?? false;
   const allProfiles = useMemo(() => profiles ?? [], [profiles]);
+  const suggestionsList = useMemo(
+    () => profile_suggestions ?? [],
+    [profile_suggestions]
+  );
 
   // Socket-based AI suggestion handling via shared hook
   const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
@@ -104,6 +111,61 @@ export function Profiles({
     [aiSuggestions]
   );
 
+  // Convert profiles array to ProfilesItem format for SelectableGrid
+  const profileItems = useMemo(() => {
+    return allProfiles
+      .filter((p) => p.profile_id && p.name) // Filter out nulls
+      .map((p) => ({
+        id: p.profile_id!,
+        name: p.name!,
+        ...(p.description?.trim() ? { description: p.description.trim() } : {}),
+      }));
+  }, [allProfiles]);
+
+  // Filter profiles based on search term and show selected filter
+  const filteredProfileItems = useMemo(() => {
+    let filtered = profileItems;
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter((profile) => {
+        const searchText = `${profile.name} ${profile.description || ""}`.toLowerCase();
+        return searchText.includes(searchLower);
+      });
+    }
+
+    // Apply show selected filter
+    if (showSelectedFilter) {
+      filtered = filtered.filter((profile) => ids.includes(profile.id));
+    }
+
+    return filtered;
+  }, [profileItems, searchTerm, showSelectedFilter, ids]);
+
+  // Check if a profile is suggested
+  const isSuggested = useCallback(
+    (profileId: string) => suggestionsList.includes(profileId),
+    [suggestionsList]
+  );
+
+  const handleSelect = useCallback(
+    (profileId: string) => {
+      const isSelected = ids.includes(profileId);
+      const newIds = isSelected
+        ? ids.filter((id) => id !== profileId)
+        : [...ids, profileId];
+
+      onChange(newIds);
+    },
+    [ids, onChange]
+  );
+
+  // Check if any profile resource is generated (must be before early return)
+  const hasGenerated = useMemo(() => {
+    return profile_resources?.some((p) => p.generated) ?? false;
+  }, [profile_resources]);
+
   // Accept AI suggestion - add AI-suggested profiles to selection
   const handleAccept = useCallback(() => {
     if (aiSuggestions.length === 0) return;
@@ -120,41 +182,6 @@ export function Profiles({
   const handleReject = useCallback(() => {
     clearAi();
   }, [clearAi]);
-
-  const suggestionsList = useMemo(
-    () => profile_suggestions ?? [],
-    [profile_suggestions]
-  );
-
-  // Convert profiles array to ProfilesItem format for GenericPicker
-  const profilesItems = useMemo(() => {
-    return allProfiles
-      .filter((p) => p.profile_id && p.name) // Filter out nulls
-      .map((p) => ({
-        id: p.profile_id!,
-        name: p.name!,
-        ...(p.description ? { description: p.description } : {}),
-      }));
-  }, [allProfiles]);
-
-  // Check if a profiles is suggested
-  const isSuggested = useCallback(
-    (profilesId: string) => suggestionsList.includes(profilesId),
-    [suggestionsList]
-  );
-
-  const handleSelect = useCallback(
-    (selectedIds: string[]) => {
-      // Update parent state
-      onChange(selectedIds);
-    },
-    [onChange]
-  );
-
-  // Check if any profiles resource is generated (must be before early return)
-  const hasGenerated = useMemo(() => {
-    return profile_resources?.some((p) => p.generated) ?? false;
-  }, [profile_resources]);
 
   // Don't render if show_profiles is false (AFTER all hooks)
   if (!show) {
@@ -237,58 +264,60 @@ export function Profiles({
           )}
         </div>
       )}
-      <GenericPicker<ProfilesItem>
-        items={profilesItems}
-        itemIds={allProfiles
-          .map((p) => p.profile_id)
-          .filter((id): id is string => id !== null)} // All profiles IDs from array, filter nulls
+      <SelectableGrid<ProfilesItem>
+        horizontal
+        items={filteredProfileItems}
+        selectedId={null}
         selectedIds={ids}
         onSelect={handleSelect}
-        multiSelect={true}
         getId={(item) => item.id}
-        getLabel={(item) => item.name}
         renderItem={(item, isSelected) => {
           const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
 
           return (
-            <div className={cn(
-              "flex items-center justify-between w-full",
-              isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10 rounded"
-            )}>
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                {isAiSuggested && !isSelected && (
-                  <span className="px-1.5 py-0.5 bg-success/20 text-success text-xs rounded shrink-0">
-                    AI Suggested
-                  </span>
-                )}
-                {isSuggested(item.id) && !isSelected && !isAiSuggested && (
-                  <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
-                    Suggested
-                  </span>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="truncate">{item.name}</div>
-                  {item.description && (
-                    <div className="text-xs text-muted-foreground truncate">
-                      {item.description}
-                    </div>
-                  )}
+            <div
+              className={cn(
+                "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                "hover:shadow-md hover:bg-accent/50",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                isSelected && "ring-2 ring-primary bg-accent",
+                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
+              )}
+            >
+              {/* Check icon - top right */}
+              {isSelected && (
+                <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                  <Check className="h-3.5 w-3.5 text-primary-foreground" />
                 </div>
-              </div>
-              <Check
-                className={cn(
-                  "ml-auto flex-shrink-0 h-4 w-4",
-                  isSelected ? "opacity-100" : "opacity-0"
+              )}
+
+              {/* AI Suggested badge - top right */}
+              {isAiSuggested && !isSelected && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  AI Suggested
+                </div>
+              )}
+
+              {/* Suggested badge - top right */}
+              {isSuggested(item.id) && !isSelected && !isAiSuggested && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
+                  Suggested
+                </div>
+              )}
+
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium text-sm leading-tight">{item.name}</h3>
+                {item.description && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                    <p className="truncate">{item.description}</p>
+                  </div>
                 )}
-              />
+              </div>
             </div>
           );
         }}
-        placeholder={placeholder}
+        emptyMessage="No profiles found."
         disabled={disabled}
-        showLabel={false}
-        hideSelectedChips={false}
-        showClearAll={true}
       />
     </div>
   );

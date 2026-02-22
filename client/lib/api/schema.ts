@@ -28051,6 +28051,10 @@ export interface components {
             simulation_search?: string | null;
             /** Simulation Show Selected */
             simulation_show_selected?: boolean | null;
+            /** Profile Search */
+            profile_search?: string | null;
+            /** Profile Show Selected */
+            profile_show_selected?: boolean | null;
             /** Draft Id */
             draft_id?: string | null;
         };
