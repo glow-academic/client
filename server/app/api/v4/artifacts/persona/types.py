@@ -282,6 +282,7 @@ class ListPersonaApiPersona(BaseModel):
     generated: bool | None = None
     mcp: bool | None = None
     num_scenarios: int | None = None
+    num_profiles: int | None = None
     # Computed in Python
     can_edit: bool | None = None
     can_duplicate: bool | None = None

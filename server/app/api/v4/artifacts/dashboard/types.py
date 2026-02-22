@@ -45,13 +45,15 @@ class DashboardRequest(BaseModel):
     improvement_simulation_ids: list[UUID] | None = None
     improvement_simulations_search: str | None = None
 
-    # Footer section pickers (scenario/simulation-focused)
+    # Footer section pickers (parameter + scenario focused)
     scenario_perf_parameter_ids: list[UUID] | None = None
     scenario_perf_param_search: str | None = None
     scenario_stats_parameter_ids: list[UUID] | None = None
     scenario_stats_param_search: str | None = None
-    sim_perf_simulation_ids: list[UUID] | None = None
-    sim_perf_simulation_search: str | None = None
+    scenario_sim_perf_scenario_ids: list[UUID] | None = None
+    scenario_sim_perf_scenario_search: str | None = None
+    scenario_comp_scenario_ids: list[UUID] | None = None
+    scenario_comp_scenario_search: str | None = None
 
     # History section (attempt list)
     history_practice: bool = False
@@ -387,55 +389,55 @@ class FooterScenarioStats(BaseModel):
     status: str = "neutral"
 
 
-class FooterSimulationScenarioFact(BaseModel):
-    simulation_id: str | None = None
+class FooterScenarioSimulationFact(BaseModel):
     scenario_id: str | None = None
-    scenario_name: str | None = None
+    simulation_id: str | None = None
+    simulation_name: str | None = None
     avg_score: float | None = None
     success_rate: float | None = None
     total_attempts: int | None = None
     completed_attempts: int | None = None
 
 
-class FooterSimulationPerformance(BaseModel):
-    scenario_facts: list[FooterSimulationScenarioFact] = Field(default_factory=list)
-    valid_simulation_ids: list[str] = Field(default_factory=list)
+class FooterScenarioSimulationPerformance(BaseModel):
+    simulation_facts: list[FooterScenarioSimulationFact] = Field(default_factory=list)
+    valid_scenario_ids: list[str] = Field(default_factory=list)
     status: str = "neutral"
 
 
-class FooterSimulationFact(BaseModel):
-    simulation_id: str | None = None
-    title: str | None = None
+class FooterScenarioFact(BaseModel):
+    scenario_id: str | None = None
+    name: str | None = None
     avg_score: float | None = None
     completion_rate: float | None = None
-    total_attempts: int | None = None
-    scenario_count: int | None = None
+    total_chats: int | None = None
+    simulation_count: int | None = None
 
 
-class FooterSimulationParameterFactCategorical(BaseModel):
-    simulation_id: str | None = None
+class FooterScenarioParameterFactCategorical(BaseModel):
+    scenario_id: str | None = None
     parameter_id: str | None = None
     parameter_item_id: str | None = None
-    scenario_count: int | None = None
+    chat_count: int | None = None
 
 
-class FooterSimulationParameterFactNumeric(BaseModel):
-    simulation_id: str | None = None
+class FooterScenarioParameterFactNumeric(BaseModel):
+    scenario_id: str | None = None
     parameter_id: str | None = None
     avg_level: float | None = None
     level_label: str | None = None
-    scenario_count: int | None = None
+    chat_count: int | None = None
 
 
-class FooterSimulationComposition(BaseModel):
-    simulation_facts: list[FooterSimulationFact] = Field(default_factory=list)
-    simulation_parameter_facts_categorical: list[
-        FooterSimulationParameterFactCategorical
+class FooterScenarioComposition(BaseModel):
+    scenario_facts: list[FooterScenarioFact] = Field(default_factory=list)
+    scenario_parameter_facts_categorical: list[
+        FooterScenarioParameterFactCategorical
     ] = Field(default_factory=list)
-    simulation_parameter_facts_numeric: list[FooterSimulationParameterFactNumeric] = (
-        Field(default_factory=list)
+    scenario_parameter_facts_numeric: list[FooterScenarioParameterFactNumeric] = Field(
+        default_factory=list
     )
-    valid_simulation_ids: list[str] = Field(default_factory=list)
+    valid_scenario_ids: list[str] = Field(default_factory=list)
     status: str = "neutral"
 
 
@@ -444,11 +446,11 @@ class DashboardFooterMetrics(BaseModel):
         default_factory=FooterScenarioPerformance
     )
     scenario_stats: FooterScenarioStats = Field(default_factory=FooterScenarioStats)
-    simulation_performance: FooterSimulationPerformance = Field(
-        default_factory=FooterSimulationPerformance
+    scenario_simulation_performance: FooterScenarioSimulationPerformance = Field(
+        default_factory=FooterScenarioSimulationPerformance
     )
-    simulation_composition: FooterSimulationComposition = Field(
-        default_factory=FooterSimulationComposition
+    scenario_composition: FooterScenarioComposition = Field(
+        default_factory=FooterScenarioComposition
     )
 
 
@@ -458,6 +460,12 @@ class DashboardSimulationMeta(BaseModel):
     description: str | None = None
     department_ids: list[str] | None = None
     time_limit: int | None = None
+
+
+class DashboardScenarioMeta(BaseModel):
+    scenario_id: str | None = None
+    name: str | None = None
+    description: str | None = None
 
 
 class DashboardRubricMeta(BaseModel):
@@ -494,8 +502,8 @@ class DashboardInsights(BaseModel):
     skill_performance: str | None = None
     scenario_performance: str | None = None
     scenario_stats: str | None = None
-    simulation_performance: str | None = None
-    simulation_composition: str | None = None
+    scenario_simulation_performance: str | None = None
+    scenario_composition: str | None = None
     persona: dict[str, str | DashboardInsightObject | None] | None = None
     cohort: dict[str, str | DashboardInsightObject | None] | None = None
 
@@ -523,6 +531,7 @@ class DashboardBundleResponse(BaseModel):
     )
 
     simulations: list[DashboardSimulationMeta] = Field(default_factory=list)
+    scenarios: list[DashboardScenarioMeta] = Field(default_factory=list)
     rubrics: list[DashboardRubricMeta] = Field(default_factory=list)
     parameters: list[DashboardParameterMeta] = Field(default_factory=list)
     fields: list[DashboardFieldMeta] = Field(default_factory=list)
@@ -540,134 +549,6 @@ class DashboardBundleResponse(BaseModel):
 
     # Attempt history
     history: HistoryResponse | None = None
-
-
-# ============================================================================
-# Section request types (for split endpoints)
-# ============================================================================
-
-
-class DashboardSectionRequest(BaseModel):
-    """Base request shared by all dashboard section endpoints."""
-
-    start_date: str | None = None
-    end_date: str | None = None
-    cohort_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    roles: list[str] | None = None
-    simulation_filters: list[str] | None = None
-    target_profile_id: UUID | None = None
-    actor_profile_id: UUID | None = None
-    page_limit: int = Field(default=50, ge=1, le=200)
-    page_offset: int = Field(default=0, ge=0)
-
-
-class DashboardHeaderRequest(DashboardSectionRequest):
-    """Request for header section with optional history."""
-
-    # History section (attempt list)
-    history_practice: bool = False
-    history_scenario_ids: list[UUID] | None = None
-    history_infinite_mode: bool | None = None
-    history_show_archived: bool = False
-    history_sort_by: str | None = "date"
-    history_sort_order: str | None = "desc"
-    history_page: int = 0
-    history_page_size: int = 20
-    history_simulation_search: str | None = None
-    history_scenario_search: str | None = None
-    history_profile_search: str | None = None
-
-
-class DashboardPrimaryRequest(DashboardSectionRequest):
-    """Request for primary section."""
-
-    heatmap_rubric_ids: list[UUID] | None = None
-    heatmap_rubric_search: str | None = None
-    trend_rubric_ids: list[UUID] | None = None
-    trend_rubric_search: str | None = None
-    skill_rubric_ids: list[UUID] | None = None
-    skill_rubric_search: str | None = None
-
-
-class DashboardSecondaryRequest(DashboardSectionRequest):
-    """Request for secondary section."""
-
-    persona_simulation_ids: list[UUID] | None = None
-    persona_simulations_search: str | None = None
-    cohort_simulation_ids: list[UUID] | None = None
-    cohort_simulations_search: str | None = None
-    improvement_simulation_ids: list[UUID] | None = None
-    improvement_simulations_search: str | None = None
-
-
-class DashboardFooterRequest(DashboardSectionRequest):
-    """Request for footer section."""
-
-    scenario_perf_parameter_ids: list[UUID] | None = None
-    scenario_perf_param_search: str | None = None
-    scenario_stats_parameter_ids: list[UUID] | None = None
-    scenario_stats_param_search: str | None = None
-    sim_perf_simulation_ids: list[UUID] | None = None
-    sim_perf_simulation_search: str | None = None
-
-
-# ============================================================================
-# Section response types (for split endpoints)
-# ============================================================================
-
-
-class DashboardHeaderResponse(BaseModel):
-    """Response for header section endpoint."""
-
-    header_metrics: DashboardHeaderMetrics = Field(
-        default_factory=DashboardHeaderMetrics
-    )
-    thresholds: DashboardThresholds | None = None
-    simulation_options: list[FilterOption] = Field(default_factory=list)
-    profile_name: str | None = None
-    profile_emails: list[str] | None = None
-    profile_primary_email: str | None = None
-    profile_role: str | None = None
-    # Attempt history
-    history: HistoryResponse | None = None
-
-
-class DashboardPrimaryResponse(BaseModel):
-    """Response for primary section endpoint."""
-
-    primary_metrics: DashboardPrimaryMetrics = Field(
-        default_factory=DashboardPrimaryMetrics
-    )
-    simulations: list[DashboardSimulationMeta] = Field(default_factory=list)
-    rubrics: list[DashboardRubricMeta] = Field(default_factory=list)
-    thresholds: DashboardThresholds | None = None
-    insights: DashboardInsights | None = None
-
-
-class DashboardSecondaryResponse(BaseModel):
-    """Response for secondary section endpoint."""
-
-    secondary_metrics: DashboardSecondaryMetrics = Field(
-        default_factory=DashboardSecondaryMetrics
-    )
-    simulations: list[DashboardSimulationMeta] = Field(default_factory=list)
-    rubrics: list[DashboardRubricMeta] = Field(default_factory=list)
-    thresholds: DashboardThresholds | None = None
-    insights: DashboardInsights | None = None
-
-
-class DashboardFooterResponse(BaseModel):
-    """Response for footer section endpoint."""
-
-    footer_metrics: DashboardFooterMetrics = Field(
-        default_factory=DashboardFooterMetrics
-    )
-    simulations: list[DashboardSimulationMeta] = Field(default_factory=list)
-    parameters: list[DashboardParameterMeta] = Field(default_factory=list)
-    fields: list[DashboardFieldMeta] = Field(default_factory=list)
-    thresholds: DashboardThresholds | None = None
-    insights: DashboardInsights | None = None
 
 
 # Resolve forward reference for DashboardPrimaryMetrics.skill_performance

@@ -1,7 +1,4 @@
-"""Shared data-fetching helpers for dashboard section endpoints.
-
-Extracted from get.py to enable reuse across header/primary/secondary/footer.
-"""
+"""Shared data-fetching helpers for dashboard endpoints."""
 
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -10,7 +7,7 @@ from uuid import UUID
 
 import asyncpg
 
-from app.api.v4.artifacts.dashboard.types import DashboardSectionRequest
+from app.api.v4.artifacts.dashboard.types import DashboardRequest
 from app.api.v4.entries.chat.get import FilterOption, GetChatsResponse
 from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
 from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
@@ -135,7 +132,7 @@ class Thresholds:
         }
 
 
-def parse_dashboard_filters(request: DashboardSectionRequest) -> ParsedFilters:
+def parse_dashboard_filters(request: DashboardRequest) -> ParsedFilters:
     """Parse common filter values from a dashboard section request."""
     parsed_start_date = (
         datetime.fromisoformat(request.start_date.replace("Z", "+00:00"))
@@ -158,7 +155,7 @@ def parse_dashboard_filters(request: DashboardSectionRequest) -> ParsedFilters:
         attempt_type = None
 
     return ParsedFilters(
-        simulation_ids=None,  # Section requests don't have simulation_ids field
+        simulation_ids=getattr(request, "simulation_ids", None),
         cohort_ids=request.cohort_ids,
         parsed_start_date=parsed_start_date,
         parsed_end_date=parsed_end_date,
@@ -368,7 +365,7 @@ async def get_rubric_scores_internal(
 
 async def fetch_chats_data(
     pool: asyncpg.Pool,
-    request: DashboardSectionRequest,
+    request: DashboardRequest,
     filters: ParsedFilters,
     bypass_cache: bool = False,
 ) -> "GetChatsResponse":
@@ -394,7 +391,7 @@ async def fetch_chats_data(
 
 async def fetch_rubric_scores_data(
     pool: asyncpg.Pool,
-    request: DashboardSectionRequest,
+    request: DashboardRequest,
     filters: ParsedFilters,
     bypass_cache: bool = False,
 ) -> "RubricScoresResponse":
@@ -469,6 +466,18 @@ def build_simulation_meta(simulations: list[Any]) -> list[dict]:
             "time_limit": None,
         }
         for item in simulations
+    ]
+
+
+def build_scenario_meta(scenarios: list[Any]) -> list[dict]:
+    """Build scenario metadata list from hydrated scenarios."""
+    return [
+        {
+            "scenario_id": str(item.scenario_id) if item.scenario_id else None,
+            "name": item.name,
+            "description": item.description,
+        }
+        for item in scenarios
     ]
 
 

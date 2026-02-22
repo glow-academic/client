@@ -50,9 +50,12 @@ const dashboardSectionParamsClient = {
   // Footer: ScenarioStats
   scenarioStatsParameterIds: parseAsCommaSeparatedArray,
   scenarioStatsParamSearch: parseAsString,
-  // Footer: SimulationPerformance
-  simPerfSimulationIds: parseAsCommaSeparatedArray,
-  simPerfSimulationSearch: parseAsString,
+  // Footer: ScenarioSimulationPerformance
+  scenarioSimPerfScenarioIds: parseAsCommaSeparatedArray,
+  scenarioSimPerfScenarioSearch: parseAsString,
+  // Footer: ScenarioComposition
+  scenarioCompScenarioIds: parseAsCommaSeparatedArray,
+  scenarioCompScenarioSearch: parseAsString,
 } as const;
 
 export function useDashboardSectionParams() {
@@ -173,16 +176,30 @@ export function useDashboardSectionParams() {
     [setParams],
   );
 
-  // Footer: SimulationPerformance
-  const setSimPerfSimulationIds = useCallback(
+  // Footer: ScenarioSimulationPerformance
+  const setScenarioSimPerfScenarioIds = useCallback(
     (ids: string[]) => {
-      setParams({ simPerfSimulationIds: ids.length > 0 ? ids : null });
+      setParams({ scenarioSimPerfScenarioIds: ids.length > 0 ? ids : null });
     },
     [setParams],
   );
-  const setSimPerfSimulationSearch = useCallback(
+  const setScenarioSimPerfScenarioSearch = useCallback(
     (term: string) => {
-      setParams({ simPerfSimulationSearch: term || null });
+      setParams({ scenarioSimPerfScenarioSearch: term || null });
+    },
+    [setParams],
+  );
+
+  // Footer: ScenarioComposition
+  const setScenarioCompScenarioIds = useCallback(
+    (ids: string[]) => {
+      setParams({ scenarioCompScenarioIds: ids.length > 0 ? ids : null });
+    },
+    [setParams],
+  );
+  const setScenarioCompScenarioSearch = useCallback(
+    (term: string) => {
+      setParams({ scenarioCompScenarioSearch: term || null });
     },
     [setParams],
   );
@@ -213,8 +230,11 @@ export function useDashboardSectionParams() {
     // Footer: ScenarioStats
     setScenarioStatsParameterIds,
     setScenarioStatsParamSearch,
-    // Footer: SimulationPerformance
-    setSimPerfSimulationIds,
-    setSimPerfSimulationSearch,
+    // Footer: ScenarioSimulationPerformance
+    setScenarioSimPerfScenarioIds,
+    setScenarioSimPerfScenarioSearch,
+    // Footer: ScenarioComposition
+    setScenarioCompScenarioIds,
+    setScenarioCompScenarioSearch,
   };
 }

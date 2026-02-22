@@ -173,6 +173,7 @@ async def get_persona_list(
                     generated=getattr(persona, "generated", None),
                     mcp=getattr(persona, "mcp", None),
                     num_scenarios=persona.num_scenarios,
+                    num_profiles=getattr(persona, "num_profiles", None),
                     can_edit=can_edit_val,
                     can_duplicate=can_duplicate_val,
                     can_delete=can_delete_val,

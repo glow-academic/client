@@ -5,7 +5,7 @@
  * 06/07/2025
  */
 "use client";
-import { Brain, Copy, Edit, Eye, Sparkles, Trash2, X } from "lucide-react";
+import { Brain, Copy, Edit, Eye, Sparkles, Trash2, Users, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -806,9 +806,16 @@ export default function Personas({
           <p className="text-sm text-muted-foreground line-clamp-2 flex-grow">
             {persona.description || "No description available"}
           </p>
-          <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
-            <Eye className="h-3 w-3" />
-            {persona.num_scenarios} scenarios
+          <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <Eye className="h-3 w-3" />
+              {persona.num_scenarios} {persona.num_scenarios === 1 ? "scenario" : "scenarios"}
+            </span>
+            <span className="text-muted-foreground">&middot;</span>
+            <span className="flex items-center gap-1">
+              <Users className="h-3 w-3" />
+              {persona.num_profiles ?? 0} {persona.num_profiles === 1 ? "profile" : "profiles"}
+            </span>
           </div>
         </CardContent>
       </Card>

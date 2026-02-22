@@ -491,9 +491,11 @@ async def get_cohort_internal(
 
     async def fetch_profiles() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_profiles_internal(
-                c, profile_ids, bypass_cache=bypass_cache
-            ) if profile_ids else []
+            selected = (
+                await get_profiles_internal(c, profile_ids, bypass_cache=bypass_cache)
+                if profile_ids
+                else []
+            )
             suggestions = await search_profiles_internal(
                 c,
                 search=None,
@@ -557,9 +559,7 @@ async def get_cohort_internal(
     simulations_raw = _dedupe_by_id(
         simulations_selected + simulations_suggestions, "simulation_id"
     )
-    profiles_raw = _dedupe_by_id(
-        profiles_selected + profiles_suggestions, "profile_id"
-    )
+    profiles_raw = _dedupe_by_id(profiles_selected + profiles_suggestions, "profile_id")
 
     # Convert to response types
     names = [
@@ -627,14 +627,18 @@ async def get_cohort_internal(
     # Selected multi-select resources
     department_resources = [d for d in departments if d.department_id in department_ids]
     simulation_resources = [s for s in simulations if s.simulation_id in simulation_ids]
-    profile_resources = [p for p in profiles if p.profile_id and p.profile_id in profile_ids]
+    profile_resources = [
+        p for p in profiles if p.profile_id and p.profile_id in profile_ids
+    ]
 
     # Suggestion IDs
     name_suggestions_ids = [n.id for n in names_suggestions]
     description_suggestions_ids = [d.id for d in descriptions_suggestions]
     department_suggestions_ids = [d.department_id for d in departments_suggestions]
     simulation_suggestions_ids = [s.simulation_id for s in simulations_suggestions]
-    profile_suggestions_ids = [p.profile_id for p in profiles_suggestions if p.profile_id]
+    profile_suggestions_ids = [
+        p.profile_id for p in profiles_suggestions if p.profile_id
+    ]
 
     # Compute final show flags based on actual data
     show_name = compute_show_name()

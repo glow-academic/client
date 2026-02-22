@@ -32,6 +32,7 @@ from app.api.v4.artifacts.dashboard.shared import (
     build_field_meta,
     build_parameter_meta,
     build_rubric_meta,
+    build_scenario_meta,
     build_simulation_meta,
     fetch_chats_data,
     fetch_rubric_scores_data,
@@ -43,7 +44,6 @@ from app.api.v4.artifacts.dashboard.shared import (
 from app.api.v4.artifacts.dashboard.types import (
     DashboardBundleResponse,
     DashboardRequest,
-    DashboardSectionRequest,
     DashboardWebsocketEntries,
     DashboardWebsocketResources,
     GetDashboardWebsocketResponse,
@@ -555,20 +555,6 @@ async def get_dashboard_internal(
         attempt_type=attempt_type,
     )
 
-    # Adapt DashboardRequest to DashboardSectionRequest for shared fetchers
-    section_request = DashboardSectionRequest(
-        start_date=request.start_date,
-        end_date=request.end_date,
-        cohort_ids=request.cohort_ids,
-        department_ids=request.department_ids,
-        roles=request.roles,
-        simulation_filters=request.simulation_filters,
-        target_profile_id=request.target_profile_id,
-        actor_profile_id=request.actor_profile_id,
-        page_limit=request.page_limit,
-        page_offset=request.page_offset,
-    )
-
     # Phase 1 — Parallel data fetch
     (
         chats_result,
@@ -578,13 +564,13 @@ async def get_dashboard_internal(
     ) = await asyncio.gather(
         fetch_chats_data(
             pool=pool,
-            request=section_request,
+            request=request,
             filters=filters,
             bypass_cache=bypass_cache,
         ),
         fetch_rubric_scores_data(
             pool=pool,
-            request=section_request,
+            request=request,
             filters=filters,
             bypass_cache=bypass_cache,
         ),
@@ -944,16 +930,34 @@ async def get_dashboard_internal(
             for f in footer_metrics.scenario_stats.numeric_scenario_facts
             if f.parameter_id in filter_set
         ]
-    if request.sim_perf_simulation_ids:
-        filter_set = {str(sid) for sid in request.sim_perf_simulation_ids}
-        footer_metrics.simulation_performance.scenario_facts = [
+    if request.scenario_sim_perf_scenario_ids:
+        filter_set = {str(sid) for sid in request.scenario_sim_perf_scenario_ids}
+        footer_metrics.scenario_simulation_performance.simulation_facts = [
             f
-            for f in footer_metrics.simulation_performance.scenario_facts
-            if f.simulation_id in filter_set
+            for f in footer_metrics.scenario_simulation_performance.simulation_facts
+            if f.scenario_id in filter_set
+        ]
+    if request.scenario_comp_scenario_ids:
+        filter_set = {str(sid) for sid in request.scenario_comp_scenario_ids}
+        footer_metrics.scenario_composition.scenario_facts = [
+            f
+            for f in footer_metrics.scenario_composition.scenario_facts
+            if f.scenario_id in filter_set
+        ]
+        footer_metrics.scenario_composition.scenario_parameter_facts_categorical = [
+            f
+            for f in footer_metrics.scenario_composition.scenario_parameter_facts_categorical
+            if f.scenario_id in filter_set
+        ]
+        footer_metrics.scenario_composition.scenario_parameter_facts_numeric = [
+            f
+            for f in footer_metrics.scenario_composition.scenario_parameter_facts_numeric
+            if f.scenario_id in filter_set
         ]
 
     # Phase 6 — Build metadata lists
     simulations_meta = build_simulation_meta(simulations)
+    scenarios_meta = build_scenario_meta(scenarios_list)
     rubrics_meta = build_rubric_meta(rubrics)
     parameters_meta = build_parameter_meta(parameters)
     fields_meta = build_field_meta(fields_list, field_parameter_map, parameters)
@@ -976,13 +980,11 @@ async def get_dashboard_internal(
         request.persona_simulations_search
         or request.cohort_simulations_search
         or request.improvement_simulations_search
-        or request.sim_perf_simulation_search
     ):
         q = (
             request.persona_simulations_search
             or request.cohort_simulations_search
             or request.improvement_simulations_search
-            or request.sim_perf_simulation_search
             or ""
         ).lower()
         simulations_meta = [
@@ -997,6 +999,19 @@ async def get_dashboard_internal(
         ).lower()
         parameters_meta = [
             p for p in parameters_meta if q in (p.get("name") or "").lower()
+        ]
+
+    if (
+        request.scenario_sim_perf_scenario_search
+        or request.scenario_comp_scenario_search
+    ):
+        q = (
+            request.scenario_sim_perf_scenario_search
+            or request.scenario_comp_scenario_search
+            or ""
+        ).lower()
+        scenarios_meta = [
+            s for s in scenarios_meta if q in (s.get("name") or "").lower()
         ]
 
     simulation_options = [
@@ -1014,6 +1029,7 @@ async def get_dashboard_internal(
         secondary_metrics=secondary_metrics,
         footer_metrics=footer_metrics,
         simulations=simulations_meta,
+        scenarios=scenarios_meta,
         rubrics=rubrics_meta,
         parameters=parameters_meta,
         fields=fields_meta,

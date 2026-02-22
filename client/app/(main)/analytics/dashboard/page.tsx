@@ -1,8 +1,8 @@
 /**
  * app/(main)/analytics/dashboard/page.tsx
  * Dashboard page for the analytics section.
- * Decomposed into 4 independent Suspense-wrapped sections for parallel streaming.
- * History is embedded in the header section response.
+ * Uses a single /dashboard/get endpoint that returns all sections at once.
+ * Components share a single data promise for efficient streaming.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
@@ -28,16 +28,9 @@ import { Suspense } from "react";
 import { loadDashboardSearchParams } from "@/lib/search-params/dashboard";
 
 /** ---- Strong types from OpenAPI ---- */
-type HeaderIn = InputOf<"/api/v4/artifacts/dashboard/header", "post">;
-type HeaderOut = OutputOf<"/api/v4/artifacts/dashboard/header", "post">;
-type PrimaryIn = InputOf<"/api/v4/artifacts/dashboard/primary", "post">;
-type PrimaryOut = OutputOf<"/api/v4/artifacts/dashboard/primary", "post">;
-type SecondaryIn = InputOf<"/api/v4/artifacts/dashboard/secondary", "post">;
-type SecondaryOut = OutputOf<"/api/v4/artifacts/dashboard/secondary", "post">;
-type FooterIn = InputOf<"/api/v4/artifacts/dashboard/footer", "post">;
-type FooterOut = OutputOf<"/api/v4/artifacts/dashboard/footer", "post">;
-// History from embedded header response
-type DashboardHistoryOut = NonNullable<HeaderOut["history"]>;
+type DashboardIn = InputOf<"/api/v4/artifacts/dashboard/get", "post">;
+type DashboardOut = OutputOf<"/api/v4/artifacts/dashboard/get", "post">;
+type DashboardHistoryOut = NonNullable<DashboardOut["history"]>;
 type BulkArchiveAttemptsIn = InputOf<
   "/api/v4/attempts/simulation/archive",
   "post"
@@ -47,34 +40,10 @@ type BulkArchiveAttemptsOut = OutputOf<
   "post"
 >;
 
-/** ---- Section fetch functions ---- */
-const getDashboardHeader = async (input: HeaderIn): Promise<HeaderOut> => {
+/** ---- Fetch function ---- */
+const getDashboard = async (input: DashboardIn): Promise<DashboardOut> => {
   const bypassCache = await isHardRefresh();
-  return api.post("/artifacts/dashboard/header", input, {
-    cache: "no-store",
-    ...(bypassCache && { headers: { "X-Bypass-Cache": "1" } }),
-  });
-};
-
-const getDashboardPrimary = async (input: PrimaryIn): Promise<PrimaryOut> => {
-  const bypassCache = await isHardRefresh();
-  return api.post("/artifacts/dashboard/primary", input, {
-    cache: "no-store",
-    ...(bypassCache && { headers: { "X-Bypass-Cache": "1" } }),
-  });
-};
-
-const getDashboardSecondary = async (input: SecondaryIn): Promise<SecondaryOut> => {
-  const bypassCache = await isHardRefresh();
-  return api.post("/artifacts/dashboard/secondary", input, {
-    cache: "no-store",
-    ...(bypassCache && { headers: { "X-Bypass-Cache": "1" } }),
-  });
-};
-
-const getDashboardFooter = async (input: FooterIn): Promise<FooterOut> => {
-  const bypassCache = await isHardRefresh();
-  return api.post("/artifacts/dashboard/footer", input, {
+  return api.post("/artifacts/dashboard/get", input, {
     cache: "no-store",
     ...(bypassCache && { headers: { "X-Bypass-Cache": "1" } }),
   });
@@ -126,8 +95,10 @@ export default async function DashboardPage({
   const scenarioPerfParamSearch = q.scenarioPerfParamSearch ?? undefined;
   const scenarioStatsParameterIds = q.scenarioStatsParameterIds ?? undefined;
   const scenarioStatsParamSearch = q.scenarioStatsParamSearch ?? undefined;
-  const simPerfSimulationIds = q.simPerfSimulationIds ?? undefined;
-  const simPerfSimulationSearch = q.simPerfSimulationSearch ?? undefined;
+  const scenarioSimPerfScenarioIds = q.scenarioSimPerfScenarioIds ?? undefined;
+  const scenarioSimPerfScenarioSearch = q.scenarioSimPerfScenarioSearch ?? undefined;
+  const scenarioCompScenarioIds = q.scenarioCompScenarioIds ?? undefined;
+  const scenarioCompScenarioSearch = q.scenarioCompScenarioSearch ?? undefined;
 
   // History params with defaults
   const historyPage = q.historyPage ?? 0;
@@ -143,20 +114,8 @@ export default async function DashboardPage({
   const historySimulationSearch = q.historySimulationSearch ?? undefined;
   const historyScenarioSearch = q.historyScenarioSearch ?? undefined;
 
-  // Common body params for all sections
-  const commonBody = {
-    start_date: filters.startDate,
-    end_date: filters.endDate,
-    cohort_ids: filters.cohortIds,
-    department_ids: filters.departmentIds,
-    roles: filters.roles,
-    simulation_filters: filters.simulationFilters,
-    page_limit: 50,
-    page_offset: 0,
-  };
-
-  // Suspense keys for each section — include analytics filters + section-specific picker params
-  const filterKey = [
+  // Suspense key — includes all params that affect the data
+  const dataKey = [
     filters.startDate,
     filters.endDate,
     filters.cohortIds.join(","),
@@ -164,12 +123,30 @@ export default async function DashboardPage({
     filters.roles.join(","),
     filters.simulationFilters.join(","),
     q._refresh || "",
-  ].join("|");
-
-  // Header key includes history params since history is embedded in header
-  const headerKey = [
-    "header",
-    filterKey,
+    // Primary pickers
+    (heatmapRubricIds || []).join(","),
+    heatmapRubricSearch || "",
+    (trendRubricIds || []).join(","),
+    trendRubricSearch || "",
+    (skillRubricIds || []).join(","),
+    skillRubricSearch || "",
+    // Secondary pickers
+    (personaSimulationIds || []).join(","),
+    personaSimulationsSearch || "",
+    (cohortSimulationIds || []).join(","),
+    cohortSimulationsSearch || "",
+    (improvementSimulationIds || []).join(","),
+    improvementSimulationsSearch || "",
+    // Footer pickers
+    (scenarioPerfParameterIds || []).join(","),
+    scenarioPerfParamSearch || "",
+    (scenarioStatsParameterIds || []).join(","),
+    scenarioStatsParamSearch || "",
+    (scenarioSimPerfScenarioIds || []).join(","),
+    scenarioSimPerfScenarioSearch || "",
+    (scenarioCompScenarioIds || []).join(","),
+    scenarioCompScenarioSearch || "",
+    // History
     historyPage,
     historyPageSize,
     historySearch || "",
@@ -188,29 +165,48 @@ export default async function DashboardPage({
     historyScenarioSearch || "",
   ].join("|");
 
-  const primaryKey = `primary|${filterKey}|${(heatmapRubricIds || []).join(",")}|${heatmapRubricSearch || ""}|${(trendRubricIds || []).join(",")}|${trendRubricSearch || ""}|${(skillRubricIds || []).join(",")}|${skillRubricSearch || ""}`;
-
-  const secondaryKey = `secondary|${filterKey}|${(personaSimulationIds || []).join(",")}|${personaSimulationsSearch || ""}|${(cohortSimulationIds || []).join(",")}|${cohortSimulationsSearch || ""}|${(improvementSimulationIds || []).join(",")}|${improvementSimulationsSearch || ""}`;
-
-  const footerKey = `footer|${filterKey}|${(scenarioPerfParameterIds || []).join(",")}|${scenarioPerfParamSearch || ""}|${(scenarioStatsParameterIds || []).join(",")}|${scenarioStatsParamSearch || ""}|${(simPerfSimulationIds || []).join(",")}|${simPerfSimulationSearch || ""}`;
-
-  // Create a shared header promise so both Header and History sections
-  // can await the same data without duplicating the API call
-  const headerPromise = getDashboardHeader({
+  // Single API call returning all dashboard data
+  const dashboardPromise = getDashboard({
     body: {
-      ...commonBody,
+      start_date: filters.startDate,
+      end_date: filters.endDate,
+      cohort_ids: filters.cohortIds,
+      department_ids: filters.departmentIds,
+      roles: filters.roles,
+      simulation_filters: filters.simulationFilters,
+      page_limit: 50,
+      page_offset: 0,
+      // Primary pickers
+      ...(heatmapRubricIds?.length && { heatmap_rubric_ids: heatmapRubricIds }),
+      ...(heatmapRubricSearch && { heatmap_rubric_search: heatmapRubricSearch }),
+      ...(trendRubricIds?.length && { trend_rubric_ids: trendRubricIds }),
+      ...(trendRubricSearch && { trend_rubric_search: trendRubricSearch }),
+      ...(skillRubricIds?.length && { skill_rubric_ids: skillRubricIds }),
+      ...(skillRubricSearch && { skill_rubric_search: skillRubricSearch }),
+      // Secondary pickers
+      ...(personaSimulationIds?.length && { persona_simulation_ids: personaSimulationIds }),
+      ...(personaSimulationsSearch && { persona_simulations_search: personaSimulationsSearch }),
+      ...(cohortSimulationIds?.length && { cohort_simulation_ids: cohortSimulationIds }),
+      ...(cohortSimulationsSearch && { cohort_simulations_search: cohortSimulationsSearch }),
+      ...(improvementSimulationIds?.length && { improvement_simulation_ids: improvementSimulationIds }),
+      ...(improvementSimulationsSearch && { improvement_simulations_search: improvementSimulationsSearch }),
+      // Footer pickers
+      ...(scenarioPerfParameterIds?.length && { scenario_perf_parameter_ids: scenarioPerfParameterIds }),
+      ...(scenarioPerfParamSearch && { scenario_perf_param_search: scenarioPerfParamSearch }),
+      ...(scenarioStatsParameterIds?.length && { scenario_stats_parameter_ids: scenarioStatsParameterIds }),
+      ...(scenarioStatsParamSearch && { scenario_stats_param_search: scenarioStatsParamSearch }),
+      ...(scenarioSimPerfScenarioIds?.length && { scenario_sim_perf_scenario_ids: scenarioSimPerfScenarioIds }),
+      ...(scenarioSimPerfScenarioSearch && { scenario_sim_perf_scenario_search: scenarioSimPerfScenarioSearch }),
+      ...(scenarioCompScenarioIds?.length && { scenario_comp_scenario_ids: scenarioCompScenarioIds }),
+      ...(scenarioCompScenarioSearch && { scenario_comp_scenario_search: scenarioCompScenarioSearch }),
+      // History
       history_page: historyPage,
       history_page_size: historyPageSize,
       history_sort_by: historySortBy,
       history_sort_order: historySortOrder,
       ...(historySearch && { history_simulation_search: historySearch }),
-      ...(historyScenarioIds &&
-        historyScenarioIds.length > 0 && {
-          history_scenario_ids: historyScenarioIds,
-        }),
-      ...(historyInfiniteMode !== undefined && {
-        history_infinite_mode: historyInfiniteMode,
-      }),
+      ...(historyScenarioIds?.length && { history_scenario_ids: historyScenarioIds }),
+      ...(historyInfiniteMode !== undefined && { history_infinite_mode: historyInfiniteMode }),
       ...(historyProfileSearch && { history_profile_search: historyProfileSearch }),
       ...(historySimulationSearch && { history_simulation_search: historySimulationSearch }),
       ...(historyScenarioSearch && { history_scenario_search: historyScenarioSearch }),
@@ -220,8 +216,8 @@ export default async function DashboardPage({
   return (
     <div className="space-y-6" data-page="dashboard-index">
       {/* Header - full width */}
-      <Suspense key={headerKey} fallback={<HeaderSkeleton />}>
-        <DashboardHeaderSection headerPromise={headerPromise} />
+      <Suspense key={`header|${dataKey}`} fallback={<HeaderSkeleton />}>
+        <DashboardHeaderSection dashboardPromise={dashboardPromise} />
       </Suspense>
 
       {/* Primary + Secondary in side-by-side grid */}
@@ -229,9 +225,9 @@ export default async function DashboardPage({
         className="grid gap-6 grid-cols-1 lg:grid-cols-[3fr_2fr] pb-2 items-stretch"
         style={{ gridAutoRows: "1fr" }}
       >
-        <Suspense key={primaryKey} fallback={<PrimarySkeleton />}>
+        <Suspense key={`primary|${dataKey}`} fallback={<PrimarySkeleton />}>
           <DashboardPrimarySection
-            commonBody={commonBody}
+            dashboardPromise={dashboardPromise}
             heatmapRubricIds={heatmapRubricIds}
             heatmapRubricSearch={heatmapRubricSearch}
             trendRubricIds={trendRubricIds}
@@ -240,9 +236,9 @@ export default async function DashboardPage({
             skillRubricSearch={skillRubricSearch}
           />
         </Suspense>
-        <Suspense key={secondaryKey} fallback={<SecondarySkeleton />}>
+        <Suspense key={`secondary|${dataKey}`} fallback={<SecondarySkeleton />}>
           <DashboardSecondarySection
-            commonBody={commonBody}
+            dashboardPromise={dashboardPromise}
             personaSimulationIds={personaSimulationIds}
             personaSimulationsSearch={personaSimulationsSearch}
             cohortSimulationIds={cohortSimulationIds}
@@ -254,22 +250,24 @@ export default async function DashboardPage({
       </div>
 
       {/* Footer - single boundary, internal 2-col grid */}
-      <Suspense key={footerKey} fallback={<FooterSkeleton />}>
+      <Suspense key={`footer|${dataKey}`} fallback={<FooterSkeleton />}>
         <DashboardFooterSection
-          commonBody={commonBody}
+          dashboardPromise={dashboardPromise}
           scenarioPerfParameterIds={scenarioPerfParameterIds}
           scenarioPerfParamSearch={scenarioPerfParamSearch}
           scenarioStatsParameterIds={scenarioStatsParameterIds}
           scenarioStatsParamSearch={scenarioStatsParamSearch}
-          simPerfSimulationIds={simPerfSimulationIds}
-          simPerfSimulationSearch={simPerfSimulationSearch}
+          scenarioSimPerfScenarioIds={scenarioSimPerfScenarioIds}
+          scenarioSimPerfScenarioSearch={scenarioSimPerfScenarioSearch}
+          scenarioCompScenarioIds={scenarioCompScenarioIds}
+          scenarioCompScenarioSearch={scenarioCompScenarioSearch}
         />
       </Suspense>
 
       {/* History - below all graphs */}
-      <Suspense key={headerKey} fallback={null}>
+      <Suspense key={`history|${dataKey}`} fallback={null}>
         <DashboardHistorySection
-          headerPromise={headerPromise}
+          dashboardPromise={dashboardPromise}
           historyPage={historyPage}
           historyPageSize={historyPageSize}
           defaultFilters={filters}
@@ -293,28 +291,17 @@ async function bulkArchiveAttempts(
 
 /** ---- Inline async server components per section ---- */
 
-type CommonBody = {
-  start_date: string;
-  end_date: string;
-  cohort_ids: string[];
-  department_ids: string[];
-  roles: string[];
-  simulation_filters: string[];
-  page_limit: number;
-  page_offset: number;
-};
-
 async function DashboardHeaderSection({
-  headerPromise,
+  dashboardPromise,
 }: {
-  headerPromise: Promise<HeaderOut>;
+  dashboardPromise: Promise<DashboardOut>;
 }) {
-  const data = await headerPromise;
+  const data = await dashboardPromise;
   return <DashboardHeader data={data} />;
 }
 
 async function DashboardHistorySection({
-  headerPromise,
+  dashboardPromise,
   historyPage,
   historyPageSize,
   defaultFilters,
@@ -323,7 +310,7 @@ async function DashboardHistorySection({
   historySimulationSearch,
   historyScenarioSearch,
 }: {
-  headerPromise: Promise<HeaderOut>;
+  dashboardPromise: Promise<DashboardOut>;
   historyPage: number;
   historyPageSize: number;
   defaultFilters: {
@@ -340,9 +327,9 @@ async function DashboardHistorySection({
   historySimulationSearch?: string | undefined;
   historyScenarioSearch?: string | undefined;
 }) {
-  const data = await headerPromise;
+  const data = await dashboardPromise;
 
-  // Extract history from embedded header response
+  // Extract history from embedded response
   const historyData: DashboardHistoryOut = data.history || {
     data: [],
     total_count: 0,
@@ -412,7 +399,7 @@ async function DashboardHistorySection({
 }
 
 async function DashboardPrimarySection({
-  commonBody,
+  dashboardPromise,
   heatmapRubricIds,
   heatmapRubricSearch,
   trendRubricIds,
@@ -420,7 +407,7 @@ async function DashboardPrimarySection({
   skillRubricIds,
   skillRubricSearch,
 }: {
-  commonBody: CommonBody;
+  dashboardPromise: Promise<DashboardOut>;
   heatmapRubricIds?: string[] | undefined;
   heatmapRubricSearch?: string | undefined;
   trendRubricIds?: string[] | undefined;
@@ -428,29 +415,7 @@ async function DashboardPrimarySection({
   skillRubricIds?: string[] | undefined;
   skillRubricSearch?: string | undefined;
 }) {
-  const data = await getDashboardPrimary({
-    body: {
-      ...commonBody,
-      ...(heatmapRubricIds?.length && {
-        heatmap_rubric_ids: heatmapRubricIds,
-      }),
-      ...(heatmapRubricSearch && {
-        heatmap_rubric_search: heatmapRubricSearch,
-      }),
-      ...(trendRubricIds?.length && {
-        trend_rubric_ids: trendRubricIds,
-      }),
-      ...(trendRubricSearch && {
-        trend_rubric_search: trendRubricSearch,
-      }),
-      ...(skillRubricIds?.length && {
-        skill_rubric_ids: skillRubricIds,
-      }),
-      ...(skillRubricSearch && {
-        skill_rubric_search: skillRubricSearch,
-      }),
-    },
-  });
+  const data = await dashboardPromise;
   return (
     <DashboardPrimary
       data={data}
@@ -465,7 +430,7 @@ async function DashboardPrimarySection({
 }
 
 async function DashboardSecondarySection({
-  commonBody,
+  dashboardPromise,
   personaSimulationIds,
   personaSimulationsSearch,
   cohortSimulationIds,
@@ -473,7 +438,7 @@ async function DashboardSecondarySection({
   improvementSimulationIds,
   improvementSimulationsSearch,
 }: {
-  commonBody: CommonBody;
+  dashboardPromise: Promise<DashboardOut>;
   personaSimulationIds?: string[] | undefined;
   personaSimulationsSearch?: string | undefined;
   cohortSimulationIds?: string[] | undefined;
@@ -481,29 +446,7 @@ async function DashboardSecondarySection({
   improvementSimulationIds?: string[] | undefined;
   improvementSimulationsSearch?: string | undefined;
 }) {
-  const data = await getDashboardSecondary({
-    body: {
-      ...commonBody,
-      ...(personaSimulationIds?.length && {
-        persona_simulation_ids: personaSimulationIds,
-      }),
-      ...(personaSimulationsSearch && {
-        persona_simulations_search: personaSimulationsSearch,
-      }),
-      ...(cohortSimulationIds?.length && {
-        cohort_simulation_ids: cohortSimulationIds,
-      }),
-      ...(cohortSimulationsSearch && {
-        cohort_simulations_search: cohortSimulationsSearch,
-      }),
-      ...(improvementSimulationIds?.length && {
-        improvement_simulation_ids: improvementSimulationIds,
-      }),
-      ...(improvementSimulationsSearch && {
-        improvement_simulations_search: improvementSimulationsSearch,
-      }),
-    },
-  });
+  const data = await dashboardPromise;
   return (
     <DashboardSecondary
       data={data}
@@ -518,45 +461,27 @@ async function DashboardSecondarySection({
 }
 
 async function DashboardFooterSection({
-  commonBody,
+  dashboardPromise,
   scenarioPerfParameterIds,
   scenarioPerfParamSearch,
   scenarioStatsParameterIds,
   scenarioStatsParamSearch,
-  simPerfSimulationIds,
-  simPerfSimulationSearch,
+  scenarioSimPerfScenarioIds,
+  scenarioSimPerfScenarioSearch,
+  scenarioCompScenarioIds,
+  scenarioCompScenarioSearch,
 }: {
-  commonBody: CommonBody;
+  dashboardPromise: Promise<DashboardOut>;
   scenarioPerfParameterIds?: string[] | undefined;
   scenarioPerfParamSearch?: string | undefined;
   scenarioStatsParameterIds?: string[] | undefined;
   scenarioStatsParamSearch?: string | undefined;
-  simPerfSimulationIds?: string[] | undefined;
-  simPerfSimulationSearch?: string | undefined;
+  scenarioSimPerfScenarioIds?: string[] | undefined;
+  scenarioSimPerfScenarioSearch?: string | undefined;
+  scenarioCompScenarioIds?: string[] | undefined;
+  scenarioCompScenarioSearch?: string | undefined;
 }) {
-  const data = await getDashboardFooter({
-    body: {
-      ...commonBody,
-      ...(scenarioPerfParameterIds?.length && {
-        scenario_perf_parameter_ids: scenarioPerfParameterIds,
-      }),
-      ...(scenarioPerfParamSearch && {
-        scenario_perf_param_search: scenarioPerfParamSearch,
-      }),
-      ...(scenarioStatsParameterIds?.length && {
-        scenario_stats_parameter_ids: scenarioStatsParameterIds,
-      }),
-      ...(scenarioStatsParamSearch && {
-        scenario_stats_param_search: scenarioStatsParamSearch,
-      }),
-      ...(simPerfSimulationIds?.length && {
-        sim_perf_simulation_ids: simPerfSimulationIds,
-      }),
-      ...(simPerfSimulationSearch && {
-        sim_perf_simulation_search: simPerfSimulationSearch,
-      }),
-    },
-  });
+  const data = await dashboardPromise;
   return (
     <DashboardFooter
       data={data}
@@ -564,8 +489,8 @@ async function DashboardFooterSection({
       scenarioPerfParamSearch={scenarioPerfParamSearch}
       initialScenarioStatsParameters={scenarioStatsParameterIds}
       scenarioStatsParamSearch={scenarioStatsParamSearch}
-      initialSimPerfSimulations={simPerfSimulationIds}
-      simPerfSimulationSearch={simPerfSimulationSearch}
+      initialScenarioSimPerfScenarios={scenarioSimPerfScenarioIds}
+      scenarioSimPerfScenarioSearch={scenarioSimPerfScenarioSearch}
     />
   );
 }
@@ -575,12 +500,6 @@ export type {
   BulkArchiveAttemptsIn,
   BulkArchiveAttemptsOut,
   DashboardHistoryOut,
-  HeaderIn,
-  HeaderOut,
-  PrimaryIn,
-  PrimaryOut,
-  SecondaryIn,
-  SecondaryOut,
-  FooterIn,
-  FooterOut,
+  DashboardIn,
+  DashboardOut,
 };

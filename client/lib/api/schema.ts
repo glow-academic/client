@@ -2842,100 +2842,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/dashboard/header": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Dashboard Header
-         * @description Get dashboard header section data.
-         */
-        post: operations["get_dashboard_header_api_v4_artifacts_dashboard_header_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/artifacts/dashboard/primary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Dashboard Primary
-         * @description Get dashboard primary section data.
-         *
-         *     Primary section is rubric-focused:
-         *     - Rubric Heatmap (correlation matrix)
-         *     - Rubric Trend (score over time by standard group)
-         *     - Skill Performance (radar chart per rubric)
-         *
-         *     All sourced from mv_rubric_facts.
-         */
-        post: operations["get_dashboard_primary_api_v4_artifacts_dashboard_primary_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/artifacts/dashboard/secondary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Dashboard Secondary
-         * @description Get dashboard secondary section data.
-         *
-         *     Secondary section is simulation-focused:
-         *     - Persona Performance (avg score per persona, trend by date)
-         *     - Cohort Performance (pass rate, avg score per cohort x simulation)
-         *     - Attempt Improvement (score progression by attempt number)
-         *
-         *     All sourced from mv_attempt_facts (renamed from mv_cohort_facts).
-         */
-        post: operations["get_dashboard_secondary_api_v4_artifacts_dashboard_secondary_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/artifacts/dashboard/footer": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Dashboard Footer
-         * @description Get dashboard footer section data.
-         */
-        post: operations["get_dashboard_footer_api_v4_artifacts_dashboard_footer_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/artifacts/dashboard/refresh": {
         parameters: {
             query?: never;
@@ -24195,6 +24101,8 @@ export interface components {
             footer_metrics?: components["schemas"]["DashboardFooterMetrics"];
             /** Simulations */
             simulations?: components["schemas"]["DashboardSimulationMeta"][];
+            /** Scenarios */
+            scenarios?: components["schemas"]["DashboardScenarioMeta"][];
             /** Rubrics */
             rubrics?: components["schemas"]["DashboardRubricMeta"][];
             /** Parameters */
@@ -24232,67 +24140,8 @@ export interface components {
         DashboardFooterMetrics: {
             scenario_performance?: components["schemas"]["FooterScenarioPerformance"];
             scenario_stats?: components["schemas"]["FooterScenarioStats"];
-            simulation_performance?: components["schemas"]["FooterSimulationPerformance"];
-            simulation_composition?: components["schemas"]["FooterSimulationComposition"];
-        };
-        /**
-         * DashboardFooterRequest
-         * @description Request for footer section.
-         */
-        DashboardFooterRequest: {
-            /** Start Date */
-            start_date?: string | null;
-            /** End Date */
-            end_date?: string | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Roles */
-            roles?: string[] | null;
-            /** Simulation Filters */
-            simulation_filters?: string[] | null;
-            /** Target Profile Id */
-            target_profile_id?: string | null;
-            /** Actor Profile Id */
-            actor_profile_id?: string | null;
-            /**
-             * Page Limit
-             * @default 50
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @default 0
-             */
-            page_offset: number;
-            /** Scenario Perf Parameter Ids */
-            scenario_perf_parameter_ids?: string[] | null;
-            /** Scenario Perf Param Search */
-            scenario_perf_param_search?: string | null;
-            /** Scenario Stats Parameter Ids */
-            scenario_stats_parameter_ids?: string[] | null;
-            /** Scenario Stats Param Search */
-            scenario_stats_param_search?: string | null;
-            /** Sim Perf Simulation Ids */
-            sim_perf_simulation_ids?: string[] | null;
-            /** Sim Perf Simulation Search */
-            sim_perf_simulation_search?: string | null;
-        };
-        /**
-         * DashboardFooterResponse
-         * @description Response for footer section endpoint.
-         */
-        DashboardFooterResponse: {
-            footer_metrics?: components["schemas"]["DashboardFooterMetrics"];
-            /** Simulations */
-            simulations?: components["schemas"]["DashboardSimulationMeta"][];
-            /** Parameters */
-            parameters?: components["schemas"]["DashboardParameterMeta"][];
-            /** Fields */
-            fields?: components["schemas"]["DashboardFieldMeta"][];
-            thresholds?: components["schemas"]["DashboardThresholds"] | null;
-            insights?: components["schemas"]["DashboardInsights"] | null;
+            scenario_simulation_performance?: components["schemas"]["FooterScenarioSimulationPerformance"];
+            scenario_composition?: components["schemas"]["FooterScenarioComposition"];
         };
         /** DashboardHeaderMetric */
         DashboardHeaderMetric: {
@@ -24326,97 +24175,6 @@ export interface components {
             time_spent?: components["schemas"]["DashboardHeaderMetric"];
             total_attempts?: components["schemas"]["DashboardHeaderMetric"];
         };
-        /**
-         * DashboardHeaderRequest
-         * @description Request for header section with optional history.
-         */
-        DashboardHeaderRequest: {
-            /** Start Date */
-            start_date?: string | null;
-            /** End Date */
-            end_date?: string | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Roles */
-            roles?: string[] | null;
-            /** Simulation Filters */
-            simulation_filters?: string[] | null;
-            /** Target Profile Id */
-            target_profile_id?: string | null;
-            /** Actor Profile Id */
-            actor_profile_id?: string | null;
-            /**
-             * Page Limit
-             * @default 50
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @default 0
-             */
-            page_offset: number;
-            /**
-             * History Practice
-             * @default false
-             */
-            history_practice: boolean;
-            /** History Scenario Ids */
-            history_scenario_ids?: string[] | null;
-            /** History Infinite Mode */
-            history_infinite_mode?: boolean | null;
-            /**
-             * History Show Archived
-             * @default false
-             */
-            history_show_archived: boolean;
-            /**
-             * History Sort By
-             * @default date
-             */
-            history_sort_by: string | null;
-            /**
-             * History Sort Order
-             * @default desc
-             */
-            history_sort_order: string | null;
-            /**
-             * History Page
-             * @default 0
-             */
-            history_page: number;
-            /**
-             * History Page Size
-             * @default 20
-             */
-            history_page_size: number;
-            /** History Simulation Search */
-            history_simulation_search?: string | null;
-            /** History Scenario Search */
-            history_scenario_search?: string | null;
-            /** History Profile Search */
-            history_profile_search?: string | null;
-        };
-        /**
-         * DashboardHeaderResponse
-         * @description Response for header section endpoint.
-         */
-        DashboardHeaderResponse: {
-            header_metrics?: components["schemas"]["DashboardHeaderMetrics"];
-            thresholds?: components["schemas"]["DashboardThresholds"] | null;
-            /** Simulation Options */
-            simulation_options?: components["schemas"]["FilterOption"][];
-            /** Profile Name */
-            profile_name?: string | null;
-            /** Profile Emails */
-            profile_emails?: string[] | null;
-            /** Profile Primary Email */
-            profile_primary_email?: string | null;
-            /** Profile Role */
-            profile_role?: string | null;
-            history?: components["schemas"]["HistoryResponse"] | null;
-        };
         /** DashboardInsightObject */
         DashboardInsightObject: {
             /** Insight */
@@ -24436,10 +24194,10 @@ export interface components {
             scenario_performance?: string | null;
             /** Scenario Stats */
             scenario_stats?: string | null;
-            /** Simulation Performance */
-            simulation_performance?: string | null;
-            /** Simulation Composition */
-            simulation_composition?: string | null;
+            /** Scenario Simulation Performance */
+            scenario_simulation_performance?: string | null;
+            /** Scenario Composition */
+            scenario_composition?: string | null;
             /** Persona */
             persona?: {
                 [key: string]: string | components["schemas"]["DashboardInsightObject"] | null;
@@ -24469,63 +24227,6 @@ export interface components {
             rubric_heatmap?: components["schemas"]["PrimaryRubricHeatmap"];
             rubric_trend?: components["schemas"]["PrimaryRubricTrend"];
             skill_performance?: components["schemas"]["SecondarySkillPerformance"];
-        };
-        /**
-         * DashboardPrimaryRequest
-         * @description Request for primary section.
-         */
-        DashboardPrimaryRequest: {
-            /** Start Date */
-            start_date?: string | null;
-            /** End Date */
-            end_date?: string | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Roles */
-            roles?: string[] | null;
-            /** Simulation Filters */
-            simulation_filters?: string[] | null;
-            /** Target Profile Id */
-            target_profile_id?: string | null;
-            /** Actor Profile Id */
-            actor_profile_id?: string | null;
-            /**
-             * Page Limit
-             * @default 50
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @default 0
-             */
-            page_offset: number;
-            /** Heatmap Rubric Ids */
-            heatmap_rubric_ids?: string[] | null;
-            /** Heatmap Rubric Search */
-            heatmap_rubric_search?: string | null;
-            /** Trend Rubric Ids */
-            trend_rubric_ids?: string[] | null;
-            /** Trend Rubric Search */
-            trend_rubric_search?: string | null;
-            /** Skill Rubric Ids */
-            skill_rubric_ids?: string[] | null;
-            /** Skill Rubric Search */
-            skill_rubric_search?: string | null;
-        };
-        /**
-         * DashboardPrimaryResponse
-         * @description Response for primary section endpoint.
-         */
-        DashboardPrimaryResponse: {
-            primary_metrics?: components["schemas"]["DashboardPrimaryMetrics"];
-            /** Simulations */
-            simulations?: components["schemas"]["DashboardSimulationMeta"][];
-            /** Rubrics */
-            rubrics?: components["schemas"]["DashboardRubricMeta"][];
-            thresholds?: components["schemas"]["DashboardThresholds"] | null;
-            insights?: components["schemas"]["DashboardInsights"] | null;
         };
         /**
          * DashboardRequest
@@ -24592,10 +24293,14 @@ export interface components {
             scenario_stats_parameter_ids?: string[] | null;
             /** Scenario Stats Param Search */
             scenario_stats_param_search?: string | null;
-            /** Sim Perf Simulation Ids */
-            sim_perf_simulation_ids?: string[] | null;
-            /** Sim Perf Simulation Search */
-            sim_perf_simulation_search?: string | null;
+            /** Scenario Sim Perf Scenario Ids */
+            scenario_sim_perf_scenario_ids?: string[] | null;
+            /** Scenario Sim Perf Scenario Search */
+            scenario_sim_perf_scenario_search?: string | null;
+            /** Scenario Comp Scenario Ids */
+            scenario_comp_scenario_ids?: string[] | null;
+            /** Scenario Comp Scenario Search */
+            scenario_comp_scenario_search?: string | null;
             /**
              * History Practice
              * @default false
@@ -24646,68 +24351,20 @@ export interface components {
             /** Description */
             description?: string | null;
         };
+        /** DashboardScenarioMeta */
+        DashboardScenarioMeta: {
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+        };
         /** DashboardSecondaryMetrics */
         DashboardSecondaryMetrics: {
             persona_performance?: components["schemas"]["PrimaryPersonaPerformance"];
             cohort_performance?: components["schemas"]["SecondaryCohortPerformance"];
             attempt_improvement?: components["schemas"]["SecondaryAttemptImprovement"];
-        };
-        /**
-         * DashboardSecondaryRequest
-         * @description Request for secondary section.
-         */
-        DashboardSecondaryRequest: {
-            /** Start Date */
-            start_date?: string | null;
-            /** End Date */
-            end_date?: string | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Roles */
-            roles?: string[] | null;
-            /** Simulation Filters */
-            simulation_filters?: string[] | null;
-            /** Target Profile Id */
-            target_profile_id?: string | null;
-            /** Actor Profile Id */
-            actor_profile_id?: string | null;
-            /**
-             * Page Limit
-             * @default 50
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @default 0
-             */
-            page_offset: number;
-            /** Persona Simulation Ids */
-            persona_simulation_ids?: string[] | null;
-            /** Persona Simulations Search */
-            persona_simulations_search?: string | null;
-            /** Cohort Simulation Ids */
-            cohort_simulation_ids?: string[] | null;
-            /** Cohort Simulations Search */
-            cohort_simulations_search?: string | null;
-            /** Improvement Simulation Ids */
-            improvement_simulation_ids?: string[] | null;
-            /** Improvement Simulations Search */
-            improvement_simulations_search?: string | null;
-        };
-        /**
-         * DashboardSecondaryResponse
-         * @description Response for secondary section endpoint.
-         */
-        DashboardSecondaryResponse: {
-            secondary_metrics?: components["schemas"]["DashboardSecondaryMetrics"];
-            /** Simulations */
-            simulations?: components["schemas"]["DashboardSimulationMeta"][];
-            /** Rubrics */
-            rubrics?: components["schemas"]["DashboardRubricMeta"][];
-            thresholds?: components["schemas"]["DashboardThresholds"] | null;
-            insights?: components["schemas"]["DashboardInsights"] | null;
         };
         /** DashboardSimulationMeta */
         DashboardSimulationMeta: {
@@ -27056,6 +26713,61 @@ export interface components {
             /** Scenario Id */
             scenario_id?: string | null;
         };
+        /** FooterScenarioComposition */
+        FooterScenarioComposition: {
+            /** Scenario Facts */
+            scenario_facts?: components["schemas"]["FooterScenarioFact"][];
+            /** Scenario Parameter Facts Categorical */
+            scenario_parameter_facts_categorical?: components["schemas"]["FooterScenarioParameterFactCategorical"][];
+            /** Scenario Parameter Facts Numeric */
+            scenario_parameter_facts_numeric?: components["schemas"]["FooterScenarioParameterFactNumeric"][];
+            /** Valid Scenario Ids */
+            valid_scenario_ids?: string[];
+            /**
+             * Status
+             * @default neutral
+             */
+            status: string;
+        };
+        /** FooterScenarioFact */
+        FooterScenarioFact: {
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Avg Score */
+            avg_score?: number | null;
+            /** Completion Rate */
+            completion_rate?: number | null;
+            /** Total Chats */
+            total_chats?: number | null;
+            /** Simulation Count */
+            simulation_count?: number | null;
+        };
+        /** FooterScenarioParameterFactCategorical */
+        FooterScenarioParameterFactCategorical: {
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Parameter Id */
+            parameter_id?: string | null;
+            /** Parameter Item Id */
+            parameter_item_id?: string | null;
+            /** Chat Count */
+            chat_count?: number | null;
+        };
+        /** FooterScenarioParameterFactNumeric */
+        FooterScenarioParameterFactNumeric: {
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Parameter Id */
+            parameter_id?: string | null;
+            /** Avg Level */
+            avg_level?: number | null;
+            /** Level Label */
+            level_label?: string | null;
+            /** Chat Count */
+            chat_count?: number | null;
+        };
         /** FooterScenarioPerformance */
         FooterScenarioPerformance: {
             /** Attribute Attempt Facts */
@@ -27064,6 +26776,35 @@ export interface components {
             attribute_scenario_facts?: components["schemas"]["FooterScenarioAttributeScenarioFact"][];
             /** Valid Parameter Ids */
             valid_parameter_ids?: string[];
+            /**
+             * Status
+             * @default neutral
+             */
+            status: string;
+        };
+        /** FooterScenarioSimulationFact */
+        FooterScenarioSimulationFact: {
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Simulation Name */
+            simulation_name?: string | null;
+            /** Avg Score */
+            avg_score?: number | null;
+            /** Success Rate */
+            success_rate?: number | null;
+            /** Total Attempts */
+            total_attempts?: number | null;
+            /** Completed Attempts */
+            completed_attempts?: number | null;
+        };
+        /** FooterScenarioSimulationPerformance */
+        FooterScenarioSimulationPerformance: {
+            /** Simulation Facts */
+            simulation_facts?: components["schemas"]["FooterScenarioSimulationFact"][];
+            /** Valid Scenario Ids */
+            valid_scenario_ids?: string[];
             /**
              * Status
              * @default neutral
@@ -27083,90 +26824,6 @@ export interface components {
              * @default neutral
              */
             status: string;
-        };
-        /** FooterSimulationComposition */
-        FooterSimulationComposition: {
-            /** Simulation Facts */
-            simulation_facts?: components["schemas"]["FooterSimulationFact"][];
-            /** Simulation Parameter Facts Categorical */
-            simulation_parameter_facts_categorical?: components["schemas"]["FooterSimulationParameterFactCategorical"][];
-            /** Simulation Parameter Facts Numeric */
-            simulation_parameter_facts_numeric?: components["schemas"]["FooterSimulationParameterFactNumeric"][];
-            /** Valid Simulation Ids */
-            valid_simulation_ids?: string[];
-            /**
-             * Status
-             * @default neutral
-             */
-            status: string;
-        };
-        /** FooterSimulationFact */
-        FooterSimulationFact: {
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /** Title */
-            title?: string | null;
-            /** Avg Score */
-            avg_score?: number | null;
-            /** Completion Rate */
-            completion_rate?: number | null;
-            /** Total Attempts */
-            total_attempts?: number | null;
-            /** Scenario Count */
-            scenario_count?: number | null;
-        };
-        /** FooterSimulationParameterFactCategorical */
-        FooterSimulationParameterFactCategorical: {
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /** Parameter Id */
-            parameter_id?: string | null;
-            /** Parameter Item Id */
-            parameter_item_id?: string | null;
-            /** Scenario Count */
-            scenario_count?: number | null;
-        };
-        /** FooterSimulationParameterFactNumeric */
-        FooterSimulationParameterFactNumeric: {
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /** Parameter Id */
-            parameter_id?: string | null;
-            /** Avg Level */
-            avg_level?: number | null;
-            /** Level Label */
-            level_label?: string | null;
-            /** Scenario Count */
-            scenario_count?: number | null;
-        };
-        /** FooterSimulationPerformance */
-        FooterSimulationPerformance: {
-            /** Scenario Facts */
-            scenario_facts?: components["schemas"]["FooterSimulationScenarioFact"][];
-            /** Valid Simulation Ids */
-            valid_simulation_ids?: string[];
-            /**
-             * Status
-             * @default neutral
-             */
-            status: string;
-        };
-        /** FooterSimulationScenarioFact */
-        FooterSimulationScenarioFact: {
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /** Scenario Id */
-            scenario_id?: string | null;
-            /** Scenario Name */
-            scenario_name?: string | null;
-            /** Avg Score */
-            avg_score?: number | null;
-            /** Success Rate */
-            success_rate?: number | null;
-            /** Total Attempts */
-            total_attempts?: number | null;
-            /** Completed Attempts */
-            completed_attempts?: number | null;
         };
         /**
          * GeneratePayload
@@ -32882,6 +32539,8 @@ export interface components {
             mcp?: boolean | null;
             /** Num Scenarios */
             num_scenarios?: number | null;
+            /** Num Profiles */
+            num_profiles?: number | null;
             /** Can Edit */
             can_edit?: boolean | null;
             /** Can Duplicate */
@@ -54803,154 +54462,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DashboardBundleResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_dashboard_header_api_v4_artifacts_dashboard_header_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DashboardHeaderRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DashboardHeaderResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_dashboard_primary_api_v4_artifacts_dashboard_primary_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DashboardPrimaryRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DashboardPrimaryResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_dashboard_secondary_api_v4_artifacts_dashboard_secondary_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DashboardSecondaryRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DashboardSecondaryResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_dashboard_footer_api_v4_artifacts_dashboard_footer_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DashboardFooterRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DashboardFooterResponse"];
                 };
             };
             /** @description Validation Error */

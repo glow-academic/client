@@ -48,6 +48,7 @@ CREATE TYPE types.q_list_personas_v4_persona AS (
     generated boolean,
     mcp boolean,
     num_scenarios int,
+    num_profiles int,
     active_scenario_count int,
     updated_at timestamptz
 );
@@ -120,6 +121,17 @@ persona_fields_data AS (
     WHERE ppfj.active = true
     GROUP BY ppfj.persona_id
 ),
+-- Cohort count via persona → personas_resource → profile_personas_resource → cohorts_resource.profile_persona_ids
+persona_cohorts AS (
+    SELECT
+        ppj.persona_id,
+        COUNT(DISTINCT cr.id)::int as num_profiles
+    FROM persona_personas_junction ppj
+    JOIN personas_resource pr ON pr.id = ppj.personas_id
+    JOIN profile_personas_resource ppr ON ppr.persona_id = pr.id AND ppr.active = true
+    JOIN cohorts_resource cr ON ppr.id = ANY(cr.profile_persona_ids) AND cr.active = true
+    GROUP BY ppj.persona_id
+),
 persona_data_base AS (
     SELECT
         p.id as persona_id,
@@ -134,6 +146,7 @@ persona_data_base AS (
         COALESCE(pfd.field_ids, ARRAY[]::uuid[]) as field_ids,
         COALESCE(ps.num_scenarios, 0) as num_scenarios,
         -- active_scenario_count from inline scenario count
+        COALESCE(pc.num_profiles, 0) as num_profiles,
         COALESCE(ps.num_scenarios, 0) as active_scenario_count,
         p.generated,
         p.mcp
@@ -141,6 +154,7 @@ persona_data_base AS (
     LEFT JOIN persona_scenarios ps ON ps.persona_id = p.id
     LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
     LEFT JOIN persona_fields_data pfd ON pfd.persona_id = p.id
+    LEFT JOIN persona_cohorts pc ON pc.persona_id = p.id
     LEFT JOIN persona_departments_junction pd ON pd.persona_id = p.id AND pd.department_id IN (SELECT department_id FROM user_departments)
     GROUP BY p.id,
         (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
@@ -149,7 +163,7 @@ persona_data_base AS (
         (SELECT i.value FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1),
         EXISTS (SELECT 1 FROM persona_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.type = 'persona_active' AND pf.value = TRUE),
         p.updated_at,
-        pdd.department_ids, ps.scenario_ids, pfd.field_ids, ps.num_scenarios, p.generated, p.mcp
+        pdd.department_ids, ps.scenario_ids, pfd.field_ids, ps.num_scenarios, pc.num_profiles, p.generated, p.mcp
     HAVING COUNT(pd.persona_id) > 0 OR NOT EXISTS (
         SELECT 1 FROM persona_departments_junction pd2 WHERE pd2.persona_id = p.id
     )
@@ -221,7 +235,7 @@ SELECT
         (SELECT ARRAY_AGG(
             (pd.persona_id, pd.persona_name, pd.description, pd.color, pd.icon,
              pd.department_ids, pd.scenario_ids, pd.field_ids,
-             NOT pd.active, pd.generated, pd.mcp, pd.num_scenarios,
+             NOT pd.active, pd.generated, pd.mcp, pd.num_scenarios, pd.num_profiles,
              pd.active_scenario_count,
              pd.updated_at
             )::types.q_list_personas_v4_persona

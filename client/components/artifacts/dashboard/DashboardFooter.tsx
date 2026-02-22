@@ -7,12 +7,12 @@ import { useMemo, useState } from "react";
 
 import { useDashboardSectionParams } from "@/hooks/use-dashboard-section-params";
 
+import ScenarioComposition from "./footer/ScenarioComposition";
 import ScenarioPerformance from "./footer/ScenarioPerformance";
+import ScenarioSimulationPerformance from "./footer/ScenarioSimulationPerformance";
 import ScenarioStats from "./footer/ScenarioStats";
-import SimulationComposition from "./footer/SimulationComposition";
-import SimulationPerformance from "./footer/SimulationPerformance";
 
-export type FooterOut = OutputOf<"/api/v4/artifacts/dashboard/footer", "post">;
+export type FooterOut = OutputOf<"/api/v4/artifacts/dashboard/get", "post">;
 
 function validateStatus(
   status: string | null | undefined,
@@ -35,10 +35,10 @@ export interface DashboardFooterProps {
   onScenarioStatsParameterChange?: ((ids: string[]) => void) | undefined;
   scenarioStatsParamSearch?: string | undefined;
   onScenarioStatsParamSearchChange?: ((term: string) => void) | undefined;
-  initialSimPerfSimulations?: string[] | undefined;
-  onSimPerfSimulationChange?: ((ids: string[]) => void) | undefined;
-  simPerfSimulationSearch?: string | undefined;
-  onSimPerfSimulationSearchChange?: ((term: string) => void) | undefined;
+  initialScenarioSimPerfScenarios?: string[] | undefined;
+  onScenarioSimPerfScenarioChange?: ((ids: string[]) => void) | undefined;
+  scenarioSimPerfScenarioSearch?: string | undefined;
+  onScenarioSimPerfScenarioSearchChange?: ((term: string) => void) | undefined;
 }
 
 export default function DashboardFooter({
@@ -51,10 +51,10 @@ export default function DashboardFooter({
   onScenarioStatsParameterChange,
   scenarioStatsParamSearch,
   onScenarioStatsParamSearchChange,
-  initialSimPerfSimulations,
-  onSimPerfSimulationChange,
-  simPerfSimulationSearch,
-  onSimPerfSimulationSearchChange,
+  initialScenarioSimPerfScenarios,
+  onScenarioSimPerfScenarioChange,
+  scenarioSimPerfScenarioSearch,
+  onScenarioSimPerfScenarioSearchChange,
 }: DashboardFooterProps) {
   const {
     params: sectionParams,
@@ -62,8 +62,8 @@ export default function DashboardFooter({
     setScenarioPerfParamSearch,
     setScenarioStatsParameterIds,
     setScenarioStatsParamSearch,
-    setSimPerfSimulationIds,
-    setSimPerfSimulationSearch,
+    setScenarioSimPerfScenarioIds,
+    setScenarioSimPerfScenarioSearch,
   } = useDashboardSectionParams();
 
   const effectiveOnScenarioPerfChange = onScenarioPerfParameterChange ?? setScenarioPerfParameterIds;
@@ -74,9 +74,9 @@ export default function DashboardFooter({
   const effectiveOnScenarioStatsSearch = onScenarioStatsParamSearchChange ?? setScenarioStatsParamSearch;
   const effectiveScenarioStatsSearch = scenarioStatsParamSearch ?? sectionParams.scenarioStatsParamSearch ?? undefined;
 
-  const effectiveOnSimPerfChange = onSimPerfSimulationChange ?? setSimPerfSimulationIds;
-  const effectiveOnSimPerfSearch = onSimPerfSimulationSearchChange ?? setSimPerfSimulationSearch;
-  const effectiveSimPerfSearch = simPerfSimulationSearch ?? sectionParams.simPerfSimulationSearch ?? undefined;
+  const effectiveOnScenarioSimPerfChange = onScenarioSimPerfScenarioChange ?? setScenarioSimPerfScenarioIds;
+  const effectiveOnScenarioSimPerfSearch = onScenarioSimPerfScenarioSearchChange ?? setScenarioSimPerfScenarioSearch;
+  const effectiveScenarioSimPerfSearch = scenarioSimPerfScenarioSearch ?? sectionParams.scenarioSimPerfScenarioSearch ?? undefined;
 
   const [leftFooterCarouselIndex, setLeftFooterCarouselIndex] = useState(0);
   const [rightFooterCarouselIndex, setRightFooterCarouselIndex] = useState(0);
@@ -168,68 +168,63 @@ export default function DashboardFooter({
   const rightFooterComponents = useMemo(() => {
     if (!data?.footer_metrics) return [];
 
-    const simulationPerformance = data.footer_metrics.simulation_performance;
-    const simulationComposition = data.footer_metrics.simulation_composition;
+    const scenarioSimPerf = data.footer_metrics.scenario_simulation_performance;
+    const scenarioComp = data.footer_metrics.scenario_composition;
 
-    if (!simulationPerformance || !simulationComposition) return [];
+    if (!scenarioSimPerf || !scenarioComp) return [];
 
     return [
-      <SimulationPerformance
-        key="simulation-performance"
-        validSimulationIds={simulationPerformance.valid_simulation_ids || []}
-        scenarioFacts={(simulationPerformance.scenario_facts || []).map((f) => ({
-          simulationId: f.simulation_id || "",
+      <ScenarioSimulationPerformance
+        key="scenario-simulation-performance"
+        validScenarioIds={scenarioSimPerf.valid_scenario_ids || []}
+        simulationFacts={(scenarioSimPerf.simulation_facts || []).map((f) => ({
           scenarioId: f.scenario_id || "",
-          scenarioName: f.scenario_name || "",
+          simulationId: f.simulation_id || "",
+          simulationName: f.simulation_name || "",
           avgScore: f.avg_score ?? 0,
           successRate: f.success_rate ?? 0,
           totalAttempts: f.total_attempts ?? 0,
           completedAttempts: f.completed_attempts ?? 0,
         }))}
-        simulations={(data.simulations || []).map((s) => ({
-          simulation_id: s.simulation_id || "",
+        scenarios={(data.scenarios || []).map((s) => ({
+          scenario_id: s.scenario_id || "",
           name: s.name || "",
           description: s.description || "",
         }))}
-        actionableInsight={data.insights?.simulation_performance ?? null}
-        status={validateStatus(simulationPerformance.status)}
-        initialSelectedSimulations={initialSimPerfSimulations}
-        onSimulationSelect={effectiveOnSimPerfChange}
-        simulationSearchValue={effectiveSimPerfSearch}
-        onSimulationSearchChange={effectiveOnSimPerfSearch}
+        actionableInsight={data.insights?.scenario_simulation_performance ?? null}
+        status={validateStatus(scenarioSimPerf.status)}
+        initialSelectedScenarios={initialScenarioSimPerfScenarios}
+        onScenarioSelect={effectiveOnScenarioSimPerfChange}
+        scenarioSearchValue={effectiveScenarioSimPerfSearch}
+        onScenarioSearchChange={effectiveOnScenarioSimPerfSearch}
       />,
-      <SimulationComposition
-        key="simulation-composition"
-        simulationFacts={(simulationComposition.simulation_facts || []).map((f) => ({
-          simulationId: f.simulation_id || "",
-          title: f.title || "",
+      <ScenarioComposition
+        key="scenario-composition"
+        scenarioFacts={(scenarioComp.scenario_facts || []).map((f) => ({
+          scenarioId: f.scenario_id || "",
+          name: f.name || "",
           avgScore: f.avg_score ?? 0,
           completionRate: f.completion_rate ?? 0,
-          totalAttempts: f.total_attempts ?? 0,
-          scenarioCount: f.scenario_count ?? 0,
+          totalChats: f.total_chats ?? 0,
+          simulationCount: f.simulation_count ?? 0,
         }))}
-        simulationParameterFactsCategorical={
-          (simulationComposition.simulation_parameter_facts_categorical || []).map((f) => ({
-            simulationId: f.simulation_id || "",
+        scenarioParameterFactsCategorical={
+          (scenarioComp.scenario_parameter_facts_categorical || []).map((f) => ({
+            scenarioId: f.scenario_id || "",
             parameterId: f.parameter_id || "",
             parameterItemId: f.parameter_item_id || "",
-            scenarioCount: f.scenario_count ?? 0,
+            chatCount: f.chat_count ?? 0,
           }))
         }
-        simulationParameterFactsNumeric={
-          (simulationComposition.simulation_parameter_facts_numeric || []).map((f) => ({
-            simulationId: f.simulation_id || "",
+        scenarioParameterFactsNumeric={
+          (scenarioComp.scenario_parameter_facts_numeric || []).map((f) => ({
+            scenarioId: f.scenario_id || "",
             parameterId: f.parameter_id || "",
             avgLevel: f.avg_level ?? 0,
             levelLabel: f.level_label || "",
-            scenarioCount: f.scenario_count ?? 0,
+            chatCount: f.chat_count ?? 0,
           }))
         }
-        simulations={(data.simulations || []).map((s) => ({
-          simulation_id: s.simulation_id || "",
-          name: s.name || "",
-          description: s.description || "",
-        }))}
         parameters={(data.parameters || []).map((p) => ({
           parameter_id: p.parameter_id || "",
           name: p.name || "",
@@ -245,12 +240,12 @@ export default function DashboardFooter({
           parameter_id: f.parameter_id || "",
           parameter_name: f.parameter_name || "",
         }))}
-        validSimulationIds={simulationComposition.valid_simulation_ids || []}
-        actionableInsight={data.insights?.simulation_composition ?? null}
-        status={validateStatus(simulationComposition.status)}
+        validScenarioIds={scenarioComp.valid_scenario_ids || []}
+        actionableInsight={data.insights?.scenario_composition ?? null}
+        status={validateStatus(scenarioComp.status)}
       />,
     ];
-  }, [data, initialSimPerfSimulations, effectiveOnSimPerfChange, effectiveSimPerfSearch, effectiveOnSimPerfSearch]);
+  }, [data, initialScenarioSimPerfScenarios, effectiveOnScenarioSimPerfChange, effectiveScenarioSimPerfSearch, effectiveOnScenarioSimPerfSearch]);
 
   const navigateLeftFooter = (direction: "prev" | "next") => {
     const length = leftFooterComponents.length;

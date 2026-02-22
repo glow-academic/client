@@ -78,13 +78,15 @@ export const dashboardSectionSearchParams = {
   cohortSimulationsSearch: parseAsString,
   improvementSimulationIds: parseAsCommaSeparatedArray,
   improvementSimulationsSearch: parseAsString,
-  // Footer: scenario perf + scenario stats + sim perf
+  // Footer: scenario perf + scenario stats + scenario sim perf + scenario comp
   scenarioPerfParameterIds: parseAsCommaSeparatedArray,
   scenarioPerfParamSearch: parseAsString,
   scenarioStatsParameterIds: parseAsCommaSeparatedArray,
   scenarioStatsParamSearch: parseAsString,
-  simPerfSimulationIds: parseAsCommaSeparatedArray,
-  simPerfSimulationSearch: parseAsString,
+  scenarioSimPerfScenarioIds: parseAsCommaSeparatedArray,
+  scenarioSimPerfScenarioSearch: parseAsString,
+  scenarioCompScenarioIds: parseAsCommaSeparatedArray,
+  scenarioCompScenarioSearch: parseAsString,
 };
 
 export const loadAnalyticsSearchParams = createLoader(analyticsSearchParams);

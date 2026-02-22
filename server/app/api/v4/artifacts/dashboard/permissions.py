@@ -1814,7 +1814,7 @@ def compute_footer_metrics(
         }
     )
 
-    # Simulation performance by scenario
+    # Scenario simulation performance — group by (sim_id, scenario_id)
     scenario_acc: dict[tuple[str, str], dict] = defaultdict(
         lambda: {
             "count": 0,
@@ -1824,11 +1824,11 @@ def compute_footer_metrics(
             "score_count": 0,
         }
     )
-    valid_sim_ids: set[str] = set()
+    valid_scenario_ids: set[str] = set()
     for row in chat_rows:
         sim_id = str(row.simulation_id)
         scenario_id = str(row.scenario_id)
-        valid_sim_ids.add(sim_id)
+        valid_scenario_ids.add(scenario_id)
         k = (sim_id, scenario_id)
         scenario_acc[k]["count"] += 1
         scenario_acc[k]["completed"] += 1 if row.completed else 0
@@ -1837,13 +1837,13 @@ def compute_footer_metrics(
             scenario_acc[k]["sum_score"] += float(row.grade_percent)
             scenario_acc[k]["score_count"] += 1
 
-    scenario_facts = []
+    sim_perf_facts = []
     for (sim_id, scenario_id), d in sorted(scenario_acc.items()):
-        scenario_facts.append(
+        sim_perf_facts.append(
             {
-                "simulation_id": sim_id,
                 "scenario_id": scenario_id,
-                "scenario_name": scenario_name_map.get(scenario_id, scenario_id),
+                "simulation_id": sim_id,
+                "simulation_name": simulation_name_map.get(sim_id, sim_id),
                 "avg_score": _round2(
                     d["sum_score"] / d["score_count"] if d["score_count"] else 0
                 ),
@@ -1859,10 +1859,10 @@ def compute_footer_metrics(
         mean(
             [
                 (0.7 * (f["avg_score"] or 0)) + (0.3 * (f["success_rate"] or 0))
-                for f in scenario_facts
+                for f in sim_perf_facts
             ]
         )
-        if scenario_facts
+        if sim_perf_facts
         else None
     )
     perf_status = (
@@ -1874,79 +1874,72 @@ def compute_footer_metrics(
         if perf_score >= warning_threshold
         else "danger"
     )
-    simulation_performance = {
-        "scenario_facts": scenario_facts,
-        "valid_simulation_ids": sorted(valid_sim_ids),
+    scenario_simulation_performance = {
+        "simulation_facts": sim_perf_facts,
+        "valid_scenario_ids": sorted(valid_scenario_ids),
         "status": perf_status,
     }
 
-    # Simulation composition from attempt rows
-    attempt_by_sim: dict[str, dict] = defaultdict(
+    # Scenario composition — group chats by scenario_id
+    chat_by_scenario: dict[str, dict] = defaultdict(
         lambda: {
             "count": 0,
+            "completed": 0,
             "sum_score": 0.0,
             "score_count": 0,
-            "sum_chats": 0,
-            "sum_chats_completed": 0,
-            "scenario_ids": set(),
+            "simulation_ids": set(),
         }
     )
-    for a in attempts:
-        if a.simulation_id is None:
-            continue
-        sim_id = str(a.simulation_id)
-        d = attempt_by_sim[sim_id]
+    for row in chat_rows:
+        scenario_id = str(row.scenario_id)
+        d = chat_by_scenario[scenario_id]
         d["count"] += 1
-        d["sum_chats"] += a.num_chats or 0
-        d["sum_chats_completed"] += a.num_chats_completed or 0
-        if a.score_percent is not None:
-            d["sum_score"] += float(a.score_percent)
+        d["completed"] += 1 if row.completed else 0
+        if row.grade_percent is not None:
+            d["sum_score"] += float(row.grade_percent)
             d["score_count"] += 1
-        for sid in a.scenario_ids or []:
-            d["scenario_ids"].add(str(sid))
+        d["simulation_ids"].add(str(row.simulation_id))
 
-    simulation_facts = []
-    for sim_id, d in sorted(attempt_by_sim.items()):
-        completion = (
-            (d["sum_chats_completed"] / d["sum_chats"] * 100) if d["sum_chats"] else 0
-        )
-        simulation_facts.append(
+    scenario_facts_out = []
+    for scenario_id, d in sorted(chat_by_scenario.items()):
+        completion = (d["completed"] / d["count"] * 100) if d["count"] else 0
+        scenario_facts_out.append(
             {
-                "simulation_id": sim_id,
-                "title": simulation_name_map.get(sim_id, sim_id),
+                "scenario_id": scenario_id,
+                "name": scenario_name_map.get(scenario_id, scenario_id),
                 "avg_score": _round2(
                     d["sum_score"] / d["score_count"] if d["score_count"] else 0
                 ),
                 "completion_rate": _round2(completion),
-                "total_attempts": d["count"],
-                "scenario_count": len(d["scenario_ids"]),
+                "total_chats": d["count"],
+                "simulation_count": len(d["simulation_ids"]),
             }
         )
 
-    simulation_parameter_facts_categorical = []
-    param_sim_counts: dict[tuple[str, str, str], int] = defaultdict(int)
+    scenario_parameter_facts_categorical = []
+    param_scenario_counts: dict[tuple[str, str, str], int] = defaultdict(int)
     for row in chat_rows:
-        sim_id = str(row.simulation_id)
+        scenario_id = str(row.scenario_id)
         for pid in row.parameter_ids or []:
             pid_str = str(pid)
             field_id = str(row.field_ids[0]) if row.field_ids else ""
-            param_sim_counts[(sim_id, pid_str, field_id)] += 1
-    for (sim_id, pid, field_id), count in sorted(param_sim_counts.items()):
-        simulation_parameter_facts_categorical.append(
+            param_scenario_counts[(scenario_id, pid_str, field_id)] += 1
+    for (scenario_id, pid, field_id), count in sorted(param_scenario_counts.items()):
+        scenario_parameter_facts_categorical.append(
             {
-                "simulation_id": sim_id,
+                "scenario_id": scenario_id,
                 "parameter_id": pid,
                 "parameter_item_id": field_id or None,
-                "scenario_count": count,
+                "chat_count": count,
             }
         )
 
-    comp_status = "success" if simulation_facts else "neutral"
-    simulation_composition = {
-        "simulation_facts": simulation_facts,
-        "simulation_parameter_facts_categorical": simulation_parameter_facts_categorical,
-        "simulation_parameter_facts_numeric": [],
-        "valid_simulation_ids": sorted(valid_sim_ids),
+    comp_status = "success" if scenario_facts_out else "neutral"
+    scenario_composition = {
+        "scenario_facts": scenario_facts_out,
+        "scenario_parameter_facts_categorical": scenario_parameter_facts_categorical,
+        "scenario_parameter_facts_numeric": [],
+        "valid_scenario_ids": sorted(valid_scenario_ids),
         "status": comp_status,
     }
 
@@ -2101,8 +2094,8 @@ def compute_footer_metrics(
     return DashboardFooterMetrics(
         scenario_performance=scenario_performance,
         scenario_stats=scenario_stats,
-        simulation_performance=simulation_performance,
-        simulation_composition=simulation_composition,
+        scenario_simulation_performance=scenario_simulation_performance,
+        scenario_composition=scenario_composition,
     )
 
 
@@ -2217,7 +2210,7 @@ def compute_footer_metrics_v2(
         }
     )
 
-    # --- 1. Simulation performance by scenario ---
+    # --- 1. Scenario simulation performance — group by (sim_id, scenario_id) ---
     scenario_acc: dict[tuple[str, str], dict] = defaultdict(
         lambda: {
             "count": 0,
@@ -2227,13 +2220,13 @@ def compute_footer_metrics_v2(
             "score_count": 0,
         }
     )
-    valid_sim_ids: set[str] = set()
+    valid_scenario_ids_v2: set[str] = set()
     for row in scenario_facts_items:
         sim_id = str(row.simulation_id)
         scenario_id = str(row.scenario_id) if row.scenario_id else None
         if not scenario_id:
             continue
-        valid_sim_ids.add(sim_id)
+        valid_scenario_ids_v2.add(scenario_id)
         k = (sim_id, scenario_id)
         scenario_acc[k]["count"] += 1
         scenario_acc[k]["completed"] += 1 if row.completed else 0
@@ -2242,13 +2235,13 @@ def compute_footer_metrics_v2(
             scenario_acc[k]["sum_score"] += float(row.grade_percent)
             scenario_acc[k]["score_count"] += 1
 
-    scenario_facts_out = []
+    sim_perf_facts_v2 = []
     for (sim_id, scenario_id), d in sorted(scenario_acc.items()):
-        scenario_facts_out.append(
+        sim_perf_facts_v2.append(
             {
-                "simulation_id": sim_id,
                 "scenario_id": scenario_id,
-                "scenario_name": scenario_name_map.get(scenario_id, scenario_id),
+                "simulation_id": sim_id,
+                "simulation_name": simulation_name_map.get(sim_id, sim_id),
                 "avg_score": _round2(
                     d["sum_score"] / d["score_count"] if d["score_count"] else 0
                 ),
@@ -2264,10 +2257,10 @@ def compute_footer_metrics_v2(
         mean(
             [
                 (0.7 * (f["avg_score"] or 0)) + (0.3 * (f["success_rate"] or 0))
-                for f in scenario_facts_out
+                for f in sim_perf_facts_v2
             ]
         )
-        if scenario_facts_out
+        if sim_perf_facts_v2
         else None
     )
     perf_status = (
@@ -2279,102 +2272,75 @@ def compute_footer_metrics_v2(
         if perf_score >= warning_threshold
         else "danger"
     )
-    simulation_performance = {
-        "scenario_facts": scenario_facts_out,
-        "valid_simulation_ids": sorted(valid_sim_ids),
+    scenario_simulation_performance = {
+        "simulation_facts": sim_perf_facts_v2,
+        "valid_scenario_ids": sorted(valid_scenario_ids_v2),
         "status": perf_status,
     }
 
-    # --- 2. Simulation composition (derived from scenario_facts attempt grouping) ---
-    attempt_groups: dict[str, dict] = defaultdict(
+    # --- 2. Scenario composition — group chats by scenario_id ---
+    chat_by_scenario: dict[str, dict] = defaultdict(
         lambda: {
-            "simulation_id": None,
-            "num_chats": 0,
-            "num_chats_completed": 0,
-            "sum_grade_percent": 0.0,
-            "grade_count": 0,
-            "scenario_ids": set(),
+            "count": 0,
+            "completed": 0,
+            "sum_score": 0.0,
+            "score_count": 0,
+            "simulation_ids": set(),
         }
     )
     for row in scenario_facts_items:
-        aid = str(row.attempt_id)
-        a = attempt_groups[aid]
-        a["simulation_id"] = str(row.simulation_id)
-        a["num_chats"] += 1
-        a["num_chats_completed"] += 1 if row.completed else 0
-        if row.grade_percent is not None:
-            a["sum_grade_percent"] += float(row.grade_percent)
-            a["grade_count"] += 1
-        if row.scenario_id:
-            a["scenario_ids"].add(str(row.scenario_id))
-
-    attempt_by_sim: dict[str, dict] = defaultdict(
-        lambda: {
-            "count": 0,
-            "sum_score": 0.0,
-            "score_count": 0,
-            "sum_chats": 0,
-            "sum_chats_completed": 0,
-            "scenario_ids": set(),
-        }
-    )
-    for a in attempt_groups.values():
-        sim_id = a["simulation_id"]
-        if sim_id is None:
+        scenario_id = str(row.scenario_id) if row.scenario_id else None
+        if not scenario_id:
             continue
-        d = attempt_by_sim[sim_id]
+        d = chat_by_scenario[scenario_id]
         d["count"] += 1
-        d["sum_chats"] += a["num_chats"]
-        d["sum_chats_completed"] += a["num_chats_completed"]
-        if a["grade_count"] > 0:
-            avg_grade = a["sum_grade_percent"] / a["grade_count"]
-            d["sum_score"] += avg_grade
+        d["completed"] += 1 if row.completed else 0
+        if row.grade_percent is not None:
+            d["sum_score"] += float(row.grade_percent)
             d["score_count"] += 1
-        d["scenario_ids"].update(a["scenario_ids"])
+        d["simulation_ids"].add(str(row.simulation_id))
 
-    simulation_facts_out = []
-    for sim_id, d in sorted(attempt_by_sim.items()):
-        completion = (
-            (d["sum_chats_completed"] / d["sum_chats"] * 100) if d["sum_chats"] else 0
-        )
-        simulation_facts_out.append(
+    scenario_facts_out_v2 = []
+    for scenario_id, d in sorted(chat_by_scenario.items()):
+        completion = (d["completed"] / d["count"] * 100) if d["count"] else 0
+        scenario_facts_out_v2.append(
             {
-                "simulation_id": sim_id,
-                "title": simulation_name_map.get(sim_id, sim_id),
+                "scenario_id": scenario_id,
+                "name": scenario_name_map.get(scenario_id, scenario_id),
                 "avg_score": _round2(
                     d["sum_score"] / d["score_count"] if d["score_count"] else 0
                 ),
                 "completion_rate": _round2(completion),
-                "total_attempts": d["count"],
-                "scenario_count": len(d["scenario_ids"]),
+                "total_chats": d["count"],
+                "simulation_count": len(d["simulation_ids"]),
             }
         )
 
-    # Parameter facts from scenario_to_param_items + scenario_facts
-    simulation_parameter_facts_categorical = []
-    param_sim_counts: dict[tuple[str, str, str], int] = defaultdict(int)
+    # Parameter facts per scenario
+    scenario_parameter_facts_categorical_v2: list[dict] = []
+    param_scenario_counts: dict[tuple[str, str, str], int] = defaultdict(int)
     for row in scenario_facts_items:
-        sim_id = str(row.simulation_id)
         scenario_id = str(row.scenario_id) if row.scenario_id else None
-        if scenario_id:
-            for pid, fid in scenario_to_param_items.get(scenario_id, set()):
-                param_sim_counts[(sim_id, pid, fid)] += 1
-    for (sim_id, pid, field_id), count in sorted(param_sim_counts.items()):
-        simulation_parameter_facts_categorical.append(
+        if not scenario_id:
+            continue
+        for pid, fid in scenario_to_param_items.get(scenario_id, set()):
+            param_scenario_counts[(scenario_id, pid, fid)] += 1
+    for (scenario_id, pid, field_id), count in sorted(param_scenario_counts.items()):
+        scenario_parameter_facts_categorical_v2.append(
             {
-                "simulation_id": sim_id,
+                "scenario_id": scenario_id,
                 "parameter_id": pid,
                 "parameter_item_id": field_id or None,
-                "scenario_count": count,
+                "chat_count": count,
             }
         )
 
-    comp_status = "success" if simulation_facts_out else "neutral"
-    simulation_composition = {
-        "simulation_facts": simulation_facts_out,
-        "simulation_parameter_facts_categorical": simulation_parameter_facts_categorical,
-        "simulation_parameter_facts_numeric": [],
-        "valid_simulation_ids": sorted(valid_sim_ids),
+    comp_status = "success" if scenario_facts_out_v2 else "neutral"
+    scenario_composition = {
+        "scenario_facts": scenario_facts_out_v2,
+        "scenario_parameter_facts_categorical": scenario_parameter_facts_categorical_v2,
+        "scenario_parameter_facts_numeric": [],
+        "valid_scenario_ids": sorted(valid_scenario_ids_v2),
         "status": comp_status,
     }
 
@@ -2534,8 +2500,8 @@ def compute_footer_metrics_v2(
     return DashboardFooterMetrics(
         scenario_performance=scenario_performance,
         scenario_stats=scenario_stats,
-        simulation_performance=simulation_performance,
-        simulation_composition=simulation_composition,
+        scenario_simulation_performance=scenario_simulation_performance,
+        scenario_composition=scenario_composition,
     )
 
 
