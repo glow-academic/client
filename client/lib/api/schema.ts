@@ -26715,12 +26715,10 @@ export interface components {
         };
         /** FooterScenarioComposition */
         FooterScenarioComposition: {
-            /** Scenario Facts */
-            scenario_facts?: components["schemas"]["FooterScenarioFact"][];
-            /** Scenario Parameter Facts Categorical */
-            scenario_parameter_facts_categorical?: components["schemas"]["FooterScenarioParameterFactCategorical"][];
-            /** Scenario Parameter Facts Numeric */
-            scenario_parameter_facts_numeric?: components["schemas"]["FooterScenarioParameterFactNumeric"][];
+            /** Scenario Summaries */
+            scenario_summaries?: components["schemas"]["FooterScenarioCompositionSummary"][];
+            /** Chat Parameter Facts */
+            chat_parameter_facts?: components["schemas"]["FooterScenarioCompositionParamFact"][];
             /** Valid Scenario Ids */
             valid_scenario_ids?: string[];
             /**
@@ -26729,25 +26727,15 @@ export interface components {
              */
             status: string;
         };
-        /** FooterScenarioFact */
-        FooterScenarioFact: {
+        /**
+         * FooterScenarioCompositionParamFact
+         * @description Parameter counts per (scenario, group) — group is 'high' or 'low'.
+         */
+        FooterScenarioCompositionParamFact: {
             /** Scenario Id */
             scenario_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Avg Score */
-            avg_score?: number | null;
-            /** Completion Rate */
-            completion_rate?: number | null;
-            /** Total Chats */
-            total_chats?: number | null;
-            /** Simulation Count */
-            simulation_count?: number | null;
-        };
-        /** FooterScenarioParameterFactCategorical */
-        FooterScenarioParameterFactCategorical: {
-            /** Scenario Id */
-            scenario_id?: string | null;
+            /** Group */
+            group?: string | null;
             /** Parameter Id */
             parameter_id?: string | null;
             /** Parameter Item Id */
@@ -26755,18 +26743,25 @@ export interface components {
             /** Chat Count */
             chat_count?: number | null;
         };
-        /** FooterScenarioParameterFactNumeric */
-        FooterScenarioParameterFactNumeric: {
+        /**
+         * FooterScenarioCompositionSummary
+         * @description Per-scenario summary with high/low chat split.
+         */
+        FooterScenarioCompositionSummary: {
             /** Scenario Id */
             scenario_id?: string | null;
-            /** Parameter Id */
-            parameter_id?: string | null;
-            /** Avg Level */
-            avg_level?: number | null;
-            /** Level Label */
-            level_label?: string | null;
-            /** Chat Count */
-            chat_count?: number | null;
+            /** Name */
+            name?: string | null;
+            /** Total Chats */
+            total_chats?: number | null;
+            /** High Count */
+            high_count?: number | null;
+            /** Low Count */
+            low_count?: number | null;
+            /** High Avg Score */
+            high_avg_score?: number | null;
+            /** Low Avg Score */
+            low_avg_score?: number | null;
         };
         /** FooterScenarioPerformance */
         FooterScenarioPerformance: {

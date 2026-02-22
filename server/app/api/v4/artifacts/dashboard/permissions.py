@@ -1880,65 +1880,89 @@ def compute_footer_metrics(
         "status": perf_status,
     }
 
-    # Scenario composition — group chats by scenario_id
-    chat_by_scenario: dict[str, dict] = defaultdict(
+    # Scenario composition — split chats within each scenario into high/low by score
+    # Step 1: collect chat scores per scenario
+    scenario_chat_scores: dict[str, list[float]] = defaultdict(list)
+    for row in chat_rows:
+        scenario_id = str(row.scenario_id)
+        if row.grade_percent is not None:
+            scenario_chat_scores[scenario_id].append(float(row.grade_percent))
+
+    # Step 2: compute median threshold per scenario
+    scenario_median: dict[str, float] = {}
+    for scenario_id, scores in scenario_chat_scores.items():
+        if scores:
+            sorted_scores = sorted(scores)
+            mid = len(sorted_scores) // 2
+            if len(sorted_scores) % 2 == 0:
+                scenario_median[scenario_id] = (
+                    sorted_scores[mid - 1] + sorted_scores[mid]
+                ) / 2
+            else:
+                scenario_median[scenario_id] = sorted_scores[mid]
+
+    # Step 3: classify each chat and count parameters per (scenario, group)
+    scenario_group_stats: dict[str, dict[str, dict]] = defaultdict(
         lambda: {
-            "count": 0,
-            "completed": 0,
-            "sum_score": 0.0,
-            "score_count": 0,
-            "simulation_ids": set(),
+            "high": {"count": 0, "sum_score": 0.0, "score_count": 0},
+            "low": {"count": 0, "sum_score": 0.0, "score_count": 0},
         }
     )
+    param_group_counts: dict[tuple[str, str, str, str], int] = defaultdict(int)
     for row in chat_rows:
         scenario_id = str(row.scenario_id)
-        d = chat_by_scenario[scenario_id]
-        d["count"] += 1
-        d["completed"] += 1 if row.completed else 0
-        if row.grade_percent is not None:
-            d["sum_score"] += float(row.grade_percent)
-            d["score_count"] += 1
-        d["simulation_ids"].add(str(row.simulation_id))
-
-    scenario_facts_out = []
-    for scenario_id, d in sorted(chat_by_scenario.items()):
-        completion = (d["completed"] / d["count"] * 100) if d["count"] else 0
-        scenario_facts_out.append(
-            {
-                "scenario_id": scenario_id,
-                "name": scenario_name_map.get(scenario_id, scenario_id),
-                "avg_score": _round2(
-                    d["sum_score"] / d["score_count"] if d["score_count"] else 0
-                ),
-                "completion_rate": _round2(completion),
-                "total_chats": d["count"],
-                "simulation_count": len(d["simulation_ids"]),
-            }
-        )
-
-    scenario_parameter_facts_categorical = []
-    param_scenario_counts: dict[tuple[str, str, str], int] = defaultdict(int)
-    for row in chat_rows:
-        scenario_id = str(row.scenario_id)
+        median = scenario_median.get(scenario_id)
+        if median is None or row.grade_percent is None:
+            continue
+        group = "high" if float(row.grade_percent) >= median else "low"
+        g = scenario_group_stats[scenario_id][group]
+        g["count"] += 1
+        g["sum_score"] += float(row.grade_percent)
+        g["score_count"] += 1
         for pid in row.parameter_ids or []:
             pid_str = str(pid)
             field_id = str(row.field_ids[0]) if row.field_ids else ""
-            param_scenario_counts[(scenario_id, pid_str, field_id)] += 1
-    for (scenario_id, pid, field_id), count in sorted(param_scenario_counts.items()):
-        scenario_parameter_facts_categorical.append(
+            param_group_counts[(scenario_id, group, pid_str, field_id)] += 1
+
+    # Step 4: build summaries and parameter facts
+    scenario_summaries = []
+    for scenario_id in sorted(scenario_group_stats.keys()):
+        h = scenario_group_stats[scenario_id]["high"]
+        lo = scenario_group_stats[scenario_id]["low"]
+        scenario_summaries.append(
             {
                 "scenario_id": scenario_id,
+                "name": scenario_name_map.get(scenario_id, scenario_id),
+                "total_chats": h["count"] + lo["count"],
+                "high_count": h["count"],
+                "low_count": lo["count"],
+                "high_avg_score": _round2(
+                    h["sum_score"] / h["score_count"] if h["score_count"] else 0
+                ),
+                "low_avg_score": _round2(
+                    lo["sum_score"] / lo["score_count"] if lo["score_count"] else 0
+                ),
+            }
+        )
+
+    chat_parameter_facts = []
+    for (scenario_id, group, pid, field_id), count in sorted(
+        param_group_counts.items()
+    ):
+        chat_parameter_facts.append(
+            {
+                "scenario_id": scenario_id,
+                "group": group,
                 "parameter_id": pid,
                 "parameter_item_id": field_id or None,
                 "chat_count": count,
             }
         )
 
-    comp_status = "success" if scenario_facts_out else "neutral"
+    comp_status = "success" if scenario_summaries else "neutral"
     scenario_composition = {
-        "scenario_facts": scenario_facts_out,
-        "scenario_parameter_facts_categorical": scenario_parameter_facts_categorical,
-        "scenario_parameter_facts_numeric": [],
+        "scenario_summaries": scenario_summaries,
+        "chat_parameter_facts": chat_parameter_facts,
         "valid_scenario_ids": sorted(valid_scenario_ids),
         "status": comp_status,
     }
@@ -2278,68 +2302,91 @@ def compute_footer_metrics_v2(
         "status": perf_status,
     }
 
-    # --- 2. Scenario composition — group chats by scenario_id ---
-    chat_by_scenario: dict[str, dict] = defaultdict(
-        lambda: {
-            "count": 0,
-            "completed": 0,
-            "sum_score": 0.0,
-            "score_count": 0,
-            "simulation_ids": set(),
-        }
-    )
+    # --- 2. Scenario composition — split chats within each scenario into high/low ---
+    # Step 1: collect chat scores per scenario
+    scenario_chat_scores_v2: dict[str, list[float]] = defaultdict(list)
     for row in scenario_facts_items:
         scenario_id = str(row.scenario_id) if row.scenario_id else None
         if not scenario_id:
             continue
-        d = chat_by_scenario[scenario_id]
-        d["count"] += 1
-        d["completed"] += 1 if row.completed else 0
         if row.grade_percent is not None:
-            d["sum_score"] += float(row.grade_percent)
-            d["score_count"] += 1
-        d["simulation_ids"].add(str(row.simulation_id))
+            scenario_chat_scores_v2[scenario_id].append(float(row.grade_percent))
 
-    scenario_facts_out_v2 = []
-    for scenario_id, d in sorted(chat_by_scenario.items()):
-        completion = (d["completed"] / d["count"] * 100) if d["count"] else 0
-        scenario_facts_out_v2.append(
+    # Step 2: compute median threshold per scenario
+    scenario_median_v2: dict[str, float] = {}
+    for scenario_id, scores in scenario_chat_scores_v2.items():
+        if scores:
+            sorted_scores = sorted(scores)
+            mid = len(sorted_scores) // 2
+            if len(sorted_scores) % 2 == 0:
+                scenario_median_v2[scenario_id] = (
+                    sorted_scores[mid - 1] + sorted_scores[mid]
+                ) / 2
+            else:
+                scenario_median_v2[scenario_id] = sorted_scores[mid]
+
+    # Step 3: classify each chat and count parameters per (scenario, group)
+    scenario_group_stats_v2: dict[str, dict[str, dict]] = defaultdict(
+        lambda: {
+            "high": {"count": 0, "sum_score": 0.0, "score_count": 0},
+            "low": {"count": 0, "sum_score": 0.0, "score_count": 0},
+        }
+    )
+    param_group_counts_v2: dict[tuple[str, str, str, str], int] = defaultdict(int)
+    for row in scenario_facts_items:
+        scenario_id = str(row.scenario_id) if row.scenario_id else None
+        if not scenario_id:
+            continue
+        median = scenario_median_v2.get(scenario_id)
+        if median is None or row.grade_percent is None:
+            continue
+        group = "high" if float(row.grade_percent) >= median else "low"
+        g = scenario_group_stats_v2[scenario_id][group]
+        g["count"] += 1
+        g["sum_score"] += float(row.grade_percent)
+        g["score_count"] += 1
+        for pid, fid in scenario_to_param_items.get(scenario_id, set()):
+            param_group_counts_v2[(scenario_id, group, pid, fid)] += 1
+
+    # Step 4: build summaries and parameter facts
+    scenario_summaries_v2 = []
+    for scenario_id in sorted(scenario_group_stats_v2.keys()):
+        h = scenario_group_stats_v2[scenario_id]["high"]
+        lo = scenario_group_stats_v2[scenario_id]["low"]
+        scenario_summaries_v2.append(
             {
                 "scenario_id": scenario_id,
                 "name": scenario_name_map.get(scenario_id, scenario_id),
-                "avg_score": _round2(
-                    d["sum_score"] / d["score_count"] if d["score_count"] else 0
+                "total_chats": h["count"] + lo["count"],
+                "high_count": h["count"],
+                "low_count": lo["count"],
+                "high_avg_score": _round2(
+                    h["sum_score"] / h["score_count"] if h["score_count"] else 0
                 ),
-                "completion_rate": _round2(completion),
-                "total_chats": d["count"],
-                "simulation_count": len(d["simulation_ids"]),
+                "low_avg_score": _round2(
+                    lo["sum_score"] / lo["score_count"] if lo["score_count"] else 0
+                ),
             }
         )
 
-    # Parameter facts per scenario
-    scenario_parameter_facts_categorical_v2: list[dict] = []
-    param_scenario_counts: dict[tuple[str, str, str], int] = defaultdict(int)
-    for row in scenario_facts_items:
-        scenario_id = str(row.scenario_id) if row.scenario_id else None
-        if not scenario_id:
-            continue
-        for pid, fid in scenario_to_param_items.get(scenario_id, set()):
-            param_scenario_counts[(scenario_id, pid, fid)] += 1
-    for (scenario_id, pid, field_id), count in sorted(param_scenario_counts.items()):
-        scenario_parameter_facts_categorical_v2.append(
+    chat_parameter_facts_v2: list[dict] = []
+    for (scenario_id, group, pid, field_id), count in sorted(
+        param_group_counts_v2.items()
+    ):
+        chat_parameter_facts_v2.append(
             {
                 "scenario_id": scenario_id,
+                "group": group,
                 "parameter_id": pid,
                 "parameter_item_id": field_id or None,
                 "chat_count": count,
             }
         )
 
-    comp_status = "success" if scenario_facts_out_v2 else "neutral"
+    comp_status = "success" if scenario_summaries_v2 else "neutral"
     scenario_composition = {
-        "scenario_facts": scenario_facts_out_v2,
-        "scenario_parameter_facts_categorical": scenario_parameter_facts_categorical_v2,
-        "scenario_parameter_facts_numeric": [],
+        "scenario_summaries": scenario_summaries_v2,
+        "chat_parameter_facts": chat_parameter_facts_v2,
         "valid_scenario_ids": sorted(valid_scenario_ids_v2),
         "status": comp_status,
     }

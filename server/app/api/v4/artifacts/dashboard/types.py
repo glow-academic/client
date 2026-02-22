@@ -405,36 +405,33 @@ class FooterScenarioSimulationPerformance(BaseModel):
     status: str = "neutral"
 
 
-class FooterScenarioFact(BaseModel):
+class FooterScenarioCompositionSummary(BaseModel):
+    """Per-scenario summary with high/low chat split."""
+
     scenario_id: str | None = None
     name: str | None = None
-    avg_score: float | None = None
-    completion_rate: float | None = None
     total_chats: int | None = None
-    simulation_count: int | None = None
+    high_count: int | None = None
+    low_count: int | None = None
+    high_avg_score: float | None = None
+    low_avg_score: float | None = None
 
 
-class FooterScenarioParameterFactCategorical(BaseModel):
+class FooterScenarioCompositionParamFact(BaseModel):
+    """Parameter counts per (scenario, group) — group is 'high' or 'low'."""
+
     scenario_id: str | None = None
+    group: str | None = None
     parameter_id: str | None = None
     parameter_item_id: str | None = None
     chat_count: int | None = None
 
 
-class FooterScenarioParameterFactNumeric(BaseModel):
-    scenario_id: str | None = None
-    parameter_id: str | None = None
-    avg_level: float | None = None
-    level_label: str | None = None
-    chat_count: int | None = None
-
-
 class FooterScenarioComposition(BaseModel):
-    scenario_facts: list[FooterScenarioFact] = Field(default_factory=list)
-    scenario_parameter_facts_categorical: list[
-        FooterScenarioParameterFactCategorical
-    ] = Field(default_factory=list)
-    scenario_parameter_facts_numeric: list[FooterScenarioParameterFactNumeric] = Field(
+    scenario_summaries: list[FooterScenarioCompositionSummary] = Field(
+        default_factory=list
+    )
+    chat_parameter_facts: list[FooterScenarioCompositionParamFact] = Field(
         default_factory=list
     )
     valid_scenario_ids: list[str] = Field(default_factory=list)

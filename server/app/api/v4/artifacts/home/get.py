@@ -87,14 +87,15 @@ async def _fetch_cohort_member_profiles(
         return {}
     async with pool.acquire() as c:
         rows = await c.fetch(
-            "SELECT id, profile_ids FROM cohorts_resource"
-            " WHERE id = ANY($1::uuid[])",
+            "SELECT ccj.cohorts_id AS cohort_id, cpj.profiles_id AS profile_id"
+            " FROM cohort_cohorts_junction ccj"
+            " JOIN cohort_profiles_junction cpj ON cpj.cohort_id = ccj.cohort_id"
+            " WHERE ccj.cohorts_id = ANY($1::uuid[])",
             cohort_ids,
         )
     result: dict[UUID, set[UUID]] = {cid: set() for cid in cohort_ids}
     for row in rows:
-        for pid in (row["profile_ids"] or []):
-            result[row["id"]].add(pid)
+        result[row["cohort_id"]].add(row["profile_id"])
     return result
 
 

@@ -501,6 +501,8 @@ async function ReportFooterSection({
       scenarioStatsParamSearch={scenarioStatsParamSearch}
       initialScenarioSimPerfScenarios={scenarioSimPerfScenarioIds}
       scenarioSimPerfScenarioSearch={scenarioSimPerfScenarioSearch}
+      initialScenarioCompScenarios={scenarioCompScenarioIds}
+      scenarioCompScenarioSearch={scenarioCompScenarioSearch}
     />
   );
 }

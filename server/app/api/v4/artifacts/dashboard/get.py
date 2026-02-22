@@ -939,19 +939,14 @@ async def get_dashboard_internal(
         ]
     if request.scenario_comp_scenario_ids:
         filter_set = {str(sid) for sid in request.scenario_comp_scenario_ids}
-        footer_metrics.scenario_composition.scenario_facts = [
+        footer_metrics.scenario_composition.scenario_summaries = [
             f
-            for f in footer_metrics.scenario_composition.scenario_facts
+            for f in footer_metrics.scenario_composition.scenario_summaries
             if f.scenario_id in filter_set
         ]
-        footer_metrics.scenario_composition.scenario_parameter_facts_categorical = [
+        footer_metrics.scenario_composition.chat_parameter_facts = [
             f
-            for f in footer_metrics.scenario_composition.scenario_parameter_facts_categorical
-            if f.scenario_id in filter_set
-        ]
-        footer_metrics.scenario_composition.scenario_parameter_facts_numeric = [
-            f
-            for f in footer_metrics.scenario_composition.scenario_parameter_facts_numeric
+            for f in footer_metrics.scenario_composition.chat_parameter_facts
             if f.scenario_id in filter_set
         ]
 

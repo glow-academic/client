@@ -39,6 +39,10 @@ export interface DashboardFooterProps {
   onScenarioSimPerfScenarioChange?: ((ids: string[]) => void) | undefined;
   scenarioSimPerfScenarioSearch?: string | undefined;
   onScenarioSimPerfScenarioSearchChange?: ((term: string) => void) | undefined;
+  initialScenarioCompScenarios?: string[] | undefined;
+  onScenarioCompScenarioChange?: ((ids: string[]) => void) | undefined;
+  scenarioCompScenarioSearch?: string | undefined;
+  onScenarioCompScenarioSearchChange?: ((term: string) => void) | undefined;
 }
 
 export default function DashboardFooter({
@@ -55,6 +59,10 @@ export default function DashboardFooter({
   onScenarioSimPerfScenarioChange,
   scenarioSimPerfScenarioSearch,
   onScenarioSimPerfScenarioSearchChange,
+  initialScenarioCompScenarios,
+  onScenarioCompScenarioChange,
+  scenarioCompScenarioSearch,
+  onScenarioCompScenarioSearchChange,
 }: DashboardFooterProps) {
   const {
     params: sectionParams,
@@ -64,6 +72,8 @@ export default function DashboardFooter({
     setScenarioStatsParamSearch,
     setScenarioSimPerfScenarioIds,
     setScenarioSimPerfScenarioSearch,
+    setScenarioCompScenarioIds,
+    setScenarioCompScenarioSearch,
   } = useDashboardSectionParams();
 
   const effectiveOnScenarioPerfChange = onScenarioPerfParameterChange ?? setScenarioPerfParameterIds;
@@ -77,6 +87,10 @@ export default function DashboardFooter({
   const effectiveOnScenarioSimPerfChange = onScenarioSimPerfScenarioChange ?? setScenarioSimPerfScenarioIds;
   const effectiveOnScenarioSimPerfSearch = onScenarioSimPerfScenarioSearchChange ?? setScenarioSimPerfScenarioSearch;
   const effectiveScenarioSimPerfSearch = scenarioSimPerfScenarioSearch ?? sectionParams.scenarioSimPerfScenarioSearch ?? undefined;
+
+  const effectiveOnScenarioCompChange = onScenarioCompScenarioChange ?? setScenarioCompScenarioIds;
+  const effectiveOnScenarioCompSearch = onScenarioCompScenarioSearchChange ?? setScenarioCompScenarioSearch;
+  const effectiveScenarioCompSearch = scenarioCompScenarioSearch ?? sectionParams.scenarioCompScenarioSearch ?? undefined;
 
   const [leftFooterCarouselIndex, setLeftFooterCarouselIndex] = useState(0);
   const [rightFooterCarouselIndex, setRightFooterCarouselIndex] = useState(0);
@@ -200,38 +214,31 @@ export default function DashboardFooter({
       />,
       <ScenarioComposition
         key="scenario-composition"
-        scenarioFacts={(scenarioComp.scenario_facts || []).map((f) => ({
+        scenarioSummaries={(scenarioComp.scenario_summaries || []).map((f) => ({
           scenarioId: f.scenario_id || "",
           name: f.name || "",
-          avgScore: f.avg_score ?? 0,
-          completionRate: f.completion_rate ?? 0,
           totalChats: f.total_chats ?? 0,
-          simulationCount: f.simulation_count ?? 0,
+          highCount: f.high_count ?? 0,
+          lowCount: f.low_count ?? 0,
+          highAvgScore: f.high_avg_score ?? 0,
+          lowAvgScore: f.low_avg_score ?? 0,
         }))}
-        scenarioParameterFactsCategorical={
-          (scenarioComp.scenario_parameter_facts_categorical || []).map((f) => ({
-            scenarioId: f.scenario_id || "",
-            parameterId: f.parameter_id || "",
-            parameterItemId: f.parameter_item_id || "",
-            chatCount: f.chat_count ?? 0,
-          }))
-        }
-        scenarioParameterFactsNumeric={
-          (scenarioComp.scenario_parameter_facts_numeric || []).map((f) => ({
-            scenarioId: f.scenario_id || "",
-            parameterId: f.parameter_id || "",
-            avgLevel: f.avg_level ?? 0,
-            levelLabel: f.level_label || "",
-            chatCount: f.chat_count ?? 0,
-          }))
-        }
+        chatParameterFacts={(scenarioComp.chat_parameter_facts || []).map((f) => ({
+          scenarioId: f.scenario_id || "",
+          group: (f.group || "high") as "high" | "low",
+          parameterId: f.parameter_id || "",
+          parameterItemId: f.parameter_item_id || "",
+          chatCount: f.chat_count ?? 0,
+        }))}
+        scenarios={(data.scenarios || []).map((s) => ({
+          scenario_id: s.scenario_id || "",
+          name: s.name || "",
+          description: s.description || "",
+        }))}
         parameters={(data.parameters || []).map((p) => ({
           parameter_id: p.parameter_id || "",
           name: p.name || "",
           description: p.description || "",
-          numerical: p.numerical ?? false,
-          document_parameter: p.document_parameter ?? false,
-          persona_parameter: p.persona_parameter ?? false,
         }))}
         fields={(data.fields || []).map((f) => ({
           field_id: f.field_id || "",
@@ -243,9 +250,13 @@ export default function DashboardFooter({
         validScenarioIds={scenarioComp.valid_scenario_ids || []}
         actionableInsight={data.insights?.scenario_composition ?? null}
         status={validateStatus(scenarioComp.status)}
+        initialSelectedScenarios={initialScenarioCompScenarios}
+        onScenarioSelect={effectiveOnScenarioCompChange}
+        scenarioSearchValue={effectiveScenarioCompSearch}
+        onScenarioSearchChange={effectiveOnScenarioCompSearch}
       />,
     ];
-  }, [data, initialScenarioSimPerfScenarios, effectiveOnScenarioSimPerfChange, effectiveScenarioSimPerfSearch, effectiveOnScenarioSimPerfSearch]);
+  }, [data, initialScenarioSimPerfScenarios, effectiveOnScenarioSimPerfChange, effectiveScenarioSimPerfSearch, effectiveOnScenarioSimPerfSearch, initialScenarioCompScenarios, effectiveOnScenarioCompChange, effectiveScenarioCompSearch, effectiveOnScenarioCompSearch]);
 
   const navigateLeftFooter = (direction: "prev" | "next") => {
     const length = leftFooterComponents.length;

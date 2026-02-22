@@ -162,7 +162,7 @@ flag_resource_data AS (
 simulation_positions_draft_data AS (
     SELECT
         COALESCE(
-            ARRAY_AGG(spr.value ORDER BY spr.value),
+            ARRAY_REMOVE(ARRAY_AGG(spr.value ORDER BY spr.value), NULL),
             '{}'::int[]
         ) as simulation_position_values
     FROM params x
