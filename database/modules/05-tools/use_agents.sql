@@ -9,7 +9,7 @@ INSERT INTO public.args_resource (id, name, description, field_type, required, d
 INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, active, generated, mcp) VALUES ('019c4f27-1767-7bba-8bbb-21302f3426ba', '019bbf87-091f-7363-a53b-59c0c5d9656b', 0, '2026-02-12T00:01:27.881501+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c4f27-175c-7b5e-9ebc-a2af6925ae0c', 'Use an existing agent resource instead of creating a new one', '2026-02-12T00:01:27.881501+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c4f27-175b-7fd7-8fdb-e935f473098b', 'use_agents', '2026-02-12T00:01:27.881501+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable, args_ids, args_output_ids) VALUES ('019c4f27-1758-7c66-af1b-4c6c05170ccb', '2026-02-12T00:01:27.881501+00:00', false, false, true, 'use_agents', 'Use an existing agent resource instead of creating a new one', '{}', false, '{019bbf87-091f-7363-a53b-59c0c5d9656b}', '{}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable, args_ids, args_output_ids, resource) VALUES ('019c4f27-1758-7c66-af1b-4c6c05170ccb', '2026-02-12T00:01:27.881501+00:00', false, false, true, 'use_agents', 'Use an existing agent resource instead of creating a new one', '{}', false, '{019bbf87-091f-7363-a53b-59c0c5d9656b}', '{}', 'agents') ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- tool_artifact

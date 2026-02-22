@@ -452,17 +452,14 @@ async def get_pricing(
                     bypass_cache=bypass_cache,
                 )
 
-        parallel_tasks: list = [fetch_runs()]
-        if request.history_enabled:
-            parallel_tasks.append(
-                _fetch_group_history_data(pool, profile_id, request, bypass_cache)
-            )
+        parallel_tasks: list = [
+            fetch_runs(),
+            _fetch_group_history_data(pool, profile_id, request, bypass_cache),
+        ]
 
         parallel_results = await asyncio.gather(*parallel_tasks)
         runs_result = parallel_results[0]
-        history_data: GetGroupListResponse | None = (
-            parallel_results[1] if request.history_enabled else None
-        )
+        history_data: GetGroupListResponse | None = parallel_results[1]
 
         # Step 2: Collect unique agent/model IDs from runs
         agent_ids_set: set[UUID] = set()

@@ -27,8 +27,6 @@ from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
-    GetAgentToolEntriesSqlParams,
-    GetAgentToolEntriesSqlRow,
     GetProfileContextApiRequest,
     GetSettingsThemeDataSqlParams,
     GetSettingsThemeDataSqlRow,
@@ -37,9 +35,6 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_SETTINGS_THEME_PATH = (
     "app/sql/v4/queries/settings/get_settings_theme_data_complete.sql"
-)
-SQL_AGENT_TOOL_ENTRIES_PATH = (
-    "app/sql/v4/queries/auth/get_agent_tool_entries_complete.sql"
 )
 
 router = APIRouter()
@@ -117,29 +112,25 @@ async def get_auth_settings_internal(
                 c, list(set(all_tool_ids)), bypass_cache
             )
 
-    # Resolve agent→tool→resource entries for settings agents
+    # Resolve agent→tool→resource entries in Python using already-fetched data.
+    # Each agent has tool_ids (tools_resource IDs), each tool has a resource type.
     agent_tool_entries: list[SettingsAgentToolEntry] = []
-    if settings_agent_ids:
-        async with pool.acquire() as c:
-            entry_params = GetAgentToolEntriesSqlParams(
-                agent_ids=list(settings_agent_ids)
-            )
-            entry_rows = cast(
-                list[GetAgentToolEntriesSqlRow],
-                await execute_sql_typed(
-                    c, SQL_AGENT_TOOL_ENTRIES_PATH, params=entry_params, multi_row=True
-                ),
-            )
-            agent_tool_entries = [
-                SettingsAgentToolEntry(
-                    agent_id=row.agent_id,
-                    tool_id=row.tool_id,
-                    resource=row.resource,
-                    is_creatable=row.is_creatable or False,
-                )
-                for row in entry_rows
-                if row.agent_id and row.tool_id and row.resource
-            ]
+    if settings_agents and settings_tools:
+        tool_by_id = {t.id: t for t in settings_tools if t.id}
+        for agent in settings_agents:
+            if not agent.id or not agent.tool_ids:
+                continue
+            for tool_id in agent.tool_ids:
+                tool = tool_by_id.get(tool_id)
+                if tool and tool.resource:
+                    agent_tool_entries.append(
+                        SettingsAgentToolEntry(
+                            agent_id=agent.id,
+                            tool_id=tool.id,
+                            resource=tool.resource,
+                            is_creatable=tool.createable or False,
+                        )
+                    )
 
     theme_primitives = {
         "primary": settings_theme.primary_color or "",

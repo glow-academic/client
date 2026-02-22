@@ -76,7 +76,6 @@ class GetPracticeWebsocketResponse(BaseModel):
 class GetPracticeRequest(BaseModel):
     """Request for practice get endpoint with optional history."""
 
-    history_enabled: bool = False
     history_sort_by: str | None = "date"
     history_sort_order: str | None = "desc"
     history_page: int = 0

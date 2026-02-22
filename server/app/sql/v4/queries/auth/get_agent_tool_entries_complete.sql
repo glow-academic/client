@@ -28,14 +28,16 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
--- Resolve: agent_artifact → agent_tools_junction → tools_resource → tool_tools_junction
---        → tool_artifact → tool_domains_junction + domains_resource + flag checks
+-- Input agent_ids are agents_resource IDs (from setting_agents_junction).
+-- Bridge: agents_resource → agent_agents_junction → agent_artifact to traverse tool chain.
+-- Return the original agents_resource ID as agent_id (downstream expects resource IDs).
 SELECT
-    a.id as agent_id,
+    aaj.agents_id as agent_id,
     ta.id as tool_id,
     dr.resource::text as resource,
     COALESCE(tf_create.value, true) as is_creatable
-FROM agent_artifact a
+FROM agent_agents_junction aaj
+JOIN agent_artifact a ON a.id = aaj.agent_id
 JOIN agent_tools_junction atj ON atj.agent_id = a.id AND atj.active = true
 JOIN tools_resource tr ON tr.id = atj.tool_id
 JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
@@ -48,7 +50,7 @@ LEFT JOIN tool_flags_junction tf_create ON tf_create.tool_id = ta.id
 LEFT JOIN flags_resource f_create ON f_create.id = tf_create.flag_id AND f_create.name = 'tool_creatable'
 LEFT JOIN agent_flags_junction af_agent ON af_agent.agent_id = a.id
 LEFT JOIN flags_resource f_agent ON f_agent.id = af_agent.flag_id AND f_agent.name = 'agent_active'
-WHERE a.id = ANY(agent_ids)
+WHERE aaj.agents_id = ANY(agent_ids)
   AND COALESCE(af_agent.value, false) = true
   AND (tf_active.tool_id IS NULL OR COALESCE(f_active.id, NULL) IS NULL OR COALESCE(tf_active.value, false) = true);
 $$;

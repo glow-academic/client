@@ -37,13 +37,13 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.id, q.name, q.description, q.generated, q.args_ids, q.args_output_ids)::types.q_get_tools_v4_item
+        (q.id, q.name, q.description, q.generated, q.args_ids, q.args_output_ids, q.resource, q.createable)::types.q_get_tools_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_tools_v4_item[]
 ) as items
 FROM (
-    SELECT t.id, t.name, t.description, COALESCE(t.generated, false) AS generated, COALESCE(t.args_ids, ARRAY[]::uuid[]) AS args_ids, COALESCE(t.args_output_ids, ARRAY[]::uuid[]) AS args_output_ids
+    SELECT t.id, t.name, t.description, COALESCE(t.generated, false) AS generated, COALESCE(t.args_ids, ARRAY[]::uuid[]) AS args_ids, COALESCE(t.args_output_ids, ARRAY[]::uuid[]) AS args_output_ids, t.resource, COALESCE(t.createable, false) AS createable
     FROM tools_resource t
     WHERE t.active = true
       -- Search filter

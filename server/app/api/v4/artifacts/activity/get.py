@@ -545,16 +545,15 @@ async def get_activity(
                 page_offset=request.page_offset,
             )
         ]
-        if request.history_enabled:
-            parallel_tasks.append(
-                _fetch_session_history_data(
-                    pool, profile_id, request, filter_profile_ids, bypass_cache
-                )
+        parallel_tasks.append(
+            _fetch_session_history_data(
+                pool, profile_id, request, filter_profile_ids, bypass_cache
             )
+        )
 
         parallel_results = await asyncio.gather(*parallel_tasks)
         data = parallel_results[0]
-        history_data: Any = parallel_results[1] if request.history_enabled else None
+        history_data: Any = parallel_results[1]
 
         # Build chart_data from activity view (date_key + event_type + event_count)
         chart_data = [

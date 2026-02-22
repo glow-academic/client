@@ -64,7 +64,6 @@ class ActivityRequest(BaseModel):
     page_offset: int = Field(default=0, ge=0)
 
     # Embedded session history params
-    history_enabled: bool = False
     history_page: int = 0
     history_page_size: int = 50
     history_sort_by: str = "date"
@@ -123,7 +122,7 @@ class ActivityResponse(BaseModel):
     resources: ActivityResources = Field(default_factory=ActivityResources)
     total_count: int = Field(default=0)
 
-    # Embedded session history (when history_enabled=True)
+    # Embedded session history
     history: GetSessionListResponse | None = None
 
 

@@ -84,7 +84,6 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
       page_limit: 100,
       page_offset: 0,
       // Embedded group history params
-      history_enabled: true,
       history_page: pricingPage,
       history_page_size: pricingPageSize,
       history_sort_by: sortBy,

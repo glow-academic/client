@@ -75,36 +75,34 @@ async def get_dashboard_header(
             ),
         ]
 
-        if request.history_enabled:
-            parallel_tasks.append(
-                fetch_dashboard_history_data(
-                    pool,
-                    history_enabled=True,
-                    profile_resource_id=profile_id,
-                    target_profile_id=request.target_profile_id,
-                    start_date=request.start_date,
-                    end_date=request.end_date,
-                    cohort_ids=request.cohort_ids,
-                    department_ids=request.department_ids,
-                    history_practice=request.history_practice,
-                    history_scenario_ids=request.history_scenario_ids,
-                    history_infinite_mode=request.history_infinite_mode,
-                    history_show_archived=request.history_show_archived,
-                    history_sort_by=request.history_sort_by,
-                    history_sort_order=request.history_sort_order,
-                    history_page=request.history_page,
-                    history_page_size=request.history_page_size,
-                    history_simulation_search=request.history_simulation_search,
-                    history_scenario_search=request.history_scenario_search,
-                    history_profile_search=request.history_profile_search,
-                    bypass_cache=bypass_cache,
-                )
+        parallel_tasks.append(
+            fetch_dashboard_history_data(
+                pool,
+                profile_resource_id=profile_id,
+                target_profile_id=request.target_profile_id,
+                start_date=request.start_date,
+                end_date=request.end_date,
+                cohort_ids=request.cohort_ids,
+                department_ids=request.department_ids,
+                history_practice=request.history_practice,
+                history_scenario_ids=request.history_scenario_ids,
+                history_infinite_mode=request.history_infinite_mode,
+                history_show_archived=request.history_show_archived,
+                history_sort_by=request.history_sort_by,
+                history_sort_order=request.history_sort_order,
+                history_page=request.history_page,
+                history_page_size=request.history_page_size,
+                history_simulation_search=request.history_simulation_search,
+                history_scenario_search=request.history_scenario_search,
+                history_profile_search=request.history_profile_search,
+                bypass_cache=bypass_cache,
             )
+        )
 
         parallel_results = await asyncio.gather(*parallel_tasks)
         chats_result = parallel_results[0]
         thresholds = parallel_results[1]
-        history_data = parallel_results[2] if request.history_enabled else None
+        history_data = parallel_results[2]
 
         chat_items = chats_result.items
 

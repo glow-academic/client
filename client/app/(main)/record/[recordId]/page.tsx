@@ -197,7 +197,6 @@ export default async function RecordPage({
   const headerPromise = getReportHeader({
     body: {
       ...commonBody,
-      history_enabled: true,
       history_page: historyPage,
       history_page_size: historyPageSize,
       history_sort_by: historySortBy,

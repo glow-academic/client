@@ -267,7 +267,7 @@ async def _fetch_practice_history_data(
     bypass_cache: bool = False,
 ) -> HistoryResponse | None:
     """Fetch paginated attempt history for practice page."""
-    if not request.history_enabled or not profile_resource_id:
+    if not profile_resource_id:
         return None
 
     practice = True
@@ -995,10 +995,10 @@ async def practice_get(
 
     cache_key_val = cache_key(
         http_request.url.path,
-        request.model_dump(mode="json") if request.history_enabled else {},
+        request.model_dump(mode="json"),
     )
 
-    if not bypass_cache and not request.history_enabled:
+    if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
             response.headers["X-Cache-Tags"] = ",".join(tags)

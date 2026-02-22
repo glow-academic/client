@@ -54,7 +54,6 @@ class DashboardRequest(BaseModel):
     sim_perf_simulation_search: str | None = None
 
     # History section (attempt list)
-    history_enabled: bool = False
     history_practice: bool = False
     history_scenario_ids: list[UUID] | None = None
     history_infinite_mode: bool | None = None
@@ -539,7 +538,7 @@ class DashboardBundleResponse(BaseModel):
     profile_primary_email: str | None = None
     profile_role: str | None = None
 
-    # Attempt history (populated when history_enabled=True)
+    # Attempt history
     history: HistoryResponse | None = None
 
 
@@ -567,7 +566,6 @@ class DashboardHeaderRequest(DashboardSectionRequest):
     """Request for header section with optional history."""
 
     # History section (attempt list)
-    history_enabled: bool = False
     history_practice: bool = False
     history_scenario_ids: list[UUID] | None = None
     history_infinite_mode: bool | None = None
@@ -631,7 +629,7 @@ class DashboardHeaderResponse(BaseModel):
     profile_emails: list[str] | None = None
     profile_primary_email: str | None = None
     profile_role: str | None = None
-    # Attempt history (populated when history_enabled=True)
+    # Attempt history
     history: HistoryResponse | None = None
 
 

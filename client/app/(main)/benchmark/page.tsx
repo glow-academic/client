@@ -102,7 +102,6 @@ export default async function BenchmarkPage({
       start_date: defaultFilters.startDate,
       end_date: defaultFilters.endDate,
       department_ids: defaultFilters.departmentIds,
-      history_enabled: true,
       history_page: historyPage,
       history_page_size: historyPageSize,
       ...(historySearch && { history_search: historySearch }),

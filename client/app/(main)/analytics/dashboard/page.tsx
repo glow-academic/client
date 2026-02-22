@@ -199,7 +199,6 @@ export default async function DashboardPage({
   const headerPromise = getDashboardHeader({
     body: {
       ...commonBody,
-      history_enabled: true,
       history_page: historyPage,
       history_page_size: historyPageSize,
       history_sort_by: historySortBy,

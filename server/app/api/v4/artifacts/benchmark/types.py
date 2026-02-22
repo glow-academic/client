@@ -15,7 +15,6 @@ class BenchmarkRequest(BaseModel):
     end_date: str | None = None
     department_ids: list[str] = Field(default_factory=list)
     # History params
-    history_enabled: bool = False
     history_page: int = 0
     history_page_size: int = 10
     history_eval_ids: list[str] = Field(default_factory=list)

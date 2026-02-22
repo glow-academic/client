@@ -69,7 +69,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   // Single fetch: cards + embedded history
   const homeData = await getHomeData({
     body: {
-      history_enabled: true,
       history_page: historyPage,
       history_page_size: historyPageSize,
       history_sort_by: historySortBy,

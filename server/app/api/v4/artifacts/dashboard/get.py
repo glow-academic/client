@@ -249,7 +249,6 @@ def _transform_history_item(
 async def fetch_dashboard_history_data(
     pool: asyncpg.Pool,
     *,
-    history_enabled: bool,
     profile_resource_id: UUID | None,
     target_profile_id: UUID | None,
     start_date: str | None,
@@ -270,7 +269,7 @@ async def fetch_dashboard_history_data(
     bypass_cache: bool = False,
 ) -> HistoryResponse | None:
     """Fetch attempt history data — shared between dashboard/get and dashboard/header."""
-    if not history_enabled or not profile_resource_id:
+    if not profile_resource_id:
         return None
 
     query_profile_id = target_profile_id or profile_resource_id
@@ -597,7 +596,6 @@ async def get_dashboard_internal(
         ),
         fetch_dashboard_history_data(
             pool,
-            history_enabled=request.history_enabled,
             profile_resource_id=profile_resource_id,
             target_profile_id=request.target_profile_id,
             start_date=request.start_date,
@@ -1218,17 +1216,16 @@ async def get_dashboard(
 
         # Resolve profile_resource_id for history section
         profile_resource_id: UUID | None = None
-        if request.history_enabled:
-            profile_id = http_request.state.profile_id
-            if profile_id:
-                profile_resource_id = await conn.fetchval(
-                    """
-                    SELECT profiles_id FROM profile_profiles_junction
-                    WHERE profile_id = $1 AND active = true
-                    LIMIT 1
-                    """,
-                    profile_id,
-                )
+        profile_id = http_request.state.profile_id
+        if profile_id:
+            profile_resource_id = await conn.fetchval(
+                """
+                SELECT profiles_id FROM profile_profiles_junction
+                WHERE profile_id = $1 AND active = true
+                LIMIT 1
+                """,
+                profile_id,
+            )
 
         bundle = await get_dashboard_internal(
             pool=pool,

@@ -254,25 +254,23 @@ async def get_benchmark(
                 return (None, None)
 
         # Build parallel tasks
-        parallel_tasks: list = [fetch_tests(), fetch_benchmark_date_range()]
-        if request.history_enabled:
-            parallel_tasks.append(
-                _fetch_test_history_data(
-                    pool=pool,
-                    request=request,
-                    department_uuids=department_uuids,
-                    date_from=date_from,
-                    date_to=date_to,
-                    bypass_cache=bypass_cache,
-                )
-            )
+        parallel_tasks: list = [
+            fetch_tests(),
+            fetch_benchmark_date_range(),
+            _fetch_test_history_data(
+                pool=pool,
+                request=request,
+                department_uuids=department_uuids,
+                date_from=date_from,
+                date_to=date_to,
+                bypass_cache=bypass_cache,
+            ),
+        ]
 
         parallel_results = await asyncio.gather(*parallel_tasks)
         tests_result = parallel_results[0]
         benchmark_date_range = parallel_results[1]
-        history_data: TestHistoryResponse | None = (
-            parallel_results[2] if request.history_enabled else None
-        )
+        history_data: TestHistoryResponse | None = parallel_results[2]
 
         # Step 2: Collect unique IDs from tests
         eval_ids: set[UUID] = set()

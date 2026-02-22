@@ -1000,7 +1000,6 @@ def register_endpoints(server: FastMCP) -> None:
         agent_id: str | None = None,
         page_limit: int | None = None,
         page_offset: int | None = None,
-        history_enabled: bool = False,
         kwargs: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Get pricing analytics — token costs, model usage, and spending trends.
@@ -1012,7 +1011,6 @@ def register_endpoints(server: FastMCP) -> None:
             agent_id: Filter by specific agent.
             page_limit: Number of results per page.
             page_offset: Pagination offset.
-            history_enabled: Include historical trend data.
             kwargs: Additional parameters — use docs("pricing") for full schema.
         """
         payload = {
@@ -1024,7 +1022,6 @@ def register_endpoints(server: FastMCP) -> None:
                 "agent_id": agent_id,
                 "page_limit": page_limit,
                 "page_offset": page_offset,
-                "history_enabled": history_enabled,
             }.items()
             if v is not None
         }

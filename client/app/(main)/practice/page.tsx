@@ -74,7 +74,6 @@ export default async function PracticePage({
   // Single fetch: cards + embedded history
   const practiceData = await getPracticeData({
     body: {
-      history_enabled: !isGuest,
       history_page: historyPage,
       history_page_size: historyPageSize,
       history_sort_by: historySortBy,

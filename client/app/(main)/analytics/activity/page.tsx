@@ -83,7 +83,6 @@ export default async function ActivityPage({
       page_limit: 50,
       page_offset: 0,
       // Embedded session history params
-      history_enabled: true,
       history_page: activityPage,
       history_page_size: activityPageSize,
       history_sort_by: "date",

@@ -21003,11 +21003,6 @@ export interface components {
              */
             page_offset: number;
             /**
-             * History Enabled
-             * @default false
-             */
-            history_enabled: boolean;
-            /**
              * History Page
              * @default 0
              */
@@ -22800,11 +22795,6 @@ export interface components {
             /** Department Ids */
             department_ids?: string[];
             /**
-             * History Enabled
-             * @default false
-             */
-            history_enabled: boolean;
-            /**
              * History Page
              * @default 0
              */
@@ -24310,11 +24300,6 @@ export interface components {
              */
             page_offset: number;
             /**
-             * History Enabled
-             * @default false
-             */
-            history_enabled: boolean;
-            /**
              * History Practice
              * @default false
              */
@@ -24553,11 +24538,6 @@ export interface components {
             sim_perf_simulation_ids?: string[] | null;
             /** Sim Perf Simulation Search */
             sim_perf_simulation_search?: string | null;
-            /**
-             * History Enabled
-             * @default false
-             */
-            history_enabled: boolean;
             /**
              * History Practice
              * @default false
@@ -28777,11 +28757,6 @@ export interface components {
          */
         GetHomeRequest: {
             /**
-             * History Enabled
-             * @default false
-             */
-            history_enabled: boolean;
-            /**
              * History Sort By
              * @default date
              */
@@ -29427,11 +29402,6 @@ export interface components {
          * @description Request for practice get endpoint with optional history.
          */
         GetPracticeRequest: {
-            /**
-             * History Enabled
-             * @default false
-             */
-            history_enabled: boolean;
             /**
              * History Sort By
              * @default date
@@ -35757,11 +35727,6 @@ export interface components {
              */
             page_offset: number;
             /**
-             * History Enabled
-             * @default false
-             */
-            history_enabled: boolean;
-            /**
              * History Page
              * @default 0
              */
@@ -38450,6 +38415,10 @@ export interface components {
             args_ids: string[] | null;
             /** Args Output Ids */
             args_output_ids: string[] | null;
+            /** Resource */
+            resource: string | null;
+            /** Createable */
+            createable: boolean | null;
         };
         /** QGetUploadsV4Item */
         QGetUploadsV4Item: {

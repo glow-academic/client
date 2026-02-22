@@ -28,7 +28,6 @@ class PricingRequest(BaseModel):
     page_offset: int = Field(default=0, ge=0)
 
     # Embedded group history params
-    history_enabled: bool = False
     history_page: int = 0
     history_page_size: int = 50
     history_sort_by: str = "date"
@@ -71,7 +70,7 @@ class PricingResponse(BaseModel):
     model_options: list[FilterOption] = Field(default_factory=list)
     agent_options: list[FilterOption] = Field(default_factory=list)
 
-    # Embedded group history (when history_enabled=True)
+    # Embedded group history
     history: GetGroupListResponse | None = None
 
 

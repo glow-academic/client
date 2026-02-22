@@ -29111,6 +29111,8 @@ class QGetToolsV4Item(BaseModel):
     generated: bool | None
     args_ids: list[UUID] | None
     args_output_ids: list[UUID] | None
+    resource: str | None
+    createable: bool | None
 
 class GetToolsSqlRow(BaseModel):
 
