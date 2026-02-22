@@ -53,8 +53,7 @@ CREATE OR REPLACE FUNCTION api_save_simulation_v4(
     scenario_flags types.simulation_multi_resource_action DEFAULT NULL,
     scenario_positions types.simulation_multi_resource_action DEFAULT NULL,
     scenario_rubrics types.simulation_multi_resource_action DEFAULT NULL,
-    scenario_time_limits types.simulation_multi_resource_action DEFAULT NULL,
-    scenario_personas types.simulation_multi_resource_action DEFAULT NULL
+    scenario_time_limits types.simulation_multi_resource_action DEFAULT NULL
 )
 RETURNS TABLE (
     simulation_id uuid
@@ -79,7 +78,6 @@ DECLARE
     v_scenario_position_ids uuid[];
     v_scenario_rubric_ids uuid[];
     v_scenario_time_limit_ids uuid[];
-    v_scenario_persona_ids uuid[];
 
     -- Call tracking
     v_run_id uuid;
@@ -98,7 +96,6 @@ BEGIN
     v_scenario_position_ids := COALESCE((scenario_positions).resource_ids, ARRAY[]::uuid[]);
     v_scenario_rubric_ids := COALESCE((scenario_rubrics).resource_ids, ARRAY[]::uuid[]);
     v_scenario_time_limit_ids := COALESCE((scenario_time_limits).resource_ids, ARRAY[]::uuid[]);
-    v_scenario_persona_ids := COALESCE((scenario_personas).resource_ids, ARRAY[]::uuid[]);
 
     IF v_group_id IS NULL THEN
         RAISE EXCEPTION 'group_id is required';
@@ -185,13 +182,6 @@ BEGIN
         RAISE EXCEPTION 'One or more scenario_time_limit_ids not found';
     END IF;
 
-    IF EXISTS (
-        SELECT 1 FROM UNNEST(v_scenario_persona_ids) AS x
-        WHERE NOT EXISTS (SELECT 1 FROM scenario_personas_resource WHERE id = x)
-    ) THEN
-        RAISE EXCEPTION 'One or more scenario_persona_ids not found';
-    END IF;
-
     -- Deactivate old links on update (workflow semantics)
     IF NOT is_create THEN
         UPDATE simulation_names_junction SET active = false WHERE simulation_names_junction.simulation_id = v_simulation_id AND simulation_names_junction.active = true;
@@ -203,7 +193,6 @@ BEGIN
         UPDATE simulation_scenario_positions_junction SET active = false WHERE simulation_scenario_positions_junction.simulation_id = v_simulation_id AND simulation_scenario_positions_junction.active = true;
         UPDATE simulation_scenario_rubrics_junction SET active = false WHERE simulation_scenario_rubrics_junction.simulation_id = v_simulation_id AND simulation_scenario_rubrics_junction.active = true;
         UPDATE simulation_scenario_time_limits_junction SET active = false WHERE simulation_scenario_time_limits_junction.simulation_id = v_simulation_id AND simulation_scenario_time_limits_junction.active = true;
-        UPDATE simulation_scenario_personas_junction SET active = false WHERE simulation_scenario_personas_junction.simulation_id = v_simulation_id AND simulation_scenario_personas_junction.active = true;
     END IF;
 
     -- Tool-call tracking: one run per save
@@ -381,29 +370,6 @@ BEGIN
         END IF;
     END IF;
 
-    IF COALESCE(array_length(v_scenario_persona_ids, 1), 0) > 0 THEN
-        IF (scenario_personas).create_tool_id IS NOT NULL THEN
-            v_call_id := uuidv7();
-            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-            VALUES (v_call_id, 'simulation_save_create_scenario_personas_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((scenario_personas).create_tool_id, v_call_id);
-            INSERT INTO personas_calls_connection (personas_id, call_id)
-            SELECT DISTINCT spr.persona_id, v_call_id
-            FROM scenario_personas_resource spr
-            WHERE spr.id = ANY(v_scenario_persona_ids);
-        END IF;
-        IF (scenario_personas).link_tool_id IS NOT NULL THEN
-            v_call_id := uuidv7();
-            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-            VALUES (v_call_id, 'simulation_save_link_scenario_personas_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((scenario_personas).link_tool_id, v_call_id);
-            INSERT INTO personas_calls_connection (personas_id, call_id)
-            SELECT DISTINCT spr.persona_id, v_call_id
-            FROM scenario_personas_resource spr
-            WHERE spr.id = ANY(v_scenario_persona_ids);
-        END IF;
-    END IF;
-
     -- Upsert active links
     IF v_name_id IS NOT NULL THEN
         INSERT INTO simulation_names_junction (simulation_id, name_id, created_at, generated, mcp, active)
@@ -459,12 +425,6 @@ BEGIN
     SELECT v_simulation_id, sid, NOW(), false, false, true
     FROM UNNEST(v_scenario_time_limit_ids) sid
     ON CONFLICT ON CONSTRAINT simulation_scenario_time_limits_pkey DO UPDATE
-    SET active = true, generated = false, mcp = false;
-
-    INSERT INTO simulation_scenario_personas_junction (simulation_id, scenario_persona_id, created_at, generated, mcp, active)
-    SELECT v_simulation_id, sid, NOW(), false, false, true
-    FROM UNNEST(v_scenario_persona_ids) sid
-    ON CONFLICT ON CONSTRAINT simulation_scenario_personas_pkey DO UPDATE
     SET active = true, generated = false, mcp = false;
 
     -- Sync linked simulations_resource with name/description

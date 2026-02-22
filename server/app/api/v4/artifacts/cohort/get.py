@@ -338,8 +338,7 @@ async def get_cohort_internal(
         for r in ("simulations", "simulation_positions", "simulation_availability")
     )
     profiles_step_show_ai_generate = any(
-        show_ai_generate_map.get(r, False)
-        for r in ("profiles", "profile_personas")
+        show_ai_generate_map.get(r, False) for r in ("profiles", "profile_personas")
     )
 
     # === PYTHON BUSINESS LOGIC ===
@@ -455,9 +454,18 @@ async def get_cohort_internal(
 
     async def fetch_simulation_positions() -> list[CohortSimulationPosition]:
         async with pool.acquire() as c:
-            return await get_simulation_positions_internal(
+            items = await get_simulation_positions_internal(
                 c, simulation_ids, bypass_cache=bypass_cache
             )
+            return [
+                CohortSimulationPosition(
+                    simulation_id=item.simulation_id,
+                    value=item.value,
+                    generated=item.generated,
+                    mcp=item.mcp,
+                )
+                for item in items
+            ]
 
     simulation_availability_ids = ids_result.simulation_availability_ids or []
 
@@ -1052,9 +1060,7 @@ async def get_cohort_client(
         ),
         profile_personas=CohortProfilePersonaSection(
             current=(current_bucket.profile_personas if current_bucket else None),
-            resources=(
-                resources_bucket.profile_personas if resources_bucket else None
-            ),
+            resources=(resources_bucket.profile_personas if resources_bucket else None),
             **section_common("profile_personas"),
         ),
     )

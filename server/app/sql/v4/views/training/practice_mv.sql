@@ -90,14 +90,6 @@ position_agg AS (
     WHERE pspc.active = true
     GROUP BY pspc.practice_id
 ),
-persona_agg AS (
-    SELECT
-        pspc.practice_id,
-        ARRAY_AGG(DISTINCT pspc.scenario_personas_id ORDER BY pspc.scenario_personas_id) AS persona_ids
-    FROM practice_scenario_personas_connection pspc
-    WHERE pspc.active = true
-    GROUP BY pspc.practice_id
-),
 -- Chat level connections (aggregated UP to practice_entry via practice_chat_entry)
 chat_agg AS (
     SELECT
@@ -131,7 +123,6 @@ SELECT
     -- Simulation-level scenario resource connections
     COALESCE(flg.flag_ids, ARRAY[]::uuid[]) AS flag_ids,
     COALESCE(pos.position_ids, ARRAY[]::uuid[]) AS position_ids,
-    COALESCE(per.persona_ids, ARRAY[]::uuid[]) AS persona_ids,
 
     -- Aggregated UP from chat level
     COALESCE(trn.chat_ids, ARRAY[]::uuid[]) AS chat_ids,
@@ -150,7 +141,6 @@ LEFT JOIN rubric_agg rub ON rub.practice_id = pe.id
 LEFT JOIN time_limit_agg tl ON tl.practice_id = pe.id
 LEFT JOIN flag_agg flg ON flg.practice_id = pe.id
 LEFT JOIN position_agg pos ON pos.practice_id = pe.id
-LEFT JOIN persona_agg per ON per.practice_id = pe.id
 LEFT JOIN chat_agg trn ON trn.practice_id = pe.id
 LEFT JOIN scenario_agg scn ON scn.practice_id = pe.id
 WHERE pe.active = true

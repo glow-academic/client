@@ -51,8 +51,8 @@ CREATE TYPE types.q_get_training_config_v4_item AS (
     scenario_id uuid,
     rubric_id uuid,
     problem_statement_id uuid,
-    -- Plural sets
     persona_ids uuid[],
+    -- Plural sets
     objective_ids uuid[],
     question_ids uuid[],
     option_ids uuid[],
@@ -88,8 +88,8 @@ AS $$
             (ARRAY_AGG(tsc.scenarios_id ORDER BY tsc.created_at) FILTER (WHERE tsc.scenarios_id IS NOT NULL))[1] AS scenario_id,
             (ARRAY_AGG(trc.scenario_rubrics_id ORDER BY trc.created_at) FILTER (WHERE trc.scenario_rubrics_id IS NOT NULL))[1] AS rubric_id,
             (ARRAY_AGG(tpsc.problem_statements_id ORDER BY tpsc.created_at) FILTER (WHERE tpsc.problem_statements_id IS NOT NULL))[1] AS problem_statement_id,
+            COALESCE(ARRAY_AGG(DISTINCT ppr.persona_id ORDER BY ppr.persona_id) FILTER (WHERE ppr.persona_id IS NOT NULL), ARRAY[]::uuid[]) AS persona_ids,
             -- plural sets
-            COALESCE(ARRAY_AGG(DISTINCT tpc.scenario_personas_id ORDER BY tpc.scenario_personas_id) FILTER (WHERE tpc.scenario_personas_id IS NOT NULL), ARRAY[]::uuid[]) AS persona_ids,
             COALESCE(ARRAY_AGG(DISTINCT toc.objectives_id ORDER BY toc.objectives_id) FILTER (WHERE toc.objectives_id IS NOT NULL), ARRAY[]::uuid[]) AS objective_ids,
             COALESCE(ARRAY_AGG(DISTINCT tqc.questions_id ORDER BY tqc.questions_id) FILTER (WHERE tqc.questions_id IS NOT NULL), ARRAY[]::uuid[]) AS question_ids,
             COALESCE(ARRAY_AGG(DISTINCT topt.options_id ORDER BY topt.options_id) FILTER (WHERE topt.options_id IS NOT NULL), ARRAY[]::uuid[]) AS option_ids,
@@ -109,7 +109,6 @@ AS $$
         LEFT JOIN chat_resolved_scenarios_connection tsc ON tsc.chat_resolved_id = tbd.id AND tsc.active = true
         LEFT JOIN chat_resolved_rubrics_connection trc ON trc.chat_resolved_id = tbd.id AND trc.active = true
         LEFT JOIN chat_resolved_problem_statements_connection tpsc ON tpsc.chat_resolved_id = tbd.id AND tpsc.active = true
-        LEFT JOIN chat_resolved_personas_connection tpc ON tpc.chat_resolved_id = tbd.id AND tpc.active = true
         LEFT JOIN chat_resolved_objectives_connection toc ON toc.chat_resolved_id = tbd.id AND toc.active = true
         LEFT JOIN chat_resolved_questions_connection tqc ON tqc.chat_resolved_id = tbd.id AND tqc.active = true
         LEFT JOIN chat_resolved_options_connection topt ON topt.chat_resolved_id = tbd.id AND topt.active = true
@@ -118,6 +117,8 @@ AS $$
         LEFT JOIN chat_resolved_documents_connection tdc ON tdc.chat_resolved_id = tbd.id AND tdc.active = true
         LEFT JOIN chat_resolved_standard_groups_connection tsgc ON tsgc.chat_resolved_id = tbd.id AND tsgc.active = true
         LEFT JOIN chat_resolved_standards_connection tsc2 ON tsc2.chat_resolved_id = tbd.id AND tsc2.active = true
+        LEFT JOIN chat_resolved_profile_personas_connection tppc ON tppc.chat_resolved_id = tbd.id AND tppc.active = true
+        LEFT JOIN profile_personas_resource ppr ON ppr.id = tppc.profile_personas_id AND ppr.active = true
         WHERE tbd.id = ANY(chat_resolved_ids)
           AND tbd.active = true
         GROUP BY
@@ -138,8 +139,8 @@ AS $$
                     copy_paste_allowed, text_enabled, audio_enabled, hints_enabled,
                     show_images, show_objectives, show_problem_statement,
                     time_limit_seconds, negative,
-                    scenario_id, rubric_id, problem_statement_id,
-                    persona_ids, objective_ids, question_ids, option_ids,
+                    scenario_id, rubric_id, problem_statement_id, persona_ids,
+                    objective_ids, question_ids, option_ids,
                     image_ids, video_ids, document_ids,
                     standard_group_ids, standard_ids
                 )::types.q_get_training_config_v4_item

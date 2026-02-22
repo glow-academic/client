@@ -26,6 +26,7 @@ from app.sql.types import (
     QGetParametersV4Item,
     QGetPersonaDraftsEntriesV4Item,
     QGetProvidersV4Item,
+    QGetVoicesV4Item,
 )
 
 
@@ -98,6 +99,11 @@ class PersonaParameterSection(BaseResourceSection):
     resources: list[QGetParametersV4Item] | None = None
 
 
+class PersonaVoiceSection(BaseResourceSection):
+    current: list[QGetVoicesV4Item] | None = None
+    resources: list[QGetVoicesV4Item] | None = None
+
+
 class GetPersonaApiRequest(BaseModel):
     """Request model for get persona endpoint."""
 
@@ -142,6 +148,7 @@ class GetPersonaApiResponse(BaseModel):
     parameter_fields: PersonaParameterFieldSection | None = None
     examples: PersonaExampleSection | None = None
     parameters: PersonaParameterSection | None = None
+    voices: PersonaVoiceSection | None = None
     # Fields catalog (not a section — computed resource, never saved)
     fields: list[QGetFieldsV4Item] | None = None
 
@@ -156,7 +163,7 @@ class PersonaWebsocketEntries(BaseModel):
 class PersonaWebsocketResources(BaseModel):
     """Hydrated resources for websocket — selected only, no suggestions."""
 
-    # 10 persona resources
+    # 11 persona resources
     names: list[QGetNamesV4Item] | None = None
     descriptions: list[QGetDescriptionsV4Item] | None = None
     colors: list[QGetColorsV4Item] | None = None
@@ -167,6 +174,7 @@ class PersonaWebsocketResources(BaseModel):
     parameter_fields: list[QGetParameterFieldsV4Item] | None = None
     examples: list[QGetExamplesV4Item] | None = None
     parameters: list[QGetParametersV4Item] | None = None
+    voices: list[QGetVoicesV4Item] | None = None
 
 
 class GetPersonaWebsocketResponse(BaseModel):
@@ -197,6 +205,7 @@ class PersonaResourceBucket(BaseModel):
     parameter_fields: list[QGetParameterFieldsV4Item] | None = None
     examples: list[QGetExamplesV4Item] | None = None
     parameters: list[QGetParametersV4Item] | None = None
+    voices: list[QGetVoicesV4Item] | None = None
     fields: list[QGetFieldsV4Item] | None = None
 
 
@@ -328,6 +337,7 @@ class SavePersonaApiRequest(BaseModel):
     parameter_field_ids: list[UUID] | None = None
     example_ids: list[UUID] | None = None
     parameter_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
 
 
 class SavePersonaApiResponse(BaseModel):
@@ -354,6 +364,7 @@ class SavePersonaSqlParams(BaseModel):
     parameter_fields: PersonaMultiResourceAction
     examples: PersonaMultiResourceAction
     parameters: PersonaMultiResourceAction
+    voices: PersonaMultiResourceAction
 
     @classmethod
     def from_request(
@@ -378,6 +389,7 @@ class SavePersonaSqlParams(BaseModel):
             ),
             examples=PersonaMultiResourceAction(resource_ids=request.example_ids),
             parameters=PersonaMultiResourceAction(resource_ids=request.parameter_ids),
+            voices=PersonaMultiResourceAction(resource_ids=request.voice_ids),
         )
 
     def to_tuple(self) -> tuple:
@@ -403,6 +415,7 @@ class SavePersonaSqlParams(BaseModel):
             multi(self.parameter_fields),
             multi(self.examples),
             multi(self.parameters),
+            multi(self.voices),
         )
 
 
@@ -465,6 +478,7 @@ class PatchPersonaDraftApiRequest(BaseModel):
     parameter_field_ids: list[UUID] | None = None
     example_ids: list[UUID] | None = None
     parameter_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
 
 
 class PatchPersonaDraftApiResponse(BaseModel):
@@ -492,6 +506,7 @@ class PatchPersonaDraftSqlParams(BaseModel):
     parameter_fields: PersonaMultiResourceAction
     examples: PersonaMultiResourceAction
     parameters: PersonaMultiResourceAction
+    voices: PersonaMultiResourceAction
     expected_version: int = 0
 
     @classmethod
@@ -517,6 +532,7 @@ class PatchPersonaDraftSqlParams(BaseModel):
             ),
             examples=PersonaMultiResourceAction(resource_ids=request.example_ids),
             parameters=PersonaMultiResourceAction(resource_ids=request.parameter_ids),
+            voices=PersonaMultiResourceAction(resource_ids=request.voice_ids),
             expected_version=request.expected_version,
         )
 
@@ -543,6 +559,7 @@ class PatchPersonaDraftSqlParams(BaseModel):
             multi(self.parameter_fields),
             multi(self.examples),
             multi(self.parameters),
+            multi(self.voices),
             self.expected_version,
         )
 

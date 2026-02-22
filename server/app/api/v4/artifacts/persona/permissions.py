@@ -278,6 +278,16 @@ def compute_parameters_required() -> bool:
     return False
 
 
+def compute_show_voices(voices_count: int) -> bool:
+    """Determine if voices picker should be shown."""
+    return voices_count > 0
+
+
+def compute_voices_required() -> bool:
+    """Determine if voices is required."""
+    return False
+
+
 # ========== List Endpoint Permission Functions ==========
 
 
@@ -365,11 +375,12 @@ PERSONA_RESOURCES: set[str] = {
     "parameter_fields",
     "examples",
     "parameters",
+    "voices",
 }
 
 # Multi-resource agent definitions for persona
 PERSONA_BASIC_RESOURCES: set[str] = {"names", "descriptions", "flags", "departments"}
-PERSONA_CONTENT_RESOURCES: set[str] = {"instructions", "examples"}
+PERSONA_CONTENT_RESOURCES: set[str] = {"instructions", "examples", "voices"}
 PERSONA_PARAMETERS_RESOURCES: set[str] = {"parameters", "parameter_fields"}
 PERSONA_GENERAL_RESOURCES: set[str] = PERSONA_RESOURCES  # All resources
 

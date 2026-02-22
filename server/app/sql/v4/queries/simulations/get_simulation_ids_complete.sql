@@ -38,8 +38,7 @@ RETURNS TABLE (
     scenario_flag_ids uuid[],
     scenario_position_ids uuid[],
     scenario_rubric_ids uuid[],
-    scenario_time_limit_ids uuid[],
-    scenario_persona_ids uuid[]
+    scenario_time_limit_ids uuid[]
 )
 LANGUAGE sql
 STABLE
@@ -123,14 +122,6 @@ scenario_time_limit_data AS (
         (SELECT ARRAY_AGG(sstl.scenario_time_limit_id) FROM simulation_scenario_time_limits_junction sstl WHERE sstl.simulation_id = (SELECT p_simulation_id FROM params) AND sstl.active = true),
         ARRAY[]::uuid[]
     ) as scenario_time_limit_ids
-),
--- Get scenario_persona_ids
-scenario_persona_data AS (
-    SELECT COALESCE(
-        (SELECT ARRAY_AGG(spd.scenario_personas_id) FROM simulation_drafts_scenario_personas_connection spd WHERE spd.draft_id = (SELECT p_draft_id FROM params)),
-        (SELECT ARRAY_AGG(ssp.scenario_persona_id) FROM simulation_scenario_personas_junction ssp WHERE ssp.simulation_id = (SELECT p_simulation_id FROM params) AND ssp.active = true),
-        ARRAY[]::uuid[]
-    ) as scenario_persona_ids
 )
 SELECT
     (SELECT name_id FROM name_data),
@@ -141,7 +132,6 @@ SELECT
     (SELECT scenario_flag_ids FROM scenario_flag_data),
     (SELECT scenario_position_ids FROM scenario_position_data),
     (SELECT scenario_rubric_ids FROM scenario_rubric_data),
-    (SELECT scenario_time_limit_ids FROM scenario_time_limit_data),
-    (SELECT scenario_persona_ids FROM scenario_persona_data)
+    (SELECT scenario_time_limit_ids FROM scenario_time_limit_data)
 FROM params x;
 $$;

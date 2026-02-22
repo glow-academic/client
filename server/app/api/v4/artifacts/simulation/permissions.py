@@ -24,7 +24,6 @@ SIMULATION_RESOURCES: set[str] = {
     "departments",
     "scenarios",
     "scenario_flags",
-    "scenario_personas",
     "scenario_positions",
     "scenario_rubrics",
     "scenario_time_limits",
@@ -254,17 +253,6 @@ def compute_show_scenario_flags(
     )
 
 
-def compute_show_scenario_personas(
-    effective_scenario_ids: list[UUID] | None,
-    scenario_personas_count: int,
-    scenarios_count: int,
-) -> bool:
-    """Compute whether to show scenario personas."""
-    return bool(
-        effective_scenario_ids or scenario_personas_count > 0 or scenarios_count > 0
-    )
-
-
 def compute_show_scenario_positions(
     effective_scenario_ids: list[UUID] | None,
     scenario_positions_count: int,
@@ -330,11 +318,6 @@ def compute_scenarios_required() -> bool:
 
 def compute_scenario_flags_required() -> bool:
     """Scenario flags are optional."""
-    return False
-
-
-def compute_scenario_personas_required() -> bool:
-    """Scenario personas are optional."""
     return False
 
 
@@ -423,11 +406,6 @@ SIMULATION_DOMAIN_METADATA: dict[str, dict[str, str | bool]] = {
         "name": "Scenario Flags",
         "description": "Flag configurations for scenarios",
         "icon": "toggle-left",
-    },
-    "scenario_personas": {
-        "name": "Scenario Personas",
-        "description": "Persona assignments for scenarios",
-        "icon": "users",
     },
     "scenario_positions": {
         "name": "Scenario Positions",

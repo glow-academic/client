@@ -19,7 +19,6 @@ from app.sql.types import (
     QGetNamesV4Item,
     QGetRubricsV4Item,
     QGetScenarioFlagsV4Item,
-    QGetScenarioPersonasV4Item,
     QGetScenarioPositionsV4Item,
     QGetScenarioRubricsV4Item,
     QGetScenarioTimeLimitsV4Item,
@@ -86,7 +85,6 @@ class SimulationResourceBucket(BaseModel):
     departments: list[SimulationDepartment] | None = None
     scenarios: list[SimulationScenario] | None = None
     scenario_flags: list[QGetScenarioFlagsV4Item] | None = None
-    scenario_personas: list[QGetScenarioPersonasV4Item] | None = None
     scenario_positions: list[QGetScenarioPositionsV4Item] | None = None
     scenario_rubrics: list[QGetScenarioRubricsV4Item] | None = None
     scenario_time_limits: list[QGetScenarioTimeLimitsV4Item] | None = None
@@ -169,7 +167,6 @@ class GetSimulationIdsSqlRow(BaseModel):
     scenario_position_ids: list[UUID] | None = None
     scenario_rubric_ids: list[UUID] | None = None
     scenario_time_limit_ids: list[UUID] | None = None
-    scenario_persona_ids: list[UUID] | None = None
 
     # Candidate agents (for Python-side agent scoring)
     candidate_agents: list[dict] | None = None
@@ -181,7 +178,6 @@ class GetSimulationIdsSqlRow(BaseModel):
     departments_has_tools: bool | None = None
     scenarios_has_tools: bool | None = None
     scenario_flags_has_tools: bool | None = None
-    scenario_personas_has_tools: bool | None = None
     scenario_positions_has_tools: bool | None = None
     scenario_rubrics_has_tools: bool | None = None
     scenario_time_limits_has_tools: bool | None = None
@@ -328,11 +324,6 @@ class SimulationScenarioFlagSection(BaseResourceSection):
     resources: list[QGetScenarioFlagsV4Item] | None = None
 
 
-class SimulationScenarioPersonaSection(BaseResourceSection):
-    current: list[QGetScenarioPersonasV4Item] | None = None
-    resources: list[QGetScenarioPersonasV4Item] | None = None
-
-
 class SimulationScenarioPositionSection(BaseResourceSection):
     current: list[QGetScenarioPositionsV4Item] | None = None
     resources: list[QGetScenarioPositionsV4Item] | None = None
@@ -366,7 +357,6 @@ class GetSimulationApiResponse(BaseModel):
     departments: SimulationDepartmentSection | None = None
     scenarios: SimulationScenarioSection | None = None
     scenario_flags: SimulationScenarioFlagSection | None = None
-    scenario_personas: SimulationScenarioPersonaSection | None = None
     scenario_positions: SimulationScenarioPositionSection | None = None
     scenario_rubrics: SimulationScenarioRubricSection | None = None
     scenario_time_limits: SimulationScenarioTimeLimitSection | None = None
@@ -389,7 +379,6 @@ class SimulationWebsocketResources(BaseModel):
     departments: list[SimulationDepartment | QGetDepartmentsV4Item] | None = None
     scenarios: list[SimulationScenario] | None = None
     scenario_flags: list[QGetScenarioFlagsV4Item] | None = None
-    scenario_personas: list[QGetScenarioPersonasV4Item] | None = None
     scenario_positions: list[QGetScenarioPositionsV4Item] | None = None
     scenario_rubrics: list[QGetScenarioRubricsV4Item] | None = None
     scenario_time_limits: list[QGetScenarioTimeLimitsV4Item] | None = None
@@ -495,7 +484,6 @@ class SaveSimulationApiRequest(BaseModel):
     scenario_position_ids: list[UUID] | None = None
     scenario_rubric_ids: list[UUID] | None = None
     scenario_time_limit_ids: list[UUID] | None = None
-    scenario_persona_ids: list[UUID] | None = None
 
 
 class SaveSimulationApiResponse(BaseModel):
@@ -520,7 +508,6 @@ class SaveSimulationSqlParams(BaseModel):
     scenario_positions: SimulationMultiResourceAction
     scenario_rubrics: SimulationMultiResourceAction
     scenario_time_limits: SimulationMultiResourceAction
-    scenario_personas: SimulationMultiResourceAction
 
     @classmethod
     def from_request(
@@ -552,9 +539,6 @@ class SaveSimulationSqlParams(BaseModel):
             scenario_time_limits=SimulationMultiResourceAction(
                 resource_ids=request.scenario_time_limit_ids
             ),
-            scenario_personas=SimulationMultiResourceAction(
-                resource_ids=request.scenario_persona_ids
-            ),
         )
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -581,7 +565,6 @@ class SaveSimulationSqlParams(BaseModel):
             multi(self.scenario_positions),
             multi(self.scenario_rubrics),
             multi(self.scenario_time_limits),
-            multi(self.scenario_personas),
         )
 
 
@@ -650,7 +633,6 @@ class PatchSimulationDraftApiRequest(BaseModel):
     scenario_position_ids: list[UUID] | None = None
     scenario_rubric_ids: list[UUID] | None = None
     scenario_time_limit_ids: list[UUID] | None = None
-    scenario_persona_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
 
@@ -677,7 +659,6 @@ class PatchSimulationDraftSqlParams(BaseModel):
     scenario_positions: SimulationMultiResourceAction | None = None
     scenario_rubrics: SimulationMultiResourceAction | None = None
     scenario_time_limits: SimulationMultiResourceAction | None = None
-    scenario_personas: SimulationMultiResourceAction | None = None
     expected_version: int | None = 0
 
     @classmethod
@@ -707,9 +688,6 @@ class PatchSimulationDraftSqlParams(BaseModel):
             scenario_time_limits=SimulationMultiResourceAction(
                 resource_ids=request.scenario_time_limit_ids
             ),
-            scenario_personas=SimulationMultiResourceAction(
-                resource_ids=request.scenario_persona_ids
-            ),
             expected_version=request.expected_version,
         )
 
@@ -737,7 +715,6 @@ class PatchSimulationDraftSqlParams(BaseModel):
             multi(self.scenario_positions),
             multi(self.scenario_rubrics),
             multi(self.scenario_time_limits),
-            multi(self.scenario_personas),
             self.expected_version,
         )
 

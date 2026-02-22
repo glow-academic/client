@@ -34,6 +34,7 @@ import { Instructions } from "@/components/resources/Instructions";
 import { Names } from "@/components/resources/Names";
 import { ParameterFields } from "@/components/resources/ParameterFields";
 import { Parameters } from "@/components/resources/Parameters";
+import { Voices } from "@/components/resources/Voices";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useSocket } from "@/contexts/socket-context";
@@ -87,6 +88,8 @@ type CreateDraftParameterFieldsOut = OutputOf<
   "/api/v4/resources/parameter_fields",
   "post"
 >;
+type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
+type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
 type PatchPersonaDraftIn = InputOf<"/api/v4/artifacts/personas/draft", "patch">;
 type PatchPersonaDraftOut = OutputOf<
   "/api/v4/artifacts/personas/draft",
@@ -103,6 +106,7 @@ type FlushResult = {
   instructions_id?: string | null;
   example_ids?: string[];
   parameter_field_ids?: string[];
+  voice_ids?: string[];
 };
 
 type PersonaFormState = {
@@ -116,6 +120,7 @@ type PersonaFormState = {
   parameter_field_ids: string[];
   example_ids: string[];
   parameter_ids: string[];
+  voice_ids: string[];
 };
 
 export interface PersonaProps {
@@ -146,6 +151,9 @@ export interface PersonaProps {
   createParameterFieldsAction?: (
     input: CreateDraftParameterFieldsIn,
   ) => Promise<CreateDraftParameterFieldsOut>;
+  createVoicesAction?: (
+    input: CreateDraftVoicesIn,
+  ) => Promise<CreateDraftVoicesOut>;
 }
 
 const FLUSH_KEYS = [
@@ -155,6 +163,7 @@ const FLUSH_KEYS = [
   "examples",
   "colors",
   "parameter_fields",
+  "voices",
 ] as const;
 
 const VALID_RESOURCE_TYPES: ResourceType[] = [
@@ -168,6 +177,7 @@ const VALID_RESOURCE_TYPES: ResourceType[] = [
   "parameter_fields",
   "departments",
   "parameters",
+  "voices",
 ];
 
 const PERSONA_RESOURCES: ResourceConfig[] = [
@@ -211,6 +221,12 @@ const PERSONA_RESOURCES: ResourceConfig[] = [
     flushKey: null,
     type: "multi",
   },
+  {
+    key: "voices",
+    formKey: "voice_ids",
+    flushKey: "voice_ids",
+    type: "multi",
+  },
 ];
 
 function PersonaComponent({
@@ -224,6 +240,7 @@ function PersonaComponent({
   createInstructionsAction,
   createExamplesAction,
   createParameterFieldsAction,
+  createVoicesAction,
 }: PersonaProps) {
   const router = useRouter();
   const isEditMode = !!personaId;
@@ -278,6 +295,7 @@ function PersonaComponent({
       parameter_fields: personaData.parameter_fields,
       examples: personaData.examples,
       parameters: personaData.parameters,
+      voices: personaData.voices,
       group_id: personaData.group_id,
       basic_show_ai_generate: personaData.basic_show_ai_generate,
       content_show_ai_generate: personaData.content_show_ai_generate,
@@ -296,6 +314,7 @@ function PersonaComponent({
     personaData?.parameter_fields,
     personaData?.examples,
     personaData?.parameters,
+    personaData?.voices,
     personaData?.group_id,
     personaData?.basic_show_ai_generate,
     personaData?.content_show_ai_generate,
@@ -342,6 +361,12 @@ function PersonaComponent({
               (e) => e.generated,
             ) ?? false
           );
+        case "voices":
+          return (
+            stablePersonaDataFields.voices?.current?.some(
+              (v) => v.generated,
+            ) ?? false
+          );
         default:
           return false;
       }
@@ -363,6 +388,7 @@ function PersonaComponent({
         parameter_field_ids: [],
         example_ids: [],
         parameter_ids: [],
+        voice_ids: [],
       };
     }
 
@@ -406,6 +432,9 @@ function PersonaComponent({
         .map((e) => e.id)
         .filter(Boolean) as string[],
       parameter_ids: Array.from(paramIdsSet),
+      voice_ids: (data.voices?.current ?? [])
+        .map((v) => v.id)
+        .filter(Boolean) as string[],
     };
   }, []);
 
@@ -448,6 +477,11 @@ function PersonaComponent({
         .filter(Boolean),
     );
   }, [personaData?.parameters]);
+  const voiceIdsStr = React.useMemo(() => {
+    return JSON.stringify(
+      (personaData?.voices?.current ?? []).map((v) => v.id).filter(Boolean),
+    );
+  }, [personaData?.voices]);
 
   // Update form state when server data changes
   useEffect(() => {
@@ -467,7 +501,9 @@ function PersonaComponent({
         JSON.stringify(prev.example_ids) !==
           JSON.stringify(newState.example_ids) ||
         JSON.stringify(prev.parameter_ids) !==
-          JSON.stringify(newState.parameter_ids)
+          JSON.stringify(newState.parameter_ids) ||
+        JSON.stringify(prev.voice_ids) !==
+          JSON.stringify(newState.voice_ids)
       ) {
         serverSyncPendingRef.current = true;
         lastPatchedFormStateRef.current = newState;
@@ -487,10 +523,12 @@ function PersonaComponent({
     personaData?.parameter_fields,
     personaData?.examples,
     personaData?.parameters,
+    personaData?.voices,
     departmentIdsStr,
     parameterFieldIdsStr,
     exampleIdsStr,
     parameterIdsStr,
+    voiceIdsStr,
   ]);
 
   // --- Draft Lifecycle ---
@@ -534,6 +572,10 @@ function PersonaComponent({
     () => JSON.stringify(formState.parameter_ids),
     [formState.parameter_ids],
   );
+  const formStateVoiceIdsStr = React.useMemo(
+    () => JSON.stringify(formState.voice_ids),
+    [formState.voice_ids],
+  );
 
   // formStateKey excludes draftId — the hook prepends it
   const formStateKey = React.useMemo(
@@ -549,6 +591,7 @@ function PersonaComponent({
         parameter_field_ids: formState.parameter_field_ids,
         example_ids: formState.example_ids,
         parameter_ids: formState.parameter_ids,
+        voice_ids: formState.voice_ids,
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
@@ -562,6 +605,7 @@ function PersonaComponent({
       formStateParameterFieldIdsStr,
       formStateExampleIdsStr,
       formStateParameterIdsStr,
+      formStateVoiceIdsStr,
     ],
   );
 
@@ -706,7 +750,7 @@ function PersonaComponent({
       parameters: ["parameters", "parameter_fields"],
       color: ["colors"],
       icon: ["icons"],
-      content: ["instructions", "examples"],
+      content: ["instructions", "examples", "voices"],
       all: [
         "names",
         "descriptions",
@@ -718,6 +762,7 @@ function PersonaComponent({
         "parameter_fields",
         "departments",
         "examples",
+        "voices",
       ],
     }),
     [],
@@ -735,6 +780,7 @@ function PersonaComponent({
       parameters: "Parameters",
       parameter_fields: "Parameter Fields",
       departments: "Departments",
+      voices: "Voices",
     }),
     [],
   );
@@ -859,6 +905,9 @@ function PersonaComponent({
             parameter_ids: effectiveFormState.parameter_ids?.length
               ? effectiveFormState.parameter_ids
               : null,
+            voice_ids: effectiveFormState.voice_ids?.length
+              ? effectiveFormState.voice_ids
+              : null,
           },
         });
         toast.success(
@@ -962,8 +1011,8 @@ function PersonaComponent({
         id: "content",
         title: "Personality",
         description:
-          "Define instructions and example messages for the persona.",
-        resetFields: ["instructions", "examples"],
+          "Define instructions, example messages, and voices for the persona.",
+        resetFields: ["instructions", "examples", "voice_ids"],
       },
     ],
     [],
@@ -1440,7 +1489,7 @@ function PersonaComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              resetFields={["instructions", "examples"]}
+              resetFields={["instructions", "examples", "voice_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
               actions={
@@ -1545,6 +1594,22 @@ function PersonaComponent({
                 registerFlush={registerFlushCallbacks["examples"]}
                 create_tool_id={s?.examples?.tool_id ?? null}
               />
+              <Voices
+                voice_ids={formState.voice_ids ?? []}
+                voice_resources={s?.voices?.current ?? []}
+                show_voices={s?.voices?.show ?? false}
+                voice_suggestions={s?.voices?.suggestions ?? []}
+                voices={s?.voices?.resources ?? []}
+                disabled={disabled}
+                onVoiceIdsChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, voice_ids: ids }))
+                }
+                group_id={s?.group_id ?? null}
+                create_tool_id={s?.voices?.tool_id ?? null}
+                createVoicesAction={createVoicesAction}
+                isAutosaveEnabled={isAutosaveEnabled}
+                registerFlush={registerFlushCallbacks["voices"]}
+              />
             </StepCard>
           );
 
@@ -1570,6 +1635,7 @@ function PersonaComponent({
       formState.parameter_field_ids,
       formState.example_ids,
       formState.parameter_ids,
+      formState.voice_ids,
       createNamesAction,
       createDescriptionsAction,
       createColorsAction,
@@ -1580,6 +1646,7 @@ function PersonaComponent({
       isAutosaveEnabled,
       registerFlushCallbacks,
       createParameterFieldsAction,
+      createVoicesAction,
       makeOnGenerationComplete,
     ],
   );
@@ -1678,7 +1745,8 @@ export default React.memo(PersonaComponent, (prevProps, nextProps) => {
     prevProps.createInstructionsAction !== nextProps.createInstructionsAction ||
     prevProps.createExamplesAction !== nextProps.createExamplesAction ||
     prevProps.createParameterFieldsAction !==
-      nextProps.createParameterFieldsAction
+      nextProps.createParameterFieldsAction ||
+    prevProps.createVoicesAction !== nextProps.createVoicesAction
   ) {
     return false;
   }

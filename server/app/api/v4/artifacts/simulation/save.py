@@ -95,7 +95,6 @@ async def save_simulation_internal(
             scenario_positions=_multi("scenario_positions"),
             scenario_rubrics=_multi("scenario_rubrics"),
             scenario_time_limits=_multi("scenario_time_limits"),
-            scenario_personas=_multi("scenario_personas"),
         )
 
         async with conn.transaction():

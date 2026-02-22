@@ -37,7 +37,6 @@ CREATE TYPE types.q_get_home_context_view_v4_item AS (
     chat_entry_ids uuid[],
     scenario_ids uuid[],
     cohort_ids uuid[],
-    persona_ids uuid[],
     rubric_ids uuid[],
     time_limit_ids uuid[]
 );
@@ -79,7 +78,6 @@ accessible_training AS (
         mh.cohort_ids,
         mh.chat_ids AS chat_entry_ids,
         mh.scenario_ids,
-        mh.persona_ids,
         mh.rubric_ids,
         mh.time_limit_ids
     FROM home_mv mh
@@ -113,8 +111,6 @@ simulation_scope AS (
             FILTER (WHERE scid.scenario_id IS NOT NULL) AS scenario_ids,
         ARRAY_AGG(DISTINCT coid.cohort_id ORDER BY coid.cohort_id)
             FILTER (WHERE coid.cohort_id IS NOT NULL) AS cohort_ids,
-        ARRAY_AGG(DISTINCT pid.persona_id ORDER BY pid.persona_id)
-            FILTER (WHERE pid.persona_id IS NOT NULL) AS persona_ids,
         ARRAY_AGG(DISTINCT rid.rubric_id ORDER BY rid.rubric_id)
             FILTER (WHERE rid.rubric_id IS NOT NULL) AS rubric_ids,
         ARRAY_AGG(DISTINCT tlid.time_limit_id ORDER BY tlid.time_limit_id)
@@ -125,7 +121,6 @@ simulation_scope AS (
     LEFT JOIN LATERAL unnest(at2.chat_entry_ids) tbeid(chat_entry_id) ON TRUE
     LEFT JOIN LATERAL unnest(at2.scenario_ids) scid(scenario_id) ON TRUE
     LEFT JOIN LATERAL unnest(at2.cohort_ids) coid(cohort_id) ON TRUE
-    LEFT JOIN LATERAL unnest(at2.persona_ids) pid(persona_id) ON TRUE
     LEFT JOIN LATERAL unnest(at2.rubric_ids) rid(rubric_id) ON TRUE
     LEFT JOIN LATERAL unnest(at2.time_limit_ids) tlid(time_limit_id) ON TRUE
     GROUP BY asim.simulation_id
@@ -139,7 +134,6 @@ SELECT
                     ss.chat_entry_ids,
                     ss.scenario_ids,
                     ss.cohort_ids,
-                    ss.persona_ids,
                     ss.rubric_ids,
                     ss.time_limit_ids
                 )::types.q_get_home_context_view_v4_item

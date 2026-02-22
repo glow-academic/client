@@ -80,7 +80,6 @@ accessible_training AS (
         mh.cohort_ids,
         mh.chat_ids AS chat_entry_ids,
         mh.scenario_ids,
-        mh.persona_ids,
         mh.rubric_ids,
         mh.time_limit_ids
     FROM home_mv mh
@@ -95,7 +94,6 @@ accessible_training AS (
         mp.cohort_ids,
         mp.chat_ids AS chat_entry_ids,
         mp.scenario_ids,
-        mp.persona_ids,
         mp.rubric_ids,
         mp.time_limit_ids
     FROM practice_mv mp

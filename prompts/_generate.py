@@ -556,7 +556,9 @@ def write_crud_instructions(name: str, info: dict) -> str:
         elif r_name == "colors":
             line = "- id: {{ item.id }} | name: {{ item.name }} | hex_code: {{ item.hex_code }}"
         elif r_name == "icons":
-            line = "- id: {{ item.id }} | name: {{ item.name }} | value: {{ item.value }}"
+            line = (
+                "- id: {{ item.id }} | name: {{ item.name }} | value: {{ item.value }}"
+            )
         elif r_name == "instructions":
             line = "- id: {{ item.id }} | template: {{ item.template[:80] }}{% if item.template|length > 80 %}...{% endif %}"
         elif r_name == "examples":

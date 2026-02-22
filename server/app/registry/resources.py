@@ -302,10 +302,6 @@ RESOURCE_SCHEMAS: dict[str, dict[str, str]] = {
         "flag_id": "uuid",
         "scenario_id": "uuid",
     },
-    "scenario_personas": {
-        "scenario_id": "uuid",
-        "persona_id": "uuid",
-    },
     "scenario_positions": {
         "value": "int",
         "scenario_id": "uuid",
@@ -542,7 +538,6 @@ RESOURCE_OUTPUT_SCHEMAS: dict[str, list[dict[str, str]]] = {
         {"field_type": "string", "name": "id"},
         {"field_type": "string", "name": "name"},
     ],
-    "scenario_personas": [{"field_type": "string", "name": "id"}],
     "scenario_positions": [
         {"field_type": "string", "name": "id"},
         {"field_type": "string", "name": "scenario_id"},

@@ -42,6 +42,7 @@ RETURNS TABLE (
     parameter_field_ids uuid[],
     example_ids uuid[],
     parameter_ids uuid[],
+    voice_ids uuid[],
 
     -- Suggestion IDs (computed in resource search endpoints)
     name_suggestions uuid[],
@@ -52,7 +53,8 @@ RETURNS TABLE (
     department_suggestions uuid[],
     parameter_field_suggestions uuid[],
     example_suggestions uuid[],
-    parameter_suggestions uuid[]
+    parameter_suggestions uuid[],
+    voice_suggestions uuid[]
 )
 LANGUAGE sql
 STABLE
@@ -125,6 +127,20 @@ persona_parameters_data AS (
     FROM params
     LIMIT 1
 ),
+persona_voices_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT persona_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(pv.voice_id ORDER BY pv.created_at)
+                 FROM persona_voices_junction pv
+                 WHERE pv.persona_id = (SELECT persona_id FROM params) AND pv.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as voice_ids
+    FROM params
+    LIMIT 1
+),
 -- Single-select resource IDs (canonical only).
 name_resource_data AS (
     SELECT
@@ -177,6 +193,7 @@ SELECT
     (SELECT parameter_field_ids FROM persona_parameter_fields_data) as parameter_field_ids,
     (SELECT example_ids FROM persona_examples_data) as example_ids,
     (SELECT parameter_ids FROM persona_parameters_data) as parameter_ids,
+    (SELECT voice_ids FROM persona_voices_data) as voice_ids,
 
     -- Suggestion IDs (computed in resource search endpoints)
     ARRAY[]::uuid[] as name_suggestions,
@@ -187,6 +204,7 @@ SELECT
     ARRAY[]::uuid[] as department_suggestions,
     ARRAY[]::uuid[] as parameter_field_suggestions,
     ARRAY[]::uuid[] as example_suggestions,
-    ARRAY[]::uuid[] as parameter_suggestions
+    ARRAY[]::uuid[] as parameter_suggestions,
+    ARRAY[]::uuid[] as voice_suggestions
 FROM params x;
 $$;

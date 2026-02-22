@@ -26,7 +26,6 @@ from app.api.v4.artifacts.simulation.permissions import (
     compute_flag_required,
     compute_name_required,
     compute_scenario_flags_required,
-    compute_scenario_personas_required,
     compute_scenario_positions_required,
     compute_scenario_rubrics_required,
     compute_scenario_show_flags,
@@ -37,7 +36,6 @@ from app.api.v4.artifacts.simulation.permissions import (
     compute_show_flag,
     compute_show_name,
     compute_show_scenario_flags,
-    compute_show_scenario_personas,
     compute_show_scenario_positions,
     compute_show_scenario_rubrics,
     compute_show_scenario_time_limits,
@@ -62,7 +60,6 @@ from app.api.v4.artifacts.simulation.types import (
     SimulationResources,
     SimulationScenario,
     SimulationScenarioFlagSection,
-    SimulationScenarioPersonaSection,
     SimulationScenarioPositionSection,
     SimulationScenarioRubricSection,
     SimulationScenarioSection,
@@ -93,10 +90,6 @@ from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_internal
 from app.api.v4.resources.scenario_flags.get import get_scenario_flags_internal
 from app.api.v4.resources.scenario_flags.search import search_scenario_flags_internal
-from app.api.v4.resources.scenario_personas.get import get_scenario_personas_internal
-from app.api.v4.resources.scenario_personas.search import (
-    search_scenario_personas_internal,
-)
 from app.api.v4.resources.scenario_positions.get import get_scenario_positions_internal
 from app.api.v4.resources.scenario_positions.search import (
     search_scenario_positions_internal,
@@ -327,7 +320,6 @@ async def get_simulation_internal(
     scenario_position_ids = ids_result.scenario_position_ids or []
     scenario_rubric_ids = ids_result.scenario_rubric_ids or []
     scenario_time_limit_ids = ids_result.scenario_time_limit_ids or []
-    scenario_persona_ids = ids_result.scenario_persona_ids or []
 
     async def fetch_names():
         async with pool.acquire() as c:
@@ -430,16 +422,6 @@ async def get_simulation_internal(
             )
             return (selected, suggestions)
 
-    async def fetch_scenario_personas():
-        async with pool.acquire() as c:
-            selected = await get_scenario_personas_internal(
-                c, scenario_persona_ids, bypass_cache
-            )
-            suggestions = await search_scenario_personas_internal(
-                c, effective_scenario_ids, bypass_cache=bypass_cache
-            )
-            return (selected, suggestions)
-
     async def fetch_scenario_positions():
         async with pool.acquire() as c:
             selected = await get_scenario_positions_internal(
@@ -482,7 +464,6 @@ async def get_simulation_internal(
         (departments_selected, departments_suggestions),
         (scenarios_selected, scenarios_suggestions),
         (scenario_flags_selected, scenario_flags_suggestions),
-        (scenario_personas_selected, scenario_personas_suggestions),
         (scenario_positions_selected, scenario_positions_suggestions),
         (scenario_rubrics_selected, scenario_rubrics_suggestions),
         (scenario_time_limits_selected, scenario_time_limits_suggestions),
@@ -494,7 +475,6 @@ async def get_simulation_internal(
         fetch_departments(),
         fetch_scenarios(),
         fetch_scenario_flags(),
-        fetch_scenario_personas(),
         fetch_scenario_positions(),
         fetch_scenario_rubrics(),
         fetch_scenario_time_limits(),
@@ -512,10 +492,6 @@ async def get_simulation_internal(
     )
     scenario_flags = _dedupe_by_id(
         list(scenario_flags_selected) + list(scenario_flags_suggestions), "id"
-    )
-    scenario_personas = _dedupe_by_id(
-        list(scenario_personas_selected) + list(scenario_personas_suggestions),
-        "id",
     )
     scenario_positions = _dedupe_by_id(
         list(scenario_positions_selected) + list(scenario_positions_suggestions),
@@ -616,9 +592,6 @@ async def get_simulation_internal(
     show_scenario_flags_flag = compute_show_scenario_flags(
         effective_scenario_ids, len(scenario_flags), len(scenarios_combined)
     )
-    show_scenario_personas_flag = compute_show_scenario_personas(
-        effective_scenario_ids, len(scenario_personas), len(scenarios_combined)
-    )
     show_scenario_positions_flag = compute_show_scenario_positions(
         effective_scenario_ids, len(scenario_positions), len(scenarios_combined)
     )
@@ -636,7 +609,6 @@ async def get_simulation_internal(
         "departments": show_departments_flag,
         "scenarios": show_scenarios_flag,
         "scenario_flags": show_scenario_flags_flag,
-        "scenario_personas": show_scenario_personas_flag,
         "scenario_positions": show_scenario_positions_flag,
         "scenario_rubrics": show_scenario_rubrics_flag,
         "scenario_time_limits": show_scenario_time_limits_flag,
@@ -649,7 +621,6 @@ async def get_simulation_internal(
         "departments": compute_departments_required(),
         "scenarios": compute_scenarios_required(),
         "scenario_flags": compute_scenario_flags_required(),
-        "scenario_personas": compute_scenario_personas_required(),
         "scenario_positions": compute_scenario_positions_required(),
         "scenario_rubrics": compute_scenario_rubrics_required(),
         "scenario_time_limits": compute_scenario_time_limits_required(),
@@ -671,7 +642,6 @@ async def get_simulation_internal(
             departments=departments_typed,
             scenarios=scenarios_typed,
             scenario_flags=scenario_flags,
-            scenario_personas=scenario_personas,
             scenario_positions=scenario_positions,
             scenario_rubrics=scenario_rubrics,
             scenario_time_limits=scenario_time_limits,
@@ -684,7 +654,6 @@ async def get_simulation_internal(
             departments=department_resources_typed or [],
             scenarios=scenario_resources_current or [],
             scenario_flags=list(scenario_flags_selected) or [],
-            scenario_personas=list(scenario_personas_selected) or [],
             scenario_positions=list(scenario_positions_selected) or [],
             scenario_rubrics=list(scenario_rubrics_selected) or [],
             scenario_time_limits=list(scenario_time_limits_selected) or [],
@@ -904,7 +873,6 @@ async def get_simulation_websocket(
             departments=current.departments if current else None,
             scenarios=current.scenarios if current else None,
             scenario_flags=current.scenario_flags if current else None,
-            scenario_personas=current.scenario_personas if current else None,
             scenario_positions=current.scenario_positions if current else None,
             scenario_rubrics=current.scenario_rubrics if current else None,
             scenario_time_limits=current.scenario_time_limits if current else None,
@@ -993,13 +961,6 @@ async def get_simulation_client(
             current=(current_bucket.scenario_flags if current_bucket else None),
             resources=(resources_bucket.scenario_flags if resources_bucket else None),
             **section_common("scenario_flags"),
-        ),
-        scenario_personas=SimulationScenarioPersonaSection(
-            current=(current_bucket.scenario_personas if current_bucket else None),
-            resources=(
-                resources_bucket.scenario_personas if resources_bucket else None
-            ),
-            **section_common("scenario_personas"),
         ),
         scenario_positions=SimulationScenarioPositionSection(
             current=(current_bucket.scenario_positions if current_bucket else None),

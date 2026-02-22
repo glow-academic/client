@@ -30,7 +30,6 @@ RETURNS TABLE (
     scenario_id uuid,
     -- Bundle-level resource ID arrays
     department_ids uuid[],
-    persona_ids uuid[],
     document_ids uuid[],
     parameter_field_ids uuid[],
     parameter_ids uuid[],
@@ -94,7 +93,6 @@ SELECT
     b.parent_id,
     b.scenario_id,
     b.department_ids,
-    b.persona_ids,
     b.document_ids,
     b.parameter_field_ids,
     b.parameter_ids,

@@ -50,6 +50,7 @@ CREATE OR REPLACE FUNCTION api_patch_persona_draft_v4(
     parameter_fields types.persona_multi_resource_action DEFAULT NULL,
     examples types.persona_multi_resource_action DEFAULT NULL,
     parameters types.persona_multi_resource_action DEFAULT NULL,
+    voices types.persona_multi_resource_action DEFAULT NULL,
     expected_version int DEFAULT 0
 )
 RETURNS TABLE (
@@ -78,6 +79,7 @@ DECLARE
     v_parameter_field_ids uuid[];
     v_example_ids uuid[];
     v_parameter_ids uuid[];
+    v_voice_ids uuid[];
     -- Call tracking variables
     v_run_id uuid;
     v_call_id uuid;
@@ -93,6 +95,7 @@ BEGIN
     v_parameter_field_ids := (parameter_fields).resource_ids;
     v_example_ids := (examples).resource_ids;
     v_parameter_ids := (parameters).resource_ids;
+    v_voice_ids := (voices).resource_ids;
 
     -- Resolve profile_artifact.id to profiles_resource.id via junction table
     -- persona_drafts_profiles_connection has FK to profiles_resource, not profile_artifact
@@ -165,6 +168,15 @@ BEGIN
         END IF;
     END IF;
 
+    IF v_voice_ids IS NOT NULL THEN
+        IF EXISTS (
+            SELECT 1 FROM UNNEST(v_voice_ids) as vid
+            WHERE NOT EXISTS (SELECT 1 FROM voices_resource WHERE id = vid)
+        ) THEN
+            RAISE EXCEPTION 'One or more voice resource IDs not found in voices_resource';
+        END IF;
+    END IF;
+
     -- Try to update existing draft
     IF input_draft_id IS NOT NULL THEN
         -- Get existing draft's group_id
@@ -200,6 +212,7 @@ BEGIN
             DELETE FROM persona_drafts_parameter_fields_connection WHERE persona_drafts_parameter_fields_connection.draft_id = v_draft_id;
             DELETE FROM persona_drafts_examples_connection WHERE persona_drafts_examples_connection.draft_id = v_draft_id;
             DELETE FROM persona_drafts_parameters_connection WHERE persona_drafts_parameters_connection.draft_id = v_draft_id;
+            DELETE FROM persona_drafts_voices_connection WHERE persona_drafts_voices_connection.draft_id = v_draft_id;
 
             -- Insert new resource links
             IF v_name_id IS NOT NULL THEN
@@ -277,6 +290,15 @@ BEGIN
                 SELECT v_draft_id, param_id, v_new_version
                 FROM UNNEST(v_parameter_ids) as param_id
                 ON CONFLICT ON CONSTRAINT parameters_draft_pkey DO UPDATE
+                SET version = v_new_version;
+            END IF;
+
+            IF v_voice_ids IS NOT NULL THEN
+                DELETE FROM persona_drafts_voices_connection WHERE persona_drafts_voices_connection.draft_id = v_draft_id;
+                INSERT INTO persona_drafts_voices_connection (draft_id, voices_id, version)
+                SELECT v_draft_id, vid, v_new_version
+                FROM UNNEST(v_voice_ids) as vid
+                ON CONFLICT (draft_id, voices_id) DO UPDATE
                 SET version = v_new_version;
             END IF;
 
@@ -475,6 +497,26 @@ BEGIN
                 END IF;
             END IF;
 
+            -- voices (multi-select)
+            IF v_run_id IS NOT NULL AND COALESCE(array_length(v_voice_ids, 1), 0) > 0 THEN
+                IF (voices).create_tool_id IS NOT NULL THEN
+                    v_call_id := uuidv7();
+                    INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                    VALUES (v_call_id, 'persona_create_voices_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                    INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((voices).create_tool_id, v_call_id);
+                    INSERT INTO voices_calls_connection (voices_id, call_id)
+                    SELECT vid, v_call_id FROM UNNEST(v_voice_ids) AS vid;
+                END IF;
+                IF (voices).link_tool_id IS NOT NULL THEN
+                    v_call_id := uuidv7();
+                    INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                    VALUES (v_call_id, 'persona_link_voices_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                    INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((voices).link_tool_id, v_call_id);
+                    INSERT INTO voices_calls_connection (voices_id, call_id)
+                    SELECT vid, v_call_id FROM UNNEST(v_voice_ids) AS vid;
+                END IF;
+            END IF;
+
             RETURN QUERY SELECT v_draft_id, v_new_version, v_draft_exists;
             RETURN;
         END IF;
@@ -568,6 +610,14 @@ BEGIN
         SELECT v_draft_id, param_id, v_new_version
         FROM UNNEST(v_parameter_ids) as param_id
         ON CONFLICT ON CONSTRAINT parameters_draft_pkey DO UPDATE
+        SET version = v_new_version;
+    END IF;
+
+    IF v_voice_ids IS NOT NULL THEN
+        INSERT INTO persona_drafts_voices_connection (draft_id, voices_id, version)
+        SELECT v_draft_id, vid, v_new_version
+        FROM UNNEST(v_voice_ids) as vid
+        ON CONFLICT (draft_id, voices_id) DO UPDATE
         SET version = v_new_version;
     END IF;
 
@@ -765,6 +815,26 @@ BEGIN
             INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((parameters).link_tool_id, v_call_id);
             INSERT INTO parameters_calls_connection (parameters_id, call_id)
             SELECT param_id, v_call_id FROM UNNEST(v_parameter_ids) AS param_id;
+        END IF;
+    END IF;
+
+    -- voices (multi-select)
+    IF v_run_id IS NOT NULL AND COALESCE(array_length(v_voice_ids, 1), 0) > 0 THEN
+        IF (voices).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'persona_create_voices_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((voices).create_tool_id, v_call_id);
+            INSERT INTO voices_calls_connection (voices_id, call_id)
+            SELECT vid, v_call_id FROM UNNEST(v_voice_ids) AS vid;
+        END IF;
+        IF (voices).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'persona_link_voices_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((voices).link_tool_id, v_call_id);
+            INSERT INTO voices_calls_connection (voices_id, call_id)
+            SELECT vid, v_call_id FROM UNNEST(v_voice_ids) AS vid;
         END IF;
     END IF;
 

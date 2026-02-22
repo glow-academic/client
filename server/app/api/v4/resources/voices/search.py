@@ -36,6 +36,7 @@ async def search_voices_internal(
     *,
     agent: bool = False,
     model: bool = False,
+    persona: bool = False,
 ) -> list[QGetVoicesV4Item]:
     """Internal function to search voices."""
     if limit_count is not None and limit_count <= 0:
@@ -51,6 +52,7 @@ async def search_voices_internal(
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
             "agent": agent,
             "model": model,
+            "persona": persona,
         },
     )
 
@@ -69,6 +71,7 @@ async def search_voices_internal(
         exclude_ids=exclude_ids or [],
         agent=agent,
         model=model,
+        persona=persona,
     )
     result = cast(
         SearchVoicesSqlRow,

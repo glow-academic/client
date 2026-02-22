@@ -53,7 +53,8 @@ CREATE OR REPLACE FUNCTION api_save_persona_v4(
     departments types.persona_multi_resource_action DEFAULT NULL,
     parameter_fields types.persona_multi_resource_action DEFAULT NULL,
     examples types.persona_multi_resource_action DEFAULT NULL,
-    parameters types.persona_multi_resource_action DEFAULT NULL
+    parameters types.persona_multi_resource_action DEFAULT NULL,
+    voices types.persona_multi_resource_action DEFAULT NULL
 )
 RETURNS TABLE (
     persona_id uuid
@@ -78,6 +79,7 @@ DECLARE
     v_example_ids uuid[];
     v_parameter_field_ids uuid[];
     v_parameter_ids uuid[];
+    v_voice_ids uuid[];
     -- Call tracking variables
     v_run_id uuid;
     v_call_id uuid;
@@ -95,6 +97,7 @@ BEGIN
     v_parameter_field_ids := COALESCE((parameter_fields).resource_ids, ARRAY[]::uuid[]);
     v_example_ids := COALESCE((examples).resource_ids, ARRAY[]::uuid[]);
     v_parameter_ids := COALESCE((parameters).resource_ids, ARRAY[]::uuid[]);
+    v_voice_ids := COALESCE((voices).resource_ids, ARRAY[]::uuid[]);
 
     -- Validate required fields
     IF v_name_id IS NULL THEN
@@ -166,6 +169,7 @@ BEGIN
         DELETE FROM persona_parameter_fields_junction WHERE persona_id = v_persona_id;
         DELETE FROM persona_examples_junction WHERE persona_id = v_persona_id;
         DELETE FROM persona_parameters_junction WHERE persona_id = v_persona_id;
+        DELETE FROM persona_voices_junction WHERE persona_id = v_persona_id;
         -- Update existing active flag if it exists
         UPDATE persona_flags_junction SET
             flag_id = COALESCE(v_active_flag_id, persona_flags_junction.flag_id),
@@ -369,6 +373,26 @@ BEGIN
         END IF;
     END IF;
 
+    -- voices (multi-select)
+    IF v_run_id IS NOT NULL AND COALESCE(array_length(v_voice_ids, 1), 0) > 0 THEN
+        IF (voices).create_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'persona_create_voices_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((voices).create_tool_id, v_call_id);
+            INSERT INTO voices_calls_connection (voices_id, call_id)
+            SELECT voice_id, v_call_id FROM UNNEST(v_voice_ids) AS voice_id;
+        END IF;
+        IF (voices).link_tool_id IS NOT NULL THEN
+            v_call_id := uuidv7();
+            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+            VALUES (v_call_id, 'persona_link_voices_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((voices).link_tool_id, v_call_id);
+            INSERT INTO voices_calls_connection (voices_id, call_id)
+            SELECT voice_id, v_call_id FROM UNNEST(v_voice_ids) AS voice_id;
+        END IF;
+    END IF;
+
     -- Continue with persona save using SQL (persona already created/updated above)
     RETURN QUERY
     WITH params AS (
@@ -383,7 +407,8 @@ BEGIN
             v_department_ids AS department_ids,
             v_parameter_field_ids AS parameter_field_ids,
             v_example_ids AS example_ids,
-            v_parameter_ids AS parameter_ids
+            v_parameter_ids AS parameter_ids,
+            v_voice_ids AS voice_ids
     ),
     -- Permission validation is now handled in Python (permissions.py)
     -- Link persona to name
@@ -518,6 +543,20 @@ BEGIN
         CROSS JOIN UNNEST(x.parameter_ids) as param_id
         WHERE COALESCE(array_length(x.parameter_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT persona_parameters_pkey DO UPDATE SET
+            active = true
+    ),
+    -- Link voices (old ones already deleted above if update)
+    link_voices AS (
+        INSERT INTO persona_voices_junction (persona_id, voice_id, active, created_at)
+        SELECT
+            x.persona_id,
+            vid,
+            true,
+            NOW()
+        FROM params x
+        CROSS JOIN UNNEST(x.voice_ids) as vid
+        WHERE COALESCE(array_length(x.voice_ids, 1), 0) > 0
+        ON CONFLICT (persona_id, voice_id) DO UPDATE SET
             active = true
     ),
     -- Deactivate old persona resource junction entries

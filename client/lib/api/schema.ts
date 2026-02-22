@@ -6135,7 +6135,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/scenario_personas": {
+    "/api/v4/resources/profile_personas": {
         parameters: {
             query?: never;
             header?: never;
@@ -6145,17 +6145,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Scenario Personas
-         * @description Create scenario_personas resource (always INSERT).
+         * Create Profile Personas
+         * @description Create profile_personas resource (always INSERT).
          */
-        post: operations["create_scenario_personas_api_v4_resources_scenario_personas_post"];
+        post: operations["create_profile_personas_api_v4_resources_profile_personas_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/scenario_personas/get": {
+    "/api/v4/resources/profile_personas/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -6165,17 +6165,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Scenario Personas
-         * @description Get scenario personas by resource IDs.
+         * Get Profile Personas
+         * @description Get profile personas by resource IDs.
          */
-        post: operations["get_scenario_personas_api_v4_resources_scenario_personas_get_post"];
+        post: operations["get_profile_personas_api_v4_resources_profile_personas_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/scenario_personas/search": {
+    "/api/v4/resources/profile_personas/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -6185,10 +6185,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Search Scenario Personas
-         * @description Search available scenario personas for scenarios.
+         * Search Profile Personas
+         * @description Search available profile personas for profiles.
          */
-        post: operations["search_scenario_personas_api_v4_resources_scenario_personas_search_post"];
+        post: operations["search_profile_personas_api_v4_resources_profile_personas_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -18596,74 +18596,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v5/server/scenario_personas_generation_started": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** scenario_personas generation started */
-        post: operations["scenario_personas_generation_started_socket_v5_server_scenario_personas_generation_started_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v5/server/scenario_personas_generation_progress": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** scenario_personas generation progress */
-        post: operations["scenario_personas_generation_progress_socket_v5_server_scenario_personas_generation_progress_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v5/server/scenario_personas_generation_complete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** scenario_personas generation complete */
-        post: operations["scenario_personas_generation_complete_socket_v5_server_scenario_personas_generation_complete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v5/server/scenario_personas_generation_error": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** scenario_personas generation error */
-        post: operations["scenario_personas_generation_error_socket_v5_server_scenario_personas_generation_error_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/socket/v5/server/scenario_positions_generation_started": {
         parameters: {
             query?: never;
@@ -23621,6 +23553,48 @@ export interface components {
             /** Mcp */
             mcp?: boolean | null;
         };
+        /**
+         * CohortProfilePersona
+         * @description Profile persona for cohort.
+         */
+        CohortProfilePersona: {
+            /** Id */
+            id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+            /** Mcp */
+            mcp?: boolean | null;
+        };
+        /** CohortProfilePersonaSection */
+        CohortProfilePersonaSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Tool Id */
+            tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["CohortProfilePersona"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["CohortProfilePersona"][] | null;
+        };
         /** CohortProfileSection */
         CohortProfileSection: {
             /**
@@ -24106,8 +24080,6 @@ export interface components {
             active: boolean | null;
             /** Department Ids */
             department_ids?: string[] | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
             /** Profile Id New */
             profile_id_new?: string | null;
         };
@@ -28113,6 +28085,7 @@ export interface components {
             simulation_positions?: components["schemas"]["CohortSimulationPositionSection"] | null;
             simulation_availability?: components["schemas"]["CohortSimulationAvailabilitySection"] | null;
             profiles?: components["schemas"]["CohortProfileSection"] | null;
+            profile_personas?: components["schemas"]["CohortProfilePersonaSection"] | null;
         };
         /** GetCohortDraftsEntriesApiRequest */
         GetCohortDraftsEntriesApiRequest: {
@@ -29394,6 +29367,7 @@ export interface components {
             parameter_fields?: components["schemas"]["PersonaParameterFieldSection"] | null;
             examples?: components["schemas"]["PersonaExampleSection"] | null;
             parameters?: components["schemas"]["PersonaParameterSection"] | null;
+            voices?: components["schemas"]["PersonaVoiceSection"] | null;
             /** Fields */
             fields?: components["schemas"]["QGetFieldsV4Item"][] | null;
         };
@@ -29645,7 +29619,6 @@ export interface components {
             request_limits?: components["schemas"]["ProfileRequestLimitSection"] | null;
             flags?: components["schemas"]["ProfileFlagSection"] | null;
             departments?: components["schemas"]["ProfileDepartmentSection"] | null;
-            cohorts?: components["schemas"]["ProfileCohortSection"] | null;
         };
         /** GetProfileByEmailApiRequest */
         GetProfileByEmailApiRequest: {
@@ -29691,6 +29664,16 @@ export interface components {
         GetProfileDraftsEntriesApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetProfileDraftsEntriesV4Item"][] | null;
+        };
+        /** GetProfilePersonasApiRequest */
+        GetProfilePersonasApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetProfilePersonasApiResponse */
+        GetProfilePersonasApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetProfilePersonasV4Item"][] | null;
         };
         /** GetProfilesApiRequest */
         GetProfilesApiRequest: {
@@ -30216,16 +30199,6 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetScenarioFlagsV4Item"][] | null;
         };
-        /** GetScenarioPersonasApiRequest */
-        GetScenarioPersonasApiRequest: {
-            /** Ids */
-            ids?: string[] | null;
-        };
-        /** GetScenarioPersonasApiResponse */
-        GetScenarioPersonasApiResponse: {
-            /** Items */
-            items?: components["schemas"]["QGetScenarioPersonasV4Item"][] | null;
-        };
         /** GetScenarioPositionsApiRequest */
         GetScenarioPositionsApiRequest: {
             /** Ids */
@@ -30517,7 +30490,6 @@ export interface components {
             departments?: components["schemas"]["SimulationDepartmentSection"] | null;
             scenarios?: components["schemas"]["SimulationScenarioSection"] | null;
             scenario_flags?: components["schemas"]["SimulationScenarioFlagSection"] | null;
-            scenario_personas?: components["schemas"]["SimulationScenarioPersonaSection"] | null;
             scenario_positions?: components["schemas"]["SimulationScenarioPositionSection"] | null;
             scenario_rubrics?: components["schemas"]["SimulationScenarioRubricSection"] | null;
             scenario_time_limits?: components["schemas"]["SimulationScenarioTimeLimitSection"] | null;
@@ -30660,14 +30632,10 @@ export interface components {
         GetStaffListApiRequest: {
             /** Search */
             search?: string | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
             /** Filter Department Ids */
             filter_department_ids?: string[] | null;
             /** Role Filter */
             role_filter?: string | null;
-            /** Cohort Search */
-            cohort_search?: string | null;
             /** Department Search */
             department_search?: string | null;
             /** Role Search */
@@ -30687,8 +30655,6 @@ export interface components {
         GetStaffSearchApiRequest: {
             /** Query */
             query: string;
-            /** Cohort Ids */
-            cohort_ids: string[];
             /** Department Ids */
             department_ids: string[];
             /**
@@ -30701,8 +30667,6 @@ export interface components {
         GetStaffSearchApiResponse: {
             /** Staff */
             staff?: components["schemas"]["QSearchStaffV4Staff"][] | null;
-            /** Cohorts */
-            cohorts?: components["schemas"]["QSearchStaffV4Cohort"][] | null;
             /** Departments */
             departments?: components["schemas"]["QSearchStaffV4Department"][] | null;
         };
@@ -31796,8 +31760,6 @@ export interface components {
             active: boolean | null;
             /** Department Ids */
             department_ids: string[] | null;
-            /** Cohort Ids */
-            cohort_ids: string[] | null;
         };
         /** IconsGenerationEvent */
         IconsGenerationEvent: {
@@ -33331,7 +33293,6 @@ export interface components {
             actor_name?: string | null;
             /** Staff */
             staff?: components["schemas"]["ListStaffApiStaff"][] | null;
-            cohort_filter?: components["schemas"]["ListFilterSection"] | null;
             department_filter?: components["schemas"]["ListFilterSection"] | null;
             role_filter?: components["schemas"]["ListFilterSection"] | null;
             /** Total Count */
@@ -33354,8 +33315,6 @@ export interface components {
             role?: string | null;
             /** Initials */
             initials?: string | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
             /** Department Ids */
             department_ids?: string[] | null;
             /** Primary Department Id */
@@ -34599,6 +34558,8 @@ export interface components {
             simulation_availability_ids?: string[] | null;
             /** Profile Ids */
             profile_ids?: string[] | null;
+            /** Profile Persona Ids */
+            profile_persona_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -34912,6 +34873,8 @@ export interface components {
             example_ids?: string[] | null;
             /** Parameter Ids */
             parameter_ids?: string[] | null;
+            /** Voice Ids */
+            voice_ids?: string[] | null;
         };
         /**
          * PatchPersonaDraftApiResponse
@@ -34951,8 +34914,6 @@ export interface components {
             email_ids?: string[] | null;
             /** Department Ids */
             department_ids?: string[] | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -35205,8 +35166,6 @@ export interface components {
             scenario_rubric_ids?: string[] | null;
             /** Scenario Time Limit Ids */
             scenario_time_limit_ids?: string[] | null;
-            /** Scenario Persona Ids */
-            scenario_persona_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -35603,6 +35562,32 @@ export interface components {
             timestamp?: number | null;
             /** Simulation Id */
             simulation_id?: string | null;
+        };
+        /** PersonaVoiceSection */
+        PersonaVoiceSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Tool Id */
+            tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["QGetVoicesV4Item"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["QGetVoicesV4Item"][] | null;
         };
         /** PersonasGenerationEvent */
         PersonasGenerationEvent: {
@@ -36062,32 +36047,6 @@ export interface components {
             /** Rows */
             rows?: components["schemas"]["QProcessDocumentCsvV4ProcessedRow"][] | null;
         };
-        /** ProfileCohortSection */
-        ProfileCohortSection: {
-            /**
-             * Show
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /** Suggestions */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /** Tool Id */
-            tool_id?: string | null;
-            /** Current */
-            current?: components["schemas"]["QGetCohortsV4Item"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["QGetCohortsV4Item"][] | null;
-        };
         /** ProfileDepartmentSection */
         ProfileDepartmentSection: {
             /**
@@ -36217,6 +36176,33 @@ export interface components {
             resource?: components["schemas"]["QGetNamesV4Item"] | null;
             /** Resources */
             resources?: components["schemas"]["QGetNamesV4Item"][] | null;
+        };
+        /** ProfilePersonasApiRequest */
+        ProfilePersonasApiRequest: {
+            /**
+             * Cohort Id
+             * Format: uuid
+             */
+            cohort_id: string;
+            /**
+             * Persona Id
+             * Format: uuid
+             */
+            persona_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
+        };
+        /** ProfilePersonasApiResponse */
+        ProfilePersonasApiResponse: {
+            /** Id */
+            id?: string | null;
         };
         /** ProfileRequestLimitSection */
         ProfileRequestLimitSection: {
@@ -38012,6 +37998,17 @@ export interface components {
             /** Department Ids */
             department_ids: string[] | null;
         };
+        /** QGetProfilePersonasV4Item */
+        QGetProfilePersonasV4Item: {
+            /** Id */
+            id: string | null;
+            /** Profile Id */
+            profile_id: string | null;
+            /** Persona Id */
+            persona_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetProfilesV4Item */
         QGetProfilesV4Item: {
             /** Profile Id */
@@ -38286,17 +38283,6 @@ export interface components {
             description: string | null;
             /** Icon */
             icon: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetScenarioPersonasV4Item */
-        QGetScenarioPersonasV4Item: {
-            /** Id */
-            id: string | null;
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Persona Id */
-            persona_id: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -38629,8 +38615,6 @@ export interface components {
             role: string | null;
             /** Department Ids */
             department_ids: string[] | null;
-            /** Cohort Ids */
-            cohort_ids: string[] | null;
             /** Errors */
             errors: components["schemas"]["QProcessCsvV4CsvRowError"][] | null;
         };
@@ -38685,15 +38669,6 @@ export interface components {
             /** Primary Department Id */
             primary_department_id: string | null;
         };
-        /** QSearchStaffV4Cohort */
-        QSearchStaffV4Cohort: {
-            /** Cohort Id */
-            cohort_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
         /** QSearchStaffV4Department */
         QSearchStaffV4Department: {
             /** Department Id */
@@ -38721,8 +38696,6 @@ export interface components {
             active: boolean | null;
             /** Last Active */
             last_active: string | null;
-            /** Cohort Ids */
-            cohort_ids: string[] | null;
             /** Department Ids */
             department_ids: string[] | null;
             /** Primary Department Id */
@@ -40524,6 +40497,8 @@ export interface components {
             simulation_availability_ids?: string[] | null;
             /** Profile Ids */
             profile_ids?: string[] | null;
+            /** Profile Persona Ids */
+            profile_persona_ids?: string[] | null;
         };
         /**
          * SaveCohortApiResponse
@@ -40761,6 +40736,8 @@ export interface components {
             example_ids?: string[] | null;
             /** Parameter Ids */
             parameter_ids?: string[] | null;
+            /** Voice Ids */
+            voice_ids?: string[] | null;
         };
         /**
          * SavePersonaApiResponse
@@ -40799,8 +40776,6 @@ export interface components {
             email_ids?: string[] | null;
             /** Department Ids */
             department_ids?: string[] | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -41033,8 +41008,6 @@ export interface components {
             scenario_rubric_ids?: string[] | null;
             /** Scenario Time Limit Ids */
             scenario_time_limit_ids?: string[] | null;
-            /** Scenario Persona Ids */
-            scenario_persona_ids?: string[] | null;
         };
         /**
          * SaveSimulationApiResponse
@@ -41639,77 +41612,6 @@ export interface components {
             current?: components["schemas"]["ScenarioPersona"][] | null;
             /** Resources */
             resources?: components["schemas"]["ScenarioPersona"][] | null;
-        };
-        /** ScenarioPersonasApiRequest */
-        ScenarioPersonasApiRequest: {
-            /**
-             * Simulation Id
-             * Format: uuid
-             */
-            simulation_id: string;
-            /**
-             * Scenario Id
-             * Format: uuid
-             */
-            scenario_id: string;
-            /**
-             * Persona Id
-             * Format: uuid
-             */
-            persona_id: string;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Tool Id */
-            tool_id?: string | null;
-        };
-        /** ScenarioPersonasApiResponse */
-        ScenarioPersonasApiResponse: {
-            /** Id */
-            id?: string | null;
-        };
-        /** ScenarioPersonasGenerationEvent */
-        ScenarioPersonasGenerationEvent: {
-            /**
-             * Artifact Type
-             * @default
-             */
-            artifact_type: string;
-            /**
-             * Resource Type
-             * @default scenario_personas
-             */
-            resource_type: string;
-            /** Resource Id */
-            resource_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Run Id */
-            run_id?: string | null;
-            /** Success */
-            success?: boolean | null;
-            /** Message */
-            message?: string | null;
-            /** Error Stage */
-            error_stage?: string | null;
-            /** Tool Call Id */
-            tool_call_id?: string | null;
-            /** Tool Name */
-            tool_name?: string | null;
-            /** Arguments Delta */
-            arguments_delta?: string | null;
-            /** Id */
-            id?: string | null;
-            /** Generated */
-            generated?: boolean | null;
-            /** Scenario Id */
-            scenario_id?: string | null;
-            /** Persona Id */
-            persona_id?: string | null;
         };
         /** ScenarioPositionsApiRequest */
         ScenarioPositionsApiRequest: {
@@ -45042,6 +44944,23 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
+        /** SearchProfilePersonasApiRequest */
+        SearchProfilePersonasApiRequest: {
+            /** Profile Ids */
+            profile_ids?: string[] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /**
+             * Cohort
+             * @default false
+             */
+            cohort: boolean | null;
+        };
+        /** SearchProfilePersonasApiResponse */
+        SearchProfilePersonasApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetProfilePersonasV4Item"][] | null;
+        };
         /** SearchProfilesApiRequest */
         SearchProfilesApiRequest: {
             /** Search */
@@ -45743,23 +45662,6 @@ export interface components {
         SearchScenarioFlagsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetScenarioFlagsV4Item"][] | null;
-        };
-        /** SearchScenarioPersonasApiRequest */
-        SearchScenarioPersonasApiRequest: {
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-            /**
-             * Simulation
-             * @default false
-             */
-            simulation: boolean | null;
-        };
-        /** SearchScenarioPersonasApiResponse */
-        SearchScenarioPersonasApiResponse: {
-            /** Items */
-            items?: components["schemas"]["QGetScenarioPersonasV4Item"][] | null;
         };
         /** SearchScenarioPositionsApiRequest */
         SearchScenarioPositionsApiRequest: {
@@ -46663,6 +46565,11 @@ export interface components {
              * @default false
              */
             model: boolean | null;
+            /**
+             * Persona
+             * @default false
+             */
+            persona: boolean | null;
         };
         /** SearchVoicesApiResponse */
         SearchVoicesApiResponse: {
@@ -47627,32 +47534,6 @@ export interface components {
             current?: components["schemas"]["QGetScenarioFlagsV4Item"][] | null;
             /** Resources */
             resources?: components["schemas"]["QGetScenarioFlagsV4Item"][] | null;
-        };
-        /** SimulationScenarioPersonaSection */
-        SimulationScenarioPersonaSection: {
-            /**
-             * Show
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /** Suggestions */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /** Tool Id */
-            tool_id?: string | null;
-            /** Current */
-            current?: components["schemas"]["QGetScenarioPersonasV4Item"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["QGetScenarioPersonasV4Item"][] | null;
         };
         /** SimulationScenarioPositionSection */
         SimulationScenarioPositionSection: {
@@ -61018,7 +60899,7 @@ export interface operations {
             };
         };
     };
-    create_scenario_personas_api_v4_resources_scenario_personas_post: {
+    create_profile_personas_api_v4_resources_profile_personas_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61031,7 +60912,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ScenarioPersonasApiRequest"];
+                "application/json": components["schemas"]["ProfilePersonasApiRequest"];
             };
         };
         responses: {
@@ -61041,7 +60922,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ScenarioPersonasApiResponse"];
+                    "application/json": components["schemas"]["ProfilePersonasApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61055,7 +60936,7 @@ export interface operations {
             };
         };
     };
-    get_scenario_personas_api_v4_resources_scenario_personas_get_post: {
+    get_profile_personas_api_v4_resources_profile_personas_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61068,7 +60949,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetScenarioPersonasApiRequest"];
+                "application/json": components["schemas"]["GetProfilePersonasApiRequest"];
             };
         };
         responses: {
@@ -61078,7 +60959,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetScenarioPersonasApiResponse"];
+                    "application/json": components["schemas"]["GetProfilePersonasApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61092,7 +60973,7 @@ export interface operations {
             };
         };
     };
-    search_scenario_personas_api_v4_resources_scenario_personas_search_post: {
+    search_profile_personas_api_v4_resources_profile_personas_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61105,7 +60986,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SearchScenarioPersonasApiRequest"];
+                "application/json": components["schemas"]["SearchProfilePersonasApiRequest"];
             };
         };
         responses: {
@@ -61115,7 +60996,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SearchScenarioPersonasApiResponse"];
+                    "application/json": components["schemas"]["SearchProfilePersonasApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84601,146 +84482,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ScenarioFlagsGenerationEvent"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    scenario_personas_generation_started_socket_v5_server_scenario_personas_generation_started_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ScenarioPersonasGenerationEvent"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    scenario_personas_generation_progress_socket_v5_server_scenario_personas_generation_progress_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ScenarioPersonasGenerationEvent"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    scenario_personas_generation_complete_socket_v5_server_scenario_personas_generation_complete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ScenarioPersonasGenerationEvent"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    scenario_personas_generation_error_socket_v5_server_scenario_personas_generation_error_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ScenarioPersonasGenerationEvent"];
             };
         };
         responses: {

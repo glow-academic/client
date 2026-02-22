@@ -50,7 +50,6 @@ CREATE OR REPLACE FUNCTION api_patch_simulation_draft_v4(
     scenario_positions types.simulation_multi_resource_action DEFAULT NULL,
     scenario_rubrics types.simulation_multi_resource_action DEFAULT NULL,
     scenario_time_limits types.simulation_multi_resource_action DEFAULT NULL,
-    scenario_personas types.simulation_multi_resource_action DEFAULT NULL,
     expected_version int DEFAULT 0
 )
 RETURNS TABLE (
@@ -80,7 +79,6 @@ DECLARE
     v_scenario_position_ids uuid[];
     v_scenario_rubric_ids uuid[];
     v_scenario_time_limit_ids uuid[];
-    v_scenario_persona_ids uuid[];
 
     -- Tool-call logging
     v_run_id uuid;
@@ -95,7 +93,6 @@ BEGIN
     v_scenario_position_ids := COALESCE((scenario_positions).resource_ids, ARRAY[]::uuid[]);
     v_scenario_rubric_ids := COALESCE((scenario_rubrics).resource_ids, ARRAY[]::uuid[]);
     v_scenario_time_limit_ids := COALESCE((scenario_time_limits).resource_ids, ARRAY[]::uuid[]);
-    v_scenario_persona_ids := COALESCE((scenario_personas).resource_ids, ARRAY[]::uuid[]);
 
     SELECT ppj.profiles_id INTO v_profiles_resource_id
     FROM profile_profiles_junction ppj
@@ -162,13 +159,6 @@ BEGIN
         WHERE NOT EXISTS (SELECT 1 FROM scenario_time_limits_resource WHERE id = sid)
     ) THEN
         RAISE EXCEPTION 'One or more scenario_time_limit_ids not found';
-    END IF;
-
-    IF EXISTS (
-        SELECT 1 FROM UNNEST(v_scenario_persona_ids) AS sid
-        WHERE NOT EXISTS (SELECT 1 FROM scenario_personas_resource WHERE id = sid)
-    ) THEN
-        RAISE EXCEPTION 'One or more scenario_persona_ids not found';
     END IF;
 
     -- Try update path first
@@ -244,7 +234,6 @@ BEGIN
     DELETE FROM simulation_drafts_scenario_positions_connection WHERE simulation_drafts_scenario_positions_connection.draft_id = v_draft_id;
     DELETE FROM simulation_drafts_scenario_rubrics_connection WHERE simulation_drafts_scenario_rubrics_connection.draft_id = v_draft_id;
     DELETE FROM simulation_drafts_scenario_time_limits_connection WHERE simulation_drafts_scenario_time_limits_connection.draft_id = v_draft_id;
-    DELETE FROM simulation_drafts_scenario_personas_connection WHERE simulation_drafts_scenario_personas_connection.draft_id = v_draft_id;
 
     IF v_name_id IS NOT NULL THEN
         INSERT INTO simulation_drafts_names_connection (draft_id, names_id, version)
@@ -292,11 +281,6 @@ BEGIN
     SELECT v_draft_id, sid, v_new_version
     FROM UNNEST(v_scenario_time_limit_ids) sid
     ON CONFLICT ON CONSTRAINT scenario_time_limits_draft_pkey DO UPDATE SET version = v_new_version;
-
-    INSERT INTO simulation_drafts_scenario_personas_connection (draft_id, scenario_personas_id, version)
-    SELECT v_draft_id, sid, v_new_version
-    FROM UNNEST(v_scenario_persona_ids) sid
-    ON CONFLICT ON CONSTRAINT scenario_personas_draft_pkey DO UPDATE SET version = v_new_version;
 
     -- Tool-call tracking: one run per draft patch
     IF v_group_id IS NOT NULL THEN
@@ -471,28 +455,6 @@ BEGIN
             END IF;
         END IF;
 
-        IF COALESCE(array_length(v_scenario_persona_ids, 1), 0) > 0 THEN
-            IF (scenario_personas).create_tool_id IS NOT NULL THEN
-                v_call_id := uuidv7();
-                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-                VALUES (v_call_id, 'simulation_draft_create_scenario_personas_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((scenario_personas).create_tool_id, v_call_id);
-                INSERT INTO personas_calls_connection (personas_id, call_id)
-                SELECT DISTINCT spr.persona_id, v_call_id
-                FROM scenario_personas_resource spr
-                WHERE spr.id = ANY(v_scenario_persona_ids);
-            END IF;
-            IF (scenario_personas).link_tool_id IS NOT NULL THEN
-                v_call_id := uuidv7();
-                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-                VALUES (v_call_id, 'simulation_draft_link_scenario_personas_' || v_call_id::text, v_run_id, true, NOW(), NOW());
-                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((scenario_personas).link_tool_id, v_call_id);
-                INSERT INTO personas_calls_connection (personas_id, call_id)
-                SELECT DISTINCT spr.persona_id, v_call_id
-                FROM scenario_personas_resource spr
-                WHERE spr.id = ANY(v_scenario_persona_ids);
-            END IF;
-        END IF;
     END IF;
 
     RETURN QUERY SELECT v_draft_id, v_new_version, v_draft_exists;

@@ -42,6 +42,8 @@ from app.api.v4.artifacts.persona.permissions import (
     compute_show_name,
     compute_show_parameter_fields,
     compute_show_parameters,
+    compute_show_voices,
+    compute_voices_required,
     has_access,
 )
 from app.api.v4.artifacts.persona.types import (
@@ -62,6 +64,7 @@ from app.api.v4.artifacts.persona.types import (
     PersonaParameterSection,
     PersonaResourceBucket,
     PersonaResources,
+    PersonaVoiceSection,
     PersonaWebsocketEntries,
     PersonaWebsocketResources,
 )
@@ -98,6 +101,8 @@ from app.api.v4.resources.parameters.search import search_parameters_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.tools.get import get_tools_internal
+from app.api.v4.resources.voices.get import get_voices_internal
+from app.api.v4.resources.voices.search import search_voices_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -241,6 +246,7 @@ async def get_persona_internal(
     selected_parameter_field_ids = ids_result.parameter_field_ids or []
     selected_example_ids = ids_result.example_ids or []
     selected_parameter_ids = ids_result.parameter_ids or []
+    selected_voice_ids = ids_result.voice_ids or []
 
     # Draft values override canonical persona-junction values.
     if draft_item is not None:
@@ -265,6 +271,8 @@ async def get_persona_internal(
             selected_example_ids = draft_item.example_ids
         if draft_item.parameter_ids:
             selected_parameter_ids = draft_item.parameter_ids
+        if hasattr(draft_item, "voice_ids") and draft_item.voice_ids:
+            selected_voice_ids = draft_item.voice_ids
 
     # === RESOLVE AGENTS FROM SETTINGS (source of truth) ===
     async with pool.acquire() as settings_conn:
@@ -307,6 +315,7 @@ async def get_persona_internal(
     )
     examples_show_ai_generate = compute_show_ai_generate(agent_ids, "examples")
     parameters_show_ai_generate = compute_show_ai_generate(agent_ids, "parameters")
+    voices_show_ai_generate = compute_show_ai_generate(agent_ids, "voices")
 
     # Step-level show_ai_generate flags
     basic_show_ai_generate = any(
@@ -321,6 +330,7 @@ async def get_persona_internal(
         [
             instructions_show_ai_generate,
             examples_show_ai_generate,
+            voices_show_ai_generate,
         ]
     )
     parameters_step_show_ai_generate = any(
@@ -360,6 +370,7 @@ async def get_persona_internal(
     parameter_field_ids = selected_parameter_field_ids
     example_ids = selected_example_ids
     parameter_ids = selected_parameter_ids
+    voice_ids_list = selected_voice_ids
 
     # Parallel fetch all resources
     # NOTE: Each query needs its own connection from the pool because
@@ -542,6 +553,20 @@ async def get_persona_internal(
             )
             return (selected, suggestions)
 
+    async def fetch_voices():
+        async with pool.acquire() as c:
+            selected = await get_voices_internal(c, voice_ids_list, bypass_cache)
+            suggestions = await search_voices_internal(
+                c,
+                None,
+                20,
+                0,
+                voice_ids_list,
+                bypass_cache,
+                persona=True,
+            )
+            return (selected, suggestions)
+
     async def fetch_config_agents():
         async with pool.acquire() as c:
             return await get_agents_internal(c, config_agent_resource_ids, bypass_cache)
@@ -564,6 +589,7 @@ async def get_persona_internal(
         parameter_fields_selected,
         (examples_selected, examples_suggestions),
         (parameters_selected, parameters_suggestions),
+        (voices_selected, voices_suggestions),
         fields_catalog,
         config_agents_result,
         config_models_result,
@@ -578,6 +604,7 @@ async def get_persona_internal(
         fetch_parameter_fields(),
         fetch_examples(),
         fetch_parameters(),
+        fetch_voices(),
         fetch_fields(),
         fetch_config_agents(),
         fetch_config_models(),
@@ -612,6 +639,7 @@ async def get_persona_internal(
         parameters_selected + parameters_suggestions,
         "parameter_id",
     )
+    voices = _dedupe_by_id(voices_selected + voices_suggestions, "id")
 
     # Find selected resources
     name_resource = next((n for n in names if n.id == selected_name_id), None)
@@ -635,6 +663,7 @@ async def get_persona_internal(
     parameter_resources = [
         p for p in parameters if p.parameter_id in selected_parameter_ids
     ]
+    voice_resources = [v for v in voices if v.id in selected_voice_ids]
 
     name_suggestions = [n.id for n in names_suggestions]
     description_suggestions = [d.id for d in descriptions_suggestions]
@@ -645,6 +674,7 @@ async def get_persona_internal(
     parameter_field_suggestions: list[UUID] = []
     example_suggestions = [e.id for e in examples_suggestions]
     parameter_suggestions = [p.parameter_id for p in parameters_suggestions]
+    voice_suggestions_ids = [v.id for v in voices_suggestions]
 
     # Compute final show flags based on actual data
     show_name = compute_show_name(names_has_tools)
@@ -657,6 +687,7 @@ async def get_persona_internal(
     show_parameter_fields_flag = compute_show_parameter_fields(len(fields_catalog))
     show_examples_flag = compute_show_examples(len(examples))
     show_parameters_flag = compute_show_parameters(len(parameters))
+    show_voices_flag = compute_show_voices(len(voices))
 
     # Build show and required flags maps for domain_data
     show_flags_map = {
@@ -670,6 +701,7 @@ async def get_persona_internal(
         "parameter_fields": show_parameter_fields_flag,
         "examples": show_examples_flag,
         "parameters": show_parameters_flag,
+        "voices": show_voices_flag,
     }
 
     required_flags_map = {
@@ -683,6 +715,7 @@ async def get_persona_internal(
         "parameter_fields": compute_parameter_fields_required(),
         "examples": compute_examples_required(),
         "parameters": compute_parameters_required(),
+        "voices": compute_voices_required(),
     }
 
     # Transform flags to enriched format for client (canonical pattern)
@@ -739,6 +772,7 @@ async def get_persona_internal(
             parameter_fields=parameter_fields_selected,
             examples=examples,
             parameters=parameters,
+            voices=voices,
             fields=fields_catalog,
         ),
         current=PersonaResourceBucket(
@@ -752,6 +786,7 @@ async def get_persona_internal(
             parameter_fields=parameter_field_resources or [],
             examples=example_resources or [],
             parameters=parameter_resources or [],
+            voices=voice_resources or [],
             fields=None,
         ),
     )
@@ -768,6 +803,7 @@ async def get_persona_internal(
         "parameter_fields": parameter_fields_show_ai_generate,
         "examples": examples_show_ai_generate,
         "parameters": parameters_show_ai_generate,
+        "voices": voices_show_ai_generate,
     }
 
     # Build suggestions map
@@ -781,6 +817,7 @@ async def get_persona_internal(
         "parameter_fields": parameter_field_suggestions,
         "examples": example_suggestions,
         "parameters": parameter_suggestions,
+        "voices": voice_suggestions_ids,
     }
 
     return PersonaInternalData(
@@ -978,6 +1015,7 @@ async def get_persona_websocket(
             parameter_fields=current.parameter_fields if current else None,
             examples=current.examples if current else None,
             parameters=current.parameters if current else None,
+            voices=current.voices if current else None,
         ),
         config=websocket_config,
         resource_agent_ids=data.agent_ids,
@@ -1082,6 +1120,11 @@ async def get_persona_client(
             **_section_common("parameters"),
             current=current.parameters if current else [],
             resources=all_resources.parameters if all_resources else [],
+        ),
+        voices=PersonaVoiceSection(
+            **_section_common("voices"),
+            current=current.voices if current else [],
+            resources=all_resources.voices if all_resources else [],
         ),
         # Fields catalog
         fields=all_resources.fields if all_resources else [],

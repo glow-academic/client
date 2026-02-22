@@ -25,7 +25,8 @@ CREATE OR REPLACE FUNCTION api_search_voices_v4(
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     agent boolean DEFAULT false,
-    model boolean DEFAULT false
+    model boolean DEFAULT false,
+    persona boolean DEFAULT false
 )
 RETURNS TABLE (
     items types.q_get_voices_v4_item[]
@@ -51,6 +52,7 @@ FROM (
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT agent OR EXISTS (SELECT 1 FROM agent_voices_junction j WHERE j.voice_id = v.id AND j.active = true))
       AND (NOT model OR EXISTS (SELECT 1 FROM model_voices_junction j WHERE j.voice_id = v.id AND j.active = true))
+      AND (NOT persona OR EXISTS (SELECT 1 FROM persona_voices_junction j WHERE j.voice_id = v.id AND j.active = true))
     ORDER BY v.voice
     LIMIT limit_count
     OFFSET offset_count

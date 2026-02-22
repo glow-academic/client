@@ -90,14 +90,6 @@ position_agg AS (
     WHERE hspc.active = true
     GROUP BY hspc.home_id
 ),
-persona_agg AS (
-    SELECT
-        hspc.home_id,
-        ARRAY_AGG(DISTINCT hspc.scenario_personas_id ORDER BY hspc.scenario_personas_id) AS persona_ids
-    FROM home_scenario_personas_connection hspc
-    WHERE hspc.active = true
-    GROUP BY hspc.home_id
-),
 -- Chat level connections (aggregated UP to home_entry via home_chat_entry)
 chat_agg AS (
     SELECT
@@ -131,7 +123,6 @@ SELECT
     -- Simulation-level scenario resource connections
     COALESCE(flg.flag_ids, ARRAY[]::uuid[]) AS flag_ids,
     COALESCE(pos.position_ids, ARRAY[]::uuid[]) AS position_ids,
-    COALESCE(per.persona_ids, ARRAY[]::uuid[]) AS persona_ids,
 
     -- Aggregated UP from chat level
     COALESCE(trn.chat_ids, ARRAY[]::uuid[]) AS chat_ids,
@@ -150,7 +141,6 @@ LEFT JOIN rubric_agg rub ON rub.home_id = he.id
 LEFT JOIN time_limit_agg tl ON tl.home_id = he.id
 LEFT JOIN flag_agg flg ON flg.home_id = he.id
 LEFT JOIN position_agg pos ON pos.home_id = he.id
-LEFT JOIN persona_agg per ON per.home_id = he.id
 LEFT JOIN chat_agg trn ON trn.home_id = he.id
 LEFT JOIN scenario_agg scn ON scn.home_id = he.id
 WHERE he.active = true

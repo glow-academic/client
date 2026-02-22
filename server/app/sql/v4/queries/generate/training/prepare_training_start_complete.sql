@@ -44,13 +44,11 @@ DECLARE
 
     v_rubrics_resource_id uuid;
     v_rubric_artifact_id uuid;
-    v_personas_resource_id uuid;
     v_problem_statements_resource_id uuid;
     v_selected_department_id uuid;
 
     v_chat_resolved_id uuid;
     v_config_signature text := 'runtime-v1';
-    v_draft_persona_ids uuid[] := ARRAY[]::uuid[];
     v_draft_document_ids uuid[] := ARRAY[]::uuid[];
     v_draft_parameter_field_ids uuid[] := ARRAY[]::uuid[];
 BEGIN
@@ -131,12 +129,6 @@ BEGIN
       AND ssrj.active = true
     LIMIT 1;
 
-    SELECT spj.persona_id INTO v_personas_resource_id
-    FROM scenario_personas_junction spj
-    WHERE spj.scenario_id = v_scenario_artifact_id
-      AND spj.active = true
-    LIMIT 1;
-
     SELECT spsj.problem_statement_id INTO v_problem_statements_resource_id
     FROM scenario_problem_statements_junction spsj
     WHERE spsj.scenario_id = v_scenario_artifact_id
@@ -145,11 +137,6 @@ BEGIN
 
     -- Resolve optional draft overrides (scenario-style draft selections).
     IF p_draft_id IS NOT NULL THEN
-        SELECT ARRAY_AGG(DISTINCT pdc.personas_id)
-        INTO v_draft_persona_ids
-        FROM chat_drafts_personas_connection pdc
-        WHERE pdc.draft_id = p_draft_id;
-
         SELECT ARRAY_AGG(DISTINCT ddc.documents_id)
         INTO v_draft_document_ids
         FROM chat_drafts_documents_connection ddc
@@ -230,26 +217,6 @@ BEGIN
       AND sstl.active = true
       AND stlr.scenario_id = v_scenarios_resource_id
     ON CONFLICT (chat_resolved_id, scenario_time_limits_id) DO NOTHING;
-
-    IF COALESCE(array_length(v_draft_persona_ids, 1), 0) > 0 OR v_personas_resource_id IS NOT NULL THEN
-        INSERT INTO chat_resolved_personas_connection (
-            chat_resolved_id, personas_id, created_at, active, generated, mcp
-        )
-        SELECT
-            v_chat_resolved_id,
-            pid,
-            NOW(),
-            true,
-            false,
-            false
-        FROM unnest(
-            CASE
-                WHEN COALESCE(array_length(v_draft_persona_ids, 1), 0) > 0 THEN v_draft_persona_ids
-                ELSE ARRAY[v_personas_resource_id]::uuid[]
-            END
-        ) AS pid
-        ON CONFLICT (chat_resolved_id, personas_id) DO NOTHING;
-    END IF;
 
     IF v_rubrics_resource_id IS NOT NULL THEN
         INSERT INTO chat_resolved_rubrics_connection (
@@ -341,6 +308,29 @@ BEGIN
     WHERE sij.scenario_id = v_scenario_artifact_id
       AND sij.active = true
     ON CONFLICT (chat_resolved_id, images_id) DO NOTHING;
+
+    -- Profile personas from cohort scope
+    IF v_cohorts_resource_id IS NOT NULL THEN
+        INSERT INTO chat_resolved_profile_personas_connection (
+            chat_resolved_id, profile_personas_id, created_at, active, generated, mcp
+        )
+        SELECT DISTINCT
+            v_chat_resolved_id,
+            ppr.id,
+            NOW(),
+            true,
+            false,
+            false
+        FROM cohort_cohorts_junction ccj
+        JOIN cohort_profile_personas_junction cpj
+          ON cpj.cohort_id = ccj.cohort_id AND cpj.active = true
+        JOIN profile_personas_resource ppr
+          ON ppr.id = cpj.profile_persona_id AND ppr.active = true
+        WHERE ccj.cohorts_id = v_cohorts_resource_id
+          AND ccj.active = true
+          AND ppr.profile_id = v_profiles_resource_id
+        ON CONFLICT (chat_resolved_id, profile_personas_id) DO NOTHING;
+    END IF;
 
     IF v_rubric_artifact_id IS NOT NULL THEN
         INSERT INTO chat_resolved_standards_connection (chat_resolved_id, standards_id, created_at, active, generated, mcp)

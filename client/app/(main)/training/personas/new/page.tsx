@@ -48,6 +48,8 @@ type CreateDraftParameterFieldsOut = OutputOf<
   "/api/v4/resources/parameter_fields",
   "post"
 >;
+type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
+type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -125,6 +127,14 @@ async function createDraftParameterFields(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/parameter_fields", input);
+}
+
+async function createDraftVoices(
+  input: CreateDraftVoicesIn
+): Promise<CreateDraftVoicesOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/voices", input);
 }
 
 /** ---- Docs types for page metadata ---- */
@@ -211,6 +221,7 @@ export default async function NewPersonaPage({
         createColorsAction={createDraftColors}
         createExamplesAction={createDraftExamples}
         createParameterFieldsAction={createDraftParameterFields}
+        createVoicesAction={createDraftVoices}
       />
     </div>
   );

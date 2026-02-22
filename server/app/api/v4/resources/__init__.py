@@ -465,19 +465,7 @@ from app.api.v4.resources.scenario_flags.search import (
 
 router.include_router(scenario_flags_get_router)
 router.include_router(scenario_flags_search_router)
-from app.api.v4.resources.scenario_personas.create import (
-    router as scenario_personas_router,
-)
-from app.api.v4.resources.scenario_personas.get import (
-    router as scenario_personas_get_router,
-)
-from app.api.v4.resources.scenario_personas.search import (
-    router as scenario_personas_search_router,
-)
-
-router.include_router(scenario_personas_router)
-router.include_router(scenario_personas_get_router)
-router.include_router(scenario_personas_search_router)
+# NOTE: scenario_personas removed - replaced by profile_personas on cohort (migration 500)
 from app.api.v4.resources.profile_personas.create import (
     router as profile_personas_router,
 )
