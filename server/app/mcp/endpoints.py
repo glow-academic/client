@@ -38,38 +38,38 @@ def _get_handler(module_path: str, func_name: str) -> Any:
 # Docs handlers are sync functions returning dicts (called without await).
 
 ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
-    "activity": {
-        "get": ("app.api.v4.artifacts.activity.get", "get_activity"),
-        "docs": ("app.api.v4.artifacts.activity.docs", "get_activity_docs_static"),
-        "refresh": ("app.api.v4.artifacts.activity.refresh", "activity_refresh"),
-    },
-    "agent": {
-        "get": ("app.api.v4.artifacts.agent.get", "get_agent"),
-        "list": ("app.api.v4.artifacts.agent.list", "get_agent_list"),
-        "save": ("app.api.v4.artifacts.agent.save", "save_agent"),
-        "delete": ("app.api.v4.artifacts.agent.delete", "delete_agent"),
-        "duplicate": ("app.api.v4.artifacts.agent.duplicate", "duplicate_agent"),
-        "draft": ("app.api.v4.artifacts.agent.draft", "patch_agent_draft"),
-        "docs": ("app.api.v4.artifacts.agent.docs", "get_agents_docs"),
-    },
+    # "activity": {
+    #     "get": ("app.api.v4.artifacts.activity.get", "get_activity"),
+    #     "docs": ("app.api.v4.artifacts.activity.docs", "get_activity_docs_static"),
+    #     "refresh": ("app.api.v4.artifacts.activity.refresh", "activity_refresh"),
+    # },
+    # "agent": {
+    #     "get": ("app.api.v4.artifacts.agent.get", "get_agent"),
+    #     "list": ("app.api.v4.artifacts.agent.list", "get_agent_list"),
+    #     "save": ("app.api.v4.artifacts.agent.save", "save_agent"),
+    #     "delete": ("app.api.v4.artifacts.agent.delete", "delete_agent"),
+    #     "duplicate": ("app.api.v4.artifacts.agent.duplicate", "duplicate_agent"),
+    #     "draft": ("app.api.v4.artifacts.agent.draft", "patch_agent_draft"),
+    #     "docs": ("app.api.v4.artifacts.agent.docs", "get_agents_docs"),
+    # },
     "attempt": {
         "get": ("app.api.v4.artifacts.attempt.get", "attempt_get"),
         "docs": ("app.api.v4.artifacts.attempt.docs", "get_attempts_docs"),
     },
-    "auth": {
-        "get": ("app.api.v4.artifacts.auth.get", "get_auth"),
-        "list": ("app.api.v4.artifacts.auth.list", "get_auth_list"),
-        "save": ("app.api.v4.artifacts.auth.save", "save_auth"),
-        "delete": ("app.api.v4.artifacts.auth.delete", "delete_auth"),
-        "duplicate": ("app.api.v4.artifacts.auth.duplicate", "duplicate_auth"),
-        "draft": ("app.api.v4.artifacts.auth.draft", "patch_auth_draft"),
-        "docs": ("app.api.v4.artifacts.auth.docs", "get_auths_docs"),
-    },
-    "benchmark": {
-        "get": ("app.api.v4.artifacts.benchmark.get", "benchmark_bundle_get"),
-        "refresh": ("app.api.v4.artifacts.benchmark.refresh", "benchmark_refresh"),
-        "docs": ("app.api.v4.artifacts.benchmark.docs", "get_benchmarks_docs"),
-    },
+    # "auth": {
+    #     "get": ("app.api.v4.artifacts.auth.get", "get_auth"),
+    #     "list": ("app.api.v4.artifacts.auth.list", "get_auth_list"),
+    #     "save": ("app.api.v4.artifacts.auth.save", "save_auth"),
+    #     "delete": ("app.api.v4.artifacts.auth.delete", "delete_auth"),
+    #     "duplicate": ("app.api.v4.artifacts.auth.duplicate", "duplicate_auth"),
+    #     "draft": ("app.api.v4.artifacts.auth.draft", "patch_auth_draft"),
+    #     "docs": ("app.api.v4.artifacts.auth.docs", "get_auths_docs"),
+    # },
+    # "benchmark": {
+    #     "get": ("app.api.v4.artifacts.benchmark.get", "benchmark_bundle_get"),
+    #     "refresh": ("app.api.v4.artifacts.benchmark.refresh", "benchmark_refresh"),
+    #     "docs": ("app.api.v4.artifacts.benchmark.docs", "get_benchmarks_docs"),
+    # },
     "cohort": {
         "get": ("app.api.v4.artifacts.cohort.get", "get_cohort"),
         "list": ("app.api.v4.artifacts.cohort.list", "get_cohort_list"),
@@ -91,54 +91,54 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
         "refresh": ("app.api.v4.artifacts.dashboard.refresh", "dashboard_refresh"),
         "docs": ("app.api.v4.artifacts.dashboard.docs", "get_dashboard_docs_static"),
     },
-    "department": {
-        "get": ("app.api.v4.artifacts.department.get", "get_department"),
-        "list": ("app.api.v4.artifacts.department.list", "get_department_list"),
-        "save": ("app.api.v4.artifacts.department.save", "save_department"),
-        "delete": ("app.api.v4.artifacts.department.delete", "delete_department"),
-        "duplicate": (
-            "app.api.v4.artifacts.department.duplicate",
-            "duplicate_department",
-        ),
-        "draft": ("app.api.v4.artifacts.department.draft", "patch_department_draft"),
-        "docs": ("app.api.v4.artifacts.department.docs", "get_departments_docs"),
-    },
-    "document": {
-        "get": ("app.api.v4.artifacts.document.get", "get_document"),
-        "list": ("app.api.v4.artifacts.document.list", "get_document_list"),
-        "save": ("app.api.v4.artifacts.document.save", "save_document"),
-        "delete": ("app.api.v4.artifacts.document.delete", "delete_document"),
-        "duplicate": ("app.api.v4.artifacts.document.duplicate", "duplicate_document"),
-        "draft": ("app.api.v4.artifacts.document.draft", "patch_document_draft"),
-        "docs": ("app.api.v4.artifacts.document.docs", "get_documents_docs"),
-    },
-    "eval": {
-        "get": ("app.api.v4.artifacts.eval.get", "get_eval"),
-        "list": ("app.api.v4.artifacts.eval.list", "get_eval_list"),
-        "save": ("app.api.v4.artifacts.eval.save", "save_eval"),
-        "delete": ("app.api.v4.artifacts.eval.delete", "delete_eval"),
-        "duplicate": ("app.api.v4.artifacts.eval.duplicate", "duplicate_eval"),
-        "draft": ("app.api.v4.artifacts.eval.draft", "patch_eval_draft"),
-        "docs": ("app.api.v4.artifacts.eval.docs", "get_evals_docs"),
-    },
-    "field": {
-        "get": ("app.api.v4.artifacts.field.get", "get_field"),
-        "list": ("app.api.v4.artifacts.field.list", "get_field_list"),
-        "save": ("app.api.v4.artifacts.field.save", "save_field"),
-        "delete": ("app.api.v4.artifacts.field.delete", "delete_field"),
-        "duplicate": ("app.api.v4.artifacts.field.duplicate", "duplicate_field"),
-        "draft": ("app.api.v4.artifacts.field.draft", "patch_field_draft"),
-        "docs": ("app.api.v4.artifacts.field.docs", "get_fields_docs"),
-    },
+    # "department": {
+    #     "get": ("app.api.v4.artifacts.department.get", "get_department"),
+    #     "list": ("app.api.v4.artifacts.department.list", "get_department_list"),
+    #     "save": ("app.api.v4.artifacts.department.save", "save_department"),
+    #     "delete": ("app.api.v4.artifacts.department.delete", "delete_department"),
+    #     "duplicate": (
+    #         "app.api.v4.artifacts.department.duplicate",
+    #         "duplicate_department",
+    #     ),
+    #     "draft": ("app.api.v4.artifacts.department.draft", "patch_department_draft"),
+    #     "docs": ("app.api.v4.artifacts.department.docs", "get_departments_docs"),
+    # },
+    # "document": {
+    #     "get": ("app.api.v4.artifacts.document.get", "get_document"),
+    #     "list": ("app.api.v4.artifacts.document.list", "get_document_list"),
+    #     "save": ("app.api.v4.artifacts.document.save", "save_document"),
+    #     "delete": ("app.api.v4.artifacts.document.delete", "delete_document"),
+    #     "duplicate": ("app.api.v4.artifacts.document.duplicate", "duplicate_document"),
+    #     "draft": ("app.api.v4.artifacts.document.draft", "patch_document_draft"),
+    #     "docs": ("app.api.v4.artifacts.document.docs", "get_documents_docs"),
+    # },
+    # "eval": {
+    #     "get": ("app.api.v4.artifacts.eval.get", "get_eval"),
+    #     "list": ("app.api.v4.artifacts.eval.list", "get_eval_list"),
+    #     "save": ("app.api.v4.artifacts.eval.save", "save_eval"),
+    #     "delete": ("app.api.v4.artifacts.eval.delete", "delete_eval"),
+    #     "duplicate": ("app.api.v4.artifacts.eval.duplicate", "duplicate_eval"),
+    #     "draft": ("app.api.v4.artifacts.eval.draft", "patch_eval_draft"),
+    #     "docs": ("app.api.v4.artifacts.eval.docs", "get_evals_docs"),
+    # },
+    # "field": {
+    #     "get": ("app.api.v4.artifacts.field.get", "get_field"),
+    #     "list": ("app.api.v4.artifacts.field.list", "get_field_list"),
+    #     "save": ("app.api.v4.artifacts.field.save", "save_field"),
+    #     "delete": ("app.api.v4.artifacts.field.delete", "delete_field"),
+    #     "duplicate": ("app.api.v4.artifacts.field.duplicate", "duplicate_field"),
+    #     "draft": ("app.api.v4.artifacts.field.draft", "patch_field_draft"),
+    #     "docs": ("app.api.v4.artifacts.field.docs", "get_fields_docs"),
+    # },
     "group": {
         "get": ("app.api.v4.artifacts.group.get", "get_group"),
         "docs": ("app.api.v4.artifacts.group.docs", "get_groups_docs"),
     },
-    "health": {
-        "get": ("app.api.v4.artifacts.health.get", "get_health"),
-        "refresh": ("app.api.v4.artifacts.health.refresh", "health_refresh"),
-        "docs": ("app.api.v4.artifacts.health.docs", "get_health_docs_static"),
-    },
+    # "health": {
+    #     "get": ("app.api.v4.artifacts.health.get", "get_health"),
+    #     "refresh": ("app.api.v4.artifacts.health.refresh", "health_refresh"),
+    #     "docs": ("app.api.v4.artifacts.health.docs", "get_health_docs_static"),
+    # },
     "leaderboard": {
         "get": ("app.api.v4.artifacts.leaderboard.get", "get_leaderboard"),
         "refresh": (
@@ -150,27 +150,27 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
             "get_leaderboard_docs_static",
         ),
     },
-    "model": {
-        "get": ("app.api.v4.artifacts.model.get", "get_model"),
-        "list": ("app.api.v4.artifacts.model.list", "get_model_list"),
-        "save": ("app.api.v4.artifacts.model.save", "save_model"),
-        "delete": ("app.api.v4.artifacts.model.delete", "delete_model"),
-        "duplicate": ("app.api.v4.artifacts.model.duplicate", "duplicate_model"),
-        "draft": ("app.api.v4.artifacts.model.draft", "patch_model_draft"),
-        "docs": ("app.api.v4.artifacts.model.docs", "get_models_docs"),
-    },
-    "parameter": {
-        "get": ("app.api.v4.artifacts.parameter.get", "get_parameter"),
-        "list": ("app.api.v4.artifacts.parameter.list", "get_parameter_list"),
-        "save": ("app.api.v4.artifacts.parameter.save", "save_parameter"),
-        "delete": ("app.api.v4.artifacts.parameter.delete", "delete_parameter"),
-        "duplicate": (
-            "app.api.v4.artifacts.parameter.duplicate",
-            "duplicate_parameter",
-        ),
-        "draft": ("app.api.v4.artifacts.parameter.draft", "patch_parameter_draft"),
-        "docs": ("app.api.v4.artifacts.parameter.docs", "get_parameters_docs"),
-    },
+    # "model": {
+    #     "get": ("app.api.v4.artifacts.model.get", "get_model"),
+    #     "list": ("app.api.v4.artifacts.model.list", "get_model_list"),
+    #     "save": ("app.api.v4.artifacts.model.save", "save_model"),
+    #     "delete": ("app.api.v4.artifacts.model.delete", "delete_model"),
+    #     "duplicate": ("app.api.v4.artifacts.model.duplicate", "duplicate_model"),
+    #     "draft": ("app.api.v4.artifacts.model.draft", "patch_model_draft"),
+    #     "docs": ("app.api.v4.artifacts.model.docs", "get_models_docs"),
+    # },
+    # "parameter": {
+    #     "get": ("app.api.v4.artifacts.parameter.get", "get_parameter"),
+    #     "list": ("app.api.v4.artifacts.parameter.list", "get_parameter_list"),
+    #     "save": ("app.api.v4.artifacts.parameter.save", "save_parameter"),
+    #     "delete": ("app.api.v4.artifacts.parameter.delete", "delete_parameter"),
+    #     "duplicate": (
+    #         "app.api.v4.artifacts.parameter.duplicate",
+    #         "duplicate_parameter",
+    #     ),
+    #     "draft": ("app.api.v4.artifacts.parameter.draft", "patch_parameter_draft"),
+    #     "docs": ("app.api.v4.artifacts.parameter.docs", "get_parameters_docs"),
+    # },
     "persona": {
         "get": ("app.api.v4.artifacts.persona.get", "get_persona"),
         "list": ("app.api.v4.artifacts.persona.list", "get_persona_list"),
@@ -185,38 +185,38 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
         "refresh": ("app.api.v4.artifacts.pricing.refresh", "pricing_refresh"),
         "docs": ("app.api.v4.artifacts.pricing.docs", "get_pricing_docs_static"),
     },
-    "profile": {
-        "get": ("app.api.v4.artifacts.profile.get", "get_profile"),
-        "list": ("app.api.v4.artifacts.profile.list", "get_profile_list"),
-        "save": ("app.api.v4.artifacts.profile.save", "save_profile"),
-        "delete": ("app.api.v4.artifacts.profile.delete", "delete_profile"),
-        "duplicate": ("app.api.v4.artifacts.profile.duplicate", "duplicate_profile"),
-        "draft": ("app.api.v4.artifacts.profile.draft", "patch_profile_draft"),
-        "docs": ("app.api.v4.artifacts.profile.docs", "get_profiles_docs"),
-    },
-    "provider": {
-        "get": ("app.api.v4.artifacts.provider.get", "get_provider"),
-        "list": ("app.api.v4.artifacts.provider.list", "get_provider_list"),
-        "save": ("app.api.v4.artifacts.provider.save", "save_provider"),
-        "delete": ("app.api.v4.artifacts.provider.delete", "delete_provider"),
-        "duplicate": ("app.api.v4.artifacts.provider.duplicate", "duplicate_provider"),
-        "draft": ("app.api.v4.artifacts.provider.draft", "patch_provider_draft"),
-        "docs": ("app.api.v4.artifacts.provider.docs", "get_providers_docs"),
-    },
+    # "profile": {
+    #     "get": ("app.api.v4.artifacts.profile.get", "get_profile"),
+    #     "list": ("app.api.v4.artifacts.profile.list", "get_profile_list"),
+    #     "save": ("app.api.v4.artifacts.profile.save", "save_profile"),
+    #     "delete": ("app.api.v4.artifacts.profile.delete", "delete_profile"),
+    #     "duplicate": ("app.api.v4.artifacts.profile.duplicate", "duplicate_profile"),
+    #     "draft": ("app.api.v4.artifacts.profile.draft", "patch_profile_draft"),
+    #     "docs": ("app.api.v4.artifacts.profile.docs", "get_profiles_docs"),
+    # },
+    # "provider": {
+    #     "get": ("app.api.v4.artifacts.provider.get", "get_provider"),
+    #     "list": ("app.api.v4.artifacts.provider.list", "get_provider_list"),
+    #     "save": ("app.api.v4.artifacts.provider.save", "save_provider"),
+    #     "delete": ("app.api.v4.artifacts.provider.delete", "delete_provider"),
+    #     "duplicate": ("app.api.v4.artifacts.provider.duplicate", "duplicate_provider"),
+    #     "draft": ("app.api.v4.artifacts.provider.draft", "patch_provider_draft"),
+    #     "docs": ("app.api.v4.artifacts.provider.docs", "get_providers_docs"),
+    # },
     "reports": {
         "get": ("app.api.v4.artifacts.reports.get", "get_reports"),
         "refresh": ("app.api.v4.artifacts.reports.refresh", "reports_refresh"),
         "docs": ("app.api.v4.artifacts.reports.docs", "get_reports_docs_static"),
     },
-    "rubric": {
-        "get": ("app.api.v4.artifacts.rubric.get", "get_rubric"),
-        "list": ("app.api.v4.artifacts.rubric.list", "get_rubric_list"),
-        "save": ("app.api.v4.artifacts.rubric.save", "save_rubric"),
-        "delete": ("app.api.v4.artifacts.rubric.delete", "delete_rubric"),
-        "duplicate": ("app.api.v4.artifacts.rubric.duplicate", "duplicate_rubric"),
-        "draft": ("app.api.v4.artifacts.rubric.draft", "patch_rubric_draft"),
-        "docs": ("app.api.v4.artifacts.rubric.docs", "get_rubrics_docs"),
-    },
+    # "rubric": {
+    #     "get": ("app.api.v4.artifacts.rubric.get", "get_rubric"),
+    #     "list": ("app.api.v4.artifacts.rubric.list", "get_rubric_list"),
+    #     "save": ("app.api.v4.artifacts.rubric.save", "save_rubric"),
+    #     "delete": ("app.api.v4.artifacts.rubric.delete", "delete_rubric"),
+    #     "duplicate": ("app.api.v4.artifacts.rubric.duplicate", "duplicate_rubric"),
+    #     "draft": ("app.api.v4.artifacts.rubric.draft", "patch_rubric_draft"),
+    #     "docs": ("app.api.v4.artifacts.rubric.docs", "get_rubrics_docs"),
+    # },
     "scenario": {
         "get": ("app.api.v4.artifacts.scenario.get", "get_scenario"),
         "list": ("app.api.v4.artifacts.scenario.list", "get_scenario_list"),
@@ -226,19 +226,19 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
         "draft": ("app.api.v4.artifacts.scenario.draft", "patch_scenario_draft"),
         "docs": ("app.api.v4.artifacts.scenario.docs", "get_scenarios_docs"),
     },
-    "session": {
-        "get": ("app.api.v4.artifacts.session.get", "get_session"),
-        "docs": ("app.api.v4.artifacts.session.docs", "get_sessions_docs"),
-    },
-    "setting": {
-        "get": ("app.api.v4.artifacts.setting.get", "get_setting"),
-        "list": ("app.api.v4.artifacts.setting.list", "get_setting_list"),
-        "save": ("app.api.v4.artifacts.setting.save", "save_setting"),
-        "delete": ("app.api.v4.artifacts.setting.delete", "delete_setting"),
-        "duplicate": ("app.api.v4.artifacts.setting.duplicate", "duplicate_setting"),
-        "draft": ("app.api.v4.artifacts.setting.draft", "patch_setting_draft"),
-        "docs": ("app.api.v4.artifacts.setting.docs", "get_settings_docs"),
-    },
+    # "session": {
+    #     "get": ("app.api.v4.artifacts.session.get", "get_session"),
+    #     "docs": ("app.api.v4.artifacts.session.docs", "get_sessions_docs"),
+    # },
+    # "setting": {
+    #     "get": ("app.api.v4.artifacts.setting.get", "get_setting"),
+    #     "list": ("app.api.v4.artifacts.setting.list", "get_setting_list"),
+    #     "save": ("app.api.v4.artifacts.setting.save", "save_setting"),
+    #     "delete": ("app.api.v4.artifacts.setting.delete", "delete_setting"),
+    #     "duplicate": ("app.api.v4.artifacts.setting.duplicate", "duplicate_setting"),
+    #     "draft": ("app.api.v4.artifacts.setting.draft", "patch_setting_draft"),
+    #     "docs": ("app.api.v4.artifacts.setting.docs", "get_settings_docs"),
+    # },
     "simulation": {
         "get": ("app.api.v4.artifacts.simulation.get", "get_simulation"),
         "list": ("app.api.v4.artifacts.simulation.list", "get_simulation_list"),
@@ -251,19 +251,19 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
         "draft": ("app.api.v4.artifacts.simulation.draft", "patch_simulation_draft"),
         "docs": ("app.api.v4.artifacts.simulation.docs", "get_simulations_docs"),
     },
-    "test": {
-        "get": ("app.api.v4.artifacts.test.get", "get_test_artifact"),
-        "docs": ("app.api.v4.artifacts.test.docs", "get_tests_docs"),
-    },
-    "tool": {
-        "get": ("app.api.v4.artifacts.tool.get", "get_tool"),
-        "list": ("app.api.v4.artifacts.tool.list", "get_tool_list"),
-        "save": ("app.api.v4.artifacts.tool.save", "save_tool"),
-        "delete": ("app.api.v4.artifacts.tool.delete", "delete_tool"),
-        "duplicate": ("app.api.v4.artifacts.tool.duplicate", "duplicate_tool"),
-        "draft": ("app.api.v4.artifacts.tool.draft", "patch_tool_draft"),
-        "docs": ("app.api.v4.artifacts.tool.docs", "get_tools_docs"),
-    },
+    # "test": {
+    #     "get": ("app.api.v4.artifacts.test.get", "get_test_artifact"),
+    #     "docs": ("app.api.v4.artifacts.test.docs", "get_tests_docs"),
+    # },
+    # "tool": {
+    #     "get": ("app.api.v4.artifacts.tool.get", "get_tool"),
+    #     "list": ("app.api.v4.artifacts.tool.list", "get_tool_list"),
+    #     "save": ("app.api.v4.artifacts.tool.save", "save_tool"),
+    #     "delete": ("app.api.v4.artifacts.tool.delete", "delete_tool"),
+    #     "duplicate": ("app.api.v4.artifacts.tool.duplicate", "duplicate_tool"),
+    #     "draft": ("app.api.v4.artifacts.tool.draft", "patch_tool_draft"),
+    #     "docs": ("app.api.v4.artifacts.tool.docs", "get_tools_docs"),
+    # },
     "chat": {
         "get": ("app.api.v4.artifacts.chat.get", "chat_bundle_get"),
         "list": ("app.api.v4.artifacts.chat.list", "chat_get"),
@@ -986,48 +986,11 @@ def register_endpoints(server: FastMCP) -> None:
             payload.update(kwargs)
         return await call_handler("dashboard", "get", payload)
 
-    @server.tool()
-    async def activity(
-        profile_id: str | None = None,
-        date_from: str | None = None,
-        date_to: str | None = None,
-        department_ids: list[str] | None = None,
-        roles: list[str] | None = None,
-        page_limit: int | None = None,
-        page_offset: int | None = None,
-        history_enabled: bool = False,
-        kwargs: dict[str, Any] | None = None,
-    ) -> dict[str, Any]:
-        """Get activity analytics — session counts, durations, and trends.
-
-        Args:
-            profile_id: Filter to a specific profile's activity.
-            date_from: Start date filter (YYYY-MM-DD).
-            date_to: End date filter (YYYY-MM-DD).
-            department_ids: Filter by department IDs.
-            roles: Filter by roles.
-            page_limit: Number of results per page.
-            page_offset: Pagination offset.
-            history_enabled: Include historical trend data.
-            kwargs: Additional parameters — use docs("activity") for full schema.
-        """
-        payload = {
-            k: v
-            for k, v in {
-                "profile_id": profile_id,
-                "date_from": date_from,
-                "date_to": date_to,
-                "department_ids": department_ids,
-                "roles": roles,
-                "page_limit": page_limit,
-                "page_offset": page_offset,
-                "history_enabled": history_enabled,
-            }.items()
-            if v is not None
-        }
-        if kwargs:
-            payload.update(kwargs)
-        return await call_handler("activity", "get", payload)
+    # --- activity tool temporarily commented out ---
+    # @server.tool()
+    # async def activity(...) -> dict[str, Any]:
+    #     """Get activity analytics — session counts, durations, and trends."""
+    #     ...
 
     @server.tool()
     async def pricing(
@@ -1124,32 +1087,11 @@ def register_endpoints(server: FastMCP) -> None:
             payload.update(kwargs)
         return await call_handler("reports", "get", payload)
 
-    @server.tool()
-    async def health(
-        service: str | None = None,
-        date_from: str | None = None,
-        date_to: str | None = None,
-        page_limit: int | None = None,
-    ) -> dict[str, Any]:
-        """Get system health metrics — uptime, error rates, and service status.
-
-        Args:
-            service: Filter to a specific service.
-            date_from: Start date filter (YYYY-MM-DD).
-            date_to: End date filter (YYYY-MM-DD).
-            page_limit: Number of results per page.
-        """
-        payload = {
-            k: v
-            for k, v in {
-                "service": service,
-                "date_from": date_from,
-                "date_to": date_to,
-                "page_limit": page_limit,
-            }.items()
-            if v is not None
-        }
-        return await call_handler("health", "get", payload)
+    # --- health tool temporarily commented out ---
+    # @server.tool()
+    # async def health(...) -> dict[str, Any]:
+    #     """Get system health metrics — uptime, error rates, and service status."""
+    #     ...
 
     @server.tool()
     async def leaderboard(
@@ -1206,36 +1148,11 @@ def register_endpoints(server: FastMCP) -> None:
             payload.update(kwargs)
         return await call_handler("leaderboard", "get", payload)
 
-    @server.tool()
-    async def benchmark(
-        start_date: str | None = None,
-        end_date: str | None = None,
-        department_ids: list[str] | None = None,
-        history_enabled: bool = False,
-        kwargs: dict[str, Any] | None = None,
-    ) -> dict[str, Any]:
-        """Get benchmark analytics — evaluation results and agent performance comparisons.
-
-        Args:
-            start_date: Start date filter (YYYY-MM-DD).
-            end_date: End date filter (YYYY-MM-DD).
-            department_ids: Filter by department IDs.
-            history_enabled: Include historical trend data.
-            kwargs: Additional parameters — use docs("benchmark") for full schema.
-        """
-        payload = {
-            k: v
-            for k, v in {
-                "start_date": start_date,
-                "end_date": end_date,
-                "department_ids": department_ids,
-                "history_enabled": history_enabled,
-            }.items()
-            if v is not None
-        }
-        if kwargs:
-            payload.update(kwargs)
-        return await call_handler("benchmark", "get", payload)
+    # --- benchmark tool temporarily commented out ---
+    # @server.tool()
+    # async def benchmark(...) -> dict[str, Any]:
+    #     """Get benchmark analytics — evaluation results and agent performance comparisons."""
+    #     ...
 
     @server.tool()
     async def chat(
@@ -1269,28 +1186,11 @@ def register_endpoints(server: FastMCP) -> None:
         """
         return await call_handler("attempt", "get", {"attempt_id": attempt_id})
 
-    @server.tool()
-    async def session(
-        session_id: str,
-        audit_limit: int = 50,
-        audit_offset: int = 0,
-    ) -> dict[str, Any]:
-        """Get a session — full session details with audit log.
-
-        Args:
-            session_id: The session ID to fetch.
-            audit_limit: Max number of audit entries to return (default 50).
-            audit_offset: Audit log pagination offset (default 0).
-        """
-        return await call_handler(
-            "session",
-            "get",
-            {
-                "session_id": session_id,
-                "audit_limit": audit_limit,
-                "audit_offset": audit_offset,
-            },
-        )
+    # --- session tool temporarily commented out (activity section) ---
+    # @server.tool()
+    # async def session(session_id: str, ...) -> dict[str, Any]:
+    #     """Get a session — full session details with audit log."""
+    #     ...
 
     @server.tool()
     async def group(
@@ -1303,39 +1203,34 @@ def register_endpoints(server: FastMCP) -> None:
         """
         return await call_handler("group", "get", {"group_id": group_id})
 
-    @server.tool()
-    async def invocation(
-        test_id: str,
-    ) -> dict[str, Any]:
-        """Get a test invocation — detailed test execution results.
-
-        Args:
-            test_id: The test invocation ID to fetch.
-        """
-        return await call_handler("test", "get", {"test_id": test_id})
+    # --- invocation tool temporarily commented out ---
+    # @server.tool()
+    # async def invocation(test_id: str) -> dict[str, Any]:
+    #     """Get a test invocation — detailed test execution results."""
+    #     ...
 
     # ==================================================================
     # Category 2: CRUD Artifact Tools (6 tools)
     # ==================================================================
 
     _CRUD_ARTIFACTS = [
-        "agent",
-        "auth",
+        # "agent",  # temporarily removed (intelligence)
+        # "auth",  # temporarily removed
         "cohort",
-        "department",
-        "document",
-        "eval",
-        "field",
-        "model",
-        "parameter",
+        # "department",  # temporarily removed
+        # "document",  # temporarily removed
+        # "eval",  # temporarily removed
+        # "field",  # temporarily removed
+        # "model",  # temporarily removed
+        # "parameter",  # temporarily removed
         "persona",
-        "profile",
-        "provider",
-        "rubric",
+        # "profile",  # temporarily removed
+        # "provider",  # temporarily removed
+        # "rubric",  # temporarily removed
         "scenario",
-        "setting",
+        # "setting",  # temporarily removed
         "simulation",
-        "tool",
+        # "tool",  # temporarily removed
     ]
 
     @server.tool()
