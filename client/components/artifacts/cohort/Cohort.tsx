@@ -990,7 +990,7 @@ function CohortComponent({
                   flag_id={formState.active_flag_id ?? null}
                   show_flags={s?.flags?.show ?? false}
                   columns={1}
-                  label="Active"
+                  label="Flags"
                   disabled={disabled}
                   onChange={(flagId) =>
                     setFormState((prev) => ({
