@@ -36,6 +36,14 @@ type CreateDraftSimulationPositionsOut = OutputOf<
   "/api/v4/resources/simulation_positions",
   "post"
 >;
+type CreateDraftProfilePersonasIn = InputOf<
+  "/api/v4/resources/profile_personas",
+  "post"
+>;
+type CreateDraftProfilePersonasOut = OutputOf<
+  "/api/v4/resources/profile_personas",
+  "post"
+>;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -88,6 +96,13 @@ async function createDraftSimulationPositions(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/simulation_positions", input);
+}
+
+async function createDraftProfilePersonas(
+  input: CreateDraftProfilePersonasIn
+): Promise<CreateDraftProfilePersonasOut> {
+  "use server";
+  return api.post("/resources/profile_personas", input);
 }
 
 /** ---- Docs types for page metadata ---- */
@@ -162,6 +177,7 @@ export default async function NewCohortPage({
         createNamesAction={createDraftNames}
         createDescriptionsAction={createDraftDescriptions}
         createSimulationPositionsAction={createDraftSimulationPositions}
+        createProfilePersonasAction={createDraftProfilePersonas}
       />
     </div>
   );

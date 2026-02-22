@@ -576,6 +576,7 @@ function CohortComponent({
         simulation_availability_ids: formState.simulation_availability_ids,
         simulation_positions: formState.simulation_positions,
         profile_ids: formState.profile_ids,
+        profile_persona_ids: formState.profile_persona_ids,
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
@@ -587,6 +588,7 @@ function CohortComponent({
       formStateSimulationPositionsStr,
       formStateSimulationAvailabilityIdsStr,
       formStateProfileIdsStr,
+      formStateProfilePersonaIdsStr,
     ],
   );
 
@@ -744,13 +746,18 @@ function CohortComponent({
     [handleGenerateResources],
   );
 
+  const handleGenerateProfilePersonas = useCallback(
+    async () => handleGenerateResources(["profile_personas"]),
+    [handleGenerateResources],
+  );
+
   // --- Generation Modal ---
   // Step-to-resources mapping for multi-generation
   const stepResources: Record<string, ResourceType[]> = useMemo(
     () => ({
       basic: ["names", "descriptions", "departments", "flags"],
       simulations: ["simulations", "simulation_availability"],
-      profiles: ["profiles"],
+      profiles: ["profiles", "profile_personas"],
       all: [
         "names",
         "descriptions",
@@ -760,6 +767,7 @@ function CohortComponent({
         "simulation_positions",
         "simulation_availability",
         "profiles",
+        "profile_personas",
       ], // All resources for full-page generation
     }),
     [],
@@ -776,6 +784,7 @@ function CohortComponent({
       simulation_positions: "Simulation Positions",
       simulation_availability: "Simulation Availability",
       profiles: "Profiles",
+      profile_personas: "Profile Personas",
     }),
     [],
   );
@@ -869,6 +878,7 @@ function CohortComponent({
             simulation_position_ids: effectiveFormState.simulation_position_ids?.length > 0 ? effectiveFormState.simulation_position_ids : null,
             simulation_availability_ids: effectiveFormState.simulation_availability_ids?.length > 0 ? effectiveFormState.simulation_availability_ids : null,
             profile_ids: effectiveFormState.profile_ids?.length > 0 ? effectiveFormState.profile_ids : null,
+            profile_persona_ids: effectiveFormState.profile_persona_ids?.length > 0 ? effectiveFormState.profile_persona_ids : null,
           },
         } as SaveCohortIn);
         toast.success(
@@ -940,7 +950,7 @@ function CohortComponent({
         id: "profiles",
         title: "Profiles",
         description: "Select profiles for this cohort.",
-        resetFields: ["profile_ids"],
+        resetFields: ["profile_ids", "profile_persona_ids"],
       },
     ],
     [],
@@ -957,6 +967,7 @@ function CohortComponent({
       "simulation_positions",
       "simulation_availability",
       "profile_ids",
+      "profile_persona_ids",
     ],
     [],
   );
@@ -998,6 +1009,7 @@ function CohortComponent({
           return {
             ...prev,
             profile_ids: [],
+            profile_persona_ids: [],
           };
         default:
           return prev;
@@ -1400,6 +1412,49 @@ function CohortComponent({
                 showAiGenerate={s?.profiles?.show_ai_generate ?? false}
                 onGenerate={handleGenerateProfiles}
               />
+              <ProfilePersonas
+                profile_persona_ids={formState.profile_persona_ids ?? []}
+                profile_persona_resources={(s?.profile_personas?.current ?? []).map((pp) => ({
+                  id: pp.id ?? null,
+                  profile_id: pp.profile_id ?? null,
+                  persona_id: pp.persona_id ?? null,
+                  generated: pp.generated ?? false,
+                }))}
+                profile_personas={(s?.profile_personas?.resources ?? []).map((pp) => ({
+                  id: pp.id ?? null,
+                  profile_id: pp.profile_id ?? null,
+                  persona_id: pp.persona_id ?? null,
+                  generated: pp.generated ?? false,
+                }))}
+                show_profile_personas={s?.profile_personas?.show ?? false}
+                profiles={(s?.profiles?.resources ?? []).map((p) => ({
+                  profile_id: p.profile_id ?? null,
+                  name: p.name ?? null,
+                  description: p.description ?? null,
+                  generated: p.generated ?? false,
+                }))}
+                profile_resources={(s?.profiles?.current ?? []).map((p) => ({
+                  profile_id: p.profile_id ?? null,
+                  name: p.name ?? null,
+                  description: p.description ?? null,
+                  generated: p.generated ?? false,
+                }))}
+                personas={[]}
+                profile_ids={formState.profile_ids ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, profile_persona_ids: ids }))
+                }
+                cohort_id={cohortId ?? null}
+                group_id={s?.group_id ?? null}
+                create_tool_id={null}
+                createProfilePersonasAction={createProfilePersonasAction}
+                showAiGenerate={s?.profile_personas?.show_ai_generate ?? false}
+                onGenerate={handleGenerateProfilePersonas}
+                isAutosaveEnabled={isAutosaveEnabled}
+                registerFlush={registerFlushCallbacks["profile_personas"]}
+                aiProfilePersonaResources={[]}
+              />
             </StepCard>
           );
 
@@ -1421,6 +1476,7 @@ function CohortComponent({
       handleGenerateSimulationPositions,
       handleGenerateSimulationAvailability,
       handleGenerateProfiles,
+      handleGenerateProfilePersonas,
       isGenerating,
       stepResources,
       // Depend on individual formState fields instead of whole object to prevent callback recreation
@@ -1434,10 +1490,12 @@ function CohortComponent({
       formState.simulation_ids,
       formState.simulation_positions,
       formState.profile_ids,
+      formState.profile_persona_ids,
       createNamesAction,
       createDescriptionsAction,
       createSimulationPositionsAction,
       createSimulationAvailabilityAction,
+      createProfilePersonasAction,
       canRegenerate,
       handleOpenStepCardModal,
       isAutosaveEnabled,

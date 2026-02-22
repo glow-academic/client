@@ -1069,14 +1069,11 @@ function ScenarioComponent({
   const stepResources: Record<string, ScenarioResourceType[]> = useMemo(
     () => ({
       basic: ["names", "descriptions", "scenario_flags", "departments"],
-      problem_statement: ["problem_statements"],
-      objectives: ["objectives"],
       personas: ["personas"],
       documents: ["documents"],
       parameters: ["parameters", "parameter_fields"],
-      images: ["images"],
-      videos: ["videos"],
-      questions: ["questions"],
+      context: ["images", "problem_statements", "objectives"],
+      video: ["videos", "questions"],
       all: [
         "names",
         "descriptions",
@@ -1148,24 +1145,6 @@ function ScenarioComponent({
       },
     ];
 
-    if (showProblemStatementSection) {
-      items.push({
-        id: "problem_statement",
-        title: "Problem Statement",
-        description: "Define the core problem statement for the scenario.",
-        resetFields: ["problem_statement", "problemStatementSearch"],
-      });
-    }
-
-    if (showObjectivesSection) {
-      items.push({
-        id: "objectives",
-        title: "Objectives",
-        description: "Define learning objectives for the scenario.",
-        resetFields: ["objectives"],
-      });
-    }
-
     if (stableScenarioDataFields?.personas?.show) {
       items.push({
         id: "personas",
@@ -1193,40 +1172,38 @@ function ScenarioComponent({
       });
     }
 
-    if (showImagesSection) {
+    if (showProblemStatementSection || showObjectivesSection || showImagesSection) {
       items.push({
-        id: "images",
-        title: "Images",
-        description: "Select images for the scenario.",
-        resetFields: ["images"],
+        id: "context",
+        title: "Context",
+        description:
+          "Define the visual context, problem statement, and learning objectives.",
+        resetFields: [
+          "problem_statement",
+          "objectives",
+          "images",
+          "problemStatementSearch",
+        ],
       });
     }
 
-    if (showVideosSection) {
+    if (showVideosSection || showQuestionsSection) {
       items.push({
-        id: "videos",
-        title: "Videos",
-        description: "Select videos for the scenario.",
-        resetFields: ["videos"],
-      });
-    }
-
-    if (showQuestionsSection) {
-      items.push({
-        id: "questions",
-        title: "Questions",
-        description: "Select questions for the scenario.",
-        resetFields: ["questions"],
+        id: "video",
+        title: "Video",
+        description:
+          "Add video content, questions, and answer options.",
+        resetFields: ["videos", "questions"],
       });
     }
 
     return items;
   }, [
-    showProblemStatementSection,
-    showObjectivesSection,
     stableScenarioDataFields?.personas?.show,
     stableScenarioDataFields?.documents?.show,
     stableScenarioDataFields?.parameters?.show,
+    showProblemStatementSection,
+    showObjectivesSection,
     showImagesSection,
     showVideosSection,
     showQuestionsSection,
@@ -1259,22 +1236,16 @@ function ScenarioComponent({
     switch (stepId) {
       case "basic":
         return "Basic information reset";
-      case "problem_statement":
-        return "Problem statement reset";
-      case "objectives":
-        return "Objectives reset";
       case "personas":
         return "Personas reset";
       case "documents":
         return "Documents reset";
       case "parameters":
         return "Parameters reset";
-      case "images":
-        return "Images reset";
-      case "videos":
-        return "Videos reset";
-      case "questions":
-        return "Questions reset";
+      case "context":
+        return "Context reset";
+      case "video":
+        return "Video reset";
       default:
         return "Reset";
     }
@@ -1296,16 +1267,6 @@ function ScenarioComponent({
             questions_enabled_flag_id: null,
             problem_statement_enabled_flag_id: null,
           };
-        case "problem_statement":
-          return {
-            ...prev,
-            problem_statement_id: null,
-          };
-        case "objectives":
-          return {
-            ...prev,
-            objective_ids: [],
-          };
         case "personas":
           return {
             ...prev,
@@ -1322,19 +1283,17 @@ function ScenarioComponent({
             parameter_ids: [],
             parameter_field_ids: [],
           };
-        case "images":
+        case "context":
           return {
             ...prev,
+            problem_statement_id: null,
+            objective_ids: [],
             image_ids: [],
           };
-        case "videos":
+        case "video":
           return {
             ...prev,
             video_ids: [],
-          };
-        case "questions":
-          return {
-            ...prev,
             question_ids: [],
             option_ids: [],
           };
@@ -1559,12 +1518,6 @@ function ScenarioComponent({
           return hasName && hasDescription && hasDepartments
             ? "completed"
             : "active";
-        case "problem_statement":
-          if (!hasName || !hasDescription) return "pending";
-          return hasProblemStatement ? "completed" : "active";
-        case "objectives":
-          if (!hasName || !hasDescription) return "pending";
-          return hasObjectives ? "completed" : "active";
         case "personas":
           if (!hasName || !hasDescription) return "pending";
           return formState.persona_ids.length > 0 ? "completed" : "active";
@@ -1574,15 +1527,21 @@ function ScenarioComponent({
         case "parameters":
           if (!hasName || !hasDescription) return "pending";
           return formState.parameter_ids.length > 0 ? "completed" : "active";
-        case "images":
+        case "context": {
           if (!hasName || !hasDescription) return "pending";
-          return formState.image_ids.length > 0 ? "completed" : "active";
-        case "videos":
+          const hasContextContent =
+            hasProblemStatement ||
+            hasObjectives ||
+            formState.image_ids.length > 0;
+          return hasContextContent ? "completed" : "active";
+        }
+        case "video": {
           if (!hasName || !hasDescription) return "pending";
-          return formState.video_ids.length > 0 ? "completed" : "active";
-        case "questions":
-          if (!hasName || !hasDescription) return "pending";
-          return formState.question_ids.length > 0 ? "completed" : "active";
+          const hasVideoContent =
+            formState.video_ids.length > 0 ||
+            formState.question_ids.length > 0;
+          return hasVideoContent ? "completed" : "active";
+        }
         default:
           return "pending";
       }
@@ -1788,7 +1747,7 @@ function ScenarioComponent({
               </div>
             </StepCard>
           );
-        case "problem_statement":
+        case "context":
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1797,13 +1756,15 @@ function ScenarioComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              resetFields={["problem_statement"]}
+              resetFields={["problem_statement", "objectives", "images"]}
               actions={
-                stepResources["problem_statement"]?.length &&
-                (s?.problem_statements?.show_ai_generate ?? false) ? (
+                stepResources["context"]?.length &&
+                ((s?.images?.show_ai_generate ?? false) ||
+                  (s?.problem_statements?.show_ai_generate ?? false) ||
+                  (s?.objectives?.show_ai_generate ?? false)) ? (
                   <StepCardAiButton
-                    stepId="problem_statement"
-                    resourceTypes={stepResources["problem_statement"]}
+                    stepId="context"
+                    resourceTypes={stepResources["context"]}
                     canRegenerate={canRegenerate}
                     isGenerating={isGeneratingStepResource}
                     onOpenModal={handleOpenStepCardModal}
@@ -1813,93 +1774,103 @@ function ScenarioComponent({
               }
               {...resetProps}
             >
-              <ProblemStatements
-                problem_statement_id={formState.problem_statement_id ?? null}
-                problem_statement_resource={
-                  s?.problem_statements?.resource ?? null
-                }
-                show_problem_statement={showProblemStatementSection}
-                problem_statement_suggestions={
-                  s?.problem_statements?.suggestions ?? []
-                }
-                problem_statements={s?.problem_statements?.resources ?? []}
-                disabled={disabled}
-                onProblemStatementIdChange={(problemStatementId) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    problem_statement_id: problemStatementId,
-                  }))
-                }
-                onGenerate={generateHandlers["problem_statements"]}
-                label="Problem Statement"
-                placeholder="Define the core problem"
-                required={s?.problem_statements?.required ?? false}
-                group_id={s?.group_id ?? null}
-                searchTerm={problemStatementSearch ?? undefined}
-                onSearchChange={(term: string) =>
-                  setFormData({ problemStatementSearch: term || null })
-                }
-                create_tool_id={s?.problem_statements?.create_tool_id ?? null}
-                createProblemStatementsAction={
-                  createProblemStatementsAction as
-                    | ((
-                        input: CreateDraftProblemStatementsIn,
-                      ) => Promise<CreateDraftProblemStatementsOut>)
-                    | undefined
-                }
-                registerFlush={registerFlushCallbacks["problem_statements"]}
-                isAutosaveEnabled={isAutosaveEnabled}
-              />
-            </StepCard>
-          );
-        case "objectives":
-          return (
-            <StepCard
-              stepStatus={stepStatus}
-              stepNumber={stepNumber}
-              stepTitle={stepTitle}
-              stepDescription={stepDescription}
-              isReadonly={disabled}
-              isEditMode={isEditMode}
-              resetFields={["objectives"]}
-              actions={
-                stepResources["objectives"]?.length &&
-                (s?.objectives?.show_ai_generate ?? false) ? (
-                  <StepCardAiButton
-                    stepId="objectives"
-                    resourceTypes={stepResources["objectives"]}
-                    canRegenerate={canRegenerate}
-                    isGenerating={isGeneratingStepResource}
-                    onOpenModal={handleOpenStepCardModal}
+              <div className="space-y-4">
+                {showImagesSection && (
+                  <Images
+                    image_ids={formState.image_ids}
+                    image_resources={s?.images?.current ?? []}
+                    show_images={showImagesSection}
+                    images_required={s?.images?.required ?? false}
+                    image_suggestions={s?.images?.suggestions ?? []}
+                    images={s?.images?.resources ?? []}
                     disabled={disabled}
+                    onChange={(ids) =>
+                      setFormState((prev) => ({ ...prev, image_ids: ids }))
+                    }
+                    group_id={s?.group_id ?? null}
+                    createImagesAction={
+                      createImagesAction as
+                        | ((
+                            input: CreateDraftImagesIn,
+                          ) => Promise<CreateDraftImagesOut>)
+                        | undefined
+                    }
+                    onGenerate={generateHandlers["images"]}
+                    multiSelect={true}
+                    maxImages={3}
+                    isAutosaveEnabled={isAutosaveEnabled}
+                    registerFlush={registerFlushCallbacks["images"]}
                   />
-                ) : undefined
-              }
-              {...resetProps}
-            >
-              <Objectives
-                objective_ids={formState.objective_ids}
-                objective_resources={s?.objectives?.current ?? []}
-                show_objectives={showObjectivesSection}
-                objectives_required={s?.objectives?.required ?? false}
-                objective_suggestions={s?.objectives?.suggestions ?? []}
-                objectives={s?.objectives?.resources ?? []}
-                disabled={disabled}
-                onChange={(ids) =>
-                  setFormState((prev) => ({ ...prev, objective_ids: ids }))
-                }
-                group_id={s?.group_id ?? null}
-                createObjectivesAction={
-                  createObjectivesAction as
-                    | ((
-                        input: CreateDraftObjectivesIn,
-                      ) => Promise<CreateDraftObjectivesOut>)
-                    | undefined
-                }
-                onGenerate={generateHandlers["objectives"]}
-                isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks["objectives"]}
-              />
+                )}
+                {showProblemStatementSection && (
+                  <ProblemStatements
+                    problem_statement_id={
+                      formState.problem_statement_id ?? null
+                    }
+                    problem_statement_resource={
+                      s?.problem_statements?.resource ?? null
+                    }
+                    show_problem_statement={showProblemStatementSection}
+                    problem_statement_suggestions={
+                      s?.problem_statements?.suggestions ?? []
+                    }
+                    problem_statements={s?.problem_statements?.resources ?? []}
+                    disabled={disabled}
+                    onProblemStatementIdChange={(problemStatementId) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        problem_statement_id: problemStatementId,
+                      }))
+                    }
+                    onGenerate={generateHandlers["problem_statements"]}
+                    label="Problem Statement"
+                    placeholder="Define the core problem"
+                    required={s?.problem_statements?.required ?? false}
+                    group_id={s?.group_id ?? null}
+                    searchTerm={problemStatementSearch ?? undefined}
+                    onSearchChange={(term: string) =>
+                      setFormData({ problemStatementSearch: term || null })
+                    }
+                    create_tool_id={
+                      s?.problem_statements?.create_tool_id ?? null
+                    }
+                    createProblemStatementsAction={
+                      createProblemStatementsAction as
+                        | ((
+                            input: CreateDraftProblemStatementsIn,
+                          ) => Promise<CreateDraftProblemStatementsOut>)
+                        | undefined
+                    }
+                    registerFlush={registerFlushCallbacks["problem_statements"]}
+                    isAutosaveEnabled={isAutosaveEnabled}
+                  />
+                )}
+                {showObjectivesSection && (
+                  <Objectives
+                    objective_ids={formState.objective_ids}
+                    objective_resources={s?.objectives?.current ?? []}
+                    show_objectives={showObjectivesSection}
+                    objectives_required={s?.objectives?.required ?? false}
+                    objective_suggestions={s?.objectives?.suggestions ?? []}
+                    objectives={s?.objectives?.resources ?? []}
+                    disabled={disabled}
+                    onChange={(ids) =>
+                      setFormState((prev) => ({ ...prev, objective_ids: ids }))
+                    }
+                    group_id={s?.group_id ?? null}
+                    createObjectivesAction={
+                      createObjectivesAction as
+                        | ((
+                            input: CreateDraftObjectivesIn,
+                          ) => Promise<CreateDraftObjectivesOut>)
+                        | undefined
+                    }
+                    onGenerate={generateHandlers["objectives"]}
+                    isAutosaveEnabled={isAutosaveEnabled}
+                    registerFlush={registerFlushCallbacks["objectives"]}
+                  />
+                )}
+              </div>
             </StepCard>
           );
         case "personas":
@@ -2107,7 +2078,7 @@ function ScenarioComponent({
               </div>
             </StepCard>
           );
-        case "images":
+        case "video":
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -2116,13 +2087,14 @@ function ScenarioComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              resetFields={["images"]}
+              resetFields={["videos", "questions"]}
               actions={
-                stepResources["images"]?.length &&
-                (s?.images?.show_ai_generate ?? false) ? (
+                stepResources["video"]?.length &&
+                ((s?.videos?.show_ai_generate ?? false) ||
+                  (s?.questions?.show_ai_generate ?? false)) ? (
                   <StepCardAiButton
-                    stepId="images"
-                    resourceTypes={stepResources["images"]}
+                    stepId="video"
+                    resourceTypes={stepResources["video"]}
                     canRegenerate={canRegenerate}
                     isGenerating={isGeneratingStepResource}
                     onOpenModal={handleOpenStepCardModal}
@@ -2132,155 +2104,85 @@ function ScenarioComponent({
               }
               {...resetProps}
             >
-              <Images
-                image_ids={formState.image_ids}
-                image_resources={s?.images?.current ?? []}
-                show_images={showImagesSection}
-                images_required={s?.images?.required ?? false}
-                image_suggestions={s?.images?.suggestions ?? []}
-                images={s?.images?.resources ?? []}
-                disabled={disabled}
-                onChange={(ids) =>
-                  setFormState((prev) => ({ ...prev, image_ids: ids }))
-                }
-                group_id={s?.group_id ?? null}
-                createImagesAction={
-                  createImagesAction as
-                    | ((
-                        input: CreateDraftImagesIn,
-                      ) => Promise<CreateDraftImagesOut>)
-                    | undefined
-                }
-                onGenerate={generateHandlers["images"]}
-                multiSelect={true}
-                maxImages={3}
-                isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks["images"]}
-              />
-            </StepCard>
-          );
-        case "videos":
-          return (
-            <StepCard
-              stepStatus={stepStatus}
-              stepNumber={stepNumber}
-              stepTitle={stepTitle}
-              stepDescription={stepDescription}
-              isReadonly={disabled}
-              isEditMode={isEditMode}
-              resetFields={["videos"]}
-              actions={
-                stepResources["videos"]?.length &&
-                (s?.videos?.show_ai_generate ?? false) ? (
-                  <StepCardAiButton
-                    stepId="videos"
-                    resourceTypes={stepResources["videos"]}
-                    canRegenerate={canRegenerate}
-                    isGenerating={isGeneratingStepResource}
-                    onOpenModal={handleOpenStepCardModal}
+              <div className="space-y-4">
+                {showVideosSection && (
+                  <Videos
+                    video_ids={formState.video_ids}
+                    video_resources={s?.videos?.current ?? []}
+                    show_videos={showVideosSection}
+                    videos_required={s?.videos?.required ?? false}
+                    video_suggestions={s?.videos?.suggestions ?? []}
+                    videos={s?.videos?.resources ?? []}
                     disabled={disabled}
+                    onChange={(ids) =>
+                      setFormState((prev) => ({ ...prev, video_ids: ids }))
+                    }
+                    group_id={s?.group_id ?? null}
+                    createVideosAction={
+                      createVideosAction as
+                        | ((
+                            input: CreateDraftVideosIn,
+                          ) => Promise<CreateDraftVideosOut>)
+                        | undefined
+                    }
+                    onGenerate={generateHandlers["videos"]}
+                    isAutosaveEnabled={isAutosaveEnabled}
+                    registerFlush={registerFlushCallbacks["videos"]}
                   />
-                ) : undefined
-              }
-              {...resetProps}
-            >
-              <Videos
-                video_ids={formState.video_ids}
-                video_resources={s?.videos?.current ?? []}
-                show_videos={showVideosSection}
-                videos_required={s?.videos?.required ?? false}
-                video_suggestions={s?.videos?.suggestions ?? []}
-                videos={s?.videos?.resources ?? []}
-                disabled={disabled}
-                onChange={(ids) =>
-                  setFormState((prev) => ({ ...prev, video_ids: ids }))
-                }
-                group_id={s?.group_id ?? null}
-                createVideosAction={
-                  createVideosAction as
-                    | ((
-                        input: CreateDraftVideosIn,
-                      ) => Promise<CreateDraftVideosOut>)
-                    | undefined
-                }
-                onGenerate={generateHandlers["videos"]}
-                isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks["videos"]}
-              />
-            </StepCard>
-          );
-        case "questions":
-          return (
-            <StepCard
-              stepStatus={stepStatus}
-              stepNumber={stepNumber}
-              stepTitle={stepTitle}
-              stepDescription={stepDescription}
-              isReadonly={disabled}
-              isEditMode={isEditMode}
-              resetFields={["questions"]}
-              actions={
-                stepResources["questions"]?.length &&
-                (s?.questions?.show_ai_generate ?? false) ? (
-                  <StepCardAiButton
-                    stepId="questions"
-                    resourceTypes={stepResources["questions"]}
-                    canRegenerate={canRegenerate}
-                    isGenerating={isGeneratingStepResource}
-                    onOpenModal={handleOpenStepCardModal}
+                )}
+                {showQuestionsSection && (
+                  <Questions
+                    question_ids={formState.question_ids}
+                    question_resources={s?.questions?.current ?? []}
+                    show_questions={showQuestionsSection}
+                    questions_required={s?.questions?.required ?? false}
+                    question_suggestions={s?.questions?.suggestions ?? []}
+                    questions={s?.questions?.resources ?? []}
                     disabled={disabled}
+                    onChange={(ids) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        question_ids: ids,
+                      }))
+                    }
+                    group_id={s?.group_id ?? null}
+                    createQuestionsAction={
+                      createQuestionsAction as
+                        | ((
+                            input: CreateDraftQuestionsIn,
+                          ) => Promise<CreateDraftQuestionsOut>)
+                        | undefined
+                    }
+                    onGenerate={generateHandlers["questions"]}
+                    isAutosaveEnabled={isAutosaveEnabled}
+                    registerFlush={registerFlushCallbacks["questions"]}
                   />
-                ) : undefined
-              }
-              {...resetProps}
-            >
-              <Questions
-                question_ids={formState.question_ids}
-                question_resources={s?.questions?.current ?? []}
-                show_questions={showQuestionsSection}
-                questions_required={s?.questions?.required ?? false}
-                question_suggestions={s?.questions?.suggestions ?? []}
-                questions={s?.questions?.resources ?? []}
-                disabled={disabled}
-                onChange={(ids) =>
-                  setFormState((prev) => ({ ...prev, question_ids: ids }))
-                }
-                group_id={s?.group_id ?? null}
-                createQuestionsAction={
-                  createQuestionsAction as
-                    | ((
-                        input: CreateDraftQuestionsIn,
-                      ) => Promise<CreateDraftQuestionsOut>)
-                    | undefined
-                }
-                onGenerate={generateHandlers["questions"]}
-                isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks["questions"]}
-              />
-              <Options
-                option_ids={formState.option_ids}
-                option_resources={s?.options?.current ?? []}
-                show_options={
-                  showQuestionsSection && formState.question_ids.length > 0
-                }
-                options={s?.options?.resources ?? []}
-                question_ids={formState.question_ids}
-                question_resources={s?.questions?.current ?? []}
-                disabled={disabled}
-                onChange={(ids) =>
-                  setFormState((prev) => ({ ...prev, option_ids: ids }))
-                }
-                group_id={s?.group_id ?? null}
-                createOptionsAction={
-                  createOptionsAction as
-                    | ((
-                        input: CreateDraftOptionsIn,
-                      ) => Promise<CreateDraftOptionsOut>)
-                    | undefined
-                }
-                isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks["options"]}
-              />
+                )}
+                {showQuestionsSection && formState.question_ids.length > 0 && (
+                  <Options
+                    option_ids={formState.option_ids}
+                    option_resources={s?.options?.current ?? []}
+                    show_options={true}
+                    options={s?.options?.resources ?? []}
+                    question_ids={formState.question_ids}
+                    question_resources={s?.questions?.current ?? []}
+                    disabled={disabled}
+                    onChange={(ids) =>
+                      setFormState((prev) => ({ ...prev, option_ids: ids }))
+                    }
+                    group_id={s?.group_id ?? null}
+                    createOptionsAction={
+                      createOptionsAction as
+                        | ((
+                            input: CreateDraftOptionsIn,
+                          ) => Promise<CreateDraftOptionsOut>)
+                        | undefined
+                    }
+                    isAutosaveEnabled={isAutosaveEnabled}
+                    registerFlush={registerFlushCallbacks["options"]}
+                  />
+                )}
+              </div>
             </StepCard>
           );
         default:
