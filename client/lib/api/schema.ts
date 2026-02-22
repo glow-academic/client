@@ -24261,46 +24261,22 @@ export interface components {
              * @default 0
              */
             page_offset: number;
-            /** Heatmap Rubric Ids */
-            heatmap_rubric_ids?: string[] | null;
-            /** Heatmap Rubric Search */
-            heatmap_rubric_search?: string | null;
-            /** Trend Rubric Ids */
-            trend_rubric_ids?: string[] | null;
-            /** Trend Rubric Search */
-            trend_rubric_search?: string | null;
-            /** Skill Rubric Ids */
-            skill_rubric_ids?: string[] | null;
-            /** Skill Rubric Search */
-            skill_rubric_search?: string | null;
-            /** Persona Simulation Ids */
-            persona_simulation_ids?: string[] | null;
-            /** Persona Simulations Search */
-            persona_simulations_search?: string | null;
-            /** Cohort Simulation Ids */
-            cohort_simulation_ids?: string[] | null;
-            /** Cohort Simulations Search */
-            cohort_simulations_search?: string | null;
-            /** Improvement Simulation Ids */
-            improvement_simulation_ids?: string[] | null;
-            /** Improvement Simulations Search */
-            improvement_simulations_search?: string | null;
-            /** Scenario Perf Parameter Ids */
-            scenario_perf_parameter_ids?: string[] | null;
-            /** Scenario Perf Param Search */
-            scenario_perf_param_search?: string | null;
-            /** Scenario Stats Parameter Ids */
-            scenario_stats_parameter_ids?: string[] | null;
-            /** Scenario Stats Param Search */
-            scenario_stats_param_search?: string | null;
-            /** Scenario Sim Perf Scenario Ids */
-            scenario_sim_perf_scenario_ids?: string[] | null;
-            /** Scenario Sim Perf Scenario Search */
-            scenario_sim_perf_scenario_search?: string | null;
-            /** Scenario Comp Scenario Ids */
-            scenario_comp_scenario_ids?: string[] | null;
-            /** Scenario Comp Scenario Search */
-            scenario_comp_scenario_search?: string | null;
+            /** Rubric Ids */
+            rubric_ids?: string[] | null;
+            /** Rubric Search */
+            rubric_search?: string | null;
+            /** Simulation Picker Ids */
+            simulation_picker_ids?: string[] | null;
+            /** Simulation Picker Search */
+            simulation_picker_search?: string | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Parameter Search */
+            parameter_search?: string | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Scenario Search */
+            scenario_search?: string | null;
             /**
              * History Practice
              * @default false

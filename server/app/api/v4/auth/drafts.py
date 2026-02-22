@@ -5,8 +5,12 @@ from __future__ import annotations
 from typing import Annotated, Any
 from uuid import UUID
 
+import logging
+
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request
+
+logger = logging.getLogger(__name__)
 
 from app.api.v4.auth.types import GetDraftsApiResponse, QGetProfileContextV4Draft
 from app.api.v4.entries.agent_drafts.get import get_agent_drafts_entries_internal
@@ -33,32 +37,11 @@ from app.api.v4.entries.simulation_drafts.get import (
 )
 from app.api.v4.entries.tool_drafts.get import get_tool_drafts_entries_internal
 from app.api.v4.entries.training_drafts.get import get_training_drafts_entries_internal
+from app.api.v4.auth.route_permissions import compute_page_metadata
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 
 router = APIRouter()
-
-# Pathname segment → artifact type (matches drafts_entry.artifact enum)
-_PATHNAME_TO_ARTIFACT: dict[str, str] = {
-    "personas": "persona",
-    "scenarios": "scenario",
-    "simulations": "simulation",
-    "cohorts": "cohort",
-    "agents": "agent",
-    "models": "model",
-    "providers": "provider",
-    "tools": "tool",
-    "documents": "document",
-    "fields": "field",
-    "parameters": "parameter",
-    "staff": "profile",
-    "settings": "setting",
-    "departments": "department",
-    "rubrics": "rubric",
-    "evals": "eval",
-    "auth": "auth",
-    "training": "chat",
-}
 
 # Artifact type → per-artifact draft internal function
 _ARTIFACT_INTERNAL_FN = {
@@ -81,16 +64,6 @@ _ARTIFACT_INTERNAL_FN = {
     "tool": get_tool_drafts_entries_internal,
     "chat": get_training_drafts_entries_internal,
 }
-
-
-def _resolve_artifact_type(pathname: str) -> str | None:
-    """Parse X-Pathname to determine the artifact type for drafts."""
-    parts = [p for p in pathname.strip("/").split("/") if p]
-    # Walk segments to find a matching artifact route segment
-    for part in parts:
-        if part in _PATHNAME_TO_ARTIFACT:
-            return _PATHNAME_TO_ARTIFACT[part]
-    return None
 
 
 def _convert_draft(item: Any, artifact_type: str) -> QGetProfileContextV4Draft:
@@ -119,8 +92,8 @@ async def get_drafts(
             return GetDraftsApiResponse(drafts=[])
 
         pathname = http_request.headers.get("X-Pathname", "")
-        artifact_type = _resolve_artifact_type(pathname)
-
+        metadata = compute_page_metadata(pathname, [])
+        artifact_type = metadata.artifact_type
         if not artifact_type:
             return GetDraftsApiResponse(drafts=[])
 
@@ -135,7 +108,7 @@ async def get_drafts(
             raise HTTPException(status_code=500, detail="Database pool not available")
 
         # Resolve draft IDs via junction path, filtered by artifact type
-        # Both table names are safe — derived from _PATHNAME_TO_ARTIFACT dict (fixed set)
+        # Both table names are safe — derived from _ARTIFACT_INTERNAL_FN dict (fixed set)
         entry_table = f"{artifact_type}_drafts_entry"
         ownership_table = f"{artifact_type}_drafts_profiles_connection"
         async with pool.acquire() as c:

@@ -67,10 +67,15 @@ chat_scope AS (
         c.id AS chat_id,
         (ARRAY_AGG(tsc.scenarios_id ORDER BY tsc.created_at)
             FILTER (WHERE tsc.scenarios_id IS NOT NULL))[1] AS scenario_id,
-        NULL::uuid AS user_persona_id
+        (ARRAY_AGG(ppr.persona_id ORDER BY tppc.created_at)
+            FILTER (WHERE ppr.persona_id IS NOT NULL))[1] AS user_persona_id
     FROM chat_resolved_entry c
     LEFT JOIN chat_resolved_scenarios_connection tsc
         ON tsc.chat_resolved_id = c.id AND tsc.active = TRUE
+    LEFT JOIN chat_resolved_profile_personas_connection tppc
+        ON tppc.chat_resolved_id = c.id AND tppc.active = TRUE
+    LEFT JOIN profile_personas_resource ppr
+        ON ppr.id = tppc.profile_personas_id AND ppr.active = TRUE
     WHERE c.active = TRUE
     GROUP BY c.id
 )

@@ -27,73 +27,43 @@ function validateStatus(
 
 export interface DashboardFooterProps {
   data: FooterOut;
-  initialScenarioPerfParameters?: string[] | undefined;
-  onScenarioPerfParameterChange?: ((ids: string[]) => void) | undefined;
-  scenarioPerfParamSearch?: string | undefined;
-  onScenarioPerfParamSearchChange?: ((term: string) => void) | undefined;
-  initialScenarioStatsParameters?: string[] | undefined;
-  onScenarioStatsParameterChange?: ((ids: string[]) => void) | undefined;
-  scenarioStatsParamSearch?: string | undefined;
-  onScenarioStatsParamSearchChange?: ((term: string) => void) | undefined;
-  initialScenarioSimPerfScenarios?: string[] | undefined;
-  onScenarioSimPerfScenarioChange?: ((ids: string[]) => void) | undefined;
-  scenarioSimPerfScenarioSearch?: string | undefined;
-  onScenarioSimPerfScenarioSearchChange?: ((term: string) => void) | undefined;
-  initialScenarioCompScenarios?: string[] | undefined;
-  onScenarioCompScenarioChange?: ((ids: string[]) => void) | undefined;
-  scenarioCompScenarioSearch?: string | undefined;
-  onScenarioCompScenarioSearchChange?: ((term: string) => void) | undefined;
+  initialParameterIds?: string[] | undefined;
+  parameterSearch?: string | undefined;
+  initialParameterIndex?: number;
+  initialScenarioIds?: string[] | undefined;
+  scenarioSearch?: string | undefined;
+  initialScenarioIndex?: number;
 }
 
 export default function DashboardFooter({
   data,
-  initialScenarioPerfParameters,
-  onScenarioPerfParameterChange,
-  scenarioPerfParamSearch,
-  onScenarioPerfParamSearchChange,
-  initialScenarioStatsParameters,
-  onScenarioStatsParameterChange,
-  scenarioStatsParamSearch,
-  onScenarioStatsParamSearchChange,
-  initialScenarioSimPerfScenarios,
-  onScenarioSimPerfScenarioChange,
-  scenarioSimPerfScenarioSearch,
-  onScenarioSimPerfScenarioSearchChange,
-  initialScenarioCompScenarios,
-  onScenarioCompScenarioChange,
-  scenarioCompScenarioSearch,
-  onScenarioCompScenarioSearchChange,
+  initialParameterIds,
+  parameterSearch,
+  initialParameterIndex = 0,
+  initialScenarioIds,
+  scenarioSearch,
+  initialScenarioIndex = 0,
 }: DashboardFooterProps) {
   const {
     params: sectionParams,
-    setScenarioPerfParameterIds,
-    setScenarioPerfParamSearch,
-    setScenarioStatsParameterIds,
-    setScenarioStatsParamSearch,
-    setScenarioSimPerfScenarioIds,
-    setScenarioSimPerfScenarioSearch,
-    setScenarioCompScenarioIds,
-    setScenarioCompScenarioSearch,
+    setParameterIds,
+    setParameterSearch,
+    setParameterIndex,
+    setScenarioIds,
+    setScenarioSearch,
+    setScenarioIndex,
   } = useDashboardSectionParams();
 
-  const effectiveOnScenarioPerfChange = onScenarioPerfParameterChange ?? setScenarioPerfParameterIds;
-  const effectiveOnScenarioPerfSearch = onScenarioPerfParamSearchChange ?? setScenarioPerfParamSearch;
-  const effectiveScenarioPerfSearch = scenarioPerfParamSearch ?? sectionParams.scenarioPerfParamSearch ?? undefined;
+  const effectiveOnParameterChange = setParameterIds;
+  const effectiveOnParameterSearch = setParameterSearch;
+  const effectiveParameterSearch = parameterSearch ?? sectionParams.parameterSearch ?? undefined;
 
-  const effectiveOnScenarioStatsChange = onScenarioStatsParameterChange ?? setScenarioStatsParameterIds;
-  const effectiveOnScenarioStatsSearch = onScenarioStatsParamSearchChange ?? setScenarioStatsParamSearch;
-  const effectiveScenarioStatsSearch = scenarioStatsParamSearch ?? sectionParams.scenarioStatsParamSearch ?? undefined;
+  const effectiveOnScenarioChange = setScenarioIds;
+  const effectiveOnScenarioSearch = setScenarioSearch;
+  const effectiveScenarioSearch = scenarioSearch ?? sectionParams.scenarioSearch ?? undefined;
 
-  const effectiveOnScenarioSimPerfChange = onScenarioSimPerfScenarioChange ?? setScenarioSimPerfScenarioIds;
-  const effectiveOnScenarioSimPerfSearch = onScenarioSimPerfScenarioSearchChange ?? setScenarioSimPerfScenarioSearch;
-  const effectiveScenarioSimPerfSearch = scenarioSimPerfScenarioSearch ?? sectionParams.scenarioSimPerfScenarioSearch ?? undefined;
-
-  const effectiveOnScenarioCompChange = onScenarioCompScenarioChange ?? setScenarioCompScenarioIds;
-  const effectiveOnScenarioCompSearch = onScenarioCompScenarioSearchChange ?? setScenarioCompScenarioSearch;
-  const effectiveScenarioCompSearch = scenarioCompScenarioSearch ?? sectionParams.scenarioCompScenarioSearch ?? undefined;
-
-  const [leftFooterCarouselIndex, setLeftFooterCarouselIndex] = useState(0);
-  const [rightFooterCarouselIndex, setRightFooterCarouselIndex] = useState(0);
+  const [leftFooterCarouselIndex, setLeftFooterCarouselIndex] = useState(initialParameterIndex);
+  const [rightFooterCarouselIndex, setRightFooterCarouselIndex] = useState(initialScenarioIndex);
   const [isLeftFooterHovered, setIsLeftFooterHovered] = useState(false);
   const [isRightFooterHovered, setIsRightFooterHovered] = useState(false);
 
@@ -140,10 +110,10 @@ export default function DashboardFooter({
         validParameterIds={scenarioPerformance.valid_parameter_ids || []}
         actionableInsight={data.insights?.scenario_performance ?? null}
         status={validateStatus(scenarioPerformance.status)}
-        initialSelectedParameters={initialScenarioPerfParameters}
-        onParameterSelect={effectiveOnScenarioPerfChange}
-        parameterSearchValue={effectiveScenarioPerfSearch}
-        onParameterSearchChange={effectiveOnScenarioPerfSearch}
+        initialSelectedParameters={initialParameterIds}
+        onParameterSelect={effectiveOnParameterChange}
+        parameterSearchValue={effectiveParameterSearch}
+        onParameterSearchChange={effectiveOnParameterSearch}
       />,
       <ScenarioStats
         key="scenario-stats"
@@ -171,13 +141,13 @@ export default function DashboardFooter({
         validNumericParameterIds={scenarioStats.valid_numeric_parameter_ids || []}
         actionableInsight={data.insights?.scenario_stats ?? null}
         status={validateStatus(scenarioStats.status)}
-        initialSelectedParameters={initialScenarioStatsParameters}
-        onParameterSelect={effectiveOnScenarioStatsChange}
-        parameterSearchValue={effectiveScenarioStatsSearch}
-        onParameterSearchChange={effectiveOnScenarioStatsSearch}
+        initialSelectedParameters={initialParameterIds}
+        onParameterSelect={effectiveOnParameterChange}
+        parameterSearchValue={effectiveParameterSearch}
+        onParameterSearchChange={effectiveOnParameterSearch}
       />,
     ];
-  }, [data, initialScenarioPerfParameters, effectiveOnScenarioPerfChange, effectiveScenarioPerfSearch, effectiveOnScenarioPerfSearch, initialScenarioStatsParameters, effectiveOnScenarioStatsChange, effectiveScenarioStatsSearch, effectiveOnScenarioStatsSearch]);
+  }, [data, initialParameterIds, effectiveOnParameterChange, effectiveParameterSearch, effectiveOnParameterSearch]);
 
   const rightFooterComponents = useMemo(() => {
     if (!data?.footer_metrics) return [];
@@ -207,10 +177,10 @@ export default function DashboardFooter({
         }))}
         actionableInsight={data.insights?.scenario_simulation_performance ?? null}
         status={validateStatus(scenarioSimPerf.status)}
-        initialSelectedScenarios={initialScenarioSimPerfScenarios}
-        onScenarioSelect={effectiveOnScenarioSimPerfChange}
-        scenarioSearchValue={effectiveScenarioSimPerfSearch}
-        onScenarioSearchChange={effectiveOnScenarioSimPerfSearch}
+        initialSelectedScenarios={initialScenarioIds}
+        onScenarioSelect={effectiveOnScenarioChange}
+        scenarioSearchValue={effectiveScenarioSearch}
+        onScenarioSearchChange={effectiveOnScenarioSearch}
       />,
       <ScenarioComposition
         key="scenario-composition"
@@ -250,32 +220,48 @@ export default function DashboardFooter({
         validScenarioIds={scenarioComp.valid_scenario_ids || []}
         actionableInsight={data.insights?.scenario_composition ?? null}
         status={validateStatus(scenarioComp.status)}
-        initialSelectedScenarios={initialScenarioCompScenarios}
-        onScenarioSelect={effectiveOnScenarioCompChange}
-        scenarioSearchValue={effectiveScenarioCompSearch}
-        onScenarioSearchChange={effectiveOnScenarioCompSearch}
+        initialSelectedScenarios={initialScenarioIds}
+        onScenarioSelect={effectiveOnScenarioChange}
+        scenarioSearchValue={effectiveScenarioSearch}
+        onScenarioSearchChange={effectiveOnScenarioSearch}
       />,
     ];
-  }, [data, initialScenarioSimPerfScenarios, effectiveOnScenarioSimPerfChange, effectiveScenarioSimPerfSearch, effectiveOnScenarioSimPerfSearch, initialScenarioCompScenarios, effectiveOnScenarioCompChange, effectiveScenarioCompSearch, effectiveOnScenarioCompSearch]);
+  }, [data, initialScenarioIds, effectiveOnScenarioChange, effectiveScenarioSearch, effectiveOnScenarioSearch]);
 
   const navigateLeftFooter = (direction: "prev" | "next") => {
     const length = leftFooterComponents.length;
     if (length === 0) return;
+    let newIndex: number;
     if (direction === "prev") {
-      setLeftFooterCarouselIndex((prev: number) => (prev - 1 + length) % length);
+      newIndex = (leftFooterCarouselIndex - 1 + length) % length;
     } else {
-      setLeftFooterCarouselIndex((prev: number) => (prev + 1) % length);
+      newIndex = (leftFooterCarouselIndex + 1) % length;
     }
+    setLeftFooterCarouselIndex(newIndex);
+    setParameterIndex(newIndex);
   };
 
   const navigateRightFooter = (direction: "prev" | "next") => {
     const length = rightFooterComponents.length;
     if (length === 0) return;
+    let newIndex: number;
     if (direction === "prev") {
-      setRightFooterCarouselIndex((prev: number) => (prev - 1 + length) % length);
+      newIndex = (rightFooterCarouselIndex - 1 + length) % length;
     } else {
-      setRightFooterCarouselIndex((prev: number) => (prev + 1) % length);
+      newIndex = (rightFooterCarouselIndex + 1) % length;
     }
+    setRightFooterCarouselIndex(newIndex);
+    setScenarioIndex(newIndex);
+  };
+
+  const setLeftIndex = (index: number) => {
+    setLeftFooterCarouselIndex(index);
+    setParameterIndex(index);
+  };
+
+  const setRightIndex = (index: number) => {
+    setRightFooterCarouselIndex(index);
+    setScenarioIndex(index);
   };
 
   if (leftFooterComponents.length === 0 && rightFooterComponents.length === 0) return null;
@@ -283,7 +269,7 @@ export default function DashboardFooter({
   return (
     <div className="pb-8">
       <div className="grid gap-6 items-stretch grid-cols-1 lg:grid-cols-2">
-        {/* Left Footer Section */}
+        {/* Left Footer Section (Parameter) */}
         {leftFooterComponents.length > 0 && (
           <div className="flex flex-col space-y-4">
             <div
@@ -330,7 +316,7 @@ export default function DashboardFooter({
                 {leftFooterComponents.map((_, index) => (
                   <button
                     key={index}
-                    onClick={() => setLeftFooterCarouselIndex(index)}
+                    onClick={() => setLeftIndex(index)}
                     className={`w-2 h-2 rounded-full transition-colors ${
                       index === leftFooterCarouselIndex ? "bg-primary" : "bg-muted"
                     }`}
@@ -341,7 +327,7 @@ export default function DashboardFooter({
           </div>
         )}
 
-        {/* Right Footer Section */}
+        {/* Right Footer Section (Scenario) */}
         {rightFooterComponents.length > 0 && (
           <div className="flex flex-col space-y-4">
             <div
@@ -388,7 +374,7 @@ export default function DashboardFooter({
                 {rightFooterComponents.map((_, index) => (
                   <button
                     key={index}
-                    onClick={() => setRightFooterCarouselIndex(index)}
+                    onClick={() => setRightIndex(index)}
                     className={`w-2 h-2 rounded-full transition-colors ${
                       index === rightFooterCarouselIndex ? "bg-primary" : "bg-muted"
                     }`}

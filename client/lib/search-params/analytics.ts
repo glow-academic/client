@@ -64,29 +64,22 @@ export const historySearchParams = {
  * Each chart's picker state is synced to URL params so sections refetch with filtered data.
  */
 export const dashboardSectionSearchParams = {
-  // Primary: RubricHeatmap + RubricTrend + SkillPerformance (all rubric pickers)
-  heatmapRubricIds: parseAsCommaSeparatedArray,
-  heatmapRubricSearch: parseAsString,
-  trendRubricIds: parseAsCommaSeparatedArray,
-  trendRubricSearch: parseAsString,
-  skillRubricIds: parseAsCommaSeparatedArray,
-  skillRubricSearch: parseAsString,
-  // Secondary: PersonaPerformance + CohortPerformance + AttemptImprovement (all simulation pickers)
-  personaSimulationIds: parseAsCommaSeparatedArray,
-  personaSimulationsSearch: parseAsString,
-  cohortSimulationIds: parseAsCommaSeparatedArray,
-  cohortSimulationsSearch: parseAsString,
-  improvementSimulationIds: parseAsCommaSeparatedArray,
-  improvementSimulationsSearch: parseAsString,
-  // Footer: scenario perf + scenario stats + scenario sim perf + scenario comp
-  scenarioPerfParameterIds: parseAsCommaSeparatedArray,
-  scenarioPerfParamSearch: parseAsString,
-  scenarioStatsParameterIds: parseAsCommaSeparatedArray,
-  scenarioStatsParamSearch: parseAsString,
-  scenarioSimPerfScenarioIds: parseAsCommaSeparatedArray,
-  scenarioSimPerfScenarioSearch: parseAsString,
-  scenarioCompScenarioIds: parseAsCommaSeparatedArray,
-  scenarioCompScenarioSearch: parseAsString,
+  // Rubric section: Heatmap + Trend + SkillPerformance
+  rubricIds: parseAsCommaSeparatedArray,
+  rubricSearch: parseAsString,
+  rubricIndex: parseAsInteger,
+  // Simulation section: Persona + Cohort + AttemptImprovement
+  simulationPickerIds: parseAsCommaSeparatedArray,
+  simulationPickerSearch: parseAsString,
+  simulationIndex: parseAsInteger,
+  // Parameter section: ScenarioPerformance + ScenarioStats
+  parameterIds: parseAsCommaSeparatedArray,
+  parameterSearch: parseAsString,
+  parameterIndex: parseAsInteger,
+  // Scenario section: ScenarioSimPerf + ScenarioComposition
+  scenarioIds: parseAsCommaSeparatedArray,
+  scenarioSearch: parseAsString,
+  scenarioIndex: parseAsInteger,
 };
 
 export const loadAnalyticsSearchParams = createLoader(analyticsSearchParams);

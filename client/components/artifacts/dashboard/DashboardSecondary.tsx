@@ -27,59 +27,30 @@ function validateStatus(
 export interface DashboardSecondaryProps {
   data: SecondaryOut;
   profileId?: string | undefined;
-  initialPersonaSimulations?: string[] | undefined;
-  onPersonaSimulationChange?: ((ids: string[]) => void) | undefined;
-  personaSimulationsSearch?: string | undefined;
-  onPersonaSimulationsSearchChange?: ((term: string) => void) | undefined;
-  initialCohortSimulations?: string[] | undefined;
-  onCohortSimulationChange?: ((ids: string[]) => void) | undefined;
-  cohortSimulationsSearch?: string | undefined;
-  onCohortSimulationsSearchChange?: ((term: string) => void) | undefined;
-  initialImprovementSimulations?: string[] | undefined;
-  onImprovementSimulationChange?: ((ids: string[]) => void) | undefined;
-  improvementSimulationsSearch?: string | undefined;
-  onImprovementSimulationsSearchChange?: ((term: string) => void) | undefined;
+  initialSimulationIds?: string[] | undefined;
+  simulationSearch?: string | undefined;
+  initialIndex?: number;
 }
 
 export default function DashboardSecondary({
   data,
   profileId,
-  initialPersonaSimulations,
-  onPersonaSimulationChange,
-  personaSimulationsSearch,
-  onPersonaSimulationsSearchChange,
-  initialCohortSimulations,
-  onCohortSimulationChange,
-  cohortSimulationsSearch,
-  onCohortSimulationsSearchChange,
-  initialImprovementSimulations,
-  onImprovementSimulationChange,
-  improvementSimulationsSearch,
-  onImprovementSimulationsSearchChange,
+  initialSimulationIds,
+  simulationSearch,
+  initialIndex = 0,
 }: DashboardSecondaryProps) {
   const {
     params: sectionParams,
-    setPersonaSimulationIds,
-    setPersonaSimulationsSearch,
-    setCohortSimulationIds,
-    setCohortSimulationsSearch,
-    setImprovementSimulationIds,
-    setImprovementSimulationsSearch,
+    setSimulationPickerIds,
+    setSimulationPickerSearch,
+    setSimulationIndex,
   } = useDashboardSectionParams();
 
-  const effectiveOnPersonaChange = onPersonaSimulationChange ?? setPersonaSimulationIds;
-  const effectiveOnPersonaSearch = onPersonaSimulationsSearchChange ?? setPersonaSimulationsSearch;
-  const effectivePersonaSearch = personaSimulationsSearch ?? sectionParams.personaSimulationsSearch ?? undefined;
+  const effectiveOnSimulationChange = setSimulationPickerIds;
+  const effectiveOnSimulationSearch = setSimulationPickerSearch;
+  const effectiveSimulationSearch = simulationSearch ?? sectionParams.simulationPickerSearch ?? undefined;
 
-  const effectiveOnCohortChange = onCohortSimulationChange ?? setCohortSimulationIds;
-  const effectiveOnCohortSearch = onCohortSimulationsSearchChange ?? setCohortSimulationsSearch;
-  const effectiveCohortSearch = cohortSimulationsSearch ?? sectionParams.cohortSimulationsSearch ?? undefined;
-
-  const effectiveOnImprovementChange = onImprovementSimulationChange ?? setImprovementSimulationIds;
-  const effectiveOnImprovementSearch = onImprovementSimulationsSearchChange ?? setImprovementSimulationsSearch;
-  const effectiveImprovementSearch = improvementSimulationsSearch ?? sectionParams.improvementSimulationsSearch ?? undefined;
-
-  const [secondaryCarouselIndex, setSecondaryCarouselIndex] = useState(0);
+  const [secondaryCarouselIndex, setSecondaryCarouselIndex] = useState(initialIndex);
   const [isSecondaryHovered, setIsSecondaryHovered] = useState(false);
 
   const secondaryComponents = useMemo(() => {
@@ -145,10 +116,10 @@ export default function DashboardSecondary({
           warning: data.thresholds.warning ?? 0,
           danger: data.thresholds.danger ?? 0,
         } : { success: 0, warning: 0, danger: 0 }}
-        initialSelectedSimulations={initialPersonaSimulations}
-        onSimulationSelect={effectiveOnPersonaChange}
-        simulationSearchValue={effectivePersonaSearch}
-        onSimulationSearchChange={effectiveOnPersonaSearch}
+        initialSelectedSimulations={initialSimulationIds}
+        onSimulationSelect={effectiveOnSimulationChange}
+        simulationSearchValue={effectiveSimulationSearch}
+        onSimulationSearchChange={effectiveOnSimulationSearch}
       />,
       <CohortPerformance
         key="cohort-performance"
@@ -200,10 +171,10 @@ export default function DashboardSecondary({
           ) as Record<string, string | null>
         } : {})}
         status={validateStatus(cohortPerformance.status)}
-        initialSelectedSimulations={initialCohortSimulations}
-        onSimulationSelect={effectiveOnCohortChange}
-        simulationSearchValue={effectiveCohortSearch}
-        onSimulationSearchChange={effectiveOnCohortSearch}
+        initialSelectedSimulations={initialSimulationIds}
+        onSimulationSelect={effectiveOnSimulationChange}
+        simulationSearchValue={effectiveSimulationSearch}
+        onSimulationSearchChange={effectiveOnSimulationSearch}
       />,
       <AttemptImprovement
         key="attempt-improvement"
@@ -228,22 +199,30 @@ export default function DashboardSecondary({
         validSimulationIds={attemptImprovement.valid_simulation_ids || []}
         actionableInsight={data.insights?.attempt_improvement ?? null}
         status={validateStatus(attemptImprovement.status)}
-        initialSelectedSimulations={initialImprovementSimulations}
-        onSimulationSelect={effectiveOnImprovementChange}
-        simulationSearchValue={effectiveImprovementSearch}
-        onSimulationSearchChange={effectiveOnImprovementSearch}
+        initialSelectedSimulations={initialSimulationIds}
+        onSimulationSelect={effectiveOnSimulationChange}
+        simulationSearchValue={effectiveSimulationSearch}
+        onSimulationSearchChange={effectiveOnSimulationSearch}
       />,
     ];
-  }, [data, profileId, initialPersonaSimulations, effectiveOnPersonaChange, effectivePersonaSearch, effectiveOnPersonaSearch, initialCohortSimulations, effectiveOnCohortChange, effectiveCohortSearch, effectiveOnCohortSearch, initialImprovementSimulations, effectiveOnImprovementChange, effectiveImprovementSearch, effectiveOnImprovementSearch]);
+  }, [data, profileId, initialSimulationIds, effectiveOnSimulationChange, effectiveSimulationSearch, effectiveOnSimulationSearch]);
 
   const navigateSecondary = (direction: "prev" | "next") => {
     const length = secondaryComponents.length;
     if (length === 0) return;
+    let newIndex: number;
     if (direction === "prev") {
-      setSecondaryCarouselIndex((prev: number) => (prev - 1 + length) % length);
+      newIndex = (secondaryCarouselIndex - 1 + length) % length;
     } else {
-      setSecondaryCarouselIndex((prev: number) => (prev + 1) % length);
+      newIndex = (secondaryCarouselIndex + 1) % length;
     }
+    setSecondaryCarouselIndex(newIndex);
+    setSimulationIndex(newIndex);
+  };
+
+  const setIndex = (index: number) => {
+    setSecondaryCarouselIndex(index);
+    setSimulationIndex(index);
   };
 
   if (secondaryComponents.length === 0) return null;
@@ -294,7 +273,7 @@ export default function DashboardSecondary({
           {secondaryComponents.map((_, index) => (
             <button
               key={index}
-              onClick={() => setSecondaryCarouselIndex(index)}
+              onClick={() => setIndex(index)}
               className={`w-2 h-2 rounded-full transition-colors ${
                 index === secondaryCarouselIndex ? "bg-primary" : "bg-muted"
               }`}

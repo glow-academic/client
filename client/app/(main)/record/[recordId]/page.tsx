@@ -79,29 +79,19 @@ export default async function RecordPage({
   const { defaults, profileContext } = await computeAnalyticsDefaults();
   const filters = resolveAnalyticsFilters(q, defaults, profileContext);
 
-  // Section picker params
-  // Primary: all rubric pickers
-  const heatmapRubricIds = q.heatmapRubricIds ?? undefined;
-  const heatmapRubricSearch = q.heatmapRubricSearch ?? undefined;
-  const trendRubricIds = q.trendRubricIds ?? undefined;
-  const trendRubricSearch = q.trendRubricSearch ?? undefined;
-  const skillRubricIds = q.skillRubricIds ?? undefined;
-  const skillRubricSearch = q.skillRubricSearch ?? undefined;
-  // Secondary: all simulation pickers
-  const personaSimulationIds = q.personaSimulationIds ?? undefined;
-  const personaSimulationsSearch = q.personaSimulationsSearch ?? undefined;
-  const cohortSimulationIds = q.cohortSimulationIds ?? undefined;
-  const cohortSimulationsSearch = q.cohortSimulationsSearch ?? undefined;
-  const improvementSimulationIds = q.improvementSimulationIds ?? undefined;
-  const improvementSimulationsSearch = q.improvementSimulationsSearch ?? undefined;
-  const scenarioPerfParameterIds = q.scenarioPerfParameterIds ?? undefined;
-  const scenarioPerfParamSearch = q.scenarioPerfParamSearch ?? undefined;
-  const scenarioStatsParameterIds = q.scenarioStatsParameterIds ?? undefined;
-  const scenarioStatsParamSearch = q.scenarioStatsParamSearch ?? undefined;
-  const scenarioSimPerfScenarioIds = q.scenarioSimPerfScenarioIds ?? undefined;
-  const scenarioSimPerfScenarioSearch = q.scenarioSimPerfScenarioSearch ?? undefined;
-  const scenarioCompScenarioIds = q.scenarioCompScenarioIds ?? undefined;
-  const scenarioCompScenarioSearch = q.scenarioCompScenarioSearch ?? undefined;
+  // Section picker params (canonical — shared across charts in each section)
+  const rubricIds = q.rubricIds ?? undefined;
+  const rubricSearch = q.rubricSearch ?? undefined;
+  const rubricIndex = q.rubricIndex ?? 0;
+  const simulationPickerIds = q.simulationPickerIds ?? undefined;
+  const simulationPickerSearch = q.simulationPickerSearch ?? undefined;
+  const simulationIndex = q.simulationIndex ?? 0;
+  const parameterIds = q.parameterIds ?? undefined;
+  const parameterSearch = q.parameterSearch ?? undefined;
+  const parameterIndex = q.parameterIndex ?? 0;
+  const scenarioIds = q.scenarioIds ?? undefined;
+  const scenarioSearch = q.scenarioSearch ?? undefined;
+  const scenarioIndex = q.scenarioIndex ?? 0;
 
   // History params with defaults
   const historyPage = q.historyPage ?? 0;
@@ -122,29 +112,19 @@ export default async function RecordPage({
     filters.roles.join(","),
     filters.simulationFilters.join(","),
     recordId,
-    // Primary pickers
-    (heatmapRubricIds || []).join(","),
-    heatmapRubricSearch || "",
-    (trendRubricIds || []).join(","),
-    trendRubricSearch || "",
-    (skillRubricIds || []).join(","),
-    skillRubricSearch || "",
-    // Secondary pickers
-    (personaSimulationIds || []).join(","),
-    personaSimulationsSearch || "",
-    (cohortSimulationIds || []).join(","),
-    cohortSimulationsSearch || "",
-    (improvementSimulationIds || []).join(","),
-    improvementSimulationsSearch || "",
-    // Footer pickers
-    (scenarioPerfParameterIds || []).join(","),
-    scenarioPerfParamSearch || "",
-    (scenarioStatsParameterIds || []).join(","),
-    scenarioStatsParamSearch || "",
-    (scenarioSimPerfScenarioIds || []).join(","),
-    scenarioSimPerfScenarioSearch || "",
-    (scenarioCompScenarioIds || []).join(","),
-    scenarioCompScenarioSearch || "",
+    // Section pickers (canonical)
+    (rubricIds || []).join(","),
+    rubricSearch || "",
+    rubricIndex,
+    (simulationPickerIds || []).join(","),
+    simulationPickerSearch || "",
+    simulationIndex,
+    (parameterIds || []).join(","),
+    parameterSearch || "",
+    parameterIndex,
+    (scenarioIds || []).join(","),
+    scenarioSearch || "",
+    scenarioIndex,
     // History
     historyPage,
     historyPageSize,
@@ -173,29 +153,15 @@ export default async function RecordPage({
       actor_profile_id: profileContext.id || recordId,
       page_limit: 50,
       page_offset: 0,
-      // Primary pickers
-      ...(heatmapRubricIds?.length && { heatmap_rubric_ids: heatmapRubricIds }),
-      ...(heatmapRubricSearch && { heatmap_rubric_search: heatmapRubricSearch }),
-      ...(trendRubricIds?.length && { trend_rubric_ids: trendRubricIds }),
-      ...(trendRubricSearch && { trend_rubric_search: trendRubricSearch }),
-      ...(skillRubricIds?.length && { skill_rubric_ids: skillRubricIds }),
-      ...(skillRubricSearch && { skill_rubric_search: skillRubricSearch }),
-      // Secondary pickers
-      ...(personaSimulationIds?.length && { persona_simulation_ids: personaSimulationIds }),
-      ...(personaSimulationsSearch && { persona_simulations_search: personaSimulationsSearch }),
-      ...(cohortSimulationIds?.length && { cohort_simulation_ids: cohortSimulationIds }),
-      ...(cohortSimulationsSearch && { cohort_simulations_search: cohortSimulationsSearch }),
-      ...(improvementSimulationIds?.length && { improvement_simulation_ids: improvementSimulationIds }),
-      ...(improvementSimulationsSearch && { improvement_simulations_search: improvementSimulationsSearch }),
-      // Footer pickers
-      ...(scenarioPerfParameterIds?.length && { scenario_perf_parameter_ids: scenarioPerfParameterIds }),
-      ...(scenarioPerfParamSearch && { scenario_perf_param_search: scenarioPerfParamSearch }),
-      ...(scenarioStatsParameterIds?.length && { scenario_stats_parameter_ids: scenarioStatsParameterIds }),
-      ...(scenarioStatsParamSearch && { scenario_stats_param_search: scenarioStatsParamSearch }),
-      ...(scenarioSimPerfScenarioIds?.length && { scenario_sim_perf_scenario_ids: scenarioSimPerfScenarioIds }),
-      ...(scenarioSimPerfScenarioSearch && { scenario_sim_perf_scenario_search: scenarioSimPerfScenarioSearch }),
-      ...(scenarioCompScenarioIds?.length && { scenario_comp_scenario_ids: scenarioCompScenarioIds }),
-      ...(scenarioCompScenarioSearch && { scenario_comp_scenario_search: scenarioCompScenarioSearch }),
+      // Section pickers (canonical)
+      ...(rubricIds?.length && { rubric_ids: rubricIds }),
+      ...(rubricSearch && { rubric_search: rubricSearch }),
+      ...(simulationPickerIds?.length && { simulation_picker_ids: simulationPickerIds }),
+      ...(simulationPickerSearch && { simulation_picker_search: simulationPickerSearch }),
+      ...(parameterIds?.length && { parameter_ids: parameterIds }),
+      ...(parameterSearch && { parameter_search: parameterSearch }),
+      ...(scenarioIds?.length && { scenario_ids: scenarioIds }),
+      ...(scenarioSearch && { scenario_search: scenarioSearch }),
       // History
       history_page: historyPage,
       history_page_size: historyPageSize,
@@ -227,24 +193,18 @@ export default async function RecordPage({
         <Suspense key={`primary|${dataKey}`} fallback={<PrimarySkeleton />}>
           <ReportPrimarySection
             dashboardPromise={dashboardPromise}
-            heatmapRubricIds={heatmapRubricIds}
-            heatmapRubricSearch={heatmapRubricSearch}
-            trendRubricIds={trendRubricIds}
-            trendRubricSearch={trendRubricSearch}
-            skillRubricIds={skillRubricIds}
-            skillRubricSearch={skillRubricSearch}
+            rubricIds={rubricIds}
+            rubricSearch={rubricSearch}
+            rubricIndex={rubricIndex}
           />
         </Suspense>
         <Suspense key={`secondary|${dataKey}`} fallback={<SecondarySkeleton />}>
           <ReportSecondarySection
             dashboardPromise={dashboardPromise}
             recordId={recordId}
-            personaSimulationIds={personaSimulationIds}
-            personaSimulationsSearch={personaSimulationsSearch}
-            cohortSimulationIds={cohortSimulationIds}
-            cohortSimulationsSearch={cohortSimulationsSearch}
-            improvementSimulationIds={improvementSimulationIds}
-            improvementSimulationsSearch={improvementSimulationsSearch}
+            simulationPickerIds={simulationPickerIds}
+            simulationPickerSearch={simulationPickerSearch}
+            simulationIndex={simulationIndex}
           />
         </Suspense>
       </div>
@@ -253,14 +213,12 @@ export default async function RecordPage({
       <Suspense key={`footer|${dataKey}`} fallback={<FooterSkeleton />}>
         <ReportFooterSection
           dashboardPromise={dashboardPromise}
-          scenarioPerfParameterIds={scenarioPerfParameterIds}
-          scenarioPerfParamSearch={scenarioPerfParamSearch}
-          scenarioStatsParameterIds={scenarioStatsParameterIds}
-          scenarioStatsParamSearch={scenarioStatsParamSearch}
-          scenarioSimPerfScenarioIds={scenarioSimPerfScenarioIds}
-          scenarioSimPerfScenarioSearch={scenarioSimPerfScenarioSearch}
-          scenarioCompScenarioIds={scenarioCompScenarioIds}
-          scenarioCompScenarioSearch={scenarioCompScenarioSearch}
+          parameterIds={parameterIds}
+          parameterSearch={parameterSearch}
+          parameterIndex={parameterIndex}
+          scenarioIds={scenarioIds}
+          scenarioSearch={scenarioSearch}
+          scenarioIndex={scenarioIndex}
         />
       </Suspense>
 
@@ -407,31 +365,22 @@ async function ReportHistorySection({
 
 async function ReportPrimarySection({
   dashboardPromise,
-  heatmapRubricIds,
-  heatmapRubricSearch,
-  trendRubricIds,
-  trendRubricSearch,
-  skillRubricIds,
-  skillRubricSearch,
+  rubricIds,
+  rubricSearch,
+  rubricIndex,
 }: {
   dashboardPromise: Promise<DashboardOut>;
-  heatmapRubricIds?: string[] | undefined;
-  heatmapRubricSearch?: string | undefined;
-  trendRubricIds?: string[] | undefined;
-  trendRubricSearch?: string | undefined;
-  skillRubricIds?: string[] | undefined;
-  skillRubricSearch?: string | undefined;
+  rubricIds?: string[] | undefined;
+  rubricSearch?: string | undefined;
+  rubricIndex: number;
 }) {
   const data = await dashboardPromise;
   return (
     <DashboardPrimary
       data={data}
-      initialHeatmapRubrics={heatmapRubricIds}
-      heatmapRubricSearch={heatmapRubricSearch}
-      initialTrendRubrics={trendRubricIds}
-      trendRubricSearch={trendRubricSearch}
-      initialSkillRubrics={skillRubricIds}
-      skillRubricSearch={skillRubricSearch}
+      initialRubricIds={rubricIds}
+      rubricSearch={rubricSearch}
+      initialIndex={rubricIndex}
     />
   );
 }
@@ -439,70 +388,55 @@ async function ReportPrimarySection({
 async function ReportSecondarySection({
   dashboardPromise,
   recordId,
-  personaSimulationIds,
-  personaSimulationsSearch,
-  cohortSimulationIds,
-  cohortSimulationsSearch,
-  improvementSimulationIds,
-  improvementSimulationsSearch,
+  simulationPickerIds,
+  simulationPickerSearch,
+  simulationIndex,
 }: {
   dashboardPromise: Promise<DashboardOut>;
   recordId: string;
-  personaSimulationIds?: string[] | undefined;
-  personaSimulationsSearch?: string | undefined;
-  cohortSimulationIds?: string[] | undefined;
-  cohortSimulationsSearch?: string | undefined;
-  improvementSimulationIds?: string[] | undefined;
-  improvementSimulationsSearch?: string | undefined;
+  simulationPickerIds?: string[] | undefined;
+  simulationPickerSearch?: string | undefined;
+  simulationIndex: number;
 }) {
   const data = await dashboardPromise;
   return (
     <DashboardSecondary
       data={data}
       profileId={recordId}
-      initialPersonaSimulations={personaSimulationIds}
-      personaSimulationsSearch={personaSimulationsSearch}
-      initialCohortSimulations={cohortSimulationIds}
-      cohortSimulationsSearch={cohortSimulationsSearch}
-      initialImprovementSimulations={improvementSimulationIds}
-      improvementSimulationsSearch={improvementSimulationsSearch}
+      initialSimulationIds={simulationPickerIds}
+      simulationSearch={simulationPickerSearch}
+      initialIndex={simulationIndex}
     />
   );
 }
 
 async function ReportFooterSection({
   dashboardPromise,
-  scenarioPerfParameterIds,
-  scenarioPerfParamSearch,
-  scenarioStatsParameterIds,
-  scenarioStatsParamSearch,
-  scenarioSimPerfScenarioIds,
-  scenarioSimPerfScenarioSearch,
-  scenarioCompScenarioIds,
-  scenarioCompScenarioSearch,
+  parameterIds,
+  parameterSearch,
+  parameterIndex,
+  scenarioIds,
+  scenarioSearch,
+  scenarioIndex,
 }: {
   dashboardPromise: Promise<DashboardOut>;
-  scenarioPerfParameterIds?: string[] | undefined;
-  scenarioPerfParamSearch?: string | undefined;
-  scenarioStatsParameterIds?: string[] | undefined;
-  scenarioStatsParamSearch?: string | undefined;
-  scenarioSimPerfScenarioIds?: string[] | undefined;
-  scenarioSimPerfScenarioSearch?: string | undefined;
-  scenarioCompScenarioIds?: string[] | undefined;
-  scenarioCompScenarioSearch?: string | undefined;
+  parameterIds?: string[] | undefined;
+  parameterSearch?: string | undefined;
+  parameterIndex: number;
+  scenarioIds?: string[] | undefined;
+  scenarioSearch?: string | undefined;
+  scenarioIndex: number;
 }) {
   const data = await dashboardPromise;
   return (
     <DashboardFooter
       data={data}
-      initialScenarioPerfParameters={scenarioPerfParameterIds}
-      scenarioPerfParamSearch={scenarioPerfParamSearch}
-      initialScenarioStatsParameters={scenarioStatsParameterIds}
-      scenarioStatsParamSearch={scenarioStatsParamSearch}
-      initialScenarioSimPerfScenarios={scenarioSimPerfScenarioIds}
-      scenarioSimPerfScenarioSearch={scenarioSimPerfScenarioSearch}
-      initialScenarioCompScenarios={scenarioCompScenarioIds}
-      scenarioCompScenarioSearch={scenarioCompScenarioSearch}
+      initialParameterIds={parameterIds}
+      parameterSearch={parameterSearch}
+      initialParameterIndex={parameterIndex}
+      initialScenarioIds={scenarioIds}
+      scenarioSearch={scenarioSearch}
+      initialScenarioIndex={scenarioIndex}
     />
   );
 }

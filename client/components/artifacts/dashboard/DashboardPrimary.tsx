@@ -26,58 +26,29 @@ function validateStatus(
 
 export interface DashboardPrimaryProps {
   data: PrimaryOut;
-  initialHeatmapRubrics?: string[] | undefined;
-  onHeatmapRubricChange?: ((ids: string[]) => void) | undefined;
-  heatmapRubricSearch?: string | undefined;
-  onHeatmapRubricSearchChange?: ((term: string) => void) | undefined;
-  initialTrendRubrics?: string[] | undefined;
-  onTrendRubricChange?: ((ids: string[]) => void) | undefined;
-  trendRubricSearch?: string | undefined;
-  onTrendRubricSearchChange?: ((term: string) => void) | undefined;
-  initialSkillRubrics?: string[] | undefined;
-  onSkillRubricChange?: ((ids: string[]) => void) | undefined;
-  skillRubricSearch?: string | undefined;
-  onSkillRubricSearchChange?: ((term: string) => void) | undefined;
+  initialRubricIds?: string[] | undefined;
+  rubricSearch?: string | undefined;
+  initialIndex?: number;
 }
 
 export default function DashboardPrimary({
   data,
-  initialHeatmapRubrics,
-  onHeatmapRubricChange,
-  heatmapRubricSearch,
-  onHeatmapRubricSearchChange,
-  initialTrendRubrics,
-  onTrendRubricChange,
-  trendRubricSearch,
-  onTrendRubricSearchChange,
-  initialSkillRubrics,
-  onSkillRubricChange,
-  skillRubricSearch,
-  onSkillRubricSearchChange,
+  initialRubricIds,
+  rubricSearch,
+  initialIndex = 0,
 }: DashboardPrimaryProps) {
   const {
     params: sectionParams,
-    setHeatmapRubricIds,
-    setHeatmapRubricSearch,
-    setTrendRubricIds,
-    setTrendRubricSearch,
-    setSkillRubricIds,
-    setSkillRubricSearch,
+    setRubricIds,
+    setRubricSearch,
+    setRubricIndex,
   } = useDashboardSectionParams();
 
-  const effectiveOnHeatmapChange = onHeatmapRubricChange ?? setHeatmapRubricIds;
-  const effectiveOnHeatmapSearch = onHeatmapRubricSearchChange ?? setHeatmapRubricSearch;
-  const effectiveHeatmapSearch = heatmapRubricSearch ?? sectionParams.heatmapRubricSearch ?? undefined;
+  const effectiveOnRubricChange = setRubricIds;
+  const effectiveOnRubricSearch = setRubricSearch;
+  const effectiveRubricSearch = rubricSearch ?? sectionParams.rubricSearch ?? undefined;
 
-  const effectiveOnTrendChange = onTrendRubricChange ?? setTrendRubricIds;
-  const effectiveOnTrendSearch = onTrendRubricSearchChange ?? setTrendRubricSearch;
-  const effectiveTrendSearch = trendRubricSearch ?? sectionParams.trendRubricSearch ?? undefined;
-
-  const effectiveOnSkillChange = onSkillRubricChange ?? setSkillRubricIds;
-  const effectiveOnSkillSearch = onSkillRubricSearchChange ?? setSkillRubricSearch;
-  const effectiveSkillSearch = skillRubricSearch ?? sectionParams.skillRubricSearch ?? undefined;
-
-  const [primaryCarouselIndex, setPrimaryCarouselIndex] = useState(0);
+  const [primaryCarouselIndex, setPrimaryCarouselIndex] = useState(initialIndex);
   const [isPrimaryHovered, setIsPrimaryHovered] = useState(false);
 
   const primaryComponents = useMemo(() => {
@@ -161,10 +132,10 @@ export default function DashboardPrimary({
         hasDataAvailable={(rubricHeatmap.matrices || []).length > 0}
         actionableInsight={data.insights?.rubric_heatmap ?? null}
         status={validateStatus(rubricHeatmap.status)}
-        initialSelectedRubrics={initialHeatmapRubrics}
-        onRubricSelect={effectiveOnHeatmapChange}
-        rubricSearchValue={effectiveHeatmapSearch}
-        onRubricSearchChange={effectiveOnHeatmapSearch}
+        initialSelectedRubrics={initialRubricIds}
+        onRubricSelect={effectiveOnRubricChange}
+        rubricSearchValue={effectiveRubricSearch}
+        onRubricSearchChange={effectiveOnRubricSearch}
       />,
       <RubricTrend
         key="rubric-trend"
@@ -174,10 +145,10 @@ export default function DashboardPrimary({
         hasDataAvailable={(rubricTrend.trend_data || []).length > 0}
         actionableInsight={data.insights?.rubric_trend ?? null}
         status={validateStatus(rubricTrend.status)}
-        initialSelectedRubrics={initialTrendRubrics}
-        onRubricSelect={effectiveOnTrendChange}
-        rubricSearchValue={effectiveTrendSearch}
-        onRubricSearchChange={effectiveOnTrendSearch}
+        initialSelectedRubrics={initialRubricIds}
+        onRubricSelect={effectiveOnRubricChange}
+        rubricSearchValue={effectiveRubricSearch}
+        onRubricSearchChange={effectiveOnRubricSearch}
       />,
       <SkillPerformance
         key="skill-performance"
@@ -203,22 +174,30 @@ export default function DashboardPrimary({
         validRubricIds={skillPerformance.valid_rubric_ids || []}
         actionableInsight={data.insights?.skill_performance ?? null}
         status={validateStatus(skillPerformance.status)}
-        initialSelectedRubrics={initialSkillRubrics}
-        onRubricSelect={effectiveOnSkillChange}
-        rubricSearchValue={effectiveSkillSearch}
-        onRubricSearchChange={effectiveOnSkillSearch}
+        initialSelectedRubrics={initialRubricIds}
+        onRubricSelect={effectiveOnRubricChange}
+        rubricSearchValue={effectiveRubricSearch}
+        onRubricSearchChange={effectiveOnRubricSearch}
       />,
     ];
-  }, [data, initialHeatmapRubrics, effectiveOnHeatmapChange, effectiveHeatmapSearch, effectiveOnHeatmapSearch, initialTrendRubrics, effectiveOnTrendChange, effectiveTrendSearch, effectiveOnTrendSearch, initialSkillRubrics, effectiveOnSkillChange, effectiveSkillSearch, effectiveOnSkillSearch]);
+  }, [data, initialRubricIds, effectiveOnRubricChange, effectiveRubricSearch, effectiveOnRubricSearch]);
 
   const navigatePrimary = (direction: "prev" | "next") => {
     const length = primaryComponents.length;
     if (length === 0) return;
+    let newIndex: number;
     if (direction === "prev") {
-      setPrimaryCarouselIndex((prev: number) => (prev - 1 + length) % length);
+      newIndex = (primaryCarouselIndex - 1 + length) % length;
     } else {
-      setPrimaryCarouselIndex((prev: number) => (prev + 1) % length);
+      newIndex = (primaryCarouselIndex + 1) % length;
     }
+    setPrimaryCarouselIndex(newIndex);
+    setRubricIndex(newIndex);
+  };
+
+  const setIndex = (index: number) => {
+    setPrimaryCarouselIndex(index);
+    setRubricIndex(index);
   };
 
   if (primaryComponents.length === 0) return null;
@@ -269,7 +248,7 @@ export default function DashboardPrimary({
           {primaryComponents.map((_, index) => (
             <button
               key={index}
-              onClick={() => setPrimaryCarouselIndex(index)}
+              onClick={() => setIndex(index)}
               className={`w-2 h-2 rounded-full transition-colors ${
                 index === primaryCarouselIndex ? "bg-primary" : "bg-muted"
               }`}

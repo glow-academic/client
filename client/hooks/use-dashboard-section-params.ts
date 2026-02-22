@@ -1,17 +1,17 @@
 /**
  * Client-side hook for dashboard section picker URL state management.
- * Each chart picker's selected IDs and search terms are synced to the URL
+ * Each section's selected IDs, search term, and carousel index are synced to the URL
  * via nuqs useQueryStates with shallow: false so changes trigger server re-render.
  */
 
 "use client";
 
-import { createParser, parseAsString, useQueryStates } from "nuqs";
+import { createParser, parseAsInteger, parseAsString, useQueryStates } from "nuqs";
 import { useCallback } from "react";
 
 /**
  * Custom parser for comma-separated arrays (client-side).
- * Maintains URL format: `?personaSimulationIds=id1,id2`
+ * Maintains URL format: `?rubricIds=id1,id2`
  */
 const parseAsCommaSeparatedArray = createParser({
   parse: (value: string) => {
@@ -26,36 +26,22 @@ const parseAsCommaSeparatedArray = createParser({
 });
 
 const dashboardSectionParamsClient = {
-  // Primary: RubricHeatmap
-  heatmapRubricIds: parseAsCommaSeparatedArray,
-  heatmapRubricSearch: parseAsString,
-  // Primary: RubricTrend
-  trendRubricIds: parseAsCommaSeparatedArray,
-  trendRubricSearch: parseAsString,
-  // Primary: SkillPerformance
-  skillRubricIds: parseAsCommaSeparatedArray,
-  skillRubricSearch: parseAsString,
-  // Secondary: PersonaPerformance
-  personaSimulationIds: parseAsCommaSeparatedArray,
-  personaSimulationsSearch: parseAsString,
-  // Secondary: CohortPerformance
-  cohortSimulationIds: parseAsCommaSeparatedArray,
-  cohortSimulationsSearch: parseAsString,
-  // Secondary: AttemptImprovement
-  improvementSimulationIds: parseAsCommaSeparatedArray,
-  improvementSimulationsSearch: parseAsString,
-  // Footer: ScenarioPerformance
-  scenarioPerfParameterIds: parseAsCommaSeparatedArray,
-  scenarioPerfParamSearch: parseAsString,
-  // Footer: ScenarioStats
-  scenarioStatsParameterIds: parseAsCommaSeparatedArray,
-  scenarioStatsParamSearch: parseAsString,
-  // Footer: ScenarioSimulationPerformance
-  scenarioSimPerfScenarioIds: parseAsCommaSeparatedArray,
-  scenarioSimPerfScenarioSearch: parseAsString,
-  // Footer: ScenarioComposition
-  scenarioCompScenarioIds: parseAsCommaSeparatedArray,
-  scenarioCompScenarioSearch: parseAsString,
+  // Rubric section: Heatmap + Trend + SkillPerformance
+  rubricIds: parseAsCommaSeparatedArray,
+  rubricSearch: parseAsString,
+  rubricIndex: parseAsInteger,
+  // Simulation section: Persona + Cohort + AttemptImprovement
+  simulationPickerIds: parseAsCommaSeparatedArray,
+  simulationPickerSearch: parseAsString,
+  simulationIndex: parseAsInteger,
+  // Parameter section: ScenarioPerformance + ScenarioStats
+  parameterIds: parseAsCommaSeparatedArray,
+  parameterSearch: parseAsString,
+  parameterIndex: parseAsInteger,
+  // Scenario section: ScenarioSimPerf + ScenarioComposition
+  scenarioIds: parseAsCommaSeparatedArray,
+  scenarioSearch: parseAsString,
+  scenarioIndex: parseAsInteger,
 } as const;
 
 export function useDashboardSectionParams() {
@@ -64,177 +50,103 @@ export function useDashboardSectionParams() {
     history: "replace",
   });
 
-  // Primary: RubricHeatmap
-  const setHeatmapRubricIds = useCallback(
+  // Rubric section
+  const setRubricIds = useCallback(
     (ids: string[]) => {
-      setParams({ heatmapRubricIds: ids.length > 0 ? ids : null });
+      setParams({ rubricIds: ids.length > 0 ? ids : null });
     },
     [setParams],
   );
-  const setHeatmapRubricSearch = useCallback(
+  const setRubricSearch = useCallback(
     (term: string) => {
-      setParams({ heatmapRubricSearch: term || null });
+      setParams({ rubricSearch: term || null });
+    },
+    [setParams],
+  );
+  const setRubricIndex = useCallback(
+    (index: number) => {
+      setParams({ rubricIndex: index === 0 ? null : index });
     },
     [setParams],
   );
 
-  // Primary: RubricTrend
-  const setTrendRubricIds = useCallback(
+  // Simulation section
+  const setSimulationPickerIds = useCallback(
     (ids: string[]) => {
-      setParams({ trendRubricIds: ids.length > 0 ? ids : null });
+      setParams({ simulationPickerIds: ids.length > 0 ? ids : null });
     },
     [setParams],
   );
-  const setTrendRubricSearch = useCallback(
+  const setSimulationPickerSearch = useCallback(
     (term: string) => {
-      setParams({ trendRubricSearch: term || null });
+      setParams({ simulationPickerSearch: term || null });
+    },
+    [setParams],
+  );
+  const setSimulationIndex = useCallback(
+    (index: number) => {
+      setParams({ simulationIndex: index === 0 ? null : index });
     },
     [setParams],
   );
 
-  // Primary: SkillPerformance
-  const setSkillRubricIds = useCallback(
+  // Parameter section
+  const setParameterIds = useCallback(
     (ids: string[]) => {
-      setParams({ skillRubricIds: ids.length > 0 ? ids : null });
+      setParams({ parameterIds: ids.length > 0 ? ids : null });
     },
     [setParams],
   );
-  const setSkillRubricSearch = useCallback(
+  const setParameterSearch = useCallback(
     (term: string) => {
-      setParams({ skillRubricSearch: term || null });
+      setParams({ parameterSearch: term || null });
+    },
+    [setParams],
+  );
+  const setParameterIndex = useCallback(
+    (index: number) => {
+      setParams({ parameterIndex: index === 0 ? null : index });
     },
     [setParams],
   );
 
-  // Secondary: PersonaPerformance
-  const setPersonaSimulationIds = useCallback(
+  // Scenario section
+  const setScenarioIds = useCallback(
     (ids: string[]) => {
-      setParams({ personaSimulationIds: ids.length > 0 ? ids : null });
+      setParams({ scenarioIds: ids.length > 0 ? ids : null });
     },
     [setParams],
   );
-  const setPersonaSimulationsSearch = useCallback(
+  const setScenarioSearch = useCallback(
     (term: string) => {
-      setParams({ personaSimulationsSearch: term || null });
+      setParams({ scenarioSearch: term || null });
     },
     [setParams],
   );
-
-  // Secondary: CohortPerformance
-  const setCohortSimulationIds = useCallback(
-    (ids: string[]) => {
-      setParams({ cohortSimulationIds: ids.length > 0 ? ids : null });
-    },
-    [setParams],
-  );
-  const setCohortSimulationsSearch = useCallback(
-    (term: string) => {
-      setParams({ cohortSimulationsSearch: term || null });
-    },
-    [setParams],
-  );
-
-  // Secondary: AttemptImprovement
-  const setImprovementSimulationIds = useCallback(
-    (ids: string[]) => {
-      setParams({ improvementSimulationIds: ids.length > 0 ? ids : null });
-    },
-    [setParams],
-  );
-  const setImprovementSimulationsSearch = useCallback(
-    (term: string) => {
-      setParams({ improvementSimulationsSearch: term || null });
-    },
-    [setParams],
-  );
-
-  // Footer: ScenarioPerformance
-  const setScenarioPerfParameterIds = useCallback(
-    (ids: string[]) => {
-      setParams({ scenarioPerfParameterIds: ids.length > 0 ? ids : null });
-    },
-    [setParams],
-  );
-  const setScenarioPerfParamSearch = useCallback(
-    (term: string) => {
-      setParams({ scenarioPerfParamSearch: term || null });
-    },
-    [setParams],
-  );
-
-  // Footer: ScenarioStats
-  const setScenarioStatsParameterIds = useCallback(
-    (ids: string[]) => {
-      setParams({ scenarioStatsParameterIds: ids.length > 0 ? ids : null });
-    },
-    [setParams],
-  );
-  const setScenarioStatsParamSearch = useCallback(
-    (term: string) => {
-      setParams({ scenarioStatsParamSearch: term || null });
-    },
-    [setParams],
-  );
-
-  // Footer: ScenarioSimulationPerformance
-  const setScenarioSimPerfScenarioIds = useCallback(
-    (ids: string[]) => {
-      setParams({ scenarioSimPerfScenarioIds: ids.length > 0 ? ids : null });
-    },
-    [setParams],
-  );
-  const setScenarioSimPerfScenarioSearch = useCallback(
-    (term: string) => {
-      setParams({ scenarioSimPerfScenarioSearch: term || null });
-    },
-    [setParams],
-  );
-
-  // Footer: ScenarioComposition
-  const setScenarioCompScenarioIds = useCallback(
-    (ids: string[]) => {
-      setParams({ scenarioCompScenarioIds: ids.length > 0 ? ids : null });
-    },
-    [setParams],
-  );
-  const setScenarioCompScenarioSearch = useCallback(
-    (term: string) => {
-      setParams({ scenarioCompScenarioSearch: term || null });
+  const setScenarioIndex = useCallback(
+    (index: number) => {
+      setParams({ scenarioIndex: index === 0 ? null : index });
     },
     [setParams],
   );
 
   return {
     params,
-    // Primary: RubricHeatmap
-    setHeatmapRubricIds,
-    setHeatmapRubricSearch,
-    // Primary: RubricTrend
-    setTrendRubricIds,
-    setTrendRubricSearch,
-    // Primary: SkillPerformance
-    setSkillRubricIds,
-    setSkillRubricSearch,
-    // Secondary: PersonaPerformance
-    setPersonaSimulationIds,
-    setPersonaSimulationsSearch,
-    // Secondary: CohortPerformance
-    setCohortSimulationIds,
-    setCohortSimulationsSearch,
-    // Secondary: AttemptImprovement
-    setImprovementSimulationIds,
-    setImprovementSimulationsSearch,
-    // Footer: ScenarioPerformance
-    setScenarioPerfParameterIds,
-    setScenarioPerfParamSearch,
-    // Footer: ScenarioStats
-    setScenarioStatsParameterIds,
-    setScenarioStatsParamSearch,
-    // Footer: ScenarioSimulationPerformance
-    setScenarioSimPerfScenarioIds,
-    setScenarioSimPerfScenarioSearch,
-    // Footer: ScenarioComposition
-    setScenarioCompScenarioIds,
-    setScenarioCompScenarioSearch,
+    // Rubric section
+    setRubricIds,
+    setRubricSearch,
+    setRubricIndex,
+    // Simulation section
+    setSimulationPickerIds,
+    setSimulationPickerSearch,
+    setSimulationIndex,
+    // Parameter section
+    setParameterIds,
+    setParameterSearch,
+    setParameterIndex,
+    // Scenario section
+    setScenarioIds,
+    setScenarioSearch,
+    setScenarioIndex,
   };
 }

@@ -861,32 +861,28 @@ async def get_dashboard_internal(
 
     # Phase 5b — Apply picker filters (valid_*_ids stay intact for picker options)
 
-    # Primary: rubric picker filters
-    if request.heatmap_rubric_ids:
-        filter_set = {str(rid) for rid in request.heatmap_rubric_ids}
+    # Rubric section: filters heatmap matrices + skill packages
+    if request.rubric_ids:
+        filter_set = {str(rid) for rid in request.rubric_ids}
         primary_metrics.rubric_heatmap.matrices = [
             m
             for m in primary_metrics.rubric_heatmap.matrices
             if m.rubric_id in filter_set
         ]
-    if request.skill_rubric_ids:
-        filter_set = {str(rid) for rid in request.skill_rubric_ids}
         primary_metrics.skill_performance.packages = [
             p
             for p in primary_metrics.skill_performance.packages
             if p.rubric_id in filter_set
         ]
 
-    # Secondary: simulation picker filters
-    if request.persona_simulation_ids:
-        filter_set = {str(sid) for sid in request.persona_simulation_ids}
+    # Simulation section: filters persona, cohort, and improvement charts
+    if request.simulation_picker_ids:
+        filter_set = {str(sid) for sid in request.simulation_picker_ids}
         secondary_metrics.persona_performance.chart_data = [
             row
             for row in secondary_metrics.persona_performance.chart_data
             if any(sid in filter_set for sid in (row.simulation_ids or []))
         ]
-    if request.cohort_simulation_ids:
-        filter_set = {str(sid) for sid in request.cohort_simulation_ids}
         secondary_metrics.cohort_performance.simulation_facts = [
             f
             for f in secondary_metrics.cohort_performance.simulation_facts
@@ -897,17 +893,15 @@ async def get_dashboard_internal(
             for f in secondary_metrics.cohort_performance.daily_facts
             if f.simulation_id in filter_set
         ]
-    if request.improvement_simulation_ids:
-        filter_set = {str(sid) for sid in request.improvement_simulation_ids}
         secondary_metrics.attempt_improvement.facts = [
             f
             for f in secondary_metrics.attempt_improvement.facts
             if f.simulation_id in filter_set
         ]
 
-    # Footer: parameter/simulation picker filters
-    if request.scenario_perf_parameter_ids:
-        filter_set = {str(pid) for pid in request.scenario_perf_parameter_ids}
+    # Parameter section: filters scenario_performance + scenario_stats
+    if request.parameter_ids:
+        filter_set = {str(pid) for pid in request.parameter_ids}
         footer_metrics.scenario_performance.attribute_attempt_facts = [
             f
             for f in footer_metrics.scenario_performance.attribute_attempt_facts
@@ -918,8 +912,6 @@ async def get_dashboard_internal(
             for f in footer_metrics.scenario_performance.attribute_scenario_facts
             if f.parameter_id in filter_set
         ]
-    if request.scenario_stats_parameter_ids:
-        filter_set = {str(pid) for pid in request.scenario_stats_parameter_ids}
         footer_metrics.scenario_stats.numeric_attempt_facts = [
             f
             for f in footer_metrics.scenario_stats.numeric_attempt_facts
@@ -930,15 +922,15 @@ async def get_dashboard_internal(
             for f in footer_metrics.scenario_stats.numeric_scenario_facts
             if f.parameter_id in filter_set
         ]
-    if request.scenario_sim_perf_scenario_ids:
-        filter_set = {str(sid) for sid in request.scenario_sim_perf_scenario_ids}
+
+    # Scenario section: filters scenario_simulation_performance + scenario_composition
+    if request.scenario_ids:
+        filter_set = {str(sid) for sid in request.scenario_ids}
         footer_metrics.scenario_simulation_performance.simulation_facts = [
             f
             for f in footer_metrics.scenario_simulation_performance.simulation_facts
             if f.scenario_id in filter_set
         ]
-    if request.scenario_comp_scenario_ids:
-        filter_set = {str(sid) for sid in request.scenario_comp_scenario_ids}
         footer_metrics.scenario_composition.scenario_summaries = [
             f
             for f in footer_metrics.scenario_composition.scenario_summaries
@@ -958,53 +950,24 @@ async def get_dashboard_internal(
     fields_meta = build_field_meta(fields_list, field_parameter_map, parameters)
 
     # Apply search filters to metadata lists
-    if (
-        request.heatmap_rubric_search
-        or request.trend_rubric_search
-        or request.skill_rubric_search
-    ):
-        q = (
-            request.heatmap_rubric_search
-            or request.trend_rubric_search
-            or request.skill_rubric_search
-            or ""
-        ).lower()
+    if request.rubric_search:
+        q = request.rubric_search.lower()
         rubrics_meta = [r for r in rubrics_meta if q in (r.get("name") or "").lower()]
 
-    if (
-        request.persona_simulations_search
-        or request.cohort_simulations_search
-        or request.improvement_simulations_search
-    ):
-        q = (
-            request.persona_simulations_search
-            or request.cohort_simulations_search
-            or request.improvement_simulations_search
-            or ""
-        ).lower()
+    if request.simulation_picker_search:
+        q = request.simulation_picker_search.lower()
         simulations_meta = [
             s for s in simulations_meta if q in (s.get("name") or "").lower()
         ]
 
-    if request.scenario_perf_param_search or request.scenario_stats_param_search:
-        q = (
-            request.scenario_perf_param_search
-            or request.scenario_stats_param_search
-            or ""
-        ).lower()
+    if request.parameter_search:
+        q = request.parameter_search.lower()
         parameters_meta = [
             p for p in parameters_meta if q in (p.get("name") or "").lower()
         ]
 
-    if (
-        request.scenario_sim_perf_scenario_search
-        or request.scenario_comp_scenario_search
-    ):
-        q = (
-            request.scenario_sim_perf_scenario_search
-            or request.scenario_comp_scenario_search
-            or ""
-        ).lower()
+    if request.scenario_search:
+        q = request.scenario_search.lower()
         scenarios_meta = [
             s for s in scenarios_meta if q in (s.get("name") or "").lower()
         ]

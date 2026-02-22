@@ -29,31 +29,15 @@ class DashboardRequest(BaseModel):
     page_limit: int = Field(default=50, ge=1, le=200)
     page_offset: int = Field(default=0, ge=0)
 
-    # Primary section pickers (rubric-focused)
-    heatmap_rubric_ids: list[UUID] | None = None
-    heatmap_rubric_search: str | None = None
-    trend_rubric_ids: list[UUID] | None = None
-    trend_rubric_search: str | None = None
-    skill_rubric_ids: list[UUID] | None = None
-    skill_rubric_search: str | None = None
-
-    # Secondary section pickers (simulation-focused)
-    persona_simulation_ids: list[UUID] | None = None
-    persona_simulations_search: str | None = None
-    cohort_simulation_ids: list[UUID] | None = None
-    cohort_simulations_search: str | None = None
-    improvement_simulation_ids: list[UUID] | None = None
-    improvement_simulations_search: str | None = None
-
-    # Footer section pickers (parameter + scenario focused)
-    scenario_perf_parameter_ids: list[UUID] | None = None
-    scenario_perf_param_search: str | None = None
-    scenario_stats_parameter_ids: list[UUID] | None = None
-    scenario_stats_param_search: str | None = None
-    scenario_sim_perf_scenario_ids: list[UUID] | None = None
-    scenario_sim_perf_scenario_search: str | None = None
-    scenario_comp_scenario_ids: list[UUID] | None = None
-    scenario_comp_scenario_search: str | None = None
+    # Section pickers (canonical — shared across charts in each section)
+    rubric_ids: list[UUID] | None = None
+    rubric_search: str | None = None
+    simulation_picker_ids: list[UUID] | None = None
+    simulation_picker_search: str | None = None
+    parameter_ids: list[UUID] | None = None
+    parameter_search: str | None = None
+    scenario_ids: list[UUID] | None = None
+    scenario_search: str | None = None
 
     # History section (attempt list)
     history_practice: bool = False
