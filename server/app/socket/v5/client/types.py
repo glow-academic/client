@@ -264,6 +264,7 @@ class AttemptNextPayload(BaseModel):
     """Client-to-server: proceed to the next scenario in an existing attempt."""
 
     attempt_id: UUID
+    draft_id: UUID | None = None
 
 
 class AttemptStartedEvent(BaseModel):

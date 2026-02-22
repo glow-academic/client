@@ -103,7 +103,9 @@ export function AttemptLobby({
     setIsStarting(true);
     isStartingRef.current = true;
 
-    nextScenario(attemptId);
+    nextScenario(attemptId, {
+      draftId: draftId ?? undefined,
+    });
   }, [
     socket,
     isConnected,

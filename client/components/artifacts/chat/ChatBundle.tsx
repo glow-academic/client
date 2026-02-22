@@ -16,6 +16,13 @@ import { Videos } from "@/components/resources/Videos";
 import { Images } from "@/components/resources/Images";
 import { ProblemStatements } from "@/components/resources/ProblemStatements";
 import { Objectives } from "@/components/resources/Objectives";
+import { useSocket } from "@/contexts/socket-context";
+import { useAttemptLifecycle } from "@/hooks/use-attempt-lifecycle";
+import type {
+  AttemptChatStartedEvent,
+  AttemptEndedEvent,
+  AttemptErrorEvent,
+} from "@/hooks/use-attempt-lifecycle";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { useRouter } from "next/navigation";
 import { parseAsBoolean, parseAsString, useQueryStates } from "nuqs";
@@ -76,7 +83,9 @@ export default function ChatBundle({
   attemptId,
 }: ChatBundleProps) {
   const router = useRouter();
+  const { socket, isConnected } = useSocket();
   const s = bundleData;
+  const isStartingRef = useRef(false);
 
   const initialFormState = useMemo<ChatBundleFormState>(
     () => ({
@@ -129,6 +138,46 @@ export default function ChatBundle({
 
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const savingRef = useRef(false);
+
+  // Listen for attempt lifecycle events after submitting
+  const { nextScenario } = useAttemptLifecycle({
+    socket,
+    attemptId,
+    onChatStarted: useCallback(
+      (data: AttemptChatStartedEvent) => {
+        if (!isStartingRef.current) return;
+        isStartingRef.current = false;
+        setIsSaving(false);
+        if (data.attempt_id === attemptId) {
+          router.refresh();
+        }
+      },
+      [attemptId, router],
+    ),
+    onEnded: useCallback(
+      (data: AttemptEndedEvent) => {
+        if (!isStartingRef.current) return;
+        isStartingRef.current = false;
+        setIsSaving(false);
+        if (data.attempt_id === attemptId) {
+          router.push(`/attempt/${attemptId}/results`);
+        }
+      },
+      [attemptId, router],
+    ),
+    onError: useCallback((data: AttemptErrorEvent) => {
+      if (!isStartingRef.current) return;
+      if (
+        data.type === "end" ||
+        data.type === "start" ||
+        data.type === "next"
+      ) {
+        isStartingRef.current = false;
+        setIsSaving(false);
+        toast.error(data.message || "Failed to start training.");
+      }
+    }, []),
+  });
 
   useEffect(() => {
     if (draftId && draftId !== urlParams.draftId) {
@@ -185,22 +234,23 @@ export default function ChatBundle({
     };
   }, [formState, saveDraftNow]);
 
-  const saveAndReturn = useCallback(async () => {
+  const saveAndStart = useCallback(async () => {
+    if (!socket || !isConnected) {
+      toast.error("WebSocket not connected. Please refresh the page.");
+      return;
+    }
+
     setIsSaving(true);
+    isStartingRef.current = true;
     try {
       await saveDraftNow();
-      const params = new URLSearchParams();
-      if (draftId) params.set("draftId", draftId);
-      if (infiniteMode) params.set("infiniteMode", "true");
-      if (userInstructions.trim()) params.set("userInstructions", userInstructions.trim());
-      const qs = params.toString();
-      router.push(`/attempt/${attemptId}${qs ? `?${qs}` : ""}`);
+      nextScenario(attemptId, { draftId: draftId ?? undefined });
     } catch {
-      toast.error("Failed to save draft.");
-    } finally {
       setIsSaving(false);
+      isStartingRef.current = false;
+      toast.error("Failed to save draft.");
     }
-  }, [saveDraftNow, attemptId, draftId, infiniteMode, userInstructions, router]);
+  }, [socket, isConnected, saveDraftNow, attemptId, draftId, nextScenario]);
 
   if (!s.profile_has_access) {
     return (
@@ -425,10 +475,10 @@ export default function ChatBundle({
               Cancel
             </Button>
             <Button
-              onClick={() => void saveAndReturn()}
-              disabled={isSaving}
+              onClick={() => void saveAndStart()}
+              disabled={isSaving || !isConnected}
             >
-              {isSaving ? "Saving..." : "Save & Return"}
+              {isSaving ? "Starting..." : "Save & Start"}
             </Button>
           </div>
         </CardContent>
