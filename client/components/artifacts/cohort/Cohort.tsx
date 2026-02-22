@@ -1021,7 +1021,6 @@ function CohortComponent({
             simulation_id: sim.simulation_id ?? null,
             name: sim.name ?? null,
             description: sim.description ?? null,
-            time_limit: sim.time_limit ?? null,
             generated: sim.generated ?? false,
           }));
           const simulationCurrentForUi = (s?.simulations?.current ?? []).map(
@@ -1029,7 +1028,6 @@ function CohortComponent({
               simulation_id: sim.simulation_id ?? null,
               name: sim.name ?? null,
               description: sim.description ?? null,
-              time_limit: sim.time_limit ?? null,
               generated: sim.generated ?? false,
             }),
           );

@@ -74,10 +74,6 @@ from app.api.v4.entries import router as entries_router
 # ============================================================================
 from app.api.v4.resources import router as resources_router
 
-# ============================================================================
-# Views (READ layer on entry_type tables)
-# ============================================================================
-from app.api.v4.views import router as views_router
 from app.utils.mcp.get_mcp import get_mcp
 from app.utils.profile.get_profile_id import get_profile_id
 from app.utils.session.get_session_id import get_session_id
@@ -149,11 +145,6 @@ router.include_router(resources_router)
 # Entries (CRUD layer on entry tables via MVs)
 # ============================================================================
 router.include_router(entries_router)
-
-# ============================================================================
-# Views (READ layer on entry_type tables)
-# ============================================================================
-router.include_router(views_router)
 
 # ============================================================================
 # Auth (not available to MCP)

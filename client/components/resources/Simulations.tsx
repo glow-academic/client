@@ -30,7 +30,6 @@ export interface SimulationItem {
   id: string;
   name: string;
   description?: string;
-  time_limit?: number | null;
 }
 
 export interface SimulationsProps {
@@ -131,9 +130,6 @@ export function Simulations({
           name: s.name!,
           ...(normalizedDescription
             ? { description: normalizedDescription }
-            : {}),
-          ...(s.time_limit !== null && s.time_limit !== undefined
-            ? { time_limit: s.time_limit }
             : {}),
         };
       });
@@ -324,7 +320,7 @@ export function Simulations({
 
               <div className="flex-1 min-w-0">
                 <h3 className="font-medium text-sm leading-tight">{item.name}</h3>
-                {(item.description || item.time_limit) && (
+                {item.description && (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                     {item.description && (
                       <p className="truncate">{item.description}</p>
