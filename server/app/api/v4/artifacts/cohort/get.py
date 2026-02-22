@@ -31,8 +31,10 @@ from app.api.v4.artifacts.cohort.permissions import (
     compute_show_description,
     compute_show_flag,
     compute_show_name,
+    compute_show_simulation_availability,
     compute_show_simulation_positions,
     compute_show_simulations,
+    compute_simulation_availability_required,
     compute_simulation_positions_required,
     compute_simulations_required,
     has_access,
@@ -50,6 +52,8 @@ from app.api.v4.artifacts.cohort.types import (
     CohortResourceBucket,
     CohortResources,
     CohortSimulation,
+    CohortSimulationAvailability,
+    CohortSimulationAvailabilitySection,
     CohortSimulationPosition,
     CohortSimulationPositionSection,
     CohortSimulationSection,
@@ -78,6 +82,9 @@ from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.providers.get import get_providers_internal
+from app.api.v4.resources.simulation_availability.get import (
+    get_simulation_availability_internal,
+)
 from app.api.v4.resources.simulation_positions.get import (
     get_simulation_positions_internal,
 )
@@ -171,6 +178,7 @@ class CohortInternalData:
     department_resources: list[CohortDepartment]
     simulation_resources: list[CohortSimulation]
     simulation_positions: list[CohortSimulationPosition]
+    simulation_availability: list[CohortSimulationAvailability]
 
     # Config resources (for websocket generation context)
     config_agent_resources: list[Any] | None
@@ -313,7 +321,7 @@ async def get_cohort_internal(
     )
     simulations_step_show_ai_generate = any(
         show_ai_generate_map.get(r, False)
-        for r in ("simulations", "simulation_positions")
+        for r in ("simulations", "simulation_positions", "simulation_availability")
     )
 
     # === PYTHON BUSINESS LOGIC ===
@@ -431,6 +439,27 @@ async def get_cohort_internal(
                 c, simulation_ids, bypass_cache=bypass_cache
             )
 
+    simulation_availability_ids = ids_result.simulation_availability_ids or []
+
+    async def fetch_simulation_availability() -> list[CohortSimulationAvailability]:
+        if not simulation_availability_ids:
+            return []
+        async with pool.acquire() as c:
+            items = await get_simulation_availability_internal(
+                c, simulation_availability_ids, bypass_cache=bypass_cache
+            )
+            return [
+                CohortSimulationAvailability(
+                    id=item.id,
+                    simulation_id=item.simulation_id,
+                    time=item.time,
+                    type=item.type,
+                    generated=item.generated,
+                    mcp=item.mcp,
+                )
+                for item in items
+            ]
+
     # Parallel fetch all resources
     (
         (names_selected, names_suggestions),
@@ -439,6 +468,7 @@ async def get_cohort_internal(
         (departments_selected, departments_suggestions),
         (simulations_selected, simulations_suggestions),
         simulation_positions,
+        simulation_availability,
     ) = await asyncio.gather(
         fetch_names(),
         fetch_descriptions(),
@@ -446,6 +476,7 @@ async def get_cohort_internal(
         fetch_departments(),
         fetch_simulations(),
         fetch_simulation_positions(),
+        fetch_simulation_availability(),
     )
 
     # Dedupe and combine selected + suggestions
@@ -533,6 +564,9 @@ async def get_cohort_internal(
     show_simulation_positions_flag = compute_show_simulation_positions(
         len(simulation_positions or [])
     )
+    show_simulation_availability_flag = compute_show_simulation_availability(
+        len(simulation_availability or [])
+    )
 
     # Validation for new mode
     if cohort_id is None:
@@ -549,6 +583,7 @@ async def get_cohort_internal(
         "departments": show_departments_flag,
         "simulations": show_simulations_flag,
         "simulation_positions": show_simulation_positions_flag,
+        "simulation_availability": show_simulation_availability_flag,
     }
     required_flags_map = {
         "names": compute_name_required(),
@@ -557,6 +592,7 @@ async def get_cohort_internal(
         "departments": compute_departments_required(show_departments_flag),
         "simulations": compute_simulations_required(),
         "simulation_positions": compute_simulation_positions_required(),
+        "simulation_availability": compute_simulation_availability_required(),
     }
 
     # Build suggestions map
@@ -576,6 +612,7 @@ async def get_cohort_internal(
             departments=departments,
             simulations=simulations,
             simulation_positions=simulation_positions or [],
+            simulation_availability=simulation_availability or [],
         ),
         current=CohortResourceBucket(
             names=[name_resource] if name_resource else [],
@@ -584,6 +621,7 @@ async def get_cohort_internal(
             departments=department_resources or [],
             simulations=simulation_resources or [],
             simulation_positions=simulation_positions or [],
+            simulation_availability=simulation_availability or [],
         ),
     )
 
@@ -595,6 +633,7 @@ async def get_cohort_internal(
         "departments": effective_group_id,
         "simulations": effective_group_id,
         "simulation_positions": effective_group_id,
+        "simulation_availability": effective_group_id,
     }
 
     selected_agent_ids = [aid for aid in agent_ids.values() if aid]
@@ -673,6 +712,7 @@ async def get_cohort_internal(
         department_resources=department_resources,
         simulation_resources=simulation_resources,
         simulation_positions=simulation_positions or [],
+        simulation_availability=simulation_availability or [],
         config_agent_resources=config_agents_result or None,
         config_model_resources=config_models_result or None,
         config_provider_resources=config_providers_result or None,
@@ -825,6 +865,7 @@ async def get_cohort_websocket(
             departments=current.departments if current else None,
             simulations=current.simulations if current else None,
             simulation_positions=current.simulation_positions if current else None,
+            simulation_availability=current.simulation_availability if current else None,
         ),
         config=websocket_config,
     )
@@ -913,6 +954,17 @@ async def get_cohort_client(
                 resources_bucket.simulation_positions if resources_bucket else None
             ),
             **section_common("simulation_positions"),
+        ),
+        simulation_availability=CohortSimulationAvailabilitySection(
+            current=(
+                current_bucket.simulation_availability if current_bucket else None
+            ),
+            resources=(
+                resources_bucket.simulation_availability
+                if resources_bucket
+                else None
+            ),
+            **section_common("simulation_availability"),
         ),
     )
 

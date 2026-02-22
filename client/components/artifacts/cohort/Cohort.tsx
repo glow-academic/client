@@ -25,6 +25,10 @@ import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags, type FlagConfig } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
 import {
+  SimulationAvailability,
+  type SimulationAvailabilityProps,
+} from "@/components/resources/SimulationAvailability";
+import {
   SimulationPositions,
   type SimulationPositionsProps,
   type SimulationPositionItem,
@@ -69,6 +73,14 @@ type CreateDraftSimulationPositionsOut = OutputOf<
   "/api/v4/resources/simulation_positions",
   "post"
 >;
+type CreateDraftSimulationAvailabilityIn = InputOf<
+  "/api/v4/resources/simulation_availability",
+  "post"
+>;
+type CreateDraftSimulationAvailabilityOut = OutputOf<
+  "/api/v4/resources/simulation_availability",
+  "post"
+>;
 type PatchCohortDraftIn = InputOf<"/api/v4/artifacts/cohorts/draft", "patch">;
 type PatchCohortDraftOut = OutputOf<"/api/v4/artifacts/cohorts/draft", "patch">;
 
@@ -79,6 +91,7 @@ type FlushResult = {
   name_id?: string | null;
   description_id?: string | null;
   simulation_position_ids?: string[] | null;
+  simulation_availability_ids?: string[] | null;
 };
 
 type CohortFormState = {
@@ -88,6 +101,7 @@ type CohortFormState = {
   department_ids: string[];
   simulation_ids: string[];
   simulation_position_ids: string[];
+  simulation_availability_ids: string[];
   simulation_positions: SimulationPositionItem[];
 };
 
@@ -110,9 +124,12 @@ export interface CohortProps {
   createSimulationPositionsAction?: (
     input: CreateDraftSimulationPositionsIn,
   ) => Promise<CreateDraftSimulationPositionsOut>;
+  createSimulationAvailabilityAction?: (
+    input: CreateDraftSimulationAvailabilityIn,
+  ) => Promise<CreateDraftSimulationAvailabilityOut>;
 }
 
-const FLUSH_KEYS = ["names", "descriptions", "simulation_positions"] as const;
+const FLUSH_KEYS = ["names", "descriptions", "simulation_positions", "simulation_availability"] as const;
 
 const VALID_RESOURCE_TYPES: ResourceType[] = [
   "names",
@@ -121,6 +138,7 @@ const VALID_RESOURCE_TYPES: ResourceType[] = [
   "departments",
   "simulations",
   "simulation_positions",
+  "simulation_availability",
 ];
 
 const COHORT_RESOURCES: ResourceConfig[] = [
@@ -150,6 +168,12 @@ const COHORT_RESOURCES: ResourceConfig[] = [
     flushKey: "simulation_position_ids",
     type: "multi",
   },
+  {
+    key: "simulation_availability",
+    formKey: "simulation_availability_ids",
+    flushKey: "simulation_availability_ids",
+    type: "multi",
+  },
 ];
 
 function CohortComponent({
@@ -160,6 +184,7 @@ function CohortComponent({
   createNamesAction,
   createDescriptionsAction,
   createSimulationPositionsAction,
+  createSimulationAvailabilityAction,
 }: CohortProps) {
   const router = useRouter();
   const isEditMode = !!cohortId;
@@ -213,6 +238,7 @@ function CohortComponent({
       departments: cohortData.departments,
       simulations: cohortData.simulations,
       simulation_positions: cohortData.simulation_positions,
+      simulation_availability: cohortData.simulation_availability,
       basic_show_ai_generate: cohortData.basic_show_ai_generate,
       simulations_step_show_ai_generate:
         cohortData.simulations_step_show_ai_generate,
@@ -228,6 +254,7 @@ function CohortComponent({
     cohortData?.flags,
     cohortData?.simulations,
     cohortData?.simulation_positions,
+    cohortData?.simulation_availability,
     cohortData?.basic_show_ai_generate,
     cohortData?.simulations_step_show_ai_generate,
   ]);
@@ -264,6 +291,12 @@ function CohortComponent({
               (p) => p.generated,
             ) ?? false
           );
+        case "simulation_availability":
+          return (
+            stableCohortDataFields.simulation_availability?.current?.some(
+              (a) => a.generated,
+            ) ?? false
+          );
         default:
           return false;
       }
@@ -281,6 +314,7 @@ function CohortComponent({
         department_ids: [] as string[],
         simulation_ids: [] as string[],
         simulation_position_ids: [] as string[],
+        simulation_availability_ids: [] as string[],
         simulation_positions: [] as SimulationPositionItem[],
       };
     }
@@ -297,6 +331,9 @@ function CohortComponent({
         .map((s) => s.simulation_id)
         .filter((id): id is string => !!id),
       simulation_position_ids: [] as string[],
+      simulation_availability_ids: (data.simulation_availability?.current ?? [])
+        .map((a) => a.id)
+        .filter((id): id is string => !!id),
       simulation_positions: (data.simulation_positions?.current ?? []).map(
         (p) => ({
           simulation_id: p.simulation_id ?? "",
@@ -345,6 +382,15 @@ function CohortComponent({
     () => JSON.stringify(cohortData?.simulation_positions?.current ?? []),
     [cohortData?.simulation_positions],
   );
+  const simulationAvailabilityIdsStr = React.useMemo(
+    () =>
+      JSON.stringify(
+        (cohortData?.simulation_availability?.current ?? [])
+          .map((a) => a.id)
+          .filter(Boolean),
+      ),
+    [cohortData?.simulation_availability],
+  );
 
   // Update form state when server data changes
   // Use cohortData directly in dependency array, not getInitialFormState
@@ -361,7 +407,9 @@ function CohortComponent({
         JSON.stringify(prev.simulation_ids) !==
           JSON.stringify(newState.simulation_ids) ||
         JSON.stringify(prev.simulation_positions) !==
-          JSON.stringify(newState.simulation_positions)
+          JSON.stringify(newState.simulation_positions) ||
+        JSON.stringify(prev.simulation_availability_ids) !==
+          JSON.stringify(newState.simulation_availability_ids)
       ) {
         serverSyncPendingRef.current = true;
         return newState;
@@ -379,6 +427,7 @@ function CohortComponent({
     departmentIdsStr,
     simulationIdsStr,
     simulationPositionsStr,
+    simulationAvailabilityIdsStr,
   ]);
 
   // --- Draft Lifecycle ---
@@ -419,6 +468,10 @@ function CohortComponent({
     () => JSON.stringify(formState.simulation_positions),
     [formState.simulation_positions],
   );
+  const formStateSimulationAvailabilityIdsStr = React.useMemo(
+    () => JSON.stringify(formState.simulation_availability_ids),
+    [formState.simulation_availability_ids],
+  );
 
   // formStateKey excludes draftId -- the hook prepends it
   const formStateKey = React.useMemo(
@@ -430,6 +483,7 @@ function CohortComponent({
         department_ids: formState.department_ids,
         simulation_ids: formState.simulation_ids,
         simulation_position_ids: formState.simulation_position_ids,
+        simulation_availability_ids: formState.simulation_availability_ids,
         simulation_positions: formState.simulation_positions,
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -440,6 +494,7 @@ function CohortComponent({
       formStateDepartmentIdsStr,
       formStateSimulationIdsStr,
       formStateSimulationPositionsStr,
+      formStateSimulationAvailabilityIdsStr,
     ],
   );
 
@@ -587,12 +642,17 @@ function CohortComponent({
     [handleGenerateResources],
   );
 
+  const handleGenerateSimulationAvailability = useCallback(
+    async () => handleGenerateResources(["simulation_availability"]),
+    [handleGenerateResources],
+  );
+
   // --- Generation Modal ---
   // Step-to-resources mapping for multi-generation
   const stepResources: Record<string, ResourceType[]> = useMemo(
     () => ({
       basic: ["names", "descriptions", "departments", "flags"],
-      simulations: ["simulations"],
+      simulations: ["simulations", "simulation_availability"],
       all: [
         "names",
         "descriptions",
@@ -600,6 +660,7 @@ function CohortComponent({
         "departments",
         "simulations",
         "simulation_positions",
+        "simulation_availability",
       ], // All resources for full-page generation
     }),
     [],
@@ -614,6 +675,7 @@ function CohortComponent({
       departments: "Departments",
       simulations: "Simulations",
       simulation_positions: "Simulation Positions",
+      simulation_availability: "Simulation Availability",
     }),
     [],
   );
@@ -705,6 +767,7 @@ function CohortComponent({
             department_ids: effectiveFormState.department_ids.length > 0 ? effectiveFormState.department_ids : null,
             simulation_ids: effectiveFormState.simulation_ids.length > 0 ? effectiveFormState.simulation_ids : null,
             simulation_position_ids: effectiveFormState.simulation_position_ids?.length > 0 ? effectiveFormState.simulation_position_ids : null,
+            simulation_availability_ids: effectiveFormState.simulation_availability_ids?.length > 0 ? effectiveFormState.simulation_availability_ids : null,
           },
         } as SaveCohortIn);
         toast.success(
@@ -780,6 +843,7 @@ function CohortComponent({
       "department_ids",
       "simulation_ids",
       "simulation_positions",
+      "simulation_availability",
     ],
     [],
   );
@@ -812,6 +876,7 @@ function CohortComponent({
             ...prev,
             simulation_ids: [],
             simulation_position_ids: [],
+            simulation_availability_ids: [],
             simulation_positions: [],
           };
         default:
@@ -1125,6 +1190,41 @@ function CohortComponent({
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["simulation_positions"]}
               />
+              <SimulationAvailability
+                simulation_availability_ids={formState.simulation_availability_ids ?? []}
+                simulation_availability_resources={
+                  (s?.simulation_availability?.current ?? []) as SimulationAvailabilityProps["simulation_availability_resources"]
+                }
+                show_simulation_availability={
+                  s?.simulation_availability?.show ?? false
+                }
+                simulation_ids={formState.simulation_ids ?? []}
+                simulations={simulationResourcesForUi}
+                simulation_resources={simulationCurrentForUi}
+                disabled={disabled}
+                onAvailabilityIdsChange={(ids) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    simulation_availability_ids: ids,
+                  }))
+                }
+                label="Simulation Availability"
+                required={s?.simulation_availability?.required ?? false}
+                group_id={s?.group_id ?? null}
+                showAiGenerate={
+                  s?.simulation_availability?.show_ai_generate ?? false
+                }
+                onGenerate={
+                  isEditMode ? handleGenerateSimulationAvailability : undefined
+                }
+                createSimulationAvailabilityAction={
+                  createSimulationAvailabilityAction as
+                    | SimulationAvailabilityProps["createSimulationAvailabilityAction"]
+                    | undefined
+                }
+                isAutosaveEnabled={isAutosaveEnabled}
+                registerFlush={registerFlushCallbacks["simulation_availability"]}
+              />
             </StepCard>
           );
         }
@@ -1145,6 +1245,7 @@ function CohortComponent({
       handleGenerateFlags,
       handleGenerateSimulations,
       handleGenerateSimulationPositions,
+      handleGenerateSimulationAvailability,
       isGenerating,
       stepResources,
       // Depend on individual formState fields instead of whole object to prevent callback recreation
@@ -1160,6 +1261,7 @@ function CohortComponent({
       createNamesAction,
       createDescriptionsAction,
       createSimulationPositionsAction,
+      createSimulationAvailabilityAction,
       canRegenerate,
       handleOpenStepCardModal,
       isAutosaveEnabled,
@@ -1248,7 +1350,9 @@ export default React.memo(CohortComponent, (prevProps, nextProps) => {
     prevProps.createNamesAction !== nextProps.createNamesAction ||
     prevProps.createDescriptionsAction !== nextProps.createDescriptionsAction ||
     prevProps.createSimulationPositionsAction !==
-      nextProps.createSimulationPositionsAction
+      nextProps.createSimulationPositionsAction ||
+    prevProps.createSimulationAvailabilityAction !==
+      nextProps.createSimulationAvailabilityAction
   ) {
     return false; // Function props changed, re-render
   }

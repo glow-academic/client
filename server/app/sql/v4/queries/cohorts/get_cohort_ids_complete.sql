@@ -41,6 +41,9 @@ RETURNS TABLE (
     -- Simulation positions (special composite type from current implementation)
     simulation_position_values int[],
 
+    -- Simulation availability IDs
+    simulation_availability_ids uuid[],
+
     -- Suggestion IDs (computed in resource search endpoints)
     name_suggestions uuid[],
     description_suggestions uuid[],
@@ -189,6 +192,40 @@ simulation_positions_combined_data AS (
         END as simulation_position_values
     FROM params
     LIMIT 1
+),
+-- Simulation availability (from draft or cohort junction)
+draft_simulation_availability_data AS (
+    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(dsa.simulation_availability_id ORDER BY dsa.created_at), NULL), ARRAY[]::uuid[]) as simulation_availability_ids
+    FROM params x
+    LEFT JOIN cohort_drafts_simulation_availability_connection dsa ON dsa.draft_id = x.draft_id
+    LIMIT 1
+),
+cohort_simulation_availability_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT cohort_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(csa.simulation_availability_id ORDER BY csa.created_at)
+                 FROM cohort_simulation_availability_junction csa
+                 WHERE csa.cohort_id = (SELECT cohort_id FROM params) AND csa.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as simulation_availability_ids
+    FROM params
+    LIMIT 1
+),
+simulation_availability_combined_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT draft_id FROM params) IS NOT NULL
+                AND COALESCE(array_length((SELECT simulation_availability_ids FROM draft_simulation_availability_data), 1), 0) > 0
+                THEN (SELECT simulation_availability_ids FROM draft_simulation_availability_data)
+            WHEN COALESCE(array_length((SELECT simulation_availability_ids FROM cohort_simulation_availability_data), 1), 0) > 0
+                THEN (SELECT simulation_availability_ids FROM cohort_simulation_availability_data)
+            ELSE ARRAY[]::uuid[]
+        END as simulation_availability_ids
+    FROM params
+    LIMIT 1
 )
 SELECT
     -- Single-select resource IDs
@@ -202,6 +239,9 @@ SELECT
 
     -- Simulation positions
     (SELECT simulation_position_values FROM simulation_positions_combined_data) as simulation_position_values,
+
+    -- Simulation availability
+    (SELECT simulation_availability_ids FROM simulation_availability_combined_data) as simulation_availability_ids,
 
     -- Suggestion IDs (computed in resource search endpoints)
     ARRAY[]::uuid[] as name_suggestions,

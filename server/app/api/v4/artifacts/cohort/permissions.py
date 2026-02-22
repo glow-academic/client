@@ -30,6 +30,7 @@ __all__ = [
     "compute_show_departments",
     "compute_show_simulations",
     "compute_show_simulation_positions",
+    "compute_show_simulation_availability",
     # Required field flags
     "compute_name_required",
     "compute_description_required",
@@ -37,6 +38,7 @@ __all__ = [
     "compute_departments_required",
     "compute_simulations_required",
     "compute_simulation_positions_required",
+    "compute_simulation_availability_required",
 ]
 
 # ========== Agent Scoring - Cohort-specific Constants ==========
@@ -52,7 +54,7 @@ COHORT_RESOURCES: set[str] = {
 
 # Multi-resource agent definitions for cohort
 COHORT_BASIC_RESOURCES: set[str] = {"names", "descriptions", "flags", "departments"}
-COHORT_SIMULATIONS_RESOURCES: set[str] = {"simulations", "simulation_positions"}
+COHORT_SIMULATIONS_RESOURCES: set[str] = {"simulations", "simulation_positions", "simulation_availability"}
 
 # ========== Domain Metadata - for client-side display in modals ==========
 
@@ -86,6 +88,11 @@ COHORT_DOMAIN_METADATA: dict[str, dict[str, str | bool]] = {
         "name": "Simulation Order",
         "description": "Order of simulations",
         "icon": "list-ordered",
+    },
+    "simulation_availability": {
+        "name": "Simulation Availability",
+        "description": "Availability windows for simulations",
+        "icon": "calendar",
     },
 }
 
@@ -278,6 +285,11 @@ def compute_show_simulation_positions(simulation_positions_count: int) -> bool:
     return simulation_positions_count > 0
 
 
+def compute_show_simulation_availability(simulation_availability_count: int) -> bool:
+    """Show simulation availability section if there are availability entries."""
+    return simulation_availability_count > 0
+
+
 # =============================================================================
 # Required Field Flags
 # =============================================================================
@@ -310,6 +322,11 @@ def compute_simulations_required() -> bool:
 
 def compute_simulation_positions_required() -> bool:
     """Simulation positions are optional."""
+    return False
+
+
+def compute_simulation_availability_required() -> bool:
+    """Simulation availability is optional."""
     return False
 
 

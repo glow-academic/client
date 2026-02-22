@@ -23620,6 +23620,50 @@ export interface components {
             generated?: boolean | null;
         };
         /**
+         * CohortSimulationAvailability
+         * @description Simulation availability for cohort.
+         */
+        CohortSimulationAvailability: {
+            /** Id */
+            id?: string | null;
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Time */
+            time?: string | null;
+            /** Type */
+            type?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+            /** Mcp */
+            mcp?: boolean | null;
+        };
+        /** CohortSimulationAvailabilitySection */
+        CohortSimulationAvailabilitySection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Tool Id */
+            tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["CohortSimulationAvailability"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["CohortSimulationAvailability"][] | null;
+        };
+        /**
          * CohortSimulationPosition
          * @description Simulation position for cohort.
          */
@@ -28023,6 +28067,7 @@ export interface components {
             departments?: components["schemas"]["CohortDepartmentSection"] | null;
             simulations?: components["schemas"]["CohortSimulationSection"] | null;
             simulation_positions?: components["schemas"]["CohortSimulationPositionSection"] | null;
+            simulation_availability?: components["schemas"]["CohortSimulationAvailabilitySection"] | null;
         };
         /** GetCohortDraftsEntriesApiRequest */
         GetCohortDraftsEntriesApiRequest: {
@@ -34505,6 +34550,8 @@ export interface components {
             simulation_ids?: string[] | null;
             /** Simulation Position Ids */
             simulation_position_ids?: string[] | null;
+            /** Simulation Availability Ids */
+            simulation_availability_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -40404,6 +40451,8 @@ export interface components {
             simulation_ids?: string[] | null;
             /** Simulation Position Ids */
             simulation_position_ids?: string[] | null;
+            /** Simulation Availability Ids */
+            simulation_availability_ids?: string[] | null;
         };
         /**
          * SaveCohortApiResponse

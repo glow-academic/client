@@ -357,6 +357,7 @@ _register(
             "departments",
             "simulations",
             "simulation_positions",
+            "simulation_availability",
         ],
         prepare_sql_path="app/sql/v4/queries/generate/cohort/prepare_cohort_generation_complete.sql",
         draft_view_key="draft_cohort",
