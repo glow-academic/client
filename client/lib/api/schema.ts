@@ -24234,18 +24234,24 @@ export interface components {
             resources?: components["schemas"]["CohortDescriptionResource"][] | null;
         };
         /**
-         * CohortFlagResource
-         * @description Flag resource for cohort.
+         * CohortFlagConfig
+         * @description Flag config for cohort — matches client FlagConfig interface.
          */
-        CohortFlagResource: {
-            /** Id */
-            id?: string | null;
-            /** Name */
-            name?: string | null;
+        CohortFlagConfig: {
+            /** Key */
+            key?: string | null;
+            /** Label */
+            label?: string | null;
             /** Description */
             description?: string | null;
-            /** Icon */
-            icon?: string | null;
+            /** Icon Id */
+            icon_id?: string | null;
+            /** Flag Option Id */
+            flag_option_id?: string | null;
+            /** Show */
+            show?: boolean | null;
+            /** Required */
+            required?: boolean | null;
             /** Generated */
             generated?: boolean | null;
         };
@@ -24270,9 +24276,9 @@ export interface components {
             show_ai_generate: boolean;
             /** Tool Id */
             tool_id?: string | null;
-            resource?: components["schemas"]["CohortFlagResource"] | null;
+            resource?: components["schemas"]["CohortFlagConfig"] | null;
             /** Resources */
-            resources?: components["schemas"]["CohortFlagResource"][] | null;
+            resources?: components["schemas"]["CohortFlagConfig"][] | null;
         };
         /**
          * CohortNameResource
@@ -32980,8 +32986,8 @@ export interface components {
              * Format: uuid
              */
             simulation_id: string;
-            /** Training Entry Ids */
-            training_entry_ids?: string[] | null;
+            /** Chat Entry Ids */
+            chat_entry_ids?: string[] | null;
             /** Scenario Ids */
             scenario_ids?: string[] | null;
             /** Cohort Ids */
@@ -37055,8 +37061,8 @@ export interface components {
              * Format: uuid
              */
             simulation_id: string;
-            /** Training Entry Ids */
-            training_entry_ids?: string[] | null;
+            /** Chat Entry Ids */
+            chat_entry_ids?: string[] | null;
             /** Scenario Ids */
             scenario_ids?: string[] | null;
             /** Cohort Ids */

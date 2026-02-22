@@ -43,7 +43,7 @@ from app.api.v4.artifacts.cohort.types import (
     CohortDepartmentSection,
     CohortDescriptionResource,
     CohortDescriptionSection,
-    CohortFlagResource,
+    CohortFlagConfig,
     CohortFlagSection,
     CohortNameResource,
     CohortNameSection,
@@ -167,7 +167,7 @@ class CohortInternalData:
     # Selected resources for API response
     name_resource: CohortNameResource | None
     description_resource: CohortDescriptionResource | None
-    flag_resource: CohortFlagResource | None
+    flag_resource: CohortFlagConfig | None
     department_resources: list[CohortDepartment]
     simulation_resources: list[CohortSimulation]
     simulation_positions: list[CohortSimulationPosition]
@@ -492,13 +492,15 @@ async def get_cohort_internal(
         for s in simulations_raw
     ]
 
-    # Convert flags to CohortFlagResource format
+    # Convert flags to CohortFlagConfig format (matches client FlagConfig)
+    # show/required are set at the section level via section_common(), not per-flag
     flags = [
-        CohortFlagResource(
-            id=f.id,
-            name=f.name,
+        CohortFlagConfig(
+            key=f.name,
+            label=f.name,
             description=f.description,
-            icon=f.icon,
+            icon_id=f.icon,
+            flag_option_id=f.id,
             generated=f.generated,
         )
         for f in flags_raw
@@ -511,7 +513,7 @@ async def get_cohort_internal(
         (d for d in descriptions if d.id == ids_result.description_id),
         None,
     )
-    flag_resource = next((f for f in flags if f.id == ids_result.active_flag_id), None)
+    flag_resource = next((f for f in flags if f.flag_option_id == ids_result.active_flag_id), None)
 
     # Selected multi-select resources
     department_resources = [d for d in departments if d.department_id in department_ids]

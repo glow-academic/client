@@ -9,7 +9,7 @@ class PracticeContextViewItem(BaseModel):
     """IDs-first practice simulation item — raw IDs only, no computed fields."""
 
     simulation_id: UUID
-    training_entry_ids: list[UUID] | None = None
+    chat_entry_ids: list[UUID] | None = None
     scenario_ids: list[UUID] | None = None
     cohort_ids: list[UUID] | None = None
     persona_ids: list[UUID] | None = None

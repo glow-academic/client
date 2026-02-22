@@ -762,12 +762,12 @@ async def get_attempt_internal(
         training_entry_id: UUID | None = None
         training_row = await conn.fetchrow(
             """
-            SELECT COALESCE(pte.training_id, hte.training_id) AS training_entry_id
+            SELECT COALESCE(pte.chat_id, hte.chat_id) AS training_entry_id
             FROM attempt_entry a
             LEFT JOIN attempt_practice_entry apc ON apc.attempt_id = a.id AND apc.active = true
-            LEFT JOIN practice_training_entry pte ON pte.practice_id = apc.practice_id AND pte.active = true
+            LEFT JOIN practice_chat_entry pte ON pte.practice_id = apc.practice_id AND pte.active = true
             LEFT JOIN attempt_home_entry ahc ON ahc.attempt_id = a.id AND ahc.active = true
-            LEFT JOIN home_training_entry hte ON hte.home_id = ahc.home_id AND hte.active = true
+            LEFT JOIN home_chat_entry hte ON hte.home_id = ahc.home_id AND hte.active = true
             WHERE a.id = $1
             """,
             attempt_id,

@@ -882,7 +882,7 @@ async def get_home_internal(
             )
 
             training_entry_id = (
-                item.training_entry_ids[0] if item.training_entry_ids else None
+                item.chat_entry_ids[0] if item.chat_entry_ids else None
             )
 
             attempt_count = ps.get("attempt_count", 0)

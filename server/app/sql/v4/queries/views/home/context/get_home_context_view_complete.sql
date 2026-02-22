@@ -34,7 +34,7 @@ END $$;
 
 CREATE TYPE types.q_get_home_context_view_v4_item AS (
     simulation_id uuid,
-    training_entry_ids uuid[],
+    chat_entry_ids uuid[],
     scenario_ids uuid[],
     cohort_ids uuid[],
     persona_ids uuid[],
@@ -74,7 +74,7 @@ accessible_training AS (
         mh.home_id AS parent_id,
         mh.simulation_ids,
         mh.cohort_ids,
-        mh.chat_ids AS training_entry_ids,
+        mh.chat_ids AS chat_entry_ids,
         mh.scenario_ids,
         mh.persona_ids,
         mh.rubric_ids,
@@ -104,8 +104,8 @@ active_simulations AS (
 simulation_scope AS (
     SELECT
         asim.simulation_id,
-        ARRAY_AGG(DISTINCT tbeid.training_entry_id ORDER BY tbeid.training_entry_id)
-            FILTER (WHERE tbeid.training_entry_id IS NOT NULL) AS training_entry_ids,
+        ARRAY_AGG(DISTINCT tbeid.chat_entry_id ORDER BY tbeid.chat_entry_id)
+            FILTER (WHERE tbeid.chat_entry_id IS NOT NULL) AS chat_entry_ids,
         ARRAY_AGG(DISTINCT scid.scenario_id ORDER BY scid.scenario_id)
             FILTER (WHERE scid.scenario_id IS NOT NULL) AS scenario_ids,
         ARRAY_AGG(DISTINCT coid.cohort_id ORDER BY coid.cohort_id)
@@ -119,7 +119,7 @@ simulation_scope AS (
     FROM active_simulations asim
     JOIN accessible_training at2
       ON asim.simulation_id = ANY(at2.simulation_ids)
-    LEFT JOIN LATERAL unnest(at2.training_entry_ids) tbeid(training_entry_id) ON TRUE
+    LEFT JOIN LATERAL unnest(at2.chat_entry_ids) tbeid(chat_entry_id) ON TRUE
     LEFT JOIN LATERAL unnest(at2.scenario_ids) scid(scenario_id) ON TRUE
     LEFT JOIN LATERAL unnest(at2.cohort_ids) coid(cohort_id) ON TRUE
     LEFT JOIN LATERAL unnest(at2.persona_ids) pid(persona_id) ON TRUE
@@ -133,7 +133,7 @@ SELECT
             SELECT ARRAY_AGG(
                 (
                     ss.simulation_id,
-                    ss.training_entry_ids,
+                    ss.chat_entry_ids,
                     ss.scenario_ids,
                     ss.cohort_ids,
                     ss.persona_ids,

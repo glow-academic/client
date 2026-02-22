@@ -38,13 +38,16 @@ class CohortDescriptionResource(BaseModel):
     generated: bool | None = None
 
 
-class CohortFlagResource(BaseModel):
-    """Flag resource for cohort."""
+class CohortFlagConfig(BaseModel):
+    """Flag config for cohort — matches client FlagConfig interface."""
 
-    id: UUID | None = None
-    name: str | None = None
+    key: str | None = None
+    label: str | None = None
     description: str | None = None
-    icon: str | None = None
+    icon_id: str | None = None
+    flag_option_id: UUID | None = None
+    show: bool | None = None
+    required: bool | None = None
     generated: bool | None = None
 
 
@@ -86,7 +89,7 @@ class CohortResourceBucket(BaseModel):
 
     names: list[CohortNameResource] | None = None
     descriptions: list[CohortDescriptionResource] | None = None
-    flags: list[CohortFlagResource] | None = None
+    flags: list[CohortFlagConfig] | None = None
     departments: list[CohortDepartment] | None = None
     simulations: list[CohortSimulation] | None = None
     simulation_positions: list[CohortSimulationPosition] | None = None
@@ -125,8 +128,8 @@ class CohortDescriptionSection(BaseResourceSection):
 
 
 class CohortFlagSection(BaseResourceSection):
-    resource: CohortFlagResource | None = None
-    resources: list[CohortFlagResource] | None = None
+    resource: CohortFlagConfig | None = None
+    resources: list[CohortFlagConfig] | None = None
 
 
 class CohortDepartmentSection(BaseResourceSection):
@@ -194,7 +197,7 @@ class CohortWebsocketResources(BaseModel):
 
     names: list[CohortNameResource] | None = None
     descriptions: list[CohortDescriptionResource] | None = None
-    flags: list[CohortFlagResource] | None = None
+    flags: list[CohortFlagConfig] | None = None
     departments: list[CohortDepartment] | None = None
     simulations: list[CohortSimulation] | None = None
     simulation_positions: list[CohortSimulationPosition] | None = None

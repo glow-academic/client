@@ -432,7 +432,6 @@ VIEW_RESOURCES: dict[str, frozenset[str]] = {
 ARTIFACT_RESOURCES: dict[str, frozenset[str]] = {
     "agent": frozenset(
         {
-            "agents",
             "departments",
             "descriptions",
             "flags",
@@ -448,7 +447,6 @@ ARTIFACT_RESOURCES: dict[str, frozenset[str]] = {
     ),
     "auth": frozenset(
         {
-            "auths",
             "departments",
             "descriptions",
             "flags",
@@ -460,7 +458,6 @@ ARTIFACT_RESOURCES: dict[str, frozenset[str]] = {
     ),
     "cohort": frozenset(
         {
-            "cohorts",
             "departments",
             "descriptions",
             "flags",
@@ -472,7 +469,6 @@ ARTIFACT_RESOURCES: dict[str, frozenset[str]] = {
     ),
     "department": frozenset(
         {
-            "departments",
             "descriptions",
             "flags",
             "names",
@@ -483,7 +479,6 @@ ARTIFACT_RESOURCES: dict[str, frozenset[str]] = {
         {
             "departments",
             "descriptions",
-            "documents",
             "flags",
             "images",
             "names",
@@ -497,7 +492,6 @@ ARTIFACT_RESOURCES: dict[str, frozenset[str]] = {
         {
             "departments",
             "descriptions",
-            "evals",
             "flags",
             "group_positions",
             "group_rubrics",
@@ -513,7 +507,6 @@ ARTIFACT_RESOURCES: dict[str, frozenset[str]] = {
             "conditional_parameters",
             "departments",
             "descriptions",
-            "fields",
             "flags",
             "names",
         }
@@ -524,7 +517,6 @@ ARTIFACT_RESOURCES: dict[str, frozenset[str]] = {
             "descriptions",
             "flags",
             "modalities",
-            "models",
             "names",
             "pricing",
             "providers",
@@ -542,7 +534,6 @@ ARTIFACT_RESOURCES: dict[str, frozenset[str]] = {
             "fields",
             "flags",
             "names",
-            "parameters",
         }
     ),
     "persona": frozenset(
@@ -557,7 +548,6 @@ ARTIFACT_RESOURCES: dict[str, frozenset[str]] = {
             "names",
             "parameter_fields",
             "parameters",
-            "personas",
         }
     ),
     "profile": frozenset(
@@ -567,7 +557,6 @@ ARTIFACT_RESOURCES: dict[str, frozenset[str]] = {
             "emails",
             "flags",
             "names",
-            "profiles",
             "request_limits",
             "roles",
         }
@@ -580,7 +569,6 @@ ARTIFACT_RESOURCES: dict[str, frozenset[str]] = {
             "flags",
             "keys",
             "names",
-            "providers",
             "values",
         }
     ),
@@ -591,7 +579,6 @@ ARTIFACT_RESOURCES: dict[str, frozenset[str]] = {
             "flags",
             "names",
             "points",
-            "rubrics",
             "standard_groups",
             "standards",
         }
@@ -611,7 +598,6 @@ ARTIFACT_RESOURCES: dict[str, frozenset[str]] = {
             "personas",
             "problem_statements",
             "questions",
-            "scenarios",
             "videos",
         }
     ),
@@ -628,7 +614,6 @@ ARTIFACT_RESOURCES: dict[str, frozenset[str]] = {
             "names",
             "profiles",
             "provider_keys",
-            "settings",
             "thresholds",
         }
     ),
@@ -644,7 +629,6 @@ ARTIFACT_RESOURCES: dict[str, frozenset[str]] = {
             "scenario_rubrics",
             "scenario_time_limits",
             "scenarios",
-            "simulations",
         }
     ),
     "tool": frozenset(
@@ -658,7 +642,6 @@ ARTIFACT_RESOURCES: dict[str, frozenset[str]] = {
             "domains",
             "flags",
             "names",
-            "tools",
         }
     ),
 }

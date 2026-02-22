@@ -54,9 +54,9 @@ async def get_home_context_view_internal(
             items.append(
                 HomeContextViewItem(
                     simulation_id=item.simulation_id,
-                    training_entry_ids=(
-                        list(item.training_entry_ids)
-                        if item.training_entry_ids
+                    chat_entry_ids=(
+                        list(item.chat_entry_ids)
+                        if item.chat_entry_ids
                         else None
                     ),
                     scenario_ids=list(item.scenario_ids) if item.scenario_ids else None,

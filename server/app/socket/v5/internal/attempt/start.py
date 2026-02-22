@@ -31,18 +31,18 @@ internal_sio = get_internal_sio()
 # SQL to count remaining scenarios (expected from training - completed chats)
 SQL_REMAINING_SCENARIOS = """
     WITH attempt_training AS (
-        SELECT COALESCE(pte.training_id, hte.training_id) AS training_id
+        SELECT COALESCE(pte.chat_id, hte.chat_id) AS chat_id
         FROM attempt_entry a
         LEFT JOIN attempt_practice_entry apc ON apc.attempt_id = a.id AND apc.active = true
-        LEFT JOIN practice_training_entry pte ON pte.practice_id = apc.practice_id AND pte.active = true
+        LEFT JOIN practice_chat_entry pte ON pte.practice_id = apc.practice_id AND pte.active = true
         LEFT JOIN attempt_home_entry ahc ON ahc.attempt_id = a.id AND ahc.active = true
-        LEFT JOIN home_training_entry hte ON hte.home_id = ahc.home_id AND hte.active = true
+        LEFT JOIN home_chat_entry hte ON hte.home_id = ahc.home_id AND hte.active = true
         WHERE a.id = $1
     ),
     expected_scenarios AS (
         SELECT DISTINCT tsc.scenarios_id AS scenario_id
         FROM attempt_training at2
-        JOIN training_scenarios_connection tsc ON tsc.training_id = at2.training_id AND tsc.active = true
+        JOIN chat_scenarios_connection tsc ON tsc.chat_id = at2.chat_id AND tsc.active = true
     ),
     completed_chats AS (
         SELECT COUNT(*) AS cnt

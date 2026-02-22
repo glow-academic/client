@@ -81,7 +81,7 @@ SELECT
     COALESCE(ascn.scenario_ids, ARRAY[]::uuid[]) AS scenario_ids,
 
     -- Training context (for socket handlers — replaces inline SQL_ATTEMPT_CONTEXT)
-    training_ctx.training_entry_id,
+    training_ctx.chat_entry_id,
     training_ctx.chat_resolved_id
 
 FROM attempt_entry a
@@ -93,10 +93,10 @@ LEFT JOIN attempt_departments_connection adc ON adc.attempt_id = a.id
 LEFT JOIN attempt_cohorts_connection acc ON acc.attempt_id = a.id
 -- Scenario IDs (optional)
 LEFT JOIN attempt_scenarios ascn ON ascn.attempt_id = a.id
--- Training context: resolve training_entry_id + chat_resolved_id (LATERAL for 1:1)
+-- Training context: resolve chat_entry_id + chat_resolved_id (LATERAL for 1:1)
 LEFT JOIN LATERAL (
     SELECT
-        COALESCE(pte.chat_id, hte.chat_id) AS training_entry_id,
+        COALESCE(pte.chat_id, hte.chat_id) AS chat_entry_id,
         cr.id AS chat_resolved_id
     FROM (SELECT 1) _dummy
     LEFT JOIN attempt_practice_entry ape ON ape.attempt_id = a.id AND ape.active = true

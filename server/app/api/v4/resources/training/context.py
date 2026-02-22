@@ -86,7 +86,7 @@ async def get_training_attempt_context_internal(
 
     params = GetTrainingAttemptContextSqlParams(
         p_profile_id=profile_id,
-        p_training_entry_id=training_entry_id,
+        p_chat_entry_id=training_entry_id,
     )
     row = await execute_sql_typed(conn, SQL_PATH, params=params)
 
@@ -96,7 +96,7 @@ async def get_training_attempt_context_internal(
         )
 
     ctx = TrainingAttemptContext(
-        training_entry_id=row.training_entry_id,
+        training_entry_id=row.chat_entry_id,
         is_practice=row.is_practice or False,
         practice_id=row.practice_id,
         home_id=row.home_id,
