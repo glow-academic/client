@@ -194,26 +194,35 @@ export default async function DashboardPage({
 
   const footerKey = `footer|${filterKey}|${(scenarioPerfParameterIds || []).join(",")}|${scenarioPerfParamSearch || ""}|${(scenarioStatsParameterIds || []).join(",")}|${scenarioStatsParamSearch || ""}|${(simPerfSimulationIds || []).join(",")}|${simPerfSimulationSearch || ""}`;
 
+  // Create a shared header promise so both Header and History sections
+  // can await the same data without duplicating the API call
+  const headerPromise = getDashboardHeader({
+    body: {
+      ...commonBody,
+      history_enabled: true,
+      history_page: historyPage,
+      history_page_size: historyPageSize,
+      history_sort_by: historySortBy,
+      history_sort_order: historySortOrder,
+      ...(historySearch && { history_simulation_search: historySearch }),
+      ...(historyScenarioIds &&
+        historyScenarioIds.length > 0 && {
+          history_scenario_ids: historyScenarioIds,
+        }),
+      ...(historyInfiniteMode !== undefined && {
+        history_infinite_mode: historyInfiniteMode,
+      }),
+      ...(historyProfileSearch && { history_profile_search: historyProfileSearch }),
+      ...(historySimulationSearch && { history_simulation_search: historySimulationSearch }),
+      ...(historyScenarioSearch && { history_scenario_search: historyScenarioSearch }),
+    },
+  });
+
   return (
     <div className="space-y-6" data-page="dashboard-index">
-      {/* Header - full width (includes embedded history) */}
+      {/* Header - full width */}
       <Suspense key={headerKey} fallback={<HeaderSkeleton />}>
-        <DashboardHeaderSection
-          commonBody={commonBody}
-          historyPage={historyPage}
-          historyPageSize={historyPageSize}
-          historySearch={historySearch}
-          historySimulationIds={historySimulationIds}
-          historyScenarioIds={historyScenarioIds}
-          historyInfiniteMode={historyInfiniteMode}
-          historySortBy={historySortBy}
-          historySortOrder={historySortOrder}
-          historyProfileSearch={historyProfileSearch}
-          historySimulationSearch={historySimulationSearch}
-          historyScenarioSearch={historyScenarioSearch}
-          defaultFilters={filters}
-          bulkArchiveAttemptsAction={bulkArchiveAttempts}
-        />
+        <DashboardHeaderSection headerPromise={headerPromise} />
       </Suspense>
 
       {/* Primary + Secondary in side-by-side grid */}
@@ -257,6 +266,20 @@ export default async function DashboardPage({
           simPerfSimulationSearch={simPerfSimulationSearch}
         />
       </Suspense>
+
+      {/* History - below all graphs */}
+      <Suspense key={headerKey} fallback={null}>
+        <DashboardHistorySection
+          headerPromise={headerPromise}
+          historyPage={historyPage}
+          historyPageSize={historyPageSize}
+          defaultFilters={filters}
+          bulkArchiveAttemptsAction={bulkArchiveAttempts}
+          historyProfileSearch={historyProfileSearch}
+          historySimulationSearch={historySimulationSearch}
+          historyScenarioSearch={historyScenarioSearch}
+        />
+      </Suspense>
     </div>
   );
 }
@@ -283,33 +306,27 @@ type CommonBody = {
 };
 
 async function DashboardHeaderSection({
-  commonBody,
+  headerPromise,
+}: {
+  headerPromise: Promise<HeaderOut>;
+}) {
+  const data = await headerPromise;
+  return <DashboardHeader data={data} />;
+}
+
+async function DashboardHistorySection({
+  headerPromise,
   historyPage,
   historyPageSize,
-  historySearch,
-  historySimulationIds,
-  historyScenarioIds,
-  historyInfiniteMode,
-  historySortBy,
-  historySortOrder,
+  defaultFilters,
+  bulkArchiveAttemptsAction,
   historyProfileSearch,
   historySimulationSearch,
   historyScenarioSearch,
-  defaultFilters,
-  bulkArchiveAttemptsAction,
 }: {
-  commonBody: CommonBody;
+  headerPromise: Promise<HeaderOut>;
   historyPage: number;
   historyPageSize: number;
-  historySearch?: string | undefined;
-  historySimulationIds?: string[] | undefined;
-  historyScenarioIds?: string[] | undefined;
-  historyInfiniteMode?: boolean | undefined;
-  historySortBy: string;
-  historySortOrder: string;
-  historyProfileSearch?: string | undefined;
-  historySimulationSearch?: string | undefined;
-  historyScenarioSearch?: string | undefined;
   defaultFilters: {
     startDate: string;
     endDate: string;
@@ -320,28 +337,11 @@ async function DashboardHeaderSection({
   bulkArchiveAttemptsAction?: (
     input: BulkArchiveAttemptsIn
   ) => Promise<BulkArchiveAttemptsOut>;
+  historyProfileSearch?: string | undefined;
+  historySimulationSearch?: string | undefined;
+  historyScenarioSearch?: string | undefined;
 }) {
-  const data = await getDashboardHeader({
-    body: {
-      ...commonBody,
-      history_enabled: true,
-      history_page: historyPage,
-      history_page_size: historyPageSize,
-      history_sort_by: historySortBy,
-      history_sort_order: historySortOrder,
-      ...(historySearch && { history_simulation_search: historySearch }),
-      ...(historyScenarioIds &&
-        historyScenarioIds.length > 0 && {
-          history_scenario_ids: historyScenarioIds,
-        }),
-      ...(historyInfiniteMode !== undefined && {
-        history_infinite_mode: historyInfiniteMode,
-      }),
-      ...(historyProfileSearch && { history_profile_search: historyProfileSearch }),
-      ...(historySimulationSearch && { history_simulation_search: historySimulationSearch }),
-      ...(historyScenarioSearch && { history_scenario_search: historyScenarioSearch }),
-    },
-  });
+  const data = await headerPromise;
 
   // Extract history from embedded header response
   const historyData: DashboardHistoryOut = data.history || {
@@ -388,32 +388,27 @@ async function DashboardHeaderSection({
   );
 
   return (
-    <>
-      <DashboardHeader data={data} />
-
-      {/* History section — data from embedded header response */}
-      <div className="">
-        <SimulationHistory
-          data={dataArray}
-          totalCount={historyData.total_count || 0}
-          archivedCount={archivedCount}
-          unarchivedCount={unarchivedCount}
-          pageIndex={historyPage}
-          pageSize={historyPageSize}
-          showExport={false}
-          showArchive={!!bulkArchiveAttemptsAction}
-          singleProfile={false}
-          initialFilters={defaultFilters}
-          profileOptions={profileOptions}
-          simulationOptions={simulationOptions}
-          scenarioOptions={scenarioOptions}
-          profileSearch={historyProfileSearch || ""}
-          simulationSearch={historySimulationSearch || ""}
-          scenarioSearch={historyScenarioSearch || ""}
-          {...(bulkArchiveAttemptsAction && { bulkArchiveAttemptsAction })}
-        />
-      </div>
-    </>
+    <div className="">
+      <SimulationHistory
+        data={dataArray}
+        totalCount={historyData.total_count || 0}
+        archivedCount={archivedCount}
+        unarchivedCount={unarchivedCount}
+        pageIndex={historyPage}
+        pageSize={historyPageSize}
+        showExport={false}
+        showArchive={!!bulkArchiveAttemptsAction}
+        singleProfile={false}
+        initialFilters={defaultFilters}
+        profileOptions={profileOptions}
+        simulationOptions={simulationOptions}
+        scenarioOptions={scenarioOptions}
+        profileSearch={historyProfileSearch || ""}
+        simulationSearch={historySimulationSearch || ""}
+        scenarioSearch={historyScenarioSearch || ""}
+        {...(bulkArchiveAttemptsAction && { bulkArchiveAttemptsAction })}
+      />
+    </div>
   );
 }
 

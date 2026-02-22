@@ -192,6 +192,27 @@ export default async function RecordPage({
 
   const footerKey = `footer|${filterKey}|${(scenarioPerfParameterIds || []).join(",")}|${scenarioPerfParamSearch || ""}|${(scenarioStatsParameterIds || []).join(",")}|${scenarioStatsParamSearch || ""}|${(simPerfSimulationIds || []).join(",")}|${simPerfSimulationSearch || ""}`;
 
+  // Create a shared header promise so both Header and History sections
+  // can await the same data without duplicating the API call
+  const headerPromise = getReportHeader({
+    body: {
+      ...commonBody,
+      history_enabled: true,
+      history_page: historyPage,
+      history_page_size: historyPageSize,
+      history_sort_by: historySortBy,
+      history_sort_order: historySortOrder,
+      ...(historySearch && { history_simulation_search: historySearch }),
+      ...(historyScenarioIds &&
+        historyScenarioIds.length > 0 && {
+          history_scenario_ids: historyScenarioIds,
+        }),
+      ...(historyInfiniteMode !== undefined && {
+        history_infinite_mode: historyInfiniteMode,
+      }),
+    },
+  });
+
   return (
     <div className="space-y-6">
       {/* Profile header with name/email/role - rendered from the header section data */}
@@ -199,20 +220,9 @@ export default async function RecordPage({
         <ReportProfileHeaderSection commonBody={commonBody} />
       </Suspense>
 
-      {/* Header - full width (includes embedded history) */}
+      {/* Header - full width */}
       <Suspense key={headerKey} fallback={<HeaderSkeleton />}>
-        <ReportHeaderSection
-          commonBody={commonBody}
-          historyPage={historyPage}
-          historyPageSize={historyPageSize}
-          historySearch={historySearch}
-          historySimulationIds={historySimulationIds}
-          historyScenarioIds={historyScenarioIds}
-          historyInfiniteMode={historyInfiniteMode}
-          historySortBy={historySortBy}
-          historySortOrder={historySortOrder}
-          defaultFilters={filters}
-        />
+        <ReportHeaderSection headerPromise={headerPromise} />
       </Suspense>
 
       {/* Primary + Secondary in side-by-side grid */}
@@ -255,6 +265,16 @@ export default async function RecordPage({
           scenarioStatsParamSearch={scenarioStatsParamSearch}
           simPerfSimulationIds={simPerfSimulationIds}
           simPerfSimulationSearch={simPerfSimulationSearch}
+        />
+      </Suspense>
+
+      {/* History - below all graphs */}
+      <Suspense key={headerKey} fallback={null}>
+        <ReportHistorySection
+          headerPromise={headerPromise}
+          historyPage={historyPage}
+          historyPageSize={historyPageSize}
+          defaultFilters={filters}
         />
       </Suspense>
     </div>
@@ -314,26 +334,23 @@ async function ReportProfileHeaderSection({
 }
 
 async function ReportHeaderSection({
-  commonBody,
+  headerPromise,
+}: {
+  headerPromise: Promise<HeaderOut>;
+}) {
+  const data = await headerPromise;
+  return <DashboardHeader data={data} />;
+}
+
+async function ReportHistorySection({
+  headerPromise,
   historyPage,
   historyPageSize,
-  historySearch,
-  historySimulationIds,
-  historyScenarioIds,
-  historyInfiniteMode,
-  historySortBy,
-  historySortOrder,
   defaultFilters,
 }: {
-  commonBody: CommonBody;
+  headerPromise: Promise<HeaderOut>;
   historyPage: number;
   historyPageSize: number;
-  historySearch?: string | undefined;
-  historySimulationIds?: string[] | undefined;
-  historyScenarioIds?: string[] | undefined;
-  historyInfiniteMode?: boolean | undefined;
-  historySortBy: string;
-  historySortOrder: string;
   defaultFilters: {
     startDate: string;
     endDate: string;
@@ -343,24 +360,7 @@ async function ReportHeaderSection({
     simulationFilters: string[];
   };
 }) {
-  const data = await getReportHeader({
-    body: {
-      ...commonBody,
-      history_enabled: true,
-      history_page: historyPage,
-      history_page_size: historyPageSize,
-      history_sort_by: historySortBy,
-      history_sort_order: historySortOrder,
-      ...(historySearch && { history_simulation_search: historySearch }),
-      ...(historyScenarioIds &&
-        historyScenarioIds.length > 0 && {
-          history_scenario_ids: historyScenarioIds,
-        }),
-      ...(historyInfiniteMode !== undefined && {
-        history_infinite_mode: historyInfiniteMode,
-      }),
-    },
-  });
+  const data = await headerPromise;
 
   // Extract history from embedded header response
   const historyData: ReportHistoryOut = data.history || {
@@ -397,34 +397,29 @@ async function ReportHeaderSection({
   );
 
   return (
-    <>
-      <DashboardHeader data={data} />
-
-      {/* History section — data from embedded header response */}
-      <div className="">
-        <SimulationHistory
-          data={dataArray}
-          totalCount={historyData.total_count || 0}
-          archivedCount={archivedCount}
-          unarchivedCount={unarchivedCount}
-          pageIndex={historyPage}
-          pageSize={historyPageSize}
-          showExport={false}
-          showArchive={false}
-          singleProfile={true}
-          initialFilters={{
-            startDate: defaultFilters.startDate,
-            endDate: defaultFilters.endDate,
-            cohortIds: defaultFilters.cohortIds,
-            departmentIds: defaultFilters.departmentIds,
-            roles: defaultFilters.roles,
-          }}
-          profileOptions={[]}
-          simulationOptions={simulationOptions}
-          scenarioOptions={scenarioOptions}
-        />
-      </div>
-    </>
+    <div className="">
+      <SimulationHistory
+        data={dataArray}
+        totalCount={historyData.total_count || 0}
+        archivedCount={archivedCount}
+        unarchivedCount={unarchivedCount}
+        pageIndex={historyPage}
+        pageSize={historyPageSize}
+        showExport={false}
+        showArchive={false}
+        singleProfile={true}
+        initialFilters={{
+          startDate: defaultFilters.startDate,
+          endDate: defaultFilters.endDate,
+          cohortIds: defaultFilters.cohortIds,
+          departmentIds: defaultFilters.departmentIds,
+          roles: defaultFilters.roles,
+        }}
+        profileOptions={[]}
+        simulationOptions={simulationOptions}
+        scenarioOptions={scenarioOptions}
+      />
+    </div>
   );
 }
 
