@@ -904,6 +904,7 @@ async def get_cohort_websocket(
     )
 
     current = data.resources_payload.current
+    all_resources = data.resources_payload.resources
 
     # Enrich tools with args and args_outputs
     config_tools = tools_result or []
@@ -961,17 +962,21 @@ async def get_cohort_websocket(
         entries=entries if draft_view or runs_result else None,
         resource_agent_ids=data.agent_ids,
         resources=CohortWebsocketResources(
-            names=current.names if current else None,
-            descriptions=current.descriptions if current else None,
-            flags=current.flags if current else None,
-            departments=current.departments if current else None,
-            simulations=current.simulations if current else None,
-            simulation_positions=current.simulation_positions if current else None,
-            simulation_availability=current.simulation_availability
-            if current
+            names=all_resources.names if all_resources else None,
+            descriptions=all_resources.descriptions if all_resources else None,
+            flags=all_resources.flags if all_resources else None,
+            departments=all_resources.departments if all_resources else None,
+            simulations=all_resources.simulations if all_resources else None,
+            simulation_positions=all_resources.simulation_positions
+            if all_resources
             else None,
-            profiles=current.profiles if current else None,
-            profile_personas=current.profile_personas if current else None,
+            simulation_availability=all_resources.simulation_availability
+            if all_resources
+            else None,
+            profiles=all_resources.profiles if all_resources else None,
+            profile_personas=all_resources.profile_personas
+            if all_resources
+            else None,
         ),
         config=websocket_config,
     )

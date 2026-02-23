@@ -31009,6 +31009,7 @@ class PatchScenarioDraftSqlParams(BaseModel):
     objectives: ScenarioMultiResourceAction | None = None
     videos: ScenarioMultiResourceAction | None = None
     questions: ScenarioMultiResourceAction | None = None
+    options: ScenarioMultiResourceAction | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -31029,6 +31030,7 @@ class PatchScenarioDraftSqlParams(BaseModel):
             self.objectives,
             self.videos,
             self.questions,
+            self.options,
             self.expected_version,
         )
 
@@ -31055,6 +31057,7 @@ class PatchScenarioDraftApiRequest(BaseModel):
     objectives: ScenarioMultiResourceAction | None = None
     videos: ScenarioMultiResourceAction | None = None
     questions: ScenarioMultiResourceAction | None = None
+    options: ScenarioMultiResourceAction | None = None
     expected_version: int | None = 0
 
 class PatchScenarioDraftApiResponse(BaseModel):

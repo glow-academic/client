@@ -66,6 +66,7 @@ CREATE OR REPLACE FUNCTION api_patch_scenario_draft_v4(
     objectives types.scenario_multi_resource_action DEFAULT NULL,
     videos types.scenario_multi_resource_action DEFAULT NULL,
     questions types.scenario_multi_resource_action DEFAULT NULL,
+    options types.scenario_multi_resource_action DEFAULT NULL,
     expected_version int DEFAULT 0
 )
 RETURNS TABLE (
@@ -103,6 +104,7 @@ DECLARE
     objective_ids uuid[];
     video_ids uuid[];
     question_ids uuid[];
+    option_ids uuid[];
     flag_ids uuid[];
     -- Tool-call logging
     v_run_id uuid;
@@ -156,6 +158,7 @@ BEGIN
     objective_ids := COALESCE((objectives).resource_ids, ARRAY[]::uuid[]);
     video_ids := COALESCE((videos).resource_ids, ARRAY[]::uuid[]);
     question_ids := COALESCE((questions).resource_ids, ARRAY[]::uuid[]);
+    option_ids := COALESCE((options).resource_ids, ARRAY[]::uuid[]);
     flag_ids := COALESCE((flags).resource_ids, ARRAY[]::uuid[]);
 
     -- Resolve profile_artifact.id to profiles_resource.id via junction table
@@ -246,13 +249,14 @@ BEGIN
             DELETE FROM scenario_drafts_personas_connection WHERE scenario_drafts_personas_connection.draft_id = v_draft_id;
             DELETE FROM scenario_drafts_documents_connection WHERE scenario_drafts_documents_connection.draft_id = v_draft_id;
             DELETE FROM scenario_drafts_parameters_connection WHERE scenario_drafts_parameters_connection.draft_id = v_draft_id;
-            DELETE FROM scenario_drafts_fields_connection WHERE scenario_drafts_fields_connection.draft_id = v_draft_id;
+            DELETE FROM scenario_drafts_parameter_fields_connection WHERE scenario_drafts_parameter_fields_connection.draft_id = v_draft_id;
             DELETE FROM scenario_drafts_images_connection WHERE scenario_drafts_images_connection.draft_id = v_draft_id;
             DELETE FROM scenario_drafts_objectives_connection WHERE scenario_drafts_objectives_connection.draft_id = v_draft_id;
             DELETE FROM scenario_drafts_problem_statements_connection WHERE scenario_drafts_problem_statements_connection.draft_id = v_draft_id;
             DELETE FROM scenario_drafts_videos_connection WHERE scenario_drafts_videos_connection.draft_id = v_draft_id;
             DELETE FROM scenario_drafts_questions_connection WHERE scenario_drafts_questions_connection.draft_id = v_draft_id;
-            
+            DELETE FROM scenario_drafts_options_connection WHERE scenario_drafts_options_connection.draft_id = v_draft_id;
+
             -- Insert new resource links
             IF name_id IS NOT NULL THEN
                 INSERT INTO scenario_drafts_names_connection (draft_id, names_id, version)
@@ -342,7 +346,7 @@ BEGIN
             END IF;
 
             IF parameter_field_ids IS NOT NULL THEN
-                INSERT INTO scenario_drafts_fields_connection (draft_id, fields_id, version)
+                INSERT INTO scenario_drafts_parameter_fields_connection (draft_id, parameter_fields_id, version)
                 SELECT v_draft_id, pf_id, v_new_version
                 FROM unnest(parameter_field_ids) as pf_id
                 ON CONFLICT ON CONSTRAINT scenario_drafts_parameter_fields_connection_pkey DO UPDATE
@@ -387,9 +391,17 @@ BEGIN
                 ON CONFLICT ON CONSTRAINT scenario_drafts_questions_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
+
+            IF option_ids IS NOT NULL THEN
+                INSERT INTO scenario_drafts_options_connection (draft_id, options_id, version)
+                SELECT v_draft_id, option_id, v_new_version
+                FROM unnest(option_ids) as option_id
+                ON CONFLICT ON CONSTRAINT scenario_drafts_options_connection_pkey DO UPDATE
+                SET version = v_new_version;
+            END IF;
         END IF;
     END IF;
-    
+
     -- Create new draft if update failed or input_draft_id was NULL
     IF v_draft_id IS NULL THEN
         -- Create new group for draft
@@ -498,7 +510,7 @@ BEGIN
         END IF;
 
         IF parameter_field_ids IS NOT NULL THEN
-            INSERT INTO scenario_drafts_fields_connection (draft_id, fields_id, version)
+            INSERT INTO scenario_drafts_parameter_fields_connection (draft_id, parameter_fields_id, version)
             SELECT v_draft_id, pf_id, v_new_version
             FROM unnest(parameter_field_ids) as pf_id
             ON CONFLICT ON CONSTRAINT scenario_drafts_parameter_fields_connection_pkey DO UPDATE
@@ -541,6 +553,14 @@ BEGIN
             SELECT v_draft_id, question_id, v_new_version
             FROM unnest(question_ids) as question_id
             ON CONFLICT ON CONSTRAINT scenario_drafts_questions_connection_pkey DO UPDATE
+            SET version = v_new_version;
+        END IF;
+
+        IF option_ids IS NOT NULL THEN
+            INSERT INTO scenario_drafts_options_connection (draft_id, options_id, version)
+            SELECT v_draft_id, option_id, v_new_version
+            FROM unnest(option_ids) as option_id
+            ON CONFLICT ON CONSTRAINT scenario_drafts_options_connection_pkey DO UPDATE
             SET version = v_new_version;
         END IF;
     END IF;
@@ -808,6 +828,26 @@ BEGIN
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((questions).link_tool_id, v_call_id);
                 INSERT INTO questions_calls_connection (questions_id, call_id)
                 SELECT x.question_id, v_call_id FROM UNNEST(question_ids) AS x(question_id);
+            END IF;
+        END IF;
+
+        -- options
+        IF COALESCE(array_length(option_ids, 1), 0) > 0 THEN
+            IF (options).create_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'scenario_draft_create_options_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((options).create_tool_id, v_call_id);
+                INSERT INTO options_calls_connection (options_id, call_id)
+                SELECT x.option_id, v_call_id FROM UNNEST(option_ids) AS x(option_id);
+            END IF;
+            IF (options).link_tool_id IS NOT NULL THEN
+                v_call_id := uuidv7();
+                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
+                VALUES (v_call_id, 'scenario_draft_link_options_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((options).link_tool_id, v_call_id);
+                INSERT INTO options_calls_connection (options_id, call_id)
+                SELECT x.option_id, v_call_id FROM UNNEST(option_ids) AS x(option_id);
             END IF;
         END IF;
     END IF;

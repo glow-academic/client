@@ -4,22 +4,7 @@
 -- Parameters: search (text), limit_count (int), offset_count (int), draft_id (uuid), suggest_source (text), exclude_ids (uuid[])
 -- Returns: items (array of description resources)
 
--- Drop function if exists (handles signature variations)
-DO $$
-DECLARE
-    r RECORD;
-BEGIN
-    FOR r IN
-        SELECT oidvectortypes(proargtypes) as sig
-        FROM pg_proc
-        WHERE proname = 'api_search_descriptions_v4'
-          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
-    LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS api_search_descriptions_v4(%s)', r.sig);
-    END LOOP;
-END $$;
-
--- Create function
+-- Create function (uses CREATE OR REPLACE to avoid DROP race condition during hot reload)
 CREATE OR REPLACE FUNCTION api_search_descriptions_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,

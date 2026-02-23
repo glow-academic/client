@@ -107,38 +107,38 @@ INSERT INTO public.instructions_resource (id, template, active, created_at, gene
 
 {% if resources.simulation_positions and resources.simulation_positions|length > 0 %}
 #### Simulation Positions
-{% for item in resources.simulation_positions %}- id: {{ item.id }} | {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% for item in resources.simulation_positions %}- simulation_id: {{ item.simulation_id }} | {{ item.value }}
 {% endfor %}{% endif %}
 
 {% if resources.simulation_availability and resources.simulation_availability|length > 0 %}
 #### Simulation Availability
-{% for item in resources.simulation_availability %}- id: {{ item.id }} | {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% for item in resources.simulation_availability %}- id: {{ item.id }} | simulation_id: {{ item.simulation_id }} | {{ item.time }} ({{ item.type }})
 {% endfor %}{% endif %}
 
 {% if resources.profile_personas and resources.profile_personas|length > 0 %}
 #### Profile Personas
-{% for item in resources.profile_personas %}- id: {{ item.id }} | {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% for item in resources.profile_personas %}- id: {{ item.id }} | profile_id: {{ item.profile_id }} | persona_id: {{ item.persona_id }}
 {% endfor %}{% endif %}
 
 ### Entries (Use Only)
 {% if resources.departments and resources.departments|length > 0 %}
 #### Departments
-{% for item in resources.departments %}- id: {{ item.id }} | {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% for item in resources.departments %}- id: {{ item.department_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}{% endif %}
 
 {% if resources.flags and resources.flags|length > 0 %}
 #### Flags
-{% for item in resources.flags %}- id: {{ item.id }} | {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% for item in resources.flags %}- id: {{ item.flag_option_id }} | {{ item.label or item.key }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}{% endif %}
 
 {% if resources.simulations and resources.simulations|length > 0 %}
 #### Simulations
-{% for item in resources.simulations %}- id: {{ item.id }} | {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% for item in resources.simulations %}- id: {{ item.simulation_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}{% endif %}
 
 {% if resources.profiles and resources.profiles|length > 0 %}
 #### Profiles
-{% for item in resources.profiles %}- id: {{ item.id }} | {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% for item in resources.profiles %}- id: {{ item.profile_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}{% endif %}
 
 ## Tool Usage
