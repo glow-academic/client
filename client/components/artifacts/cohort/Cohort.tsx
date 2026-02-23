@@ -664,10 +664,11 @@ function CohortComponent({
       generate(resourceTypes, {
         draft_id: draftIdToUse,
         artifact_id: cohortId || null,
+        group_id: cohortData?.group_id ?? null,
         user_instructions: userInstructions ? [userInstructions] : null,
       });
     },
-    [cohortId, flushAllAndSave, formDataRef, generate],
+    [cohortId, cohortData?.group_id, flushAllAndSave, formDataRef, generate],
   );
 
   // Individual generation handlers - generate directly without modals

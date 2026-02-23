@@ -135,7 +135,7 @@ BEGIN
     IF EXISTS (
         SELECT 1
         FROM unnest(v_simulation_ids) AS sim_id
-        WHERE NOT EXISTS (SELECT 1 FROM simulation_artifact sa WHERE sa.id = sim_id)
+        WHERE NOT EXISTS (SELECT 1 FROM simulations_resource sr WHERE sr.id = sim_id)
     ) THEN
         RAISE EXCEPTION 'Simulation artifact not found for one or more IDs';
     END IF;
