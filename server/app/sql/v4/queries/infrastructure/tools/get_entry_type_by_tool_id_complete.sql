@@ -24,10 +24,11 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT br.entry::text as entry_type
-    FROM tool_bindings_junction tbj
-    JOIN bindings_resource br ON br.id = tbj.binding_id AND br.active = true
-    WHERE tbj.tool_id = $1
-      AND tbj.active = true
+    -- $1 is a tools_resource.id — read entry directly (denormalized from bindings)
+    SELECT tr.entry as entry_type
+    FROM tools_resource tr
+    WHERE tr.id = $1
+      AND tr.active = true
+      AND tr.entry IS NOT NULL
     LIMIT 1;
 $$;

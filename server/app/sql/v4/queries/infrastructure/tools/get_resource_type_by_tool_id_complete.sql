@@ -24,10 +24,11 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT dr.resource::text as resource_type
-    FROM tool_domains_junction tdj
-    JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
-    WHERE tdj.tool_id = $1
-      AND tdj.active = true
+    -- $1 is a tools_resource.id — read resource directly (denormalized from domains)
+    SELECT tr.resource as resource_type
+    FROM tools_resource tr
+    WHERE tr.id = $1
+      AND tr.active = true
+      AND tr.resource IS NOT NULL
     LIMIT 1;
 $$;

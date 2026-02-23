@@ -423,8 +423,11 @@ async def _generate_artifact_impl(
         responses_tools = None
         # Build output schema lookup: tool_name -> {output_column: argument_name}
         tool_output_schemas: dict[str, dict[str, str]] = {}
-        # Build name -> tool_id lookup from pre-fetched config to avoid redundant DB lookups
+        # Build name -> pre-fetched config lookups to avoid redundant DB queries
         tool_id_by_name: dict[str, uuid.UUID] = {}
+        tool_resource_type_by_name: dict[str, str] = {}
+        tool_entry_type_by_name: dict[str, str] = {}
+        tool_createable_by_name: dict[str, bool] = {}
         if data.tools:
             openai_tools = convert_tools_to_openai_format(data.tools)
             responses_tools = convert_tools_to_responses_format(data.tools)
@@ -440,6 +443,16 @@ async def _generate_artifact_impl(
                         )
                     except (ValueError, AttributeError):
                         pass
+                if t_name:
+                    t_resource = tool_def.get("resource")
+                    t_entry = tool_def.get("entry")
+                    t_createable = tool_def.get("createable")
+                    if t_resource:
+                        tool_resource_type_by_name[t_name] = t_resource
+                    if t_entry:
+                        tool_entry_type_by_name[t_name] = t_entry
+                    if t_createable is not None:
+                        tool_createable_by_name[t_name] = bool(t_createable)
                 t_args_outputs = tool_def.get("_args_outputs")
                 if t_name and isinstance(t_args_outputs, list):
                     resolved: dict[str, str] = {}
@@ -889,15 +902,28 @@ async def _generate_artifact_impl(
 
                     # Execute tool inline using the agentic pattern
                     # Tool result (including errors) will be visible to model for retries
-                    async with get_db_connection() as conn:
-                        tool_result_str = await execute_tool_call(
-                            conn=conn,
-                            tool_name=tool_name,
-                            arguments=arguments_dict,
-                            run_id=uuid.UUID(data.run_id) if data.run_id else None,
-                            external_call_id=tool_call_id,
-                            tool_id=tool_id_by_name.get(tool_name),
+                    resolved_tool_id = tool_id_by_name.get(tool_name)
+                    if not resolved_tool_id:
+                        tool_result_str = json.dumps(
+                            {
+                                "success": False,
+                                "message": f"Tool not found: {tool_name}",
+                                "error_stage": "tool_resolve",
+                            }
                         )
+                    else:
+                        async with get_db_connection() as conn:
+                            tool_result_str = await execute_tool_call(
+                                conn=conn,
+                                tool_name=tool_name,
+                                arguments=arguments_dict,
+                                tool_id=resolved_tool_id,
+                                run_id=uuid.UUID(data.run_id) if data.run_id else None,
+                                external_call_id=tool_call_id,
+                                resource_type=tool_resource_type_by_name.get(tool_name),
+                                entry_type=tool_entry_type_by_name.get(tool_name),
+                                is_creatable=tool_createable_by_name.get(tool_name),
+                            )
 
                     # Parse result for internal tracking
                     try:

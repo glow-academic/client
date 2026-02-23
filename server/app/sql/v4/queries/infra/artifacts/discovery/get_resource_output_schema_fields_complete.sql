@@ -30,17 +30,19 @@ LANGUAGE plpgsql
 STABLE
 AS $$
 BEGIN
+    -- tool_id is a tools_resource.id — use denormalized args_output_ids directly
     RETURN QUERY
-    SELECT 
+    SELECT
         ao.name::text as name,
-        'string'::text as field_type,  -- args_outputs_resource doesn't have field_type, default to string
-        false as required,  -- args_outputs_resource doesn't have required, default to false
-        0 as position,  -- args_outputs_resource doesn't have position, default to 0
+        'string'::text as field_type,
+        false as required,
+        0 as position,
         COALESCE(ao.template, '')::text as template
-    FROM tool_args_outputs_junction tao
-    JOIN args_outputs_resource ao ON ao.id = tao.args_outputs_id
-    WHERE tao.tool_id = api_get_resource_output_schema_fields_v4.tool_id
-      AND ao.active = true
-    ORDER BY ao.created_at;  -- Use created_at for ordering since position doesn't exist
+    FROM tools_resource tr
+    JOIN LATERAL unnest(tr.args_output_ids) AS aoid(id) ON true
+    JOIN args_outputs_resource ao ON ao.id = aoid.id AND ao.active = true
+    WHERE tr.id = api_get_resource_output_schema_fields_v4.tool_id
+      AND tr.active = true
+    ORDER BY ao.created_at;
 END;
 $$;

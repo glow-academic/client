@@ -25,14 +25,10 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT COALESCE(
-        (
-            SELECT tf.value
-            FROM tool_flags_junction tf
-            JOIN flags_resource f ON f.id = tf.flag_id
-            WHERE tf.tool_id = p_tool_id
-              AND f.name = 'tool_creatable'
-        ),
-        true  -- Default to true (creatable) if flag not set
-    ) as is_creatable;
+    -- p_tool_id is a tools_resource.id — read createable directly
+    SELECT COALESCE(tr.createable, true) as is_creatable
+    FROM tools_resource tr
+    WHERE tr.id = p_tool_id
+      AND tr.active = true
+    LIMIT 1;
 $$;

@@ -23,10 +23,6 @@ from app.sql.types import (
     CreateEntryRecordSqlRow,
     InfraToolsCreateCallForToolSqlParams,
     InfraToolsCreateCallForToolSqlRow,
-    InfraToolsGetEntryTypeByToolIdSqlParams,
-    InfraToolsGetResourceTypeByToolIdSqlParams,
-    InfraToolsGetToolIdByNameSqlParams,
-    InfraToolsIsToolCreatableSqlParams,
     InfraToolsLinkToolCallSqlParams,
 )
 from app.utils.logging.db_logger import get_logger
@@ -39,9 +35,12 @@ async def execute_tool_call(
     conn: asyncpg.Connection,
     tool_name: str,
     arguments: dict[str, Any],
+    tool_id: uuid.UUID,
     run_id: uuid.UUID | None = None,
     external_call_id: str | None = None,
-    tool_id: uuid.UUID | None = None,
+    resource_type: str | None = None,
+    entry_type: str | None = None,
+    is_creatable: bool | None = None,
 ) -> str:
     """Execute a tool call and return result as JSON string for model.
 
@@ -49,13 +48,19 @@ async def execute_tool_call(
     The return value becomes the content of the role="tool" message that the
     model sees, enabling retries on errors.
 
+    All resolution data (tool_id, resource_type/entry_type, is_creatable) is
+    pre-resolved from the tool config passed through the generation pipeline.
+
     Args:
         conn: Database connection
         tool_name: Name of the tool (e.g., "create_names", "use_names")
         arguments: Tool arguments from the model
+        tool_id: Pre-resolved tool ID (tools_resource.id)
         run_id: Optional run ID for linking calls
         external_call_id: Optional external call ID for tracking
-        tool_id: Optional pre-resolved tool ID to skip name-based DB lookup
+        resource_type: Pre-resolved resource type (tools_resource.resource)
+        entry_type: Pre-resolved entry type (tools_resource.entry)
+        is_creatable: Pre-resolved createable flag (tools_resource.createable)
 
     Returns:
         JSON string with result:
@@ -63,47 +68,28 @@ async def execute_tool_call(
         - Error: {"success": false, "message": "Error description"}
     """
     try:
-        # Use pre-resolved tool_id if available, otherwise fall back to name lookup
-        if tool_id is None:
-            tool_params = InfraToolsGetToolIdByNameSqlParams(tool_name=tool_name)
-            tool_result = await execute_sql_typed(
-                conn,
-                "app/sql/v4/queries/infrastructure/tools/get_tool_id_by_name_complete.sql",
-                params=tool_params,
-            )
-
-            if not tool_result or not getattr(tool_result, "tool_id", None):
-                return json.dumps(
-                    {
-                        "success": False,
-                        "message": f"Tool not found: {tool_name}",
-                        "error_stage": "tool_resolve",
-                    }
-                )
-
-            tool_id = tool_result.tool_id
-
-        # First, check if this is an entry-based tool (has binding with entry type)
-        entry_params = InfraToolsGetEntryTypeByToolIdSqlParams(tool_id=tool_id)
-        entry_result = await execute_sql_typed(
-            conn,
-            "app/sql/v4/queries/infrastructure/tools/get_entry_type_by_tool_id_complete.sql",
-            params=entry_params,
-        )
-
-        if entry_result and getattr(entry_result, "entry_type", None):
+        if entry_type:
             # Entry-based tool: insert into {entry}_entry table
             return await _execute_entry_tool(
                 conn,
                 tool_id,
                 tool_name,
-                entry_result.entry_type,
+                entry_type,
                 arguments,
                 run_id,
                 external_call_id,
             )
 
-        # Otherwise, fall back to resource-based tool logic
+        if not resource_type:
+            return json.dumps(
+                {
+                    "success": False,
+                    "message": f"No resource_type or entry_type configured for tool: {tool_name}",
+                    "error_stage": "tool_resolve",
+                }
+            )
+
+        # Resource-based tool logic
         return await _execute_resource_tool(
             conn,
             tool_id,
@@ -111,6 +97,8 @@ async def execute_tool_call(
             arguments,
             run_id,
             external_call_id,
+            resource_type=resource_type,
+            is_creatable=is_creatable if is_creatable is not None else True,
         )
 
     except Exception as e:
@@ -244,6 +232,8 @@ async def _execute_resource_tool(
     arguments: dict[str, Any],
     run_id: uuid.UUID | None = None,
     external_call_id: str | None = None,
+    resource_type: str = "",
+    is_creatable: bool = True,
 ) -> str:
     """Execute a resource-based tool (inserts into {resource}_resource table).
 
@@ -255,38 +245,13 @@ async def _execute_resource_tool(
         tool_name: Name of the tool
         arguments: Tool arguments from the model
         run_id: Optional run ID for linking calls
+        resource_type: Pre-resolved resource type (tools_resource.resource)
+        is_creatable: Pre-resolved createable flag (tools_resource.createable)
 
     Returns:
         JSON string with result
     """
     try:
-        # Check if tool is creatable (INSERT) or use-only (SELECT existing)
-        creatable_params = InfraToolsIsToolCreatableSqlParams(p_tool_id=tool_id)
-        creatable_result = await execute_sql_typed(
-            conn,
-            "app/sql/v4/queries/infrastructure/tools/is_tool_creatable_complete.sql",
-            params=creatable_params,
-        )
-        is_creatable = creatable_result.is_creatable if creatable_result else True
-
-        # Get resource_type by tool_id
-        resource_params = InfraToolsGetResourceTypeByToolIdSqlParams(tool_id=tool_id)
-        resource_result = await execute_sql_typed(
-            conn,
-            "app/sql/v4/queries/infrastructure/tools/get_resource_type_by_tool_id_complete.sql",
-            params=resource_params,
-        )
-
-        if not resource_result or not getattr(resource_result, "resource_type", None):
-            return json.dumps(
-                {
-                    "success": False,
-                    "message": f"No resource_type configured for tool: {tool_name}",
-                    "error_stage": "tool_resolve",
-                }
-            )
-
-        resource_type = resource_result.resource_type
 
         # Render tool templates (maps arguments to output columns)
         rendered_values = await render_tool_template(conn, tool_id, arguments)
@@ -397,8 +362,17 @@ async def _execute_resource_tool(
             }
         else:
             # Use tool: hydrate from the fetched row
+            import datetime
+
+            def _serialize(v: Any) -> Any:
+                if isinstance(v, uuid.UUID):
+                    return str(v)
+                if isinstance(v, (datetime.datetime, datetime.date)):
+                    return v.isoformat()
+                return v
+
             resource_data = {
-                k: str(v) if isinstance(v, uuid.UUID) else v
+                k: _serialize(v)
                 for k, v in dict(existing_row).items()
             }
         return json.dumps(

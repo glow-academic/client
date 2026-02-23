@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict Etrk7fSdALZxRLrgn26ACfKVhsFURliAqW2FdiyUcnyIlNDhnfbhCUtQ4mVYbkh
+\restrict Rag2dD3jhsWh6cJZNwaR2Lj4dW4ufM3xiZNl7kdlhslPjqHekMBemxZ1NXTMc1B
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -449,7 +449,8 @@ CREATE TYPE public.resource_type AS ENUM (
     'values',
     'videos',
     'voices',
-    'simulation_availability'
+    'simulation_availability',
+    'profile_personas'
 );
 
 
@@ -40502,7 +40503,8 @@ CREATE TABLE public.tools_resource (
     createable boolean DEFAULT false NOT NULL,
     args_ids uuid[] DEFAULT ARRAY[]::uuid[],
     args_output_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    resource text
+    resource text,
+    entry text
 );
 
 
@@ -67982,5 +67984,5 @@ ALTER TABLE ONLY public.voices_calls_connection
 -- PostgreSQL database dump complete
 --
 
-\unrestrict Etrk7fSdALZxRLrgn26ACfKVhsFURliAqW2FdiyUcnyIlNDhnfbhCUtQ4mVYbkh
+\unrestrict Rag2dD3jhsWh6cJZNwaR2Lj4dW4ufM3xiZNl7kdlhslPjqHekMBemxZ1NXTMc1B
 

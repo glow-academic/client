@@ -7,7 +7,7 @@
 -- Resource rows
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019bf207-ca50-796a-9a4a-1c698533717c', 'Create a document field resource for linking document-type parameter fields to scenarios', '2026-01-24T22:02:35.441799+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019bf207-ca50-74d3-98df-24139cfce3d3', 'create_document_fields', '2026-01-24T22:02:35.441799+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable, args_ids, args_output_ids, resource) VALUES ('019bf207-ca51-72c1-b1ca-e06fd2334952', '2026-01-24T22:02:35.441799+00:00', false, false, true, 'create_document_fields', 'Create a document field resource for linking document-type parameter fields to scenarios', '{}', true, '{}', '{}', NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable, args_ids, args_output_ids, resource, entry) VALUES ('019bf207-ca51-72c1-b1ca-e06fd2334952', '2026-01-24T22:02:35.441799+00:00', false, false, true, 'create_document_fields', 'Create a document field resource for linking document-type parameter fields to scenarios', '{}', true, '{}', '{}', NULL, NULL) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- tool_artifact

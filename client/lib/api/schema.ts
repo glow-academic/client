@@ -38193,6 +38193,8 @@ export interface components {
             args_output_ids: string[] | null;
             /** Resource */
             resource: string | null;
+            /** Entry */
+            entry: string | null;
             /** Createable */
             createable: boolean | null;
         };
