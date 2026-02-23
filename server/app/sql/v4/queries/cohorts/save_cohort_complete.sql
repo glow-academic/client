@@ -52,7 +52,8 @@ CREATE OR REPLACE FUNCTION api_save_cohort_v4(
     profile_personas types.cohort_multi_resource_action DEFAULT NULL
 )
 RETURNS TABLE (
-    cohort_id uuid
+    out_cohort_id uuid,
+    out_actor_name text
 )
 LANGUAGE plpgsql
 VOLATILE
@@ -115,7 +116,7 @@ BEGIN
         WHERE NOT EXISTS (
             SELECT 1
             FROM departments_resource dr
-            WHERE dr.id = dept_id OR dr.department_id = dept_id
+            WHERE dr.id = dept_id OR dept_id = ANY(dr.department_ids)
         )
     ) THEN
         RAISE EXCEPTION 'Department resource not found for one or more IDs';
@@ -207,10 +208,6 @@ BEGIN
         SET active = false
         WHERE cohort_id = v_cohort_id AND active = true;
     END IF;
-
-    INSERT INTO cohort_groups_junction (cohort_id, group_id, created_at, active)
-    VALUES (v_cohort_id, v_group_id, NOW(), true)
-    ON CONFLICT DO NOTHING;
 
     IF v_name_id IS NOT NULL THEN
         INSERT INTO cohort_names_junction (cohort_id, name_id, created_at, active)
@@ -510,7 +507,7 @@ BEGIN
     END IF;
 
     RETURN QUERY
-    SELECT v_cohort_id, v_actor_name;
+    SELECT v_cohort_id, NULL::text;
 END;
 $$;
 

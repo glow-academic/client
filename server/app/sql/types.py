@@ -2767,7 +2767,8 @@ class SaveCohortSqlParams(BaseModel):
 
 class SaveCohortSqlRow(BaseModel):
 
-    cohort_id: UUID | None = None
+    out_cohort_id: UUID | None = None
+    out_actor_name: str | None = None
 
 class SaveCohortApiRequest(BaseModel):
 
@@ -2785,7 +2786,8 @@ class SaveCohortApiRequest(BaseModel):
 
 class SaveCohortApiResponse(BaseModel):
 
-    cohort_id: UUID | None = None
+    out_cohort_id: UUID | None = None
+    out_actor_name: str | None = None
 
 
 

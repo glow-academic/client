@@ -445,8 +445,8 @@ class SaveCohortSqlParams(BaseModel):
 class SaveCohortSqlRow(BaseModel):
     """SQL row for save cohort."""
 
-    cohort_id: UUID | None = None
-    actor_name: str | None = None
+    out_cohort_id: UUID | None = None
+    out_actor_name: str | None = None
 
 
 # =============================================================================

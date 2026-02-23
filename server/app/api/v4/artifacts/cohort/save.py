@@ -96,11 +96,11 @@ async def save_cohort_internal(
                 await execute_sql_typed(conn, SQL_PATH, params=params),
             )
 
-            if not result or not result.cohort_id:
+            if not result or not result.out_cohort_id:
                 return None
 
         await invalidate_tags(["cohorts"])
-        return result.cohort_id
+        return result.out_cohort_id
 
     except Exception as e:
         logger.exception(f"save_cohort_internal failed: {e}")
@@ -194,14 +194,11 @@ async def save_cohort(
                     detail="You don't have permission to create cohorts.",
                 )
 
-        # Server-resolved group_id: create if not updating an existing cohort
-        group_id = None
-        if not request.input_cohort_id:
+        async with conn.transaction():
+            # Server-resolved group_id: always create a new group for each save
             group_id = await conn.fetchval(
                 "INSERT INTO groups_entry (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id"
             )
-
-        async with conn.transaction():
             # Convert flat resource IDs to SQL params (add profile_id and group_id from server)
             params = SaveCohortSqlParams.from_request(
                 request, profile_id=profile_id, group_id=group_id
@@ -218,7 +215,7 @@ async def save_cohort(
                 ),
             )
 
-            if not result or not result.cohort_id:
+            if not result or not result.out_cohort_id:
                 if request.input_cohort_id:
                     raise ValueError(f"Cohort not found: {request.input_cohort_id}")
                 raise ValueError("Failed to save cohort")
@@ -226,13 +223,13 @@ async def save_cohort(
             # Set audit context with data from SQL query
             if actor_name:
                 audit_ctx = {"actor": {"name": actor_name, "id": profile_id}}
-                audit_ctx["cohort"] = {"id": str(result.cohort_id)}
+                audit_ctx["cohort"] = {"id": str(result.out_cohort_id)}
                 audit_set(http_request, **audit_ctx)
 
         # Convert SQL result to API response
         api_response = SaveCohortApiResponse.model_validate(
             {
-                "cohort_id": str(result.cohort_id),
+                "cohort_id": str(result.out_cohort_id),
                 "actor_name": actor_name,
             }
         )
