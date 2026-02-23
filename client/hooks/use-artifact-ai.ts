@@ -43,6 +43,8 @@ interface UseArtifactAiConfig {
   groupId: string | null | undefined;
   /** Allowed resource types for this artifact */
   validResourceTypes: string[];
+  /** Called when generation completes (success or failure) */
+  onComplete?: (data: { success: boolean }) => void;
 }
 
 interface UseArtifactAiReturn {
@@ -87,6 +89,7 @@ export function useArtifactAi({
   artifactType,
   groupId,
   validResourceTypes,
+  onComplete,
 }: UseArtifactAiConfig): UseArtifactAiReturn {
   const { socket, isConnected } = useSocket();
   const [generatingResources, setGeneratingResources] = useState<Set<string>>(
@@ -196,7 +199,7 @@ export function useArtifactAi({
       group_id?: string | null;
       artifact_type?: string | null;
     }): boolean => {
-      if (data.group_id && data.group_id !== groupId) return false;
+      if (data.group_id && groupId && data.group_id !== groupId) return false;
       if (data.artifact_type && data.artifact_type !== artifactType)
         return false;
       return true;
@@ -269,6 +272,9 @@ export function useArtifactAi({
         // Clean up
         if (data.run_id) toastMapRef.current.delete(data.run_id);
       }
+
+      // Notify caller
+      onComplete?.({ success: data.success !== false });
     };
 
     const handleError = (data: {
@@ -361,7 +367,7 @@ export function useArtifactAi({
       s.off(errorEvent, handleError);
       s.off(progressEvent, handleProgress);
     };
-  }, [socket, isConnected, groupId, artifactType, resolveToast]);
+  }, [socket, isConnected, groupId, artifactType, resolveToast, onComplete]);
 
   return {
     generatingResources,

@@ -82,12 +82,13 @@ export default function Cohorts({
   profileSearch,
   departmentSearch,
 }: CohortsProps) {
+  const router = useRouter();
   const { generate } = useArtifactAi({
     artifactType: "cohort",
     groupId: null,
-    validResourceTypes: ["names", "descriptions", "flags", "departments", "simulations", "simulation_positions"],
+    validResourceTypes: ["names", "descriptions", "flags", "departments", "simulations", "simulation_positions", "simulation_availability", "profiles", "profile_personas"],
+    onComplete: () => router.refresh(),
   });
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -99,10 +100,10 @@ export default function Cohorts({
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
 
   // Generation modal via shared hook
-  type CohortResourceType = "names" | "descriptions" | "flags" | "departments" | "simulations" | "simulation_positions";
+  type CohortResourceType = "names" | "descriptions" | "flags" | "departments" | "simulations" | "simulation_positions" | "simulation_availability" | "profiles" | "profile_personas";
   const { handleOpenStepCardModal, modalProps } = useGenerationModal<CohortResourceType>({
     stepResources: {
-      all: ["names", "descriptions", "flags", "departments", "simulations", "simulation_positions"],
+      all: ["names", "descriptions", "flags", "departments", "simulations", "simulation_positions", "simulation_availability", "profiles", "profile_personas"],
     },
     resourceLabels: {
       names: "Name",
@@ -111,6 +112,9 @@ export default function Cohorts({
       departments: "Departments",
       simulations: "Simulations",
       simulation_positions: "Simulation Positions",
+      simulation_availability: "Simulation Availability",
+      profiles: "Profiles",
+      profile_personas: "Profile Personas",
     },
     canRegenerate: () => true,
     onGenerate: (selectedResources, instructions) => {

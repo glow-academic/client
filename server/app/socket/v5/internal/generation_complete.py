@@ -108,8 +108,10 @@ async def handle_run_complete(data: dict[str, Any]) -> None:
     resource_actions: dict[str, Any] = {}
     for tr in all_tool_results:
         if isinstance(tr, dict):
-            rt = tr.get("resource_type")
-            rid = tr.get("resource_id")
+            # resource_type/resource_id may be at top level or nested in "result"
+            result = tr.get("result") if isinstance(tr.get("result"), dict) else tr
+            rt = tr.get("resource_type") or result.get("resource_type")
+            rid = tr.get("resource_id") or result.get("resource_id")
             if rt and rid:
                 resource_actions[rt] = {"resource_id": rid}
 

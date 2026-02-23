@@ -363,6 +363,7 @@ _register(
         ],
         prepare_sql_path="app/sql/v4/queries/generate/cohort/prepare_cohort_generation_complete.sql",
         draft_view_key="draft_cohort",
+        requires_draft=False,
         fetcher_id_kwarg="cohort_id",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.cohort.get",
