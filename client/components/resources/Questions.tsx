@@ -74,6 +74,8 @@ export interface QuestionsProps {
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ question_ids: string[] } | void>) => void;
   aiQuestionResources?: Pick<QuestionsResourceItem, "question_id" | "question_text">[] | null;
+  /** Called whenever internal questions change (including unflushed) — allows parent to show dependent UI immediately */
+  onInternalQuestionsChange?: (questions: { id: string; question_text: string }[]) => void;
 }
 
 // Internal question type (matching ContentSection pattern)
@@ -109,6 +111,7 @@ export function Questions({
   isAutosaveEnabled = true,
   registerFlush,
   aiQuestionResources: _aiQuestionResources,
+  onInternalQuestionsChange,
 }: QuestionsProps) {
   // Use standardized props
   const ids = useMemo(() => question_ids ?? [], [question_ids]);
@@ -172,6 +175,8 @@ export function Questions({
   const questionIdMapRef = useRef<Map<string, string>>(new Map()); // Maps question text -> question_id
   const onChangeRef = useRef(onChange); // Stable ref to avoid useEffect dependency
   onChangeRef.current = onChange;
+  const onInternalQuestionsChangeRef = useRef(onInternalQuestionsChange);
+  onInternalQuestionsChangeRef.current = onInternalQuestionsChange;
   const flushRef = useRef<(() => Promise<{ question_ids: string[] } | void>) | undefined>(undefined);
   const [draggedQuestionIndex, setDraggedQuestionIndex] = useState<
     number | null
@@ -206,6 +211,17 @@ export function Questions({
       lastReportedIdsRef.current = ids;
     }
   }, [ids, effectiveQuestionMapping]);
+
+  // Report internal questions to parent (including unflushed) for dependent UI like Options
+  useEffect(() => {
+    const questionsWithText = internalQuestions
+      .filter((q) => q.question_text.trim())
+      .map((q) => ({
+        id: questionIdMapRef.current.get(q.question_text) || q.id || `pending-${q.question_text}`,
+        question_text: q.question_text,
+      }));
+    onInternalQuestionsChangeRef.current?.(questionsWithText);
+  }, [internalQuestions]);
 
   // Debounced resource creation for each question text - only when autosave is enabled
   useEffect(() => {

@@ -65,7 +65,7 @@ export default function Activity({
   });
   const insightsModalProps = useInsightsModal({
     onGenerate: (instructions) => {
-      generate(["insights"], {
+      generate(["activity_insights"], {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
       });
     },

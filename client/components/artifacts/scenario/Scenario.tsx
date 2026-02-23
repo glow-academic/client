@@ -451,6 +451,8 @@ function ScenarioComponent({
     formState as unknown as Record<string, unknown>,
   );
   const lastPatchedFormStateRef = useRef<ScenarioFormState | null>(null);
+  // Track internal (unflushed) questions from Questions component for immediate Options rendering
+  const [internalQuestions, setInternalQuestions] = useState<{ id: string; question_text: string }[]>([]);
   useEffect(() => {
     formStateRef.current = formState as unknown as Record<string, unknown>;
   }, [formState]);
@@ -2105,9 +2107,10 @@ function ScenarioComponent({
                     create_tool_id={s?.questions?.tool_id ?? null}
                     isAutosaveEnabled={isAutosaveEnabled}
                     registerFlush={registerFlushCallbacks["questions"]}
+                    onInternalQuestionsChange={setInternalQuestions}
                   />
                 )}
-                {showQuestionsSection && formState.question_ids.length > 0 && (
+                {showQuestionsSection && internalQuestions.length > 0 && (
                   <Options
                     option_ids={formState.option_ids}
                     option_resources={s?.options?.current ?? []}
@@ -2115,6 +2118,7 @@ function ScenarioComponent({
                     options={s?.options?.resources ?? []}
                     question_ids={formState.question_ids}
                     question_resources={s?.questions?.current ?? []}
+                    internalQuestions={internalQuestions}
                     disabled={disabled}
                     onChange={(ids) =>
                       setFormState((prev) => ({ ...prev, option_ids: ids }))
@@ -2165,6 +2169,7 @@ function ScenarioComponent({
       showImagesSection,
       showVideosSection,
       showQuestionsSection,
+      internalQuestions,
       handleConditionalParameterToggle,
       showObjectivesSection,
       showProblemStatementSection,

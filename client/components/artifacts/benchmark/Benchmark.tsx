@@ -53,7 +53,7 @@ export default function Benchmark({
   });
   const insightsModalProps = useInsightsModal({
     onGenerate: (instructions) => {
-      generateInsights(["insights"], {
+      generateInsights(["benchmark_insights"], {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
       });
     },

@@ -37,7 +37,7 @@ export default function Practice({
   });
   const insightsModalProps = useInsightsModal({
     onGenerate: (instructions) => {
-      generate(["insights"], {
+      generate(["practice_insights"], {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
       });
     },

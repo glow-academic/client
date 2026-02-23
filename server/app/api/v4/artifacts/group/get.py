@@ -57,6 +57,9 @@ from app.utils.cache.set_cached import set_cached
 
 router = APIRouter()
 
+# Group entry types for agent resolution
+GROUP_BUNDLE_ENTRIES: set[str] = {"group_insights", "debug_info"}
+
 
 # =============================================================================
 # Internal Layer
@@ -80,7 +83,7 @@ async def get_group_internal(
             settings_conn, profile_id, bypass_cache
         )
     agent_ids, _tool_ids_map, _link_tool_ids = resolve_agents_for_artifact(
-        settings_data.agent_tool_entries, set()
+        settings_data.agent_tool_entries, GROUP_BUNDLE_ENTRIES
     )
 
     config_agent_resource_ids = [a.id for a in settings_data.settings_agents if a.id]

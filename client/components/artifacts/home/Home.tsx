@@ -38,7 +38,7 @@ export default function Home({ homeData }: HomeProps) {
   });
   const insightsModalProps = useInsightsModal({
     onGenerate: (instructions) => {
-      generate(["insights"], {
+      generate(["home_insights"], {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
       });
     },

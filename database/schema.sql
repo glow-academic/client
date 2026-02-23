@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict VRgYKsnujzBI0ujhxcRO9pzVgxUFWBmUOKLFnqRzEMyzburSQEljsh6dPa6ZIzp
+\restrict amf0jkud9Bzi14HedSCfkgVdTKfaYRFQntXyxZ1m795qTNGJCJIfydkURcHaz4w
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -206,7 +206,8 @@ CREATE TYPE public.entry_type AS ENUM (
     'record_insights',
     'reports_insights',
     'session_insights',
-    'test_insights'
+    'test_insights',
+    'group_insights'
 );
 
 
@@ -33665,6 +33666,21 @@ CREATE TABLE public.grants_entry (
 
 
 --
+-- Name: group_insights_entry; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.group_insights_entry (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    group_id uuid,
+    content text NOT NULL
+);
+
+
+--
 -- Name: group_positions_calls_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -38749,6 +38765,21 @@ CREATE TABLE public.scenarios_resource (
 
 
 --
+-- Name: session_insights_entry; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.session_insights_entry (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    group_id uuid,
+    content text NOT NULL
+);
+
+
+--
 -- Name: sessions_entry; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -42938,6 +42969,14 @@ ALTER TABLE ONLY public.grants_entry
 
 
 --
+-- Name: group_insights_entry group_insights_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.group_insights_entry
+    ADD CONSTRAINT group_insights_entry_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: group_positions_calls_connection group_positions_calls_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -45407,6 +45446,14 @@ ALTER TABLE ONLY public.scenario_artifact
 
 ALTER TABLE ONLY public.scenarios_resource
     ADD CONSTRAINT scenarios_resource_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: session_insights_entry session_insights_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.session_insights_entry
+    ADD CONSTRAINT session_insights_entry_pkey PRIMARY KEY (id);
 
 
 --
@@ -50630,6 +50677,20 @@ CREATE INDEX idx_flags_mcp ON public.flags_resource USING btree (mcp);
 
 
 --
+-- Name: idx_group_insights_entry_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_group_insights_entry_created_at ON public.group_insights_entry USING btree (created_at);
+
+
+--
+-- Name: idx_group_insights_entry_group_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_group_insights_entry_group_id ON public.group_insights_entry USING btree (group_id) WHERE (group_id IS NOT NULL);
+
+
+--
 -- Name: idx_group_positions_resource_active; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -53112,6 +53173,20 @@ CREATE INDEX idx_scenarios_resource_parameter_ids ON public.scenarios_resource U
 --
 
 CREATE INDEX idx_scenarios_resource_persona_ids ON public.scenarios_resource USING gin (persona_ids);
+
+
+--
+-- Name: idx_session_insights_entry_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_session_insights_entry_created_at ON public.session_insights_entry USING btree (created_at);
+
+
+--
+-- Name: idx_session_insights_entry_group_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_session_insights_entry_group_id ON public.session_insights_entry USING btree (group_id) WHERE (group_id IS NOT NULL);
 
 
 --
@@ -61298,6 +61373,14 @@ ALTER TABLE ONLY public.grants_entry
 
 
 --
+-- Name: group_insights_entry group_insights_entry_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.group_insights_entry
+    ADD CONSTRAINT group_insights_entry_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups_entry(id);
+
+
+--
 -- Name: group_positions_calls_connection group_positions_calls_connection_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -65434,6 +65517,14 @@ ALTER TABLE ONLY public.scenarios_calls_connection
 
 
 --
+-- Name: session_insights_entry session_insights_entry_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.session_insights_entry
+    ADD CONSTRAINT session_insights_entry_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups_entry(id);
+
+
+--
 -- Name: sessions_entry sessions_entry_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -67997,5 +68088,5 @@ ALTER TABLE ONLY public.voices_calls_connection
 -- PostgreSQL database dump complete
 --
 
-\unrestrict VRgYKsnujzBI0ujhxcRO9pzVgxUFWBmUOKLFnqRzEMyzburSQEljsh6dPa6ZIzp
+\unrestrict amf0jkud9Bzi14HedSCfkgVdTKfaYRFQntXyxZ1m795qTNGJCJIfydkURcHaz4w
 

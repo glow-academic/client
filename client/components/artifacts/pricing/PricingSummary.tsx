@@ -134,7 +134,7 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
   });
   const insightsModalProps = useInsightsModal({
     onGenerate: (instructions) => {
-      generate(["insights"], {
+      generate(["pricing_insights"], {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
       });
     },

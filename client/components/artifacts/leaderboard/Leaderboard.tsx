@@ -96,7 +96,7 @@ export default function Leaderboard({
   });
   const insightsModalProps = useInsightsModal({
     onGenerate: (instructions) => {
-      generate(["insights"], {
+      generate(["leaderboard_insights"], {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
       });
     },

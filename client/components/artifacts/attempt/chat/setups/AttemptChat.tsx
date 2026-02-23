@@ -122,7 +122,7 @@ export function AttemptChat({
   });
   const insightsModalProps = useInsightsModal({
     onGenerate: (instructions) => {
-      generateInsights(["insights"], {
+      generateInsights(["attempt_insights"], {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
       });
     },

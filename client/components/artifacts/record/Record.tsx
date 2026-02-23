@@ -78,7 +78,7 @@ export default function Record({
   });
   const insightsModalProps = useInsightsModal({
     onGenerate: (instructions) => {
-      generate(["insights"], {
+      generate(["record_insights"], {
         user_instructions: instructions?.trim()
           ? [instructions.trim()]
           : null,

@@ -87,7 +87,7 @@ export default function Reports({
   });
   const insightsModalProps = useInsightsModal({
     onGenerate: (instructions) => {
-      generate(["insights"], {
+      generate(["reports_insights"], {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
       });
     },

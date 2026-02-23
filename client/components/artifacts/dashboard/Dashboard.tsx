@@ -81,7 +81,7 @@ export default function Dashboard({
   });
   const insightsModalProps = useInsightsModal({
     onGenerate: (instructions) => {
-      generate(["insights"], {
+      generate(["dashboard_insights"], {
         user_instructions: instructions?.trim()
           ? [instructions.trim()]
           : null,

@@ -59,6 +59,8 @@ export interface OptionsProps {
   options?: OptionResourceItem[];
   question_ids?: string[];
   question_resources?: QuestionsResourceItem[];
+  /** Internal (possibly unflushed) questions from Questions component — used to render sections immediately */
+  internalQuestions?: { id: string; question_text: string }[];
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   group_id?: string | null;
@@ -79,6 +81,7 @@ export function Options({
   options,
   question_ids,
   question_resources,
+  internalQuestions: internalQuestionsProp,
   disabled = false,
   onChange,
   group_id,
@@ -92,12 +95,19 @@ export function Options({
   const ids = useMemo(() => option_ids ?? [], [option_ids]);
   const show = show_options ?? false;
   const questionIds = useMemo(() => question_ids ?? [], [question_ids]);
+  const internalQuestions = useMemo(() => internalQuestionsProp ?? [], [internalQuestionsProp]);
   const questionResources = useMemo(
     () => question_resources ?? [],
     [question_resources],
   );
 
-  // Build question label map
+  // Use internalQuestions (includes unflushed) for rendering, fall back to flushed question_ids
+  const displayQuestions = useMemo(() => {
+    if (internalQuestions.length > 0) return internalQuestions;
+    return questionIds.map((id) => ({ id, question_text: "" }));
+  }, [internalQuestions, questionIds]);
+
+  // Build question label map from both resources and internalQuestions
   const questionLabelMap = useMemo(() => {
     const map: Record<string, string> = {};
     questionResources.forEach((q) => {
@@ -105,8 +115,14 @@ export function Options({
         map[q.question_id] = q.question_text;
       }
     });
+    // Also include labels from internalQuestions (covers unflushed questions)
+    internalQuestions.forEach((q) => {
+      if (q.id && q.question_text) {
+        map[q.id] = q.question_text;
+      }
+    });
     return map;
-  }, [questionResources]);
+  }, [questionResources, internalQuestions]);
 
   // Build option mapping from resources
   const optionMapping = useMemo(() => {
@@ -172,6 +188,28 @@ export function Options({
     }
   }, [ids, optionMapping]);
 
+  // When internalQuestions update (question gets flushed), remap pending question IDs to real IDs
+  useEffect(() => {
+    if (internalQuestions.length === 0) return;
+    setInternalOptions((prev) => {
+      let changed = false;
+      const next = prev.map((o) => {
+        if (!o.question_id.startsWith("pending-")) return o;
+        // Find the real ID for this pending question by matching text
+        const pendingText = o.question_id.replace("pending-", "");
+        const match = internalQuestions.find(
+          (q) => q.question_text === pendingText && !q.id.startsWith("pending-"),
+        );
+        if (match) {
+          changed = true;
+          return { ...o, question_id: match.id };
+        }
+        return o;
+      });
+      return changed ? next : prev;
+    });
+  }, [internalQuestions]);
+
   // Debounced resource creation
   useEffect(() => {
     if (!isAutosaveEnabled) return;
@@ -223,9 +261,11 @@ export function Options({
   flushRef.current = async (): Promise<FlushResult> => {
     if (!createOptionsAction || !create_tool_id || !group_id) return;
 
+    // Only flush options whose parent question has a real server ID (not pending-*)
     const toCreate = internalOptions.filter(
       (o) =>
         o.option_text.trim() &&
+        !o.question_id.startsWith("pending-") &&
         !optionIdMapRef.current.has(
           `${o.option_text}|${o.is_correct}|${o.question_id}`,
         ),
@@ -284,14 +324,14 @@ export function Options({
     optionIndex: number;
   } | null>(null);
 
-  // Group options by question_id
+  // Group options by question_id (using displayQuestions which includes unflushed)
   const optionsByQuestion = useMemo(() => {
     const groups: Record<string, InternalOption[]> = {};
-    questionIds.forEach((qId) => {
-      groups[qId] = internalOptions.filter((o) => o.question_id === qId);
+    displayQuestions.forEach((q) => {
+      groups[q.id] = internalOptions.filter((o) => o.question_id === q.id);
     });
     return groups;
-  }, [internalOptions, questionIds]);
+  }, [internalOptions, displayQuestions]);
 
   // Handlers
   const handleAddOption = useCallback(
@@ -442,7 +482,7 @@ export function Options({
   }, [clearAi]);
 
   // Don't render if no questions or not shown
-  if (!show || questionIds.length === 0) {
+  if (!show || displayQuestions.length === 0) {
     return null;
   }
 
@@ -515,7 +555,7 @@ export function Options({
       </div>
 
       {/* Per-question option sections */}
-      {questionIds.map((qId) => {
+      {displayQuestions.map(({ id: qId }) => {
         const questionLabel =
           questionLabelMap[qId] || "Question";
         const questionOptions = optionsByQuestion[qId] ?? [];

@@ -43,7 +43,7 @@ export default function Logs({ bundleData: serverBundleData }: LogsProps) {
   });
   const insightsModalProps = useInsightsModal({
     onGenerate: (instructions) => {
-      generate(["insights"], {
+      generate(["health_insights"], {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
       });
     },
