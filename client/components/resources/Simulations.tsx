@@ -113,7 +113,7 @@ export function Simulations({
     () =>
       new Set(
         aiSuggestions
-          .map((s) => s.simulation_id)
+          .map((s) => s.id)
           .filter(Boolean) as string[]
       ),
     [aiSuggestions]
@@ -183,7 +183,7 @@ export function Simulations({
   const handleAccept = useCallback(() => {
     if (aiSuggestions.length === 0) return;
     const newIds = aiSuggestions
-      .map((s) => s.simulation_id)
+      .map((s) => s.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);

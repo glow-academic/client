@@ -38,7 +38,7 @@ SELECT
     d.generated,
     d.mcp,
     d.active,
-    (SELECT ggc.groups_id FROM groups_groups_connection ggc WHERE ggc.group_id = d.group_id AND ggc.active = true LIMIT 1) AS group_id,
+    d.group_id,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'arg_positions'), ARRAY[]::uuid[]) AS arg_position_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'args'), ARRAY[]::uuid[]) AS args_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'args_outputs'), ARRAY[]::uuid[]) AS args_output_ids,

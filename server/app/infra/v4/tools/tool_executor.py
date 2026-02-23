@@ -369,6 +369,8 @@ async def _execute_resource_tool(
                     return str(v)
                 if isinstance(v, (datetime.datetime, datetime.date)):
                     return v.isoformat()
+                if isinstance(v, list):
+                    return [_serialize(item) for item in v]
                 return v
 
             resource_data = {

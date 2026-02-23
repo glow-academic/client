@@ -88,6 +88,7 @@ from app.api.v4.resources.flags.search import search_flags_internal
 from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
+from app.api.v4.resources.personas.search import search_personas_internal
 from app.api.v4.resources.profile_personas.get import get_profile_personas_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.profiles.search import search_profiles_internal
@@ -524,6 +525,16 @@ async def get_cohort_internal(
                 for item in items
             ]
 
+    async def fetch_personas() -> list[Any]:
+        async with pool.acquire() as c:
+            return await search_personas_internal(
+                c,
+                search=None,
+                limit_count=100,
+                offset_count=0,
+                bypass_cache=bypass_cache,
+            )
+
     # Parallel fetch all resources
     (
         (names_selected, names_suggestions),
@@ -535,6 +546,7 @@ async def get_cohort_internal(
         simulation_availability,
         (profiles_selected, profiles_suggestions),
         profile_personas_fetched,
+        personas_fetched,
     ) = await asyncio.gather(
         fetch_names(),
         fetch_descriptions(),
@@ -545,6 +557,7 @@ async def get_cohort_internal(
         fetch_simulation_availability(),
         fetch_profiles(),
         fetch_profile_personas(),
+        fetch_personas(),
     )
 
     # Dedupe and combine selected + suggestions
@@ -709,6 +722,7 @@ async def get_cohort_internal(
             simulation_availability=simulation_availability or [],
             profiles=profiles,
             profile_personas=profile_personas_fetched or [],
+            personas=personas_fetched or [],
         ),
         current=CohortResourceBucket(
             names=[name_resource] if name_resource else [],
@@ -720,6 +734,7 @@ async def get_cohort_internal(
             simulation_availability=simulation_availability or [],
             profiles=profile_resources,
             profile_personas=profile_personas_fetched or [],
+            personas=personas_fetched or [],
         ),
     )
 
@@ -976,6 +991,7 @@ async def get_cohort_websocket(
             profile_personas=all_resources.profile_personas
             if all_resources
             else None,
+            personas=all_resources.personas if all_resources else None,
         ),
         config=websocket_config,
     )
@@ -1085,6 +1101,7 @@ async def get_cohort_client(
             resources=(resources_bucket.profile_personas if resources_bucket else None),
             **section_common("profile_personas"),
         ),
+        personas=(resources_bucket.personas if resources_bucket else None),
     )
 
 

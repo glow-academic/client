@@ -183,13 +183,19 @@ def compute_can_delete(
 
     Business logic:
     - Default cohorts (no departments) cannot be deleted except by superadmin
-    - Cohorts with usage_count > 0 cannot be deleted
     - Only admins, instructional, and superadmins can delete
+
+    NOTE: usage_count (profile links) is intentionally NOT checked here.
+    Unlike other artifacts where usage_count blocks deletion because child
+    artifacts depend on the parent (e.g. can't delete a simulation used by
+    cohorts), cohort->profile links are just assignments, not dependencies.
+    Historical data (attempts, chats) is preserved separately in fact tables,
+    so deleting a cohort doesn't lose any historical records.
     """
     if not cohort_department_ids and user_role != "superadmin":
         return False
-    if usage_count > 0:
-        return False
+    # if usage_count > 0:
+    #     return False
     return user_role in ("admin", "instructional", "superadmin")
 
 

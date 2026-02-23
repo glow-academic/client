@@ -42,7 +42,10 @@ CREATE TYPE types.q_get_cohort_drafts_entries_v4_item AS (
     flag_ids uuid[],
     department_ids uuid[],
     simulation_ids uuid[],
-    simulation_position_ids uuid[]
+    simulation_position_ids uuid[],
+    profile_persona_ids uuid[],
+    simulation_availability_ids uuid[],
+    profile_ids uuid[]
 );
 
 CREATE OR REPLACE FUNCTION public.api_get_cohort_drafts_entries_v4(
@@ -76,7 +79,10 @@ AS $$
                     flag_ids,
                     department_ids,
                     simulation_ids,
-                    simulation_position_ids
+                    simulation_position_ids,
+                    profile_persona_ids,
+                    simulation_availability_ids,
+                    profile_ids
                 )::types.q_get_cohort_drafts_entries_v4_item
                 ORDER BY updated_at DESC
             ),

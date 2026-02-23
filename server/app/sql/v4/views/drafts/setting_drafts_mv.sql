@@ -41,7 +41,7 @@ SELECT
     d.generated,
     d.mcp,
     d.active,
-    (SELECT ggc.groups_id FROM groups_groups_connection ggc WHERE ggc.group_id = d.group_id AND ggc.active = true LIMIT 1) AS group_id,
+    d.group_id,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'agents'), ARRAY[]::uuid[]) AS agent_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'auth_item_keys'), ARRAY[]::uuid[]) AS auth_item_key_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'auths'), ARRAY[]::uuid[]) AS auth_ids,

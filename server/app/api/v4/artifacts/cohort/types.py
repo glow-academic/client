@@ -15,6 +15,7 @@ from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.sql.types import (
     QGetCohortDraftsEntriesV4Item,
+    QGetPersonasV4Item,
 )
 
 # =============================================================================
@@ -126,6 +127,7 @@ class CohortResourceBucket(BaseModel):
     simulation_availability: list[CohortSimulationAvailability] | None = None
     profiles: list[CohortProfile] | None = None
     profile_personas: list[CohortProfilePersona] | None = None
+    personas: list[QGetPersonasV4Item] | None = None
 
 
 class CohortResources(BaseModel):
@@ -222,6 +224,7 @@ class GetCohortApiResponse(BaseModel):
     simulation_availability: CohortSimulationAvailabilitySection | None = None
     profiles: CohortProfileSection | None = None
     profile_personas: CohortProfilePersonaSection | None = None
+    personas: list[QGetPersonasV4Item] | None = None
 
 
 class GetCohortWebsocketResponse(BaseModel):
@@ -258,6 +261,7 @@ class CohortWebsocketResources(BaseModel):
     simulation_availability: list[CohortSimulationAvailability] | None = None
     profiles: list[CohortProfile] | None = None
     profile_personas: list[CohortProfilePersona] | None = None
+    personas: list[QGetPersonasV4Item] | None = None
 
 
 # =============================================================================

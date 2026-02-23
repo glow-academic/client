@@ -26,6 +26,9 @@ WITH draft_links AS (
     UNION ALL SELECT draft_id, 'names'::text AS resource_type, names_id AS resource_id FROM cohort_drafts_names_connection WHERE active = true
     UNION ALL SELECT draft_id, 'simulation_positions'::text AS resource_type, simulation_positions_id AS resource_id FROM cohort_drafts_simulation_positions_connection WHERE active = true
     UNION ALL SELECT draft_id, 'simulations'::text AS resource_type, simulations_id AS resource_id FROM cohort_drafts_simulations_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'profile_personas'::text AS resource_type, profile_personas_id AS resource_id FROM cohort_drafts_profile_personas_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'simulation_availability'::text AS resource_type, simulation_availability_id AS resource_id FROM cohort_drafts_simulation_availability_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'profiles'::text AS resource_type, profiles_id AS resource_id FROM cohort_drafts_profiles_connection WHERE active = true
 )
 SELECT
     d.id AS draft_id,
@@ -42,7 +45,10 @@ SELECT
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'flags'), ARRAY[]::uuid[]) AS flag_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'names'), ARRAY[]::uuid[]) AS name_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'simulation_positions'), ARRAY[]::uuid[]) AS simulation_position_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'simulations'), ARRAY[]::uuid[]) AS simulation_ids
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'simulations'), ARRAY[]::uuid[]) AS simulation_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'profile_personas'), ARRAY[]::uuid[]) AS profile_persona_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'simulation_availability'), ARRAY[]::uuid[]) AS simulation_availability_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'profiles'), ARRAY[]::uuid[]) AS profile_ids
 FROM cohort_drafts_entry d
 LEFT JOIN draft_links l ON l.draft_id = d.id
 GROUP BY d.id, d.created_at, d.updated_at, d.version, d.generated, d.mcp, d.active, d.group_id

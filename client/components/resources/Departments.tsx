@@ -101,7 +101,7 @@ export function Departments({
     () =>
       new Set(
         aiSuggestions
-          .map((d) => d.department_id)
+          .map((d) => d.id)
           .filter(Boolean) as string[]
       ),
     [aiSuggestions]
@@ -135,7 +135,7 @@ export function Departments({
   const handleAccept = useCallback(() => {
     if (aiSuggestions.length === 0) return;
     const newIds = aiSuggestions
-      .map((d) => d.department_id)
+      .map((d) => d.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);

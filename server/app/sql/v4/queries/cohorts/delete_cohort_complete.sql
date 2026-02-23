@@ -53,12 +53,13 @@ cohort_name AS (
     FROM params x
     JOIN cohort_artifact c ON c.id = x.cohort_id
 ),
+-- NOTE: No usage_count guard — profile links are just assignments, not
+-- dependencies. Historical data is preserved in fact tables, so deleting
+-- a cohort doesn't lose any historical records.
 delete_result AS (
     DELETE FROM cohort_artifact c
     USING params x
-    CROSS JOIN usage_check uc
-    WHERE c.id = x.cohort_id 
-      AND uc.usage_count = 0
+    WHERE c.id = x.cohort_id
     RETURNING c.id
 )
 SELECT 

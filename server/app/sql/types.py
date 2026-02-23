@@ -7173,6 +7173,9 @@ class QGetCohortDraftsEntriesV4Item(BaseModel):
     department_ids: list[UUID] | None
     simulation_ids: list[UUID] | None
     simulation_position_ids: list[UUID] | None
+    profile_persona_ids: list[UUID] | None
+    simulation_availability_ids: list[UUID] | None
+    profile_ids: list[UUID] | None
 
 class GetCohortDraftsEntriesSqlRow(BaseModel):
 
@@ -10455,6 +10458,7 @@ class QGetPersonaDraftsEntriesV4Item(BaseModel):
     parameter_field_ids: list[UUID] | None
     example_ids: list[UUID] | None
     parameter_ids: list[UUID] | None
+    voice_ids: list[UUID] | None
 
 class GetPersonaDraftsEntriesSqlRow(BaseModel):
 
@@ -12115,6 +12119,11 @@ class QGetScenarioDraftsEntriesV4Item(BaseModel):
     parameter_ids: list[UUID] | None
     parameter_field_ids: list[UUID] | None
     question_ids: list[UUID] | None
+    image_ids: list[UUID] | None
+    objective_ids: list[UUID] | None
+    option_ids: list[UUID] | None
+    problem_statement_ids: list[UUID] | None
+    video_ids: list[UUID] | None
 
 class GetScenarioDraftsEntriesSqlRow(BaseModel):
 

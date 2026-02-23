@@ -272,6 +272,7 @@ function CohortComponent({
       simulation_availability: cohortData.simulation_availability,
       profiles: cohortData.profiles,
       profile_personas: cohortData.profile_personas,
+      personas: cohortData.personas,
       basic_show_ai_generate: cohortData.basic_show_ai_generate,
       simulations_step_show_ai_generate:
         cohortData.simulations_step_show_ai_generate,
@@ -292,6 +293,7 @@ function CohortComponent({
     cohortData?.simulation_availability,
     cohortData?.profiles,
     cohortData?.profile_personas,
+    cohortData?.personas,
     cohortData?.basic_show_ai_generate,
     cohortData?.simulations_step_show_ai_generate,
     cohortData?.profiles_step_show_ai_generate,
@@ -1185,6 +1187,12 @@ function CohortComponent({
           const simulationPositionsAction = createSimulationPositionsAction as
             | SimulationPositionsProps["createSimulationPositionsAction"]
             | undefined;
+          const hasSelectedSimulations =
+            (formState.simulation_ids ?? []).length > 0;
+          const showSimulationPositions =
+            (s?.simulation_positions?.show ?? false) || hasSelectedSimulations;
+          const showSimulationAvailability =
+            (s?.simulation_availability?.show ?? false) || hasSelectedSimulations;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1232,97 +1240,95 @@ function CohortComponent({
                 ) : undefined
               }
             >
-              <Simulations
-                simulation_ids={formState.simulation_ids ?? []}
-                simulation_resources={simulationCurrentForUi}
-                show_simulations={s?.simulations?.show ?? false}
-                simulation_suggestions={s?.simulations?.suggestions ?? []}
-                simulations={simulationResourcesForUi}
-                disabled={disabled}
-                onChange={(ids) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    simulation_ids: ids,
-                  }))
-                }
-                onGenerate={handleGenerateSimulations}
-                label="Simulations"
-                required={s?.simulations?.required ?? false}
-                group_id={s?.group_id ?? null}
-                showAiGenerate={s?.simulations?.show_ai_generate ?? false}
-                searchTerm={simulationSearchTerm}
-                showSelectedFilter={simulationShowSelected}
-              />
-              <SimulationPositions
-                simulation_ids={formState.simulation_ids ?? []}
-                simulation_resources={simulationCurrentForUi}
-                simulations={simulationResourcesForUi}
-                show_simulation_positions={
-                  s?.simulation_positions?.show ?? false
-                }
-                simulation_positions={formState.simulation_positions ?? []}
-                disabled={disabled}
-                onChange={(positions) => {
-                  const orderedSimulationIds = [...positions]
-                    .sort((a, b) => a.value - b.value)
-                    .map((position) => position.simulation_id);
-                  setFormState((prev) => ({
-                    ...prev,
-                    simulation_positions: positions,
-                    simulation_ids:
-                      orderedSimulationIds.length > 0
-                        ? orderedSimulationIds
-                        : prev.simulation_ids,
-                  }));
-                }}
-                label="Simulation Positions"
-                required={s?.simulation_positions?.required ?? false}
-                group_id={s?.group_id ?? null}
-                showAiGenerate={
-                  s?.simulation_positions?.show_ai_generate ?? false
-                }
-                onGenerate={
-                  isEditMode ? handleGenerateSimulationPositions : undefined
-                }
-                createSimulationPositionsAction={simulationPositionsAction}
-                isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks["simulation_positions"]}
-              />
-              <SimulationAvailability
-                simulation_availability_ids={formState.simulation_availability_ids ?? []}
-                simulation_availability_resources={
-                  (s?.simulation_availability?.current ?? []) as SimulationAvailabilityProps["simulation_availability_resources"]
-                }
-                show_simulation_availability={
-                  s?.simulation_availability?.show ?? false
-                }
-                simulation_ids={formState.simulation_ids ?? []}
-                simulations={simulationResourcesForUi}
-                simulation_resources={simulationCurrentForUi}
-                disabled={disabled}
-                onAvailabilityIdsChange={(ids) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    simulation_availability_ids: ids,
-                  }))
-                }
-                label="Simulation Availability"
-                required={s?.simulation_availability?.required ?? false}
-                group_id={s?.group_id ?? null}
-                showAiGenerate={
-                  s?.simulation_availability?.show_ai_generate ?? false
-                }
-                onGenerate={
-                  isEditMode ? handleGenerateSimulationAvailability : undefined
-                }
-                createSimulationAvailabilityAction={
-                  createSimulationAvailabilityAction as
-                    | SimulationAvailabilityProps["createSimulationAvailabilityAction"]
-                    | undefined
-                }
-                isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks["simulation_availability"]}
-              />
+              <div className="space-y-6">
+                <Simulations
+                  simulation_ids={formState.simulation_ids ?? []}
+                  simulation_resources={simulationCurrentForUi}
+                  show_simulations={s?.simulations?.show ?? false}
+                  simulation_suggestions={s?.simulations?.suggestions ?? []}
+                  simulations={simulationResourcesForUi}
+                  disabled={disabled}
+                  onChange={(ids) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      simulation_ids: ids,
+                    }))
+                  }
+                  onGenerate={handleGenerateSimulations}
+                  label="Simulations"
+                  required={s?.simulations?.required ?? false}
+                  group_id={s?.group_id ?? null}
+                  showAiGenerate={s?.simulations?.show_ai_generate ?? false}
+                  searchTerm={simulationSearchTerm}
+                  showSelectedFilter={simulationShowSelected}
+                />
+                <SimulationPositions
+                  simulation_ids={formState.simulation_ids ?? []}
+                  simulation_resources={simulationCurrentForUi}
+                  simulations={simulationResourcesForUi}
+                  show_simulation_positions={showSimulationPositions}
+                  simulation_positions={formState.simulation_positions ?? []}
+                  disabled={disabled}
+                  onChange={(positions) => {
+                    const orderedSimulationIds = [...positions]
+                      .sort((a, b) => a.value - b.value)
+                      .map((position) => position.simulation_id);
+                    setFormState((prev) => ({
+                      ...prev,
+                      simulation_positions: positions,
+                      simulation_ids:
+                        orderedSimulationIds.length > 0
+                          ? orderedSimulationIds
+                          : prev.simulation_ids,
+                    }));
+                  }}
+                  label="Simulation Positions"
+                  required={s?.simulation_positions?.required ?? false}
+                  group_id={s?.group_id ?? null}
+                  showAiGenerate={
+                    s?.simulation_positions?.show_ai_generate ?? false
+                  }
+                  onGenerate={
+                    isEditMode ? handleGenerateSimulationPositions : undefined
+                  }
+                  createSimulationPositionsAction={simulationPositionsAction}
+                  isAutosaveEnabled={isAutosaveEnabled}
+                  registerFlush={registerFlushCallbacks["simulation_positions"]}
+                />
+                <SimulationAvailability
+                  simulation_availability_ids={formState.simulation_availability_ids ?? []}
+                  simulation_availability_resources={
+                    (s?.simulation_availability?.current ?? []) as SimulationAvailabilityProps["simulation_availability_resources"]
+                  }
+                  show_simulation_availability={showSimulationAvailability}
+                  simulation_ids={formState.simulation_ids ?? []}
+                  simulations={simulationResourcesForUi}
+                  simulation_resources={simulationCurrentForUi}
+                  disabled={disabled}
+                  onAvailabilityIdsChange={(ids) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      simulation_availability_ids: ids,
+                    }))
+                  }
+                  label="Simulation Availability"
+                  required={s?.simulation_availability?.required ?? false}
+                  group_id={s?.group_id ?? null}
+                  showAiGenerate={
+                    s?.simulation_availability?.show_ai_generate ?? false
+                  }
+                  onGenerate={
+                    isEditMode ? handleGenerateSimulationAvailability : undefined
+                  }
+                  createSimulationAvailabilityAction={
+                    createSimulationAvailabilityAction as
+                      | SimulationAvailabilityProps["createSimulationAvailabilityAction"]
+                      | undefined
+                  }
+                  isAutosaveEnabled={isAutosaveEnabled}
+                  registerFlush={registerFlushCallbacks["simulation_availability"]}
+                />
+              </div>
             </StepCard>
           );
         }
@@ -1336,6 +1342,10 @@ function CohortComponent({
               | boolean
               | null
               | undefined) ?? false;
+          const hasSelectedProfiles =
+            (formState.profile_ids ?? []).length > 0;
+          const showProfilePersonas =
+            (s?.profile_personas?.show ?? false) || hasSelectedProfiles;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1379,6 +1389,7 @@ function CohortComponent({
                 ) : undefined
               }
             >
+              <div className="space-y-6">
               <Profiles
                 profile_ids={formState.profile_ids ?? []}
                 profile_resources={(s?.profiles?.current ?? []).map((p) => ({
@@ -1420,7 +1431,7 @@ function CohortComponent({
                   persona_id: pp.persona_id ?? null,
                   generated: pp.generated ?? false,
                 }))}
-                show_profile_personas={s?.profile_personas?.show ?? false}
+                show_profile_personas={showProfilePersonas}
                 profiles={(s?.profiles?.resources ?? []).map((p) => ({
                   profile_id: p.profile_id ?? null,
                   name: p.name ?? null,
@@ -1433,7 +1444,13 @@ function CohortComponent({
                   description: p.description ?? null,
                   generated: p.generated ?? false,
                 }))}
-                personas={[]}
+                personas={(s?.personas ?? []).map((p) => ({
+                  persona_id: p.persona_id ?? null,
+                  name: p.name ?? null,
+                  description: p.description ?? null,
+                  icon: p.icon ?? null,
+                  color: p.color ?? null,
+                }))}
                 profile_ids={formState.profile_ids ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
@@ -1449,6 +1466,7 @@ function CohortComponent({
                 registerFlush={registerFlushCallbacks["profile_personas"]}
                 aiProfilePersonaResources={[]}
               />
+              </div>
             </StepCard>
           );
         }

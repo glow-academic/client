@@ -931,25 +931,7 @@ async def get_persona_websocket(
         fetch_tools(),
     )
 
-    # Extract current (selected) resources from internal data
-    current = data.resources_payload.current
-
-    # Get enriched flags for the selected flag(s)
-    # current.flags contains raw flag objects; resources.flags has enriched PersonaFlagConfig
-    selected_flag_ids = set()
-    if current and current.flags:
-        for f in current.flags:
-            fid = getattr(f, "flag_option_id", None) or getattr(f, "id", None)
-            if fid:
-                selected_flag_ids.add(fid)
-    all_enriched_flags = (
-        data.resources_payload.resources.flags
-        if data.resources_payload.resources
-        else []
-    ) or []
-    selected_enriched_flags = [
-        f for f in all_enriched_flags if f.flag_option_id in selected_flag_ids
-    ]
+    all_resources = data.resources_payload.resources
 
     # Enrich tools with args and args_outputs
     config_tools = tools_result or []
@@ -1005,17 +987,17 @@ async def get_persona_websocket(
     return GetPersonaWebsocketResponse(
         entries=entries if draft_persona or runs_result else None,
         resources=PersonaWebsocketResources(
-            names=current.names if current else None,
-            descriptions=current.descriptions if current else None,
-            colors=current.colors if current else None,
-            icons=current.icons if current else None,
-            instructions=current.instructions if current else None,
-            flags=selected_enriched_flags or None,
-            departments=current.departments if current else None,
-            parameter_fields=current.parameter_fields if current else None,
-            examples=current.examples if current else None,
-            parameters=current.parameters if current else None,
-            voices=current.voices if current else None,
+            names=all_resources.names if all_resources else None,
+            descriptions=all_resources.descriptions if all_resources else None,
+            colors=all_resources.colors if all_resources else None,
+            icons=all_resources.icons if all_resources else None,
+            instructions=all_resources.instructions if all_resources else None,
+            flags=all_resources.flags if all_resources else None,
+            departments=all_resources.departments if all_resources else None,
+            parameter_fields=all_resources.parameter_fields if all_resources else None,
+            examples=all_resources.examples if all_resources else None,
+            parameters=all_resources.parameters if all_resources else None,
+            voices=all_resources.voices if all_resources else None,
         ),
         config=websocket_config,
         resource_agent_ids=data.agent_ids,

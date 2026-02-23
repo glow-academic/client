@@ -46,7 +46,8 @@ CREATE TYPE types.q_get_persona_drafts_entries_v4_item AS (
     department_ids uuid[],
     parameter_field_ids uuid[],
     example_ids uuid[],
-    parameter_ids uuid[]
+    parameter_ids uuid[],
+    voice_ids uuid[]
 );
 
 CREATE OR REPLACE FUNCTION public.api_get_persona_drafts_entries_v4(
@@ -84,7 +85,8 @@ AS $$
                     department_ids,
                     parameter_field_ids,
                     example_ids,
-                    parameter_ids
+                    parameter_ids,
+                    voice_ids
                 )::types.q_get_persona_drafts_entries_v4_item
                 ORDER BY updated_at DESC
             ),

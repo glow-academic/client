@@ -27724,6 +27724,8 @@ export interface components {
             simulation_availability?: components["schemas"]["CohortSimulationAvailabilitySection"] | null;
             profiles?: components["schemas"]["CohortProfileSection"] | null;
             profile_personas?: components["schemas"]["CohortProfilePersonaSection"] | null;
+            /** Personas */
+            personas?: components["schemas"]["QGetPersonasV4Item"][] | null;
         };
         /** GetCohortDraftsEntriesApiRequest */
         GetCohortDraftsEntriesApiRequest: {

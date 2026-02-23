@@ -795,19 +795,7 @@ async def get_simulation_websocket(
         fetch_tools(),
     )
 
-    current = data.resources_payload.current
-    selected_flag_ids = {
-        getattr(f, "flag_option_id", None) or getattr(f, "id", None)
-        for f in (current.flags if current and current.flags else [])
-    } - {None}
-    all_enriched_flags = (
-        data.resources_payload.resources.flags
-        if data.resources_payload.resources
-        else []
-    ) or []
-    selected_enriched_flags = [
-        f for f in all_enriched_flags if f.flag_option_id in selected_flag_ids
-    ]
+    all_resources = data.resources_payload.resources
 
     # Build views (always construct — both fields optional now)
     entries = SimulationWebsocketEntries(
@@ -866,20 +854,16 @@ async def get_simulation_websocket(
         entries=entries if draft_view or runs_result else None,
         resource_agent_ids=data.agent_ids,
         resources=SimulationWebsocketResources(
-            names=current.names if current else None,
-            descriptions=current.descriptions if current else None,
-            flags=selected_enriched_flags or None,
-            departments=current.departments if current else None,
-            scenarios=current.scenarios if current else None,
-            scenario_flags=current.scenario_flags if current else None,
-            scenario_positions=current.scenario_positions if current else None,
-            scenario_rubrics=current.scenario_rubrics if current else None,
-            scenario_time_limits=current.scenario_time_limits if current else None,
-            rubrics=(
-                data.resources_payload.resources.rubrics
-                if data.resources_payload.resources
-                else None
-            ),
+            names=all_resources.names if all_resources else None,
+            descriptions=all_resources.descriptions if all_resources else None,
+            flags=all_resources.flags if all_resources else None,
+            departments=all_resources.departments if all_resources else None,
+            scenarios=all_resources.scenarios if all_resources else None,
+            scenario_flags=all_resources.scenario_flags if all_resources else None,
+            scenario_positions=all_resources.scenario_positions if all_resources else None,
+            scenario_rubrics=all_resources.scenario_rubrics if all_resources else None,
+            scenario_time_limits=all_resources.scenario_time_limits if all_resources else None,
+            rubrics=all_resources.rubrics if all_resources else None,
         ),
         config=websocket_config,
     )

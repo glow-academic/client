@@ -45,7 +45,12 @@ CREATE TYPE types.q_get_scenario_drafts_entries_v4_item AS (
     document_ids uuid[],
     parameter_ids uuid[],
     parameter_field_ids uuid[],
-    question_ids uuid[]
+    question_ids uuid[],
+    image_ids uuid[],
+    objective_ids uuid[],
+    option_ids uuid[],
+    problem_statement_ids uuid[],
+    video_ids uuid[]
 );
 
 CREATE OR REPLACE FUNCTION public.api_get_scenario_drafts_entries_v4(
@@ -82,7 +87,12 @@ AS $$
                     document_ids,
                     parameter_ids,
                     parameter_field_ids,
-                    question_ids
+                    question_ids,
+                    image_ids,
+                    objective_ids,
+                    option_ids,
+                    problem_statement_ids,
+                    video_ids
                 )::types.q_get_scenario_drafts_entries_v4_item
                 ORDER BY updated_at DESC
             ),

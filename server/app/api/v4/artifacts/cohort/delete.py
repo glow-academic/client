@@ -123,16 +123,13 @@ async def delete_cohort(
         if not compute_can_delete(
             user_role, access_result.cohort_department_ids, usage_count
         ):
-            if usage_count > 0:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Cannot delete cohort: has {usage_count} profile link(s) (preserved for historical data)",
-                )
-            else:
-                raise HTTPException(
-                    status_code=403,
-                    detail="You don't have permission to delete this cohort.",
-                )
+            # NOTE: usage_count (profile links) no longer blocks deletion.
+            # Profile links are just assignments, not dependencies — historical
+            # data is preserved separately in fact tables. See compute_can_delete.
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to delete this cohort.",
+            )
 
         # Execute delete (inside transaction)
         async with conn.transaction():
@@ -152,11 +149,8 @@ async def delete_cohort(
                 ),
             )
 
-            if result.usage_count and result.usage_count > 0:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Cannot delete cohort: has {result.usage_count} profile link(s) (preserved for historical data)",
-                )
+            # NOTE: usage_count check removed — profile links don't block
+            # cohort deletion. See compute_can_delete for reasoning.
 
             # Set audit context with data from SQL query
             if actor_name:
