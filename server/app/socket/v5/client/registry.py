@@ -284,6 +284,7 @@ _register(
         ],
         prepare_sql_path="app/sql/v4/queries/generate/persona/prepare_persona_generation_complete.sql",
         draft_view_key="draft_persona",
+        requires_draft=False,
         fetcher_id_kwarg="persona_id",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.persona.get",
@@ -313,6 +314,7 @@ _register(
         ],
         prepare_sql_path="app/sql/v4/queries/generate/scenario/prepare_scenario_generation_complete.sql",
         draft_view_key="draft_scenario",
+        requires_draft=False,
         fetcher_id_kwarg="scenario_id",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.scenario.get",
@@ -338,6 +340,7 @@ _register(
         ],
         prepare_sql_path="app/sql/v4/queries/generate/simulation/prepare_simulation_generation_complete.sql",
         draft_view_key="draft_simulation",
+        requires_draft=False,
         fetcher_id_kwarg="simulation_id",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.simulation.get",

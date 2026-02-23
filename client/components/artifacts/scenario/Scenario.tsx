@@ -1557,7 +1557,8 @@ function ScenarioComponent({
                   required={s?.names?.required ?? false}
                   hideDescription={true}
                   group_id={s?.group_id ?? null}
-                  create_tool_id={s?.names?.create_tool_id ?? null}
+                  showAiGenerate={s?.names?.show_ai_generate ?? false}
+                  create_tool_id={s?.names?.tool_id ?? null}
                   createNamesAction={
                     createNamesAction as
                       | ((
@@ -1608,7 +1609,8 @@ function ScenarioComponent({
                   placeholder="Describe the scenario"
                   required={s?.descriptions?.required ?? false}
                   group_id={s?.group_id ?? null}
-                  create_tool_id={s?.descriptions?.create_tool_id ?? null}
+                  showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
+                  create_tool_id={s?.descriptions?.tool_id ?? null}
                   createDescriptionsAction={
                     createDescriptionsAction as
                       | ((
@@ -1633,6 +1635,7 @@ function ScenarioComponent({
                   label="Departments"
                   required={s?.departments?.required ?? false}
                   group_id={s?.group_id ?? null}
+                  showAiGenerate={s?.departments?.show_ai_generate ?? false}
                   onGenerate={generateHandlers["departments"]}
                 />
 
@@ -1674,6 +1677,7 @@ function ScenarioComponent({
                     }
                   }}
                   onGenerate={generateHandlers["scenario_flags"]}
+                  showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
               </div>
             </StepCard>
@@ -1727,6 +1731,8 @@ function ScenarioComponent({
                         | undefined
                     }
                     onGenerate={generateHandlers["images"]}
+                    showAiGenerate={s?.images?.show_ai_generate ?? false}
+                    create_tool_id={s?.images?.tool_id ?? null}
                     multiSelect={true}
                     maxImages={3}
                     isAutosaveEnabled={isAutosaveEnabled}
@@ -1762,8 +1768,9 @@ function ScenarioComponent({
                     onSearchChange={(term: string) =>
                       setFormData({ problemStatementSearch: term || null })
                     }
+                    showAiGenerate={s?.problem_statements?.show_ai_generate ?? false}
                     create_tool_id={
-                      s?.problem_statements?.create_tool_id ?? null
+                      s?.problem_statements?.tool_id ?? null
                     }
                     createProblemStatementsAction={
                       createProblemStatementsAction as
@@ -1789,6 +1796,8 @@ function ScenarioComponent({
                       setFormState((prev) => ({ ...prev, objective_ids: ids }))
                     }
                     group_id={s?.group_id ?? null}
+                    showAiGenerate={s?.objectives?.show_ai_generate ?? false}
+                    create_tool_id={s?.objectives?.tool_id ?? null}
                     createObjectivesAction={
                       createObjectivesAction as
                         | ((
@@ -1858,6 +1867,7 @@ function ScenarioComponent({
                   group_id={s?.group_id ?? null}
                   required={s?.personas?.required ?? false}
                   onGenerate={generateHandlers["personas"]}
+                  showAiGenerate={s?.personas?.show_ai_generate ?? false}
                   videoEnabled={videoEnabled}
                 />
               </div>
@@ -1917,6 +1927,7 @@ function ScenarioComponent({
                   group_id={s?.group_id ?? null}
                   required={s?.documents?.required ?? false}
                   onGenerate={generateHandlers["documents"]}
+                  showAiGenerate={s?.documents?.show_ai_generate ?? false}
                   videoEnabled={videoEnabled}
                 />
               </div>
@@ -1980,6 +1991,7 @@ function ScenarioComponent({
                   group_id={s?.group_id ?? null}
                   required={s?.parameters?.required ?? false}
                   onGenerate={generateHandlers["parameters"]}
+                  showAiGenerate={s?.parameters?.show_ai_generate ?? false}
                   videoEnabled={videoEnabled}
                 />
                 <ParameterFields
@@ -2002,6 +2014,8 @@ function ScenarioComponent({
                   }
                   group_id={s?.group_id ?? null}
                   required={s?.parameter_fields?.required ?? false}
+                  showAiGenerate={s?.parameter_fields?.show_ai_generate ?? false}
+                  create_tool_id={s?.parameter_fields?.tool_id ?? null}
                   createParameterFieldsAction={createParameterFieldsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["parameter_fields"]}
@@ -2057,6 +2071,8 @@ function ScenarioComponent({
                         | undefined
                     }
                     onGenerate={generateHandlers["videos"]}
+                    showAiGenerate={s?.videos?.show_ai_generate ?? false}
+                    create_tool_id={s?.videos?.tool_id ?? null}
                     isAutosaveEnabled={isAutosaveEnabled}
                     registerFlush={registerFlushCallbacks["videos"]}
                   />
@@ -2085,6 +2101,8 @@ function ScenarioComponent({
                         | undefined
                     }
                     onGenerate={generateHandlers["questions"]}
+                    showAiGenerate={s?.questions?.show_ai_generate ?? false}
+                    create_tool_id={s?.questions?.tool_id ?? null}
                     isAutosaveEnabled={isAutosaveEnabled}
                     registerFlush={registerFlushCallbacks["questions"]}
                   />
@@ -2102,6 +2120,8 @@ function ScenarioComponent({
                       setFormState((prev) => ({ ...prev, option_ids: ids }))
                     }
                     group_id={s?.group_id ?? null}
+                    showAiGenerate={s?.options?.show_ai_generate ?? false}
+                    create_tool_id={s?.options?.tool_id ?? null}
                     createOptionsAction={
                       createOptionsAction as
                         | ((

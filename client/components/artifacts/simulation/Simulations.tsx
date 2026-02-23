@@ -101,6 +101,7 @@ export function Simulations({
     artifactType: "simulation",
     groupId: null,
     validResourceTypes: ["names", "descriptions", "flags", "departments", "scenarios", "scenario_flags", "scenario_positions", "scenario_rubrics", "scenario_time_limits"],
+    onComplete: () => router.refresh(),
   });
 
   const { handleOpenStepCardModal, modalProps } = useGenerationModal<SimulationResourceType>({

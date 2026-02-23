@@ -109,17 +109,18 @@ export function Scenarios({
   );
 
   // Generation via useArtifactAi hook
-  type ScenarioResourceType = "names" | "descriptions" | "problem_statements" | "objectives" | "scenario_flags" | "departments" | "personas" | "documents" | "parameters" | "fields" | "images" | "videos" | "questions";
+  type ScenarioResourceType = "names" | "descriptions" | "problem_statements" | "objectives" | "scenario_flags" | "departments" | "personas" | "documents" | "parameters" | "parameter_fields" | "images" | "videos" | "questions";
 
   const { generate } = useArtifactAi({
     artifactType: "scenario",
     groupId: null,
-    validResourceTypes: ["names", "descriptions", "problem_statements", "objectives", "scenario_flags", "departments", "personas", "documents", "parameters", "fields", "images", "videos", "questions"],
+    validResourceTypes: ["names", "descriptions", "problem_statements", "objectives", "scenario_flags", "departments", "personas", "documents", "parameters", "parameter_fields", "images", "videos", "questions"],
+    onComplete: () => router.refresh(),
   });
 
   const { handleOpenStepCardModal, modalProps } = useGenerationModal<ScenarioResourceType>({
     stepResources: {
-      all: ["names", "descriptions", "problem_statements", "objectives", "scenario_flags", "departments", "personas", "documents", "parameters", "fields", "images", "videos", "questions"],
+      all: ["names", "descriptions", "problem_statements", "objectives", "scenario_flags", "departments", "personas", "documents", "parameters", "parameter_fields", "images", "videos", "questions"],
     },
     resourceLabels: {
       names: "Name",
@@ -131,7 +132,7 @@ export function Scenarios({
       personas: "Personas",
       documents: "Documents",
       parameters: "Parameters",
-      fields: "Fields",
+      parameter_fields: "Fields",
       images: "Images",
       videos: "Videos",
       questions: "Questions",

@@ -118,17 +118,18 @@ export default function Personas({
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
 
   // Generation modal via shared hook
-  type PersonaResourceType = "names" | "descriptions" | "colors" | "icons" | "instructions" | "flags" | "examples" | "fields" | "departments";
+  type PersonaResourceType = "names" | "descriptions" | "colors" | "icons" | "instructions" | "flags" | "examples" | "parameter_fields" | "departments" | "parameters" | "voices";
 
   const { generate } = useArtifactAi({
     artifactType: "persona",
     groupId: null,
-    validResourceTypes: ["names", "descriptions", "colors", "icons", "instructions", "flags", "examples", "fields", "departments"],
+    validResourceTypes: ["names", "descriptions", "colors", "icons", "instructions", "flags", "examples", "parameter_fields", "departments", "parameters", "voices"],
+    onComplete: () => router.refresh(),
   });
 
   const { handleOpenStepCardModal, modalProps } = useGenerationModal<PersonaResourceType>({
     stepResources: {
-      all: ["names", "descriptions", "colors", "icons", "instructions", "flags", "examples", "fields", "departments"],
+      all: ["names", "descriptions", "colors", "icons", "instructions", "flags", "examples", "parameter_fields", "departments", "parameters", "voices"],
     },
     resourceLabels: {
       names: "Name",
@@ -138,8 +139,10 @@ export default function Personas({
       instructions: "Instructions",
       flags: "Configuration",
       examples: "Examples",
-      fields: "Fields",
+      parameter_fields: "Fields",
       departments: "Departments",
+      parameters: "Parameters",
+      voices: "Voices",
     },
     canRegenerate: () => true,
     onGenerate: (selectedResources, instructions) => {

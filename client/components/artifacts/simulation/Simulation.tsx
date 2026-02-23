@@ -1085,6 +1085,8 @@ function SimulationComponent({
                   placeholder="Simulation name"
                   defaultName="New Simulation"
                   hideDescription={true}
+                  showAiGenerate={s.names?.show_ai_generate ?? false}
+                  create_tool_id={s.names?.tool_id ?? null}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["names"]}
                 />
@@ -1126,6 +1128,8 @@ function SimulationComponent({
                   createDescriptionsAction={createDescriptionsAction}
                   group_id={s.group_id ?? null}
                   required={s.descriptions?.required ?? false}
+                  showAiGenerate={s.descriptions?.show_ai_generate ?? false}
+                  create_tool_id={s.descriptions?.tool_id ?? null}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["descriptions"]}
                 />
@@ -1142,6 +1146,7 @@ function SimulationComponent({
                   onGenerate={handleGenerateDepartments}
                   group_id={s.group_id ?? null}
                   required={s.departments?.required ?? false}
+                  showAiGenerate={s.departments?.show_ai_generate ?? false}
                 />
                 <Flags
                   mode="multi"
@@ -1201,6 +1206,7 @@ function SimulationComponent({
                     });
                   }}
                   onGenerate={handleGenerateFlags}
+                  showAiGenerate={s.flags?.show_ai_generate ?? false}
                 />
               </div>
             </StepCard>
@@ -1275,7 +1281,7 @@ function SimulationComponent({
                 <Scenarios
                   scenario_ids={formState.scenario_ids ?? []}
                   scenario_resources={s.scenarios?.current ?? []}
-                  show_scenarios={s.scenarios?.show ?? false}
+                  show_scenarios={(s.scenarios?.show ?? false) || (s.scenarios?.required ?? false)}
                   scenario_suggestions={s.scenarios?.suggestions ?? []}
                   scenarios={s.scenarios?.resources ?? []}
                   disabled={disabled}
@@ -1285,6 +1291,7 @@ function SimulationComponent({
                   onGenerate={handleGenerateScenarios}
                   group_id={s.group_id ?? null}
                   required={s.scenarios?.required ?? false}
+                  showAiGenerate={s.scenarios?.show_ai_generate ?? false}
                   searchTerm={scenarioSearch ?? ""}
                   showSelectedOnly={scenarioShowSelected}
                 />
@@ -1307,6 +1314,8 @@ function SimulationComponent({
                   onGenerate={handleGenerateScenarioFlags}
                   group_id={s.group_id ?? null}
                   required={s.scenario_flags?.required ?? false}
+                  showAiGenerate={s.scenario_flags?.show_ai_generate ?? false}
+                  create_tool_id={s.scenario_flags?.tool_id ?? null}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["scenario_flags"]}
                 />
@@ -1336,6 +1345,8 @@ function SimulationComponent({
                   onGenerate={handleGenerateScenarioPositions}
                   group_id={s.group_id ?? null}
                   required={s.scenario_positions?.required ?? false}
+                  showAiGenerate={s.scenario_positions?.show_ai_generate ?? false}
+                  create_tool_id={s.scenario_positions?.tool_id ?? null}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["scenario_positions"]}
                 />
@@ -1362,6 +1373,8 @@ function SimulationComponent({
                   onGenerate={handleGenerateScenarioRubrics}
                   group_id={s.group_id ?? null}
                   required={s.scenario_rubrics?.required ?? false}
+                  showAiGenerate={s.scenario_rubrics?.show_ai_generate ?? false}
+                  create_tool_id={s.scenario_rubrics?.tool_id ?? null}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["scenario_rubrics"]}
                 />
@@ -1389,6 +1402,8 @@ function SimulationComponent({
                   }
                   onGenerate={handleGenerateScenarioTimeLimits}
                   required={s.scenario_time_limits?.required ?? false}
+                  showAiGenerate={s.scenario_time_limits?.show_ai_generate ?? false}
+                  create_tool_id={s.scenario_time_limits?.tool_id ?? null}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["scenario_time_limits"]}
                 />

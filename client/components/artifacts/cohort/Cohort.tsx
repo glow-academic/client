@@ -1054,6 +1054,7 @@ function CohortComponent({
                   hideDescription={true}
                   group_id={s?.group_id ?? null}
                   showAiGenerate={s?.names?.show_ai_generate ?? false}
+                  create_tool_id={s?.names?.tool_id ?? null}
                   createNamesAction={
                     createNamesAction as
                       | ((
@@ -1115,6 +1116,7 @@ function CohortComponent({
                   data-testid="input-cohort-description"
                   group_id={s?.group_id ?? null}
                   showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
+                  create_tool_id={s?.descriptions?.tool_id ?? null}
                   createDescriptionsAction={createDescriptionsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["descriptions"]}

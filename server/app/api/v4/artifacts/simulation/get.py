@@ -402,7 +402,7 @@ async def get_simulation_internal(
                 limit_count=20,
                 offset_count=0,
                 department_ids=user_department_ids,
-                suggest_source="recent",
+                suggest_source="all",
                 exclude_ids=scenario_ids,
                 bypass_cache=bypass_cache,
                 simulation=True,
