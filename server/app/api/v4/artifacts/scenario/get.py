@@ -1251,19 +1251,7 @@ async def get_scenario_websocket(
         fetch_tools(),
     )
 
-    current = data.resources_payload.current
-    selected_flag_ids = {
-        getattr(f, "flag_option_id", None) or getattr(f, "id", None)
-        for f in (current.flags if current and current.flags else [])
-    } - {None}
-    all_enriched_flags = (
-        data.resources_payload.resources.flags
-        if data.resources_payload.resources
-        else []
-    ) or []
-    selected_enriched_flags = [
-        f for f in all_enriched_flags if f.flag_option_id in selected_flag_ids
-    ]
+    all_resources = data.resources_payload.resources
 
     # Enrich tools with args and args_outputs
     config_tools = tools_result or []
@@ -1321,20 +1309,20 @@ async def get_scenario_websocket(
         entries=entries if draft_view or runs_result else None,
         resource_agent_ids=data.agent_ids,
         resources=ScenarioWebsocketResources(
-            names=current.names if current else None,
-            descriptions=current.descriptions if current else None,
-            problem_statements=current.problem_statements if current else None,
-            flags=selected_enriched_flags or None,
-            departments=current.departments if current else None,
-            personas=current.personas if current else None,
-            documents=current.documents if current else None,
-            parameters=current.parameters if current else None,
-            parameter_fields=current.parameter_fields if current else None,
-            objectives=current.objectives if current else None,
-            images=current.images if current else None,
-            videos=current.videos if current else None,
-            questions=current.questions if current else None,
-            options=current.options if current else None,
+            names=all_resources.names if all_resources else None,
+            descriptions=all_resources.descriptions if all_resources else None,
+            problem_statements=all_resources.problem_statements if all_resources else None,
+            flags=all_resources.flags if all_resources else None,
+            departments=all_resources.departments if all_resources else None,
+            personas=all_resources.personas if all_resources else None,
+            documents=all_resources.documents if all_resources else None,
+            parameters=all_resources.parameters if all_resources else None,
+            parameter_fields=all_resources.parameter_fields if all_resources else None,
+            objectives=all_resources.objectives if all_resources else None,
+            images=all_resources.images if all_resources else None,
+            videos=all_resources.videos if all_resources else None,
+            questions=all_resources.questions if all_resources else None,
+            options=all_resources.options if all_resources else None,
         ),
         config=websocket_config,
     )
