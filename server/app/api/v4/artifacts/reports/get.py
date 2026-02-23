@@ -56,8 +56,8 @@ from app.utils.sql_helper import execute_sql_typed
 
 router = APIRouter()
 
-# Reports has no domain resources for agent resolution
-REPORTS_BUNDLE_RESOURCES: set[str] = set()
+# Reports entry types for agent resolution
+REPORTS_BUNDLE_ENTRIES: set[str] = {"insights", "debug_info"}
 
 
 @dataclass
@@ -91,7 +91,7 @@ async def get_reports_internal(
             settings_conn, profile_id, bypass_cache
         )
     agent_ids, _create_tool_ids, _link_tool_ids = resolve_agents_for_artifact(
-        settings_data.agent_tool_entries, REPORTS_BUNDLE_RESOURCES
+        settings_data.agent_tool_entries, REPORTS_BUNDLE_ENTRIES
     )
 
     config_agents = list(settings_data.settings_agents)

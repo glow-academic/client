@@ -271,8 +271,9 @@ async def generate_handler(data: dict[str, Any]) -> None:
             await _emit_error(sid, "No valid resource_types provided", artifact_type)
             return
 
+        all_valid_types = set(config.valid_resource_types) | set(config.entry_types)
         invalid_types = [
-            rt for rt in resource_types if rt not in config.valid_resource_types
+            rt for rt in resource_types if rt not in all_valid_types
         ]
         if invalid_types:
             await _emit_error(

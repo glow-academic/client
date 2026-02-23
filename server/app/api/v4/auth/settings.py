@@ -122,12 +122,12 @@ async def get_auth_settings_internal(
                 continue
             for tool_id in agent.tool_ids:
                 tool = tool_by_id.get(tool_id)
-                if tool and tool.resource:
+                if tool and (tool.resource or tool.entry):
                     agent_tool_entries.append(
                         SettingsAgentToolEntry(
                             agent_id=agent.id,
                             tool_id=tool.id,
-                            resource=tool.resource,
+                            resource=tool.resource or tool.entry or "",
                             is_creatable=tool.createable or False,
                         )
                     )

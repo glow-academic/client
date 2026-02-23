@@ -904,7 +904,7 @@ async def get_scenario_internal(
     # Build enriched flags list from ALL available scenario flags (canonical pattern)
     scenario_flags: list[ScenarioFlagConfig] = [
         ScenarioFlagConfig(
-            key=flag.name,
+            key=flag.type,
             label=flag.name,
             description=flag.description,
             icon_id=flag.icon,

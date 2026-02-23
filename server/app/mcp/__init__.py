@@ -50,133 +50,105 @@ mcp_server = FastMCP(
     stateless_http=True,
     transport_security=transport_security,
     instructions=f"""\
-GLOW exposes 3 tool classes: Artifacts, Resources, and Entries.
+GLOW is an educational platform for scenario-based learning and AI-powered practice simulations.
 
 ## Tool Classes
 
 | Class | Purpose | Operations |
 |-------|---------|------------|
-| Artifacts (29) | Domain objects with full CRUD | get, list, save, delete, duplicate, draft, refresh |
-| Resources (75) | Shared building-block data | get, search, create |
-| Entries (101) | Transactional records and operational data | get, search, create |
+| Artifacts | Domain objects (scenario, persona, cohort, simulation, etc.) | get, list, save, delete, duplicate, draft, refresh |
+| Resources | Shared building blocks (names, descriptions, flags, etc.) | get, search, create |
+| Entries | Transactional/operational data (attempts, sessions, metrics, etc.) | get, search, create |
 
-## Workflow — Always follow this order:
+## Creating or Editing an Artifact
 
-1. **Discover** — call `artifacts()`, `resources()`, or `entries()` to find the right item name.
-2. **Schema** — call `payload_artifact(name, op)`, `payload_resource(name, op)`, or `payload_entry(name, op)` to get the JSON schema for the request payload. Always do this before calling an operation.
-3. **Operate** — call the operation tool with the name and payload.
+Artifacts reference resources by ID. Follow these steps:
 
-## Choosing the right class
+### Step 1: Call `get_artifact` first — always
 
-- **Artifact** = a configurable domain object (agent, scenario, cohort, document, etc.). Use when you need to read, create, edit, or manage these objects.
-- **Resource** = a shared sub-component (names, descriptions, flags, prompts, etc.). Use when you need to read or create individual resource records that artifacts reference.
-- **Entry** = operational/transactional data (attempts, sessions, metrics, drafts, insights, etc.). Use when you need to read operational state, search records, or create transactional entries.
+```
+get_artifact("scenario", {{}})              # new artifact (no ID)
+get_artifact("scenario", artifact_id="<id>")  # edit existing
+```
 
-## Creating an Artifact — Standard Workflow
+The response contains everything you need:
+- **`group_id`** — pass this to `create_resource` calls so new resources are grouped together
+- **`resources`** — available resources to reuse (names, descriptions, personas, departments, flags, etc.). Each has an `id`.
+- **`current`** — currently selected resources (when editing an existing artifact)
+- **Per-resource `tool_id`** — pass to `create_resource` for AI generation tracking
 
-Artifacts are saved with resource IDs, not raw text. To create one:
-
-### Step 1: Load available resources
-Call `get_artifact(name, {{}})` with an empty payload (no ID). This returns ALL available resources as suggestions — names, descriptions, departments, personas, etc. Each resource has an `id` you can reuse directly. **Reuse existing resources whenever possible** — this is the fastest path.
+**Reuse existing resources whenever possible** — only create new ones when needed.
 
 ### Step 2: Create only what's new
-If you need a new name or description that doesn't exist yet, create just those resources:
-- `create_resource("names", {{"name": "My New Scenario"}})`  → returns `name_id`
-- `create_resource("descriptions", {{"description": "..."}})`  → returns `description_id`
 
-### Step 3: Save the artifact
-Call `save_artifact(name, payload)` with the resource IDs — a mix of reused IDs from Step 1 and newly created IDs from Step 2.
+Use `create_resource` for resources that don't exist yet. Always pass `group_id` from Step 1. If the get response included a `tool_id` for that resource type, pass it too (optional — not all resources have tools):
 
-### Example: Creating a scenario
-
-Scenario save accepts these fields:
-
-| Field | Type | Required | Source |
-|-------|------|----------|--------|
-| `input_scenario_id` | UUID | No (omit to create new) | Existing scenario ID for edits |
-| `name_id` | UUID | **Yes** | `names.resources[]` or `create_resource("names", ...)` |
-| `description_id` | UUID | No | `descriptions.resources[]` or `create_resource("descriptions", ...)` |
-| `problem_statement_id` | UUID | No | `problem_statements.resources[]` or `create_resource("problem_statements", ...)` |
-| `active_flag_id` | UUID | No | `flags.resources[]` (key: "Active") |
-| `objectives_enabled_flag_id` | UUID | No | `flags.resources[]` (key: "Objectives") |
-| `images_enabled_flag_id` | UUID | No | `flags.resources[]` (key: "Images") |
-| `video_enabled_flag_id` | UUID | No | `flags.resources[]` (key: "Video") |
-| `questions_enabled_flag_id` | UUID | No | `flags.resources[]` (key: "Questions") |
-| `problem_statement_enabled_flag_id` | UUID | No | `flags.resources[]` (key: "Problem Statement") |
-| `department_ids` | list[UUID] | No | `departments.resources[]` |
-| `persona_ids` | list[UUID] | **Yes** (≥1) | `personas.resources[]` |
-| `document_ids` | list[UUID] | No | `documents.resources[]` |
-| `parameter_ids` | list[UUID] | No | `parameters.resources[]` |
-| `parameter_field_ids` | list[UUID] | No | `parameter_fields.resources[]` |
-| `image_ids` | list[UUID] | No | `images.resources[]` |
-| `objective_ids` | list[UUID] | No | `objectives.resources[]` |
-| `video_ids` | list[UUID] | No | `videos.resources[]` |
-| `question_ids` | list[UUID] | No | `questions.resources[]` |
-| `option_ids` | list[UUID] | No | `options.resources[]` |
-
-**Minimum required fields: `name_id` + `persona_ids` (at least one persona).**
-
-Workflow:
 ```
-1. get_artifact("scenario", {{}})
-   → Response includes: names.resources[], descriptions.resources[],
-     departments.resources[], personas.resources[], flags.resources[], etc.
-   → Pick existing IDs to reuse (e.g., department_ids, persona_ids)
+create_resource("names", {{"name": "Interview Practice"}}, group_id="<from step 1>", tool_id="<if available>")
+→ returns id
 
-2. create_resource("names", {{"name": "Interview Practice: Sales Role"}})
-   → Returns: {{"id": "<new-name-id>", ...}}
-   create_resource("descriptions", {{"description": "Practice a sales interview..."}})
-   → Returns: {{"id": "<new-desc-id>", ...}}
-
-3. save_artifact("scenario", {{
-     "name_id": "<new-name-id>",
-     "description_id": "<new-desc-id>",
-     "department_ids": ["<existing-dept-id>"],
-     "persona_ids": ["<existing-persona-id>"],
-     "active_flag_id": "<flag-id-from-step-1>"
-   }})
-   → Returns: {{"success": true, "scenario_id": "<new-id>"}}
+create_resource("descriptions", {{"description": "Practice a sales interview..."}}, group_id="<from step 1>")
+→ returns id (no tool_id needed if none was returned for descriptions)
 ```
 
-After saving, the user can view their scenario at:
-**{ORIGIN}/training/scenarios/<scenario_id>**
+### Step 3: Draft (recommended) or Save
 
-Always share this link with the user after a successful create or save.
+**Recommended: use `draft_artifact`** — this creates a draft the user can review and edit in the UI before committing:
 
-This pattern (get → create resources → save) works for ALL artifacts: agent, cohort, document, persona, simulation, eval, rubric, etc. The `get` response always tells you what resources are available and what's required.
+```
+draft_artifact("scenario", {{
+  "name_id": "<new-or-reused-id>",
+  "description_id": "<new-or-reused-id>",
+  "department_ids": ["<existing-dept-id>"],
+  "persona_ids": ["<existing-persona-id>"]
+}})
+→ returns draft_id
+```
+
+Share the draft link so the user can review:
+**{ORIGIN}/training/scenarios/new?draftId=<draft_id>**
+
+**Alternative: use `save_artifact`** for a direct save when the user wants to skip the review step:
+
+```
+save_artifact("scenario", {{
+  "name_id": "<id>",
+  "persona_ids": ["<id>"],
+  ...
+}})
+→ returns scenario_id
+```
+
+Share the artifact link: **{ORIGIN}/training/scenarios/<scenario_id>**
 
 ### Editing an existing artifact
-Same pattern, but pass the artifact ID:
-1. `get_artifact("scenario", {{"scenario_id": "<id>"}})` — returns current state + all available resources
-2. Create any new resources needed
-3. `save_artifact("scenario", {{"input_scenario_id": "<id>", ...all resource IDs}})` — include ALL resource IDs, not just changed ones
 
-## URLs for artifacts
+Same 3-step pattern, but pass the artifact ID:
+1. `get_artifact("scenario", artifact_id="<id>")` — returns current state + all available resources
+2. Create any new resources needed (with `group_id` from step 1)
+3. `draft_artifact` or `save_artifact` with ALL resource IDs (not just changed ones). For save, include `input_scenario_id`.
 
-After creating or saving an artifact, share the URL with the user so they can view it:
+## Artifact URLs
 
-| Artifact | URL |
-|----------|-----|
-| scenario | `{ORIGIN}/training/scenarios/<id>` |
-| agent | `{ORIGIN}/training/agents/<id>` |
-| persona | `{ORIGIN}/training/personas/<id>` |
-| simulation | `{ORIGIN}/training/simulations/<id>` |
-| cohort | `{ORIGIN}/training/cohorts/<id>` |
-| document | `{ORIGIN}/training/documents/<id>` |
-| eval | `{ORIGIN}/training/evals/<id>` |
-| rubric | `{ORIGIN}/training/rubrics/<id>` |
-| parameter | `{ORIGIN}/training/parameters/<id>` |
-| field | `{ORIGIN}/training/fields/<id>` |
+Always share a link with the user after drafting or saving:
 
-## Documentation
+| Artifact | Saved | Draft |
+|----------|-------|-------|
+| scenario | `{ORIGIN}/training/scenarios/<id>` | `{ORIGIN}/training/scenarios/new?draftId=<draft_id>` |
+| persona | `{ORIGIN}/training/personas/<id>` | `{ORIGIN}/training/personas/new?draftId=<draft_id>` |
+| simulation | `{ORIGIN}/training/simulations/<id>` | `{ORIGIN}/training/simulations/new?draftId=<draft_id>` |
+| cohort | `{ORIGIN}/training/cohorts/<id>` | `{ORIGIN}/training/cohorts/new?draftId=<draft_id>` |
 
-Call `docs()` for general architecture. Call `docs_artifact(name)`, `docs_resource(name)`, or `docs_entry(name)` for detailed documentation on a specific item including schema, relationships, and usage patterns.
+## Discovery & Documentation
 
-## Key rules
+- `discover_artifacts()`, `discover_resources()`, `discover_entries()` — find available items
+- `docs("scenario")`, `docs("names")`, `docs("glow")` — get schema and documentation
 
-- Item names are **singular** for artifacts (e.g., "agent", not "agents") and **plural** for resources (e.g., "names", not "name"). Entry names vary — use the discovery tool to confirm.
-- The `mcp` field in payloads is auto-injected — never include it.
-- All operations require authentication via OAuth token in the Authorization header.
+## Key Rules
+
+- Artifact names are **singular** ("scenario"), resource names are **plural** ("names"). Use discovery tools to confirm entry names.
+- The `mcp` field is auto-injected — never include it in payloads.
+- `group_id` and `tool_id` on `create_resource` are explicit parameters, not part of the payload dict.
 """,
 )
 

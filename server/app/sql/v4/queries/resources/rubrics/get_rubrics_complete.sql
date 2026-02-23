@@ -58,5 +58,5 @@ SELECT COALESCE(
 ) as items
 FROM rubrics_resource r
 WHERE r.active = true
-  AND r.id = ANY(ids);
+  AND (COALESCE(array_length(ids, 1), 0) = 0 OR r.id = ANY(ids));
 $$;

@@ -200,6 +200,7 @@ export function ScenarioTimeLimits({
   useEffect(() => {
     const nextLimits = new Map<string, number | null>();
     const nextIds = new Map<string, string>();
+    const nextNegative = new Map<string, boolean>();
 
     timeLimitResources.forEach((resource) => {
       if (resource.scenario_id) {
@@ -207,6 +208,7 @@ export function ScenarioTimeLimits({
           resource.scenario_id,
           resource.time_limit_seconds ?? null,
         );
+        nextNegative.set(resource.scenario_id, resource.negative ?? false);
         if (resource.id) {
           nextIds.set(resource.scenario_id, resource.id);
         }
@@ -216,6 +218,9 @@ export function ScenarioTimeLimits({
     scenario_ids.forEach((scenarioId) => {
       if (!nextLimits.has(scenarioId)) {
         nextLimits.set(scenarioId, null);
+      }
+      if (!nextNegative.has(scenarioId)) {
+        nextNegative.set(scenarioId, false);
       }
     });
 
@@ -229,6 +234,11 @@ export function ScenarioTimeLimits({
       const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
       const nextKey = JSON.stringify(Array.from(nextIds.entries()).sort());
       return prevKey === nextKey ? prev : nextIds;
+    });
+    setNegativeByScenario((prev) => {
+      const prevKey = JSON.stringify(Array.from(prev.entries()).sort());
+      const nextKey = JSON.stringify(Array.from(nextNegative.entries()).sort());
+      return prevKey === nextKey ? prev : nextNegative;
     });
   }, [scenario_ids, timeLimitResources]);
 
@@ -269,11 +279,12 @@ export function ScenarioTimeLimits({
   }, [registerFlush]);
 
   const createTimeLimit = useCallback(
-    async (scenarioId: string, value: number) => {
+    async (scenarioId: string, value: number, negative?: boolean) => {
       if (!isAutosaveEnabled || !createScenarioTimeLimitsAction || !group_id) {
         return;
       }
-      const key = `${scenarioId}:${value}`;
+      const negFlag = negative ?? negativeByScenario.get(scenarioId) ?? false;
+      const key = `${scenarioId}:${value}:${negFlag}`;
       if (createdTimeLimitKeysRef.current.has(key)) {
         return;
       }
@@ -290,6 +301,7 @@ export function ScenarioTimeLimits({
             time_limit_seconds: value,
             mcp: false,
             tool_id: create_tool_id ?? undefined,
+            negative: negFlag,
           },
         });
 
@@ -313,6 +325,7 @@ export function ScenarioTimeLimits({
       create_tool_id,
       group_id,
       artifactIdMap,
+      negativeByScenario,
     ],
   );
 
@@ -528,6 +541,8 @@ export function ScenarioTimeLimits({
             );
           };
 
+          const isNegative = negativeByScenario.get(scenarioId) ?? false;
+
           const handleUnlimitedToggle = (checked: boolean) => {
             if (checked) {
               // Set to unlimited (null/empty)
@@ -535,6 +550,18 @@ export function ScenarioTimeLimits({
             } else {
               // Set a default value when switching from unlimited
               handleChange(scenarioId, "60"); // Default to 1 minute
+            }
+          };
+
+          const handleNegativeToggle = (checked: boolean) => {
+            setNegativeByScenario((prev) => {
+              const next = new Map(prev);
+              next.set(scenarioId, checked);
+              return next;
+            });
+            // Re-create resource with updated negative flag
+            if (currentValue !== null) {
+              void createTimeLimit(scenarioId, currentValue, checked);
             }
           };
 
@@ -567,6 +594,17 @@ export function ScenarioTimeLimits({
                   </div>
                   {!isUnlimited && (
                     <>
+                      <div className="w-px h-4 bg-border mx-1" />
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={isNegative}
+                          onCheckedChange={handleNegativeToggle}
+                          disabled={disabled}
+                        />
+                        <span className="text-xs text-muted-foreground">
+                          Negative
+                        </span>
+                      </div>
                       <div className="w-px h-4 bg-border mx-1" />
                       <Input
                         type="number"

@@ -109,7 +109,7 @@ from app.api.v4.resources.tools.get import get_tools_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
-from app.sql.types import load_sql_query
+from app.sql.types import QGetScenarioFlagsV4Item, load_sql_query
 from app.utils.sql_helper import execute_sql_typed
 
 # SQL paths for two-pass architecture
@@ -409,18 +409,43 @@ async def get_simulation_internal(
             )
             return (selected, suggestions)
 
+    SCENARIO_FLAG_TYPES_ORDERED = [
+        "audio_enabled",
+        "text_enabled",
+        "copy_paste_allowed",
+        "hints_enabled",
+        "show_problem_statement",
+        "show_objectives",
+        "show_images",
+        "analyses_enabled",
+        "strengths_enabled",
+        "improvements_enabled",
+        "replacements_enabled",
+        "use_custom",
+        "use_previous",
+    ]
+
     async def fetch_scenario_flags():
         async with pool.acquire() as c:
             selected = await get_scenario_flags_internal(
                 c, scenario_flag_ids, bypass_cache
             )
-            suggestions = await search_scenario_flags_internal(
+            # Also fetch all flag types for cross-product (built after scenarios are known)
+            all_flags = await search_flags_internal(
                 c,
-                scenario_ids=effective_scenario_ids,
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=None,
                 bypass_cache=bypass_cache,
-                simulation=True,
             )
-            return (selected, suggestions)
+            flags_by_type = {f.type: f for f in all_flags}
+            scenario_flag_types = [
+                flags_by_type[t]
+                for t in SCENARIO_FLAG_TYPES_ORDERED
+                if t in flags_by_type
+            ]
+            return (selected, scenario_flag_types)
 
     async def fetch_scenario_positions():
         async with pool.acquire() as c:
@@ -463,7 +488,7 @@ async def get_simulation_internal(
         (flags_selected, flags_available),
         (departments_selected, departments_suggestions),
         (scenarios_selected, scenarios_suggestions),
-        (scenario_flags_selected, scenario_flags_suggestions),
+        (scenario_flags_selected, scenario_flag_types),
         (scenario_positions_selected, scenario_positions_suggestions),
         (scenario_rubrics_selected, scenario_rubrics_suggestions),
         (scenario_time_limits_selected, scenario_time_limits_suggestions),
@@ -490,9 +515,30 @@ async def get_simulation_internal(
     scenarios_combined = _dedupe_by_id(
         scenarios_selected + scenarios_suggestions, "scenario_id"
     )
-    scenario_flags = _dedupe_by_id(
-        list(scenario_flags_selected) + list(scenario_flags_suggestions), "id"
-    )
+    # Build scenario flags: cross-product of all scenario IDs × flag types
+    # (canonical pattern: explicit flag type list, same as SIMULATION_FLAG_TYPES_ORDERED)
+    all_scenario_ids = [s.scenario_id for s in scenarios_combined if s.scenario_id]
+    _sf_existing: set[tuple[UUID, UUID]] = set()
+    for sf in scenario_flags_selected:
+        if sf.scenario_id and sf.flag_id:
+            _sf_existing.add((sf.scenario_id, sf.flag_id))
+    scenario_flags_suggestions: list[QGetScenarioFlagsV4Item] = []
+    for sid in all_scenario_ids:
+        for flag in scenario_flag_types:
+            if not flag.id or (sid, flag.id) in _sf_existing:
+                continue
+            scenario_flags_suggestions.append(
+                QGetScenarioFlagsV4Item(
+                    id=None,
+                    scenario_id=sid,
+                    flag_id=flag.id,
+                    name=flag.name,
+                    description=flag.description,
+                    icon=flag.icon,
+                    generated=False,
+                )
+            )
+    scenario_flags = list(scenario_flags_selected) + scenario_flags_suggestions
     scenario_positions = _dedupe_by_id(
         list(scenario_positions_selected) + list(scenario_positions_suggestions),
         "id",

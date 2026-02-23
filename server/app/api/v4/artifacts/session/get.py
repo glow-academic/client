@@ -56,8 +56,8 @@ from app.utils.cache.set_cached import set_cached
 
 router = APIRouter()
 
-# Session resource types for agent resolution (empty — session has no domain resources)
-SESSION_BUNDLE_RESOURCES: set[str] = set()
+# Session entry types for agent resolution
+SESSION_BUNDLE_ENTRIES: set[str] = {"insights", "debug_info"}
 
 
 # =============================================================================
@@ -84,7 +84,7 @@ async def get_session_internal(
             settings_conn, profile_id, bypass_cache
         )
     agent_ids, _create_tool_ids, _link_tool_ids = resolve_agents_for_artifact(
-        settings_data.agent_tool_entries, SESSION_BUNDLE_RESOURCES
+        settings_data.agent_tool_entries, SESSION_BUNDLE_ENTRIES
     )
 
     config_agents = list(settings_data.settings_agents)

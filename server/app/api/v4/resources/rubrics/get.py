@@ -107,13 +107,11 @@ async def get_rubrics_internal(
         List of rubric items
     """
     effective_ids = ids or []
-    if not effective_ids:
-        return []
 
     # Generate cache key
     cache_key_val = cache_key(
         "rubrics/get",
-        {"ids": sorted([str(id) for id in effective_ids])},
+        {"ids": sorted([str(id) for id in effective_ids]) if effective_ids else ["__all__"]},
     )
 
     # Try cache (unless bypassed)

@@ -33,8 +33,8 @@ from app.sql.types import (
     QGetToolsV4Item,
 )
 
-# Record has no domain resources for agent resolution
-RECORD_BUNDLE_RESOURCES: set[str] = set()
+# Record entry types for agent resolution
+RECORD_BUNDLE_ENTRIES: set[str] = {"insights", "debug_info"}
 
 
 @dataclass
@@ -68,7 +68,7 @@ async def get_record_internal(
             settings_conn, profile_id, bypass_cache
         )
     agent_ids, _create_tool_ids, _link_tool_ids = resolve_agents_for_artifact(
-        settings_data.agent_tool_entries, RECORD_BUNDLE_RESOURCES
+        settings_data.agent_tool_entries, RECORD_BUNDLE_ENTRIES
     )
 
     config_agents = list(settings_data.settings_agents)

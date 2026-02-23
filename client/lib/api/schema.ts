@@ -38014,6 +38014,8 @@ export interface components {
             time_limit_seconds: number | null;
             /** Generated */
             generated: boolean | null;
+            /** Negative */
+            negative: boolean | null;
         };
         /** QGetSessionListViewV4Item */
         QGetSessionListViewV4Item: {
@@ -41542,6 +41544,11 @@ export interface components {
             group_id?: string | null;
             /** Tool Id */
             tool_id?: string | null;
+            /**
+             * Negative
+             * @default false
+             */
+            negative: boolean | null;
         };
         /** ScenarioTimeLimitsApiResponse */
         ScenarioTimeLimitsApiResponse: {

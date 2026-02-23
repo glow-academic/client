@@ -1422,6 +1422,8 @@ def register_endpoints(server: FastMCP) -> None:
     async def create_resource(
         resource: str,
         payload: dict[str, Any],
+        group_id: str | None = None,
+        tool_id: str | None = None,
     ) -> dict[str, Any]:
         """Create a new resource.
 
@@ -1429,6 +1431,10 @@ def register_endpoints(server: FastMCP) -> None:
             resource: Resource name (e.g., "names", "descriptions", "flags").
                 Use discover_resources() to see all available resources.
             payload: Full create payload — use docs(resource) for schema.
+            group_id: Group ID from get_artifact() response. Pass this so
+                the new resource is associated with the current artifact context.
+            tool_id: Tool ID from get_artifact() response. Pass this to
+                associate the resource with the AI tool that generated it.
         """
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 
@@ -1439,6 +1445,13 @@ def register_endpoints(server: FastMCP) -> None:
 
         if "create" not in RESOURCE_REGISTRY[resource]:
             return {"error": f"Resource '{resource}' does not support create."}
+
+        if group_id is not None or tool_id is not None:
+            payload = {**payload}
+            if group_id is not None:
+                payload["group_id"] = group_id
+            if tool_id is not None:
+                payload["tool_id"] = tool_id
 
         handler = _get_handler(*RESOURCE_REGISTRY[resource]["create"])
         return await call_endpoint_handler(handler, payload, profile_id)

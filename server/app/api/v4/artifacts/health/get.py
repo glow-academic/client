@@ -44,8 +44,8 @@ from app.sql.types import (
 
 router = APIRouter()
 
-# Health has no domain resources for agent resolution
-HEALTH_BUNDLE_RESOURCES: set[str] = set()
+# Health entry types for agent resolution
+HEALTH_BUNDLE_ENTRIES: set[str] = {"insights", "debug_info"}
 
 
 @router.post(
@@ -154,7 +154,7 @@ async def get_health_internal(
             settings_conn, profile_id, bypass_cache
         )
     agent_ids, _create_tool_ids, _link_tool_ids = resolve_agents_for_artifact(
-        settings_data.agent_tool_entries, HEALTH_BUNDLE_RESOURCES
+        settings_data.agent_tool_entries, HEALTH_BUNDLE_ENTRIES
     )
 
     config_agents = list(settings_data.settings_agents)

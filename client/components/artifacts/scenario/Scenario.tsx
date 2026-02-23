@@ -394,13 +394,13 @@ function ScenarioComponent({
         ?.problem_statement_id
         ? String(scenarioData.problem_statements.resource.problem_statement_id)
         : null,
-      active_flag_id: selectedFlagId("Active"),
-      objectives_enabled_flag_id: selectedFlagId("Objectives"),
-      images_enabled_flag_id: selectedFlagId("Images"),
-      video_enabled_flag_id: selectedFlagId("Video"),
-      questions_enabled_flag_id: selectedFlagId("Questions"),
+      active_flag_id: selectedFlagId("scenario_active"),
+      objectives_enabled_flag_id: selectedFlagId("objectives_enabled"),
+      images_enabled_flag_id: selectedFlagId("images_enabled"),
+      video_enabled_flag_id: selectedFlagId("video_enabled"),
+      questions_enabled_flag_id: selectedFlagId("questions_enabled"),
       problem_statement_enabled_flag_id: selectedFlagId(
-        "Problem Statement",
+        "problem_statement_enabled",
       ),
       department_ids: (scenarioData.departments?.current ?? [])
         .map((item) => item.department_id)
@@ -1647,7 +1647,7 @@ function ScenarioComponent({
                       !f.video_flag || videoEnabled,
                   )}
                   flag_ids={{
-                    active: formState.active_flag_id ?? null,
+                    scenario_active: formState.active_flag_id ?? null,
                     video_enabled: formState.video_enabled_flag_id ?? null,
                     problem_statement_enabled:
                       formState.problem_statement_enabled_flag_id ?? null,
@@ -1663,7 +1663,7 @@ function ScenarioComponent({
                   disabled={disabled}
                   onChange={(key: string, flagId: string | null) => {
                     const fieldMap: Record<string, string> = {
-                      active: "active_flag_id",
+                      scenario_active: "active_flag_id",
                       video_enabled: "video_enabled_flag_id",
                       problem_statement_enabled:
                         "problem_statement_enabled_flag_id",

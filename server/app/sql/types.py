@@ -14917,6 +14917,49 @@ class SaveFieldApiResponse(BaseModel):
 
 
 
+# Generated from: prepare_activity_generation
+
+class PrepareActivityGenerationSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_group_id,
+            self.p_agents_resource_id,
+            self.p_models_resource_id,
+            self.p_providers_resource_id,
+        )
+
+class PrepareActivityGenerationSqlRow(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+class PrepareActivityGenerationApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+class PrepareActivityGenerationApiResponse(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+
+
 # Generated from: prepare_agent_generation
 
 class PrepareAgentGenerationSqlParams(BaseModel):
@@ -15799,6 +15842,49 @@ class PrepareCohortGenerationApiResponse(BaseModel):
 
 
 
+# Generated from: prepare_dashboard_generation
+
+class PrepareDashboardGenerationSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_group_id,
+            self.p_agents_resource_id,
+            self.p_models_resource_id,
+            self.p_providers_resource_id,
+        )
+
+class PrepareDashboardGenerationSqlRow(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+class PrepareDashboardGenerationApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+class PrepareDashboardGenerationApiResponse(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+
+
 # Generated from: prepare_department_generation
 
 class PrepareDepartmentGenerationSqlParams(BaseModel):
@@ -15971,6 +16057,135 @@ class PrepareFieldGenerationApiResponse(BaseModel):
 
 
 
+# Generated from: prepare_group_generation
+
+class PrepareGroupGenerationSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_group_id,
+            self.p_agents_resource_id,
+            self.p_models_resource_id,
+            self.p_providers_resource_id,
+        )
+
+class PrepareGroupGenerationSqlRow(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+class PrepareGroupGenerationApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+class PrepareGroupGenerationApiResponse(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+
+
+# Generated from: prepare_health_generation
+
+class PrepareHealthGenerationSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_group_id,
+            self.p_agents_resource_id,
+            self.p_models_resource_id,
+            self.p_providers_resource_id,
+        )
+
+class PrepareHealthGenerationSqlRow(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+class PrepareHealthGenerationApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+class PrepareHealthGenerationApiResponse(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+
+
+# Generated from: prepare_leaderboard_generation
+
+class PrepareLeaderboardGenerationSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_group_id,
+            self.p_agents_resource_id,
+            self.p_models_resource_id,
+            self.p_providers_resource_id,
+        )
+
+class PrepareLeaderboardGenerationSqlRow(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+class PrepareLeaderboardGenerationApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+class PrepareLeaderboardGenerationApiResponse(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+
+
 # Generated from: prepare_model_generation
 
 class PrepareModelGenerationSqlParams(BaseModel):
@@ -16128,6 +16343,49 @@ class PreparePersonaGenerationApiResponse(BaseModel):
 
 
 
+# Generated from: prepare_pricing_generation
+
+class PreparePricingGenerationSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_group_id,
+            self.p_agents_resource_id,
+            self.p_models_resource_id,
+            self.p_providers_resource_id,
+        )
+
+class PreparePricingGenerationSqlRow(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+class PreparePricingGenerationApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+class PreparePricingGenerationApiResponse(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+
+
 # Generated from: prepare_profile_generation
 
 class PrepareProfileGenerationSqlParams(BaseModel):
@@ -16214,6 +16472,92 @@ class PrepareProviderGenerationApiResponse(BaseModel):
 
 
 
+# Generated from: prepare_record_generation
+
+class PrepareRecordGenerationSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_group_id,
+            self.p_agents_resource_id,
+            self.p_models_resource_id,
+            self.p_providers_resource_id,
+        )
+
+class PrepareRecordGenerationSqlRow(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+class PrepareRecordGenerationApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+class PrepareRecordGenerationApiResponse(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+
+
+# Generated from: prepare_reports_generation
+
+class PrepareReportsGenerationSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_group_id,
+            self.p_agents_resource_id,
+            self.p_models_resource_id,
+            self.p_providers_resource_id,
+        )
+
+class PrepareReportsGenerationSqlRow(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+class PrepareReportsGenerationApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+class PrepareReportsGenerationApiResponse(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+
+
 # Generated from: prepare_rubric_generation
 
 class PrepareRubricGenerationSqlParams(BaseModel):
@@ -16292,6 +16636,49 @@ class PrepareScenarioGenerationApiRequest(BaseModel):
     p_providers_resource_id: UUID | None = None
 
 class PrepareScenarioGenerationApiResponse(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+
+
+# Generated from: prepare_session_generation
+
+class PrepareSessionGenerationSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_group_id,
+            self.p_agents_resource_id,
+            self.p_models_resource_id,
+            self.p_providers_resource_id,
+        )
+
+class PrepareSessionGenerationSqlRow(BaseModel):
+
+    run_id: UUID | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    config_id: UUID | None = None
+
+class PrepareSessionGenerationApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_group_id: UUID | None = None
+    p_agents_resource_id: UUID | None = None
+    p_models_resource_id: UUID | None = None
+    p_providers_resource_id: UUID | None = None
+
+class PrepareSessionGenerationApiResponse(BaseModel):
 
     run_id: UUID | None = None
     group_id: UUID | None = None
@@ -27939,6 +28326,7 @@ class QGetScenarioTimeLimitsV4Item(BaseModel):
     scenario_id: UUID | None
     time_limit_seconds: int | None
     generated: bool | None
+    negative: bool | None
 
 class GetScenarioTimeLimitsSqlRow(BaseModel):
 
@@ -27994,6 +28382,7 @@ class ScenarioTimeLimitsSqlParams(BaseModel):
     mcp: bool | None = False
     group_id: UUID | None = None
     tool_id: UUID | None = None
+    negative: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -28002,6 +28391,7 @@ class ScenarioTimeLimitsSqlParams(BaseModel):
             self.mcp,
             self.group_id,
             self.tool_id,
+            self.negative,
         )
 
 class ScenarioTimeLimitsSqlRow(BaseModel):
@@ -28015,6 +28405,7 @@ class ScenarioTimeLimitsApiRequest(BaseModel):
     mcp: bool | None = False
     group_id: UUID | None = None
     tool_id: UUID | None = None
+    negative: bool | None = False
 
 class ScenarioTimeLimitsApiResponse(BaseModel):
 
@@ -38141,6 +38532,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SaveFieldApiRequest",
         "SaveFieldApiResponse",
     ),
+    "app/sql/v4/queries/generate/activity/prepare_activity_generation_complete.sql": (
+        "PrepareActivityGenerationSqlParams",
+        "PrepareActivityGenerationSqlRow",
+        "PrepareActivityGenerationApiRequest",
+        "PrepareActivityGenerationApiResponse",
+    ),
     "app/sql/v4/queries/generate/agent/prepare_agent_generation_complete.sql": (
         "PrepareAgentGenerationSqlParams",
         "PrepareAgentGenerationSqlRow",
@@ -38279,6 +38676,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareCohortGenerationApiRequest",
         "PrepareCohortGenerationApiResponse",
     ),
+    "app/sql/v4/queries/generate/dashboard/prepare_dashboard_generation_complete.sql": (
+        "PrepareDashboardGenerationSqlParams",
+        "PrepareDashboardGenerationSqlRow",
+        "PrepareDashboardGenerationApiRequest",
+        "PrepareDashboardGenerationApiResponse",
+    ),
     "app/sql/v4/queries/generate/department/prepare_department_generation_complete.sql": (
         "PrepareDepartmentGenerationSqlParams",
         "PrepareDepartmentGenerationSqlRow",
@@ -38302,6 +38705,24 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareFieldGenerationSqlRow",
         "PrepareFieldGenerationApiRequest",
         "PrepareFieldGenerationApiResponse",
+    ),
+    "app/sql/v4/queries/generate/group/prepare_group_generation_complete.sql": (
+        "PrepareGroupGenerationSqlParams",
+        "PrepareGroupGenerationSqlRow",
+        "PrepareGroupGenerationApiRequest",
+        "PrepareGroupGenerationApiResponse",
+    ),
+    "app/sql/v4/queries/generate/health/prepare_health_generation_complete.sql": (
+        "PrepareHealthGenerationSqlParams",
+        "PrepareHealthGenerationSqlRow",
+        "PrepareHealthGenerationApiRequest",
+        "PrepareHealthGenerationApiResponse",
+    ),
+    "app/sql/v4/queries/generate/leaderboard/prepare_leaderboard_generation_complete.sql": (
+        "PrepareLeaderboardGenerationSqlParams",
+        "PrepareLeaderboardGenerationSqlRow",
+        "PrepareLeaderboardGenerationApiRequest",
+        "PrepareLeaderboardGenerationApiResponse",
     ),
     "app/sql/v4/queries/generate/model/prepare_model_generation_complete.sql": (
         "PrepareModelGenerationSqlParams",
@@ -38327,6 +38748,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PreparePersonaGenerationApiRequest",
         "PreparePersonaGenerationApiResponse",
     ),
+    "app/sql/v4/queries/generate/pricing/prepare_pricing_generation_complete.sql": (
+        "PreparePricingGenerationSqlParams",
+        "PreparePricingGenerationSqlRow",
+        "PreparePricingGenerationApiRequest",
+        "PreparePricingGenerationApiResponse",
+    ),
     "app/sql/v4/queries/generate/profile/prepare_profile_generation_complete.sql": (
         "PrepareProfileGenerationSqlParams",
         "PrepareProfileGenerationSqlRow",
@@ -38339,6 +38766,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareProviderGenerationApiRequest",
         "PrepareProviderGenerationApiResponse",
     ),
+    "app/sql/v4/queries/generate/record/prepare_record_generation_complete.sql": (
+        "PrepareRecordGenerationSqlParams",
+        "PrepareRecordGenerationSqlRow",
+        "PrepareRecordGenerationApiRequest",
+        "PrepareRecordGenerationApiResponse",
+    ),
+    "app/sql/v4/queries/generate/reports/prepare_reports_generation_complete.sql": (
+        "PrepareReportsGenerationSqlParams",
+        "PrepareReportsGenerationSqlRow",
+        "PrepareReportsGenerationApiRequest",
+        "PrepareReportsGenerationApiResponse",
+    ),
     "app/sql/v4/queries/generate/rubric/prepare_rubric_generation_complete.sql": (
         "PrepareRubricGenerationSqlParams",
         "PrepareRubricGenerationSqlRow",
@@ -38350,6 +38789,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareScenarioGenerationSqlRow",
         "PrepareScenarioGenerationApiRequest",
         "PrepareScenarioGenerationApiResponse",
+    ),
+    "app/sql/v4/queries/generate/session/prepare_session_generation_complete.sql": (
+        "PrepareSessionGenerationSqlParams",
+        "PrepareSessionGenerationSqlRow",
+        "PrepareSessionGenerationApiRequest",
+        "PrepareSessionGenerationApiResponse",
     ),
     "app/sql/v4/queries/generate/setting/prepare_setting_generation_complete.sql": (
         "PrepareSettingGenerationSqlParams",
@@ -43264,6 +43709,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/activity/prepare_activity_generation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/agent/prepare_agent_generation_complete.sql"]
     ) -> SqlString: ...
 
@@ -43379,6 +43829,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/dashboard/prepare_dashboard_generation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/department/prepare_department_generation_complete.sql"]
     ) -> SqlString: ...
 
@@ -43395,6 +43850,21 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/field/prepare_field_generation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/group/prepare_group_generation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/health/prepare_health_generation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/leaderboard/prepare_leaderboard_generation_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -43419,6 +43889,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/pricing/prepare_pricing_generation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/profile/prepare_profile_generation_complete.sql"]
     ) -> SqlString: ...
 
@@ -43429,12 +43904,27 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/record/prepare_record_generation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/reports/prepare_reports_generation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/rubric/prepare_rubric_generation_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/scenario/prepare_scenario_generation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/session/prepare_session_generation_complete.sql"]
     ) -> SqlString: ...
 
     @overload
