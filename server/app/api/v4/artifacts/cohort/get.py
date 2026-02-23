@@ -903,7 +903,6 @@ async def get_cohort_websocket(
         fetch_tools(),
     )
 
-    current = data.resources_payload.current
     all_resources = data.resources_payload.resources
 
     # Enrich tools with args and args_outputs
