@@ -58,7 +58,7 @@ from app.utils.cache.set_cached import set_cached
 router = APIRouter()
 
 # Pricing entry types for agent resolution
-PRICING_BUNDLE_ENTRIES: set[str] = {"insights", "debug_info"}
+PRICING_BUNDLE_ENTRIES: set[str] = {"pricing_insights", "debug_info"}
 
 
 # =============================================================================

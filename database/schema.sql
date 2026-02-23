@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict iDqQyvsEUrt3RoxDLzdG2AthPFnQavv6EON5pFxWHJbkByLTMlKsgWCf2Jz4MDS
+\restrict VRgYKsnujzBI0ujhxcRO9pzVgxUFWBmUOKLFnqRzEMyzburSQEljsh6dPa6ZIzp
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -193,7 +193,20 @@ CREATE TYPE public.entry_type AS ENUM (
     'improvements',
     'analyses',
     'grades',
-    'insights'
+    'insights',
+    'activity_insights',
+    'attempt_insights',
+    'benchmark_insights',
+    'dashboard_insights',
+    'health_insights',
+    'home_insights',
+    'leaderboard_insights',
+    'practice_insights',
+    'pricing_insights',
+    'record_insights',
+    'reports_insights',
+    'session_insights',
+    'test_insights'
 );
 
 
@@ -67984,5 +67997,5 @@ ALTER TABLE ONLY public.voices_calls_connection
 -- PostgreSQL database dump complete
 --
 
-\unrestrict iDqQyvsEUrt3RoxDLzdG2AthPFnQavv6EON5pFxWHJbkByLTMlKsgWCf2Jz4MDS
+\unrestrict VRgYKsnujzBI0ujhxcRO9pzVgxUFWBmUOKLFnqRzEMyzburSQEljsh6dPa6ZIzp
 

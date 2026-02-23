@@ -100,7 +100,7 @@ async def resolve_profile_ids_for_filters(
 # Activity resource types used for agent resolution via settings
 ACTIVITY_BUNDLE_RESOURCES: set[str] = {
     "activity",
-    "insights",
+    "activity_insights",
     "debug_info",
 }
 

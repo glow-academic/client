@@ -57,7 +57,7 @@ from app.utils.cache.set_cached import set_cached
 router = APIRouter()
 
 # Session entry types for agent resolution
-SESSION_BUNDLE_ENTRIES: set[str] = {"insights", "debug_info"}
+SESSION_BUNDLE_ENTRIES: set[str] = {"session_insights", "debug_info"}
 
 
 # =============================================================================

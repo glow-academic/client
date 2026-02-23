@@ -45,7 +45,7 @@ from app.sql.types import (
 router = APIRouter()
 
 # Health entry types for agent resolution
-HEALTH_BUNDLE_ENTRIES: set[str] = {"insights", "debug_info"}
+HEALTH_BUNDLE_ENTRIES: set[str] = {"health_insights", "debug_info"}
 
 
 @router.post(

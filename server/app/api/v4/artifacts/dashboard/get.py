@@ -77,6 +77,8 @@ DASHBOARD_BUNDLE_RESOURCES: set[str] = {
     "descriptions",
     "flags",
     "departments",
+    "dashboard_insights",
+    "debug_info",
 }
 
 

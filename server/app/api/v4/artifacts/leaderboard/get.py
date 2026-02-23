@@ -61,7 +61,7 @@ from app.utils.sql_helper import execute_sql_typed
 router = APIRouter()
 
 # Leaderboard entry types for agent resolution
-LEADERBOARD_BUNDLE_ENTRIES: set[str] = {"insights", "debug_info"}
+LEADERBOARD_BUNDLE_ENTRIES: set[str] = {"leaderboard_insights", "debug_info"}
 
 
 @dataclass

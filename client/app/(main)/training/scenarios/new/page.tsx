@@ -55,6 +55,8 @@ type CreateDraftVideosIn = InputOf<"/api/v4/resources/videos", "post">;
 type CreateDraftVideosOut = OutputOf<"/api/v4/resources/videos", "post">;
 type CreateDraftParameterFieldsIn = InputOf<"/api/v4/resources/parameter_fields", "post">;
 type CreateDraftParameterFieldsOut = OutputOf<"/api/v4/resources/parameter_fields", "post">;
+type CreateDraftOptionsIn = InputOf<"/api/v4/resources/options", "post">;
+type CreateDraftOptionsOut = OutputOf<"/api/v4/resources/options", "post">;
 
 async function createDraftNames(
   input: CreateDraftNamesIn
@@ -127,6 +129,13 @@ async function createDraftParameterFields(
 ): Promise<CreateDraftParameterFieldsOut> {
   "use server";
   return api.post("/resources/parameter_fields", input);
+}
+
+async function createDraftOptions(
+  input: CreateDraftOptionsIn
+): Promise<CreateDraftOptionsOut> {
+  "use server";
+  return api.post("/resources/options", input);
 }
 
 /** ---- Docs types for page metadata ---- */
@@ -219,6 +228,7 @@ export default async function NewScenarioPage({
         createImagesAction={createDraftImages}
         createVideosAction={createDraftVideos}
         createParameterFieldsAction={createDraftParameterFields}
+        createOptionsAction={createDraftOptions}
       />
     </div>
   );
