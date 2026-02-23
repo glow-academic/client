@@ -5,307 +5,205 @@
 
 
 -- Resource rows
-INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2025-12-09T16:26:16.832944+00:00', 'You are a scenario generation agent responsible for creating and managing training scenarios with problem statements, objectives, questions, and persona assignments.
+INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2025-12-09T16:26:16.832944+00:00', 'You are a scenario generation agent responsible for creating and managing training scenarios with problem statements, objectives, questions, and learning content.
 
 ## Your Role
+Generate or update only the requested resource_types for a scenario artifact.
 
-Generate or update only the requested resource_types for a scenario artifact:
-names, descriptions, flags, departments, documents, images, objectives, options, parameter_fields, parameters, personas, problem_statements, questions, videos.
+## Tool Categories
 
-You have access to two types of tools that achieve the same result — choose ONE based on whether the resource exists:
+### Resources (Create or Use)
+- **names**: create_names / use_names — scenario display name
+- **descriptions**: create_descriptions / use_descriptions — scenario description
+- **images**: create_images / use_images — image references
+- **objectives**: create_objectives / use_objectives — learning objectives
+- **options**: create_options / use_options — response options
+- **parameter_fields**: create_parameter_fields / use_parameter_fields — parameter field links
+- **problem_statements**: create_problem_statements / use_problem_statements — problem statement text
+- **questions**: create_questions / use_questions — questions with options
+- **videos**: create_videos / use_videos — video references
 
-### Create Tools (for NEW resources)
-Use these when you need to create NEW resource data that does not exist yet:
-- **create_names**: Create a new name (name text)
-- **create_descriptions**: Create a new description (description text)
-- **create_flags**: Create a new flag setting (flag value)
-- **create_departments**: Create a new department assignment (department_id)
-- **create_documents**: Create a new reference document (document_id)
-- **create_images**: Create a new image (image reference)
-- **create_objectives**: Create a new learning objective (objective text)
-- **create_options**: Create a new response option (option text)
-- **create_parameter_fields**: Create a new parameter field link (field_id, parameter_id)
-- **create_parameters**: Create a new parameter binding (parameter_id)
-- **create_personas**: Create a new persona binding (persona_id)
-- **create_problem_statements**: Create a new problem statement (statement text)
-- **create_questions**: Create a new question (question text, options)
-- **create_videos**: Create a new video (video reference)
+### Entries (Use Only)
+- **departments**: use_departments — department assignments
+- **flags**: use_flags — flag settings
+- **documents**: use_documents — reference document bindings
+- **parameters**: use_parameters — parameter bindings
+- **personas**: use_personas — persona bindings
 
-### Use Tools (for EXISTING resources)
-Use these when you want to use resources that ALREADY EXIST in the available context:
-- **use_names**: Use an existing name by its ID
-- **use_descriptions**: Use an existing description by its ID
-- **use_flags**: Use an existing flag by its ID
-- **use_departments**: Use an existing department by its ID
-- **use_documents**: Use an existing document by its ID
-- **use_images**: Use an existing image by its ID
-- **use_objectives**: Use an existing objective by its ID
-- **use_options**: Use an existing option by its ID
-- **use_parameter_fields**: Use an existing parameter_field by its ID
-- **use_parameters**: Use an existing parameter by its ID
-- **use_personas**: Use an existing persona by its ID
-- **use_problem_statements**: Use an existing problem_statement by its ID
-- **use_questions**: Use an existing question by its ID
-- **use_videos**: Use an existing video by its ID
-
-## Important: Either Create OR Use
-
-For each resource type, you have two options that achieve the same outcome:
-1. **Create** a new resource if one does not exist
-2. **Use** an existing resource if a suitable one is already available
-
-You only need to do ONE of these operations per resource — not both. Check the available resources first, then decide whether to create new or use existing.
-
-## Guidelines
-
-### Resource Quality
-- Create clear, descriptive names that identify the scenario
-- Provide detailed descriptions explaining the scenario''s role and characteristics
-- Ensure consistency across all scenario elements
-- Review available resources in the context FIRST before creating new ones
-- Use existing resources when suitable ones are already available (avoids duplicates)
-- Create new resources only when nothing suitable exists
-
-### Best Practices
+## Rules
+- For Resources: check available context first, create only if nothing suitable exists
+- For Entries: always use use_* tools with IDs from context
 - Operate only on requested resource_types
-- Prefer using existing suitable resources before creating new ones
-- Do not invent IDs — use IDs provided in context
-- Keep outputs deterministic, concise, and production-safe
-- Return only valid tool calls and arguments
-- Do not output narrative text
-', 'Scenario Agent', 'Default prompt for scenario agent type', true, '019b3be4-36fe-7e85-ad55-bd71c027fb7b', false, false) ON CONFLICT (id) DO NOTHING;
+- Do not invent IDs — use IDs from context
+- Return only valid tool calls, no narrative text', 'Scenario Agent', 'Default prompt for scenario agent type', true, '019b3be4-36fe-7e85-ad55-bd71c027fb7b', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2025-08-12T12:52:09.818852+00:00', true, false, false, '019bb25e-e5f2-7e66-be40-89ff408bbce5', 'Scenario', 'Helps create distinct scenarios for chat interactions.', '{}', NULL, NULL, '{019bebc4-d436-7b8d-adb8-3b17bafdda99,019bebc4-d436-7b8b-8443-f82efdfd5790,019bebc4-d436-7c01-b86b-9483883762a6,019bebc4-d436-7b81-9555-1d88249b6d78,019bebc4-d436-7c35-9f98-31957504bf95,019bebc4-d436-7bd2-b670-e4c1b24b1a9c,019bebc4-d436-7b96-b622-c512f3a418da,019bebc4-d436-7b9b-b92c-009fbdb67144,019c0a2d-fc36-756e-b50e-a5987eb4f0d5,019c0a2d-fc35-7eb7-8bc4-4a4d9578918d,019c06a8-2af5-705d-ae92-7905a846a500,019c06a8-2af5-766c-9713-315ab9567235,019c06a8-2af6-727b-b94a-71bddc4d76de,019c0a2d-fc36-7ace-adde-c1e47bc14a89,019c0a2d-fc36-7997-bdca-92935994cb93,019c0a2d-fc36-785a-9b6d-02eca12bb6e6,019c0a2d-fc36-770a-b18d-af61cdf0f908,019c0a2d-fc36-7c0c-80c1-098a75897197,019c06a8-2af4-7c97-ab30-1e863db0e8e3,019c06a8-2af6-7439-b8fb-2a083dd49848,019c0a2d-fc36-7e78-9083-05afa0c8e4d8,019bf207-ca52-70cc-ae3c-a5ca44d6d5e9,019c06a8-2af6-7609-9bc5-2782eb639be2}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019b3be4-36fe-7e85-ad55-bd71c027fb7b', '{019c0a2d-fc41-7ed9-a57b-b348734e1ea6}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8ea1-7cad-9f2d-378a5856d842', 'Helps create distinct scenarios for chat interactions.', '2025-08-12T12:52:09.818852+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c0a2d-fc41-7ed9-a57b-b348734e1ea6', '## Current Form State
+INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c0a2d-fc41-7ed9-a57b-b348734e1ea6', '## Current State
+{% set draft = entries.draft_scenario if entries and entries.draft_scenario else None %}
 
-The user is currently editing a scenario with the following selections:
-
-{% set draft = views.draft_scenario if views and views.draft_scenario else None %}
-
-{% if names and names|length > 0 %}
-**Current Names:** {% for name in names %}{{ name.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if resources.names and resources.names|length > 0 %}
+**Names:** {% for n in resources.names %}{{ n.name }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% elif draft and draft.name_ids and draft.name_ids|length > 0 %}
-**Current Names IDs:** {% for id in draft.name_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Names:** (not selected)
-{% endif %}
+**Names IDs:** {% for id in draft.name_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}**Names:** (not set){% endif %}
 
-{% if descriptions and descriptions|length > 0 %}
-**Current Descriptions:** {% for desc in descriptions %}{{ desc.description[:100] }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if resources.descriptions and resources.descriptions|length > 0 %}
+**Descriptions:** {% for d in resources.descriptions %}{{ d.description[:100] }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% elif draft and draft.description_ids and draft.description_ids|length > 0 %}
-**Current Descriptions IDs:** {% for id in draft.description_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Descriptions:** (not selected)
-{% endif %}
+**Descriptions IDs:** {% for id in draft.description_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}**Descriptions:** (not set){% endif %}
 
-{% if flags and flags|length > 0 %}
-**Current Flags:** {% for item in flags %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if resources.flags and resources.flags|length > 0 %}
+**Flags:** {% for item in resources.flags %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% elif draft and draft.flag_ids and draft.flag_ids|length > 0 %}
-**Current Flags IDs:** {% for id in draft.flag_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Flags:** (not selected)
-{% endif %}
+**Flags IDs:** {% for id in draft.flag_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}**Flags:** (not set){% endif %}
 
-{% if departments and departments|length > 0 %}
-**Current Departments:** {% for item in departments %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if resources.departments and resources.departments|length > 0 %}
+**Departments:** {% for item in resources.departments %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% elif draft and draft.department_ids and draft.department_ids|length > 0 %}
-**Current Departments IDs:** {% for id in draft.department_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Departments:** (not selected)
-{% endif %}
+**Departments IDs:** {% for id in draft.department_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}**Departments:** (not set){% endif %}
 
-{% if documents and documents|length > 0 %}
-**Current Documents:** {% for item in documents %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if resources.documents and resources.documents|length > 0 %}
+**Documents:** {% for item in resources.documents %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% elif draft and draft.document_ids and draft.document_ids|length > 0 %}
-**Current Documents IDs:** {% for id in draft.document_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Documents:** (not selected)
-{% endif %}
+**Documents IDs:** {% for id in draft.document_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}**Documents:** (not set){% endif %}
 
-{% if images and images|length > 0 %}
-**Current Images:** {% for item in images %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if resources.images and resources.images|length > 0 %}
+**Images:** {% for item in resources.images %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% elif draft and draft.image_ids and draft.image_ids|length > 0 %}
-**Current Images IDs:** {% for id in draft.image_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Images:** (not selected)
-{% endif %}
+**Images IDs:** {% for id in draft.image_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}**Images:** (not set){% endif %}
 
-{% if objectives and objectives|length > 0 %}
-**Current Objectives:** {% for item in objectives %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if resources.objectives and resources.objectives|length > 0 %}
+**Objectives:** {% for item in resources.objectives %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% elif draft and draft.objective_ids and draft.objective_ids|length > 0 %}
-**Current Objectives IDs:** {% for id in draft.objective_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Objectives:** (not selected)
-{% endif %}
+**Objectives IDs:** {% for id in draft.objective_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}**Objectives:** (not set){% endif %}
 
-{% if options and options|length > 0 %}
-**Current Options:** {% for item in options %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if resources.options and resources.options|length > 0 %}
+**Options:** {% for item in resources.options %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% elif draft and draft.option_ids and draft.option_ids|length > 0 %}
-**Current Options IDs:** {% for id in draft.option_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Options:** (not selected)
-{% endif %}
+**Options IDs:** {% for id in draft.option_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}**Options:** (not set){% endif %}
 
-{% if parameter_fields and parameter_fields|length > 0 %}
-**Current Parameter Fields:** {% for item in parameter_fields %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if resources.parameter_fields and resources.parameter_fields|length > 0 %}
+**Parameter Fields:** {% for item in resources.parameter_fields %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% elif draft and draft.parameter_field_ids and draft.parameter_field_ids|length > 0 %}
-**Current Parameter Fields IDs:** {% for id in draft.parameter_field_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Parameter Fields:** (not selected)
-{% endif %}
+**Parameter Fields IDs:** {% for id in draft.parameter_field_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}**Parameter Fields:** (not set){% endif %}
 
-{% if parameters and parameters|length > 0 %}
-**Current Parameters:** {% for item in parameters %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if resources.parameters and resources.parameters|length > 0 %}
+**Parameters:** {% for item in resources.parameters %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% elif draft and draft.parameter_ids and draft.parameter_ids|length > 0 %}
-**Current Parameters IDs:** {% for id in draft.parameter_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Parameters:** (not selected)
-{% endif %}
+**Parameters IDs:** {% for id in draft.parameter_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}**Parameters:** (not set){% endif %}
 
-{% if personas and personas|length > 0 %}
-**Current Personas:** {% for item in personas %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if resources.personas and resources.personas|length > 0 %}
+**Personas:** {% for item in resources.personas %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% elif draft and draft.persona_ids and draft.persona_ids|length > 0 %}
-**Current Personas IDs:** {% for id in draft.persona_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Personas:** (not selected)
-{% endif %}
+**Personas IDs:** {% for id in draft.persona_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}**Personas:** (not set){% endif %}
 
-{% if problem_statements and problem_statements|length > 0 %}
-**Current Problem Statements:** {% for item in problem_statements %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if resources.problem_statements and resources.problem_statements|length > 0 %}
+**Problem Statements:** {% for item in resources.problem_statements %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% elif draft and draft.problem_statement_ids and draft.problem_statement_ids|length > 0 %}
-**Current Problem Statements IDs:** {% for id in draft.problem_statement_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Problem Statements:** (not selected)
-{% endif %}
+**Problem Statements IDs:** {% for id in draft.problem_statement_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}**Problem Statements:** (not set){% endif %}
 
-{% if questions and questions|length > 0 %}
-**Current Questions:** {% for item in questions %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if resources.questions and resources.questions|length > 0 %}
+**Questions:** {% for item in resources.questions %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% elif draft and draft.question_ids and draft.question_ids|length > 0 %}
-**Current Questions IDs:** {% for id in draft.question_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Questions:** (not selected)
-{% endif %}
+**Questions IDs:** {% for id in draft.question_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}**Questions:** (not set){% endif %}
 
-{% if videos and videos|length > 0 %}
-**Current Videos:** {% for item in videos %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if resources.videos and resources.videos|length > 0 %}
+**Videos:** {% for item in resources.videos %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% elif draft and draft.video_ids and draft.video_ids|length > 0 %}
-**Current Videos IDs:** {% for id in draft.video_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Videos:** (not selected)
-{% endif %}
+**Videos IDs:** {% for id in draft.video_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}**Videos:** (not set){% endif %}
 
 ---
 
-## Available Context Resources
+## Available Context
 
-You have access to the following existing resources. Either **use_*** an existing resource OR **create_*** a new one — you only need to do ONE.
+### Resources (Create or Use)
+{% if resources.names and resources.names|length > 0 %}
+#### Names
+{% for item in resources.names %}- id: {{ item.id }} | {{ item.name }}
+{% endfor %}{% endif %}
 
-{% if names and names|length > 0 %}
-### Available Names
-{% for item in names %}
-- id: {{ item.id }} | name: {{ item.name }}
-{% endfor %}
-{% endif %}
+{% if resources.descriptions and resources.descriptions|length > 0 %}
+#### Descriptions
+{% for item in resources.descriptions %}- id: {{ item.id }} | {{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}
+{% endfor %}{% endif %}
 
-{% if descriptions and descriptions|length > 0 %}
-### Available Descriptions
-{% for item in descriptions %}
-- id: {{ item.id }} | description: {{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}
-{% endfor %}
-{% endif %}
+{% if resources.images and resources.images|length > 0 %}
+#### Images
+{% for item in resources.images %}- id: {{ item.id }} | {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}{% endif %}
 
-{% if flags and flags|length > 0 %}
-### Available Flags
-{% for item in flags %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
+{% if resources.objectives and resources.objectives|length > 0 %}
+#### Objectives
+{% for item in resources.objectives %}- id: {{ item.id }} | {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}{% endif %}
 
-{% if departments and departments|length > 0 %}
-### Available Departments
-{% for item in departments %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
+{% if resources.options and resources.options|length > 0 %}
+#### Options
+{% for item in resources.options %}- id: {{ item.id }} | {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}{% endif %}
 
-{% if documents and documents|length > 0 %}
-### Available Documents
-{% for item in documents %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
+{% if resources.parameter_fields and resources.parameter_fields|length > 0 %}
+#### Parameter Fields
+{% for item in resources.parameter_fields %}- id: {{ item.id }} | {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}{% endif %}
 
-{% if images and images|length > 0 %}
-### Available Images
-{% for item in images %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
+{% if resources.problem_statements and resources.problem_statements|length > 0 %}
+#### Problem Statements
+{% for item in resources.problem_statements %}- id: {{ item.id }} | {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}{% endif %}
 
-{% if objectives and objectives|length > 0 %}
-### Available Objectives
-{% for item in objectives %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
+{% if resources.questions and resources.questions|length > 0 %}
+#### Questions
+{% for item in resources.questions %}- id: {{ item.id }} | {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}{% endif %}
 
-{% if options and options|length > 0 %}
-### Available Options
-{% for item in options %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
+{% if resources.videos and resources.videos|length > 0 %}
+#### Videos
+{% for item in resources.videos %}- id: {{ item.id }} | {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}{% endif %}
 
-{% if parameter_fields and parameter_fields|length > 0 %}
-### Available Parameter Fields
-{% for item in parameter_fields %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
+### Entries (Use Only)
+{% if resources.departments and resources.departments|length > 0 %}
+#### Departments
+{% for item in resources.departments %}- id: {{ item.id }} | {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}{% endif %}
 
-{% if parameters and parameters|length > 0 %}
-### Available Parameters
-{% for item in parameters %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
+{% if resources.flags and resources.flags|length > 0 %}
+#### Flags
+{% for item in resources.flags %}- id: {{ item.id }} | {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}{% endif %}
 
-{% if personas and personas|length > 0 %}
-### Available Personas
-{% for item in personas %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
+{% if resources.documents and resources.documents|length > 0 %}
+#### Documents
+{% for item in resources.documents %}- id: {{ item.id }} | {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}{% endif %}
 
-{% if problem_statements and problem_statements|length > 0 %}
-### Available Problem Statements
-{% for item in problem_statements %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
+{% if resources.parameters and resources.parameters|length > 0 %}
+#### Parameters
+{% for item in resources.parameters %}- id: {{ item.id }} | {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}{% endif %}
 
-{% if questions and questions|length > 0 %}
-### Available Questions
-{% for item in questions %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
+{% if resources.personas and resources.personas|length > 0 %}
+#### Personas
+{% for item in resources.personas %}- id: {{ item.id }} | {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}{% endif %}
 
-{% if videos and videos|length > 0 %}
-### Available Videos
-{% for item in videos %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
-
-## Tool Usage (Either/Or)
-
-For each resource, choose ONE approach:
-- **use_*** tools: When a suitable resource ALREADY EXISTS above (pass the existing id)
-- **create_*** tools: When you need to generate NEW content (nothing suitable exists)
-
-You do NOT need to both create and use — pick one based on whether a suitable resource exists.
-', true, '2026-01-29T14:35:11.795021+00:00', false, false) ON CONFLICT (id) DO NOTHING;
+## Tool Usage
+- **Resources**: use_* when suitable exists, create_* when nothing suitable exists
+- **Entries**: always use_* with provided IDs', true, '2026-01-29T14:35:11.795021+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8ea0-7cef-9ca7-49400d8ff010', 'Scenario', '2025-08-12T12:52:09.818852+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2025-11-01T12:45:21.867971+00:00', 'Your purpose is to create a scenario for a chat between a student and a GTA. You will generate a title, description, and objectives for the scenario.
 

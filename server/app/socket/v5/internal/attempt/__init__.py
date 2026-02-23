@@ -1,7 +1,9 @@
 """Internal attempt event handlers for v5.
 
 Importing this module registers:
-- attempt_start (create/next-scenario logic)
+- attempt_start (create attempt, delegate to proceed)
+- attempt_next (resolve context, delegate to proceed)
+- attempt_proceed (shared core: prepare → check → link/generate)
 - attempt_message (message handling + compose with generate)
 - attempt_grade (grading preparation + compose with generate)
 - attempt_chat (create/complete chats within attempts)
@@ -23,5 +25,6 @@ from . import (
     grade_progress,  # noqa: F401 — registers generate_call_complete internal event
     message,  # noqa: F401 — registers attempt_message internal event
     next,  # noqa: F401 — registers attempt_next internal event
+    proceed,  # noqa: F401 — registers attempt_proceed internal event
     start,  # noqa: F401 — registers attempt_start internal event
 )

@@ -22074,15 +22074,6 @@ export interface components {
             attempt_id: string;
             /** Draft Id */
             draft_id?: string | null;
-            /** Resource Types */
-            resource_types?: string[] | null;
-            /** User Instructions */
-            user_instructions?: string[] | null;
-            /**
-             * Save
-             * @default true
-             */
-            save: boolean;
         };
         /**
          * AttemptResources

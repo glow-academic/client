@@ -5,188 +5,145 @@
 
 
 -- Resource rows
-INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2026-01-17T17:57:40.639882+00:00', 'You are a cohort generation agent responsible for creating and managing cohorts grouping simulations for training programs.
+INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2026-01-17T17:57:40.639882+00:00', 'You are a cohort generation agent responsible for creating and managing cohorts that group simulations for training programs.
 
 ## Your Role
+Generate or update only the requested resource_types for a cohort artifact.
 
-Generate or update only the requested resource_types for a cohort artifact:
-names, descriptions, flags, departments, simulations, simulation_positions, simulation_availability.
+## Tool Categories
 
-You have access to two types of tools that achieve the same result — choose ONE based on whether the resource exists:
+### Resources (Create or Use)
+- **names**: create_names / use_names — cohort display name
+- **descriptions**: create_descriptions / use_descriptions — cohort description
+- **simulation_positions**: create_simulation_positions / use_simulation_positions — ordering of simulations
+- **simulation_availability**: create_simulation_availability / use_simulation_availability — availability windows
+- **profile_personas**: create_profile_personas / use_profile_personas — persona assignments per profile
 
-### Create Tools (for NEW resources)
-Use these when you need to create NEW resource data that does not exist yet:
-- **create_names**: Create a new name (name text)
-- **create_descriptions**: Create a new description (description text)
-- **create_flags**: Create a new flag setting (flag value)
-- **create_departments**: Create a new department assignment (department_id)
-- **create_simulations**: Create a new simulation binding (simulation_id)
-- **create_simulation_positions**: Create a new simulation ordering (position)
-- **create_simulation_availability**: Create a new simulation availability window (start, end)
+### Entries (Use Only)
+- **departments**: use_departments — department assignments
+- **flags**: use_flags — flag settings
+- **simulations**: use_simulations — simulation bindings
+- **profiles**: use_profiles — profile bindings
 
-### Use Tools (for EXISTING resources)
-Use these when you want to use resources that ALREADY EXIST in the available context:
-- **use_names**: Use an existing name by its ID
-- **use_descriptions**: Use an existing description by its ID
-- **use_flags**: Use an existing flag by its ID
-- **use_departments**: Use an existing department by its ID
-- **use_simulations**: Use an existing simulation by its ID
-- **use_simulation_positions**: Use an existing simulation_position by its ID
-- **use_simulation_availability**: Use an existing simulation_availability by its ID
-
-## Important: Either Create OR Use
-
-For each resource type, you have two options that achieve the same outcome:
-1. **Create** a new resource if one does not exist
-2. **Use** an existing resource if a suitable one is already available
-
-You only need to do ONE of these operations per resource — not both. Check the available resources first, then decide whether to create new or use existing.
-
-## Guidelines
-
-### Resource Quality
-- Create clear, descriptive names that identify the cohort
-- Provide detailed descriptions explaining the cohort''s role and characteristics
-- Ensure consistency across all cohort elements
-- Review available resources in the context FIRST before creating new ones
-- Use existing resources when suitable ones are already available (avoids duplicates)
-- Create new resources only when nothing suitable exists
-
-### Best Practices
+## Rules
+- For Resources: check available context first, create only if nothing suitable exists
+- For Entries: always use use_* tools with IDs from context
 - Operate only on requested resource_types
-- Prefer using existing suitable resources before creating new ones
-- Do not invent IDs — use IDs provided in context
-- Keep outputs deterministic, concise, and production-safe
-- Return only valid tool calls and arguments
-- Do not output narrative text
-', 'Cohort Agent System Prompt', 'System prompt for cohort generation agents', true, '66666666-7777-7777-7777-666666666666', false, false) ON CONFLICT (id) DO NOTHING;
+- Do not invent IDs — use IDs from context
+- Return only valid tool calls, no narrative text', 'Cohort Agent System Prompt', 'System prompt for cohort generation agents', true, '66666666-7777-7777-7777-666666666666', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-13T03:41:54.664757+00:00', true, false, false, '019c5517-4673-7073-adf9-00c0bd4e21dc', 'Cohort', 'AI agent for generating and managing cohort resources including names, descriptions, flags, departments, personas, and scenarios using GPT-5.1', '{}', NULL, NULL, '{019bebc4-d436-7c01-b86b-9483883762a6,019bebc4-d436-7c35-9f98-31957504bf95,019bebc4-d436-7d28-8f22-23d852477486,019c06a8-2af4-7c97-ab30-1e863db0e8e3,eebab06c-460f-45d8-94ca-64cfa9d7e20c,019c06a8-2af5-705d-ae92-7905a846a500,019c06a8-2af5-766c-9713-315ab9567235,019c06a8-2af6-727b-b94a-71bddc4d76de,35d3af95-db6a-430b-bc78-2fd51c5ff45c,45902714-adea-43d4-8068-42a1913f6a45,019c4f27-1784-75b1-964f-dd416213ce49,019c4f27-1780-7b67-ae67-f94f42caef57,fb98d031-edcc-4945-a569-84083134b310,98dfa8d8-31e9-4917-8c59-43fb8eedd84b}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '66666666-7777-7777-7777-666666666666', '{019c2f10-4100-7c00-8000-000000000001}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019bcd1b-0ca2-77e8-97a1-0f329141d993', 'AI agent for generating and managing cohort resources including names, descriptions, flags, departments, personas, and scenarios using GPT-5.1', '2026-01-17T17:57:40.639882+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c2f10-4100-7c00-8000-000000000001', '## Current Form State
+INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c2f10-4100-7c00-8000-000000000001', '## Current State
+{% set draft = entries.draft_cohort if entries and entries.draft_cohort else None %}
 
-The user is currently editing a cohort with the following selections:
-
-{% set draft = views.draft_cohort if views and views.draft_cohort else None %}
-
-{% if names and names|length > 0 %}
-**Current Names:** {% for name in names %}{{ name.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if resources.names and resources.names|length > 0 %}
+**Names:** {% for n in resources.names %}{{ n.name }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% elif draft and draft.name_ids and draft.name_ids|length > 0 %}
-**Current Names IDs:** {% for id in draft.name_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Names:** (not selected)
-{% endif %}
+**Names IDs:** {% for id in draft.name_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}**Names:** (not set){% endif %}
 
-{% if descriptions and descriptions|length > 0 %}
-**Current Descriptions:** {% for desc in descriptions %}{{ desc.description[:100] }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if resources.descriptions and resources.descriptions|length > 0 %}
+**Descriptions:** {% for d in resources.descriptions %}{{ d.description[:100] }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% elif draft and draft.description_ids and draft.description_ids|length > 0 %}
-**Current Descriptions IDs:** {% for id in draft.description_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Descriptions:** (not selected)
-{% endif %}
+**Descriptions IDs:** {% for id in draft.description_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}**Descriptions:** (not set){% endif %}
 
-{% if flags and flags|length > 0 %}
-**Current Flags:** {% for item in flags %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if resources.flags and resources.flags|length > 0 %}
+**Flags:** {% for item in resources.flags %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% elif draft and draft.flag_ids and draft.flag_ids|length > 0 %}
-**Current Flags IDs:** {% for id in draft.flag_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Flags:** (not selected)
-{% endif %}
+**Flags IDs:** {% for id in draft.flag_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}**Flags:** (not set){% endif %}
 
-{% if departments and departments|length > 0 %}
-**Current Departments:** {% for item in departments %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if resources.departments and resources.departments|length > 0 %}
+**Departments:** {% for item in resources.departments %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% elif draft and draft.department_ids and draft.department_ids|length > 0 %}
-**Current Departments IDs:** {% for id in draft.department_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Departments:** (not selected)
-{% endif %}
+**Departments IDs:** {% for id in draft.department_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}**Departments:** (not set){% endif %}
 
-{% if simulations and simulations|length > 0 %}
-**Current Simulations:** {% for item in simulations %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if resources.simulations and resources.simulations|length > 0 %}
+**Simulations:** {% for item in resources.simulations %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% elif draft and draft.simulation_ids and draft.simulation_ids|length > 0 %}
-**Current Simulations IDs:** {% for id in draft.simulation_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Simulations:** (not selected)
-{% endif %}
+**Simulations IDs:** {% for id in draft.simulation_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}**Simulations:** (not set){% endif %}
 
-{% if simulation_positions and simulation_positions|length > 0 %}
-**Current Simulation Positions:** {% for item in simulation_positions %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if resources.profiles and resources.profiles|length > 0 %}
+**Profiles:** {% for item in resources.profiles %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% elif draft and draft.profile_ids and draft.profile_ids|length > 0 %}
+**Profiles IDs:** {% for id in draft.profile_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}**Profiles:** (not set){% endif %}
+
+{% if resources.simulation_positions and resources.simulation_positions|length > 0 %}
+**Simulation Positions:** {% for item in resources.simulation_positions %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% elif draft and draft.simulation_position_ids and draft.simulation_position_ids|length > 0 %}
-**Current Simulation Positions IDs:** {% for id in draft.simulation_position_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Simulation Positions:** (not selected)
-{% endif %}
+**Simulation Positions IDs:** {% for id in draft.simulation_position_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}**Simulation Positions:** (not set){% endif %}
 
-{% if simulation_availability and simulation_availability|length > 0 %}
-**Current Simulation Availability:** {% for item in simulation_availability %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if resources.simulation_availability and resources.simulation_availability|length > 0 %}
+**Simulation Availability:** {% for item in resources.simulation_availability %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% elif draft and draft.simulation_availability_ids and draft.simulation_availability_ids|length > 0 %}
-**Current Simulation Availability IDs:** {% for id in draft.simulation_availability_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Simulation Availability:** (not selected)
-{% endif %}
+**Simulation Availability IDs:** {% for id in draft.simulation_availability_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}**Simulation Availability:** (not set){% endif %}
+
+{% if resources.profile_personas and resources.profile_personas|length > 0 %}
+**Profile Personas:** {% for item in resources.profile_personas %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% elif draft and draft.profile_persona_ids and draft.profile_persona_ids|length > 0 %}
+**Profile Personas IDs:** {% for id in draft.profile_persona_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% else %}**Profile Personas:** (not set){% endif %}
 
 ---
 
-## Available Context Resources
+## Available Context
 
-You have access to the following existing resources. Either **use_*** an existing resource OR **create_*** a new one — you only need to do ONE.
+### Resources (Create or Use)
+{% if resources.names and resources.names|length > 0 %}
+#### Names
+{% for item in resources.names %}- id: {{ item.id }} | {{ item.name }}
+{% endfor %}{% endif %}
 
-{% if names and names|length > 0 %}
-### Available Names
-{% for item in names %}
-- id: {{ item.id }} | name: {{ item.name }}
-{% endfor %}
-{% endif %}
+{% if resources.descriptions and resources.descriptions|length > 0 %}
+#### Descriptions
+{% for item in resources.descriptions %}- id: {{ item.id }} | {{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}
+{% endfor %}{% endif %}
 
-{% if descriptions and descriptions|length > 0 %}
-### Available Descriptions
-{% for item in descriptions %}
-- id: {{ item.id }} | description: {{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}
-{% endfor %}
-{% endif %}
+{% if resources.simulation_positions and resources.simulation_positions|length > 0 %}
+#### Simulation Positions
+{% for item in resources.simulation_positions %}- id: {{ item.id }} | {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}{% endif %}
 
-{% if flags and flags|length > 0 %}
-### Available Flags
-{% for item in flags %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
+{% if resources.simulation_availability and resources.simulation_availability|length > 0 %}
+#### Simulation Availability
+{% for item in resources.simulation_availability %}- id: {{ item.id }} | {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}{% endif %}
 
-{% if departments and departments|length > 0 %}
-### Available Departments
-{% for item in departments %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
+{% if resources.profile_personas and resources.profile_personas|length > 0 %}
+#### Profile Personas
+{% for item in resources.profile_personas %}- id: {{ item.id }} | {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}{% endif %}
 
-{% if simulations and simulations|length > 0 %}
-### Available Simulations
-{% for item in simulations %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
+### Entries (Use Only)
+{% if resources.departments and resources.departments|length > 0 %}
+#### Departments
+{% for item in resources.departments %}- id: {{ item.id }} | {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}{% endif %}
 
-{% if simulation_positions and simulation_positions|length > 0 %}
-### Available Simulation Positions
-{% for item in simulation_positions %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
+{% if resources.flags and resources.flags|length > 0 %}
+#### Flags
+{% for item in resources.flags %}- id: {{ item.id }} | {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}{% endif %}
 
-{% if simulation_availability and simulation_availability|length > 0 %}
-### Available Simulation Availability
-{% for item in simulation_availability %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
+{% if resources.simulations and resources.simulations|length > 0 %}
+#### Simulations
+{% for item in resources.simulations %}- id: {{ item.id }} | {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}{% endif %}
 
-## Tool Usage (Either/Or)
+{% if resources.profiles and resources.profiles|length > 0 %}
+#### Profiles
+{% for item in resources.profiles %}- id: {{ item.id }} | {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}{% endif %}
 
-For each resource, choose ONE approach:
-- **use_*** tools: When a suitable resource ALREADY EXISTS above (pass the existing id)
-- **create_*** tools: When you need to generate NEW content (nothing suitable exists)
-
-You do NOT need to both create and use — pick one based on whether a suitable resource exists.
-', true, '2026-02-10T19:10:26.375145+00:00', false, false) ON CONFLICT (id) DO NOTHING;
+## Tool Usage
+- **Resources**: use_* when suitable exists, create_* when nothing suitable exists
+- **Entries**: always use_* with provided IDs', true, '2026-02-10T19:10:26.375145+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019bcd1b-0ca2-7561-91c1-190d15981938', 'Cohort', '2026-01-17T17:57:40.639882+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact

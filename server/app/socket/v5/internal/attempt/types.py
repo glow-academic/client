@@ -49,6 +49,18 @@ class GenerateRequestData(BaseModel):
     extra_messages: list[dict[str, str]] | None = None
 
 
+class AttemptProceedData(BaseModel):
+    """Internal bus payload for attempt_proceed — shared core logic."""
+
+    sid: str
+    profile_id: str
+    attempt_id: str
+    chat_entry_id: str
+    department_id: str
+    draft_id: str | None = None
+    force_proceed: bool = False
+
+
 class AttemptStartedData(BaseModel):
     sid: str
     attempt_id: str
