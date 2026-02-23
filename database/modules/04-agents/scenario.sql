@@ -9,9 +9,13 @@ INSERT INTO public.prompts_resource (created_at, system_prompt, name, descriptio
 
 Your Role: Generate or update only the requested resource types for a scenario artifact.
 
+Resource Guidance:
+- names, descriptions, problem_statements, objectives, questions, options: Strongly prefer creating new — these are typically unique content for each scenario, but reuse if it genuinely fits
+- images, videos, parameter_fields: Prefer creating new when needed for this scenario, but reuse if suitable
+- departments, flags, personas, documents, parameters: Use existing from available context
+
 Rules:
-- For resource types (create or use): check available context first, create only if nothing suitable exists
-- For entry types (use only): always use use_* tools with IDs from context
+- For use-only resources: always use use_* tools with IDs from context
 - Operate only on the resource/entry types specified in the developer instructions
 - Do not invent IDs — use IDs from context
 - Return only valid tool calls, no narrative text', 'Scenario Agent', 'Default prompt for scenario agent type', true, '019b3be4-36fe-7e85-ad55-bd71c027fb7b', false, false) ON CONFLICT (id) DO NOTHING;
@@ -36,86 +40,87 @@ INSERT INTO public.instructions_resource (id, template, active, created_at, gene
 
 ---
 
+{% set all_gen_types = (config.resource_types or []) + (config.entry_types or []) %}
 ## Available Resources
-{% if resources.names and resources.names|length > 0 %}
+{% if "names" in all_gen_types and resources.names and resources.names|length > 0 %}
 Names:
 {% for item in resources.names %}
 - id: {{ item.id }} | {{ item.name }}
 {% endfor %}
 {% endif %}
-{% if resources.descriptions and resources.descriptions|length > 0 %}
+{% if "descriptions" in all_gen_types and resources.descriptions and resources.descriptions|length > 0 %}
 Descriptions:
 {% for item in resources.descriptions %}
 - id: {{ item.id }} | {{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.problem_statements and resources.problem_statements|length > 0 %}
+{% if "problem_statements" in all_gen_types and resources.problem_statements and resources.problem_statements|length > 0 %}
 Problem Statements:
 {% for item in resources.problem_statements %}
 - id: {{ item.problem_statement_id }} | {{ item.name }}{% if item.problem_statement %} | {{ item.problem_statement[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.departments and resources.departments|length > 0 %}
+{% if "departments" in all_gen_types and resources.departments and resources.departments|length > 0 %}
 Departments:
 {% for item in resources.departments %}
 - id: {{ item.department_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.flags and resources.flags|length > 0 %}
+{% if "flags" in all_gen_types and resources.flags and resources.flags|length > 0 %}
 Flags:
 {% for item in resources.flags %}
 - id: {{ item.flag_option_id }} | {{ item.label or item.key }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.personas and resources.personas|length > 0 %}
+{% if "personas" in all_gen_types and resources.personas and resources.personas|length > 0 %}
 Personas:
 {% for item in resources.personas %}
 - id: {{ item.persona_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.documents and resources.documents|length > 0 %}
+{% if "documents" in all_gen_types and resources.documents and resources.documents|length > 0 %}
 Documents:
 {% for item in resources.documents %}
 - id: {{ item.document_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.parameters and resources.parameters|length > 0 %}
+{% if "parameters" in all_gen_types and resources.parameters and resources.parameters|length > 0 %}
 Parameters:
 {% for item in resources.parameters %}
 - id: {{ item.parameter_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.parameter_fields and resources.parameter_fields|length > 0 %}
+{% if "parameter_fields" in all_gen_types and resources.parameter_fields and resources.parameter_fields|length > 0 %}
 Parameter Fields:
 {% for item in resources.parameter_fields %}
 - id: {{ item.field_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.objectives and resources.objectives|length > 0 %}
+{% if "objectives" in all_gen_types and resources.objectives and resources.objectives|length > 0 %}
 Objectives:
 {% for item in resources.objectives %}
 - id: {{ item.id }} | {{ item.objective[:80] }}{% if item.objective|length > 80 %}...{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.images and resources.images|length > 0 %}
+{% if "images" in all_gen_types and resources.images and resources.images|length > 0 %}
 Images:
 {% for item in resources.images %}
 - id: {{ item.image_id }} | {{ item.name }}
 {% endfor %}
 {% endif %}
-{% if resources.videos and resources.videos|length > 0 %}
+{% if "videos" in all_gen_types and resources.videos and resources.videos|length > 0 %}
 Videos:
 {% for item in resources.videos %}
 - id: {{ item.video_id }} | {{ item.name }}
 {% endfor %}
 {% endif %}
-{% if resources.questions and resources.questions|length > 0 %}
+{% if "questions" in all_gen_types and resources.questions and resources.questions|length > 0 %}
 Questions:
 {% for item in resources.questions %}
 - id: {{ item.question_id }} | {{ item.question_text[:80] }}{% if item.question_text|length > 80 %}...{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.options and resources.options|length > 0 %}
+{% if "options" in all_gen_types and resources.options and resources.options|length > 0 %}
 Options:
 {% for item in resources.options %}
 - id: {{ item.option_id }} | question_id: {{ item.question_id }} | {{ item.option_text[:60] }}{% if item.is_correct %} (correct){% endif %}

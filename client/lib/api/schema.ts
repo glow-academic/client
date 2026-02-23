@@ -26842,7 +26842,7 @@ export interface components {
             user_instructions?: string[] | null;
             /**
              * Save
-             * @default true
+             * @default false
              */
             save: boolean;
             /** Attempt Id */
@@ -36688,6 +36688,12 @@ export interface components {
             simulation_ids: string[] | null;
             /** Simulation Position Ids */
             simulation_position_ids: string[] | null;
+            /** Profile Persona Ids */
+            profile_persona_ids: string[] | null;
+            /** Simulation Availability Ids */
+            simulation_availability_ids: string[] | null;
+            /** Profile Ids */
+            profile_ids: string[] | null;
         };
         /**
          * QGetCohortsV4Item
@@ -37444,6 +37450,8 @@ export interface components {
             example_ids: string[] | null;
             /** Parameter Ids */
             parameter_ids: string[] | null;
+            /** Voice Ids */
+            voice_ids: string[] | null;
         };
         /** QGetPersonaResourceV4Item */
         QGetPersonaResourceV4Item: {
@@ -37946,6 +37954,16 @@ export interface components {
             parameter_field_ids: string[] | null;
             /** Question Ids */
             question_ids: string[] | null;
+            /** Image Ids */
+            image_ids: string[] | null;
+            /** Objective Ids */
+            objective_ids: string[] | null;
+            /** Option Ids */
+            option_ids: string[] | null;
+            /** Problem Statement Ids */
+            problem_statement_ids: string[] | null;
+            /** Video Ids */
+            video_ids: string[] | null;
         };
         /** QGetScenarioFlagsV4Item */
         QGetScenarioFlagsV4Item: {

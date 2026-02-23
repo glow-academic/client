@@ -9,9 +9,13 @@ INSERT INTO public.prompts_resource (created_at, system_prompt, name, descriptio
 
 Your Role: Generate or update only the requested resource types for a persona artifact.
 
+Resource Guidance:
+- names, descriptions, instructions, examples: Strongly prefer creating new — these are typically unique to each persona, but reuse if it genuinely fits
+- colors, voices: Prefer using existing options when a suitable match exists, but create if nothing fits
+- icons, departments, flags, parameters, parameter_fields: Use existing from available context
+
 Rules:
-- For resource types (create or use): check available context first, create only if nothing suitable exists
-- For entry types (use only): always use use_* tools with IDs from context
+- For use-only resources: always use use_* tools with IDs from context
 - Operate only on the resource/entry types specified in the developer instructions
 - Do not invent IDs — use IDs from context
 - Return only valid tool calls, no narrative text', 'Persona Agent System Prompt', 'System prompt for persona generation agents that create and manage persona resources', true, '019c06a8-2b01-788b-b8c0-4d92f79fed2f', false, false) ON CONFLICT (id) DO NOTHING;
@@ -33,68 +37,69 @@ INSERT INTO public.instructions_resource (id, template, active, created_at, gene
 
 ---
 
+{% set all_gen_types = (config.resource_types or []) + (config.entry_types or []) %}
 ## Available Resources
-{% if resources.names and resources.names|length > 0 %}
+{% if "names" in all_gen_types and resources.names and resources.names|length > 0 %}
 Names:
 {% for item in resources.names %}
 - id: {{ item.id }} | {{ item.name }}
 {% endfor %}
 {% endif %}
-{% if resources.descriptions and resources.descriptions|length > 0 %}
+{% if "descriptions" in all_gen_types and resources.descriptions and resources.descriptions|length > 0 %}
 Descriptions:
 {% for item in resources.descriptions %}
 - id: {{ item.id }} | {{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.colors and resources.colors|length > 0 %}
+{% if "colors" in all_gen_types and resources.colors and resources.colors|length > 0 %}
 Colors:
 {% for item in resources.colors %}
 - id: {{ item.id }} | {{ item.name }} | {{ item.hex_code }}
 {% endfor %}
 {% endif %}
-{% if resources.icons and resources.icons|length > 0 %}
+{% if "icons" in all_gen_types and resources.icons and resources.icons|length > 0 %}
 Icons:
 {% for item in resources.icons %}
 - id: {{ item.id }} | {{ item.name }} | {{ item.value }}
 {% endfor %}
 {% endif %}
-{% if resources.instructions and resources.instructions|length > 0 %}
+{% if "instructions" in all_gen_types and resources.instructions and resources.instructions|length > 0 %}
 Instructions:
 {% for item in resources.instructions %}
 - id: {{ item.id }} | {{ item.template[:80] }}{% if item.template|length > 80 %}...{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.departments and resources.departments|length > 0 %}
+{% if "departments" in all_gen_types and resources.departments and resources.departments|length > 0 %}
 Departments:
 {% for item in resources.departments %}
 - id: {{ item.department_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.flags and resources.flags|length > 0 %}
+{% if "flags" in all_gen_types and resources.flags and resources.flags|length > 0 %}
 Flags:
 {% for item in resources.flags %}
 - id: {{ item.flag_option_id }} | {{ item.label or item.key }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.examples and resources.examples|length > 0 %}
+{% if "examples" in all_gen_types and resources.examples and resources.examples|length > 0 %}
 Examples:
 {% for item in resources.examples %}
 - id: {{ item.id }} | {{ item.example[:80] }}{% if item.example|length > 80 %}...{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.parameter_fields and resources.parameter_fields|length > 0 %}
+{% if "parameter_fields" in all_gen_types and resources.parameter_fields and resources.parameter_fields|length > 0 %}
 Parameter Fields:
 {% for item in resources.parameter_fields %}
 - id: {{ item.id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.parameters and resources.parameters|length > 0 %}
+{% if "parameters" in all_gen_types and resources.parameters and resources.parameters|length > 0 %}
 Parameters:
 {% for item in resources.parameters %}
 - id: {{ item.parameter_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.voices and resources.voices|length > 0 %}
+{% if "voices" in all_gen_types and resources.voices and resources.voices|length > 0 %}
 Voices:
 {% for item in resources.voices %}
 - id: {{ item.id }} | {{ item.voice }}

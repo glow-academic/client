@@ -9,9 +9,12 @@ INSERT INTO public.prompts_resource (created_at, system_prompt, name, descriptio
 
 Your Role: Generate or update only the requested resource types for a cohort artifact.
 
+Resource Guidance:
+- names, descriptions: Strongly prefer creating new — these are typically unique to each cohort, but reuse if it genuinely fits
+- departments, flags, simulations, profiles, simulation_positions, simulation_availability, profile_personas: Use existing from available context
+
 Rules:
-- For resource types (create or use): check available context first, create only if nothing suitable exists
-- For entry types (use only): always use use_* tools with IDs from context
+- For use-only resources: always use use_* tools with IDs from context
 - Operate only on the resource/entry types specified in the developer instructions
 - Do not invent IDs — use IDs from context
 - Return only valid tool calls, no narrative text', 'Cohort Agent System Prompt', 'System prompt for cohort generation agents', true, '66666666-7777-7777-7777-666666666666', false, false) ON CONFLICT (id) DO NOTHING;
@@ -31,56 +34,57 @@ INSERT INTO public.instructions_resource (id, template, active, created_at, gene
 
 ---
 
+{% set all_gen_types = (config.resource_types or []) + (config.entry_types or []) %}
 ## Available Resources
-{% if resources.names and resources.names|length > 0 %}
+{% if "names" in all_gen_types and resources.names and resources.names|length > 0 %}
 Names:
 {% for item in resources.names %}
 - id: {{ item.id }} | {{ item.name }}
 {% endfor %}
 {% endif %}
-{% if resources.descriptions and resources.descriptions|length > 0 %}
+{% if "descriptions" in all_gen_types and resources.descriptions and resources.descriptions|length > 0 %}
 Descriptions:
 {% for item in resources.descriptions %}
 - id: {{ item.id }} | {{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.departments and resources.departments|length > 0 %}
+{% if "departments" in all_gen_types and resources.departments and resources.departments|length > 0 %}
 Departments:
 {% for item in resources.departments %}
 - id: {{ item.department_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.flags and resources.flags|length > 0 %}
+{% if "flags" in all_gen_types and resources.flags and resources.flags|length > 0 %}
 Flags:
 {% for item in resources.flags %}
 - id: {{ item.flag_option_id }} | {{ item.label or item.key }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.simulations and resources.simulations|length > 0 %}
+{% if "simulations" in all_gen_types and resources.simulations and resources.simulations|length > 0 %}
 Simulations:
 {% for item in resources.simulations %}
 - id: {{ item.simulation_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.profiles and resources.profiles|length > 0 %}
+{% if "profiles" in all_gen_types and resources.profiles and resources.profiles|length > 0 %}
 Profiles:
 {% for item in resources.profiles %}
 - id: {{ item.profile_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.simulation_positions and resources.simulation_positions|length > 0 %}
+{% if "simulation_positions" in all_gen_types and resources.simulation_positions and resources.simulation_positions|length > 0 %}
 Simulation Positions:
 {% for item in resources.simulation_positions %}
 - simulation_id: {{ item.simulation_id }} | value: {{ item.value }}
 {% endfor %}
 {% endif %}
-{% if resources.simulation_availability and resources.simulation_availability|length > 0 %}
+{% if "simulation_availability" in all_gen_types and resources.simulation_availability and resources.simulation_availability|length > 0 %}
 Simulation Availability:
 {% for item in resources.simulation_availability %}
 - id: {{ item.id }} | simulation_id: {{ item.simulation_id }} | {{ item.time }} ({{ item.type }})
 {% endfor %}
 {% endif %}
-{% if resources.profile_personas and resources.profile_personas|length > 0 %}
+{% if "profile_personas" in all_gen_types and resources.profile_personas and resources.profile_personas|length > 0 %}
 Profile Personas:
 {% for item in resources.profile_personas %}
 - id: {{ item.id }} | profile_id: {{ item.profile_id }} | persona_id: {{ item.persona_id }}

@@ -9,9 +9,13 @@ INSERT INTO public.prompts_resource (created_at, system_prompt, name, descriptio
 
 Your Role: Generate or update only the requested resource types for a simulation artifact.
 
+Resource Guidance:
+- names, descriptions: Strongly prefer creating new — these are typically unique to each simulation, but reuse if it genuinely fits
+- scenario_flags, scenario_positions, scenario_rubrics, scenario_time_limits: Strongly prefer creating new — these are per-scenario configuration specific to this simulation, but reuse if suitable
+- departments, flags, scenarios: Use existing from available context
+
 Rules:
-- For resource types (create or use): check available context first, create only if nothing suitable exists
-- For entry types (use only): always use use_* tools with IDs from context
+- For use-only resources: always use use_* tools with IDs from context
 - Operate only on the resource/entry types specified in the developer instructions
 - Do not invent IDs — use IDs from context
 - Return only valid tool calls, no narrative text', 'Simulation Agent System Prompt', 'System prompt for simulation generation agents that create and manage simulation resources', true, '019c0cd8-ad7d-79da-8469-639662fc6a3f', false, false) ON CONFLICT (id) DO NOTHING;
@@ -31,56 +35,57 @@ INSERT INTO public.instructions_resource (id, template, active, created_at, gene
 
 ---
 
+{% set all_gen_types = (config.resource_types or []) + (config.entry_types or []) %}
 ## Available Resources
-{% if resources.names and resources.names|length > 0 %}
+{% if "names" in all_gen_types and resources.names and resources.names|length > 0 %}
 Names:
 {% for item in resources.names %}
 - id: {{ item.id }} | {{ item.name }}
 {% endfor %}
 {% endif %}
-{% if resources.descriptions and resources.descriptions|length > 0 %}
+{% if "descriptions" in all_gen_types and resources.descriptions and resources.descriptions|length > 0 %}
 Descriptions:
 {% for item in resources.descriptions %}
 - id: {{ item.id }} | {{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.departments and resources.departments|length > 0 %}
+{% if "departments" in all_gen_types and resources.departments and resources.departments|length > 0 %}
 Departments:
 {% for item in resources.departments %}
 - id: {{ item.department_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.flags and resources.flags|length > 0 %}
+{% if "flags" in all_gen_types and resources.flags and resources.flags|length > 0 %}
 Flags:
 {% for item in resources.flags %}
 - id: {{ item.flag_option_id }} | {{ item.label or item.key }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.scenarios and resources.scenarios|length > 0 %}
+{% if "scenarios" in all_gen_types and resources.scenarios and resources.scenarios|length > 0 %}
 Scenarios:
 {% for item in resources.scenarios %}
 - id: {{ item.scenario_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.scenario_flags and resources.scenario_flags|length > 0 %}
+{% if "scenario_flags" in all_gen_types and resources.scenario_flags and resources.scenario_flags|length > 0 %}
 Scenario Flags:
 {% for item in resources.scenario_flags %}
 - id: {{ item.id }} | scenario_id: {{ item.scenario_id }} | {{ item.name }}
 {% endfor %}
 {% endif %}
-{% if resources.scenario_positions and resources.scenario_positions|length > 0 %}
+{% if "scenario_positions" in all_gen_types and resources.scenario_positions and resources.scenario_positions|length > 0 %}
 Scenario Positions:
 {% for item in resources.scenario_positions %}
 - id: {{ item.id }} | scenario_id: {{ item.scenario_id }} | value: {{ item.value }}
 {% endfor %}
 {% endif %}
-{% if resources.scenario_rubrics and resources.scenario_rubrics|length > 0 %}
+{% if "scenario_rubrics" in all_gen_types and resources.scenario_rubrics and resources.scenario_rubrics|length > 0 %}
 Scenario Rubrics:
 {% for item in resources.scenario_rubrics %}
 - id: {{ item.id }} | scenario_id: {{ item.scenario_id }} | rubric_id: {{ item.rubric_id }}
 {% endfor %}
 {% endif %}
-{% if resources.scenario_time_limits and resources.scenario_time_limits|length > 0 %}
+{% if "scenario_time_limits" in all_gen_types and resources.scenario_time_limits and resources.scenario_time_limits|length > 0 %}
 Scenario Time Limits:
 {% for item in resources.scenario_time_limits %}
 - id: {{ item.id }} | scenario_id: {{ item.scenario_id }} | {{ item.time_limit_seconds }}s
