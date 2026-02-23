@@ -9,7 +9,7 @@ INSERT INTO public.args_resource (id, name, description, field_type, required, d
 INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, active, generated, mcp) VALUES ('da96119d-93e4-4e00-9e04-291e12af6552', '019c4f27-1773-7e98-80e4-c94c03867ee0', 0, '2026-02-21T22:16:39.608062+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c82b8-5d89-72cb-8638-7242c6689a92', 'Create a new auths resource', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c82b8-5d89-723c-bdd2-5e1abc8c8fdd', 'create_auths', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable, args_ids, args_output_ids, resource) VALUES ('e3abe747-7f2d-4f59-992d-4dcfed8d8664', '2026-02-21T22:16:39.608062+00:00', false, false, true, 'create_auths', 'Create a new auth binding for settings', '{}', true, '{}', '{}', NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable, args_ids, args_output_ids, resource) VALUES ('e3abe747-7f2d-4f59-992d-4dcfed8d8664', '2026-02-21T22:16:39.608062+00:00', false, false, true, 'create_auths', 'Create a new auth binding for settings', '{}', true, '{019c4f27-1773-7e98-80e4-c94c03867ee0}', '{}', NULL) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- tool_artifact

@@ -89,6 +89,83 @@ def _build_jinja_context(result: object) -> dict[str, Any]:
     return context
 
 
+def _enrich_tools_with_args(
+    tool_dicts: list[dict[str, Any]],
+    result: object,
+    config: ArtifactGenerateConfig,
+) -> list[dict[str, Any]]:
+    """Build arguments/argument_descriptions/argument_defaults on tool dicts.
+
+    QGetToolsV4Item only carries args_ids (UUID refs). This function resolves
+    them against the pre-fetched QGetArgsV4Item list in config.args to produce
+    the JSONB structures that convert_tools_to_openai_format expects.
+    """
+    result_config = getattr(result, "config", None)
+    if not tool_dicts or not result_config:
+        return tool_dicts
+
+    resource_tools = getattr(result_config, config.config_tools_attr, None) or []
+    config_args = getattr(result_config, "args", None) or []
+
+    if not resource_tools or not config_args:
+        return tool_dicts
+
+    # Index args by id
+    arg_by_id: dict[Any, Any] = {}
+    for arg in config_args:
+        arg_id = getattr(arg, "id", None)
+        if arg_id:
+            arg_by_id[arg_id] = arg
+
+    if not arg_by_id:
+        return tool_dicts
+
+    # Map tool name → args_ids from the resource tools
+    tool_arg_ids_by_name: dict[str, list[Any]] = {}
+    for rt in resource_tools:
+        name = getattr(rt, "name", None)
+        a_ids = getattr(rt, "args_ids", None)
+        if name and a_ids:
+            tool_arg_ids_by_name[name] = a_ids
+
+    if not tool_arg_ids_by_name:
+        return tool_dicts
+
+    for td in tool_dicts:
+        t_name = td.get("name")
+        if not t_name or t_name not in tool_arg_ids_by_name:
+            continue
+
+        arguments: dict[str, Any] = {}
+        argument_descriptions: dict[str, str] = {}
+        argument_defaults: dict[str, Any] = {}
+
+        for arg_id in tool_arg_ids_by_name[t_name]:
+            arg = arg_by_id.get(arg_id)
+            if not arg:
+                continue
+            arg_name = getattr(arg, "name", None)
+            if not arg_name:
+                continue
+
+            field_type = getattr(arg, "field_type", "string") or "string"
+            required = bool(getattr(arg, "required", False))
+
+            arguments[arg_name] = {"type": field_type, "required": required}
+            desc = getattr(arg, "description", None)
+            if desc:
+                argument_descriptions[arg_name] = desc
+            default_value = getattr(arg, "default_value", None)
+            if default_value is not None and default_value != "":
+                argument_defaults[arg_name] = default_value
+
+        td["arguments"] = arguments
+        td["argument_descriptions"] = argument_descriptions
+        td["argument_defaults"] = argument_defaults
+
+    return tool_dicts
+
+
 def _enrich_tools_with_args_outputs(
     tool_dicts: list[dict[str, Any]],
     result: object,
@@ -532,8 +609,9 @@ async def generate_handler(data: dict[str, Any]) -> None:
                 ).model_dump(mode="json"),
             )
 
-            # Step 16: Convert tools and enrich with _args_outputs
+            # Step 16: Convert tools, build argument schemas, enrich with _args_outputs
             tool_dicts = convert_tools_to_dict(config_tools)
+            tool_dicts = _enrich_tools_with_args(tool_dicts, result, config)
             tool_dicts = _enrich_tools_with_args_outputs(tool_dicts, result, config)
 
             # Step 17: Dispatch to generate_artifact handler(s)

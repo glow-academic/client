@@ -244,15 +244,12 @@ async def save_simulation(
                         detail="You don't have permission to create simulations.",
                     )
 
-        # Server-resolved group_id: create if not updating an existing simulation
-        group_id = None
-        if not request.input_simulation_id:
+        # Pass 2: Execute save
+        async with conn.transaction():
+            # Server-resolved group_id: always create a new group for each save
             group_id = await conn.fetchval(
                 "INSERT INTO groups_entry (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id"
             )
-
-        # Pass 2: Execute save
-        async with conn.transaction():
             # Convert flat resource IDs to SQL params
             params = SaveSimulationSqlParams.from_request(
                 request, profile_id=profile_id, group_id=group_id

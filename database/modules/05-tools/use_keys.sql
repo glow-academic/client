@@ -10,7 +10,7 @@ INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, activ
 INSERT INTO public.args_outputs_resource (id, args_id, name, template, created_at, active, generated, mcp) VALUES ('019bbf87-0969-7d40-b671-1bdfae5c96af', '019bbf87-091f-77de-b8e9-1160c499a3e7', 'key_id', '{{ key_id }}', '2026-01-14T18:39:46.732086+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c82b8-5d8b-7039-8819-089f903f31aa', 'Use an existing keys resource instead of creating a new one', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c82b8-5d8a-7fbb-abd2-46320982f4cd', 'use_keys', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable, args_ids, args_output_ids, resource) VALUES ('5133b52b-e5ee-4f08-a9e0-f5b459ab8bea', '2026-02-21T22:16:39.608062+00:00', false, false, true, 'use_keys', 'Use an existing key by its ID', '{}', false, '{}', '{}', NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable, args_ids, args_output_ids, resource) VALUES ('5133b52b-e5ee-4f08-a9e0-f5b459ab8bea', '2026-02-21T22:16:39.608062+00:00', false, false, true, 'use_keys', 'Use an existing key by its ID', '{}', false, '{019bbf87-091f-77de-b8e9-1160c499a3e7}', '{019bbf87-0969-7d40-b671-1bdfae5c96af}', NULL) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- tool_artifact

@@ -9,7 +9,7 @@ INSERT INTO public.args_resource (id, name, description, field_type, required, d
 INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, active, generated, mcp) VALUES ('fede816d-a7a6-43e6-b081-243490f3ae78', '019bbf87-091e-7940-9825-c757e353ed6d', 0, '2026-02-21T22:16:39.608062+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c82b8-5d88-7a7c-9d44-82a70c5ebeed', 'Create a new fields resource', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c82b8-5d88-79ee-8ebb-9503b0f16f69', 'create_fields', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable, args_ids, args_output_ids, resource) VALUES ('98194c0a-97af-4bf8-8c30-12a87bfbacb2', '2026-02-21T22:16:39.608062+00:00', false, false, true, 'create_fields', 'Create a new field binding', '{}', true, '{}', '{}', NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable, args_ids, args_output_ids, resource) VALUES ('98194c0a-97af-4bf8-8c30-12a87bfbacb2', '2026-02-21T22:16:39.608062+00:00', false, false, true, 'create_fields', 'Create a new field binding', '{}', true, '{019bbf87-091e-7940-9825-c757e353ed6d}', '{}', NULL) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- tool_artifact

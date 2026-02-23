@@ -10,7 +10,7 @@ INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, activ
 INSERT INTO public.args_outputs_resource (id, args_id, name, template, created_at, active, generated, mcp) VALUES ('6ed89766-5e54-4fb0-912d-c247dae9eb15', '288e20e6-ed9c-4cf6-ac7e-c511c8425d77', 'id', '{{ point_id }}', '2026-02-21T22:16:39.604747+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c82b8-5d8b-7a1c-a3da-3edc73872ec3', 'Use an existing points resource instead of creating a new one', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c82b8-5d8b-799b-8729-155dae50a67b', 'use_points', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable, args_ids, args_output_ids, resource) VALUES ('6dd11e8a-c1b0-4ebf-a5f6-9e8f16c00175', '2026-02-21T22:16:39.608062+00:00', false, false, true, 'use_points', 'Use an existing point value by its ID', '{}', false, '{}', '{}', NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable, args_ids, args_output_ids, resource) VALUES ('6dd11e8a-c1b0-4ebf-a5f6-9e8f16c00175', '2026-02-21T22:16:39.608062+00:00', false, false, true, 'use_points', 'Use an existing point value by its ID', '{}', false, '{288e20e6-ed9c-4cf6-ac7e-c511c8425d77}', '{6ed89766-5e54-4fb0-912d-c247dae9eb15}', NULL) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- tool_artifact
