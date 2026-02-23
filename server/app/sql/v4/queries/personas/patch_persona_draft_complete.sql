@@ -218,41 +218,41 @@ BEGIN
             IF v_name_id IS NOT NULL THEN
                 INSERT INTO persona_drafts_names_connection (draft_id, names_id, version)
                 VALUES (v_draft_id, v_name_id, v_new_version)
-                ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE SET version = v_new_version;
+                ON CONFLICT ON CONSTRAINT persona_drafts_names_connection_pkey DO UPDATE SET version = v_new_version;
             END IF;
 
             IF v_description_id IS NOT NULL THEN
                 INSERT INTO persona_drafts_descriptions_connection (draft_id, descriptions_id, version)
                 VALUES (v_draft_id, v_description_id, v_new_version)
-                ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT persona_drafts_descriptions_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
             IF v_color_id IS NOT NULL THEN
                 INSERT INTO persona_drafts_colors_connection (draft_id, colors_id, version)
                 VALUES (v_draft_id, v_color_id, v_new_version)
-                ON CONFLICT ON CONSTRAINT colors_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT persona_drafts_colors_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
             IF v_icon_id IS NOT NULL THEN
                 INSERT INTO persona_drafts_icons_connection (draft_id, icons_id, version)
                 VALUES (v_draft_id, v_icon_id, v_new_version)
-                ON CONFLICT ON CONSTRAINT icons_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT persona_drafts_icons_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
             IF v_instructions_id IS NOT NULL THEN
                 INSERT INTO persona_drafts_instructions_connection (draft_id, instructions_id, version)
                 VALUES (v_draft_id, v_instructions_id, v_new_version)
-                ON CONFLICT ON CONSTRAINT instructions_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT persona_drafts_instructions_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
             IF v_active_flag_id IS NOT NULL THEN
                 INSERT INTO persona_drafts_flags_connection (draft_id, flags_id, version)
                 VALUES (v_draft_id, v_active_flag_id, v_new_version)
-                ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT persona_drafts_flags_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
@@ -262,7 +262,7 @@ BEGIN
                 INSERT INTO persona_drafts_departments_connection (draft_id, departments_id, version)
                 SELECT v_draft_id, dept_id, v_new_version
                 FROM UNNEST(v_department_ids) as dept_id
-                ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT persona_drafts_departments_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
@@ -271,7 +271,7 @@ BEGIN
                 INSERT INTO persona_drafts_parameter_fields_connection (draft_id, parameter_fields_id, version)
                 SELECT v_draft_id, field_id, v_new_version
                 FROM UNNEST(v_parameter_field_ids) as field_id
-                ON CONFLICT ON CONSTRAINT parameter_fields_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT persona_drafts_parameter_fields_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
@@ -280,7 +280,7 @@ BEGIN
                 INSERT INTO persona_drafts_examples_connection (draft_id, examples_id, version)
                 SELECT v_draft_id, ex_id, v_new_version
                 FROM UNNEST(v_example_ids) as ex_id
-                ON CONFLICT ON CONSTRAINT examples_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT persona_drafts_examples_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
@@ -289,7 +289,7 @@ BEGIN
                 INSERT INTO persona_drafts_parameters_connection (draft_id, parameters_id, version)
                 SELECT v_draft_id, param_id, v_new_version
                 FROM UNNEST(v_parameter_ids) as param_id
-                ON CONFLICT ON CONSTRAINT parameters_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT persona_drafts_parameters_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
@@ -541,42 +541,42 @@ BEGIN
     IF v_name_id IS NOT NULL THEN
         INSERT INTO persona_drafts_names_connection (draft_id, names_id, version)
         VALUES (v_draft_id, v_name_id, v_new_version)
-        ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE
+        ON CONFLICT ON CONSTRAINT persona_drafts_names_connection_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
 
     IF v_description_id IS NOT NULL THEN
         INSERT INTO persona_drafts_descriptions_connection (draft_id, descriptions_id, version)
         VALUES (v_draft_id, v_description_id, v_new_version)
-        ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE
+        ON CONFLICT ON CONSTRAINT persona_drafts_descriptions_connection_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
 
     IF v_color_id IS NOT NULL THEN
         INSERT INTO persona_drafts_colors_connection (draft_id, colors_id, version)
         VALUES (v_draft_id, v_color_id, v_new_version)
-        ON CONFLICT ON CONSTRAINT colors_draft_pkey DO UPDATE
+        ON CONFLICT ON CONSTRAINT persona_drafts_colors_connection_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
 
     IF v_icon_id IS NOT NULL THEN
         INSERT INTO persona_drafts_icons_connection (draft_id, icons_id, version)
         VALUES (v_draft_id, v_icon_id, v_new_version)
-        ON CONFLICT ON CONSTRAINT icons_draft_pkey DO UPDATE
+        ON CONFLICT ON CONSTRAINT persona_drafts_icons_connection_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
 
     IF v_instructions_id IS NOT NULL THEN
         INSERT INTO persona_drafts_instructions_connection (draft_id, instructions_id, version)
         VALUES (v_draft_id, v_instructions_id, v_new_version)
-        ON CONFLICT ON CONSTRAINT instructions_draft_pkey DO UPDATE
+        ON CONFLICT ON CONSTRAINT persona_drafts_instructions_connection_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
 
     IF v_active_flag_id IS NOT NULL THEN
         INSERT INTO persona_drafts_flags_connection (draft_id, flags_id, version)
         VALUES (v_draft_id, v_active_flag_id, v_new_version)
-        ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
+        ON CONFLICT ON CONSTRAINT persona_drafts_flags_connection_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
 
@@ -585,7 +585,7 @@ BEGIN
         INSERT INTO persona_drafts_departments_connection (draft_id, departments_id, version)
         SELECT v_draft_id, dept_id, v_new_version
         FROM UNNEST(v_department_ids) as dept_id
-        ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE
+        ON CONFLICT ON CONSTRAINT persona_drafts_departments_connection_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
 
@@ -593,7 +593,7 @@ BEGIN
         INSERT INTO persona_drafts_parameter_fields_connection (draft_id, parameter_fields_id, version)
         SELECT v_draft_id, field_id, v_new_version
         FROM UNNEST(v_parameter_field_ids) as field_id
-        ON CONFLICT ON CONSTRAINT parameter_fields_draft_pkey DO UPDATE
+        ON CONFLICT ON CONSTRAINT persona_drafts_parameter_fields_connection_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
 
@@ -601,7 +601,7 @@ BEGIN
         INSERT INTO persona_drafts_examples_connection (draft_id, examples_id, version)
         SELECT v_draft_id, ex_id, v_new_version
         FROM UNNEST(v_example_ids) as ex_id
-        ON CONFLICT ON CONSTRAINT examples_draft_pkey DO UPDATE
+        ON CONFLICT ON CONSTRAINT persona_drafts_examples_connection_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
 
@@ -609,7 +609,7 @@ BEGIN
         INSERT INTO persona_drafts_parameters_connection (draft_id, parameters_id, version)
         SELECT v_draft_id, param_id, v_new_version
         FROM UNNEST(v_parameter_ids) as param_id
-        ON CONFLICT ON CONSTRAINT parameters_draft_pkey DO UPDATE
+        ON CONFLICT ON CONSTRAINT persona_drafts_parameters_connection_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
 

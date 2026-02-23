@@ -1,26 +1,36 @@
 -- Patch simulation draft - accepts nested resource action composites.
 -- Creates draft if input_draft_id is NULL, updates if exists.
 
+-- Ensure simulation draft composite types exist before function creation.
 DO $$
 BEGIN
-    DROP TYPE IF EXISTS types.simulation_resource_action CASCADE;
-    CREATE TYPE types.simulation_resource_action AS (
-        resource_id uuid,
-        create_tool_id uuid,
-        link_tool_id uuid
-    );
-EXCEPTION WHEN OTHERS THEN NULL;
-END $$;
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE n.nspname = 'types'
+          AND t.typname = 'simulation_resource_action'
+    ) THEN
+        CREATE TYPE types.simulation_resource_action AS (
+            resource_id uuid,
+            create_tool_id uuid,
+            link_tool_id uuid
+        );
+    END IF;
 
-DO $$
-BEGIN
-    DROP TYPE IF EXISTS types.simulation_multi_resource_action CASCADE;
-    CREATE TYPE types.simulation_multi_resource_action AS (
-        resource_ids uuid[],
-        create_tool_id uuid,
-        link_tool_id uuid
-    );
-EXCEPTION WHEN OTHERS THEN NULL;
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE n.nspname = 'types'
+          AND t.typname = 'simulation_multi_resource_action'
+    ) THEN
+        CREATE TYPE types.simulation_multi_resource_action AS (
+            resource_ids uuid[],
+            create_tool_id uuid,
+            link_tool_id uuid
+        );
+    END IF;
 END $$;
 
 DO $$
@@ -230,7 +240,7 @@ BEGIN
     DELETE FROM simulation_drafts_flags_connection WHERE simulation_drafts_flags_connection.draft_id = v_draft_id;
     DELETE FROM simulation_drafts_departments_connection WHERE simulation_drafts_departments_connection.draft_id = v_draft_id;
     DELETE FROM simulation_drafts_scenarios_connection WHERE simulation_drafts_scenarios_connection.draft_id = v_draft_id;
-    DELETE FROM scenario_simulation_drafts_flags_connection WHERE scenario_simulation_drafts_flags_connection.draft_id = v_draft_id;
+    DELETE FROM simulation_drafts_scenario_flags_connection WHERE simulation_drafts_scenario_flags_connection.draft_id = v_draft_id;
     DELETE FROM simulation_drafts_scenario_positions_connection WHERE simulation_drafts_scenario_positions_connection.draft_id = v_draft_id;
     DELETE FROM simulation_drafts_scenario_rubrics_connection WHERE simulation_drafts_scenario_rubrics_connection.draft_id = v_draft_id;
     DELETE FROM simulation_drafts_scenario_time_limits_connection WHERE simulation_drafts_scenario_time_limits_connection.draft_id = v_draft_id;
@@ -238,49 +248,49 @@ BEGIN
     IF v_name_id IS NOT NULL THEN
         INSERT INTO simulation_drafts_names_connection (draft_id, names_id, version)
         VALUES (v_draft_id, v_name_id, v_new_version)
-        ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE SET version = v_new_version;
+        ON CONFLICT ON CONSTRAINT simulation_drafts_names_connection_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     IF v_description_id IS NOT NULL THEN
         INSERT INTO simulation_drafts_descriptions_connection (draft_id, descriptions_id, version)
         VALUES (v_draft_id, v_description_id, v_new_version)
-        ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE SET version = v_new_version;
+        ON CONFLICT ON CONSTRAINT simulation_drafts_descriptions_connection_pkey DO UPDATE SET version = v_new_version;
     END IF;
 
     INSERT INTO simulation_drafts_flags_connection (draft_id, flags_id, version)
     SELECT v_draft_id, fid, v_new_version
     FROM UNNEST(v_flag_ids) fid
-    ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE SET version = v_new_version;
+    ON CONFLICT ON CONSTRAINT simulation_drafts_flags_connection_pkey DO UPDATE SET version = v_new_version;
 
     INSERT INTO simulation_drafts_departments_connection (draft_id, departments_id, version)
     SELECT v_draft_id, did, v_new_version
     FROM UNNEST(v_department_ids) did
-    ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE SET version = v_new_version;
+    ON CONFLICT ON CONSTRAINT simulation_drafts_departments_connection_pkey DO UPDATE SET version = v_new_version;
 
     INSERT INTO simulation_drafts_scenarios_connection (draft_id, scenarios_id, version)
     SELECT v_draft_id, sid, v_new_version
     FROM UNNEST(v_scenario_ids) sid
-    ON CONFLICT ON CONSTRAINT scenarios_draft_pkey DO UPDATE SET version = v_new_version;
+    ON CONFLICT ON CONSTRAINT simulation_drafts_scenarios_connection_pkey DO UPDATE SET version = v_new_version;
 
-    INSERT INTO scenario_simulation_drafts_flags_connection (draft_id, scenario_flags_id, version)
+    INSERT INTO simulation_drafts_scenario_flags_connection (draft_id, scenario_flags_id, version)
     SELECT v_draft_id, sid, v_new_version
     FROM UNNEST(v_scenario_flag_ids) sid
-    ON CONFLICT ON CONSTRAINT scenario_flags_draft_pkey DO UPDATE SET version = v_new_version;
+    ON CONFLICT ON CONSTRAINT simulation_drafts_scenario_flags_connection_pkey DO UPDATE SET version = v_new_version;
 
     INSERT INTO simulation_drafts_scenario_positions_connection (draft_id, scenario_positions_id, version)
     SELECT v_draft_id, sid, v_new_version
     FROM UNNEST(v_scenario_position_ids) sid
-    ON CONFLICT ON CONSTRAINT scenario_positions_draft_pkey DO UPDATE SET version = v_new_version;
+    ON CONFLICT ON CONSTRAINT simulation_drafts_scenario_positions_connection_pkey DO UPDATE SET version = v_new_version;
 
     INSERT INTO simulation_drafts_scenario_rubrics_connection (draft_id, scenario_rubrics_id, version)
     SELECT v_draft_id, sid, v_new_version
     FROM UNNEST(v_scenario_rubric_ids) sid
-    ON CONFLICT ON CONSTRAINT scenario_rubrics_draft_pkey DO UPDATE SET version = v_new_version;
+    ON CONFLICT ON CONSTRAINT simulation_drafts_scenario_rubrics_connection_pkey DO UPDATE SET version = v_new_version;
 
     INSERT INTO simulation_drafts_scenario_time_limits_connection (draft_id, scenario_time_limits_id, version)
     SELECT v_draft_id, sid, v_new_version
     FROM UNNEST(v_scenario_time_limit_ids) sid
-    ON CONFLICT ON CONSTRAINT scenario_time_limits_draft_pkey DO UPDATE SET version = v_new_version;
+    ON CONFLICT ON CONSTRAINT simulation_drafts_scenario_time_limits_connection_pkey DO UPDATE SET version = v_new_version;
 
     -- Tool-call tracking: one run per draft patch
     IF v_group_id IS NOT NULL THEN

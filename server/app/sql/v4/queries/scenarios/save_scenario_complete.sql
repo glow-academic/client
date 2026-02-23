@@ -2,27 +2,36 @@
 -- Resource-ID only contract (no text creation)
 -- Accepts form fields directly (no draft_id dependency)
 
--- 0) Drop and recreate composite types for resource actions
+-- 0) Ensure composite types exist for resource actions
 DO $$
 BEGIN
-    DROP TYPE IF EXISTS types.scenario_resource_action CASCADE;
-    CREATE TYPE types.scenario_resource_action AS (
-        resource_id uuid,
-        create_tool_id uuid,
-        link_tool_id uuid
-    );
-EXCEPTION WHEN OTHERS THEN NULL;
-END $$;
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE n.nspname = 'types'
+          AND t.typname = 'scenario_resource_action'
+    ) THEN
+        CREATE TYPE types.scenario_resource_action AS (
+            resource_id uuid,
+            create_tool_id uuid,
+            link_tool_id uuid
+        );
+    END IF;
 
-DO $$
-BEGIN
-    DROP TYPE IF EXISTS types.scenario_multi_resource_action CASCADE;
-    CREATE TYPE types.scenario_multi_resource_action AS (
-        resource_ids uuid[],
-        create_tool_id uuid,
-        link_tool_id uuid
-    );
-EXCEPTION WHEN OTHERS THEN NULL;
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE n.nspname = 'types'
+          AND t.typname = 'scenario_multi_resource_action'
+    ) THEN
+        CREATE TYPE types.scenario_multi_resource_action AS (
+            resource_ids uuid[],
+            create_tool_id uuid,
+            link_tool_id uuid
+        );
+    END IF;
 END $$;
 
 -- 1) Drop function first (breaks dependency on types)

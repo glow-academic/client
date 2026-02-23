@@ -1,25 +1,35 @@
 -- Patch cohort draft - nested resource actions with tool-call tracking.
 
+-- Ensure cohort draft composite types exist before function creation.
 DO $$
 BEGIN
-    DROP TYPE IF EXISTS types.cohort_resource_action CASCADE;
-    CREATE TYPE types.cohort_resource_action AS (
-        resource_id uuid,
-        create_tool_id uuid,
-        link_tool_id uuid
-    );
-EXCEPTION WHEN OTHERS THEN NULL;
-END $$;
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE n.nspname = 'types'
+          AND t.typname = 'cohort_resource_action'
+    ) THEN
+        CREATE TYPE types.cohort_resource_action AS (
+            resource_id uuid,
+            create_tool_id uuid,
+            link_tool_id uuid
+        );
+    END IF;
 
-DO $$
-BEGIN
-    DROP TYPE IF EXISTS types.cohort_multi_resource_action CASCADE;
-    CREATE TYPE types.cohort_multi_resource_action AS (
-        resource_ids uuid[],
-        create_tool_id uuid,
-        link_tool_id uuid
-    );
-EXCEPTION WHEN OTHERS THEN NULL;
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE n.nspname = 'types'
+          AND t.typname = 'cohort_multi_resource_action'
+    ) THEN
+        CREATE TYPE types.cohort_multi_resource_action AS (
+            resource_ids uuid[],
+            create_tool_id uuid,
+            link_tool_id uuid
+        );
+    END IF;
 END $$;
 
 DO $$

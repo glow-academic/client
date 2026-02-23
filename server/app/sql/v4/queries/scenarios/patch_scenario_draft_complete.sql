@@ -2,26 +2,36 @@
 -- Creates draft if input_draft_id is NULL, updates if exists
 -- Links resources via junction tables
 
+-- Ensure scenario draft composite types exist before function creation.
 DO $$
 BEGIN
-    DROP TYPE IF EXISTS types.scenario_resource_action CASCADE;
-    CREATE TYPE types.scenario_resource_action AS (
-        resource_id uuid,
-        create_tool_id uuid,
-        link_tool_id uuid
-    );
-EXCEPTION WHEN OTHERS THEN NULL;
-END $$;
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE n.nspname = 'types'
+          AND t.typname = 'scenario_resource_action'
+    ) THEN
+        CREATE TYPE types.scenario_resource_action AS (
+            resource_id uuid,
+            create_tool_id uuid,
+            link_tool_id uuid
+        );
+    END IF;
 
-DO $$
-BEGIN
-    DROP TYPE IF EXISTS types.scenario_multi_resource_action CASCADE;
-    CREATE TYPE types.scenario_multi_resource_action AS (
-        resource_ids uuid[],
-        create_tool_id uuid,
-        link_tool_id uuid
-    );
-EXCEPTION WHEN OTHERS THEN NULL;
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE n.nspname = 'types'
+          AND t.typname = 'scenario_multi_resource_action'
+    ) THEN
+        CREATE TYPE types.scenario_multi_resource_action AS (
+            resource_ids uuid[],
+            create_tool_id uuid,
+            link_tool_id uuid
+        );
+    END IF;
 END $$;
 
 -- Drop function if exists (handles signature variations)
@@ -247,55 +257,55 @@ BEGIN
             IF name_id IS NOT NULL THEN
                 INSERT INTO scenario_drafts_names_connection (draft_id, names_id, version)
                 VALUES (v_draft_id, name_id, v_new_version)
-                ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE SET version = v_new_version;
+                ON CONFLICT ON CONSTRAINT scenario_drafts_names_connection_pkey DO UPDATE SET version = v_new_version;
             END IF;
             
             IF description_id IS NOT NULL THEN
                 INSERT INTO scenario_drafts_descriptions_connection (draft_id, descriptions_id, version)
                 VALUES (v_draft_id, description_id, v_new_version)
-                ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT scenario_drafts_descriptions_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
             
             IF active_flag_id IS NOT NULL THEN
                 INSERT INTO scenario_drafts_flags_connection (draft_id, flags_id, version)
                 VALUES (v_draft_id, active_flag_id, v_new_version)
-                ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT scenario_drafts_flags_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
             IF objectives_enabled_flag_id IS NOT NULL THEN
                 INSERT INTO scenario_drafts_flags_connection (draft_id, flags_id, version)
                 VALUES (v_draft_id, objectives_enabled_flag_id, v_new_version)
-                ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT scenario_drafts_flags_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
             IF images_enabled_flag_id IS NOT NULL THEN
                 INSERT INTO scenario_drafts_flags_connection (draft_id, flags_id, version)
                 VALUES (v_draft_id, images_enabled_flag_id, v_new_version)
-                ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT scenario_drafts_flags_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
             IF video_enabled_flag_id IS NOT NULL THEN
                 INSERT INTO scenario_drafts_flags_connection (draft_id, flags_id, version)
                 VALUES (v_draft_id, video_enabled_flag_id, v_new_version)
-                ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT scenario_drafts_flags_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
             IF questions_enabled_flag_id IS NOT NULL THEN
                 INSERT INTO scenario_drafts_flags_connection (draft_id, flags_id, version)
                 VALUES (v_draft_id, questions_enabled_flag_id, v_new_version)
-                ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT scenario_drafts_flags_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
             IF problem_statement_enabled_flag_id IS NOT NULL THEN
                 INSERT INTO scenario_drafts_flags_connection (draft_id, flags_id, version)
                 VALUES (v_draft_id, problem_statement_enabled_flag_id, v_new_version)
-                ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT scenario_drafts_flags_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
@@ -303,7 +313,7 @@ BEGIN
                 INSERT INTO scenario_drafts_departments_connection (draft_id, departments_id, version)
                 SELECT v_draft_id, dept_id, v_new_version
                 FROM unnest(department_ids) as dept_id
-                ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT scenario_drafts_departments_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
@@ -311,7 +321,7 @@ BEGIN
                 INSERT INTO scenario_drafts_personas_connection (draft_id, personas_id, version)
                 SELECT v_draft_id, persona_id, v_new_version
                 FROM unnest(persona_ids) as persona_id
-                ON CONFLICT ON CONSTRAINT personas_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT scenario_drafts_personas_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
@@ -319,7 +329,7 @@ BEGIN
                 INSERT INTO scenario_drafts_documents_connection (draft_id, documents_id, version)
                 SELECT v_draft_id, doc_id, v_new_version
                 FROM unnest(document_ids) as doc_id
-                ON CONFLICT ON CONSTRAINT documents_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT scenario_drafts_documents_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
@@ -327,7 +337,7 @@ BEGIN
                 INSERT INTO scenario_drafts_parameters_connection (draft_id, parameters_id, version)
                 SELECT v_draft_id, param_id, v_new_version
                 FROM unnest(parameter_ids) as param_id
-                ON CONFLICT ON CONSTRAINT parameters_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT scenario_drafts_parameters_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
@@ -335,7 +345,7 @@ BEGIN
                 INSERT INTO scenario_drafts_fields_connection (draft_id, fields_id, version)
                 SELECT v_draft_id, pf_id, v_new_version
                 FROM unnest(parameter_field_ids) as pf_id
-                ON CONFLICT ON CONSTRAINT fields_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT scenario_drafts_parameter_fields_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
@@ -343,7 +353,7 @@ BEGIN
                 INSERT INTO scenario_drafts_images_connection (draft_id, images_id, version)
                 SELECT v_draft_id, image_id, v_new_version
                 FROM unnest(image_ids) as image_id
-                ON CONFLICT ON CONSTRAINT images_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT scenario_drafts_images_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
@@ -351,14 +361,14 @@ BEGIN
                 INSERT INTO scenario_drafts_objectives_connection (draft_id, objectives_id, version)
                 SELECT v_draft_id, objective_id, v_new_version
                 FROM unnest(objective_ids) as objective_id
-                ON CONFLICT ON CONSTRAINT objectives_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT scenario_drafts_objectives_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
             IF problem_statement_id IS NOT NULL THEN
                 INSERT INTO scenario_drafts_problem_statements_connection (draft_id, problem_statements_id, version)
                 VALUES (v_draft_id, problem_statement_id, v_new_version)
-                ON CONFLICT ON CONSTRAINT problem_statements_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT scenario_drafts_problem_statements_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
@@ -366,7 +376,7 @@ BEGIN
                 INSERT INTO scenario_drafts_videos_connection (draft_id, videos_id, version)
                 SELECT v_draft_id, video_id, v_new_version
                 FROM unnest(video_ids) as video_id
-                ON CONFLICT ON CONSTRAINT videos_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT scenario_drafts_videos_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
@@ -374,7 +384,7 @@ BEGIN
                 INSERT INTO scenario_drafts_questions_connection (draft_id, questions_id, version)
                 SELECT v_draft_id, question_id, v_new_version
                 FROM unnest(question_ids) as question_id
-                ON CONFLICT ON CONSTRAINT questions_draft_pkey DO UPDATE
+                ON CONFLICT ON CONSTRAINT scenario_drafts_questions_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
         END IF;
@@ -402,56 +412,56 @@ BEGIN
         IF name_id IS NOT NULL THEN
             INSERT INTO scenario_drafts_names_connection (draft_id, names_id, version)
             VALUES (v_draft_id, name_id, v_new_version)
-            ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE
+            ON CONFLICT ON CONSTRAINT scenario_drafts_names_connection_pkey DO UPDATE
             SET version = v_new_version;
         END IF;
         
         IF description_id IS NOT NULL THEN
             INSERT INTO scenario_drafts_descriptions_connection (draft_id, descriptions_id, version)
             VALUES (v_draft_id, description_id, v_new_version)
-            ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE
+            ON CONFLICT ON CONSTRAINT scenario_drafts_descriptions_connection_pkey DO UPDATE
             SET version = v_new_version;
         END IF;
         
         IF active_flag_id IS NOT NULL THEN
             INSERT INTO scenario_drafts_flags_connection (draft_id, flags_id, version)
             VALUES (v_draft_id, active_flag_id, v_new_version)
-            ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
+            ON CONFLICT ON CONSTRAINT scenario_drafts_flags_connection_pkey DO UPDATE
             SET version = v_new_version;
         END IF;
 
         IF objectives_enabled_flag_id IS NOT NULL THEN
             INSERT INTO scenario_drafts_flags_connection (draft_id, flags_id, version)
             VALUES (v_draft_id, objectives_enabled_flag_id, v_new_version)
-            ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
+            ON CONFLICT ON CONSTRAINT scenario_drafts_flags_connection_pkey DO UPDATE
             SET version = v_new_version;
         END IF;
 
         IF images_enabled_flag_id IS NOT NULL THEN
             INSERT INTO scenario_drafts_flags_connection (draft_id, flags_id, version)
             VALUES (v_draft_id, images_enabled_flag_id, v_new_version)
-            ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
+            ON CONFLICT ON CONSTRAINT scenario_drafts_flags_connection_pkey DO UPDATE
             SET version = v_new_version;
         END IF;
 
         IF video_enabled_flag_id IS NOT NULL THEN
             INSERT INTO scenario_drafts_flags_connection (draft_id, flags_id, version)
             VALUES (v_draft_id, video_enabled_flag_id, v_new_version)
-            ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
+            ON CONFLICT ON CONSTRAINT scenario_drafts_flags_connection_pkey DO UPDATE
             SET version = v_new_version;
         END IF;
 
         IF questions_enabled_flag_id IS NOT NULL THEN
             INSERT INTO scenario_drafts_flags_connection (draft_id, flags_id, version)
             VALUES (v_draft_id, questions_enabled_flag_id, v_new_version)
-            ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
+            ON CONFLICT ON CONSTRAINT scenario_drafts_flags_connection_pkey DO UPDATE
             SET version = v_new_version;
         END IF;
 
         IF problem_statement_enabled_flag_id IS NOT NULL THEN
             INSERT INTO scenario_drafts_flags_connection (draft_id, flags_id, version)
             VALUES (v_draft_id, problem_statement_enabled_flag_id, v_new_version)
-            ON CONFLICT ON CONSTRAINT flags_draft_pkey DO UPDATE
+            ON CONFLICT ON CONSTRAINT scenario_drafts_flags_connection_pkey DO UPDATE
             SET version = v_new_version;
         END IF;
 
@@ -459,7 +469,7 @@ BEGIN
             INSERT INTO scenario_drafts_departments_connection (draft_id, departments_id, version)
             SELECT v_draft_id, dept_id, v_new_version
             FROM unnest(department_ids) as dept_id
-            ON CONFLICT ON CONSTRAINT departments_draft_pkey DO UPDATE
+            ON CONFLICT ON CONSTRAINT scenario_drafts_departments_connection_pkey DO UPDATE
             SET version = v_new_version;
         END IF;
 
@@ -467,7 +477,7 @@ BEGIN
             INSERT INTO scenario_drafts_personas_connection (draft_id, personas_id, version)
             SELECT v_draft_id, persona_id, v_new_version
             FROM unnest(persona_ids) as persona_id
-            ON CONFLICT ON CONSTRAINT personas_draft_pkey DO UPDATE
+            ON CONFLICT ON CONSTRAINT scenario_drafts_personas_connection_pkey DO UPDATE
             SET version = v_new_version;
         END IF;
 
@@ -475,7 +485,7 @@ BEGIN
             INSERT INTO scenario_drafts_documents_connection (draft_id, documents_id, version)
             SELECT v_draft_id, doc_id, v_new_version
             FROM unnest(document_ids) as doc_id
-            ON CONFLICT ON CONSTRAINT documents_draft_pkey DO UPDATE
+            ON CONFLICT ON CONSTRAINT scenario_drafts_documents_connection_pkey DO UPDATE
             SET version = v_new_version;
         END IF;
 
@@ -483,7 +493,7 @@ BEGIN
             INSERT INTO scenario_drafts_parameters_connection (draft_id, parameters_id, version)
             SELECT v_draft_id, param_id, v_new_version
             FROM unnest(parameter_ids) as param_id
-            ON CONFLICT ON CONSTRAINT parameters_draft_pkey DO UPDATE
+            ON CONFLICT ON CONSTRAINT scenario_drafts_parameters_connection_pkey DO UPDATE
             SET version = v_new_version;
         END IF;
 
@@ -491,7 +501,7 @@ BEGIN
             INSERT INTO scenario_drafts_fields_connection (draft_id, fields_id, version)
             SELECT v_draft_id, pf_id, v_new_version
             FROM unnest(parameter_field_ids) as pf_id
-            ON CONFLICT ON CONSTRAINT fields_draft_pkey DO UPDATE
+            ON CONFLICT ON CONSTRAINT scenario_drafts_parameter_fields_connection_pkey DO UPDATE
             SET version = v_new_version;
         END IF;
 
@@ -499,7 +509,7 @@ BEGIN
             INSERT INTO scenario_drafts_images_connection (draft_id, images_id, version)
             SELECT v_draft_id, image_id, v_new_version
             FROM unnest(image_ids) as image_id
-            ON CONFLICT ON CONSTRAINT images_draft_pkey DO UPDATE
+            ON CONFLICT ON CONSTRAINT scenario_drafts_images_connection_pkey DO UPDATE
             SET version = v_new_version;
         END IF;
 
@@ -507,14 +517,14 @@ BEGIN
             INSERT INTO scenario_drafts_objectives_connection (draft_id, objectives_id, version)
             SELECT v_draft_id, objective_id, v_new_version
             FROM unnest(objective_ids) as objective_id
-            ON CONFLICT ON CONSTRAINT objectives_draft_pkey DO UPDATE
+            ON CONFLICT ON CONSTRAINT scenario_drafts_objectives_connection_pkey DO UPDATE
             SET version = v_new_version;
         END IF;
 
         IF problem_statement_id IS NOT NULL THEN
             INSERT INTO scenario_drafts_problem_statements_connection (draft_id, problem_statements_id, version)
             VALUES (v_draft_id, problem_statement_id, v_new_version)
-            ON CONFLICT ON CONSTRAINT problem_statements_draft_pkey DO UPDATE
+            ON CONFLICT ON CONSTRAINT scenario_drafts_problem_statements_connection_pkey DO UPDATE
             SET version = v_new_version;
         END IF;
 
@@ -522,7 +532,7 @@ BEGIN
             INSERT INTO scenario_drafts_videos_connection (draft_id, videos_id, version)
             SELECT v_draft_id, video_id, v_new_version
             FROM unnest(video_ids) as video_id
-            ON CONFLICT ON CONSTRAINT videos_draft_pkey DO UPDATE
+            ON CONFLICT ON CONSTRAINT scenario_drafts_videos_connection_pkey DO UPDATE
             SET version = v_new_version;
         END IF;
 
@@ -530,7 +540,7 @@ BEGIN
             INSERT INTO scenario_drafts_questions_connection (draft_id, questions_id, version)
             SELECT v_draft_id, question_id, v_new_version
             FROM unnest(question_ids) as question_id
-            ON CONFLICT ON CONSTRAINT questions_draft_pkey DO UPDATE
+            ON CONFLICT ON CONSTRAINT scenario_drafts_questions_connection_pkey DO UPDATE
             SET version = v_new_version;
         END IF;
     END IF;
