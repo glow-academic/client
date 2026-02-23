@@ -85,8 +85,10 @@ async def delete_simulation(
                     bypass_cache=False,
                 )
                 actor_name = profile_ctx.access.actor_name
+                user_role = profile_ctx.access.role
         else:
             actor_name = None
+            user_role = None
 
         # Pass 1: Check access using access query
         access_params = CheckSimulationDeleteAccessSqlParams(
@@ -100,7 +102,6 @@ async def delete_simulation(
 
         if access_result:
             # Extract permission context
-            user_role = getattr(access_result, "user_role", None)
             user_department_ids = (
                 getattr(access_result, "user_department_ids", None) or []
             )

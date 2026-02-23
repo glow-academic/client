@@ -196,9 +196,12 @@ async def execute_sql_typed(
             asyncpg.exceptions.InvalidCachedStatementError,
             asyncpg.exceptions.InternalClientError,
             asyncpg.exceptions.InternalServerError,
+            asyncpg.exceptions.UndefinedFunctionError,
         ):
             # After DB drop/restore (migrate-db), OIDs change and connections hold stale
-            # prepared statements. Serialize re-creation to prevent thundering herd.
+            # prepared statements. UndefinedFunctionError handles stale JIT cache
+            # (function dropped externally by hot reload, migration, or DB restore).
+            # Serialize re-creation to prevent thundering herd.
             async with _jit_lock:
                 _jit_created_functions.discard(cache_key_fn)
                 await conn.reload_schema_state()

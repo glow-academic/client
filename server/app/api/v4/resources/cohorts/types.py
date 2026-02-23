@@ -50,6 +50,8 @@ class SearchCohortsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)
+    cohort: bool | None = None
+    profile: bool | None = None
 
 
 class SearchCohortsApiResponse(BaseModel):

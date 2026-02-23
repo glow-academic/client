@@ -525,7 +525,6 @@ async def get_simulation_internal(
                 video_enabled=s.video_enabled,
                 images_enabled=s.images_enabled,
                 questions_enabled=s.questions_enabled,
-                templates_enabled=s.templates_enabled,
             ),
         )
 

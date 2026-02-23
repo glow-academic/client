@@ -68,7 +68,6 @@ class SimulationScenario(BaseModel):
     show_copy_paste: bool | None = None
     show_images: bool | None = None
     show_questions: bool | None = None
-    show_templates: bool | None = None
 
 
 # =============================================================================
@@ -201,7 +200,6 @@ class QGetScenariosV4Item(BaseModel):
     video_enabled: bool | None = None
     images_enabled: bool | None = None
     questions_enabled: bool | None = None
-    templates_enabled: bool | None = None
     # Denormalized persona_ids for list hydration
     persona_ids: list[UUID] | None = None
     parameter_field_ids: list[UUID] | None = None

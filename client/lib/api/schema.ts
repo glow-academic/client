@@ -42574,6 +42574,10 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
+            /** Cohort */
+            cohort?: boolean | null;
+            /** Profile */
+            profile?: boolean | null;
         };
         /**
          * SearchCohortsApiResponse
@@ -47182,8 +47186,6 @@ export interface components {
             show_images?: boolean | null;
             /** Show Questions */
             show_questions?: boolean | null;
-            /** Show Templates */
-            show_templates?: boolean | null;
         };
         /** SimulationScenarioFlagSection */
         SimulationScenarioFlagSection: {
@@ -48801,8 +48803,6 @@ export interface components {
             images_enabled?: boolean | null;
             /** Questions Enabled */
             questions_enabled?: boolean | null;
-            /** Templates Enabled */
-            templates_enabled?: boolean | null;
             /** Persona Ids */
             persona_ids?: string[] | null;
             /** Parameter Field Ids */

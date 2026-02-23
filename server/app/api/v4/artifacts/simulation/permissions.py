@@ -347,7 +347,6 @@ def compute_scenario_show_flags(
     video_enabled: bool | None,
     images_enabled: bool | None,
     questions_enabled: bool | None,
-    templates_enabled: bool | None,
 ) -> dict[str, bool]:
     """Compute show flags for scenario-level flag filtering."""
     ps_enabled = (
@@ -357,7 +356,6 @@ def compute_scenario_show_flags(
     vid_enabled = video_enabled if video_enabled is not None else False
     img_enabled = images_enabled if images_enabled is not None else False
     q_enabled = questions_enabled if questions_enabled is not None else False
-    t_enabled = templates_enabled if templates_enabled is not None else False
 
     return {
         "show_problem_statement": ps_enabled,
@@ -368,7 +366,6 @@ def compute_scenario_show_flags(
         "show_copy_paste": not vid_enabled,
         "show_images": img_enabled,
         "show_questions": q_enabled,
-        "show_templates": t_enabled,
     }
 
 
