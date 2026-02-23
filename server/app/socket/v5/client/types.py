@@ -47,7 +47,7 @@ class GeneratePayload(BaseModel):
     draft_id: UUID | None = None
     resource_types: list[str]
     user_instructions: list[str] | None = None
-    save: bool = True
+    save: bool = False
 
     # Pass-through context fields
     attempt_id: str | None = None

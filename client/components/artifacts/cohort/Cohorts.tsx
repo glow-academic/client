@@ -116,6 +116,7 @@ export default function Cohorts({
     onGenerate: (selectedResources, instructions) => {
       generate(selectedResources, {
         user_instructions: instructions?.trim() ? [instructions.trim()] : null,
+        save: true,
       });
     },
     isGenerating: () => false,

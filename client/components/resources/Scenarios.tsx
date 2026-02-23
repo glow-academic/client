@@ -96,7 +96,7 @@ export function Scenarios({
     () =>
       new Set(
         aiSuggestions
-          .map((s) => s.scenario_id)
+          .map((s) => s.id)
           .filter(Boolean) as string[]
       ),
     [aiSuggestions]
@@ -180,7 +180,7 @@ export function Scenarios({
   const handleAccept = useCallback(() => {
     if (aiSuggestions.length === 0) return;
     const newIds = aiSuggestions
-      .map((s) => s.scenario_id)
+      .map((s) => s.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);

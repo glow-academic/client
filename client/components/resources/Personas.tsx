@@ -179,7 +179,7 @@ export function Personas({
     () =>
       new Set(
         effectiveAiPersonaResources
-          ?.map((p) => p.persona_id)
+          ?.map((p) => p.id)
           .filter(Boolean) as string[]
       ),
     [effectiveAiPersonaResources]
@@ -189,7 +189,7 @@ export function Personas({
   const handleAccept = useCallback(() => {
     if (!effectiveAiPersonaResources?.length) return;
     const newIds = effectiveAiPersonaResources
-      .map((p) => p.persona_id)
+      .map((p) => p.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);

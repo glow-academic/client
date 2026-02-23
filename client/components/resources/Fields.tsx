@@ -100,7 +100,7 @@ export function Fields({
     () =>
       new Set(
         aiSuggestions
-          .map((f) => f.field_id)
+          .map((f) => f.id)
           .filter(Boolean) as string[]
       ),
     [aiSuggestions]
@@ -174,7 +174,7 @@ export function Fields({
   const handleAccept = useCallback(() => {
     if (aiSuggestions.length === 0) return;
     const newIds = aiSuggestions
-      .map((f) => f.field_id)
+      .map((f) => f.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);

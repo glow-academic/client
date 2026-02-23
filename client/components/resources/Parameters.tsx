@@ -133,7 +133,7 @@ export function Parameters({
     () =>
       new Set(
         effectiveAiParameterResources
-          ?.map((p) => p.parameter_id)
+          ?.map((p) => p.id)
           .filter(Boolean) as string[],
       ),
     [effectiveAiParameterResources],
@@ -143,7 +143,7 @@ export function Parameters({
   const handleAccept = useCallback(() => {
     if (!effectiveAiParameterResources?.length) return;
     const newIds = effectiveAiParameterResources
-      .map((p) => p.parameter_id)
+      .map((p) => p.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);

@@ -363,7 +363,7 @@ export function ProfilePersonas({
     () =>
       new Set(
         aiSuggestions
-          ?.map((r) => r.profile_id)
+          ?.map((r) => r.id)
           .filter(Boolean) as string[],
       ),
     [aiSuggestions],
