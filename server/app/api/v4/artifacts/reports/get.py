@@ -204,6 +204,19 @@ async def get_reports_websocket(
                 fetch_args_outputs(),
             )
 
+    # Fetch previous insights
+    from app.api.v4.entries.reports_insights.search import (
+        search_reports_insights_entries_internal,
+    )
+
+    async def fetch_insights():
+        async with pool.acquire() as c:
+            return await search_reports_insights_entries_internal(
+                c, limit_count=20, bypass_cache=bypass_cache
+            )
+
+    insights_result = await fetch_insights()
+
     websocket_config = WebsocketConfig(
         agents=data.config_agents or None,
         models=data.config_models or None,
@@ -217,6 +230,7 @@ async def get_reports_websocket(
     return GetReportsWebsocketResponse(
         entries=ReportsWebsocketEntries(
             runs=data.runs_today,
+            reports_insights=insights_result or None,
         ),
         resources=ReportsWebsocketResources(),
         config=websocket_config,

@@ -38,6 +38,7 @@ class PracticeWebsocketEntries(BaseModel):
 
     draft_training: QGetTrainingDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
+    practice_insights: list[dict] | None = None
 
 
 class PracticeWebsocketResources(BaseModel):

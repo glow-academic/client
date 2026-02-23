@@ -5,10 +5,13 @@ no dynamic discovery, no circular imports.
 """
 
 import inspect
+import os
 from typing import Any, cast
 
 from fastapi import Response
 from mcp.server.fastmcp import FastMCP
+
+ORIGIN = os.getenv("ORIGIN", "http://localhost:3000")
 
 # ============================================================================
 # Lazy Import Cache
@@ -1228,20 +1231,29 @@ def register_endpoints(server: FastMCP) -> None:
         # "tool",  # temporarily removed
     ]
 
-    @server.tool()
+    @server.tool(
+        description=(
+            "Call this FIRST before creating or editing any artifact. "
+            "Returns group_id (pass to create_resource), per-resource tool_id "
+            "(pass to create_resource when available), and available resources "
+            "to reuse (names, descriptions, personas, departments, flags, etc.). "
+            "For a new artifact, call with no artifact_id. "
+            "For an existing artifact, pass the artifact_id to get its current state."
+        ),
+    )
     async def get_artifact(
         artifact: str,
         artifact_id: str | None = None,
         draft_id: str | None = None,
         kwargs: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Get an artifact by ID.
+        """Get an artifact — call this first to load resources and context.
 
         Args:
             artifact: Artifact type — one of: agent, auth, cohort, department,
                 document, eval, field, model, parameter, persona, profile,
                 provider, rubric, scenario, setting, simulation, tool.
-            artifact_id: The artifact's UUID.
+            artifact_id: The artifact's UUID. Omit for new artifact mode.
             draft_id: Optional draft ID to fetch draft version.
             kwargs: Additional parameters — use docs(artifact) for full schema.
         """
@@ -1270,18 +1282,26 @@ def register_endpoints(server: FastMCP) -> None:
         payload: dict[str, Any] = kwargs or {}
         return await call_handler(artifact, "list", payload)
 
-    @server.tool()
+    @server.tool(
+        description=(
+            "Direct save (create or update) — use when the user wants to skip "
+            "the draft review step. Include ALL resource IDs in the payload, not "
+            "just changed ones. After saving, share the artifact link with the "
+            f"user: {ORIGIN}/training/{{artifact}}s/{{artifact_id}}"
+        ),
+    )
     async def save_artifact(
         artifact: str,
         payload: dict[str, Any],
     ) -> dict[str, Any]:
-        """Save (create or update) an artifact.
+        """Save (create or update) an artifact directly.
 
         Args:
             artifact: Artifact type — one of: agent, auth, cohort, department,
                 document, eval, field, model, parameter, persona, profile,
                 provider, rubric, scenario, setting, simulation, tool.
             payload: Full save payload — use docs(artifact) for schema.
+                Include ALL resource IDs, not just changed ones.
         """
         return await call_handler(artifact, "save", payload)
 
@@ -1320,7 +1340,14 @@ def register_endpoints(server: FastMCP) -> None:
             payload["name"] = name
         return await call_handler(artifact, "duplicate", payload)
 
-    @server.tool()
+    @server.tool(
+        description=(
+            "Recommended way to create or edit an artifact. Creates a draft the "
+            "user can review and edit in the UI before committing. Returns a "
+            "draft_id. Share the draft link with the user: "
+            f"{ORIGIN}/training/{{artifact}}s/new?draftId={{draft_id}}"
+        ),
+    )
     async def draft_artifact(
         artifact: str,
         payload: dict[str, Any],
@@ -1418,7 +1445,15 @@ def register_endpoints(server: FastMCP) -> None:
         handler = _get_handler(*RESOURCE_REGISTRY[resource]["search"])
         return await call_endpoint_handler(handler, payload, profile_id)
 
-    @server.tool()
+    @server.tool(
+        description=(
+            "Create a new resource. Pass group_id from the get_artifact() response "
+            "so the resource is grouped with the current artifact context. "
+            "Optionally pass tool_id if get_artifact() returned one for this "
+            "resource type. Reuse existing resources from get_artifact() when "
+            "possible — only create what's new."
+        ),
+    )
     async def create_resource(
         resource: str,
         payload: dict[str, Any],
@@ -1431,10 +1466,8 @@ def register_endpoints(server: FastMCP) -> None:
             resource: Resource name (e.g., "names", "descriptions", "flags").
                 Use discover_resources() to see all available resources.
             payload: Full create payload — use docs(resource) for schema.
-            group_id: Group ID from get_artifact() response. Pass this so
-                the new resource is associated with the current artifact context.
-            tool_id: Tool ID from get_artifact() response. Pass this to
-                associate the resource with the AI tool that generated it.
+            group_id: Group ID from get_artifact() response.
+            tool_id: Tool ID from get_artifact() response (if available for this resource type).
         """
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
 

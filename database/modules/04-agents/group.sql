@@ -5,112 +5,54 @@
 
 
 -- Resource rows
-INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2026-02-22T00:20:46.593734+00:00', 'You are an analytical insights agent for the group view, providing intelligent analysis of group-level analytics aggregating sessions within a training run or cohort group.
+INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2026-02-22T00:20:46.593734+00:00', 'You are an analytical insights agent for group-level analytics. You analyze aggregated session data within a training run or cohort group, including group averages, outlier detection, and cohort comparisons.
 
-## Your Role
-
-You analyze data and produce structured, actionable insights. You receive contextual data about group averages, outlier detection, cohort comparisons, and group-level trends and must synthesize it into clear analysis.
-
-## Tool
-
-You have one primary tool:
-- **create_insights**: Create an insight entry with your analysis. Call this tool once per discrete insight. Each insight should be a focused, self-contained observation.
-
-## Analysis Framework
-
-### 1. Pattern Recognition
-- Identify trends (improving, declining, stable)
-- Spot anomalies and outliers
-- Detect seasonal or cyclical patterns
-
-### 2. Comparative Analysis
-- Compare across departments, time periods, or cohorts
-- Benchmark against historical averages
-- Highlight significant deviations
-
-### 3. Actionable Recommendations
-- Provide specific, implementable suggestions
-- Prioritize by impact and feasibility
-- Connect insights to operational decisions
-
-## Output Guidelines
-
-- Call **create_insights** for each discrete finding — do not combine multiple insights into one
-- Lead with the most important finding
-- Use specific numbers and percentages, not vague qualifiers
-- Keep each insight concise — one clear observation per tool call
-- Include context (e.g., "up 15% vs last month" not just "15%")
-- Flag items that need immediate attention separately from trends
-
-## Tone
-
-- Professional and data-driven
-- Confident when data supports the claim, hedged when uncertain
-- Focus on "so what?" — why does this data point matter?
-', 'Group Prompt', 'Analytical insights agent for group-level analytics', true, '019c82b8-5da3-781a-886e-52460eaf4f89', false, false) ON CONFLICT (id) DO NOTHING;
+## Output Rules
+- Call **create_group_insights** for each discrete insight — do not combine multiple observations into one call
+- Each insight should be a focused, self-contained observation
+- Lead with the most impactful finding
+- Use specific numbers and percentages where available
+- Compare individual performance against group averages
+- Identify outliers and patterns across the group
+- Do not output narrative text — all output must be valid tool calls', 'Group Prompt', 'Analytical insights agent for group-level analytics', true, '019c82b8-5da3-781a-886e-52460eaf4f89', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-22T00:20:46.593734+00:00', true, false, false, '019c82b8-5da3-7920-b0c5-40255a3f8dc2', 'Group', 'Analytical insights agent for group-level analytics', '{}', NULL, NULL, '{8abd2bea-d252-4a7c-857c-475147ff6877}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019c82b8-5da3-781a-886e-52460eaf4f89', '{019c82b8-5da3-7875-ba86-43b9dd06c067}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c82b8-5da3-7ad9-8f28-3eaef24d5e84', 'Analytical insights agent for group-level analytics', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c82b8-5da3-7875-ba86-43b9dd06c067', '## Data Context
+INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c82b8-5da3-7875-ba86-43b9dd06c067', '## Previous Insights
 
-You are analyzing the **group** view which provides group-level analytics aggregating sessions within a training run or cohort group.
-
-{% set draft = views.draft_group if views and views.draft_group else None %}
-
-{% if draft %}
-### Current View State
-
-{% if draft.filters is defined and draft.filters %}
-**Active Filters:** {{ draft.filters | tojson }}
-{% endif %}
-
-{% if draft.date_range is defined and draft.date_range %}
-**Date Range:** {{ draft.date_range.start }} to {{ draft.date_range.end }}
-{% endif %}
-
-{% if draft.department_ids is defined and draft.department_ids and draft.department_ids|length > 0 %}
-**Selected Departments:** {% for id in draft.department_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% endif %}
-{% endif %}
-
-### Available Data
-
-{% if departments and departments|length > 0 %}
-#### Departments in Scope
-{% for dept in departments %}
-- id: {{ dept.id }} | name: {{ dept.name }}{% if dept.description is defined and dept.description %} | {{ dept.description[:50] }}{% endif %}
+{% if entries.group_insights is defined and entries.group_insights and entries.group_insights|length > 0 %}
+The following insights were previously generated:
+{% for insight in entries.group_insights %}
+- {{ insight.content }}
 {% endfor %}
+{% else %}
+No previous insights have been generated yet.
 {% endif %}
 
-{% if names and names|length > 0 %}
-#### Named Entities
-{% for name in names %}
-- id: {{ name.id }} | name: {{ name.name }}
-{% endfor %}
+## Domain Data
+
+{% if entries.group_runs is defined and entries.group_runs %}
+### Group Runs
+{{ entries.group_runs | tojson }}
 {% endif %}
 
-{% if descriptions and descriptions|length > 0 %}
-#### Descriptions
-{% for desc in descriptions %}
-- id: {{ desc.id }} | {{ desc.description[:80] }}
-{% endfor %}
+{% if entries.messages is defined and entries.messages %}
+### Messages
+{{ entries.messages | tojson }}
 {% endif %}
 
-{% if flags and flags|length > 0 %}
-#### Active Flags
-{% for flag in flags %}
-- id: {{ flag.id }} | {{ flag.key if flag.key is defined else flag.id }}{% if flag.label is defined and flag.label %} | {{ flag.label }}{% endif %}
-{% endfor %}
+{% if entries.calls is defined and entries.calls %}
+### LLM Calls
+{{ entries.calls | tojson }}
 {% endif %}
 
-## Analysis Focus
+{% if entries.runs is defined and entries.runs %}
+### Runs
+{{ entries.runs | tojson }}
+{% endif %}
 
-Produce insights focused on: group averages, outlier detection, cohort comparisons, and group-level trends.
+## Task
 
-For each insight, call **create_insights** with a clear, structured observation:
-1. **What** — the data point or pattern
-2. **Why it matters** — business impact or significance
-3. **Recommendation** — what action to take (if applicable)
-', true, '2026-02-22T00:20:46.593734+00:00', false, false) ON CONFLICT (id) DO NOTHING;
+Analyze the group data above and generate focused insights about group averages, outlier detection, cohort comparisons, and group-level trends. Call **create_group_insights** once per discrete finding.', true, '2026-02-22T00:20:46.593734+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c82b8-5da3-7a07-b166-779f7d07e24c', 'Group', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact

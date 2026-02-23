@@ -1759,6 +1759,22 @@ async def get_attempt_websocket(
         standards=data.resources_payload.standards,
     )
 
+    # Fetch previous insights
+    from app.api.v4.entries.attempt_insights.search import (
+        search_attempt_insights_entries_internal,
+    )
+
+    insights_result: list[dict] | None = None
+    if pool:
+
+        async def fetch_insights():
+            async with pool.acquire() as c:
+                return await search_attempt_insights_entries_internal(
+                    c, limit_count=20, bypass_cache=bypass_cache
+                )
+
+        insights_result = await fetch_insights()
+
     websocket_config = WebsocketConfig(
         agents=data.config_agent_resources,
         models=data.config_model_resources,
@@ -1775,6 +1791,7 @@ async def get_attempt_websocket(
             attempt_chat=data.chats,
             attempt_message=data.messages,
             runs=runs_result,
+            attempt_insights=insights_result or None,
         ),
         resources=ws_resources,
         config=websocket_config,

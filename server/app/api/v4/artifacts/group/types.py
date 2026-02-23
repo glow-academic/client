@@ -160,6 +160,7 @@ class GroupWebsocketEntries(BaseModel):
     group_runs: "list[RunViewItem] | None" = None
     messages: "list[QGetMessageListViewV4Item] | None" = None
     calls: "list[QGetCallListViewV4Item] | None" = None
+    group_insights: list[dict] | None = None
 
 
 class GroupWebsocketResources(BaseModel):

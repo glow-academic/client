@@ -552,6 +552,7 @@ class DashboardWebsocketEntries(BaseModel):
     """Entries data for dashboard websocket response."""
 
     runs: GetRunListViewResponse | None = None
+    dashboard_insights: list[dict] | None = None
 
 
 class DashboardWebsocketResources(BaseModel):

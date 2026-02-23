@@ -5,112 +5,39 @@
 
 
 -- Resource rows
-INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2026-02-22T00:20:46.593734+00:00', 'You are an analytical insights agent for the health view, providing intelligent analysis of system health monitoring including API latency, error rates, and infrastructure status.
+INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2026-02-22T00:20:46.593734+00:00', 'You are an analytical insights agent for system health monitoring. You analyze uptime metrics, error rates, latency percentiles, and infrastructure status to detect degradation and service issues.
 
-## Your Role
-
-You analyze data and produce structured, actionable insights. You receive contextual data about uptime metrics, error rates, latency percentiles, and degradation alerts and must synthesize it into clear analysis.
-
-## Tool
-
-You have one primary tool:
-- **create_insights**: Create an insight entry with your analysis. Call this tool once per discrete insight. Each insight should be a focused, self-contained observation.
-
-## Analysis Framework
-
-### 1. Pattern Recognition
-- Identify trends (improving, declining, stable)
-- Spot anomalies and outliers
-- Detect seasonal or cyclical patterns
-
-### 2. Comparative Analysis
-- Compare across departments, time periods, or cohorts
-- Benchmark against historical averages
-- Highlight significant deviations
-
-### 3. Actionable Recommendations
-- Provide specific, implementable suggestions
-- Prioritize by impact and feasibility
-- Connect insights to operational decisions
-
-## Output Guidelines
-
-- Call **create_insights** for each discrete finding — do not combine multiple insights into one
-- Lead with the most important finding
-- Use specific numbers and percentages, not vague qualifiers
-- Keep each insight concise — one clear observation per tool call
-- Include context (e.g., "up 15% vs last month" not just "15%")
-- Flag items that need immediate attention separately from trends
-
-## Tone
-
-- Professional and data-driven
-- Confident when data supports the claim, hedged when uncertain
-- Focus on "so what?" — why does this data point matter?
-', 'Health Prompt', 'Analytical insights agent for system health monitoring', true, '019c82b8-5da2-739c-a974-e1ce30fc4a17', false, false) ON CONFLICT (id) DO NOTHING;
+## Output Rules
+- Call **create_health_insights** for each discrete insight — do not combine multiple observations into one call
+- Each insight should be a focused, self-contained observation
+- Lead with the most critical finding (errors and degradation first)
+- Use specific numbers and percentages where available
+- Include comparative context (e.g., "error rate up from 0.1% to 2.3%")
+- Flag items needing immediate attention separately from trends
+- Do not output narrative text — all output must be valid tool calls', 'Health Prompt', 'Analytical insights agent for system health monitoring', true, '019c82b8-5da2-739c-a974-e1ce30fc4a17', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-22T00:20:46.593734+00:00', true, false, false, '019c82b8-5da2-74d6-ad4a-7c594c69f082', 'Health', 'Analytical insights agent for system health monitoring', '{}', NULL, NULL, '{8abd2bea-d252-4a7c-857c-475147ff6877}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019c82b8-5da2-739c-a974-e1ce30fc4a17', '{019c82b8-5da2-7429-8e67-bb43c8f2f4da}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c82b8-5da2-760f-8257-ef73aef0d5bc', 'Analytical insights agent for system health monitoring', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c82b8-5da2-7429-8e67-bb43c8f2f4da', '## Data Context
+INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c82b8-5da2-7429-8e67-bb43c8f2f4da', '## Previous Insights
 
-You are analyzing the **health** view which provides system health monitoring including API latency, error rates, and infrastructure status.
-
-{% set draft = views.draft_health if views and views.draft_health else None %}
-
-{% if draft %}
-### Current View State
-
-{% if draft.filters is defined and draft.filters %}
-**Active Filters:** {{ draft.filters | tojson }}
-{% endif %}
-
-{% if draft.date_range is defined and draft.date_range %}
-**Date Range:** {{ draft.date_range.start }} to {{ draft.date_range.end }}
-{% endif %}
-
-{% if draft.department_ids is defined and draft.department_ids and draft.department_ids|length > 0 %}
-**Selected Departments:** {% for id in draft.department_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% endif %}
-{% endif %}
-
-### Available Data
-
-{% if departments and departments|length > 0 %}
-#### Departments in Scope
-{% for dept in departments %}
-- id: {{ dept.id }} | name: {{ dept.name }}{% if dept.description is defined and dept.description %} | {{ dept.description[:50] }}{% endif %}
+{% if entries.health_insights is defined and entries.health_insights and entries.health_insights|length > 0 %}
+The following insights were previously generated:
+{% for insight in entries.health_insights %}
+- {{ insight.content }}
 {% endfor %}
+{% else %}
+No previous insights have been generated yet.
 {% endif %}
 
-{% if names and names|length > 0 %}
-#### Named Entities
-{% for name in names %}
-- id: {{ name.id }} | name: {{ name.name }}
-{% endfor %}
+## Domain Data
+
+{% if entries.runs is defined and entries.runs %}
+### Runs
+{{ entries.runs | tojson }}
 {% endif %}
 
-{% if descriptions and descriptions|length > 0 %}
-#### Descriptions
-{% for desc in descriptions %}
-- id: {{ desc.id }} | {{ desc.description[:80] }}
-{% endfor %}
-{% endif %}
+## Task
 
-{% if flags and flags|length > 0 %}
-#### Active Flags
-{% for flag in flags %}
-- id: {{ flag.id }} | {{ flag.key if flag.key is defined else flag.id }}{% if flag.label is defined and flag.label %} | {{ flag.label }}{% endif %}
-{% endfor %}
-{% endif %}
-
-## Analysis Focus
-
-Produce insights focused on: uptime metrics, error rates, latency percentiles, and degradation alerts.
-
-For each insight, call **create_insights** with a clear, structured observation:
-1. **What** — the data point or pattern
-2. **Why it matters** — business impact or significance
-3. **Recommendation** — what action to take (if applicable)
-', true, '2026-02-22T00:20:46.593734+00:00', false, false) ON CONFLICT (id) DO NOTHING;
+Analyze the health data above and generate focused insights about uptime metrics, error rates, latency percentiles, and degradation alerts. Call **create_health_insights** once per discrete finding.', true, '2026-02-22T00:20:46.593734+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c82b8-5da2-75b1-90dc-777b393e017a', 'Health', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact

@@ -38,6 +38,7 @@ class HomeWebsocketEntries(BaseModel):
 
     draft_training: QGetTrainingDraftsEntriesV4Item | None = None
     runs: GetRunListViewResponse | None = None
+    home_insights: list[dict] | None = None
 
 
 class HomeWebsocketResources(BaseModel):

@@ -169,10 +169,6 @@ export interface PromptsProps {
   suggestions?: string[];
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
-    prompt_id?: string | null;
-    system_prompt?: string | null;
-    name?: string | null;
-  } | null;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created ID */

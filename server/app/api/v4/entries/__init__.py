@@ -48,6 +48,7 @@ from app.api.v4.entries.emulations import router as emulations_router
 from app.api.v4.entries.eval_drafts import router as eval_drafts_router
 from app.api.v4.entries.field_drafts import router as field_drafts_router
 from app.api.v4.entries.grants import router as grants_router
+from app.api.v4.entries.group_insights import router as group_insights_router
 from app.api.v4.entries.groups import router as groups_router
 from app.api.v4.entries.health import router as health_router
 from app.api.v4.entries.health_insights import router as health_insights_router
@@ -87,6 +88,7 @@ from app.api.v4.entries.rubric_drafts import router as rubric_drafts_router
 from app.api.v4.entries.run_pricing import router as run_pricing_router
 from app.api.v4.entries.runs import router as runs_router
 from app.api.v4.entries.scenario_drafts import router as scenario_drafts_router
+from app.api.v4.entries.session_insights import router as session_insights_router
 from app.api.v4.entries.sessions import router as sessions_router
 from app.api.v4.entries.setting_drafts import router as setting_drafts_router
 from app.api.v4.entries.simulation_drafts import router as simulation_drafts_router
@@ -156,6 +158,7 @@ router.include_router(emulations_router)
 router.include_router(eval_drafts_router)
 router.include_router(field_drafts_router)
 router.include_router(grants_router)
+router.include_router(group_insights_router)
 router.include_router(groups_router)
 router.include_router(health_router)
 router.include_router(health_insights_router)
@@ -191,6 +194,7 @@ router.include_router(rubric_drafts_router)
 router.include_router(run_pricing_router)
 router.include_router(runs_router)
 router.include_router(scenario_drafts_router)
+router.include_router(session_insights_router)
 router.include_router(sessions_router)
 router.include_router(setting_drafts_router)
 router.include_router(simulation_drafts_router)

@@ -127,6 +127,7 @@ class SessionWebsocketEntries(BaseModel):
     # Domain views (from internal layer)
     groups: "list[QGetGroupListViewV4Item] | None" = None
     audits: "list[QGetAuditListViewV4Item] | None" = None
+    session_insights: list[dict] | None = None
 
 
 class SessionWebsocketResources(BaseModel):

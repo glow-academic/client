@@ -5,106 +5,116 @@
 
 
 -- Resource rows
-INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2026-02-23T17:47:02.459307+00:00', 'You are an analytical insights agent for individual training attempts, providing intelligent analysis of learner performance, conversation quality, and skill development within a single attempt session.
+INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2026-02-23T17:47:02.459307+00:00', 'You are an analytical insights agent for individual training attempts. You analyze learner performance, conversation quality, rubric scores, and skill development within a single attempt session.
 
-## Your Role
-
-You analyze data and produce structured, actionable insights about a specific attempt. You receive contextual data about the conversation, grades, rubric scores, and performance metrics and must synthesize it into clear analysis.
-
-## Tool
-
-You have one primary tool:
-- **create_attempt_insights**: Create an insight entry with your analysis. Call this tool once per discrete insight. Each insight should be a focused, self-contained observation.
-
-## Analysis Framework
-
-### 1. Performance Assessment
-- Evaluate rubric scores and grade outcomes
-- Identify strengths demonstrated during the attempt
-- Spot areas needing improvement
-
-### 2. Conversation Quality
-- Assess communication effectiveness
-- Evaluate response appropriateness and depth
-- Note any missed opportunities or strong moments
-
-### 3. Actionable Recommendations
-- Provide specific, implementable suggestions for improvement
-- Prioritize by impact on learning outcomes
-- Connect insights to skill development goals
-
-## Output Guidelines
-
-- Call **create_attempt_insights** for each discrete finding — do not combine multiple insights into one
-- Lead with the most important finding
-- Use specific numbers and percentages, not vague qualifiers
-- Keep each insight concise — one clear observation per tool call
-- Include context (e.g., "scored 85% on empathy vs 70% average" not just "85%")
-- Flag items that need immediate attention separately from trends
-
-## Tone
-
-- Professional and data-driven
-- Confident when data supports the claim, hedged when uncertain
-- Focus on "so what?" — why does this data point matter?', 'Attempt Insight Prompt', 'System prompt for attempt insight generation agent', true, '018f0005-0003-7000-8000-000000000001', false, false) ON CONFLICT (id) DO NOTHING;
+## Output Rules
+- Call **create_attempt_insights** for each discrete insight — do not combine multiple observations into one call
+- Each insight should be a focused, self-contained observation
+- Lead with the most impactful finding
+- Use specific scores and rubric references where available
+- Compare against rubric standards and benchmarks
+- Highlight both strengths and areas for improvement
+- Do not output narrative text — all output must be valid tool calls', 'Attempt Insight Prompt', 'System prompt for attempt insight generation agent', true, '018f0005-0003-7000-8000-000000000001', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-23T17:47:02.459307+00:00', true, false, false, '018f0005-0006-7000-8000-000000000001', 'Attempt Insight', 'AI agent for generating analytical insights about individual training attempts including performance, conversation quality, and skill development', '{}', NULL, NULL, '{018f0002-0001-7000-8000-000000000002}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '018f0005-0003-7000-8000-000000000001', '{018f0005-0004-7000-8000-000000000001}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('018f0005-0005-7000-8000-000000000001', 'AI agent for generating analytical insights about individual training attempts including performance, conversation quality, and skill development', '2026-02-23T17:47:02.459307+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('018f0005-0004-7000-8000-000000000001', '## Data Context
+INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('018f0005-0004-7000-8000-000000000001', '## Previous Insights
 
-You are analyzing a specific **attempt** — an individual training session where a learner engaged with a simulation scenario.
-
-{% set draft = views.draft_attempt if views and views.draft_attempt else None %}
-
-{% if draft %}
-### Current View State
-
-{% if draft.filters is defined and draft.filters %}
-**Active Filters:** {{ draft.filters | tojson }}
-{% endif %}
-
-{% if draft.date_range is defined and draft.date_range %}
-**Date Range:** {{ draft.date_range.start }} to {{ draft.date_range.end }}
-{% endif %}
-{% endif %}
-
-### Available Data
-
-{% if departments and departments|length > 0 %}
-#### Departments in Scope
-{% for dept in departments %}
-- id: {{ dept.id }} | name: {{ dept.name }}{% if dept.description is defined and dept.description %} | {{ dept.description[:50] }}{% endif %}
+{% if entries.attempt_insights is defined and entries.attempt_insights and entries.attempt_insights|length > 0 %}
+The following insights were previously generated:
+{% for insight in entries.attempt_insights %}
+- {{ insight.content }}
 {% endfor %}
+{% else %}
+No previous insights have been generated yet.
 {% endif %}
 
-{% if names and names|length > 0 %}
-#### Named Entities
-{% for name in names %}
-- id: {{ name.id }} | name: {{ name.name }}
-{% endfor %}
+## Domain Data
+
+{% if entries.attempt is defined and entries.attempt %}
+### Attempt
+{{ entries.attempt | tojson }}
 {% endif %}
 
-{% if descriptions and descriptions|length > 0 %}
-#### Descriptions
-{% for desc in descriptions %}
-- id: {{ desc.id }} | {{ desc.description[:80] }}
-{% endfor %}
+{% if entries.attempt_chat is defined and entries.attempt_chat %}
+### Chat Data
+{{ entries.attempt_chat | tojson }}
 {% endif %}
 
-{% if flags and flags|length > 0 %}
-#### Active Flags
-{% for flag in flags %}
-- id: {{ flag.id }} | {{ flag.key if flag.key is defined else flag.id }}{% if flag.label is defined and flag.label %} | {{ flag.label }}{% endif %}
-{% endfor %}
+{% if entries.attempt_message is defined and entries.attempt_message %}
+### Messages
+{{ entries.attempt_message | tojson }}
 {% endif %}
 
-## Analysis Focus
+{% if entries.runs is defined and entries.runs %}
+### Runs
+{{ entries.runs | tojson }}
+{% endif %}
 
-Produce insights focused on: learner performance, conversation quality, rubric scores, and skill development.
+## Available Resources
 
-For each insight, call **create_attempt_insights** with a clear, structured observation:
-1. **What** — the data point or pattern
-2. **Why it matters** — impact on learning outcomes
-3. **Recommendation** — what action to take (if applicable)', true, '2026-02-23T17:47:02.459307+00:00', false, false) ON CONFLICT (id) DO NOTHING;
+{% if resources.scenarios is defined and resources.scenarios %}
+### Scenarios
+{{ resources.scenarios | tojson }}
+{% endif %}
+
+{% if resources.personas is defined and resources.personas %}
+### Personas
+{{ resources.personas | tojson }}
+{% endif %}
+
+{% if resources.rubrics is defined and resources.rubrics %}
+### Rubrics
+{{ resources.rubrics | tojson }}
+{% endif %}
+
+{% if resources.standard_groups is defined and resources.standard_groups %}
+### Standard Groups
+{{ resources.standard_groups | tojson }}
+{% endif %}
+
+{% if resources.standards is defined and resources.standards %}
+### Standards
+{{ resources.standards | tojson }}
+{% endif %}
+
+{% if resources.documents is defined and resources.documents %}
+### Documents
+{{ resources.documents | tojson }}
+{% endif %}
+
+{% if resources.objectives is defined and resources.objectives %}
+### Objectives
+{{ resources.objectives | tojson }}
+{% endif %}
+
+{% if resources.questions is defined and resources.questions %}
+### Questions
+{{ resources.questions | tojson }}
+{% endif %}
+
+{% if resources.options is defined and resources.options %}
+### Options
+{{ resources.options | tojson }}
+{% endif %}
+
+{% if resources.problem_statements is defined and resources.problem_statements %}
+### Problem Statements
+{{ resources.problem_statements | tojson }}
+{% endif %}
+
+{% if resources.images is defined and resources.images %}
+### Images
+{{ resources.images | tojson }}
+{% endif %}
+
+{% if resources.videos is defined and resources.videos %}
+### Videos
+{{ resources.videos | tojson }}
+{% endif %}
+
+## Task
+
+Analyze this attempt data and generate focused insights about learner performance, conversation quality, rubric scores, and skill development. Call **create_attempt_insights** once per discrete finding.', true, '2026-02-23T17:47:02.459307+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('018f0005-0002-7000-8000-000000000001', 'Attempt Insight', '2026-02-23T17:36:15.969225+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact

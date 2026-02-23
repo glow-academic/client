@@ -5,57 +5,69 @@
 
 
 -- Resource rows
-INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2026-02-22T00:20:46.593734+00:00', 'You are a benchmark test grading agent for benchmark test grading — evaluating model outputs against rubric standards.
-
-## Your Role
-
-You evaluate model outputs against rubric standards and assign grades. You provide objective, criteria-based feedback on model performance.
+INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2026-02-22T00:20:46.593734+00:00', 'You are a benchmark test grading agent. You evaluate model outputs against rubric standards and generate performance insights.
 
 ## Tools
+- **create_feedback**: Grade a specific standard group with a 1-5 score and detailed feedback
+- **create_test_insights**: Generate an analytical insight about the overall test results
 
-- **create_feedback**: Create a grade for a specific standard group with a 1-5 score and feedback
-
-## Grading Guidelines
-
-- Evaluate strictly against the rubric criteria
-- Assign grades (1-5) based on evidence in the model output
-- Provide specific feedback referencing rubric standards
+## Output Rules
+- Use **create_feedback** for each standard group evaluation — score 1-5 with specific evidence
+- Use **create_test_insights** for broader analytical observations about the test
+- Evaluate strictly against rubric criteria
 - Be consistent and objective across evaluations
-- Note edge cases or ambiguous assessments
-
-## Output
-
-Generate evaluations using the tools above. Do not output narrative text outside of tool calls.
-', 'Test Prompt', 'Benchmark test grading agent for evaluating model outputs against rubric standards', true, '019c82b8-5d9c-7527-b0a1-ae3381521b71', false, false) ON CONFLICT (id) DO NOTHING;
+- Reference specific rubric standards in your feedback
+- Do not output narrative text — all output must be valid tool calls', 'Test Prompt', 'Benchmark test grading agent for evaluating model outputs against rubric standards', true, '019c82b8-5d9c-7527-b0a1-ae3381521b71', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-22T00:20:46.593734+00:00', true, false, false, '019c82b8-5d9c-75f6-8468-7af07ed62ce7', 'Test', 'Benchmark test grading agent for evaluating model outputs against rubric standards', '{}', NULL, NULL, '{019bebc4-d436-7ba4-963e-758c7971447d}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019c82b8-5d9c-7527-b0a1-ae3381521b71', '{019c82b8-5d9c-757d-9ca9-3247ce810ff2}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c82b8-5d9c-77ad-9589-47756200136f', 'Benchmark test grading agent for evaluating model outputs against rubric standards', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c82b8-5d9c-757d-9ca9-3247ce810ff2', '## Context
+INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c82b8-5d9c-757d-9ca9-3247ce810ff2', '## Previous Insights
 
-{% set draft = views.draft_test if views and views.draft_test else None %}
-
-{% if draft %}
-### Current State
-{{ draft | tojson }}
-{% endif %}
-
-{% if standard_groups and standard_groups|length > 0 %}
-### Rubric Standard Groups
-{% for sg in standard_groups %}
-- id: {{ sg.id }} | name: {{ sg.name }}{% if sg.description is defined %} | {{ sg.description[:50] }}{% endif %}
+{% if entries.test_insights is defined and entries.test_insights and entries.test_insights|length > 0 %}
+The following insights were previously generated:
+{% for insight in entries.test_insights %}
+- {{ insight.content }}
 {% endfor %}
+{% else %}
+No previous insights have been generated yet.
 {% endif %}
 
-{% if standards and standards|length > 0 %}
-### Rubric Standards
-{% for s in standards %}
-- id: {{ s.id }} | description: {{ s.description[:80] if s.description is defined else s.id }}
-{% endfor %}
+## Domain Data
+
+{% if entries.test is defined and entries.test %}
+### Test Entry
+{{ entries.test | tojson }}
 {% endif %}
 
-## Tool Usage
+{% if entries.test_invocation is defined and entries.test_invocation %}
+### Test Invocations
+{{ entries.test_invocation | tojson }}
+{% endif %}
 
-Use **create_feedback** for each standard group. Score 1-5 with specific evidence from the model output.
-', true, '2026-02-22T00:20:46.593734+00:00', false, false) ON CONFLICT (id) DO NOTHING;
+{% if entries.runs is defined and entries.runs %}
+### Runs
+{{ entries.runs | tojson }}
+{% endif %}
+
+## Available Resources
+
+{% if resources.evals is defined and resources.evals %}
+### Evaluations
+{{ resources.evals | tojson }}
+{% endif %}
+
+{% if resources.rubrics is defined and resources.rubrics %}
+### Rubrics
+{{ resources.rubrics | tojson }}
+{% endif %}
+
+{% if resources.names is defined and resources.names %}
+### Names
+{{ resources.names | tojson }}
+{% endif %}
+
+## Task
+
+Evaluate the model outputs against the rubric standards above. Use **create_feedback** to grade each standard group (1-5 score with evidence). Use **create_test_insights** for broader analytical observations about test results.', true, '2026-02-22T00:20:46.593734+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c82b8-5d9c-7738-ae5c-8c25724b54be', 'Test', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact

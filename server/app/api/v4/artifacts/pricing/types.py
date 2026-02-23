@@ -101,6 +101,7 @@ class PricingWebsocketEntries(BaseModel):
     """Entries data for pricing websocket response."""
 
     runs: GetRunListViewResponse | None = None
+    pricing_insights: list[dict] | None = None
 
 
 class PricingWebsocketResources(BaseModel):

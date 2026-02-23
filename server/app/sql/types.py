@@ -8461,6 +8461,40 @@ class SearchGrantsEntriesApiResponse(BaseModel):
 
 
 
+# Generated from: search_group_insights_entries
+
+class SearchGroupInsightsEntriesSqlParams(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    group_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.group_id,
+        )
+
+class SearchGroupInsightsEntriesSqlRow(BaseModel):
+
+    items: Any | None = None
+
+class SearchGroupInsightsEntriesApiRequest(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    group_id: UUID | None = None
+
+class SearchGroupInsightsEntriesApiResponse(BaseModel):
+
+    items: Any | None = None
+
+
+
 # Generated from: create_groups_entries
 
 class CreateGroupsEntriesSqlParams(BaseModel):
@@ -12168,6 +12202,40 @@ class SearchScenarioDraftsEntriesApiRequest(BaseModel):
     group_id: UUID | None = None
 
 class SearchScenarioDraftsEntriesApiResponse(BaseModel):
+
+    items: Any | None = None
+
+
+
+# Generated from: search_session_insights_entries
+
+class SearchSessionInsightsEntriesSqlParams(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    group_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.group_id,
+        )
+
+class SearchSessionInsightsEntriesSqlRow(BaseModel):
+
+    items: Any | None = None
+
+class SearchSessionInsightsEntriesApiRequest(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    group_id: UUID | None = None
+
+class SearchSessionInsightsEntriesApiResponse(BaseModel):
 
     items: Any | None = None
 
@@ -37404,6 +37472,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchGrantsEntriesApiRequest",
         "SearchGrantsEntriesApiResponse",
     ),
+    "app/sql/v4/queries/entries/group_insights/search_group_insights_entries_complete.sql": (
+        "SearchGroupInsightsEntriesSqlParams",
+        "SearchGroupInsightsEntriesSqlRow",
+        "SearchGroupInsightsEntriesApiRequest",
+        "SearchGroupInsightsEntriesApiResponse",
+    ),
     "app/sql/v4/queries/entries/groups/create_groups_entries_complete.sql": (
         "CreateGroupsEntriesSqlParams",
         "CreateGroupsEntriesSqlRow",
@@ -38087,6 +38161,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchScenarioDraftsEntriesSqlRow",
         "SearchScenarioDraftsEntriesApiRequest",
         "SearchScenarioDraftsEntriesApiResponse",
+    ),
+    "app/sql/v4/queries/entries/session_insights/search_session_insights_entries_complete.sql": (
+        "SearchSessionInsightsEntriesSqlParams",
+        "SearchSessionInsightsEntriesSqlRow",
+        "SearchSessionInsightsEntriesApiRequest",
+        "SearchSessionInsightsEntriesApiResponse",
     ),
     "app/sql/v4/queries/entries/sessions/create_sessions_entries_complete.sql": (
         "CreateSessionsEntriesSqlParams",
@@ -42769,6 +42849,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/entries/group_insights/search_group_insights_entries_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/entries/groups/create_groups_entries_complete.sql"]
     ) -> SqlString: ...
 
@@ -43335,6 +43420,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/entries/scenario_drafts/search_scenario_drafts_entries_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/entries/session_insights/search_session_insights_entries_complete.sql"]
     ) -> SqlString: ...
 
     @overload

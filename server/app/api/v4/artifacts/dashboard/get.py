@@ -1139,6 +1139,19 @@ async def get_dashboard_websocket(
                 _fetch_args_outputs(),
             )
 
+    # Fetch previous insights
+    from app.api.v4.entries.dashboard_insights.search import (
+        search_dashboard_insights_entries_internal,
+    )
+
+    async def _fetch_insights():
+        async with pool.acquire() as c:
+            return await search_dashboard_insights_entries_internal(
+                c, limit_count=20, bypass_cache=bypass_cache
+            )
+
+    insights_result = await _fetch_insights()
+
     websocket_config = WebsocketConfig(
         agents=config_agents or None,
         models=config_models or None,
@@ -1152,6 +1165,7 @@ async def get_dashboard_websocket(
     return GetDashboardWebsocketResponse(
         entries=DashboardWebsocketEntries(
             runs=runs_result,
+            dashboard_insights=insights_result or None,
         ),
         resources=DashboardWebsocketResources(),
         config=websocket_config,

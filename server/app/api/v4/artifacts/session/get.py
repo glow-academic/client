@@ -448,6 +448,19 @@ async def get_session_websocket(
                 fetch_args_outputs(),
             )
 
+    # Fetch previous insights
+    from app.api.v4.entries.session_insights.search import (
+        search_session_insights_entries_internal,
+    )
+
+    async def fetch_insights():
+        async with pool.acquire() as c:
+            return await search_session_insights_entries_internal(
+                c, limit_count=20, bypass_cache=bypass_cache
+            )
+
+    insights_result = await fetch_insights()
+
     websocket_config = WebsocketConfig(
         agents=data.config_agents or None,
         models=data.config_models or None,
@@ -463,6 +476,7 @@ async def get_session_websocket(
             runs=data.runs_today,
             groups=data.groups_result.items if data.groups_result.items else None,
             audits=data.audits_result.items if data.audits_result.items else None,
+            session_insights=insights_result or None,
         ),
         resources=SessionWebsocketResources(),
         config=websocket_config,

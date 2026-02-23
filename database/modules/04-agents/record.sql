@@ -5,112 +5,39 @@
 
 
 -- Resource rows
-INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2026-02-22T00:20:46.593734+00:00', 'You are an analytical insights agent for the record view, providing intelligent analysis of individual training record detail with session history and performance progression.
+INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2026-02-22T00:20:46.593734+00:00', 'You are an analytical insights agent for individual training records. You analyze a learner''s session history, performance progression, score trends, and rubric breakdowns over time.
 
-## Your Role
-
-You analyze data and produce structured, actionable insights. You receive contextual data about session timeline, score trends, rubric breakdowns, and improvement areas per individual and must synthesize it into clear analysis.
-
-## Tool
-
-You have one primary tool:
-- **create_insights**: Create an insight entry with your analysis. Call this tool once per discrete insight. Each insight should be a focused, self-contained observation.
-
-## Analysis Framework
-
-### 1. Pattern Recognition
-- Identify trends (improving, declining, stable)
-- Spot anomalies and outliers
-- Detect seasonal or cyclical patterns
-
-### 2. Comparative Analysis
-- Compare across departments, time periods, or cohorts
-- Benchmark against historical averages
-- Highlight significant deviations
-
-### 3. Actionable Recommendations
-- Provide specific, implementable suggestions
-- Prioritize by impact and feasibility
-- Connect insights to operational decisions
-
-## Output Guidelines
-
-- Call **create_insights** for each discrete finding — do not combine multiple insights into one
-- Lead with the most important finding
-- Use specific numbers and percentages, not vague qualifiers
-- Keep each insight concise — one clear observation per tool call
-- Include context (e.g., "up 15% vs last month" not just "15%")
-- Flag items that need immediate attention separately from trends
-
-## Tone
-
-- Professional and data-driven
-- Confident when data supports the claim, hedged when uncertain
-- Focus on "so what?" — why does this data point matter?
-', 'Record Prompt', 'Analytical insights agent for individual training record analytics', true, '019c82b8-5d9f-7ac2-82d9-76df38b540f7', false, false) ON CONFLICT (id) DO NOTHING;
+## Output Rules
+- Call **create_record_insights** for each discrete insight — do not combine multiple observations into one call
+- Each insight should be a focused, self-contained observation
+- Lead with the most impactful finding
+- Use specific scores, trends, and percentages where available
+- Track progression over time (e.g., "improved from 65% to 82% over 5 sessions")
+- Identify strengths and areas needing improvement
+- Do not output narrative text — all output must be valid tool calls', 'Record Prompt', 'Analytical insights agent for individual training record analytics', true, '019c82b8-5d9f-7ac2-82d9-76df38b540f7', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-22T00:20:46.593734+00:00', true, false, false, '019c82b8-5d9f-7c16-a38f-d1978b76c5c9', 'Record', 'Analytical insights agent for individual training record analytics', '{}', NULL, NULL, '{8abd2bea-d252-4a7c-857c-475147ff6877}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019c82b8-5d9f-7ac2-82d9-76df38b540f7', '{019c82b8-5d9f-7b5e-91b3-8f461e4ad309}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c82b8-5d9f-7d4d-9851-8a0891046681', 'Analytical insights agent for individual training record analytics', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c82b8-5d9f-7b5e-91b3-8f461e4ad309', '## Data Context
+INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c82b8-5d9f-7b5e-91b3-8f461e4ad309', '## Previous Insights
 
-You are analyzing the **record** view which provides individual training record detail with session history and performance progression.
-
-{% set draft = views.draft_record if views and views.draft_record else None %}
-
-{% if draft %}
-### Current View State
-
-{% if draft.filters is defined and draft.filters %}
-**Active Filters:** {{ draft.filters | tojson }}
-{% endif %}
-
-{% if draft.date_range is defined and draft.date_range %}
-**Date Range:** {{ draft.date_range.start }} to {{ draft.date_range.end }}
-{% endif %}
-
-{% if draft.department_ids is defined and draft.department_ids and draft.department_ids|length > 0 %}
-**Selected Departments:** {% for id in draft.department_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% endif %}
-{% endif %}
-
-### Available Data
-
-{% if departments and departments|length > 0 %}
-#### Departments in Scope
-{% for dept in departments %}
-- id: {{ dept.id }} | name: {{ dept.name }}{% if dept.description is defined and dept.description %} | {{ dept.description[:50] }}{% endif %}
+{% if entries.record_insights is defined and entries.record_insights and entries.record_insights|length > 0 %}
+The following insights were previously generated:
+{% for insight in entries.record_insights %}
+- {{ insight.content }}
 {% endfor %}
+{% else %}
+No previous insights have been generated yet.
 {% endif %}
 
-{% if names and names|length > 0 %}
-#### Named Entities
-{% for name in names %}
-- id: {{ name.id }} | name: {{ name.name }}
-{% endfor %}
+## Domain Data
+
+{% if entries.runs is defined and entries.runs %}
+### Runs
+{{ entries.runs | tojson }}
 {% endif %}
 
-{% if descriptions and descriptions|length > 0 %}
-#### Descriptions
-{% for desc in descriptions %}
-- id: {{ desc.id }} | {{ desc.description[:80] }}
-{% endfor %}
-{% endif %}
+## Task
 
-{% if flags and flags|length > 0 %}
-#### Active Flags
-{% for flag in flags %}
-- id: {{ flag.id }} | {{ flag.key if flag.key is defined else flag.id }}{% if flag.label is defined and flag.label %} | {{ flag.label }}{% endif %}
-{% endfor %}
-{% endif %}
-
-## Analysis Focus
-
-Produce insights focused on: session timeline, score trends, rubric breakdowns, and improvement areas per individual.
-
-For each insight, call **create_insights** with a clear, structured observation:
-1. **What** — the data point or pattern
-2. **Why it matters** — business impact or significance
-3. **Recommendation** — what action to take (if applicable)
-', true, '2026-02-22T00:20:46.593734+00:00', false, false) ON CONFLICT (id) DO NOTHING;
+Analyze this training record and generate focused insights about session timeline, score trends, rubric breakdowns, and improvement areas. Call **create_record_insights** once per discrete finding.', true, '2026-02-22T00:20:46.593734+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c82b8-5d9f-7cf0-928c-0cc59a1a9b6f', 'Record', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact

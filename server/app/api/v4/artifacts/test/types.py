@@ -63,6 +63,7 @@ class TestEntries(BaseModel):
     test: list[QGetTestViewV4Item] | None = None
     test_invocation: list[QGetTestInvocationViewV4Item] | None = None
     runs: GetRunListViewResponse | None = None
+    test_insights: list[dict] | None = None
 
 
 class TestResources(BaseModel):

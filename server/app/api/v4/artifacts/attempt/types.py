@@ -500,6 +500,7 @@ class AttemptEntries(BaseModel):
     attempt_chat: list[ChatData] | None = None
     attempt_message: list[MessageData] | None = None
     runs: GetRunListViewResponse | None = None
+    attempt_insights: list[dict] | None = None
 
 
 class SimulationData(BaseModel):
