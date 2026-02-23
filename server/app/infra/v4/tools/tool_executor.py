@@ -304,6 +304,7 @@ async def _execute_resource_tool(
                             "success": True,
                             "message": f"Resource already exists, using existing {resource_type} entry",
                             "resource_id": resource_id,
+                            "resource_type": resource_type,
                             "resource_data": {
                                 "id": resource_id,
                                 **mapped_values,

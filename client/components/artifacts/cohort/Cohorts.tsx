@@ -581,8 +581,7 @@ export default function Cohorts({
                     data-testid={`delete-${cohort.cohort_id}`}
                     onClick={() =>
                       cohort.cohort_id &&
-                      cohort.name &&
-                      handleDeleteClick(cohort.cohort_id, cohort.name)
+                      handleDeleteClick(cohort.cohort_id, cohort.name || "Untitled Cohort")
                     }
                     {...(cohort.name
                       ? { "aria-label": `Delete ${cohort.name}` }
