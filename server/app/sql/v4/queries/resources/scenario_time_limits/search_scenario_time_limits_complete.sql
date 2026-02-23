@@ -34,7 +34,7 @@ AS $$
 SELECT
     COALESCE(
         ARRAY_AGG(
-            (stlr.id, stlr.scenario_id, stlr.time_limit_seconds, COALESCE(stlr.generated, false))::types.q_get_scenario_time_limits_v4_item
+            (stlr.id, stlr.scenario_id, stlr.time_limit_seconds, COALESCE(stlr.generated, false), COALESCE(stlr.negative, false))::types.q_get_scenario_time_limits_v4_item
             ORDER BY stlr.time_limit_seconds, stlr.scenario_id
         ),
         '{}'::types.q_get_scenario_time_limits_v4_item[]

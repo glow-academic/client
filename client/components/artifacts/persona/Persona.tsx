@@ -1573,6 +1573,8 @@ function PersonaComponent({
                   setFormState((prev) => ({ ...prev, voice_ids: ids }))
                 }
                 group_id={s?.group_id ?? null}
+                showAiGenerate={s?.voices?.show_ai_generate ?? false}
+                onGenerate={generateHandlers["voices"]}
                 create_tool_id={s?.voices?.tool_id ?? null}
                 createVoicesAction={createVoicesAction}
                 isAutosaveEnabled={isAutosaveEnabled}

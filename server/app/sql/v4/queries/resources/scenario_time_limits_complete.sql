@@ -24,7 +24,8 @@ CREATE OR REPLACE FUNCTION api_create_scenario_time_limits_v4(
     time_limit_seconds integer,
     mcp boolean DEFAULT false,
     group_id uuid DEFAULT NULL,
-    tool_id uuid DEFAULT NULL
+    tool_id uuid DEFAULT NULL,
+    negative boolean DEFAULT false
 )
 RETURNS TABLE (
     id uuid
@@ -53,7 +54,8 @@ BEGIN
         -- Update existing record
         UPDATE scenario_time_limits_resource
         SET time_limit_seconds = api_create_scenario_time_limits_v4.time_limit_seconds,
-            mcp = api_create_scenario_time_limits_v4.mcp
+            mcp = api_create_scenario_time_limits_v4.mcp,
+            negative = api_create_scenario_time_limits_v4.negative
         WHERE id = v_resource_id;
 
         RETURN QUERY SELECT v_resource_id;
@@ -67,6 +69,7 @@ BEGIN
         generated,
         mcp,
         active,
+        negative,
         created_at
     )
     VALUES (
@@ -75,6 +78,7 @@ BEGIN
         false,
         mcp,
         true,
+        api_create_scenario_time_limits_v4.negative,
         NOW()
     )
     RETURNING id INTO v_resource_id;

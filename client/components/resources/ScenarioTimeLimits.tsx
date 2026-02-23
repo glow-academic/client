@@ -184,6 +184,9 @@ export function ScenarioTimeLimits({
   const [timeLimitByScenario, setTimeLimitByScenario] = useState<
     Map<string, number | null>
   >(new Map());
+  const [negativeByScenario, setNegativeByScenario] = useState<
+    Map<string, boolean>
+  >(new Map());
   const [timeLimitIdsByScenario, setTimeLimitIdsByScenario] = useState<
     Map<string, string>
   >(new Map());

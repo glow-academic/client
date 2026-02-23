@@ -7,6 +7,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Tooltip,
@@ -18,9 +19,9 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 import {
+  ArrowDown,
+  ArrowUp,
   Check,
-  ChevronLeft,
-  ChevronRight,
   GripVertical,
   Loader2,
   Sparkles,
@@ -374,12 +375,11 @@ export function ScenarioPositions({
     ],
   );
 
-  const handleMoveLeft = useCallback(
+  const handleMoveUp = useCallback(
     (scenarioId: string) => {
       const currentPos = localPositions.get(scenarioId) || 1;
       if (currentPos > 1) {
         handlePositionChange(scenarioId, currentPos - 1);
-        // Swap with scenario at position - 1
         const swapScenario = Array.from(localPositions.entries()).find(
           ([_, pos]) => pos === currentPos - 1,
         );
@@ -391,13 +391,12 @@ export function ScenarioPositions({
     [localPositions, handlePositionChange],
   );
 
-  const handleMoveRight = useCallback(
+  const handleMoveDown = useCallback(
     (scenarioId: string) => {
       const currentPos = localPositions.get(scenarioId) || 1;
       const maxPos = Math.max(...Array.from(localPositions.values()));
       if (currentPos < maxPos) {
         handlePositionChange(scenarioId, currentPos + 1);
-        // Swap with scenario at position + 1
         const swapScenario = Array.from(localPositions.entries()).find(
           ([_, pos]) => pos === currentPos + 1,
         );
@@ -550,7 +549,7 @@ export function ScenarioPositions({
             <p className="text-sm font-medium text-success">
               AI Suggested Positions
             </p>
-            <div className="flex gap-3 overflow-x-auto py-2 pb-3 px-2">
+            <div className="space-y-2">
               {effectiveAiScenarioPositionResources.map((item, idx) => {
                 const labelText = item.scenario_id
                   ? (scenarioLabelMap.get(item.scenario_id) ??
@@ -559,78 +558,87 @@ export function ScenarioPositions({
                 return (
                   <div
                     key={item.id || item.scenario_id || idx}
-                    className={cn(
-                      "p-3 rounded-lg border-2 border-success bg-success/10",
-                      "text-sm h-[88px] w-[180px] flex-shrink-0",
-                    )}
+                    className="flex items-center gap-2 p-2 rounded-lg border-2 border-success bg-success/10"
                   >
-                    <div className="font-medium">{labelText}</div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Position: {item.value ?? "N/A"}
-                    </div>
+                    <GripVertical className="h-4 w-4 text-muted-foreground" />
+                    <Label className="text-sm w-56 truncate">
+                      {labelText}
+                    </Label>
+                    <Label className="text-sm w-20">Position:</Label>
+                    <span className="text-sm font-medium">
+                      {item.value ?? "-"}
+                    </span>
                   </div>
                 );
               })}
             </div>
           </div>
         )}
-      <div className="pl-4">
-        <div className="flex gap-3 overflow-x-auto py-2 pb-3 px-2 w-0 min-w-full">
-          {sortedScenarios.map((scenarioId) => {
-            const position = localPositions.get(scenarioId) || 1;
-            const maxPos = Math.max(...Array.from(localPositions.values()));
-            const labelText =
-              scenarioLabelMap.get(scenarioId) ?? "Untitled scenario";
-            const isAiSuggested = showDiff && aiSuggestedIds.has(scenarioId);
-            return (
-              <div
-                key={scenarioId}
-                className={cn(
-                  "relative flex flex-col justify-between p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px] w-[180px] flex-shrink-0 hover:shadow-md hover:bg-accent/50",
-                  isAiSuggested && "ring-2 ring-success bg-success/10",
-                )}
-              >
-                {/* AI suggested badge */}
-                {isAiSuggested && (
-                  <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
-                    AI Suggested
-                  </div>
-                )}
-                <div className="flex items-start gap-2">
-                  <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab flex-shrink-0 mt-0.5" />
-                  <h3
-                    className="font-medium text-sm leading-tight line-clamp-2 pr-16"
-                    title={labelText}
-                  >
-                    {labelText}
-                  </h3>
-                </div>
-                <div className="flex items-center justify-between">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => handleMoveLeft(scenarioId)}
-                    disabled={disabled || position <= 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => handleMoveRight(scenarioId)}
-                    disabled={disabled || position >= maxPos}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
+      <div className="space-y-2">
+        {sortedScenarios.map((scenarioId) => {
+          const position = localPositions.get(scenarioId) || 1;
+          const maxPos = Math.max(...Array.from(localPositions.values()));
+          const labelText =
+            scenarioLabelMap.get(scenarioId) ?? "Untitled scenario";
+          const isAiSuggested = showDiff && aiSuggestedIds.has(scenarioId);
+          return (
+            <div
+              key={scenarioId}
+              className={cn(
+                "flex items-center gap-2 p-2 border rounded-md",
+                isAiSuggested && "ring-2 ring-success bg-success/5",
+              )}
+            >
+              <GripVertical className="h-4 w-4 text-muted-foreground" />
+              <Label className="text-sm w-56 truncate" title={labelText}>
+                {labelText}
+              </Label>
+              <Label className="text-sm w-20">Position:</Label>
+              <Input
+                type="number"
+                min={1}
+                max={maxPos}
+                value={position}
+                onChange={(e) => {
+                  const newValue = parseInt(e.target.value, 10);
+                  if (!isNaN(newValue) && newValue >= 1) {
+                    handlePositionChange(scenarioId, newValue);
+                  }
+                }}
+                disabled={disabled}
+                className="w-20"
+              />
+              <div className="flex gap-1 ml-auto">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => handleMoveUp(scenarioId)}
+                  disabled={disabled || position <= 1}
+                >
+                  <ArrowUp className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => handleMoveDown(scenarioId)}
+                  disabled={disabled || position >= maxPos}
+                >
+                  <ArrowDown className="h-4 w-4" />
+                </Button>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
+        {sortedScenarios.length === 0 && (
+          <div className="text-sm text-muted-foreground p-4 text-center border rounded-md">
+            No scenarios selected. Select scenarios first to manage their
+            positions.
+          </div>
+        )}
       </div>
     </div>
   );
