@@ -562,6 +562,7 @@ async def get_chat_websocket(
             objectives=data.current_resources.get("objectives") or None,
         ),
         artifacts=WebsocketArtifacts(
+            params=GetChatRequest(chat_entry_id=chat_entry_id, draft_id=draft_id),
             agents=data.config_agents or None,
             models=data.config_models or None,
             providers=data.config_providers or None,

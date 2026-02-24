@@ -10,6 +10,7 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.health.types import (
+    GetHealthApiRequest,
     GetHealthWebsocketResponse,
     HealthRequest,
     HealthResponse,
@@ -288,6 +289,7 @@ async def get_health_websocket(
         args=config_args,
         args_outputs=config_args_outputs,
         profile=data.config_profile or None,
+        params=GetHealthApiRequest(health_id=health_id, draft_id=draft_id),
     )
 
     return GetHealthWebsocketResponse(

@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts._shared.pricing import compute_costs_from_runs
 from app.api.v4.artifacts.group.types import (
+    GetGroupApiRequest,
     GetGroupDetailRequest,
     GetGroupDetailResponse,
     GetGroupWebsocketResponse,
@@ -316,6 +317,7 @@ async def get_group_websocket(
         args=config_args,
         args_outputs=config_args_outputs,
         profile=data.config_profile or None,
+        params=GetGroupApiRequest(group_id=group_id, draft_id=draft_id),
     )
 
     return GetGroupWebsocketResponse(

@@ -9,6 +9,7 @@ from uuid import UUID
 import asyncpg
 
 from app.api.v4.artifacts.record.types import (
+    GetRecordApiRequest,
     GetRecordWebsocketResponse,
     RecordWebsocketEntries,
     RecordWebsocketResources,
@@ -195,6 +196,7 @@ async def get_record_websocket(
     insights_result = await fetch_insights()
 
     websocket_config = WebsocketArtifacts(
+        params=GetRecordApiRequest(record_id=record_id, draft_id=draft_id),
         agents=data.config_agents or None,
         models=data.config_models or None,
         providers=data.config_providers or None,

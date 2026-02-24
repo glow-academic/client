@@ -21,6 +21,7 @@ from app.api.v4.artifacts.activity.types import (
     ActivityViews,
     ActivityWebsocketEntries,
     ActivityWebsocketResources,
+    GetActivityApiRequest,
     GetActivityWebsocketResponse,
 )
 from app.api.v4.artifacts.session.types import (
@@ -719,6 +720,7 @@ async def get_activity_websocket(
         args=config_args,
         args_outputs=config_args_outputs,
         profile=data.config_profile or None,
+        params=GetActivityApiRequest(activity_id=activity_id, draft_id=draft_id),
     )
 
     return GetActivityWebsocketResponse(

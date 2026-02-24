@@ -16,6 +16,7 @@ from fastapi import APIRouter, HTTPException, Request
 
 from app.api.v4.artifacts.invocation.types import (
     BaseSuiteSection,
+    GetInvocationApiRequest,
     GetSuiteRequest,
     GetSuiteResponse,
     GetSuiteWebsocketResponse,
@@ -435,6 +436,9 @@ async def get_invocation_websocket(
     )
 
     websocket_config = WebsocketArtifacts(
+        params=GetInvocationApiRequest(
+            benchmark_entry_id=suite_entry_id, draft_id=draft_id
+        ),
         agents=data.config_agents or None,
         models=data.config_models or None,
         providers=data.config_providers or None,

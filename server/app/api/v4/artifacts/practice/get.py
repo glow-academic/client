@@ -866,6 +866,15 @@ async def get_practice_websocket(
     chat_entry_id: UUID,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    history_sort_by: str | None = None,
+    history_sort_order: str | None = None,
+    history_page: int | None = None,
+    history_page_size: int | None = None,
+    history_simulation_search: str | None = None,
+    history_scenario_search: str | None = None,
+    history_show_archived: bool | None = None,
+    history_scenario_ids: list[UUID] | None = None,
+    history_infinite_mode: bool | None = None,
 ) -> GetPracticeWebsocketResponse:
     """Independent websocket wrapper for practice generation — config chain + bundle resources."""
 
@@ -960,6 +969,21 @@ async def get_practice_websocket(
         args=config_args,
         args_outputs=config_args_outputs,
         profile=config_profile_result or None,
+        params=GetPracticeRequest(
+            history_sort_by=history_sort_by,
+            history_sort_order=history_sort_order,
+            history_page=history_page if history_page is not None else 0,
+            history_page_size=history_page_size
+            if history_page_size is not None
+            else 20,
+            history_simulation_search=history_simulation_search,
+            history_scenario_search=history_scenario_search,
+            history_show_archived=history_show_archived
+            if history_show_archived is not None
+            else False,
+            history_scenario_ids=history_scenario_ids,
+            history_infinite_mode=history_infinite_mode,
+        ),
     )
 
     return GetPracticeWebsocketResponse(

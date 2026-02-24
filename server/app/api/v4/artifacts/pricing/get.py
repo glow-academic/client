@@ -17,6 +17,7 @@ from app.api.v4.artifacts.group.types import (
     GroupListItem,
 )
 from app.api.v4.artifacts.pricing.types import (
+    GetPricingApiRequest,
     GetPricingWebsocketResponse,
     PricingDailyItem,
     PricingRequest,
@@ -223,6 +224,7 @@ async def get_pricing_websocket(
     insights_result = await fetch_insights()
 
     websocket_config = WebsocketArtifacts(
+        params=GetPricingApiRequest(pricing_id=pricing_id, draft_id=draft_id),
         agents=data.config_agents or None,
         models=data.config_models or None,
         providers=data.config_providers or None,

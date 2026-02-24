@@ -46,6 +46,7 @@ from app.api.v4.artifacts.dashboard.types import (
     DashboardRequest,
     DashboardWebsocketEntries,
     DashboardWebsocketResources,
+    GetDashboardApiRequest,
     GetDashboardWebsocketResponse,
 )
 from app.api.v4.artifacts.types import (
@@ -1160,6 +1161,7 @@ async def get_dashboard_websocket(
         args=config_args,
         args_outputs=config_args_outputs,
         profile=config_profile_result or None,
+        params=GetDashboardApiRequest(dashboard_id=dashboard_id, draft_id=draft_id),
     )
 
     return GetDashboardWebsocketResponse(

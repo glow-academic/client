@@ -620,6 +620,7 @@ async def get_test_websocket(
         insights_result = await fetch_insights()
 
     websocket_config = WebsocketArtifacts(
+        params=GetTestArtifactRequest(test_id=test_id),
         agents=data.config_agent_resources,
         models=data.config_model_resources,
         providers=data.config_provider_resources,

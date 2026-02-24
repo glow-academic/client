@@ -1776,6 +1776,7 @@ async def get_attempt_websocket(
         insights_result = await fetch_insights()
 
     websocket_config = WebsocketArtifacts(
+        params=GetAttemptDetailRequest(attempt_id=attempt_id),
         agents=data.config_agent_resources,
         models=data.config_model_resources,
         providers=data.config_provider_resources,

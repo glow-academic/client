@@ -18,6 +18,7 @@ from app.api.v4.artifacts._shared.pricing import compute_costs_from_runs
 from app.api.v4.artifacts.session.types import (
     ArtifactSessionAudit,
     ArtifactSessionGroup,
+    GetSessionApiRequest,
     GetSessionDetailRequest,
     GetSessionDetailResponse,
     GetSessionWebsocketResponse,
@@ -462,6 +463,7 @@ async def get_session_websocket(
     insights_result = await fetch_insights()
 
     websocket_config = WebsocketArtifacts(
+        params=GetSessionApiRequest(session_id=session_id, draft_id=draft_id),
         agents=data.config_agents or None,
         models=data.config_models or None,
         providers=data.config_providers or None,
