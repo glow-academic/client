@@ -115,7 +115,9 @@ class GetPersonaApiRequest(BaseModel):
     descriptions_search: str | None = None
     instructions_search: str | None = None
     parameter_field_search: str | None = None
-    parameter_ids: list[str] | None = None  # URL render filter: which parameter groups are expanded
+    parameter_ids: list[str] | None = (
+        None  # URL render filter: which parameter groups are expanded
+    )
     # Show selected filters
     color_show_selected: bool | None = None
     icon_show_selected: bool | None = None

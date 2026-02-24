@@ -31,8 +31,7 @@ import { Flags } from "@/components/resources/Flags";
 import { Images } from "@/components/resources/Images";
 import { Names } from "@/components/resources/Names";
 import { Objectives } from "@/components/resources/Objectives";
-import { ParameterFields } from "@/components/resources/ParameterFields";
-import { Parameters } from "@/components/resources/Parameters";
+import { ParameterFieldsNew } from "@/components/resources/ParameterFieldsNew";
 import { Personas } from "@/components/resources/Personas";
 import { ProblemStatements } from "@/components/resources/ProblemStatements";
 import { Options } from "@/components/resources/Options";
@@ -42,7 +41,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
-import { useConditionalParameterToggle } from "@/hooks/use-conditional-parameter-toggle";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import { useGenerationModal } from "@/hooks/use-generation-modal";
@@ -53,7 +51,7 @@ import {
   computeEffectiveFormState,
   type ResourceConfig,
 } from "@/lib/resources/action-builders";
-import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
+import { parseAsArrayOf, parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
 type GetScenarioOut = OutputOf<"/api/v4/artifacts/scenarios/get", "post">;
@@ -137,7 +135,6 @@ type ScenarioFormState = {
   department_ids: string[];
   persona_ids: string[];
   document_ids: string[];
-  parameter_ids: string[];
   parameter_field_ids: string[];
   image_ids: string[];
   objective_ids: string[];
@@ -256,12 +253,6 @@ const SCENARIO_RESOURCES: ResourceConfig[] = [
     type: "multi",
   },
   {
-    key: "parameters",
-    formKey: "parameter_ids",
-    flushKey: null,
-    type: "multi",
-  },
-  {
     key: "parameter_fields",
     formKey: "parameter_field_ids",
     flushKey: "parameter_field_ids",
@@ -341,6 +332,7 @@ function ScenarioComponent({
       personaShowSelected: parseAsBoolean,
       documentShowSelected: parseAsBoolean,
       parameterShowSelected: parseAsBoolean,
+      parameterIds: parseAsArrayOf(parseAsString),
     }),
     [],
   );
@@ -366,7 +358,6 @@ function ScenarioComponent({
         department_ids: [],
         persona_ids: [],
         document_ids: [],
-        parameter_ids: [],
         parameter_field_ids: [],
         image_ids: [],
         objective_ids: [],
@@ -412,10 +403,6 @@ function ScenarioComponent({
         .map(String),
       document_ids: (scenarioData.documents?.current ?? [])
         .map((item) => item.document_id)
-        .filter(Boolean)
-        .map(String),
-      parameter_ids: (scenarioData.parameters?.current ?? [])
-        .map((item) => item.parameter_id)
         .filter(Boolean)
         .map(String),
       parameter_field_ids: (scenarioData.parameter_fields?.current ?? [])
@@ -470,10 +457,6 @@ function ScenarioComponent({
     () => JSON.stringify(formState.document_ids),
     [formState.document_ids],
   );
-  const parameterIdsStr = useMemo(
-    () => JSON.stringify(formState.parameter_ids),
-    [formState.parameter_ids],
-  );
   const parameterFieldIdsStr = useMemo(
     () => JSON.stringify(formState.parameter_field_ids),
     [formState.parameter_field_ids],
@@ -526,15 +509,6 @@ function ScenarioComponent({
           .filter(Boolean),
       ),
     [scenarioData?.documents],
-  );
-  const scenarioParameterIdsStr = useMemo(
-    () =>
-      JSON.stringify(
-        (scenarioData?.parameters?.current ?? [])
-          .map((item) => item.parameter_id)
-          .filter(Boolean),
-      ),
-    [scenarioData?.parameters],
   );
   const scenarioParameterFieldIdsStr = useMemo(
     () =>
@@ -613,8 +587,6 @@ function ScenarioComponent({
           JSON.stringify(newState.persona_ids) ||
         JSON.stringify(prev.document_ids) !==
           JSON.stringify(newState.document_ids) ||
-        JSON.stringify(prev.parameter_ids) !==
-          JSON.stringify(newState.parameter_ids) ||
         JSON.stringify(prev.parameter_field_ids) !==
           JSON.stringify(newState.parameter_field_ids) ||
         JSON.stringify(prev.image_ids) !== JSON.stringify(newState.image_ids) ||
@@ -642,7 +614,6 @@ function ScenarioComponent({
     scenarioDepartmentIdsStr,
     scenarioPersonaIdsStr,
     scenarioDocumentIdsStr,
-    scenarioParameterIdsStr,
     scenarioParameterFieldIdsStr,
     scenarioImageIdsStr,
     scenarioObjectiveIdsStr,
@@ -693,7 +664,6 @@ function ScenarioComponent({
         department_ids: formState.department_ids,
         persona_ids: formState.persona_ids,
         document_ids: formState.document_ids,
-        parameter_ids: formState.parameter_ids,
         field_ids: formState.parameter_field_ids,
         image_ids: formState.image_ids,
         objective_ids: formState.objective_ids,
@@ -715,7 +685,6 @@ function ScenarioComponent({
       departmentIdsStr,
       personaIdsStr,
       documentIdsStr,
-      parameterIdsStr,
       parameterFieldIdsStr,
       imageIdsStr,
       objectiveIdsStr,
@@ -811,16 +780,17 @@ function ScenarioComponent({
     onPatchSuccess,
   });
 
-  // --- Conditional Parameter Toggle ---
-  const getParameterFields = useCallback(
-    () => scenarioDataRef.current?.parameter_fields?.resources ?? [],
-    [],
-  );
-
-  const { handleConditionalParameterToggle } = useConditionalParameterToggle({
-    setFormState,
-    getParameterFields,
-  });
+  // --- Initialize URL parameterIds from server resolved_parameter_ids ---
+  const hasInitializedParameterIds = useRef(false);
+  useEffect(() => {
+    const resolvedIds = (scenarioData as GetScenarioOut & { resolved_parameter_ids?: string[] | null })?.resolved_parameter_ids;
+    if (resolvedIds && resolvedIds.length > 0 && !hasInitializedParameterIds.current) {
+      hasInitializedParameterIds.current = true;
+      if (setUrlFormDataRef.current) {
+        setUrlFormDataRef.current({ parameterIds: resolvedIds });
+      }
+    }
+  }, [scenarioData, setUrlFormDataRef]);
 
   // --- Stable Data Memo ---
   const stableScenarioDataFields = useMemo(() => {
@@ -1101,7 +1071,7 @@ function ScenarioComponent({
         id: "parameters",
         title: "Parameters",
         description: "Select parameters for the scenario.",
-        resetFields: ["parameters", "parameterSearch", "parameterShowSelected"],
+        resetFields: ["parameter_field_ids", "parameterSearch", "parameterShowSelected", "parameterIds"],
       });
     }
 
@@ -1151,6 +1121,7 @@ function ScenarioComponent({
       "personaShowSelected",
       "documentShowSelected",
       "parameterShowSelected",
+      "parameterIds",
     ],
     [],
   );
@@ -1213,7 +1184,6 @@ function ScenarioComponent({
         case "parameters":
           return {
             ...prev,
-            parameter_ids: [],
             parameter_field_ids: [],
           };
         case "context":
@@ -1290,14 +1260,6 @@ function ScenarioComponent({
       ) {
         toast.error("Documents are required");
         throw new Error("Documents are required");
-      }
-
-      if (
-        stableScenarioDataFields?.parameters?.required &&
-        formState.parameter_ids.length === 0
-      ) {
-        toast.error("Parameters are required");
-        throw new Error("Parameters are required");
       }
 
       if (
@@ -1380,9 +1342,7 @@ function ScenarioComponent({
             document_ids: effectiveFormState.document_ids?.length
               ? effectiveFormState.document_ids
               : null,
-            parameter_ids: effectiveFormState.parameter_ids?.length
-              ? effectiveFormState.parameter_ids
-              : null,
+            parameter_ids: null,
             parameter_field_ids: effectiveFormState.parameter_field_ids?.length
               ? effectiveFormState.parameter_field_ids
               : null,
@@ -1424,7 +1384,6 @@ function ScenarioComponent({
       stableScenarioDataFields?.departments?.required,
       stableScenarioDataFields?.personas?.required,
       stableScenarioDataFields?.documents?.required,
-      stableScenarioDataFields?.parameters?.required,
       stableScenarioDataFields?.images?.required,
       stableScenarioDataFields?.videos?.required,
       stableScenarioDataFields?.questions?.required,
@@ -1459,7 +1418,7 @@ function ScenarioComponent({
           return formState.document_ids.length > 0 ? "completed" : "active";
         case "parameters":
           if (!hasName || !hasDescription) return "pending";
-          return formState.parameter_ids.length > 0 ? "completed" : "active";
+          return formState.parameter_field_ids.length > 0 ? "completed" : "active";
         case "context": {
           if (!hasName || !hasDescription) return "pending";
           const hasContextContent =
@@ -1935,7 +1894,9 @@ function ScenarioComponent({
               </div>
             </StepCard>
           );
-        case "parameters":
+        case "parameters": {
+          const urlParameterIds = ((formData["parameterIds"] as string[]) ?? []);
+          const setStepFormData = setFormData;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1949,7 +1910,7 @@ function ScenarioComponent({
                 setFormData({ parameterSearch: value || null })
               }
               searchPlaceholder="Search parameters..."
-              resetFields={["parameters"]}
+              resetFields={["parameter_field_ids", "parameterIds"]}
               filters={
                 filters ?? [
                   {
@@ -1978,53 +1939,39 @@ function ScenarioComponent({
               {...resetProps}
             >
               <div className="space-y-6">
-                <Parameters
-                  parameter_ids={formState.parameter_ids}
-                  parameter_resources={s?.parameters?.current ?? []}
-                  show_parameters={s?.parameters?.show ?? false}
-                  parameter_suggestions={s?.parameters?.suggestions ?? []}
-                  parameters={s?.parameters?.resources ?? []}
-                  searchTerm={parameterSearch}
-                  showSelectedFilter={parameterShowSelected}
-                  disabled={disabled}
-                  onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, parameter_ids: ids }))
-                  }
-                  group_id={s?.group_id ?? null}
-                  required={s?.parameters?.required ?? false}
-                  onGenerate={generateHandlers["parameters"]}
-                  showAiGenerate={s?.parameters?.show_ai_generate ?? false}
-                  videoEnabled={videoEnabled}
-                />
-                <ParameterFields
-                  parameter_field_ids={formState.parameter_field_ids}
-                  parameter_field_resources={s?.parameter_fields?.current ?? []}
-                  show_parameter_fields={s?.parameter_fields?.show ?? false}
-                  parameter_fields={s?.parameter_fields?.resources ?? []}
-                  parameter_ids={formState.parameter_ids}
-                  parameters={s?.parameters?.resources ?? []}
-                  parameter_resources={s?.parameters?.current ?? []}
-                  disabled={disabled}
+                <ParameterFieldsNew
+                  parameterIds={urlParameterIds}
+                  parameterFieldIds={formState.parameter_field_ids}
+                  parameterFieldResources={s?.parameter_fields?.current ?? []}
+                  allParameters={s?.parameters?.resources ?? []}
+                  availableFields={s?.parameter_fields?.resources ?? []}
+                  onToggleParameter={(parameterId, open) => {
+                    const current = urlParameterIds;
+                    if (open) {
+                      setStepFormData({ parameterIds: [...current, parameterId] });
+                    } else {
+                      setStepFormData({ parameterIds: current.filter((id: string) => id !== parameterId) });
+                    }
+                  }}
                   onChange={(ids) =>
                     setFormState((prev) => ({
                       ...prev,
                       parameter_field_ids: ids,
                     }))
                   }
-                  onConditionalParameterToggle={
-                    handleConditionalParameterToggle
-                  }
+                  disabled={disabled}
                   group_id={s?.group_id ?? null}
-                  required={s?.parameter_fields?.required ?? false}
                   showAiGenerate={s?.parameter_fields?.show_ai_generate ?? false}
-                  create_tool_id={s?.parameter_fields?.tool_id ?? null}
+                  required={s?.parameter_fields?.required ?? false}
                   createParameterFieldsAction={createParameterFieldsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["parameter_fields"]}
+                  create_tool_id={s?.parameter_fields?.tool_id ?? null}
                 />
               </div>
             </StepCard>
           );
+        }
         case "video":
           return (
             <StepCard
@@ -2170,7 +2117,6 @@ function ScenarioComponent({
       showVideosSection,
       showQuestionsSection,
       internalQuestions,
-      handleConditionalParameterToggle,
       showObjectivesSection,
       showProblemStatementSection,
       videoEnabled,

@@ -29838,6 +29838,8 @@ export interface components {
              * @default false
              */
             mcp: boolean | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
         };
         /**
          * GetScenarioApiResponse
@@ -29860,6 +29862,8 @@ export interface components {
             basic_show_ai_generate?: boolean | null;
             /** Content Show Ai Generate */
             content_show_ai_generate?: boolean | null;
+            /** Resolved Parameter Ids */
+            resolved_parameter_ids?: string[] | null;
             names?: components["schemas"]["ScenarioNameSection"] | null;
             descriptions?: components["schemas"]["ScenarioDescriptionSection"] | null;
             problem_statements?: components["schemas"]["ScenarioProblemStatementSection"] | null;
@@ -41254,6 +41258,8 @@ export interface components {
             video_parameter?: boolean | null;
             /** Non Video Parameter */
             non_video_parameter?: boolean | null;
+            /** Conditional */
+            conditional?: boolean | null;
         };
         /** ScenarioParameterFieldSection */
         ScenarioParameterFieldSection: {

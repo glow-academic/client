@@ -206,6 +206,7 @@ export default async function NewScenarioPage({
           )
         : null,
       problem_statement_ids: csvToArray(q.problemStatementIds) ?? null,
+      parameter_ids: csvToArray(q.parameterIds) ?? null,
       mcp: false,
     },
   });

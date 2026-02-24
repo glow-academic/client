@@ -105,7 +105,6 @@ from app.api.v4.resources.parameter_fields.search import (
 )
 from app.api.v4.resources.parameters.get import get_parameters_internal
 from app.api.v4.resources.parameters.search import (
-    search_conditional_parameters_internal,
     search_parameters_internal,
 )
 from app.api.v4.resources.personas.get import get_personas_internal
@@ -207,6 +206,9 @@ class ScenarioInternalData:
     # IDs result (for backwards-compat fields in client response)
     ids_result: GetScenarioIdsSqlRow
 
+    # Resolved parameter IDs (derived from saved parameter_fields)
+    resolved_parameter_ids: list[str] | None
+
     # Scenario-specific: video parameter data
     video_param_ids: set[UUID]
     non_video_param_ids: set[UUID]
@@ -232,6 +234,7 @@ async def get_scenario_internal(
     persona_show_selected: bool | None = None,
     document_show_selected: bool | None = None,
     parameter_show_selected: bool | None = None,
+    parameter_ids: list[UUID] | None = None,
 ) -> ScenarioInternalData:
     """Core data fetching layer (cacheable).
 
@@ -608,15 +611,27 @@ async def get_scenario_internal(
             )
             return (selected, suggestions)
 
-    async def fetch_parameter_fields(param_ids: list[UUID]):
+    async def fetch_parameter_fields():
         async with pool.acquire() as c:
             selected = await get_parameter_fields_internal(
                 c, selected_parameter_field_ids, bypass_cache
             )
-            available = await search_parameter_fields_internal(
-                c, param_ids, bypass_cache=bypass_cache
-            )
-            return (selected, available)
+            available: list = []
+            conditional_param_ids: list[UUID] = []
+            if parameter_ids:
+                available = await search_parameter_fields_internal(
+                    c,
+                    parameter_ids=parameter_ids,
+                    bypass_cache=bypass_cache,
+                )
+                conditional_param_ids = list(
+                    {
+                        UUID(str(f.conditional_parameter_id))
+                        for f in available
+                        if f.conditional_parameter_id
+                    }
+                )
+            return (selected, available, conditional_param_ids)
 
     async def fetch_objectives():
         async with pool.acquire() as c:
@@ -684,36 +699,7 @@ async def get_scenario_internal(
             )
             return (selected, suggestions)
 
-    # === TWO-PHASE FETCH ===
-    # Phase 1a: Fetch scenario parameters FIRST to get all scenario parameter IDs
-    (parameters_selected, parameters_suggestions) = await fetch_parameters()
-
-    # Extract ALL scenario parameter IDs (both selected and available)
-    all_scenario_parameter_ids = list(
-        {p.parameter_id for p in parameters_selected}
-        | {p.parameter_id for p in parameters_suggestions}
-    )
-
-    # Phase 1b: Fetch ALL conditional parameters transitively
-    async def fetch_conditional_parameters():
-        async with pool.acquire() as c:
-            return await search_conditional_parameters_internal(
-                c,
-                [pid for pid in all_scenario_parameter_ids if pid is not None],
-                bypass_cache,
-            )
-
-    conditional_params = await fetch_conditional_parameters()
-
-    # Combine ALL parameter IDs for Phase 2
-    all_parameter_ids = list(
-        set(
-            all_scenario_parameter_ids
-            + [p.parameter_id for p in conditional_params if p.parameter_id]
-        )
-    )
-
-    # Phase 2: Fetch remaining resources in parallel
+    # === PARALLEL FETCH ===
     (
         (names_selected, names_suggestions),
         (descriptions_selected, descriptions_suggestions),
@@ -722,7 +708,12 @@ async def get_scenario_internal(
         (departments_selected, departments_suggestions),
         (personas_selected, personas_suggestions),
         (documents_selected, documents_suggestions),
-        (parameter_fields_selected, parameter_fields_suggestions),
+        (parameters_selected, parameters_suggestions),
+        (
+            parameter_fields_selected,
+            parameter_fields_suggestions,
+            conditional_param_ids,
+        ),
         (objectives_selected, _),
         (images_selected, images_suggestions),
         (videos_selected, videos_suggestions),
@@ -736,7 +727,8 @@ async def get_scenario_internal(
         fetch_departments(),
         fetch_personas(),
         fetch_documents(),
-        fetch_parameter_fields([pid for pid in all_parameter_ids if pid is not None]),
+        fetch_parameters(),
+        fetch_parameter_fields(),
         fetch_objectives(),
         fetch_images(),
         fetch_videos(),
@@ -839,9 +831,22 @@ async def get_scenario_internal(
     personas = _dedupe_by_id(personas_selected + personas_suggestions, "persona_id")
     documents = _dedupe_by_id(documents_selected + documents_suggestions, "document_id")
     parameters = _dedupe_by_id(
-        parameters_selected + parameters_suggestions + conditional_params,
+        parameters_selected + parameters_suggestions,
         "parameter_id",
     )
+
+    # Fetch conditional parameter metadata for any referenced by available fields
+    # but not already in the parameter list
+    existing_param_ids = {p.parameter_id for p in parameters if p.parameter_id}
+    missing_conditional_ids = [
+        pid for pid in conditional_param_ids if pid not in existing_param_ids
+    ]
+    if missing_conditional_ids:
+        async with pool.acquire() as c:
+            conditional_params = await get_parameters_internal(
+                c, missing_conditional_ids, bypass_cache
+            )
+            parameters = _dedupe_by_id(parameters + conditional_params, "parameter_id")
     parameter_fields = _dedupe_by_id(
         parameter_fields_selected + parameter_fields_suggestions, "field_id"
     )
@@ -1133,6 +1138,11 @@ async def get_scenario_internal(
                         c, provider_ids, bypass_cache
                     )
 
+    # Compute resolved_parameter_ids from saved parameter_fields
+    resolved_parameter_ids = list(
+        {str(pf.parameter_id) for pf in parameter_field_resources if pf.parameter_id}
+    )
+
     return ScenarioInternalData(
         # Access/context
         actor_name=actor_name,
@@ -1164,6 +1174,8 @@ async def get_scenario_internal(
         config_provider_resources=config_providers_result or None,
         # IDs result for backwards-compat
         ids_result=ids_result,
+        # Resolved parameter IDs
+        resolved_parameter_ids=resolved_parameter_ids or None,
         # Video param data
         video_param_ids=video_param_ids,
         non_video_param_ids=non_video_param_ids,
@@ -1353,6 +1365,7 @@ async def get_scenario_client(
     persona_show_selected: bool | None = None,
     document_show_selected: bool | None = None,
     parameter_show_selected: bool | None = None,
+    parameter_ids: list[UUID] | None = None,
 ) -> GetScenarioApiResponse:
     """BFF response for HTTP endpoint/frontend.
 
@@ -1376,6 +1389,7 @@ async def get_scenario_client(
         persona_show_selected=persona_show_selected,
         document_show_selected=document_show_selected,
         parameter_show_selected=parameter_show_selected,
+        parameter_ids=parameter_ids,
     )
 
     resources_bucket = data.resources_payload.resources
@@ -1399,6 +1413,7 @@ async def get_scenario_client(
         group_id=data.group_id,
         basic_show_ai_generate=data.basic_show_ai_generate,
         content_show_ai_generate=data.content_show_ai_generate,
+        resolved_parameter_ids=data.resolved_parameter_ids or None,
         names=ScenarioNameSection(
             resource=(
                 current_bucket.names[0]
@@ -1545,6 +1560,9 @@ async def get_scenario(
             persona_show_selected=request.persona_show_selected,
             document_show_selected=request.document_show_selected,
             parameter_show_selected=request.parameter_show_selected,
+            parameter_ids=[UUID(str(pid)) for pid in request.parameter_ids]
+            if request.parameter_ids
+            else None,
         )
 
         # Set audit context

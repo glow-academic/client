@@ -104,6 +104,7 @@ const getScenario = async (
     personaShowSelected?: boolean;
     parameterShowSelected?: boolean;
     fieldShowSelectedByParam?: Record<string, boolean>; // Per-parameter field filters: {paramId: bool}
+    urlParameterIds?: string[]; // URL render filter: which parameters are expanded
     personaMin?: number;
     personaMax?: number;
     documentMin?: number;
@@ -121,6 +122,7 @@ const getScenario = async (
   const body: GetScenarioIn["body"] = {
     scenario_id: scenarioId,
     mcp: null,
+    parameter_ids: null,
   };
 
   if (filterParams) {
@@ -169,6 +171,9 @@ const getScenario = async (
       body.objective_ids = filterParams.objectiveIds;
     if (filterParams.problemStatementIds)
       body.problem_statement_ids = filterParams.problemStatementIds;
+    // URL render filter: which parameters are expanded (separate from filter_parameter_ids)
+    if (filterParams.urlParameterIds)
+      body.parameter_ids = filterParams.urlParameterIds;
   }
 
   return api.post(
@@ -348,6 +353,7 @@ export default async function EditScenarioPage({
       imageIds?: string[];
       objectiveIds?: string[];
       problemStatementIds?: string[];
+      urlParameterIds?: string[]; // URL render filter: which parameters are expanded
     };
     const filterParams: FilterParams = {};
     if (q.draftId) filterParams.draftId = q.draftId;
@@ -412,6 +418,10 @@ export default async function EditScenarioPage({
     if (objectiveIds) filterParams.objectiveIds = objectiveIds;
     if (problemStatementIds)
       filterParams.problemStatementIds = problemStatementIds;
+
+    // URL render filter: which parameters are expanded
+    const urlParameterIds = csvToArray(q.parameterIds);
+    if (urlParameterIds) filterParams.urlParameterIds = urlParameterIds;
 
     const scenarioDetail = await getScenario(
       scenarioId,

@@ -131,6 +131,7 @@ class ScenarioParameter(BaseModel):
     non_video_parameter: bool | None = (
         None  # Inverse of video_parameter for frontend filtering
     )
+    conditional: bool | None = None
 
 
 class ScenarioField(BaseModel):
@@ -266,6 +267,7 @@ class GetScenarioApiRequest(BaseModel):
     )
     draft_id: UUID | None = None
     mcp: bool | None = False
+    parameter_ids: list[UUID] | None = None
 
 
 class ScenarioNameSection(BaseResourceSection):
@@ -352,6 +354,9 @@ class GetScenarioApiResponse(BaseModel):
     # Step-level AI generation flags
     basic_show_ai_generate: bool | None = None
     content_show_ai_generate: bool | None = None
+
+    # Resolved parameter IDs (derived from saved parameter_fields)
+    resolved_parameter_ids: list[str] | None = None
 
     # Per-resource sections
     names: ScenarioNameSection | None = None

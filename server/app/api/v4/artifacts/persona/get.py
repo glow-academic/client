@@ -672,9 +672,7 @@ async def get_persona_internal(
             conditional_params = await get_parameters_internal(
                 c, missing_conditional_ids, bypass_cache
             )
-            parameters = _dedupe_by_id(
-                parameters + conditional_params, "parameter_id"
-            )
+            parameters = _dedupe_by_id(parameters + conditional_params, "parameter_id")
     voices = _dedupe_by_id(voices_selected + voices_suggestions, "id")
 
     # Find selected resources
@@ -699,9 +697,7 @@ async def get_persona_internal(
         {str(pf.parameter_id) for pf in parameter_field_resources if pf.parameter_id}
     )
     example_resources = [e for e in examples if e.id in selected_example_ids]
-    parameter_resources = [
-        p for p in parameters if p.parameter_id in parameter_ids
-    ]
+    parameter_resources = [p for p in parameters if p.parameter_id in parameter_ids]
     voice_resources = [v for v in voices if v.id in selected_voice_ids]
 
     name_suggestions = [n.id for n in names_suggestions]
