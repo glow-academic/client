@@ -80,6 +80,12 @@ const columnMap = {
   parameter_item_ids: "Parameter Items",
   scenario_ids: "Scenarios",
   updated_at: "Updated",
+  // Persona card view toggles
+  ai_badge: "AI / MCP Badge",
+  status_badge: "Status Badge",
+  card_description: "Description",
+  num_scenarios: "Scenarios",
+  num_profiles: "Profiles",
 };
 
 export interface DataTableViewOptionsProps<TData> {

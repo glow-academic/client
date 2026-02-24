@@ -30,6 +30,7 @@ import type {
 } from "@/app/(main)/training/personas/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -529,6 +530,47 @@ export default function Personas({
           );
         },
       },
+      // Virtual columns for card view toggles
+      {
+        id: "ai_badge",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof personas)[number]) => row.generated ?? false,
+      },
+      {
+        id: "status_badge",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof personas)[number]) => row.is_inactive ?? false,
+      },
+      {
+        id: "card_description",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof personas)[number]) => row.description ?? "",
+      },
+      {
+        id: "num_scenarios",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof personas)[number]) => row.num_scenarios ?? 0,
+      },
+      {
+        id: "num_profiles",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof personas)[number]) => row.num_profiles ?? 0,
+      },
     ];
   }, []);
 
@@ -679,15 +721,15 @@ export default function Personas({
                   {persona.name || "Unnamed Persona"}
                 </CardTitle>
               </div>
-              {(persona.generated || persona.is_inactive) && (
+              {((columnVisibility.ai_badge !== false && persona.generated) || (columnVisibility.status_badge !== false && persona.is_inactive)) && (
                 <div className="mt-1 flex items-center gap-2">
-                  {persona.generated && (
+                  {columnVisibility.ai_badge !== false && persona.generated && (
                     <Badge variant="default">
                       <Sparkles className="h-3 w-3 mr-1" />
                       {persona.mcp ? "MCP" : "AI"}
                     </Badge>
                   )}
-                  {persona.is_inactive && (
+                  {columnVisibility.status_badge !== false && persona.is_inactive && (
                     <Badge variant="secondary">Inactive</Badge>
                   )}
                 </div>
@@ -803,20 +845,30 @@ export default function Personas({
           </div>
         </CardHeader>
         <CardContent className="pt-0 flex-grow flex flex-col justify-end">
-          <p className="text-sm text-muted-foreground line-clamp-2 flex-grow">
-            {persona.description || "No description available"}
-          </p>
-          <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Eye className="h-3 w-3" />
-              {persona.num_scenarios} {persona.num_scenarios === 1 ? "scenario" : "scenarios"}
-            </span>
-            <span className="text-muted-foreground">&middot;</span>
-            <span className="flex items-center gap-1">
-              <Users className="h-3 w-3" />
-              {persona.num_profiles ?? 0} {persona.num_profiles === 1 ? "profile" : "profiles"}
-            </span>
-          </div>
+          {columnVisibility.card_description !== false && (
+            <p className="text-sm text-muted-foreground line-clamp-2 flex-grow">
+              {persona.description || "No description available"}
+            </p>
+          )}
+          {(columnVisibility.num_scenarios !== false || columnVisibility.num_profiles !== false) && (
+            <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground">
+              {columnVisibility.num_scenarios !== false && (
+                <span className="flex items-center gap-1">
+                  <Eye className="h-3 w-3" />
+                  {persona.num_scenarios} {persona.num_scenarios === 1 ? "scenario" : "scenarios"}
+                </span>
+              )}
+              {columnVisibility.num_scenarios !== false && columnVisibility.num_profiles !== false && (
+                <span className="text-muted-foreground">&middot;</span>
+              )}
+              {columnVisibility.num_profiles !== false && (
+                <span className="flex items-center gap-1">
+                  <Users className="h-3 w-3" />
+                  {persona.num_profiles ?? 0} {persona.num_profiles === 1 ? "profile" : "profiles"}
+                </span>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     );
@@ -913,6 +965,7 @@ export default function Personas({
               )}
             </div>
           </div>
+          <DataTableViewOptions table={table} hiddenColumns={["name", "description", "scenarios", "fieldIds", "departments", "updated_at"]} />
         </div>
 
         {/* Cards Grid */}
