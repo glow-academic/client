@@ -1816,16 +1816,11 @@ function ModelComponent({
                 show_voices={s?.voices?.show ?? true}
                 voice_suggestions={s?.voices?.suggestions ?? []}
                 voices={s?.voices?.resources ?? []}
-                searchTerm={voiceSearch}
-                onSearchChange={(term: string) =>
-                  setFormData({ voiceSearch: term || null })
-                }
                 disabled={disabled}
                 onVoiceIdsChange={(ids) =>
                   setFormState({ ...formState, voice_ids: ids })
                 }
                 label="Voices"
-                placeholder="Select voices"
                 required={s?.voices?.required ?? false}
                 group_id={s?.group_id ?? null}
                 createVoicesAction={createVoicesAction}

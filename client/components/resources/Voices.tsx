@@ -1,12 +1,12 @@
 /**
  * Voices.tsx
  * Resource component for voice selection
- * Multi-select resource component with custom voice creation
+ * Multi-select resource component with horizontal selectable grid and custom voice creation
  */
 
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,6 +36,9 @@ export interface VoiceItem {
   voice: string;
 }
 
+// Union type for grid items: voice cards + the custom "add" card
+type GridItem = { type: "voice"; id: string; voice: string } | { type: "add" };
+
 export interface VoicesProps {
   voice_ids?: string[]; // Current voice resource IDs (standardized prop name)
   voice_resources?: VoiceResourceItem[]; // Selected voice resources (each includes generated field)
@@ -47,9 +50,6 @@ export interface VoicesProps {
   label?: string;
   id?: string;
   required?: boolean;
-  placeholder?: string;
-  searchTerm?: string;
-  onSearchChange?: (term: string) => void;
   group_id?: string | null; // Group ID for linking resources
   create_tool_id?: string | null; // Tool ID for AI generation/creation
   createVoicesAction?:
@@ -75,9 +75,6 @@ export function Voices({
   label = "Voices",
   id = "voices",
   required = false,
-  placeholder = "Select voices...",
-  searchTerm,
-  onSearchChange,
   group_id,
   create_tool_id,
   createVoicesAction,
@@ -100,17 +97,6 @@ export function Voices({
     groupId: group_id,
     accumulate: true,
   });
-
-  const filteredVoices = useMemo(() => {
-    if (!searchTerm?.trim()) {
-      return allVoices;
-    }
-    const term = searchTerm.toLowerCase();
-    return allVoices.filter((voice) => {
-      const name = voice.voice?.toLowerCase() ?? "";
-      return name.includes(term);
-    });
-  }, [allVoices, searchTerm]);
 
   // Track which voice IDs have already had resources created
   const createdVoiceIdsRef = useRef<Set<string>>(new Set());
@@ -177,21 +163,27 @@ export function Voices({
     }
   }, [registerFlush]);
 
-  // Convert voices array to VoiceItem format for GenericPicker
-  const voiceItems = useMemo(() => {
-    return filteredVoices
-      .filter((v) => v.id && v.voice) // Filter out nulls
-      .map((v) => ({
-        id: v.id!,
-        voice: v.voice!,
-      }));
-  }, [filteredVoices]);
+  // Build grid items: voice cards + optional "add" card
+  const gridItems = useMemo<GridItem[]>(() => {
+    const items: GridItem[] = allVoices
+      .filter((v) => v.id && v.voice)
+      .map((v) => ({ type: "voice" as const, id: v.id!, voice: v.voice! }));
+    if (!disabled && createVoicesAction) {
+      items.push({ type: "add" as const });
+    }
+    return items;
+  }, [allVoices, disabled, createVoicesAction]);
 
   // Check if a voice is suggested
   const isSuggested = useCallback(
     (voiceId: string) => suggestionsList.includes(voiceId),
     [suggestionsList]
   );
+
+  // Check if a voice is AI-suggested
+  const aiSuggestedIds = useMemo(() => {
+    return new Set(aiSuggestions.map((v) => v.id).filter((id): id is string => !!id));
+  }, [aiSuggestions]);
 
   const handleSelect = useCallback(
     async (selectedIds: string[]) => {
@@ -232,6 +224,21 @@ export function Voices({
       onVoiceIdsChange(selectedIds);
     },
     [ids, onVoiceIdsChange, createVoicesAction, create_tool_id, group_id, allVoices, isAutosaveEnabled]
+  );
+
+  // Handle grid card click — multi-select toggle or open custom input
+  const handleGridSelect = useCallback(
+    (itemId: string) => {
+      if (itemId === "__add__") {
+        setIsAddingVoice(true);
+        return;
+      }
+      const nextIds = ids.includes(itemId)
+        ? ids.filter((i) => i !== itemId)
+        : [...ids, itemId];
+      void handleSelect(nextIds);
+    },
+    [ids, handleSelect]
   );
 
   // Handle adding a custom voice
@@ -350,25 +357,6 @@ export function Voices({
             </TooltipProvider>
           </>
         )}
-        {!disabled && createVoicesAction && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={() => setIsAddingVoice(true)}
-                  disabled={isAddingVoice}
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Add custom voice</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
       </div>
       {/* AI-suggested voices preview */}
       {showDiff && aiSuggestions.length > 0 && (
@@ -389,7 +377,7 @@ export function Voices({
           </div>
         </div>
       )}
-      {/* Add custom voice input */}
+      {/* Custom voice inline input */}
       {isAddingVoice && (
         <div className="flex items-center gap-2">
           <Input
@@ -432,42 +420,68 @@ export function Voices({
         </div>
       )}
 
-      <GenericPicker<VoiceItem>
-        items={voiceItems}
-        itemIds={filteredVoices
-          .map((v) => v.id)
-          .filter((id): id is string => id !== null)} // All voice IDs from array, filter nulls
+      <SelectableGrid<GridItem>
+        horizontal
+        items={gridItems}
+        selectedId={null}
         selectedIds={ids}
-        onSelect={handleSelect}
-        multiSelect={true}
-        getId={(item) => item.id}
-        getLabel={(item) => item.voice}
-        renderItem={(item, isSelected) => (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isSuggested(item.id) && !isSelected && (
-                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
-                  Suggested
-                </span>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="truncate">{item.voice}</div>
+        onSelect={handleGridSelect}
+        getId={(item) => (item.type === "voice" ? item.id : "__add__")}
+        renderItem={(item, isSelected) => {
+          if (item.type === "add") {
+            return (
+              <div
+                className={cn(
+                  "relative flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-dashed bg-card text-card-foreground transition-all text-center",
+                  "hover:shadow-md hover:bg-accent/50",
+                )}
+              >
+                <Plus className="h-5 w-5 text-muted-foreground" />
+                <span className="text-sm font-medium text-muted-foreground">Custom</span>
               </div>
+            );
+          }
+
+          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
+
+          return (
+            <div
+              className={cn(
+                "relative flex flex-col gap-2 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+                "hover:shadow-md hover:bg-accent/50",
+                isSelected && "ring-2 ring-primary bg-accent",
+                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
+              )}
+            >
+              {/* Check icon - top right */}
+              {isSelected && (
+                <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                  <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                </div>
+              )}
+
+              {/* AI Suggested badge - top right */}
+              {isAiSuggested && !isSelected && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  AI
+                </div>
+              )}
+
+              {/* Suggested badge - top right */}
+              {isSuggested(item.id) && !isSelected && !isAiSuggested && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
+                  Suggested
+                </div>
+              )}
+
+              <h3 className="font-medium text-sm leading-tight pr-6">
+                {item.voice}
+              </h3>
             </div>
-            <Check
-              className={`ml-auto flex-shrink-0 h-4 w-4 ${
-                isSelected ? "opacity-100" : "opacity-0"
-              }`}
-            />
-          </div>
-        )}
-        {...(searchTerm !== undefined ? { initialSearchTerm: searchTerm } : {})}
-        {...(onSearchChange ? { onSearchChange } : {})}
-        placeholder={placeholder}
+          );
+        }}
+        emptyMessage="No voices available."
         disabled={disabled}
-        showLabel={false}
-        hideSelectedChips={false}
-        showClearAll={true}
       />
     </div>
   );
