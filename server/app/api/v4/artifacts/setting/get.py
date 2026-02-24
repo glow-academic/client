@@ -124,6 +124,8 @@ async def get_setting_internal(
     setting_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    # Search/filter kwargs (threaded from websocket artifact tool)
+    color_search: str | None = None,
 ) -> SettingInternalData:
     """Core data fetching layer (cacheable).
 
@@ -297,7 +299,7 @@ async def get_setting_internal(
             selected = await get_colors_internal(c, selected_color_ids, bypass_cache)
             suggestions = await search_colors_internal(
                 c,
-                None,
+                color_search,
                 20,
                 0,
                 effective_group_id,
@@ -666,6 +668,8 @@ async def get_setting_websocket(
     setting_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    # Search/filter kwargs (from artifact tool calls)
+    color_search: str | None = None,
 ) -> GetSettingWebsocketResponse:
     """Minimal response for WebSocket handlers.
 
@@ -679,6 +683,7 @@ async def get_setting_websocket(
         setting_id=setting_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
+        color_search=color_search,
     )
 
     # Fetch draft setting view, config_profile, runs_today, and tools in parallel
@@ -809,6 +814,11 @@ async def get_setting_websocket(
         args=config_args,
         args_outputs=config_args_outputs,
         profile=config_profile_result or None,
+        params=GetSettingApiRequest(
+            setting_id=setting_id,
+            draft_id=draft_id,
+            color_search=color_search,
+        ),
     )
 
     return GetSettingWebsocketResponse(

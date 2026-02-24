@@ -207,6 +207,12 @@ async def get_cohort_internal(
     cohort_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    # Search/filter kwargs (threaded from websocket artifact tool)
+    descriptions_search: str | None = None,
+    simulation_search: str | None = None,
+    simulation_show_selected: bool | None = None,
+    profile_search: str | None = None,
+    profile_show_selected: bool | None = None,
 ) -> CohortInternalData:
     """Core data fetching layer (cacheable).
 
@@ -389,7 +395,7 @@ async def get_cohort_internal(
             selected = await get_descriptions_internal(c, description_ids, bypass_cache)
             suggestions = await search_descriptions_internal(
                 c,
-                None,
+                descriptions_search,
                 20,
                 0,
                 effective_group_id,
@@ -443,11 +449,11 @@ async def get_cohort_internal(
             # Search for suggestions
             suggestions = await search_simulations_internal(
                 c,
-                search=None,
+                search=simulation_search,
                 limit_count=20,
                 offset_count=0,
                 draft_id=effective_group_id,
-                suggest_source="all",
+                suggest_source="selected" if simulation_show_selected else "all",
                 exclude_ids=simulation_ids,
                 bypass_cache=bypass_cache,
                 cohort=True,
@@ -499,7 +505,7 @@ async def get_cohort_internal(
             )
             suggestions = await search_profiles_internal(
                 c,
-                search=None,
+                search=profile_search,
                 limit_count=20,
                 offset_count=0,
                 exclude_ids=profile_ids or [],
@@ -841,6 +847,12 @@ async def get_cohort_websocket(
     cohort_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    # Search/filter kwargs (from artifact tool calls)
+    descriptions_search: str | None = None,
+    simulation_search: str | None = None,
+    simulation_show_selected: bool | None = None,
+    profile_search: str | None = None,
+    profile_show_selected: bool | None = None,
 ) -> GetCohortWebsocketResponse:
     """Minimal response for WebSocket handlers.
 
@@ -854,6 +866,11 @@ async def get_cohort_websocket(
         cohort_id=cohort_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
+        descriptions_search=descriptions_search,
+        simulation_search=simulation_search,
+        simulation_show_selected=simulation_show_selected,
+        profile_search=profile_search,
+        profile_show_selected=profile_show_selected,
     )
 
     # Fetch draft, config_profile, runs_today, and tools in parallel
@@ -969,6 +986,15 @@ async def get_cohort_websocket(
         args=config_args,
         args_outputs=config_args_outputs,
         profile=config_profile_result or None,
+        params=GetCohortApiRequest(
+            cohort_id=cohort_id,
+            draft_id=draft_id,
+            descriptions_search=descriptions_search,
+            simulation_search=simulation_search,
+            simulation_show_selected=simulation_show_selected,
+            profile_search=profile_search,
+            profile_show_selected=profile_show_selected,
+        ),
     )
 
     return GetCohortWebsocketResponse(

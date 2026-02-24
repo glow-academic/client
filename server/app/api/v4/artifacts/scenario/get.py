@@ -564,6 +564,7 @@ async def get_scenario_internal(
                 0,
                 user_department_ids,
                 effective_group_id,
+                suggest_source="selected" if persona_show_selected else None,
                 exclude_ids=selected_persona_ids,
                 bypass_cache=bypass_cache,
                 scenario=True,
@@ -582,6 +583,7 @@ async def get_scenario_internal(
                 0,
                 user_department_ids,
                 effective_group_id,
+                suggest_source="selected" if document_show_selected else None,
                 exclude_ids=selected_document_ids,
                 bypass_cache=bypass_cache,
                 scenario=True,
@@ -605,7 +607,7 @@ async def get_scenario_internal(
                 document_parameter=None,
                 scenario_parameter=True,
                 video_parameter=None,
-                suggest_source="all",
+                suggest_source="selected" if parameter_show_selected else "all",
                 exclude_ids=selected_parameter_ids,
                 bypass_cache=bypass_cache,
             )
@@ -1194,6 +1196,20 @@ async def get_scenario_websocket(
     scenario_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    # Search/filter kwargs (from artifact tool calls)
+    description_search: str | None = None,
+    persona_search: str | None = None,
+    document_search: str | None = None,
+    parameter_search: str | None = None,
+    problem_statement_search: str | None = None,
+    image_search: str | None = None,
+    video_search: str | None = None,
+    question_search: str | None = None,
+    option_search: str | None = None,
+    persona_show_selected: bool | None = None,
+    document_show_selected: bool | None = None,
+    parameter_show_selected: bool | None = None,
+    parameter_ids: list[UUID] | None = None,
 ) -> GetScenarioWebsocketResponse:
     """Minimal response for WebSocket handlers.
 
@@ -1207,6 +1223,19 @@ async def get_scenario_websocket(
         scenario_id=scenario_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
+        description_search=description_search,
+        persona_search=persona_search,
+        document_search=document_search,
+        parameter_search=parameter_search,
+        problem_statement_search=problem_statement_search,
+        image_search=image_search,
+        video_search=video_search,
+        question_search=question_search,
+        option_search=option_search,
+        persona_show_selected=persona_show_selected,
+        document_show_selected=document_show_selected,
+        parameter_show_selected=parameter_show_selected,
+        parameter_ids=parameter_ids,
     )
 
     pool = get_pool()
@@ -1314,6 +1343,23 @@ async def get_scenario_websocket(
         args=config_args,
         args_outputs=config_args_outputs,
         profile=config_profile_result or None,
+        params=GetScenarioApiRequest(
+            scenario_id=scenario_id,
+            draft_id=draft_id,
+            description_search=description_search,
+            persona_search=persona_search,
+            document_search=document_search,
+            parameter_search=parameter_search,
+            problem_statement_search=problem_statement_search,
+            image_search=image_search,
+            video_search=video_search,
+            question_search=question_search,
+            option_search=option_search,
+            persona_show_selected=persona_show_selected,
+            document_show_selected=document_show_selected,
+            parameter_show_selected=parameter_show_selected,
+            parameter_ids=parameter_ids,
+        ),
     )
 
     return GetScenarioWebsocketResponse(

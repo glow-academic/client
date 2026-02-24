@@ -733,6 +733,9 @@ async def get_profile_websocket(
         args=config_args,
         args_outputs=config_args_outputs,
         profile=config_profile_result or None,
+        params=GetProfileApiRequest(
+            target_profile_id=target_profile_id, draft_id=draft_id
+        ),
     )
 
     return GetProfileWebsocketResponse(

@@ -518,11 +518,18 @@ async def get_field_websocket(
     field_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    # Search/filter kwargs (from artifact tool calls)
+    description_search: str | None = None,
+    conditional_parameter_search: str | None = None,
+    conditional_parameter_show_selected: bool | None = None,
 ) -> GetFieldWebsocketResponse:
     data = await get_field_internal(
         profile_id=profile_id,
         field_id=field_id,
         draft_id=draft_id,
+        description_search=description_search,
+        conditional_parameter_search=conditional_parameter_search,
+        conditional_parameter_show_selected=conditional_parameter_show_selected,
         bypass_cache=bypass_cache,
     )
 
@@ -644,6 +651,13 @@ async def get_field_websocket(
         args=config_args,
         args_outputs=config_args_outputs,
         profile=config_profile_result or None,
+        params=GetFieldApiRequest(
+            field_id=field_id,
+            draft_id=draft_id,
+            description_search=description_search,
+            conditional_parameter_search=conditional_parameter_search,
+            conditional_parameter_show_selected=conditional_parameter_show_selected,
+        ),
     )
 
     return GetFieldWebsocketResponse(

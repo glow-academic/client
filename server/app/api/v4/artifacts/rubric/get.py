@@ -164,6 +164,9 @@ async def get_rubric_internal(
     rubric_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    # Search/filter kwargs (threaded from websocket artifact tool)
+    description_search: str | None = None,
+    standard_group_search: str | None = None,
 ) -> RubricInternalData:
     """Core data fetching layer (cacheable).
 
@@ -375,7 +378,7 @@ async def get_rubric_internal(
             selected = await get_descriptions_internal(c, description_ids, bypass_cache)
             suggestions = await search_descriptions_internal(
                 c,
-                None,
+                description_search,
                 20,
                 0,
                 effective_group_id,
@@ -675,6 +678,9 @@ async def get_rubric_websocket(
     rubric_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    # Search/filter kwargs (from artifact tool calls)
+    description_search: str | None = None,
+    standard_group_search: str | None = None,
 ) -> GetRubricWebsocketResponse:
     """Websocket response using views/resources pattern."""
     from datetime import UTC, datetime
@@ -684,6 +690,8 @@ async def get_rubric_websocket(
         rubric_id=rubric_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
+        description_search=description_search,
+        standard_group_search=standard_group_search,
     )
 
     # Fetch draft rubric view, config_profile, runs_today, and tools in parallel
@@ -787,6 +795,12 @@ async def get_rubric_websocket(
         args=config_args,
         args_outputs=config_args_outputs,
         profile=config_profile_result or None,
+        params=GetRubricApiRequest(
+            rubric_id=rubric_id,
+            draft_id=draft_id,
+            description_search=description_search,
+            standard_group_search=standard_group_search,
+        ),
     )
 
     return GetRubricWebsocketResponse(

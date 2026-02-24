@@ -769,6 +769,9 @@ async def get_simulation_websocket(
     simulation_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    # Search/filter kwargs (from artifact tool calls)
+    scenario_search: str | None = None,
+    filter_scenario_ids: list[UUID] | None = None,
 ) -> GetSimulationWebsocketResponse:
     """Minimal response for simulation websocket handlers."""
     data = await get_simulation_internal(
@@ -776,6 +779,8 @@ async def get_simulation_websocket(
         simulation_id=simulation_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
+        scenario_search=scenario_search,
+        filter_scenario_ids=filter_scenario_ids,
     )
 
     # Fetch draft, config_profile, runs_today, and tools in parallel
@@ -892,6 +897,12 @@ async def get_simulation_websocket(
         args=config_args,
         args_outputs=config_args_outputs,
         profile=config_profile_result or None,
+        params=GetSimulationApiRequest(
+            simulation_id=simulation_id,
+            draft_id=draft_id,
+            scenario_search=scenario_search,
+            filter_scenario_ids=filter_scenario_ids,
+        ),
     )
 
     return GetSimulationWebsocketResponse(

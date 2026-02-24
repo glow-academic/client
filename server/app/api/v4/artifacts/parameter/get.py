@@ -97,6 +97,9 @@ async def get_parameter_internal(
     parameter_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    # Search/filter kwargs (threaded from websocket artifact tool)
+    field_search: str | None = None,
+    field_show_selected: bool | None = None,
 ) -> ParameterInternalData:
     """Core data fetching layer (cacheable)."""
 
@@ -502,6 +505,9 @@ async def get_parameter_websocket(
     parameter_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    # Search/filter kwargs (from artifact tool calls)
+    field_search: str | None = None,
+    field_show_selected: bool | None = None,
 ) -> GetParameterWebsocketResponse:
     """Minimal response for WebSocket handlers."""
     data = await get_parameter_internal(
@@ -509,6 +515,8 @@ async def get_parameter_websocket(
         parameter_id=parameter_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
+        field_search=field_search,
+        field_show_selected=field_show_selected,
     )
 
     # Fetch draft, config_profile, and runs_today in parallel
@@ -566,6 +574,12 @@ async def get_parameter_websocket(
         args=None,
         args_outputs=None,
         profile=config_profile_result or None,
+        params=GetParameterApiRequest(
+            parameter_id=parameter_id,
+            draft_id=draft_id,
+            field_search=field_search,
+            field_show_selected=field_show_selected,
+        ),
     )
 
     return GetParameterWebsocketResponse(

@@ -848,6 +848,7 @@ async def get_document_websocket(
         args=config_args,
         args_outputs=config_args_outputs,
         profile=config_profile_result or None,
+        params=GetDocumentApiRequest(document_id=document_id, draft_id=draft_id),
     )
 
     return GetDocumentWebsocketResponse(

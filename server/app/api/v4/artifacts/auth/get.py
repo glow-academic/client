@@ -637,6 +637,7 @@ async def get_auth_websocket(
         args=config_args,
         args_outputs=config_args_outputs,
         profile=config_profile_result or None,
+        params=GetAuthApiRequest(auth_id=auth_id, draft_id=draft_id),
     )
 
     return GetAuthWebsocketResponse(

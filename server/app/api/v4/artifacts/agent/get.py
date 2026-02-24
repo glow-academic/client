@@ -890,6 +890,7 @@ async def get_agent_websocket(
         args=config_args,
         args_outputs=config_args_outputs,
         profile=config_profile_result or None,
+        params=GetAgentApiRequest(agent_id=agent_id, draft_id=draft_id),
     )
 
     entries = AgentWebsocketEntries(

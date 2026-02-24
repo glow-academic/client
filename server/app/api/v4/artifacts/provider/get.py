@@ -625,6 +625,7 @@ async def get_provider_websocket(
         args=config_args,
         args_outputs=config_args_outputs,
         profile=config_profile_result or None,
+        params=GetProviderApiRequest(provider_id=provider_id, draft_id=draft_id),
     )
 
     return GetProviderWebsocketResponse(

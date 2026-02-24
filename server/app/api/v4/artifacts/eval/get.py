@@ -168,6 +168,13 @@ async def get_eval_internal(
     eval_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    # Search/filter kwargs (threaded from websocket artifact tool)
+    agent_search: str | None = None,
+    group_search: str | None = None,
+    available_model_runs_search: str | None = None,
+    available_model_runs_agent_ids: list[UUID] | None = None,
+    available_model_runs_page: int | None = 1,
+    available_model_runs_page_size: int | None = 50,
 ) -> EvalInternalData:
     """Core data fetching layer (cacheable).
 
@@ -607,6 +614,13 @@ async def get_eval_websocket(
     eval_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    # Search/filter kwargs (from artifact tool calls)
+    agent_search: str | None = None,
+    group_search: str | None = None,
+    available_model_runs_search: str | None = None,
+    available_model_runs_agent_ids: list[UUID] | None = None,
+    available_model_runs_page: int | None = 1,
+    available_model_runs_page_size: int | None = 50,
 ) -> GetEvalWebsocketResponse:
     """Minimal response for WebSocket handlers.
 
@@ -620,6 +634,12 @@ async def get_eval_websocket(
         eval_id=eval_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
+        agent_search=agent_search,
+        group_search=group_search,
+        available_model_runs_search=available_model_runs_search,
+        available_model_runs_agent_ids=available_model_runs_agent_ids,
+        available_model_runs_page=available_model_runs_page,
+        available_model_runs_page_size=available_model_runs_page_size,
     )
 
     # Fetch draft, config_profile, runs_today, and tools in parallel
@@ -770,6 +790,16 @@ async def get_eval_websocket(
         args=config_args,
         args_outputs=config_args_outputs,
         profile=config_profile_result or None,
+        params=GetEvalApiRequest(
+            eval_id=eval_id,
+            draft_id=draft_id,
+            agent_search=agent_search,
+            group_search=group_search,
+            available_model_runs_search=available_model_runs_search,
+            available_model_runs_agent_ids=available_model_runs_agent_ids,
+            available_model_runs_page=available_model_runs_page,
+            available_model_runs_page_size=available_model_runs_page_size,
+        ),
     )
 
     return GetEvalWebsocketResponse(
