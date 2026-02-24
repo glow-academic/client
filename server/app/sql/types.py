@@ -20579,35 +20579,33 @@ class SavePersonaSqlParams(BaseModel):
 
     profile_id: UUID
     input_persona_id: UUID | None = None
-    group_id: UUID | None = None
-    names: PersonaResourceAction | None = None
-    descriptions: PersonaResourceAction | None = None
-    colors: PersonaResourceAction | None = None
-    icons: PersonaResourceAction | None = None
-    instructions: PersonaResourceAction | None = None
-    flags: PersonaResourceAction | None = None
-    departments: PersonaMultiResourceAction | None = None
-    parameter_fields: PersonaMultiResourceAction | None = None
-    examples: PersonaMultiResourceAction | None = None
-    parameters: PersonaMultiResourceAction | None = None
-    voices: PersonaMultiResourceAction | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    parameter_field_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    example_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    voice_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    personas_resource_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.input_persona_id,
-            self.group_id,
-            self.names,
-            self.descriptions,
-            self.colors,
-            self.icons,
-            self.instructions,
-            self.flags,
-            self.departments,
-            self.parameter_fields,
-            self.examples,
-            self.parameters,
-            self.voices,
+            self.name_id,
+            self.description_id,
+            self.color_id,
+            self.icon_id,
+            self.instructions_id,
+            self.active_flag_id,
+            self.department_ids,
+            self.parameter_field_ids,
+            self.example_ids,
+            self.voice_ids,
+            self.personas_resource_id,
         )
 
 class SavePersonaSqlRow(BaseModel):
@@ -20617,18 +20615,17 @@ class SavePersonaSqlRow(BaseModel):
 class SavePersonaApiRequest(BaseModel):
 
     input_persona_id: UUID | None = None
-    group_id: UUID | None = None
-    names: PersonaResourceAction | None = None
-    descriptions: PersonaResourceAction | None = None
-    colors: PersonaResourceAction | None = None
-    icons: PersonaResourceAction | None = None
-    instructions: PersonaResourceAction | None = None
-    flags: PersonaResourceAction | None = None
-    departments: PersonaMultiResourceAction | None = None
-    parameter_fields: PersonaMultiResourceAction | None = None
-    examples: PersonaMultiResourceAction | None = None
-    parameters: PersonaMultiResourceAction | None = None
-    voices: PersonaMultiResourceAction | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    parameter_field_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    example_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    voice_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    personas_resource_id: UUID | None = None
 
 class SavePersonaApiResponse(BaseModel):
 
@@ -25359,6 +25356,316 @@ class KeysApiResponse(BaseModel):
 
 
 
+# Generated from: link_colors
+
+class LinkColorsSqlParams(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.resource_id,
+            self.group_id,
+            self.tool_id,
+        )
+
+class LinkColorsSqlRow(BaseModel):
+
+    color_id: UUID | None = None
+
+class LinkColorsApiRequest(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+class LinkColorsApiResponse(BaseModel):
+
+    color_id: UUID | None = None
+
+
+
+# Generated from: link_departments
+
+class LinkDepartmentsSqlParams(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.resource_id,
+            self.group_id,
+            self.tool_id,
+        )
+
+class LinkDepartmentsSqlRow(BaseModel):
+
+    department_id: UUID | None = None
+
+class LinkDepartmentsApiRequest(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+class LinkDepartmentsApiResponse(BaseModel):
+
+    department_id: UUID | None = None
+
+
+
+# Generated from: link_descriptions
+
+class LinkDescriptionsSqlParams(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.resource_id,
+            self.group_id,
+            self.tool_id,
+        )
+
+class LinkDescriptionsSqlRow(BaseModel):
+
+    description_id: UUID | None = None
+
+class LinkDescriptionsApiRequest(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+class LinkDescriptionsApiResponse(BaseModel):
+
+    description_id: UUID | None = None
+
+
+
+# Generated from: link_examples
+
+class LinkExamplesSqlParams(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.resource_id,
+            self.group_id,
+            self.tool_id,
+        )
+
+class LinkExamplesSqlRow(BaseModel):
+
+    example_id: UUID | None = None
+
+class LinkExamplesApiRequest(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+class LinkExamplesApiResponse(BaseModel):
+
+    example_id: UUID | None = None
+
+
+
+# Generated from: link_flags
+
+class LinkFlagsSqlParams(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.resource_id,
+            self.group_id,
+            self.tool_id,
+        )
+
+class LinkFlagsSqlRow(BaseModel):
+
+    flag_id: UUID | None = None
+
+class LinkFlagsApiRequest(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+class LinkFlagsApiResponse(BaseModel):
+
+    flag_id: UUID | None = None
+
+
+
+# Generated from: link_icons
+
+class LinkIconsSqlParams(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.resource_id,
+            self.group_id,
+            self.tool_id,
+        )
+
+class LinkIconsSqlRow(BaseModel):
+
+    icon_id: UUID | None = None
+
+class LinkIconsApiRequest(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+class LinkIconsApiResponse(BaseModel):
+
+    icon_id: UUID | None = None
+
+
+
+# Generated from: link_instructions
+
+class LinkInstructionsSqlParams(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.resource_id,
+            self.group_id,
+            self.tool_id,
+        )
+
+class LinkInstructionsSqlRow(BaseModel):
+
+    instruction_id: UUID | None = None
+
+class LinkInstructionsApiRequest(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+class LinkInstructionsApiResponse(BaseModel):
+
+    instruction_id: UUID | None = None
+
+
+
+# Generated from: link_names
+
+class LinkNamesSqlParams(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.resource_id,
+            self.group_id,
+            self.tool_id,
+        )
+
+class LinkNamesSqlRow(BaseModel):
+
+    name_id: UUID | None = None
+
+class LinkNamesApiRequest(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+class LinkNamesApiResponse(BaseModel):
+
+    name_id: UUID | None = None
+
+
+
+# Generated from: link_parameter_fields
+
+class LinkParameterFieldsSqlParams(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.resource_id,
+            self.group_id,
+            self.tool_id,
+        )
+
+class LinkParameterFieldsSqlRow(BaseModel):
+
+    parameter_fields_id: UUID | None = None
+
+class LinkParameterFieldsApiRequest(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+class LinkParameterFieldsApiResponse(BaseModel):
+
+    parameter_fields_id: UUID | None = None
+
+
+
+# Generated from: link_voices
+
+class LinkVoicesSqlParams(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.resource_id,
+            self.group_id,
+            self.tool_id,
+        )
+
+class LinkVoicesSqlRow(BaseModel):
+
+    voices_id: UUID | None = None
+
+class LinkVoicesApiRequest(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+class LinkVoicesApiResponse(BaseModel):
+
+    voices_id: UUID | None = None
+
+
+
 # Generated from: get_modalities
 
 class GetModalitiesSqlParams(BaseModel):
@@ -26156,6 +26463,55 @@ class SearchParametersApiRequest(BaseModel):
 class SearchParametersApiResponse(BaseModel):
 
     items: list[QGetParametersV4Item] | None = None
+
+
+
+# Generated from: create_personas
+
+class CreatePersonasSqlParams(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    example_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    parameter_field_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name_id,
+            self.description_id,
+            self.color_id,
+            self.icon_id,
+            self.instructions_id,
+            self.department_ids,
+            self.example_ids,
+            self.parameter_field_ids,
+            self.mcp,
+        )
+
+class CreatePersonasSqlRow(BaseModel):
+
+    personas_resource_id: UUID | None = None
+
+class CreatePersonasApiRequest(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    example_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    parameter_field_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    mcp: bool | None = False
+
+class CreatePersonasApiResponse(BaseModel):
+
+    personas_resource_id: UUID | None = None
 
 
 
@@ -40125,6 +40481,66 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "KeysApiRequest",
         "KeysApiResponse",
     ),
+    "app/sql/v4/queries/resources/link_colors_complete.sql": (
+        "LinkColorsSqlParams",
+        "LinkColorsSqlRow",
+        "LinkColorsApiRequest",
+        "LinkColorsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/link_departments_complete.sql": (
+        "LinkDepartmentsSqlParams",
+        "LinkDepartmentsSqlRow",
+        "LinkDepartmentsApiRequest",
+        "LinkDepartmentsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/link_descriptions_complete.sql": (
+        "LinkDescriptionsSqlParams",
+        "LinkDescriptionsSqlRow",
+        "LinkDescriptionsApiRequest",
+        "LinkDescriptionsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/link_examples_complete.sql": (
+        "LinkExamplesSqlParams",
+        "LinkExamplesSqlRow",
+        "LinkExamplesApiRequest",
+        "LinkExamplesApiResponse",
+    ),
+    "app/sql/v4/queries/resources/link_flags_complete.sql": (
+        "LinkFlagsSqlParams",
+        "LinkFlagsSqlRow",
+        "LinkFlagsApiRequest",
+        "LinkFlagsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/link_icons_complete.sql": (
+        "LinkIconsSqlParams",
+        "LinkIconsSqlRow",
+        "LinkIconsApiRequest",
+        "LinkIconsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/link_instructions_complete.sql": (
+        "LinkInstructionsSqlParams",
+        "LinkInstructionsSqlRow",
+        "LinkInstructionsApiRequest",
+        "LinkInstructionsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/link_names_complete.sql": (
+        "LinkNamesSqlParams",
+        "LinkNamesSqlRow",
+        "LinkNamesApiRequest",
+        "LinkNamesApiResponse",
+    ),
+    "app/sql/v4/queries/resources/link_parameter_fields_complete.sql": (
+        "LinkParameterFieldsSqlParams",
+        "LinkParameterFieldsSqlRow",
+        "LinkParameterFieldsApiRequest",
+        "LinkParameterFieldsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/link_voices_complete.sql": (
+        "LinkVoicesSqlParams",
+        "LinkVoicesSqlRow",
+        "LinkVoicesApiRequest",
+        "LinkVoicesApiResponse",
+    ),
     "app/sql/v4/queries/resources/modalities/get_modalities_complete.sql": (
         "GetModalitiesSqlParams",
         "GetModalitiesSqlRow",
@@ -40244,6 +40660,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchParametersSqlRow",
         "SearchParametersApiRequest",
         "SearchParametersApiResponse",
+    ),
+    "app/sql/v4/queries/resources/personas/create_personas_complete.sql": (
+        "CreatePersonasSqlParams",
+        "CreatePersonasSqlRow",
+        "CreatePersonasApiRequest",
+        "CreatePersonasApiResponse",
     ),
     "app/sql/v4/queries/resources/personas/get_persona_resource_complete.sql": (
         "GetPersonaResourceSqlParams",
@@ -45060,6 +45482,56 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/link_colors_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/link_departments_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/link_descriptions_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/link_examples_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/link_flags_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/link_icons_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/link_instructions_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/link_names_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/link_parameter_fields_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/link_voices_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/modalities/get_modalities_complete.sql"]
     ) -> SqlString: ...
 
@@ -45156,6 +45628,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/parameters/search_parameters_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/personas/create_personas_complete.sql"]
     ) -> SqlString: ...
 
     @overload

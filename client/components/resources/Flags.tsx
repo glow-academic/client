@@ -19,11 +19,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { OutputOf } from "@/lib/api/types";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { getIconComponent } from "@/utils/icons";
 import { Check, Loader2, Power, Sparkles, X } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+
+type LinkFlagsIn = InputOf<"/api/v4/resources/flags/link", "post">;
+type LinkFlagsOut = OutputOf<"/api/v4/resources/flags/link", "post">;
 
 // Derive resource item type from the GET endpoint response
 type FlagGetResponse = OutputOf<"/api/v4/resources/flags/get", "post">;
@@ -48,8 +51,14 @@ interface CommonFlagsProps {
   label?: string; // Section label
   disabled?: boolean;
   group_id?: string | null;
+  link_tool_id?: string | null; // Tool ID for link tracking
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   onGenerate?: () => void | Promise<void>;
+  linkFlagAction?: ((input: LinkFlagsIn) => Promise<LinkFlagsOut>) | undefined;
+  /** When false, skip automatic link tracking (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save */
+  registerFlush?: (flush: () => Promise<{ active_flag_id: string | null } | void>) => void;
 }
 
 // Single-flag mode props - uses flag_id (optional) without flag_ids
@@ -79,8 +88,12 @@ export function Flags(props: FlagsProps) {
     disabled = false,
     showAiGenerate = false,
     group_id,
+    link_tool_id,
     onChange,
     onGenerate,
+    linkFlagAction,
+    isAutosaveEnabled = true,
+    registerFlush,
   } = props;
 
   // Determine mode based on props
@@ -116,6 +129,85 @@ export function Flags(props: FlagsProps) {
       ),
     [aiSuggestions]
   );
+
+  // --- Flush / Link tracking ---
+  const lastLinkedIdRef = useRef<string | null>(
+    !isMultiMode ? (singleFlagId ?? null) : null
+  );
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isInitialMountRef = useRef(true);
+
+  // Current effective flag ID for single mode (used for link tracking)
+  const effectiveFlagId = !isMultiMode ? (singleFlagId ?? null) : null;
+
+  const flushRef = useRef<(() => Promise<{ active_flag_id: string | null } | void>) | undefined>(undefined);
+
+  flushRef.current = async (): Promise<{ active_flag_id: string | null } | void> => {
+    if (!linkFlagAction || !group_id || !link_tool_id) return;
+    if (effectiveFlagId === lastLinkedIdRef.current) return { active_flag_id: effectiveFlagId };
+
+    try {
+      if (effectiveFlagId) {
+        await linkFlagAction({
+          body: {
+            group_id: group_id,
+            resource_id: effectiveFlagId,
+            tool_id: link_tool_id,
+          },
+        });
+        lastLinkedIdRef.current = effectiveFlagId;
+        return { active_flag_id: effectiveFlagId };
+      } else {
+        lastLinkedIdRef.current = null;
+        return { active_flag_id: null };
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to link flag resource:", error);
+      throw error;
+    }
+  };
+
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
+
+  // Track pending changes for manual save mode
+  useEffect(() => {
+    if (isAutosaveEnabled) return;
+    if (isInitialMountRef.current) return;
+
+    const hasPendingChanges = effectiveFlagId !== lastLinkedIdRef.current;
+    if (hasPendingChanges) {
+      window.dispatchEvent(
+        new CustomEvent("unsaved-changes", { detail: { hasChanges: true } })
+      );
+    }
+  }, [effectiveFlagId, isAutosaveEnabled]);
+
+  // Debounced link tracking when autosave is enabled
+  useEffect(() => {
+    if (!isAutosaveEnabled) return;
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      lastLinkedIdRef.current = effectiveFlagId;
+      return;
+    }
+    if (effectiveFlagId === lastLinkedIdRef.current) return;
+    if (!linkFlagAction) return;
+
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+
+    debounceTimerRef.current = setTimeout(() => {
+      flushRef.current?.();
+    }, 1000);
+
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
+  }, [effectiveFlagId, linkFlagAction, isAutosaveEnabled]);
 
   // Get the checked state for a flag
   const isChecked = useCallback(

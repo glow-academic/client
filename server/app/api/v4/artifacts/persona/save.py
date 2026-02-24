@@ -14,8 +14,6 @@ from app.api.v4.artifacts.persona.permissions import (
     compute_can_edit,
 )
 from app.api.v4.artifacts.persona.types import (
-    PersonaMultiResourceAction,
-    PersonaResourceAction,
     SavePersonaApiRequest,
     SavePersonaApiResponse,
     SavePersonaFieldError,
@@ -33,6 +31,7 @@ from app.api.v4.resources.flags.search import search_flags_internal
 from app.api.v4.resources.icons.search import search_icons_internal
 from app.api.v4.resources.instructions.create import create_instructions_internal
 from app.api.v4.resources.names.create import create_names_internal
+from app.api.v4.resources.personas.create import create_personas_internal
 from app.api.v4.resources.voices.search import search_voices_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
@@ -67,45 +66,66 @@ async def save_persona_internal(
 ) -> uuid.UUID | None:
     """Save a persona from resource actions dict (used by generation complete handler).
 
-    Builds SavePersonaSqlParams from a flat resource_actions dict, executes the
-    save SQL in a transaction, and invalidates cache.
+    Extracts flat resource IDs from resource_actions, creates the denormalized
+    personas_resource, then executes the save SQL in a transaction.
 
     Returns the persona_id on success, None on failure.
     """
     try:
-        # Build resource action objects from dict
-        def _single(key: str) -> PersonaResourceAction:
+
+        def _id(key: str) -> uuid.UUID | None:
             val = resource_actions.get(key, {})
             if isinstance(val, dict):
-                return PersonaResourceAction(
-                    resource_id=val.get("resource_id"),
-                )
-            return PersonaResourceAction()
+                return val.get("resource_id")
+            return None
 
-        def _multi(key: str) -> PersonaMultiResourceAction:
+        def _ids(key: str) -> list[uuid.UUID] | None:
             val = resource_actions.get(key, {})
             if isinstance(val, dict):
-                return PersonaMultiResourceAction(
-                    resource_ids=val.get("resource_ids"),
-                )
-            return PersonaMultiResourceAction()
+                return val.get("resource_ids")
+            return None
 
-        params = SavePersonaSqlParams(
-            profile_id=profile_id,
-            input_persona_id=persona_id,
-            group_id=group_id,
-            names=_single("names"),
-            descriptions=_single("descriptions"),
-            colors=_single("colors"),
-            icons=_single("icons"),
-            instructions=_single("instructions"),
-            flags=_single("flags"),
-            departments=_multi("departments"),
-            parameter_fields=_multi("parameter_fields"),
-            examples=_multi("examples"),
-        )
+        name_id = _id("names")
+        description_id = _id("descriptions")
+        color_id = _id("colors")
+        icon_id = _id("icons")
+        instructions_id = _id("instructions")
+        active_flag_id = _id("flags")
+        department_ids = _ids("departments")
+        parameter_field_ids = _ids("parameter_fields")
+        example_ids = _ids("examples")
+        voice_ids = _ids("voices")
 
         async with conn.transaction():
+            # Create denormalized personas_resource
+            personas_resource_id = await create_personas_internal(
+                conn,
+                name_id=name_id,
+                description_id=description_id,
+                color_id=color_id,
+                icon_id=icon_id,
+                instructions_id=instructions_id,
+                department_ids=department_ids,
+                example_ids=example_ids,
+                parameter_field_ids=parameter_field_ids,
+            )
+
+            params = SavePersonaSqlParams(
+                profile_id=profile_id,
+                input_persona_id=persona_id,
+                name_id=name_id,
+                description_id=description_id,
+                color_id=color_id,
+                icon_id=icon_id,
+                instructions_id=instructions_id,
+                active_flag_id=active_flag_id,
+                department_ids=department_ids,
+                parameter_field_ids=parameter_field_ids,
+                example_ids=example_ids,
+                voice_ids=voice_ids,
+                personas_resource_id=personas_resource_id,
+            )
+
             result = cast(
                 SavePersonaSqlRow,
                 await execute_sql_typed(conn, SQL_PATH, params=params),
@@ -406,25 +426,28 @@ async def save_persona(
         if has_errors:
             return SavePersonaApiResponse(results=error_results)
 
-        # Phase 3: Allocate group_ids for each item (outside transaction)
-        group_ids: list[uuid.UUID | None] = []
-        if pool:
-            for _item in request.personas:
-                async with pool.acquire() as group_conn:
-                    gid = await group_conn.fetchval(
-                        "INSERT INTO groups_entry (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id"
-                    )
-                    group_ids.append(gid)
-        else:
-            group_ids = [None] * len(request.personas)
-
-        # Phase 4: Single transaction — execute SQL for each item
+        # Phase 3: Single transaction — create resources + save junctions
         results: list[SavePersonaResult] = []
 
         async with conn.transaction():
-            for idx, (item, group_id) in enumerate(zip(request.personas, group_ids, strict=True)):
+            for idx, item in enumerate(request.personas):
+                # Create denormalized personas_resource
+                personas_resource_id = await create_personas_internal(
+                    conn,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
+                    color_id=item.color_id,
+                    icon_id=item.icon_id,
+                    instructions_id=item.instructions_id,
+                    department_ids=item.department_ids,
+                    example_ids=item.example_ids,
+                    parameter_field_ids=item.parameter_field_ids,
+                )
+
                 params = SavePersonaSqlParams.from_request(
-                    item, profile_id=profile_id, group_id=group_id
+                    item,
+                    profile_id=profile_id,
+                    personas_resource_id=personas_resource_id,
                 )
 
                 result = cast(

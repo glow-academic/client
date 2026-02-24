@@ -263,6 +263,7 @@ class PersonaInternalData:
 
     # Per-resource tool IDs (from selected agents)
     tool_ids_map: dict[str, UUID | None]
+    link_tool_ids_map: dict[str, UUID | None]
 
     # Resolved parameter IDs (derived from saved parameter_fields)
     resolved_parameter_ids: list[str]
@@ -394,70 +395,61 @@ class SavePersonaApiResponse(BaseModel):
 
 
 class SavePersonaSqlParams(BaseModel):
-    """SQL parameters for save persona - builds composites from flat IDs."""
+    """SQL parameters for save persona - flat resource IDs."""
 
     profile_id: UUID
     input_persona_id: UUID | None = None
-    group_id: UUID | None = None
-    names: PersonaResourceAction
-    descriptions: PersonaResourceAction
-    colors: PersonaResourceAction
-    icons: PersonaResourceAction
-    instructions: PersonaResourceAction
-    flags: PersonaResourceAction
-    departments: PersonaMultiResourceAction
-    parameter_fields: PersonaMultiResourceAction
-    examples: PersonaMultiResourceAction
-    voices: PersonaMultiResourceAction
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    example_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
+    personas_resource_id: UUID | None = None
 
     @classmethod
     def from_request(
         cls,
         request: SavePersonaItem,
         profile_id: UUID,
-        group_id: UUID | None,
+        personas_resource_id: UUID | None = None,
     ) -> SavePersonaSqlParams:
         return cls(
             profile_id=profile_id,
             input_persona_id=request.input_persona_id,
-            group_id=group_id,
-            names=PersonaResourceAction(resource_id=request.name_id),
-            descriptions=PersonaResourceAction(resource_id=request.description_id),
-            colors=PersonaResourceAction(resource_id=request.color_id),
-            icons=PersonaResourceAction(resource_id=request.icon_id),
-            instructions=PersonaResourceAction(resource_id=request.instructions_id),
-            flags=PersonaResourceAction(resource_id=request.active_flag_id),
-            departments=PersonaMultiResourceAction(resource_ids=request.department_ids),
-            parameter_fields=PersonaMultiResourceAction(
-                resource_ids=request.parameter_field_ids
-            ),
-            examples=PersonaMultiResourceAction(resource_ids=request.example_ids),
-            voices=PersonaMultiResourceAction(resource_ids=request.voice_ids),
+            name_id=request.name_id,
+            description_id=request.description_id,
+            color_id=request.color_id,
+            icon_id=request.icon_id,
+            instructions_id=request.instructions_id,
+            active_flag_id=request.active_flag_id,
+            department_ids=request.department_ids,
+            parameter_field_ids=request.parameter_field_ids,
+            example_ids=request.example_ids,
+            voice_ids=request.voice_ids,
+            personas_resource_id=personas_resource_id,
         )
 
     def to_tuple(self) -> tuple:
         """Convert to tuple for SQL execution."""
-
-        def single(a: PersonaResourceAction) -> tuple:
-            return (a.resource_id, a.create_tool_id, a.link_tool_id)
-
-        def multi(a: PersonaMultiResourceAction) -> tuple:
-            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
-
         return (
             self.profile_id,
             self.input_persona_id,
-            self.group_id,
-            single(self.names),
-            single(self.descriptions),
-            single(self.colors),
-            single(self.icons),
-            single(self.instructions),
-            single(self.flags),
-            multi(self.departments),
-            multi(self.parameter_fields),
-            multi(self.examples),
-            multi(self.voices),
+            self.name_id,
+            self.description_id,
+            self.color_id,
+            self.icon_id,
+            self.instructions_id,
+            self.active_flag_id,
+            self.department_ids or [],
+            self.parameter_field_ids or [],
+            self.example_ids or [],
+            self.voice_ids or [],
+            self.personas_resource_id,
         )
 
 

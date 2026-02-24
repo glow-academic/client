@@ -73,10 +73,12 @@ router.include_router(cohorts_get_router)
 router.include_router(cohorts_search_router)
 from app.api.v4.resources.colors.create import router as colors_router
 from app.api.v4.resources.colors.get import router as colors_get_router
+from app.api.v4.resources.colors.link import router as colors_link_router
 from app.api.v4.resources.colors.search import router as colors_search_router
 
 router.include_router(colors_router)
 router.include_router(colors_get_router)
+router.include_router(colors_link_router)
 router.include_router(colors_search_router)
 # NOTE: conditional_parameters removed - non-creatable (migration 328)
 # GET/Search endpoints available for two-pass architecture
@@ -94,18 +96,22 @@ router.include_router(conditional_parameters_search_router)
 # NOTE: departments removed - non-creatable, sync via artifact save (migration 328)
 # GET endpoint available for personas two-pass architecture
 from app.api.v4.resources.departments.get import router as departments_get_router
+from app.api.v4.resources.departments.link import router as departments_link_router
 from app.api.v4.resources.departments.search import router as departments_search_router
 
 router.include_router(departments_get_router)
+router.include_router(departments_link_router)
 router.include_router(departments_search_router)
 from app.api.v4.resources.descriptions.create import router as descriptions_router
 from app.api.v4.resources.descriptions.get import router as descriptions_get_router
+from app.api.v4.resources.descriptions.link import router as descriptions_link_router
 from app.api.v4.resources.descriptions.search import (
     router as descriptions_search_router,
 )
 
 router.include_router(descriptions_router)
 router.include_router(descriptions_get_router)
+router.include_router(descriptions_link_router)
 router.include_router(descriptions_search_router)
 # NOTE: domains removed - non-creatable (migration 328)
 # GET/Search endpoints available for two-pass architecture
@@ -146,10 +152,12 @@ router.include_router(evals_get_router)
 router.include_router(evals_search_router)
 from app.api.v4.resources.examples.create import router as examples_router
 from app.api.v4.resources.examples.get import router as examples_get_router
+from app.api.v4.resources.examples.link import router as examples_link_router
 from app.api.v4.resources.examples.search import router as examples_search_router
 
 router.include_router(examples_router)
 router.include_router(examples_get_router)
+router.include_router(examples_link_router)
 router.include_router(examples_search_router)
 # NOTE: feedbacks removed - converted to entry table (migration 305)
 # NOTE: fields removed - non-creatable, sync via artifact save (migration 328)
@@ -166,21 +174,27 @@ from app.api.v4.resources.parameter_fields.create import (
 from app.api.v4.resources.parameter_fields.get import (
     router as parameter_fields_get_router,
 )
+from app.api.v4.resources.parameter_fields.link import (
+    router as parameter_fields_link_router,
+)
 from app.api.v4.resources.parameter_fields.search import (
     router as parameter_fields_search_router,
 )
 
 router.include_router(parameter_fields_create_router)
 router.include_router(parameter_fields_get_router)
+router.include_router(parameter_fields_link_router)
 router.include_router(parameter_fields_search_router)
 # NOTE: persona_fields removed - non-creatable (migration 328)
 # NOTE: document_fields removed - non-creatable (migration 328)
 # NOTE: flags removed - non-creatable (migration 328)
 # GET endpoint available for personas two-pass architecture
 from app.api.v4.resources.flags.get import router as flags_get_router
+from app.api.v4.resources.flags.link import router as flags_link_router
 from app.api.v4.resources.flags.search import router as flags_search_router
 
 router.include_router(flags_get_router)
+router.include_router(flags_link_router)
 router.include_router(flags_search_router)
 from app.api.v4.resources.group_positions.create import router as group_positions_router
 from app.api.v4.resources.group_positions.get import (
@@ -215,9 +229,11 @@ router.include_router(groups_search_router)
 # NOTE: icons removed - non-creatable (migration 328)
 # GET endpoint available for personas two-pass architecture
 from app.api.v4.resources.icons.get import router as icons_get_router
+from app.api.v4.resources.icons.link import router as icons_link_router
 from app.api.v4.resources.icons.search import router as icons_search_router
 
 router.include_router(icons_get_router)
+router.include_router(icons_link_router)
 router.include_router(icons_search_router)
 from app.api.v4.resources.images.create import router as images_router
 from app.api.v4.resources.images.get import router as images_get_router
@@ -230,12 +246,14 @@ router.include_router(images_search_router)
 # NOTE: improvements removed - converted to entry table (migration 305)
 from app.api.v4.resources.instructions.create import router as instructions_router
 from app.api.v4.resources.instructions.get import router as instructions_get_router
+from app.api.v4.resources.instructions.link import router as instructions_link_router
 from app.api.v4.resources.instructions.search import (
     router as instructions_search_router,
 )
 
 router.include_router(instructions_router)
 router.include_router(instructions_get_router)
+router.include_router(instructions_link_router)
 router.include_router(instructions_search_router)
 from app.api.v4.resources.items.create import router as items_router
 from app.api.v4.resources.items.get import router as items_get_router
@@ -283,10 +301,12 @@ router.include_router(models_get_router)
 router.include_router(models_search_router)
 from app.api.v4.resources.names.create import router as names_router
 from app.api.v4.resources.names.get import router as names_get_router
+from app.api.v4.resources.names.link import router as names_link_router
 from app.api.v4.resources.names.search import router as names_search_router
 
 router.include_router(names_router)
 router.include_router(names_get_router)
+router.include_router(names_link_router)
 router.include_router(names_search_router)
 from app.api.v4.resources.objectives.create import router as objectives_router
 from app.api.v4.resources.objectives.get import router as objectives_get_router
@@ -633,9 +653,11 @@ router.include_router(videos_router)
 router.include_router(videos_get_router)
 from app.api.v4.resources.voices.create import router as voices_router
 from app.api.v4.resources.voices.get import router as voices_get_router
+from app.api.v4.resources.voices.link import router as voices_link_router
 
 router.include_router(voices_router)
 router.include_router(voices_get_router)
+router.include_router(voices_link_router)
 from app.api.v4.resources.voices.search import router as voices_search_router
 
 router.include_router(voices_search_router)

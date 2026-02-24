@@ -56,6 +56,26 @@ type CreateDraftParameterFieldsOut = OutputOf<
 >;
 type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
 type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
+type LinkNamesIn = InputOf<"/api/v4/resources/names/link", "post">;
+type LinkNamesOut = OutputOf<"/api/v4/resources/names/link", "post">;
+type LinkDescriptionsIn = InputOf<"/api/v4/resources/descriptions/link", "post">;
+type LinkDescriptionsOut = OutputOf<"/api/v4/resources/descriptions/link", "post">;
+type LinkColorsIn = InputOf<"/api/v4/resources/colors/link", "post">;
+type LinkColorsOut = OutputOf<"/api/v4/resources/colors/link", "post">;
+type LinkIconsIn = InputOf<"/api/v4/resources/icons/link", "post">;
+type LinkIconsOut = OutputOf<"/api/v4/resources/icons/link", "post">;
+type LinkInstructionsIn = InputOf<"/api/v4/resources/instructions/link", "post">;
+type LinkInstructionsOut = OutputOf<"/api/v4/resources/instructions/link", "post">;
+type LinkFlagsIn = InputOf<"/api/v4/resources/flags/link", "post">;
+type LinkFlagsOut = OutputOf<"/api/v4/resources/flags/link", "post">;
+type LinkDepartmentsIn = InputOf<"/api/v4/resources/departments/link", "post">;
+type LinkDepartmentsOut = OutputOf<"/api/v4/resources/departments/link", "post">;
+type LinkExamplesIn = InputOf<"/api/v4/resources/examples/link", "post">;
+type LinkExamplesOut = OutputOf<"/api/v4/resources/examples/link", "post">;
+type LinkParameterFieldsIn = InputOf<"/api/v4/resources/parameter_fields/link", "post">;
+type LinkParameterFieldsOut = OutputOf<"/api/v4/resources/parameter_fields/link", "post">;
+type LinkVoicesIn = InputOf<"/api/v4/resources/voices/link", "post">;
+type LinkVoicesOut = OutputOf<"/api/v4/resources/voices/link", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -159,6 +179,58 @@ async function createDraftVoices(
   return api.post("/resources/voices", input);
 }
 
+async function linkName(input: LinkNamesIn): Promise<LinkNamesOut> {
+  "use server";
+  return api.post("/resources/names/link", input);
+}
+
+async function linkDescription(input: LinkDescriptionsIn): Promise<LinkDescriptionsOut> {
+  "use server";
+  return api.post("/resources/descriptions/link", input);
+}
+
+async function linkColor(input: LinkColorsIn): Promise<LinkColorsOut> {
+  "use server";
+  return api.post("/resources/colors/link", input);
+}
+
+async function linkIcon(input: LinkIconsIn): Promise<LinkIconsOut> {
+  "use server";
+  return api.post("/resources/icons/link", input);
+}
+
+async function linkInstruction(input: LinkInstructionsIn): Promise<LinkInstructionsOut> {
+  "use server";
+  return api.post("/resources/instructions/link", input);
+}
+
+async function linkFlag(input: LinkFlagsIn): Promise<LinkFlagsOut> {
+  "use server";
+  return api.post("/resources/flags/link", input);
+}
+
+async function linkDepartment(
+  input: LinkDepartmentsIn
+): Promise<LinkDepartmentsOut> {
+  "use server";
+  return api.post("/resources/departments/link", input);
+}
+
+async function linkExample(input: LinkExamplesIn): Promise<LinkExamplesOut> {
+  "use server";
+  return api.post("/resources/examples/link", input);
+}
+
+async function linkParameterField(input: LinkParameterFieldsIn): Promise<LinkParameterFieldsOut> {
+  "use server";
+  return api.post("/resources/parameter_fields/link", input);
+}
+
+async function linkVoice(input: LinkVoicesIn): Promise<LinkVoicesOut> {
+  "use server";
+  return api.post("/resources/voices/link", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function PersonaEditPage({
   params,
@@ -239,6 +311,16 @@ export default async function PersonaEditPage({
           createExamplesAction={createDraftExamples}
           createParameterFieldsAction={createDraftParameterFields}
           createVoicesAction={createDraftVoices}
+          linkNameAction={linkName}
+          linkDescriptionAction={linkDescription}
+          linkColorAction={linkColor}
+          linkIconAction={linkIcon}
+          linkInstructionAction={linkInstruction}
+          linkFlagAction={linkFlag}
+          linkDepartmentAction={linkDepartment}
+          linkExampleAction={linkExample}
+          linkParameterFieldAction={linkParameterField}
+          linkVoiceAction={linkVoice}
         />
       </div>
     );

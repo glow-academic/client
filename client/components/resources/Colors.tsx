@@ -26,6 +26,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftColorsIn = InputOf<"/api/v4/resources/colors", "post">;
 type CreateDraftColorsOut = OutputOf<"/api/v4/resources/colors", "post">;
+type LinkColorsIn = InputOf<"/api/v4/resources/colors/link", "post">;
+type LinkColorsOut = OutputOf<"/api/v4/resources/colors/link", "post">;
 
 // Derive resource item type from the GET endpoint response
 type ColorsGetResponse = OutputOf<"/api/v4/resources/colors/get", "post">;
@@ -64,6 +66,10 @@ export interface ColorsProps {
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   createColorsAction?:
     | ((input: CreateDraftColorsIn) => Promise<CreateDraftColorsOut>)
+    | undefined;
+  link_tool_id?: string | null; // Tool ID for linking existing resources
+  linkColorsAction?:
+    | ((input: LinkColorsIn) => Promise<LinkColorsOut>)
     | undefined;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
@@ -107,6 +113,8 @@ export function Colors({
   create_tool_id,
   showAiGenerate = false,
   createColorsAction,
+  link_tool_id,
+  linkColorsAction,
   isAutosaveEnabled = true,
   registerFlush,
   // Legacy props for backward compatibility
@@ -364,6 +372,12 @@ export function Colors({
       if (selectedColor?.id && onColorIdChange) {
         onColorIdChange(selectedColor.id);
         lastSavedValueRef.current = newValue; // Mark as saved so flush knows no creation needed
+        // Fire link tracking for selecting an existing resource
+        if (linkColorsAction && group_id && link_tool_id) {
+          linkColorsAction({
+            body: { resource_id: selectedColor.id, group_id, tool_id: link_tool_id },
+          }).catch(() => {});
+        }
         return;
       }
     }
@@ -372,7 +386,7 @@ export function Colors({
     if (!newValue && onColorIdChange) {
       onColorIdChange(null);
     }
-  }, [colors, onColorIdChange]);
+  }, [colors, onColorIdChange, linkColorsAction, group_id, link_tool_id]);
 
   // Map suggestion UUIDs to hex codes
   const suggestedHexCodes = useMemo(() => {
@@ -489,12 +503,21 @@ export function Colors({
         }
       }
 
+      // Fire link tracking for each newly selected existing resource
+      if (newlySelected.length > 0 && linkColorsAction && group_id && link_tool_id) {
+        for (const colorId of newlySelected) {
+          linkColorsAction({
+            body: { resource_id: colorId, group_id, tool_id: link_tool_id },
+          }).catch(() => {});
+        }
+      }
+
       // Update parent state
       if (onChange) {
         onChange(selectedIds);
       }
     },
-    [ids, onChange, createColorsAction, group_id, colors]
+    [ids, onChange, createColorsAction, group_id, colors, linkColorsAction, link_tool_id]
   );
 
   // Don't render if show_color is false (AFTER all hooks)

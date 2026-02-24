@@ -15,11 +15,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { OutputOf } from "@/lib/api/types";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+type LinkExamplesIn = InputOf<"/api/v4/resources/examples/link", "post">;
+type LinkExamplesOut = OutputOf<"/api/v4/resources/examples/link", "post">;
 
 // Derive resource item type from the GET endpoint response
 type ExampleGetResponse = OutputOf<"/api/v4/resources/examples/get", "post">;
@@ -41,6 +44,10 @@ export interface ExamplesProps {
   itemPlaceholder?: string;
   group_id?: string | null; // Group ID for linking resources
   create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for linking existing resources
+  linkExamplesAction?:
+    | ((input: LinkExamplesIn) => Promise<LinkExamplesOut>)
+    | undefined;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   createExamplesAction?:
     | ((input: {
@@ -80,6 +87,8 @@ export function Examples({
   itemPlaceholder = "Message",
   group_id,
   create_tool_id,
+  link_tool_id,
+  linkExamplesAction,
   showAiGenerate = false,
   createExamplesAction,
   onGenerate,
@@ -132,6 +141,25 @@ export function Examples({
     }
     return suggestions;
   }, [example_suggestions, effectiveExampleMapping, suggestions]);
+
+  // Reverse map: suggestion text -> existing resource ID (for linking instead of creating)
+  const suggestionTextToIdMap = useMemo(() => {
+    const map = new Map<string, string>();
+    if (example_suggestions && example_suggestions.length > 0) {
+      for (const suggestionId of example_suggestions) {
+        const text = effectiveExampleMapping[suggestionId];
+        if (text && text.trim()) {
+          map.set(text, suggestionId);
+        }
+        // Also check allExamples array for text->id mapping
+        const exampleObj = allExamples.find((e) => e.id === suggestionId);
+        if (exampleObj?.example && exampleObj.example.trim()) {
+          map.set(exampleObj.example, suggestionId);
+        }
+      }
+    }
+    return map;
+  }, [example_suggestions, effectiveExampleMapping, allExamples]);
 
   // Internal state for display texts (synced with example_ids via exampleMapping)
   const [internalTexts, setInternalTexts] = useState<string[]>(() => {
@@ -316,8 +344,25 @@ export function Examples({
   }, [internalTexts, createExamplesAction, isAutosaveEnabled]);
 
   const handleItemsChange = useCallback((items: string[]) => {
-    setInternalTexts(items.length > 0 ? items : [""]);
-  }, []);
+    const newItems = items.length > 0 ? items : [""];
+    // Check for newly added texts that match existing suggestions — link instead of create
+    for (const text of newItems) {
+      if (text.trim() && !exampleIdMapRef.current.has(text)) {
+        const existingId = suggestionTextToIdMap.get(text);
+        if (existingId) {
+          // Map the text to the existing resource ID so flush skips creation
+          exampleIdMapRef.current.set(text, existingId);
+          // Fire link tracking
+          if (linkExamplesAction && group_id && link_tool_id) {
+            linkExamplesAction({
+              body: { resource_id: existingId, group_id, tool_id: link_tool_id },
+            }).catch(() => {});
+          }
+        }
+      }
+    }
+    setInternalTexts(newItems);
+  }, [suggestionTextToIdMap, linkExamplesAction, group_id, link_tool_id]);
 
   // AI suggestion handling via shared hook
   const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({

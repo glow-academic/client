@@ -15,7 +15,7 @@ class BaseResourceSection(BaseModel):
     """Common metadata fields for all resource sections.
 
     Shared across persona, scenario, simulation, cohort, and other artifacts.
-    Uses a single `tool_id` field (merged from create/link tool IDs).
+    Uses `tool_id` for create tools and `link_tool_id` for link tools.
     """
 
     show: bool = False
@@ -23,6 +23,7 @@ class BaseResourceSection(BaseModel):
     suggestions: list[UUID] | None = None
     show_ai_generate: bool = False
     tool_id: UUID | None = None
+    link_tool_id: UUID | None = None
 
 
 class ListFilterOption(BaseModel):

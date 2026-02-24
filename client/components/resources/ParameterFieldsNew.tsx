@@ -30,6 +30,8 @@ type CreateDraftParameterFieldsOut = OutputOf<
   "/api/v4/resources/parameter_fields",
   "post"
 >;
+type LinkParameterFieldsIn = InputOf<"/api/v4/resources/parameter_fields/link", "post">;
+type LinkParameterFieldsOut = OutputOf<"/api/v4/resources/parameter_fields/link", "post">;
 
 // Derive resource item type from the GET endpoint response
 type ParameterFieldGetResponse = OutputOf<"/api/v4/resources/parameter_fields/get", "post">;
@@ -48,6 +50,10 @@ export interface ParameterFieldsNewProps {
   showAiGenerate?: boolean;
   createParameterFieldsAction?:
     | ((input: CreateDraftParameterFieldsIn) => Promise<CreateDraftParameterFieldsOut>)
+    | undefined;
+  link_tool_id?: string | null; // Tool ID for linking existing resources
+  linkParameterFieldsAction?:
+    | ((input: LinkParameterFieldsIn) => Promise<LinkParameterFieldsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isAutosaveEnabled?: boolean;
@@ -79,6 +85,8 @@ export function ParameterFieldsNew({
   group_id,
   showAiGenerate = false,
   createParameterFieldsAction,
+  link_tool_id,
+  linkParameterFieldsAction,
   onGenerate,
   isAutosaveEnabled = true,
   registerFlush,
@@ -248,6 +256,12 @@ export function ParameterFieldsNew({
       if (checked) {
         if (existingResourceId) {
           setResourceIds((prev) => new Map(prev).set(existingResourceId, existingResourceId));
+          // Fire link tracking for selecting an existing resource
+          if (linkParameterFieldsAction && group_id && link_tool_id) {
+            linkParameterFieldsAction({
+              body: { resource_id: existingResourceId, group_id, tool_id: link_tool_id },
+            }).catch(() => {});
+          }
         } else {
           void createParameterField(option.parameter_id, option.field_id);
         }
@@ -275,7 +289,7 @@ export function ParameterFieldsNew({
         }
       }
     },
-    [selectedFieldKeyToResourceId, localKeyToResourceId, pendingSelections, createParameterField, isAutosaveEnabled]
+    [selectedFieldKeyToResourceId, localKeyToResourceId, pendingSelections, createParameterField, isAutosaveEnabled, linkParameterFieldsAction, group_id, link_tool_id]
   );
 
   const isFieldSelected = useCallback(

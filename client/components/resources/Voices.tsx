@@ -26,6 +26,8 @@ type FlushResult = { voice_ids: string[] } | void;
 
 type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
 type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
+type LinkVoicesIn = InputOf<"/api/v4/resources/voices/link", "post">;
+type LinkVoicesOut = OutputOf<"/api/v4/resources/voices/link", "post">;
 
 // Derive resource item type from the GET endpoint response
 type VoicesGetResponse = OutputOf<"/api/v4/resources/voices/get", "post">;
@@ -55,6 +57,10 @@ export interface VoicesProps {
   createVoicesAction?:
     | ((input: CreateDraftVoicesIn) => Promise<CreateDraftVoicesOut>)
     | undefined;
+  link_tool_id?: string | null; // Tool ID for linking existing resources
+  linkVoicesAction?:
+    | ((input: LinkVoicesIn) => Promise<LinkVoicesOut>)
+    | undefined;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
@@ -78,6 +84,8 @@ export function Voices({
   group_id,
   create_tool_id,
   createVoicesAction,
+  link_tool_id,
+  linkVoicesAction,
   isAutosaveEnabled = true,
   registerFlush,
   showAiGenerate = false,
@@ -220,10 +228,19 @@ export function Voices({
         }
       }
 
+      // Fire link tracking for each newly selected existing resource
+      if (newlySelected.length > 0 && linkVoicesAction && group_id && link_tool_id) {
+        for (const voiceId of newlySelected) {
+          linkVoicesAction({
+            body: { resource_id: voiceId, group_id, tool_id: link_tool_id },
+          }).catch(() => {});
+        }
+      }
+
       // Update parent state
       onVoiceIdsChange(selectedIds);
     },
-    [ids, onVoiceIdsChange, createVoicesAction, create_tool_id, group_id, allVoices, isAutosaveEnabled]
+    [ids, onVoiceIdsChange, createVoicesAction, create_tool_id, group_id, allVoices, isAutosaveEnabled, linkVoicesAction, link_tool_id]
   );
 
   // Handle grid card click — multi-select toggle or open custom input

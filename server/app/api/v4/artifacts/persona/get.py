@@ -291,7 +291,7 @@ async def get_persona_internal(
             settings_conn, profile_id, bypass_cache
         )
 
-    agent_ids, tool_ids_map, _link_tool_ids = resolve_agents_for_artifact(
+    agent_ids, tool_ids_map, link_tool_ids_map = resolve_agents_for_artifact(
         settings_data.agent_tool_entries, PERSONA_RESOURCES
     )
 
@@ -309,7 +309,8 @@ async def get_persona_internal(
     selected_agent_ids = [aid for aid in agent_ids.values() if aid]
     config_agent_resource_ids = list(dict.fromkeys(selected_agent_ids))
     config_model_resource_ids = [
-        a.model_id for a in settings_data.settings_agents
+        a.model_id
+        for a in settings_data.settings_agents
         if a.model_id and a.id in set(config_agent_resource_ids)
     ]
     # Provider IDs derived from models after fetch (sequential, not in gather)
@@ -891,6 +892,7 @@ async def get_persona_internal(
         resources_payload=resources_payload,
         # Per-resource tool IDs
         tool_ids_map=tool_ids_map,
+        link_tool_ids_map=link_tool_ids_map,
         # Config resources
         config_agent_resources=config_agents_result or None,
         config_model_resources=config_models_result or None,
@@ -1120,6 +1122,7 @@ async def get_persona_client(
             "suggestions": data.suggestions_map.get(resource_key),
             "show_ai_generate": data.show_ai_generate_map.get(resource_key, False),
             "tool_id": data.tool_ids_map.get(resource_key),
+            "link_tool_id": data.link_tool_ids_map.get(resource_key),
         }
 
     return GetPersonaApiResponse(

@@ -88,6 +88,26 @@ type CreateDraftParameterFieldsOut = OutputOf<
 >;
 type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
 type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
+type LinkNamesIn = InputOf<"/api/v4/resources/names/link", "post">;
+type LinkNamesOut = OutputOf<"/api/v4/resources/names/link", "post">;
+type LinkDescriptionsIn = InputOf<"/api/v4/resources/descriptions/link", "post">;
+type LinkDescriptionsOut = OutputOf<"/api/v4/resources/descriptions/link", "post">;
+type LinkColorsIn = InputOf<"/api/v4/resources/colors/link", "post">;
+type LinkColorsOut = OutputOf<"/api/v4/resources/colors/link", "post">;
+type LinkIconsIn = InputOf<"/api/v4/resources/icons/link", "post">;
+type LinkIconsOut = OutputOf<"/api/v4/resources/icons/link", "post">;
+type LinkInstructionsIn = InputOf<"/api/v4/resources/instructions/link", "post">;
+type LinkInstructionsOut = OutputOf<"/api/v4/resources/instructions/link", "post">;
+type LinkFlagsIn = InputOf<"/api/v4/resources/flags/link", "post">;
+type LinkFlagsOut = OutputOf<"/api/v4/resources/flags/link", "post">;
+type LinkDepartmentsIn = InputOf<"/api/v4/resources/departments/link", "post">;
+type LinkDepartmentsOut = OutputOf<"/api/v4/resources/departments/link", "post">;
+type LinkExamplesIn = InputOf<"/api/v4/resources/examples/link", "post">;
+type LinkExamplesOut = OutputOf<"/api/v4/resources/examples/link", "post">;
+type LinkParameterFieldsIn = InputOf<"/api/v4/resources/parameter_fields/link", "post">;
+type LinkParameterFieldsOut = OutputOf<"/api/v4/resources/parameter_fields/link", "post">;
+type LinkVoicesIn = InputOf<"/api/v4/resources/voices/link", "post">;
+type LinkVoicesOut = OutputOf<"/api/v4/resources/voices/link", "post">;
 type PatchPersonaDraftIn = InputOf<"/api/v4/artifacts/personas/draft", "patch">;
 type PatchPersonaDraftOut = OutputOf<
   "/api/v4/artifacts/personas/draft",
@@ -101,7 +121,10 @@ type FlushResult = {
   name_id?: string | null;
   description_id?: string | null;
   color_id?: string | null;
+  icon_id?: string | null;
   instructions_id?: string | null;
+  active_flag_id?: string | null;
+  department_ids?: string[];
   example_ids?: string[];
   parameter_field_ids?: string[];
   voice_ids?: string[];
@@ -151,6 +174,19 @@ export interface PersonaProps {
   createVoicesAction?: (
     input: CreateDraftVoicesIn,
   ) => Promise<CreateDraftVoicesOut>;
+  // Link actions (all resources)
+  linkNameAction?: (input: LinkNamesIn) => Promise<LinkNamesOut>;
+  linkDescriptionAction?: (input: LinkDescriptionsIn) => Promise<LinkDescriptionsOut>;
+  linkColorAction?: (input: LinkColorsIn) => Promise<LinkColorsOut>;
+  linkIconAction?: (input: LinkIconsIn) => Promise<LinkIconsOut>;
+  linkInstructionAction?: (input: LinkInstructionsIn) => Promise<LinkInstructionsOut>;
+  linkFlagAction?: (input: LinkFlagsIn) => Promise<LinkFlagsOut>;
+  linkDepartmentAction?: (
+    input: LinkDepartmentsIn,
+  ) => Promise<LinkDepartmentsOut>;
+  linkExampleAction?: (input: LinkExamplesIn) => Promise<LinkExamplesOut>;
+  linkParameterFieldAction?: (input: LinkParameterFieldsIn) => Promise<LinkParameterFieldsOut>;
+  linkVoiceAction?: (input: LinkVoicesIn) => Promise<LinkVoicesOut>;
 }
 
 const FLUSH_KEYS = [
@@ -159,6 +195,9 @@ const FLUSH_KEYS = [
   "instructions",
   "examples",
   "colors",
+  "icons",
+  "flags",
+  "departments",
   "parameter_fields",
   "voices",
 ] as const;
@@ -186,18 +225,18 @@ const PERSONA_RESOURCES: ResourceConfig[] = [
     type: "single",
   },
   { key: "colors", formKey: "color_id", flushKey: "color_id", type: "single" },
-  { key: "icons", formKey: "icon_id", flushKey: null, type: "single" },
+  { key: "icons", formKey: "icon_id", flushKey: "icon_id", type: "single" },
   {
     key: "instructions",
     formKey: "instructions_id",
     flushKey: "instructions_id",
     type: "single",
   },
-  { key: "flags", formKey: "active_flag_id", flushKey: null, type: "single" },
+  { key: "flags", formKey: "active_flag_id", flushKey: "active_flag_id", type: "single" },
   {
     key: "departments",
     formKey: "department_ids",
-    flushKey: null,
+    flushKey: "department_ids",
     type: "multi",
   },
   {
@@ -232,6 +271,16 @@ function PersonaComponent({
   createExamplesAction,
   createParameterFieldsAction,
   createVoicesAction,
+  linkNameAction,
+  linkDescriptionAction,
+  linkColorAction,
+  linkIconAction,
+  linkInstructionAction,
+  linkFlagAction,
+  linkDepartmentAction,
+  linkExampleAction,
+  linkParameterFieldAction,
+  linkVoiceAction,
 }: PersonaProps) {
   const router = useRouter();
   const isEditMode = !!personaId;
@@ -1044,6 +1093,8 @@ function PersonaComponent({
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["names"]}
                   create_tool_id={s?.names?.tool_id ?? null}
+                  link_tool_id={s?.names?.link_tool_id ?? null}
+                  linkNamesAction={linkNameAction}
                 />
               }
               resetFields={["name", "description", "department_ids", "active"]}
@@ -1098,6 +1149,8 @@ function PersonaComponent({
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["descriptions"]}
                   create_tool_id={s?.descriptions?.tool_id ?? null}
+                  link_tool_id={s?.descriptions?.link_tool_id ?? null}
+                  linkDescriptionsAction={linkDescriptionAction}
                 />
                 <Departments
                   department_ids={formState.department_ids ?? []}
@@ -1112,7 +1165,11 @@ function PersonaComponent({
                   onGenerate={generateHandlers["departments"]}
                   required={s?.departments?.required ?? false}
                   group_id={s?.group_id ?? null}
+                  link_tool_id={s?.departments?.link_tool_id ?? null}
                   showAiGenerate={s?.departments?.show_ai_generate ?? false}
+                  linkDepartmentAction={linkDepartmentAction}
+                  isAutosaveEnabled={isAutosaveEnabled}
+                  registerFlush={registerFlushCallbacks["departments"]}
                 />
                 <Flags
                   flags={s?.flags?.resources ?? []}
@@ -1122,6 +1179,7 @@ function PersonaComponent({
                   label="Flags"
                   disabled={disabled}
                   group_id={s?.group_id ?? null}
+                  link_tool_id={s?.flags?.link_tool_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
                   onChange={(flagId) =>
                     setFormState((prev) => ({
@@ -1130,6 +1188,9 @@ function PersonaComponent({
                     }))
                   }
                   onGenerate={generateHandlers["flags"]}
+                  linkFlagAction={linkFlagAction}
+                  isAutosaveEnabled={isAutosaveEnabled}
+                  registerFlush={registerFlushCallbacks["flags"]}
                 />
               </div>
             </StepCard>
@@ -1206,6 +1267,8 @@ function PersonaComponent({
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["parameter_fields"]}
                 create_tool_id={s?.parameter_fields?.tool_id ?? null}
+                link_tool_id={s?.parameter_fields?.link_tool_id ?? null}
+                linkParameterFieldsAction={linkParameterFieldAction}
               />
             </StepCard>
           );
@@ -1285,6 +1348,8 @@ function PersonaComponent({
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["colors"]}
                 create_tool_id={s?.colors?.tool_id ?? null}
+                link_tool_id={s?.colors?.link_tool_id ?? null}
+                linkColorsAction={linkColorAction}
               />
             </StepCard>
           );
@@ -1358,8 +1423,12 @@ function PersonaComponent({
                   setStepFormData({ iconShowSelected: value || null })
                 }
                 group_id={s?.group_id ?? null}
+                link_tool_id={s?.icons?.link_tool_id ?? null}
                 showAiGenerate={s?.icons?.show_ai_generate ?? false}
                 required={s?.icons?.required ?? false}
+                linkIconAction={linkIconAction}
+                isAutosaveEnabled={isAutosaveEnabled}
+                registerFlush={registerFlushCallbacks["icons"]}
               />
             </StepCard>
           );
@@ -1430,6 +1499,8 @@ function PersonaComponent({
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["instructions"]}
                 create_tool_id={s?.instructions?.tool_id ?? null}
+                link_tool_id={s?.instructions?.link_tool_id ?? null}
+                linkInstructionsAction={linkInstructionAction}
               />
               <Examples
                 example_ids={formState.example_ids ?? []}
@@ -1478,6 +1549,8 @@ function PersonaComponent({
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["examples"]}
                 create_tool_id={s?.examples?.tool_id ?? null}
+                link_tool_id={s?.examples?.link_tool_id ?? null}
+                linkExamplesAction={linkExampleAction}
               />
               <Voices
                 voice_ids={formState.voice_ids ?? []}
@@ -1496,6 +1569,8 @@ function PersonaComponent({
                 createVoicesAction={createVoicesAction}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["voices"]}
+                link_tool_id={s?.voices?.link_tool_id ?? null}
+                linkVoicesAction={linkVoiceAction}
               />
             </StepCard>
           );
@@ -1526,6 +1601,16 @@ function PersonaComponent({
       createColorsAction,
       createInstructionsAction,
       createExamplesAction,
+      linkNameAction,
+      linkDescriptionAction,
+      linkColorAction,
+      linkIconAction,
+      linkInstructionAction,
+      linkFlagAction,
+      linkDepartmentAction,
+      linkExampleAction,
+      linkParameterFieldAction,
+      linkVoiceAction,
       canRegenerate,
       handleOpenStepCardModal,
       isAutosaveEnabled,
@@ -1631,7 +1716,17 @@ export default React.memo(PersonaComponent, (prevProps, nextProps) => {
     prevProps.createExamplesAction !== nextProps.createExamplesAction ||
     prevProps.createParameterFieldsAction !==
       nextProps.createParameterFieldsAction ||
-    prevProps.createVoicesAction !== nextProps.createVoicesAction
+    prevProps.createVoicesAction !== nextProps.createVoicesAction ||
+    prevProps.linkNameAction !== nextProps.linkNameAction ||
+    prevProps.linkDescriptionAction !== nextProps.linkDescriptionAction ||
+    prevProps.linkColorAction !== nextProps.linkColorAction ||
+    prevProps.linkIconAction !== nextProps.linkIconAction ||
+    prevProps.linkInstructionAction !== nextProps.linkInstructionAction ||
+    prevProps.linkFlagAction !== nextProps.linkFlagAction ||
+    prevProps.linkDepartmentAction !== nextProps.linkDepartmentAction ||
+    prevProps.linkExampleAction !== nextProps.linkExampleAction ||
+    prevProps.linkParameterFieldAction !== nextProps.linkParameterFieldAction ||
+    prevProps.linkVoiceAction !== nextProps.linkVoiceAction
   ) {
     return false;
   }

@@ -16,12 +16,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { OutputOf } from "@/lib/api/types";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { ICON_MAP } from "@/utils/icons";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+
+type LinkIconsIn = InputOf<"/api/v4/resources/icons/link", "post">;
+type LinkIconsOut = OutputOf<"/api/v4/resources/icons/link", "post">;
 
 // Derive resource item type from the GET endpoint response
 type IconGetResponse = OutputOf<"/api/v4/resources/icons/get", "post">;
@@ -50,8 +53,14 @@ export interface IconsProps {
   showSelectedFilter?: boolean; // Whether to filter to show only selected
   onShowSelectedChange?: (value: boolean) => void; // Callback when show selected filter changes
   group_id?: string | null; // Group ID for linking resources
+  link_tool_id?: string | null; // Tool ID for link tracking
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   onGenerate?: () => void | Promise<void>;
+  linkIconAction?: ((input: LinkIconsIn) => Promise<LinkIconsOut>) | undefined;
+  /** When false, skip automatic link tracking (manual save mode) */
+  isAutosaveEnabled?: boolean;
+  /** Register a flush callback with parent for manual save */
+  registerFlush?: (flush: () => Promise<{ icon_id: string | null } | void>) => void;
   // Legacy props for backward compatibility
   iconResource?: IconResourceItem | null;
   iconId?: string | null;
@@ -76,8 +85,12 @@ export function Icons({
   showSelectedFilter = false,
   onShowSelectedChange: _onShowSelectedChange,
   group_id,
+  link_tool_id,
   showAiGenerate = false,
   onGenerate,
+  linkIconAction,
+  isAutosaveEnabled = true,
+  registerFlush,
   // Legacy props for backward compatibility
   iconResource,
   iconId: _iconId,
@@ -104,6 +117,80 @@ export function Icons({
   // AI suggestion state
   const showDiff = !!aiSuggestion?.id;
   const aiSuggestedId = aiSuggestion?.id || null;
+
+  // --- Flush / Link tracking ---
+  const lastLinkedIdRef = useRef<string | null>(currentId);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isInitialMountRef = useRef(true);
+
+  const flushRef = useRef<(() => Promise<{ icon_id: string | null } | void>) | undefined>(undefined);
+
+  flushRef.current = async (): Promise<{ icon_id: string | null } | void> => {
+    if (!linkIconAction || !group_id || !link_tool_id) return;
+    if (currentId === lastLinkedIdRef.current) return { icon_id: currentId };
+
+    try {
+      if (currentId) {
+        await linkIconAction({
+          body: {
+            group_id: group_id,
+            resource_id: currentId,
+            tool_id: link_tool_id,
+          },
+        });
+        lastLinkedIdRef.current = currentId;
+        return { icon_id: currentId };
+      } else {
+        lastLinkedIdRef.current = null;
+        return { icon_id: null };
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to link icon resource:", error);
+      throw error;
+    }
+  };
+
+  useEffect(() => {
+    if (registerFlush) {
+      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
+    }
+  }, [registerFlush]);
+
+  // Track pending changes for manual save mode
+  useEffect(() => {
+    if (isAutosaveEnabled) return;
+    if (isInitialMountRef.current) return;
+
+    const hasPendingChanges = currentId !== lastLinkedIdRef.current;
+    if (hasPendingChanges) {
+      window.dispatchEvent(
+        new CustomEvent("unsaved-changes", { detail: { hasChanges: true } })
+      );
+    }
+  }, [currentId, isAutosaveEnabled]);
+
+  // Debounced link tracking when autosave is enabled
+  useEffect(() => {
+    if (!isAutosaveEnabled) return;
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      lastLinkedIdRef.current = currentId;
+      return;
+    }
+    if (currentId === lastLinkedIdRef.current) return;
+    if (!linkIconAction) return;
+
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+
+    debounceTimerRef.current = setTimeout(() => {
+      flushRef.current?.();
+    }, 1000);
+
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
+  }, [currentId, linkIconAction, isAutosaveEnabled]);
 
   // Accept AI suggestion - update icon selection
   const handleAccept = useCallback(() => {

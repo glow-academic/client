@@ -21,6 +21,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type LinkNamesIn = InputOf<"/api/v4/resources/names/link", "post">;
+type LinkNamesOut = OutputOf<"/api/v4/resources/names/link", "post">;
 
 // Derive resource item type from the GET endpoint response
 type NamesGetResponse = OutputOf<"/api/v4/resources/names/get", "post">;
@@ -47,6 +49,10 @@ export interface NamesProps {
   createNamesAction?:
     | ((input: CreateDraftNamesIn) => Promise<CreateDraftNamesOut>)
     | undefined;
+  link_tool_id?: string | null; // Tool ID for linking existing resources
+  linkNamesAction?:
+    | ((input: LinkNamesIn) => Promise<LinkNamesOut>)
+    | undefined;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created ID */
@@ -72,6 +78,8 @@ export function Names({
   create_tool_id,
   showAiGenerate = false,
   createNamesAction,
+  link_tool_id,
+  linkNamesAction,
   isAutosaveEnabled = true,
   registerFlush,
 }: NamesProps) {
@@ -294,12 +302,31 @@ export function Names({
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Tab" && ghostSuffix) {
+      if (e.key === "Tab" && ghostSuffix && ghostMatch) {
         e.preventDefault();
-        setInternalValue(ghostMatch!);
+        // Cancel any pending create debounce
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+        }
+        setInternalValue(ghostMatch);
+        lastSavedValueRef.current = ghostMatch;
+
+        // Look up the existing resource ID from the suggestion
+        const matchedName = namesArray.find(
+          (n) => n.name?.toLowerCase() === ghostMatch.toLowerCase()
+        );
+        if (matchedName?.id) {
+          onNameIdChange(matchedName.id);
+          // Fire link tracking for selecting an existing resource
+          if (linkNamesAction && group_id && link_tool_id) {
+            linkNamesAction({
+              body: { resource_id: matchedName.id, group_id, tool_id: link_tool_id },
+            }).catch(() => {});
+          }
+        }
       }
     },
-    [ghostSuffix, ghostMatch]
+    [ghostSuffix, ghostMatch, namesArray, onNameIdChange, linkNamesAction, group_id, link_tool_id]
   );
 
   // Accept AI suggestion - update internal value and notify parent
