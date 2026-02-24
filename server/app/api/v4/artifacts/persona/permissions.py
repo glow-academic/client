@@ -374,14 +374,13 @@ PERSONA_RESOURCES: set[str] = {
     "departments",
     "parameter_fields",
     "examples",
-    "parameters",
     "voices",
 }
 
 # Multi-resource agent definitions for persona
 PERSONA_BASIC_RESOURCES: set[str] = {"names", "descriptions", "flags", "departments"}
 PERSONA_CONTENT_RESOURCES: set[str] = {"instructions", "examples", "voices"}
-PERSONA_PARAMETERS_RESOURCES: set[str] = {"parameters", "parameter_fields"}
+PERSONA_PARAMETERS_RESOURCES: set[str] = {"parameter_fields"}
 PERSONA_GENERAL_RESOURCES: set[str] = PERSONA_RESOURCES  # All resources
 
 

@@ -55,6 +55,7 @@ class SettingsAgentToolEntry:
     tool_id: UUID
     resource: str  # e.g. "names", "colors", "instructions"
     is_creatable: bool  # from tool_creatable flag
+    artifact: str | None = None  # e.g. "persona", "scenario" for recall tools
 
 
 @dataclass

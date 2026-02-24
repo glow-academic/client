@@ -305,10 +305,12 @@ async def get_persona_internal(
         settings_data.agent_tool_entries, "instructions"
     )
 
-    # Config chain resource IDs (derived from settings agents)
-    config_agent_resource_ids = [a.id for a in settings_data.settings_agents if a.id]
+    # Config chain resource IDs (only resolved agents, not all settings agents)
+    selected_agent_ids = [aid for aid in agent_ids.values() if aid]
+    config_agent_resource_ids = list(dict.fromkeys(selected_agent_ids))
     config_model_resource_ids = [
-        a.model_id for a in settings_data.settings_agents if a.model_id
+        a.model_id for a in settings_data.settings_agents
+        if a.model_id and a.id in set(config_agent_resource_ids)
     ]
     # Provider IDs derived from models after fetch (sequential, not in gather)
 
@@ -975,13 +977,15 @@ async def get_persona_websocket(
     async def fetch_tools():
         if not data.config_agent_resources or not pool:
             return []
-        agent_resource = data.config_agent_resources[0]
-        if not agent_resource or not agent_resource.tool_ids:
+        tool_ids: list[UUID] = []
+        for agent in data.config_agent_resources:
+            ids = getattr(agent, "tool_ids", None) or []
+            tool_ids.extend(ids)
+        deduped_tool_ids = list(dict.fromkeys(tool_ids))
+        if not deduped_tool_ids:
             return []
         async with pool.acquire() as c:
-            return await get_tools_internal(
-                c, list(agent_resource.tool_ids), bypass_cache
-            )
+            return await get_tools_internal(c, deduped_tool_ids, bypass_cache)
 
     (
         draft_persona,

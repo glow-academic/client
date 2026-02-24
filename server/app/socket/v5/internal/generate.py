@@ -673,7 +673,14 @@ async def generate_handler(data: dict[str, Any]) -> None:
                 scoped_tool_dicts = [
                     td
                     for td in all_tool_dicts
-                    if td.get("resource") in agent_rt_set or not td.get("resource")
+                    if td.get("resource") in agent_rt_set
+                    or (
+                        not td.get("resource")
+                        and (
+                            not td.get("artifact")
+                            or td.get("artifact") == artifact_type
+                        )
+                    )
                 ]
 
                 # 13h: Build metadata

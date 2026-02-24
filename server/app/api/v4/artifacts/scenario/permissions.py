@@ -39,7 +39,6 @@ SCENARIO_RESOURCES: set[str] = {
     "fields",
     "personas",
     "documents",
-    "parameters",
 }
 
 # Multi-resource agent definitions for scenario
