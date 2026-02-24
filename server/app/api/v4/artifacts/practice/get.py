@@ -38,7 +38,7 @@ from app.api.v4.artifacts.types import (
     FilterOption,
     HistoryItem,
     HistoryResponse,
-    WebsocketConfig,
+    WebsocketArtifacts,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.entries.attempt.get import ChatViewItem, get_attempt_chats_internal
@@ -952,7 +952,7 @@ async def get_practice_websocket(
 
     insights_result = await fetch_insights()
 
-    websocket_config = WebsocketConfig(
+    websocket_config = WebsocketArtifacts(
         agents=data.config_agents or None,
         models=data.config_models or None,
         providers=data.config_providers or None,
@@ -982,7 +982,7 @@ async def get_practice_websocket(
             problem_statements=data.current_resources.get("problem_statements") or None,
             objectives=data.current_resources.get("objectives") or None,
         ),
-        config=websocket_config,
+        artifacts=websocket_config,
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
     )

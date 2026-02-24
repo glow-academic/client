@@ -7,7 +7,7 @@
 -- Resource rows
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019bf207-ca45-7ac5-9a3a-e16046a16eb2', 'Create a persona field resource for linking persona-type parameter fields to scenarios', '2026-01-24T22:02:35.441799+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019bf207-ca33-73b2-9ad0-8eccbb02e690', 'create_persona_fields', '2026-01-24T22:02:35.441799+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable, args_ids, args_output_ids, resource, entry) VALUES ('019bf207-ca4b-7fcd-8c58-15d372105878', '2026-01-24T22:02:35.441799+00:00', false, false, true, 'create_persona_fields', 'Create a persona field resource for linking persona-type parameter fields to scenarios', '{}', true, '{}', '{}', NULL, NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable, args_ids, args_output_ids, resource, entry, artifact) VALUES ('019bf207-ca4b-7fcd-8c58-15d372105878', '2026-01-24T22:02:35.441799+00:00', false, false, true, 'create_persona_fields', 'Create a persona field resource for linking persona-type parameter fields to scenarios', '{}', true, '{}', '{}', NULL, NULL, NULL) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- tool_artifact

@@ -174,12 +174,12 @@ class GetGroupWebsocketResponse(BaseModel):
 
     entries: GroupWebsocketEntries | None = None
     resources: GroupWebsocketResources
-    config: "WebsocketConfig | None" = None
+    artifacts: "WebsocketArtifacts | None" = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
 
 
-from app.api.v4.artifacts.types import WebsocketConfig  # noqa: E402
+from app.api.v4.artifacts.types import WebsocketArtifacts  # noqa: E402
 from app.api.v4.entries.runs.search import (  # noqa: E402
     GetRunListViewResponse,
     RunViewItem,

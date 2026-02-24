@@ -68,7 +68,7 @@ from app.api.v4.artifacts.persona.types import (
     PersonaWebsocketEntries,
     PersonaWebsocketResources,
 )
-from app.api.v4.artifacts.types import WebsocketConfig
+from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.persona_drafts.get import get_persona_drafts_entries_internal
@@ -132,6 +132,15 @@ async def get_persona_internal(
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
     parameter_ids: list[UUID] | None = None,
+    # Search/filter kwargs (threaded from websocket artifact tool)
+    color_search: str | None = None,
+    icon_search: str | None = None,
+    descriptions_search: str | None = None,
+    instructions_search: str | None = None,
+    parameter_field_search: str | None = None,
+    color_show_selected: bool | None = None,
+    icon_show_selected: bool | None = None,
+    parameter_field_show_selected: bool | None = None,
 ) -> PersonaInternalData:
     """Core data fetching layer (cacheable).
 
@@ -400,7 +409,7 @@ async def get_persona_internal(
             selected = await get_descriptions_internal(c, description_ids, bypass_cache)
             suggestions = await search_descriptions_internal(
                 c,
-                None,  # No search filter for internal calls
+                descriptions_search,
                 20,
                 0,
                 effective_group_id,
@@ -416,11 +425,11 @@ async def get_persona_internal(
             selected = await get_colors_internal(c, color_ids, bypass_cache)
             suggestions = await search_colors_internal(
                 c,
-                None,  # No search filter for internal calls
+                color_search,
                 20,
                 0,
                 effective_group_id,
-                "all",
+                "selected" if color_show_selected else "all",
                 color_ids,
                 bypass_cache,
                 persona=True,
@@ -432,11 +441,11 @@ async def get_persona_internal(
             selected = await get_icons_internal(c, icon_ids, bypass_cache)
             suggestions = await search_icons_internal(
                 c,
-                None,  # No search filter for internal calls
+                icon_search,
                 20,
                 0,
                 effective_group_id,
-                "all",
+                "selected" if icon_show_selected else "all",
                 icon_ids,
                 bypass_cache,
                 persona=True,
@@ -450,7 +459,7 @@ async def get_persona_internal(
             )
             suggestions = await search_instructions_internal(
                 c,
-                None,  # No search filter for internal calls
+                instructions_search,
                 20,
                 0,
                 effective_group_id,
@@ -586,7 +595,6 @@ async def get_persona_internal(
                 0,
                 voice_ids_list,
                 bypass_cache,
-                persona=True,
             )
             return (selected, suggestions)
 
@@ -893,6 +901,16 @@ async def get_persona_websocket(
     persona_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    # Search/filter kwargs (from artifact tool calls)
+    color_search: str | None = None,
+    icon_search: str | None = None,
+    descriptions_search: str | None = None,
+    instructions_search: str | None = None,
+    parameter_field_search: str | None = None,
+    parameter_ids: list[UUID] | None = None,
+    color_show_selected: bool | None = None,
+    icon_show_selected: bool | None = None,
+    parameter_field_show_selected: bool | None = None,
 ) -> GetPersonaWebsocketResponse:
     """Minimal response for WebSocket handlers.
 
@@ -906,6 +924,15 @@ async def get_persona_websocket(
         persona_id=persona_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
+        parameter_ids=parameter_ids,
+        color_search=color_search,
+        icon_search=icon_search,
+        descriptions_search=descriptions_search,
+        instructions_search=instructions_search,
+        parameter_field_search=parameter_field_search,
+        color_show_selected=color_show_selected,
+        icon_show_selected=icon_show_selected,
+        parameter_field_show_selected=parameter_field_show_selected,
     )
 
     # Fetch draft persona view, config_profile, runs_today, and tools in parallel
@@ -1011,7 +1038,7 @@ async def get_persona_websocket(
         runs=runs_result,
     )
 
-    websocket_config = WebsocketConfig(
+    websocket_config = WebsocketArtifacts(
         agents=data.config_agent_resources,
         models=data.config_model_resources,
         providers=data.config_provider_resources,
@@ -1019,6 +1046,21 @@ async def get_persona_websocket(
         args=config_args,
         args_outputs=config_args_outputs,
         profile=config_profile_result or None,
+        params=GetPersonaApiRequest(
+            persona_id=persona_id,
+            draft_id=draft_id,
+            color_search=color_search,
+            icon_search=icon_search,
+            descriptions_search=descriptions_search,
+            instructions_search=instructions_search,
+            parameter_field_search=parameter_field_search,
+            parameter_ids=[str(pid) for pid in parameter_ids]
+            if parameter_ids
+            else None,
+            color_show_selected=color_show_selected,
+            icon_show_selected=icon_show_selected,
+            parameter_field_show_selected=parameter_field_show_selected,
+        ),
     )
 
     return GetPersonaWebsocketResponse(
@@ -1036,7 +1078,7 @@ async def get_persona_websocket(
             parameters=all_resources.parameters if all_resources else None,
             voices=all_resources.voices if all_resources else None,
         ),
-        config=websocket_config,
+        artifacts=websocket_config,
         resource_agent_ids=data.agent_ids,
         group_id=data.group_id,
     )

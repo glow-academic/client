@@ -63,7 +63,7 @@ BEGIN
         -- Create run record
         v_run_id := uuidv7();
         INSERT INTO runs_entry (id, group_id, created_at, updated_at)
-        VALUES (v_run_id, 0, 0, 0, api_create_uploads_v4.group_id, NOW(), NOW());
+        VALUES (v_run_id, api_create_uploads_v4.group_id, NOW(), NOW());
 
         -- Create call record
         v_call_id := uuidv7();

@@ -53,7 +53,7 @@ from app.api.v4.artifacts.document.types import (
     GetDocumentApiResponse,
     GetDocumentWebsocketResponse,
 )
-from app.api.v4.artifacts.types import WebsocketConfig
+from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.document_drafts.get import get_document_drafts_entries_internal
@@ -840,7 +840,7 @@ async def get_document_websocket(
         texts=current.texts if current else None,
     )
 
-    websocket_config = WebsocketConfig(
+    websocket_config = WebsocketArtifacts(
         agents=data.config_agent_resources,
         models=data.config_model_resources,
         providers=data.config_provider_resources,
@@ -855,7 +855,7 @@ async def get_document_websocket(
         entries=entries if draft_view or runs_result else None,
         resource_agent_ids=data.agent_ids,
         resources=websocket_resources,
-        config=websocket_config,
+        artifacts=websocket_config,
     )
 
 

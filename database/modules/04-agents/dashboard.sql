@@ -19,9 +19,9 @@ INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c82b8-5d9e-7881-8420-7617df0cea24', 'Analytical insights agent for high-level organizational KPIs and trends', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c82b8-5d9e-7511-a124-6b571e673d57', '## Previous Insights
 
-{% if entries.dashboard_insights is defined and entries.dashboard_insights and entries.dashboard_insights|length > 0 %}
+{% if entries.insights is defined and entries.insights and entries.insights|length > 0 %}
 The following insights were previously generated:
-{% for insight in entries.dashboard_insights %}
+{% for insight in entries.insights %}
 - {{ insight.content }}
 {% endfor %}
 {% else %}

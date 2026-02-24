@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict XS3WObX2JOiy1Jle7QI27aKKruGROL7u62VvYcJLueWFLPmavMphm4uWRpeL6e8
+\restrict jHYvbUYcDjUajwfXhi89eCEyiJwfCw0WYVLdcV5atDwdndgU6qBIJzsKnjaOddP
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -29955,6 +29955,20 @@ CREATE TABLE public.args_values_entry (
 
 
 --
+-- Name: artifacts_resource; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.artifacts_resource (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    artifact text NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: attempt_analysis_entry; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -40228,6 +40242,20 @@ CREATE TABLE public.tool_artifact (
 
 
 --
+-- Name: tool_artifacts_junction; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.tool_artifacts_junction (
+    tool_id uuid NOT NULL,
+    artifact_id uuid NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: tool_bindings_junction; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -40548,7 +40576,8 @@ CREATE TABLE public.tools_resource (
     args_ids uuid[] DEFAULT ARRAY[]::uuid[],
     args_output_ids uuid[] DEFAULT ARRAY[]::uuid[],
     resource text,
-    entry text
+    entry text,
+    artifact text
 );
 
 
@@ -41094,6 +41123,22 @@ ALTER TABLE ONLY public.args_values_args_connection
 
 ALTER TABLE ONLY public.args_values_entry
     ADD CONSTRAINT args_values_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: artifacts_resource artifacts_resource_artifact_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.artifacts_resource
+    ADD CONSTRAINT artifacts_resource_artifact_key UNIQUE (artifact);
+
+
+--
+-- Name: artifacts_resource artifacts_resource_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.artifacts_resource
+    ADD CONSTRAINT artifacts_resource_pkey PRIMARY KEY (id);
 
 
 --
@@ -46406,6 +46451,14 @@ ALTER TABLE ONLY public.tool_args_outputs_junction
 
 ALTER TABLE ONLY public.tool_args_junction
     ADD CONSTRAINT tool_args_pkey PRIMARY KEY (tool_id, args_id);
+
+
+--
+-- Name: tool_artifacts_junction tool_artifacts_junction_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tool_artifacts_junction
+    ADD CONSTRAINT tool_artifacts_junction_pkey PRIMARY KEY (tool_id, artifact_id);
 
 
 --
@@ -67141,6 +67194,22 @@ ALTER TABLE ONLY public.tool_args_junction
 
 
 --
+-- Name: tool_artifacts_junction tool_artifacts_junction_artifact_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tool_artifacts_junction
+    ADD CONSTRAINT tool_artifacts_junction_artifact_id_fkey FOREIGN KEY (artifact_id) REFERENCES public.artifacts_resource(id) ON DELETE CASCADE;
+
+
+--
+-- Name: tool_artifacts_junction tool_artifacts_junction_tool_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tool_artifacts_junction
+    ADD CONSTRAINT tool_artifacts_junction_tool_id_fkey FOREIGN KEY (tool_id) REFERENCES public.tool_artifact(id) ON DELETE CASCADE;
+
+
+--
 -- Name: tool_bindings_junction tool_bindings_junction_binding_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -68088,5 +68157,5 @@ ALTER TABLE ONLY public.voices_calls_connection
 -- PostgreSQL database dump complete
 --
 
-\unrestrict XS3WObX2JOiy1Jle7QI27aKKruGROL7u62VvYcJLueWFLPmavMphm4uWRpeL6e8
+\unrestrict jHYvbUYcDjUajwfXhi89eCEyiJwfCw0WYVLdcV5atDwdndgU6qBIJzsKnjaOddP
 

@@ -7,7 +7,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.api.v4.artifacts.group.types import GetGroupListResponse
-from app.api.v4.artifacts.types import FilterOption, WebsocketConfig
+from app.api.v4.artifacts.types import FilterOption, WebsocketArtifacts
 from app.api.v4.entries.runs.search import GetRunListViewResponse, RunViewItem
 
 
@@ -115,6 +115,6 @@ class GetPricingWebsocketResponse(BaseModel):
 
     entries: PricingWebsocketEntries | None = None
     resources: PricingWebsocketResources
-    config: WebsocketConfig | None = None
+    artifacts: WebsocketArtifacts | None = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None

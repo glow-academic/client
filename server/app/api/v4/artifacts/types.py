@@ -15,8 +15,8 @@ from app.sql.types import (
 )
 
 
-class WebsocketConfig(BaseModel):
-    """Shared config chain for websocket generation context.
+class WebsocketArtifacts(BaseModel):
+    """Shared artifacts chain for websocket generation context.
 
     Houses the settings-derived resources needed by the generate pipeline.
     Identical across all artifacts — defined once here.
@@ -29,6 +29,11 @@ class WebsocketConfig(BaseModel):
     args: list[QGetArgsV4Item] | None = None
     args_outputs: list[QGetArgsOutputsV4Item] | None = None
     profile: list[QGetProfilesV4Item] | None = None
+    params: BaseModel | None = None
+
+
+# Backwards compatibility alias
+WebsocketConfig = WebsocketArtifacts
 
 
 class FilterOption(BaseModel):

@@ -12,7 +12,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.artifacts.types import WebsocketConfig
+from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.entries.attempt.get import AttemptMessageViewItem as MessageViewItem
 from app.api.v4.entries.attempt.get import ChatViewItem
 from app.api.v4.entries.runs.search import GetRunListViewResponse
@@ -709,7 +709,7 @@ class GetAttemptWebsocketResponse(BaseModel):
 
     entries: AttemptEntries | None = None
     resources: AttemptWebsocketResources | None = None
-    config: WebsocketConfig | None = None
+    artifacts: WebsocketArtifacts | None = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
 

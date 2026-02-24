@@ -18,9 +18,9 @@ INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c82b8-5d9d-725e-b246-6ff4220f6f21', 'Navigation and recommendation agent for home page overview', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c82b8-5d9d-7092-983c-d8ccd6a89b8c', '## Previous Insights
 
-{% if entries.home_insights is defined and entries.home_insights and entries.home_insights|length > 0 %}
+{% if entries.insights is defined and entries.insights and entries.insights|length > 0 %}
 The following insights were previously generated:
-{% for insight in entries.home_insights %}
+{% for insight in entries.insights %}
 - {{ insight.content }}
 {% endfor %}
 {% else %}

@@ -58,6 +58,7 @@ CREATE TYPE types.q_get_tools_v4_item AS (
     args_output_ids uuid[],
     resource text,
     entry text,
+    artifact text,
     createable boolean
 );
 
@@ -73,7 +74,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (t.id, t.name, t.description, COALESCE(t.generated, false), COALESCE(t.args_ids, ARRAY[]::uuid[]), COALESCE(t.args_output_ids, ARRAY[]::uuid[]), t.resource, t.entry, COALESCE(t.createable, false))::types.q_get_tools_v4_item
+        (t.id, t.name, t.description, COALESCE(t.generated, false), COALESCE(t.args_ids, ARRAY[]::uuid[]), COALESCE(t.args_output_ids, ARRAY[]::uuid[]), t.resource, t.entry, t.artifact, COALESCE(t.createable, false))::types.q_get_tools_v4_item
         ORDER BY array_position(ids, t.id)
     ),
     ARRAY[]::types.q_get_tools_v4_item[]

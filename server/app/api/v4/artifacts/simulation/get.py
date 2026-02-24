@@ -67,7 +67,7 @@ from app.api.v4.artifacts.simulation.types import (
     SimulationWebsocketEntries,
     SimulationWebsocketResources,
 )
-from app.api.v4.artifacts.types import WebsocketConfig
+from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.entries.runs.search import get_run_list_entries_internal
 from app.api.v4.entries.simulation_drafts.get import (
     get_simulation_drafts_entries_internal,
@@ -884,7 +884,7 @@ async def get_simulation_websocket(
                 fetch_args_outputs(),
             )
 
-    websocket_config = WebsocketConfig(
+    websocket_config = WebsocketArtifacts(
         agents=data.config_agent_resources,
         models=data.config_model_resources,
         providers=data.config_provider_resources,
@@ -914,7 +914,7 @@ async def get_simulation_websocket(
             else None,
             rubrics=all_resources.rubrics if all_resources else None,
         ),
-        config=websocket_config,
+        artifacts=websocket_config,
     )
 
 

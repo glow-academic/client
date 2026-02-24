@@ -44,7 +44,7 @@ from app.api.v4.artifacts.department.types import (
     GetDepartmentApiResponse,
     GetDepartmentWebsocketResponse,
 )
-from app.api.v4.artifacts.types import WebsocketConfig
+from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.department_drafts.get import (
@@ -634,7 +634,7 @@ async def get_department_websocket(
                 fetch_args_outputs(),
             )
 
-    websocket_config = WebsocketConfig(
+    websocket_config = WebsocketArtifacts(
         agents=data.config_agents,
         models=data.config_models,
         providers=data.config_providers,
@@ -652,7 +652,7 @@ async def get_department_websocket(
             flags=data.flags_current,
             settings=data.settings_current,
         ),
-        config=websocket_config,
+        artifacts=websocket_config,
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
     )

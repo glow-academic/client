@@ -19,9 +19,9 @@ INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c82b8-5da2-760f-8257-ef73aef0d5bc', 'Analytical insights agent for system health monitoring', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c82b8-5da2-7429-8e67-bb43c8f2f4da', '## Previous Insights
 
-{% if entries.health_insights is defined and entries.health_insights and entries.health_insights|length > 0 %}
+{% if entries.insights is defined and entries.insights and entries.insights|length > 0 %}
 The following insights were previously generated:
-{% for insight in entries.health_insights %}
+{% for insight in entries.insights %}
 - {{ insight.content }}
 {% endfor %}
 {% else %}

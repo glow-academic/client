@@ -88,6 +88,11 @@ class GenerateArtifactPayload(BaseModel):
     metadata: dict[str, Any] | None = (
         None  # Opaque passthrough — domain handlers read this
     )
+    # Artifact tool support: needed to re-fetch context and re-render developer messages
+    profile_id: str | None = None
+    artifact_id: str | None = None
+    draft_id: str | None = None
+    developer_instruction_templates: list[str] | None = None
 
 
 def _extract_template_var(template: str) -> str | None:
@@ -165,6 +170,98 @@ def _parse_partial_json(partial: str) -> dict[str, Any] | None:
         return result if isinstance(result, dict) else None
     except json.JSONDecodeError:
         return None
+
+
+async def _execute_artifact_tool_inline(
+    artifact_type: str,
+    arguments: dict[str, Any],
+    profile_id: uuid.UUID | None,
+    artifact_id: uuid.UUID | None,
+    draft_id: uuid.UUID | None,
+    developer_instruction_templates: list[str] | None,
+) -> tuple[str, list[str]]:
+    """Execute artifact tool: re-fetch context, re-render developer messages.
+
+    Returns:
+        (tool_result_json, developer_messages) — result for LLM + messages to inject
+    """
+    from app.infra.v4.generation.render_developer_instructions import (
+        render_developer_instructions,
+    )
+
+    # PoC: only persona supported for now. Generalize via registry later.
+    if artifact_type == "persona":
+        from app.api.v4.artifacts.persona.get import get_persona_websocket
+
+        if not profile_id:
+            return (
+                json.dumps({"success": False, "message": "No profile_id available"}),
+                [],
+            )
+
+        # Parse parameter_ids from comma-separated string to list[UUID]
+        param_ids_str = arguments.get("parameter_ids")
+        param_ids: list[uuid.UUID] | None = None
+        if param_ids_str and isinstance(param_ids_str, str):
+            try:
+                param_ids = [
+                    uuid.UUID(pid.strip())
+                    for pid in param_ids_str.split(",")
+                    if pid.strip()
+                ]
+            except ValueError:
+                param_ids = None
+
+        # Parse bool args
+        def _parse_bool(val: Any) -> bool | None:
+            if val is None:
+                return None
+            if isinstance(val, bool):
+                return val
+            if isinstance(val, str):
+                return val.lower() in ("true", "1", "yes")
+            return None
+
+        result = await get_persona_websocket(
+            profile_id=profile_id,
+            persona_id=artifact_id,
+            draft_id=draft_id,
+            bypass_cache=True,
+            color_search=arguments.get("color_search") or None,
+            icon_search=arguments.get("icon_search") or None,
+            descriptions_search=arguments.get("descriptions_search") or None,
+            instructions_search=arguments.get("instructions_search") or None,
+            parameter_field_search=arguments.get("parameter_field_search") or None,
+            parameter_ids=param_ids,
+            color_show_selected=_parse_bool(arguments.get("color_show_selected")),
+            icon_show_selected=_parse_bool(arguments.get("icon_show_selected")),
+            parameter_field_show_selected=_parse_bool(
+                arguments.get("parameter_field_show_selected")
+            ),
+        )
+
+        # Build Jinja context from the refreshed result
+        from app.socket.v5.internal.generate import _build_jinja_context
+
+        jinja_context = _build_jinja_context(result)
+
+        # Re-render developer instructions
+        rendered_msgs = render_developer_instructions(
+            templates=developer_instruction_templates,
+            jinja_context=jinja_context,
+        )
+
+        return (
+            json.dumps({"success": True, "message": "Refreshed persona context"}),
+            rendered_msgs,
+        )
+
+    return (
+        json.dumps(
+            {"success": False, "message": f"Unsupported artifact type: {artifact_type}"}
+        ),
+        [],
+    )
 
 
 def _event_name_for_modality(modality: str, phase: str) -> str:
@@ -427,6 +524,7 @@ async def _generate_artifact_impl(
         tool_id_by_name: dict[str, uuid.UUID] = {}
         tool_resource_type_by_name: dict[str, str] = {}
         tool_entry_type_by_name: dict[str, str] = {}
+        tool_artifact_type_by_name: dict[str, str] = {}
         tool_createable_by_name: dict[str, bool] = {}
         if data.tools:
             openai_tools = convert_tools_to_openai_format(data.tools)
@@ -448,11 +546,14 @@ async def _generate_artifact_impl(
                 if t_name:
                     t_resource = tool_def.get("resource")
                     t_entry = tool_def.get("entry")
+                    t_artifact = tool_def.get("artifact")
                     t_createable = tool_def.get("createable")
                     if t_resource:
                         tool_resource_type_by_name[t_name] = t_resource
                     if t_entry:
                         tool_entry_type_by_name[t_name] = t_entry
+                    if t_artifact:
+                        tool_artifact_type_by_name[t_name] = t_artifact
                     if t_createable is not None:
                         tool_createable_by_name[t_name] = bool(t_createable)
                 t_args_outputs = tool_def.get("_args_outputs")
@@ -904,28 +1005,55 @@ async def _generate_artifact_impl(
 
                     # Execute tool inline using the agentic pattern
                     # Tool result (including errors) will be visible to model for retries
-                    resolved_tool_id = tool_id_by_name.get(tool_name)
-                    if not resolved_tool_id:
-                        tool_result_str = json.dumps(
-                            {
-                                "success": False,
-                                "message": f"Tool not found: {tool_name}",
-                                "error_stage": "tool_resolve",
-                            }
+                    artifact_dev_msgs: list[str] = []
+                    if tool_name in tool_artifact_type_by_name:
+                        # Artifact tool — re-fetch context and re-render developer messages
+                        art_type = tool_artifact_type_by_name[tool_name]
+                        (
+                            tool_result_str,
+                            artifact_dev_msgs,
+                        ) = await _execute_artifact_tool_inline(
+                            artifact_type=art_type,
+                            arguments=arguments_dict,
+                            profile_id=uuid.UUID(data.profile_id)
+                            if data.profile_id
+                            else None,
+                            artifact_id=uuid.UUID(data.artifact_id)
+                            if data.artifact_id
+                            else None,
+                            draft_id=uuid.UUID(data.draft_id)
+                            if data.draft_id
+                            else None,
+                            developer_instruction_templates=data.developer_instruction_templates,
                         )
                     else:
-                        async with get_db_connection() as conn:
-                            tool_result_str = await execute_tool_call(
-                                conn=conn,
-                                tool_name=tool_name,
-                                arguments=arguments_dict,
-                                tool_id=resolved_tool_id,
-                                run_id=uuid.UUID(data.run_id) if data.run_id else None,
-                                external_call_id=tool_call_id,
-                                resource_type=tool_resource_type_by_name.get(tool_name),
-                                entry_type=tool_entry_type_by_name.get(tool_name),
-                                is_creatable=tool_createable_by_name.get(tool_name),
+                        # Existing resource/entry tool path
+                        resolved_tool_id = tool_id_by_name.get(tool_name)
+                        if not resolved_tool_id:
+                            tool_result_str = json.dumps(
+                                {
+                                    "success": False,
+                                    "message": f"Tool not found: {tool_name}",
+                                    "error_stage": "tool_resolve",
+                                }
                             )
+                        else:
+                            async with get_db_connection() as conn:
+                                tool_result_str = await execute_tool_call(
+                                    conn=conn,
+                                    tool_name=tool_name,
+                                    arguments=arguments_dict,
+                                    tool_id=resolved_tool_id,
+                                    run_id=uuid.UUID(data.run_id)
+                                    if data.run_id
+                                    else None,
+                                    external_call_id=tool_call_id,
+                                    resource_type=tool_resource_type_by_name.get(
+                                        tool_name
+                                    ),
+                                    entry_type=tool_entry_type_by_name.get(tool_name),
+                                    is_creatable=tool_createable_by_name.get(tool_name),
+                                )
 
                     # Parse result for internal tracking
                     try:
@@ -947,6 +1075,7 @@ async def _generate_artifact_impl(
                             "arguments_str": arguments_str,
                             "result": tool_result,
                             "result_str": tool_result_str,
+                            "artifact_dev_msgs": artifact_dev_msgs,
                         }
                     )
 
@@ -1025,6 +1154,9 @@ async def _generate_artifact_impl(
                             "output": tr["result_str"],
                         }
                     )
+                    # Inject re-rendered developer messages for artifact tools
+                    for dm in tr.get("artifact_dev_msgs", []):
+                        responses_input.append({"role": "developer", "content": dm})
                 logger.info(
                     f"Agentic loop iteration {iteration}: {len(output_items)} output items, "
                     f"{len(tool_results)} tool outputs, "
@@ -1064,6 +1196,9 @@ async def _generate_artifact_impl(
                             "content": tr["result_str"],
                         }
                     )
+                    # Inject re-rendered developer messages for artifact tools
+                    for dm in tr.get("artifact_dev_msgs", []):
+                        chat_messages.append({"role": "system", "content": dm})
                 logger.info(
                     f"Agentic loop iteration {iteration}: {len(tool_results)} tool calls, "
                     f"continuing with {len(chat_messages)} chat messages"

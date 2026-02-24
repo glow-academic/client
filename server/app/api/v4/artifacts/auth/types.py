@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.api.v4.artifacts.types import WebsocketConfig
+from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.sql.types import (
@@ -121,7 +121,7 @@ class GetAuthWebsocketResponse(BaseModel):
 
     entries: AuthWebsocketEntries | None = None
     resources: AuthWebsocketResources
-    config: WebsocketConfig | None = None
+    artifacts: WebsocketArtifacts | None = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
 

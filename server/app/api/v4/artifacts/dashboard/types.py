@@ -5,7 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.artifacts.types import FilterOption, HistoryResponse, WebsocketConfig
+from app.api.v4.artifacts.types import FilterOption, HistoryResponse, WebsocketArtifacts
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 
 # ============================================================================
@@ -566,6 +566,6 @@ class GetDashboardWebsocketResponse(BaseModel):
 
     entries: DashboardWebsocketEntries | None = None
     resources: DashboardWebsocketResources
-    config: WebsocketConfig | None = None
+    artifacts: WebsocketArtifacts | None = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None

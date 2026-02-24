@@ -18,9 +18,9 @@ INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c82b8-5d9d-7bd8-b210-c7b8fb070319', 'Navigation and recommendation agent for practice mode entry point', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c82b8-5d9d-7a12-9acc-52d542e221dc', '## Previous Insights
 
-{% if entries.practice_insights is defined and entries.practice_insights and entries.practice_insights|length > 0 %}
+{% if entries.insights is defined and entries.insights and entries.insights|length > 0 %}
 The following insights were previously generated:
-{% for insight in entries.practice_insights %}
+{% for insight in entries.insights %}
 - {{ insight.content }}
 {% endfor %}
 {% else %}

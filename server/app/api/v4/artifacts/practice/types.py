@@ -10,7 +10,7 @@ from app.api.v4.artifacts.chat.types import (
     StandardGroupMapping,
     StandardMapping,
 )
-from app.api.v4.artifacts.types import HistoryResponse, WebsocketConfig
+from app.api.v4.artifacts.types import HistoryResponse, WebsocketArtifacts
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.sql.types import (
     QGetDepartmentsV4Item,
@@ -64,7 +64,7 @@ class GetPracticeWebsocketResponse(BaseModel):
 
     entries: PracticeWebsocketEntries | None = None
     resources: PracticeWebsocketResources
-    config: WebsocketConfig | None = None
+    artifacts: WebsocketArtifacts | None = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
 

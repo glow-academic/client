@@ -28,7 +28,7 @@ from app.api.v4.artifacts.session.types import (
     GetSessionListResponse,
     SessionListItem,
 )
-from app.api.v4.artifacts.types import WebsocketConfig
+from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.activity.get import get_activity_list_view_internal
 from app.api.v4.entries.audits.get import get_audit_list_view_internal
@@ -711,7 +711,7 @@ async def get_activity_websocket(
 
     insights_result = await fetch_insights()
 
-    websocket_config = WebsocketConfig(
+    websocket_config = WebsocketArtifacts(
         agents=data.config_agents or None,
         models=data.config_models or None,
         providers=data.config_providers or None,
@@ -733,7 +733,7 @@ async def get_activity_websocket(
             activity_insights=insights_result or None,
         ),
         resources=ActivityWebsocketResources(),
-        config=websocket_config,
+        artifacts=websocket_config,
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
     )

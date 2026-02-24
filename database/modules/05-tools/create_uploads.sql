@@ -6,7 +6,7 @@
 
 -- Resource rows
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019bcc94-efdc-7de3-8e38-67841033ab51', 'create_uploads', '2026-01-17T15:31:11.448636+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable, args_ids, args_output_ids, resource, entry) VALUES ('019bebc4-d436-7d20-945d-557447e427bd', '2026-01-17T17:57:40.542460+00:00', false, false, true, 'create_uploads', NULL, '{}', true, '{}', '{}', 'uploads', NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable, args_ids, args_output_ids, resource, entry, artifact) VALUES ('019bebc4-d436-7d20-945d-557447e427bd', '2026-01-17T17:57:40.542460+00:00', false, false, true, 'create_uploads', NULL, '{}', true, '{}', '{}', 'uploads', NULL, NULL) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- tool_artifact

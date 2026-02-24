@@ -75,7 +75,7 @@ from app.api.v4.artifacts.scenario.types import (
     ScenarioWebsocketEntries,
     ScenarioWebsocketResources,
 )
-from app.api.v4.artifacts.types import WebsocketConfig
+from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.runs.search import get_run_list_entries_internal
@@ -1306,7 +1306,7 @@ async def get_scenario_websocket(
         runs=runs_result,
     )
 
-    websocket_config = WebsocketConfig(
+    websocket_config = WebsocketArtifacts(
         agents=data.config_agent_resources,
         models=data.config_model_resources,
         providers=data.config_provider_resources,
@@ -1338,7 +1338,7 @@ async def get_scenario_websocket(
             questions=all_resources.questions if all_resources else None,
             options=all_resources.options if all_resources else None,
         ),
-        config=websocket_config,
+        artifacts=websocket_config,
     )
 
 

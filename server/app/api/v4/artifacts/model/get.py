@@ -70,7 +70,7 @@ from app.api.v4.artifacts.model.types import (
     ModelWebsocketEntries,
     ModelWebsocketResources,
 )
-from app.api.v4.artifacts.types import WebsocketConfig
+from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.model_drafts.get import get_model_drafts_entries_internal
@@ -890,7 +890,7 @@ async def get_model_websocket(
         runs=runs_result,
     )
 
-    websocket_config = WebsocketConfig(
+    websocket_config = WebsocketArtifacts(
         agents=data.config_agent_resources,
         models=data.config_model_resources,
         providers=data.config_provider_resources,
@@ -920,7 +920,7 @@ async def get_model_websocket(
             qualities=data.quality_resources or None,
             voices=data.voice_resources or None,
         ),
-        config=websocket_config,
+        artifacts=websocket_config,
     )
 
 

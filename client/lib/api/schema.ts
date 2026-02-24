@@ -38269,6 +38269,8 @@ export interface components {
             resource: string | null;
             /** Entry */
             entry: string | null;
+            /** Artifact */
+            artifact: string | null;
             /** Createable */
             createable: boolean | null;
         };

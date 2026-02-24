@@ -43,7 +43,7 @@ from app.api.v4.artifacts.chat.types import (
     GetChatStartWebsocketResponse,
     GetChatWebsocketResponse,
 )
-from app.api.v4.artifacts.types import WebsocketConfig
+from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.runs.search import get_run_list_entries_internal
 from app.api.v4.entries.training.get import get_training_view_internal
@@ -561,7 +561,7 @@ async def get_chat_websocket(
             problem_statements=data.current_resources.get("problem_statements") or None,
             objectives=data.current_resources.get("objectives") or None,
         ),
-        config=WebsocketConfig(
+        artifacts=WebsocketArtifacts(
             agents=data.config_agents or None,
             models=data.config_models or None,
             providers=data.config_providers or None,

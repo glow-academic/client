@@ -39,7 +39,7 @@ from app.api.v4.artifacts.field.types import (
     GetFieldApiResponse,
     GetFieldWebsocketResponse,
 )
-from app.api.v4.artifacts.types import WebsocketConfig
+from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.field_drafts.get import get_field_drafts_entries_internal
@@ -636,7 +636,7 @@ async def get_field_websocket(
         conditional_parameters=data.selected_conditional_parameters,
     )
 
-    websocket_config = WebsocketConfig(
+    websocket_config = WebsocketArtifacts(
         agents=data.config_agents,
         models=data.config_models,
         providers=data.config_providers,
@@ -649,7 +649,7 @@ async def get_field_websocket(
     return GetFieldWebsocketResponse(
         entries=entries if draft_field or runs_result else None,
         resources=websocket_resources,
-        config=websocket_config,
+        artifacts=websocket_config,
         resource_agent_ids=data.agent_ids,
         group_id=data.group_id,
     )

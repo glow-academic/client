@@ -17,7 +17,7 @@ from app.api.v4.artifacts.health.types import (
     HealthWebsocketEntries,
     HealthWebsocketResources,
 )
-from app.api.v4.artifacts.types import WebsocketConfig
+from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.health.get import get_health_list_view_internal
 from app.api.v4.entries.metrics.get import get_metric_list_view_internal
@@ -280,7 +280,7 @@ async def get_health_websocket(
 
     insights_result = await fetch_insights()
 
-    websocket_config = WebsocketConfig(
+    websocket_config = WebsocketArtifacts(
         agents=data.config_agents or None,
         models=data.config_models or None,
         providers=data.config_providers or None,
@@ -296,7 +296,7 @@ async def get_health_websocket(
             health_insights=insights_result or None,
         ),
         resources=HealthWebsocketResources(),
-        config=websocket_config,
+        artifacts=websocket_config,
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
     )

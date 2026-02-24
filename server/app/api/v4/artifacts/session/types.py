@@ -141,12 +141,12 @@ class GetSessionWebsocketResponse(BaseModel):
 
     entries: SessionWebsocketEntries | None = None
     resources: SessionWebsocketResources
-    config: "WebsocketConfig | None" = None
+    artifacts: "WebsocketArtifacts | None" = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
 
 
-from app.api.v4.artifacts.types import WebsocketConfig  # noqa: E402
+from app.api.v4.artifacts.types import WebsocketArtifacts  # noqa: E402
 from app.api.v4.entries.runs.search import GetRunListViewResponse  # noqa: E402
 from app.sql.types import (  # noqa: E402
     GetAuditListViewSqlRow,

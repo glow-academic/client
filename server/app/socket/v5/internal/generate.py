@@ -77,11 +77,11 @@ async def _emit_error(
 
 
 def _build_jinja_context(result: object) -> dict[str, Any]:
-    """Build Jinja context with three top-level keys: resources, entries, config."""
+    """Build Jinja context with three top-level keys: resources, entries, artifacts."""
     context: dict[str, Any] = {
         "resources": {},
         "entries": {},
-        "config": {},
+        "artifacts": {},
     }
     resources = getattr(result, "resources", None)
     if resources:
@@ -89,9 +89,9 @@ def _build_jinja_context(result: object) -> dict[str, Any]:
     entries = getattr(result, "entries", None)
     if entries:
         context["entries"] = entries.model_dump(mode="json")  # type: ignore[union-attr]
-    result_config = getattr(result, "config", None)
-    if result_config:
-        context["config"] = result_config.model_dump(mode="json")  # type: ignore[union-attr]
+    result_artifacts = getattr(result, "artifacts", None)
+    if result_artifacts:
+        context["artifacts"] = result_artifacts.model_dump(mode="json")  # type: ignore[union-attr]
     return context
 
 
@@ -106,12 +106,12 @@ def _enrich_tools_with_args(
     them against the pre-fetched QGetArgsV4Item list in config.args to produce
     the JSONB structures that convert_tools_to_openai_format expects.
     """
-    result_config = getattr(result, "config", None)
-    if not tool_dicts or not result_config:
+    result_artifacts = getattr(result, "artifacts", None)
+    if not tool_dicts or not result_artifacts:
         return tool_dicts
 
-    resource_tools = getattr(result_config, config.config_tools_attr, None) or []
-    config_args = getattr(result_config, "args", None) or []
+    resource_tools = getattr(result_artifacts, config.config_tools_attr, None) or []
+    config_args = getattr(result_artifacts, "args", None) or []
 
     if not resource_tools or not config_args:
         return tool_dicts
@@ -178,13 +178,13 @@ def _enrich_tools_with_args_outputs(
     config: ArtifactGenerateConfig,
 ) -> list[dict[str, Any]]:
     """Attach _args_outputs to tools for output schema resolution."""
-    result_config = getattr(result, "config", None)
-    if not tool_dicts or not result_config:
+    result_artifacts = getattr(result, "artifacts", None)
+    if not tool_dicts or not result_artifacts:
         return tool_dicts
 
-    resource_tools = getattr(result_config, config.config_tools_attr, None) or []
+    resource_tools = getattr(result_artifacts, config.config_tools_attr, None) or []
     config_args_outputs = (
-        getattr(result_config, config.config_args_outputs_attr, None) or []
+        getattr(result_artifacts, config.config_args_outputs_attr, None) or []
     )
 
     if not resource_tools or not config_args_outputs:
@@ -345,21 +345,21 @@ async def generate_handler(data: dict[str, Any]) -> None:
         # Run-level setup (shared across all agents)
         # ===================================================================
 
-        # Step 7: Extract config lookup tables
-        result_config = getattr(result, "config", None)
+        # Step 7: Extract artifacts lookup tables
+        result_artifacts = getattr(result, "artifacts", None)
         config_agents = (
-            getattr(result_config, config.config_agents_attr, None) or []
-            if result_config
+            getattr(result_artifacts, config.config_agents_attr, None) or []
+            if result_artifacts
             else []
         )
         config_models = (
-            getattr(result_config, config.config_models_attr, None) or []
-            if result_config
+            getattr(result_artifacts, config.config_models_attr, None) or []
+            if result_artifacts
             else []
         )
         config_providers = (
-            getattr(result_config, config.config_providers_attr, None) or []
-            if result_config
+            getattr(result_artifacts, config.config_providers_attr, None) or []
+            if result_artifacts
             else []
         )
 
@@ -378,7 +378,7 @@ async def generate_handler(data: dict[str, Any]) -> None:
 
         # Step 8: Rate limit check (run-level, not per-agent)
         config_profile_list = (
-            getattr(result_config, "profile", None) if result_config else None
+            getattr(result_artifacts, "profile", None) if result_artifacts else None
         )
         config_profile = config_profile_list[0] if config_profile_list else None
         requests_per_day = config_profile.requests_per_day if config_profile else None
@@ -412,8 +412,8 @@ async def generate_handler(data: dict[str, Any]) -> None:
 
         # Step 9: Read all tools, enrich, and build createable set (shared)
         config_tools = (
-            getattr(result_config, config.config_tools_attr, None) or []
-            if result_config
+            getattr(result_artifacts, config.config_tools_attr, None) or []
+            if result_artifacts
             else []
         )
         all_tool_dicts = convert_tools_to_dict(config_tools)
@@ -588,8 +588,8 @@ async def generate_handler(data: dict[str, Any]) -> None:
 
                 # 13c: Build scoped jinja context (clone base, inject per-agent)
                 jinja_context = copy.deepcopy(jinja_context_base)
-                jinja_context["config"]["resource_types"] = scoped_resource_types
-                jinja_context["config"]["entry_types"] = scoped_entry_types
+                jinja_context["artifacts"]["resource_types"] = scoped_resource_types
+                jinja_context["artifacts"]["entry_types"] = scoped_entry_types
 
                 # 13d: Fetch this agent's system prompt + developer instructions
                 async def _fetch_prompt(ar: Any) -> str:
@@ -715,6 +715,11 @@ async def generate_handler(data: dict[str, Any]) -> None:
                         tools=scoped_tool_dicts,
                         save=payload.save,
                         metadata=metadata or None,
+                        profile_id=str(profile_id) if profile_id else None,
+                        artifact_id=str(artifact_id) if artifact_id else None,
+                        draft_id=str(payload.draft_id) if payload.draft_id else None,
+                        developer_instruction_templates=developer_instruction_templates
+                        or None,
                     ).model_dump(mode="json"),
                 )
 

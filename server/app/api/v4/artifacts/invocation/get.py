@@ -31,7 +31,7 @@ from app.api.v4.artifacts.invocation.types import (
     SuiteWebsocketEntries,
     SuiteWebsocketResources,
 )
-from app.api.v4.artifacts.types import WebsocketConfig
+from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.runs.search import get_run_list_entries_internal
 from app.api.v4.entries.suite.get import get_suite_view_internal
@@ -434,7 +434,7 @@ async def get_invocation_websocket(
         keys=data.current_resources.get("keys") or None,
     )
 
-    websocket_config = WebsocketConfig(
+    websocket_config = WebsocketArtifacts(
         agents=data.config_agents or None,
         models=data.config_models or None,
         providers=data.config_providers or None,
@@ -450,7 +450,7 @@ async def get_invocation_websocket(
             runs=runs_result,
         ),
         resources=websocket_resources,
-        config=websocket_config,
+        artifacts=websocket_config,
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
     )
