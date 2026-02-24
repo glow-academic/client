@@ -11,7 +11,6 @@ from app.api.v4.artifacts.simulation.types import (
     DeleteSimulationApiResponse,
     DeleteSimulationResult,
 )
-from app.api.v4.auth.profile import get_auth_profile_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -64,6 +63,9 @@ async def delete_simulation(
                 status_code=401,
                 detail="Profile ID is required. Please sign in again.",
             )
+
+        # Lazy import to avoid circular import chain
+        from app.api.v4.auth.profile import get_auth_profile_internal
 
         # Fetch user context once for the whole batch
         pool = get_pool()

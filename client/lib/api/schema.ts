@@ -415,11 +415,7 @@ export interface paths {
         put?: never;
         /**
          * Delete Simulation
-         * @description Delete a simulation (with usage check).
-         *
-         *     Uses two-pass architecture:
-         *     1. Check access and permissions in Python
-         *     2. Execute delete if permitted
+         * @description Bulk delete simulations — all-or-nothing single transaction.
          */
         post: operations["delete_simulation_api_v4_artifacts_simulations_delete_post"];
         delete?: never;
@@ -25115,24 +25111,36 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** DeleteSimulationApiRequest */
+        /**
+         * DeleteSimulationApiRequest
+         * @description Request model for bulk delete simulation endpoint.
+         */
         DeleteSimulationApiRequest: {
+            /** Simulation Ids */
+            simulation_ids: string[];
+        };
+        /**
+         * DeleteSimulationApiResponse
+         * @description Response model for bulk delete simulation endpoint.
+         */
+        DeleteSimulationApiResponse: {
+            /** Results */
+            results: components["schemas"]["DeleteSimulationResult"][];
+        };
+        /**
+         * DeleteSimulationResult
+         * @description Per-item result within a bulk delete response.
+         */
+        DeleteSimulationResult: {
+            /** Success */
+            success: boolean;
             /**
              * Simulation Id
              * Format: uuid
              */
             simulation_id: string;
-        };
-        /** DeleteSimulationApiResponse */
-        DeleteSimulationApiResponse: {
-            /** Deleted */
-            deleted?: boolean | null;
-            /** Usage Count */
-            usage_count?: number | null;
-            /** Title */
-            title?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
+            /** Message */
+            message: string;
         };
         /** DeleteToolApiRequest */
         DeleteToolApiRequest: {

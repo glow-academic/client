@@ -18,6 +18,10 @@ type DuplicateSimulationIn = InputOf<"/api/v4/artifacts/simulations/duplicate", 
 type DuplicateSimulationOut = OutputOf<"/api/v4/artifacts/simulations/duplicate", "post">;
 type DeleteSimulationIn = InputOf<"/api/v4/artifacts/simulations/delete", "post">;
 type DeleteSimulationOut = OutputOf<"/api/v4/artifacts/simulations/delete", "post">;
+type SaveSimulationIn = InputOf<"/api/v4/artifacts/simulations/save", "post">;
+type SaveSimulationOut = OutputOf<"/api/v4/artifacts/simulations/save", "post">;
+type SearchFlagsIn = InputOf<"/api/v4/resources/flags/search", "post">;
+type SearchFlagsOut = NonNullable<OutputOf<"/api/v4/resources/flags/search", "post">["items"]>;
 
 /** ---- Body type for simulations list request ---- */
 type SimulationsListBody = {
@@ -67,6 +71,21 @@ async function deleteSimulation(
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/artifacts/simulations/delete", input);
+}
+
+async function saveSimulation(
+  input: SaveSimulationIn,
+): Promise<SaveSimulationOut> {
+  "use server";
+  return api.post("/artifacts/simulations/save", input);
+}
+
+async function searchFlags(): Promise<SearchFlagsOut> {
+  "use server";
+  const res = await api.post("/resources/flags/search", {
+    body: { search: null, limit_count: 100, offset_count: 0, simulation: true },
+  } as SearchFlagsIn);
+  return res.items ?? [];
 }
 
 /** ---- Docs types for page metadata ---- */
@@ -132,6 +151,8 @@ export default async function SimulationsPage({ searchParams }: SimulationsPageP
         listData={listData}
         duplicateSimulationAction={duplicateSimulation}
         deleteSimulationAction={deleteSimulation}
+        saveSimulationAction={saveSimulation}
+        searchFlagsAction={searchFlags}
         pageIndex={pageIndex}
         pageSize={pageSize}
         totalCount={listData.total_count ?? 0}
@@ -149,5 +170,8 @@ export type {
   DeleteSimulationOut,
   DuplicateSimulationIn,
   DuplicateSimulationOut,
+  SaveSimulationIn,
+  SaveSimulationOut,
+  SearchFlagsOut,
   SimulationsListOut,
 };
