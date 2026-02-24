@@ -5,7 +5,7 @@
  * 06/07/2025
  */
 "use client";
-import { Brain, Copy, Edit, Eye, Sparkles, Trash2, Users, X } from "lucide-react";
+import { Brain, Check, CheckCircle, Copy, Edit, Eye, Pencil, Sparkles, Trash2, Users, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -27,6 +27,11 @@ import type {
   DuplicatePersonaIn,
   DuplicatePersonaOut,
   PersonasListOut,
+  SavePersonaIn,
+  SavePersonaOut,
+  SearchColorsOut,
+  SearchIconsOut,
+  SearchVoicesOut,
 } from "@/app/(main)/training/personas/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
@@ -44,7 +49,19 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import {
   Tooltip,
   TooltipContent,
@@ -85,6 +102,10 @@ export interface PersonasProps {
     input: DuplicatePersonaIn
   ) => Promise<DuplicatePersonaOut>;
   deletePersonaAction?: (input: DeletePersonaIn) => Promise<DeletePersonaOut>;
+  savePersonaAction?: (input: SavePersonaIn) => Promise<SavePersonaOut>;
+  searchColorsAction?: () => Promise<SearchColorsOut>;
+  searchIconsAction?: () => Promise<SearchIconsOut>;
+  searchVoicesAction?: () => Promise<SearchVoicesOut>;
   // Server-side pagination
   pageIndex: number;
   pageSize: number;
@@ -99,6 +120,10 @@ export default function Personas({
   listData: serverListData,
   duplicatePersonaAction,
   deletePersonaAction,
+  savePersonaAction,
+  searchColorsAction,
+  searchIconsAction,
+  searchVoicesAction,
   pageIndex,
   pageSize,
   totalCount,
@@ -117,6 +142,28 @@ export default function Personas({
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
+
+  // Selection state
+  const [selectedPersonaIds, setSelectedPersonaIds] = useState<string[]>([]);
+
+  // Bulk delete state
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  // Bulk edit state
+  const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
+  const [isBulkEditing, setIsBulkEditing] = useState(false);
+  const [bulkEditActiveStatus, setBulkEditActiveStatus] = useState<boolean | null>(null); // null = no change
+  const [bulkEditColorIds, setBulkEditColorIds] = useState<string[]>([]); // empty = no change
+  const [bulkEditIconIds, setBulkEditIconIds] = useState<string[]>([]); // empty = no change
+  const [bulkEditDepartmentIds, setBulkEditDepartmentIds] = useState<string[] | null>(null); // null = no change
+  const [bulkEditVoiceIds, setBulkEditVoiceIds] = useState<string[] | null>(null); // null = no change
+
+  // Lazy-loaded picker options
+  const [colorOptions, setColorOptions] = useState<{ id: string; name: string; hex_code?: string | null }[]>([]);
+  const [iconOptions, setIconOptions] = useState<{ id: string; name: string; value?: string | null }[]>([]);
+  const [voiceOptions, setVoiceOptions] = useState<{ id: string; voice: string }[]>([]);
+  const [optionsLoaded, setOptionsLoaded] = useState(false);
 
   // Generation modal via shared hook
   type PersonaResourceType = "names" | "descriptions" | "colors" | "icons" | "instructions" | "flags" | "examples" | "parameter_fields" | "departments" | "parameters" | "voices";
@@ -183,6 +230,51 @@ export default function Personas({
   const personas = useMemo(() => {
     return personasData?.personas || [];
   }, [personasData?.personas]);
+
+  // Computed selection info
+  const selectedCount = selectedPersonaIds.length;
+  const selectedPersonas = useMemo(() => {
+    return personas.filter((p) => p.persona_id && selectedPersonaIds.includes(p.persona_id));
+  }, [personas, selectedPersonaIds]);
+
+  const deletablePersonas = useMemo(() => {
+    return selectedPersonas.filter((p) => p.can_delete);
+  }, [selectedPersonas]);
+
+  const nonDeletablePersonas = useMemo(() => {
+    return selectedPersonas.filter((p) => !p.can_delete);
+  }, [selectedPersonas]);
+
+  const editablePersonas = useMemo(() => {
+    return selectedPersonas.filter((p) => p.can_edit);
+  }, [selectedPersonas]);
+
+  // Check if all personas on the current page are selected
+  const allPageSelected = useMemo(() => {
+    const pageIds = personas.filter((p) => p.persona_id).map((p) => p.persona_id!);
+    return pageIds.length > 0 && pageIds.every((id) => selectedPersonaIds.includes(id));
+  }, [personas, selectedPersonaIds]);
+
+  // Toggle selection for a single persona
+  const toggleSelection = useCallback((personaId: string) => {
+    setSelectedPersonaIds((prev) =>
+      prev.includes(personaId)
+        ? prev.filter((id) => id !== personaId)
+        : [...prev, personaId]
+    );
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedPersonaIds([]);
+  }, []);
+
+  const selectAllOnPage = useCallback(() => {
+    const pageIds = personas.filter((p) => p.persona_id).map((p) => p.persona_id!);
+    setSelectedPersonaIds((prev) => {
+      const combined = new Set([...prev, ...pageIds]);
+      return Array.from(combined);
+    });
+  }, [personas]);
 
   // Derive options from filter sections (server returns filtered options based on search)
   const scenarioOptions = useMemo(() => {
@@ -620,7 +712,7 @@ export default function Personas({
     try {
       await deletePersonaAction({
         body: {
-          persona_id: deleteItem.id,
+          persona_ids: [deleteItem.id],
         },
       });
       toast.success("Persona deleted successfully");
@@ -637,6 +729,121 @@ export default function Personas({
       setShowDeleteDialog(false);
       setDeleteItem(null);
     }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!deletePersonaAction || deletablePersonas.length === 0) return;
+
+    if (!profile?.id) {
+      toast.error("Profile not loaded. Please refresh the page.");
+      return;
+    }
+
+    setIsBulkDeleting(true);
+    try {
+      const ids = deletablePersonas.map((p) => p.persona_id!);
+      await deletePersonaAction({
+        body: {
+          persona_ids: ids,
+        },
+      });
+      toast.success(`${ids.length} persona(s) deleted successfully`);
+      clearSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to delete personas";
+      const cleanMsg = msg.replace(/^\d{3}\s*/, "");
+      toast.error(cleanMsg || "Failed to delete personas");
+    } finally {
+      setIsBulkDeleting(false);
+      setShowBulkDeleteDialog(false);
+    }
+  };
+
+  const handleBulkEdit = async () => {
+    if (!savePersonaAction || editablePersonas.length === 0) return;
+
+    if (!profile?.id) {
+      toast.error("Profile not loaded. Please refresh the page.");
+      return;
+    }
+
+    // Build items with only changed fields
+    const hasActiveChange = bulkEditActiveStatus !== null;
+    const hasColorChange = bulkEditColorIds.length > 0;
+    const hasIconChange = bulkEditIconIds.length > 0;
+    const hasDeptChange = bulkEditDepartmentIds !== null;
+    const hasVoiceChange = bulkEditVoiceIds !== null;
+
+    if (!hasActiveChange && !hasColorChange && !hasIconChange && !hasDeptChange && !hasVoiceChange) {
+      toast.error("No changes selected");
+      return;
+    }
+
+    setIsBulkEditing(true);
+    try {
+      const items = editablePersonas.map((p) => ({
+        input_persona_id: p.persona_id!,
+        ...(hasActiveChange && { active_flag: bulkEditActiveStatus }),
+        ...(hasColorChange && { color_id: bulkEditColorIds[0] }),
+        ...(hasIconChange && { icon_id: bulkEditIconIds[0] }),
+        ...(hasDeptChange && { department_ids: bulkEditDepartmentIds }),
+        ...(hasVoiceChange && { voice_ids: bulkEditVoiceIds }),
+      }));
+
+      await savePersonaAction({
+        body: {
+          personas: items,
+        },
+      });
+      toast.success(`${items.length} persona(s) updated successfully`);
+      clearSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to update personas";
+      const cleanMsg = msg.replace(/^\d{3}\s*/, "");
+      toast.error(cleanMsg || "Failed to update personas");
+    } finally {
+      setIsBulkEditing(false);
+      setShowBulkEditDialog(false);
+    }
+  };
+
+  const openBulkEditDialog = async () => {
+    // Reset form state
+    setBulkEditActiveStatus(null);
+    setBulkEditColorIds([]);
+    setBulkEditIconIds([]);
+    setBulkEditDepartmentIds(null);
+    setBulkEditVoiceIds(null);
+
+    // Lazy-load picker options
+    if (!optionsLoaded) {
+      try {
+        const [colors, icons, voices] = await Promise.all([
+          searchColorsAction?.() ?? Promise.resolve([]),
+          searchIconsAction?.() ?? Promise.resolve([]),
+          searchVoicesAction?.() ?? Promise.resolve([]),
+        ]);
+        setColorOptions(
+          (colors as { id?: string | null; name?: string | null; hex_code?: string | null }[])
+            .filter((c): c is { id: string; name: string; hex_code?: string | null } => !!c.id && !!c.name)
+        );
+        setIconOptions(
+          (icons as { id?: string | null; name?: string | null; value?: string | null }[])
+            .filter((i): i is { id: string; name: string; value?: string | null } => !!i.id && !!i.name)
+        );
+        setVoiceOptions(
+          (voices as { id?: string | null; voice?: string | null }[])
+            .filter((v): v is { id: string; voice: string } => !!v.id && !!v.voice)
+        );
+        setOptionsLoaded(true);
+      } catch {
+        toast.error("Failed to load options");
+      }
+    }
+
+    setShowBulkEditDialog(true);
   };
 
   const handleDuplicate = async (personaId: string, personaName: string) => {
@@ -687,25 +894,51 @@ export default function Personas({
 
     // Use the hex color directly with CSS custom properties
     const hexColor = persona.color || "#64748b"; // Default to slate if no color
-
-    // Generate gradient from hex color
     const gradientStyle = generateGradientFromHex(hexColor);
-
-    // Always use white icon for consistency with gradient backgrounds
     const iconColor = "#ffffff";
+
+    const isSelected = persona.persona_id ? selectedPersonaIds.includes(persona.persona_id) : false;
+
+    const handleCardClick = (e: React.MouseEvent) => {
+      // Don't toggle selection if clicking action buttons
+      if ((e.target as HTMLElement).closest("[data-action-button]")) return;
+      if (persona.persona_id) {
+        toggleSelection(persona.persona_id);
+      }
+    };
 
     return (
       <Card
-        className="relative flex flex-col h-full hover:shadow-md transition-shadow"
+        className={`group relative flex flex-col h-full hover:shadow-md transition-all cursor-pointer ${
+          isSelected ? "ring-2 ring-primary" : ""
+        }`}
         data-testid="persona-card"
         data-persona-id={persona.persona_id}
         role="gridcell"
         aria-label={`persona card ${persona.name || "Unnamed Persona"}`}
+        aria-selected={isSelected}
+        onClick={handleCardClick}
       >
         <CardHeader>
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="space-y-2 flex-1 min-w-0">
               <div className="flex items-center gap-2">
+                {/* Selection checkbox — inline before icon */}
+                <div
+                  className={`transition-all overflow-hidden flex-shrink-0 ${
+                    selectedCount > 0 ? "w-5 opacity-100" : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
+                  }`}
+                  data-action-button
+                >
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => {
+                      if (persona.persona_id) toggleSelection(persona.persona_id);
+                    }}
+                    className="rounded-full h-5 w-5"
+                    aria-label={`Select persona ${persona.name || "Unnamed"}`}
+                  />
+                </div>
                 <div
                   className="p-2 rounded-lg shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0"
                   style={{
@@ -735,7 +968,7 @@ export default function Personas({
                 </div>
               )}
             </div>
-            <div className="flex flex-wrap gap-2 items-center">
+            <div className="flex flex-wrap gap-2 items-center" data-action-button>
               {persona.can_edit ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -749,6 +982,7 @@ export default function Personas({
                       }}
                       aria-label={`Edit persona ${persona.name || "Unnamed"}`}
                       data-testid="btn-edit-persona"
+                      data-action-button
                       className="h-9 px-3"
                     >
                       <Edit className="h-4 w-4 md:mr-0 mr-2" />
@@ -770,6 +1004,7 @@ export default function Personas({
                       }}
                       aria-label={`View persona ${persona.name || "Unnamed"}`}
                       data-testid="btn-view-persona"
+                      data-action-button
                       className="h-9 px-3"
                     >
                       <Eye className="h-4 w-4 md:mr-0 mr-2" />
@@ -799,6 +1034,7 @@ export default function Personas({
                       }
                       aria-label={`Duplicate persona ${persona.name || "Unnamed"}`}
                       data-testid="btn-duplicate-persona"
+                      data-action-button
                       className="h-9 px-3"
                     >
                       {isDuplicating === persona.persona_id ? (
@@ -832,6 +1068,7 @@ export default function Personas({
                       }}
                       aria-label={`Delete persona ${persona.name || "Unnamed"}`}
                       data-testid="btn-delete-persona"
+                      data-action-button
                       className="h-9 px-3"
                     >
                       <Trash2 className="h-4 w-4 md:mr-0 mr-2" />
@@ -886,87 +1123,140 @@ export default function Personas({
     <TooltipProvider>
       <div className="space-y-8" data-page="personas-index">
         <div className="space-y-4">
-        {/* Toolbar */}
-        <div
-          className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
-          data-testid="personas-toolbar"
-        >
-          <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
-            <div className="w-full md:w-auto">
-              <Input
-                data-testid="personas-search"
-                placeholder="Search personas..."
-                value={searchTerm}
-                onChange={(event) => handleSearchChange(event.target.value)}
-                onBlur={handleSearchBlur}
-                onKeyDown={handleSearchKeyDown}
-                className="h-8 w-full md:w-[150px] lg:w-[250px]"
-                aria-label="Search personas by name"
-                aria-controls="personas-grid"
-              />
-            </div>
-
-            <div className="flex items-center space-x-2 flex-wrap">
-              {/* Scenario Filter */}
-              <DataTableFacetedFilter
-                column={scenarioColumn}
-                title="Scenario"
-                options={scenarioOptions}
-                isServerDriven={true}
-                onSearchChange={handleScenarioSearchChange}
-                searchValue={localScenarioSearch}
-              />
-
-              {/* Field Filter */}
-              <DataTableFacetedFilter
-                column={fieldColumn}
-                title="Field"
-                options={fieldOptions}
-                isServerDriven={true}
-                onSearchChange={handleFieldSearchChange}
-                searchValue={localFieldSearch}
-              />
-
-              {/* Department Filter */}
-              <DataTableFacetedFilter
-                column={departmentsColumn}
-                title="Department"
-                options={departmentOptions}
-                isServerDriven={true}
-                onSearchChange={handleDepartmentSearchChange}
-                searchValue={localDepartmentSearch}
-              />
-
-              {isFiltered && (
+        {/* Toolbar — swaps between filter bar and selection action bar */}
+        {selectedCount > 0 ? (
+          <div
+            className="flex items-center justify-between gap-2"
+            data-testid="personas-toolbar"
+          >
+            <div className="flex items-center gap-2">
+              {deletePersonaAction && (
                 <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setSearchTerm("");
-                    setLocalScenarioSearch("");
-                    setLocalFieldSearch("");
-                    setLocalDepartmentSearch("");
-                    table.resetColumnFilters();
-                    updatePersonasParams({
-                      page: 0,
-                      search: "",
-                      scenarioIds: [],
-                      fieldIds: [],
-                      departmentIds: [],
-                      scenarioSearch: "",
-                      fieldSearch: "",
-                      departmentSearch: "",
-                    });
-                  }}
-                  className="h-8 px-2 lg:px-3 hidden md:flex"
+                  variant="destructive"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => setShowBulkDeleteDialog(true)}
+                  disabled={deletablePersonas.length === 0}
                 >
-                  Reset
-                  <X className="ml-2 h-4 w-4" />
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete {deletablePersonas.length} of {selectedCount}
                 </Button>
               )}
+              {savePersonaAction && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={openBulkEditDialog}
+                  disabled={editablePersonas.length === 0}
+                >
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit {editablePersonas.length} of {selectedCount}
+                </Button>
+              )}
+              {!allPageSelected && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8"
+                  onClick={selectAllOnPage}
+                >
+                  Select All
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8"
+                onClick={clearSelection}
+              >
+                Unselect All
+              </Button>
             </div>
+            <DataTableViewOptions table={table} hiddenColumns={["name", "description", "scenarios", "fieldIds", "departments", "updated_at"]} />
           </div>
-          <DataTableViewOptions table={table} hiddenColumns={["name", "description", "scenarios", "fieldIds", "departments", "updated_at"]} />
-        </div>
+        ) : (
+          <div
+            className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
+            data-testid="personas-toolbar"
+          >
+            <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
+              <div className="w-full md:w-auto">
+                <Input
+                  data-testid="personas-search"
+                  placeholder="Search personas..."
+                  value={searchTerm}
+                  onChange={(event) => handleSearchChange(event.target.value)}
+                  onBlur={handleSearchBlur}
+                  onKeyDown={handleSearchKeyDown}
+                  className="h-8 w-full md:w-[150px] lg:w-[250px]"
+                  aria-label="Search personas by name"
+                  aria-controls="personas-grid"
+                />
+              </div>
+
+              <div className="flex items-center space-x-2 flex-wrap">
+                {/* Scenario Filter */}
+                <DataTableFacetedFilter
+                  column={scenarioColumn}
+                  title="Scenario"
+                  options={scenarioOptions}
+                  isServerDriven={true}
+                  onSearchChange={handleScenarioSearchChange}
+                  searchValue={localScenarioSearch}
+                />
+
+                {/* Field Filter */}
+                <DataTableFacetedFilter
+                  column={fieldColumn}
+                  title="Field"
+                  options={fieldOptions}
+                  isServerDriven={true}
+                  onSearchChange={handleFieldSearchChange}
+                  searchValue={localFieldSearch}
+                />
+
+                {/* Department Filter */}
+                <DataTableFacetedFilter
+                  column={departmentsColumn}
+                  title="Department"
+                  options={departmentOptions}
+                  isServerDriven={true}
+                  onSearchChange={handleDepartmentSearchChange}
+                  searchValue={localDepartmentSearch}
+                />
+
+                {isFiltered && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setSearchTerm("");
+                      setLocalScenarioSearch("");
+                      setLocalFieldSearch("");
+                      setLocalDepartmentSearch("");
+                      table.resetColumnFilters();
+                      updatePersonasParams({
+                        page: 0,
+                        search: "",
+                        scenarioIds: [],
+                        fieldIds: [],
+                        departmentIds: [],
+                        scenarioSearch: "",
+                        fieldSearch: "",
+                        departmentSearch: "",
+                      });
+                    }}
+                    className="h-8 px-2 lg:px-3 hidden md:flex"
+                  >
+                    Reset
+                    <X className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+            <DataTableViewOptions table={table} hiddenColumns={["name", "description", "scenarios", "fieldIds", "departments", "updated_at"]} />
+          </div>
+        )}
 
         {/* Cards Grid */}
         <div
@@ -994,7 +1284,7 @@ export default function Personas({
         </div>
       </div>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Single Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent
           aria-labelledby="delete-persona-title"
@@ -1027,6 +1317,277 @@ export default function Personas({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+        <AlertDialogContent
+          aria-labelledby="bulk-delete-persona-title"
+          data-testid="dialog-bulk-delete-persona"
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle id="bulk-delete-persona-title">
+              Delete {deletablePersonas.length} Persona(s)
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>This action cannot be undone.</p>
+                {deletablePersonas.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                    <ul className="text-sm space-y-0.5">
+                      {deletablePersonas.map((p) => (
+                        <li key={p.persona_id} className="flex items-center gap-1.5">
+                          <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                          {p.name || "Unnamed Persona"}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {nonDeletablePersonas.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use by scenarios):</p>
+                    <ul className="text-sm space-y-0.5">
+                      {nonDeletablePersonas.map((p) => (
+                        <li key={p.persona_id} className="flex items-center gap-1.5 text-muted-foreground">
+                          <CheckCircle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
+                          {p.name || "Unnamed Persona"}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBulkDeleting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={isBulkDeleting}
+              variant="destructive"
+            >
+              {isBulkDeleting ? "Deleting..." : `Delete ${deletablePersonas.length}`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Edit Modal */}
+      <Dialog open={showBulkEditDialog} onOpenChange={setShowBulkEditDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit {editablePersonas.length} Persona(s)</DialogTitle>
+            <DialogDescription>
+              Only changed fields will be applied. Unchanged fields keep their current values.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-5 py-4">
+            {/* Active Status — Switch with tri-state */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Active Status</Label>
+              <div className="flex items-center gap-3">
+                {bulkEditActiveStatus === null ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">No change</span>
+                    <span className="text-xs text-muted-foreground">—</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-2 text-xs"
+                      onClick={() => setBulkEditActiveStatus(true)}
+                    >
+                      Set Active
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-2 text-xs"
+                      onClick={() => setBulkEditActiveStatus(false)}
+                    >
+                      Set Inactive
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <Switch
+                      checked={bulkEditActiveStatus}
+                      onCheckedChange={setBulkEditActiveStatus}
+                    />
+                    <span className="text-sm">{bulkEditActiveStatus ? "Active" : "Inactive"}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs text-muted-foreground"
+                      onClick={() => setBulkEditActiveStatus(null)}
+                    >
+                      Reset
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Color — GenericPicker single-select */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Color</Label>
+              <GenericPicker
+                items={colorOptions}
+                selectedIds={bulkEditColorIds}
+                onSelect={setBulkEditColorIds}
+                getId={(c) => c.id}
+                getLabel={(c) => c.name}
+                placeholder="No change"
+                showClearAction
+                clearActionLabel="No change"
+                searchPlaceholder="Search colors..."
+                emptyMessage="No colors found."
+                groupHeading="Colors"
+                renderItem={(c, isSelected) => (
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-2">
+                      {c.hex_code && (
+                        <span
+                          className="inline-block h-3 w-3 rounded-full border flex-shrink-0"
+                          style={{ backgroundColor: c.hex_code }}
+                        />
+                      )}
+                      <span className="truncate">{c.name}</span>
+                    </div>
+                    <Check className={`ml-auto flex-shrink-0 h-4 w-4 ${isSelected ? "opacity-100" : "opacity-0"}`} />
+                  </div>
+                )}
+              />
+            </div>
+
+            {/* Icon — GenericPicker single-select */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Icon</Label>
+              <GenericPicker
+                items={iconOptions}
+                selectedIds={bulkEditIconIds}
+                onSelect={setBulkEditIconIds}
+                getId={(ic) => ic.id}
+                getLabel={(ic) => ic.name}
+                placeholder="No change"
+                showClearAction
+                clearActionLabel="No change"
+                searchPlaceholder="Search icons..."
+                emptyMessage="No icons found."
+                groupHeading="Icons"
+                renderItem={(ic, isSelected) => {
+                  const Ic = getIconComponent(ic.value || ic.name) || Brain;
+                  return (
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2">
+                        <Ic className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">{ic.name}</span>
+                      </div>
+                      <Check className={`ml-auto flex-shrink-0 h-4 w-4 ${isSelected ? "opacity-100" : "opacity-0"}`} />
+                    </div>
+                  );
+                }}
+              />
+            </div>
+
+            {/* Departments — GenericPicker multi-select */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Departments</Label>
+                {bulkEditDepartmentIds !== null && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs"
+                    onClick={() => setBulkEditDepartmentIds(null)}
+                  >
+                    Reset
+                  </Button>
+                )}
+              </div>
+              {bulkEditDepartmentIds === null ? (
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-muted-foreground"
+                  onClick={() => setBulkEditDepartmentIds([])}
+                >
+                  No change — click to edit departments
+                </Button>
+              ) : (
+                <GenericPicker
+                  items={departmentOptions}
+                  selectedIds={bulkEditDepartmentIds}
+                  onSelect={setBulkEditDepartmentIds}
+                  multiSelect
+                  getId={(d) => d.value}
+                  getLabel={(d) => d.label}
+                  placeholder="Select departments..."
+                  showClearAction
+                  clearActionLabel="Clear All"
+                  searchPlaceholder="Search departments..."
+                  emptyMessage="No departments found."
+                  groupHeading="Departments"
+                  hideSelectedChips={false}
+                  showClearAll
+                />
+              )}
+            </div>
+
+            {/* Voices — GenericPicker multi-select */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Voices</Label>
+                {bulkEditVoiceIds !== null && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs"
+                    onClick={() => setBulkEditVoiceIds(null)}
+                  >
+                    Reset
+                  </Button>
+                )}
+              </div>
+              {bulkEditVoiceIds === null ? (
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-muted-foreground"
+                  onClick={() => setBulkEditVoiceIds([])}
+                >
+                  No change — click to edit voices
+                </Button>
+              ) : (
+                <GenericPicker
+                  items={voiceOptions}
+                  selectedIds={bulkEditVoiceIds}
+                  onSelect={setBulkEditVoiceIds}
+                  multiSelect
+                  getId={(v) => v.id}
+                  getLabel={(v) => v.voice}
+                  placeholder="Select voices..."
+                  showClearAction
+                  clearActionLabel="Clear All"
+                  searchPlaceholder="Search voices..."
+                  emptyMessage="No voices found."
+                  groupHeading="Voices"
+                  hideSelectedChips={false}
+                  showClearAll
+                />
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBulkEditDialog(false)} disabled={isBulkEditing}>
+              Cancel
+            </Button>
+            <Button onClick={handleBulkEdit} disabled={isBulkEditing}>
+              {isBulkEditing ? "Applying..." : "Apply Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <GenerateRegenerateModal {...modalProps} />
       </div>

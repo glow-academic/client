@@ -102,9 +102,7 @@ async def link_examples(
                 tool_id=request.tool_id,
             )
 
-            return LinkExamplesApiResponse(
-                success=True, example_id=example_id
-            )
+            return LinkExamplesApiResponse(success=True, example_id=example_id)
     except HTTPException:
         raise
     except ValueError as e:

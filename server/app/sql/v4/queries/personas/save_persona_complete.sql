@@ -26,10 +26,10 @@ CREATE OR REPLACE FUNCTION api_save_persona_v4(
     icon_id uuid DEFAULT NULL,
     instructions_id uuid DEFAULT NULL,
     active_flag_id uuid DEFAULT NULL,
-    department_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    parameter_field_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    example_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    voice_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    department_ids uuid[] DEFAULT NULL,
+    parameter_field_ids uuid[] DEFAULT NULL,
+    example_ids uuid[] DEFAULT NULL,
+    voice_ids uuid[] DEFAULT NULL,
     personas_resource_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
@@ -43,25 +43,27 @@ DECLARE
     v_persona_id uuid;
     is_create boolean;
 BEGIN
-    -- Validate required fields
-    IF name_id IS NULL THEN
-        RAISE EXCEPTION 'Name resource is required';
-    END IF;
-
-    IF color_id IS NULL THEN
-        RAISE EXCEPTION 'Color resource is required';
-    END IF;
-
-    IF icon_id IS NULL THEN
-        RAISE EXCEPTION 'Icon resource is required';
-    END IF;
-
-    IF instructions_id IS NULL THEN
-        RAISE EXCEPTION 'Instructions resource is required';
-    END IF;
-
     -- Determine if create or update
     is_create := (input_persona_id IS NULL);
+
+    -- Validate required fields (only on create)
+    IF is_create THEN
+        IF name_id IS NULL THEN
+            RAISE EXCEPTION 'Name resource is required';
+        END IF;
+
+        IF color_id IS NULL THEN
+            RAISE EXCEPTION 'Color resource is required';
+        END IF;
+
+        IF icon_id IS NULL THEN
+            RAISE EXCEPTION 'Icon resource is required';
+        END IF;
+
+        IF instructions_id IS NULL THEN
+            RAISE EXCEPTION 'Instructions resource is required';
+        END IF;
+    END IF;
 
     -- Create or update persona_artifact
     IF is_create THEN
@@ -73,6 +75,74 @@ BEGIN
         UPDATE persona_artifact
         SET updated_at = NOW()
         WHERE id = v_persona_id;
+
+        -- COALESCE: fill NULL params from existing active junctions (partial update support)
+        -- Single-select resources
+        IF name_id IS NULL THEN
+            name_id := (SELECT j.name_id FROM persona_names_junction j WHERE j.persona_id = v_persona_id AND j.active LIMIT 1);
+        END IF;
+        IF description_id IS NULL THEN
+            description_id := (SELECT j.description_id FROM persona_descriptions_junction j WHERE j.persona_id = v_persona_id AND j.active LIMIT 1);
+        END IF;
+        IF color_id IS NULL THEN
+            color_id := (SELECT j.color_id FROM persona_colors_junction j WHERE j.persona_id = v_persona_id AND j.active LIMIT 1);
+        END IF;
+        IF icon_id IS NULL THEN
+            icon_id := (SELECT j.icon_id FROM persona_icons_junction j WHERE j.persona_id = v_persona_id AND j.active LIMIT 1);
+        END IF;
+        IF instructions_id IS NULL THEN
+            instructions_id := (SELECT j.instruction_id FROM persona_instructions_junction j WHERE j.persona_id = v_persona_id AND j.active LIMIT 1);
+        END IF;
+
+        -- Multi-select arrays: preserve existing if NULL passed
+        IF department_ids IS NULL THEN
+            department_ids := COALESCE((SELECT ARRAY_AGG(j.department_id) FROM persona_departments_junction j WHERE j.persona_id = v_persona_id AND j.active), ARRAY[]::uuid[]);
+        END IF;
+        IF parameter_field_ids IS NULL THEN
+            parameter_field_ids := COALESCE((SELECT ARRAY_AGG(j.parameter_field_id) FROM persona_parameter_fields_junction j WHERE j.persona_id = v_persona_id AND j.active), ARRAY[]::uuid[]);
+        END IF;
+        IF example_ids IS NULL THEN
+            example_ids := COALESCE((SELECT ARRAY_AGG(j.example_id ORDER BY j.idx) FROM persona_examples_junction j WHERE j.persona_id = v_persona_id AND j.active), ARRAY[]::uuid[]);
+        END IF;
+        IF voice_ids IS NULL THEN
+            voice_ids := COALESCE((SELECT ARRAY_AGG(j.voice_id) FROM persona_voices_junction j WHERE j.persona_id = v_persona_id AND j.active), ARRAY[]::uuid[]);
+        END IF;
+
+        -- Flag: preserve existing active flag if not provided
+        IF active_flag_id IS NULL THEN
+            active_flag_id := (SELECT j.flag_id FROM persona_flags_junction j WHERE j.persona_id = v_persona_id AND j.value = true LIMIT 1);
+        END IF;
+    END IF;
+
+    -- Create personas_resource inline if not provided (partial update path)
+    IF personas_resource_id IS NULL THEN
+        INSERT INTO personas_resource (
+            name, description, icon, color, department_ids,
+            instructions, examples, parameter_field_ids, mcp, generated
+        )
+        SELECT
+            n.name,
+            d.description,
+            ic.value,
+            c.hex_code,
+            COALESCE(api_save_persona_v4.department_ids, ARRAY[]::uuid[]),
+            ins.template,
+            COALESCE(
+                (SELECT ARRAY_AGG(e.example ORDER BY idx.ord)
+                 FROM UNNEST(COALESCE(api_save_persona_v4.example_ids, ARRAY[]::uuid[])) WITH ORDINALITY AS idx(id, ord)
+                 JOIN examples_resource e ON e.id = idx.id),
+                ARRAY[]::text[]
+            ),
+            COALESCE(api_save_persona_v4.parameter_field_ids, ARRAY[]::uuid[]),
+            false,
+            false
+        FROM (SELECT 1) AS dummy
+        LEFT JOIN names_resource n ON n.id = api_save_persona_v4.name_id
+        LEFT JOIN descriptions_resource d ON d.id = api_save_persona_v4.description_id
+        LEFT JOIN icons_resource ic ON ic.id = api_save_persona_v4.icon_id
+        LEFT JOIN colors_resource c ON c.id = api_save_persona_v4.color_id
+        LEFT JOIN instructions_resource ins ON ins.id = api_save_persona_v4.instructions_id
+        RETURNING id INTO personas_resource_id;
     END IF;
 
     -- For update: deactivate old junction rows (preserves history)

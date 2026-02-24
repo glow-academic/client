@@ -30,6 +30,8 @@ type CreateDraftSimulationScenarioFlagsOut = OutputOf<
   "/api/v4/resources/scenario_flags",
   "post"
 >;
+type LinkScenarioFlagsIn = InputOf<"/api/v4/resources/scenario_flags/link", "post">;
+type LinkScenarioFlagsOut = OutputOf<"/api/v4/resources/scenario_flags/link", "post">;
 
 // Derive resource item type from the GET endpoint response
 type ScenarioFlagsGetResponse = OutputOf<"/api/v4/resources/scenario_flags/get", "post">;
@@ -75,10 +77,14 @@ export interface ScenarioFlagsProps {
   description?: string;
   group_id?: string | null;
   create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for linking existing resources
   createScenarioFlagsAction?:
     | ( (
         input: CreateDraftSimulationScenarioFlagsIn
       ) => Promise<CreateDraftSimulationScenarioFlagsOut>)
+    | undefined;
+  linkScenarioFlagsAction?:
+    | ((input: LinkScenarioFlagsIn) => Promise<LinkScenarioFlagsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
@@ -112,7 +118,9 @@ export function ScenarioFlags({
   description,
   group_id,
   create_tool_id,
+  link_tool_id: _link_tool_id,
   createScenarioFlagsAction,
+  linkScenarioFlagsAction: _linkScenarioFlagsAction,
   onGenerate,
   showAiGenerate = false,
   isAutosaveEnabled = true,

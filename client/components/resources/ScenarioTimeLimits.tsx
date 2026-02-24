@@ -30,6 +30,8 @@ type CreateDraftScenarioTimeLimitsOut = OutputOf<
   "/api/v4/resources/scenario_time_limits",
   "post"
 >;
+type LinkScenarioTimeLimitsIn = InputOf<"/api/v4/resources/scenario_time_limits/link", "post">;
+type LinkScenarioTimeLimitsOut = OutputOf<"/api/v4/resources/scenario_time_limits/link", "post">;
 
 // Derive resource item type from the GET endpoint response
 type ScenarioTimeLimitGetResponse = OutputOf<
@@ -67,10 +69,14 @@ export interface ScenarioTimeLimitsProps {
   description?: string;
   group_id?: string | null;
   create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for linking existing resources
   createScenarioTimeLimitsAction?:
     | ((
         input: CreateDraftScenarioTimeLimitsIn,
       ) => Promise<CreateDraftScenarioTimeLimitsOut>)
+    | undefined;
+  linkScenarioTimeLimitsAction?:
+    | ((input: LinkScenarioTimeLimitsIn) => Promise<LinkScenarioTimeLimitsOut>)
     | undefined;
   onTimeLimitIdsChange?: (ids: string[]) => void;
   onGenerate?: () => void | Promise<void>;
@@ -102,7 +108,9 @@ export function ScenarioTimeLimits({
   description,
   group_id,
   create_tool_id,
+  link_tool_id: _link_tool_id,
   createScenarioTimeLimitsAction,
+  linkScenarioTimeLimitsAction: _linkScenarioTimeLimitsAction,
   onTimeLimitIdsChange,
   onGenerate,
   showAiGenerate = false,

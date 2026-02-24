@@ -34,6 +34,7 @@ import type {
 } from "@/app/(main)/training/scenarios/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -396,6 +397,55 @@ export function Scenarios({
           );
         },
       },
+      // Virtual columns for card view toggles
+      {
+        id: "ai_badge",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof scenarios)[number]) => row.generated ?? false,
+      },
+      {
+        id: "status_badge",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof scenarios)[number]) => row.is_inactive ?? false,
+      },
+      {
+        id: "problem_statement",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof scenarios)[number]) => row.problem_statement ?? "",
+      },
+      {
+        id: "card_num_simulations",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof scenarios)[number]) => row.num_simulations ?? 0,
+      },
+      {
+        id: "persona_badges",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof scenarios)[number]) => row.persona_ids ?? [],
+      },
+      {
+        id: "field_badges",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof scenarios)[number]) => row.field_ids ?? [],
+      },
     ];
   }, [personaMapping]);
 
@@ -653,13 +703,13 @@ export function Scenarios({
                 {scenario.name || "Unnamed Scenario"}
               </CardTitle>
               <div className="flex gap-1 flex-wrap flex-shrink-0">
-                {scenario.generated && (
+                {columnVisibility.ai_badge !== false && scenario.generated && (
                   <Badge variant="default">
                     <Sparkles className="h-3 w-3 mr-1" />
                     {scenario.mcp ? "MCP" : "AI"}
                   </Badge>
                 )}
-                {scenario.is_inactive && (
+                {columnVisibility.status_badge !== false && scenario.is_inactive && (
                   <Badge variant="secondary">Inactive</Badge>
                 )}
               </div>
@@ -830,23 +880,26 @@ export function Scenarios({
         </div>
       </CardHeader>
       <CardContent className="pt-0 flex-grow flex flex-col justify-end">
-        <p className="text-sm text-muted-foreground line-clamp-2">
-          {scenario.problem_statement ||
-            "Scenario will be dynamically generated."}
-        </p>
-        {/* Compact info row: Simulations • Persona • Fields */}
-        {!isChild && (
+        {columnVisibility.problem_statement !== false && (
+          <p className="text-sm text-muted-foreground line-clamp-2">
+            {scenario.problem_statement ||
+              "Scenario will be dynamically generated."}
+          </p>
+        )}
+        {!isChild && (columnVisibility.card_num_simulations !== false || columnVisibility.persona_badges !== false || columnVisibility.field_badges !== false) && (
           <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground flex-wrap">
-            {/* Simulations count - shown first */}
-            <span className="flex items-center gap-1">
-              <Users className="h-3 w-3" />
-              {scenario.num_simulations} simulation
-              {scenario.num_simulations !== 1 ? "s" : ""}
-            </span>
-            {/* Persona badge */}
-            {scenario.persona_ids && scenario.persona_ids.length > 0 && (
+            {columnVisibility.card_num_simulations !== false && (
+              <span className="flex items-center gap-1">
+                <Users className="h-3 w-3" />
+                {scenario.num_simulations} simulation
+                {scenario.num_simulations !== 1 ? "s" : ""}
+              </span>
+            )}
+            {columnVisibility.persona_badges !== false && scenario.persona_ids && scenario.persona_ids.length > 0 && (
               <>
-                <span className="text-muted-foreground">•</span>
+                {columnVisibility.card_num_simulations !== false && (
+                  <span className="text-muted-foreground">•</span>
+                )}
                 <div className="flex items-center gap-1 flex-wrap">
                   {scenario.persona_ids.map((personaId) => {
                     const persona = personaMapping[personaId];
@@ -877,10 +930,11 @@ export function Scenarios({
                 </div>
               </>
             )}
-            {/* Field badges */}
-            {scenario.field_ids && scenario.field_ids.length > 0 && (
+            {columnVisibility.field_badges !== false && scenario.field_ids && scenario.field_ids.length > 0 && (
               <>
-                <span className="text-muted-foreground">•</span>
+                {(columnVisibility.card_num_simulations !== false || (columnVisibility.persona_badges !== false && scenario.persona_ids && scenario.persona_ids.length > 0)) && (
+                  <span className="text-muted-foreground">•</span>
+                )}
                 <div className="flex items-center gap-1 flex-wrap">
                   {scenario.field_ids.slice(0, 4).map((fieldId) => {
                     const field = fieldMapping[fieldId];
@@ -1020,6 +1074,7 @@ export function Scenarios({
                 )}
               </div>
             </div>
+            <DataTableViewOptions table={table} hiddenColumns={["name", "problem_statement", "persona_id", "simulation_ids", "departments", "persona_display", "updated_at"]} />
           </div>
 
           {/* Grouped Scenarios */}

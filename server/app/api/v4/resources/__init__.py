@@ -485,6 +485,11 @@ from app.api.v4.resources.scenario_flags.search import (
 
 router.include_router(scenario_flags_get_router)
 router.include_router(scenario_flags_search_router)
+from app.api.v4.resources.scenario_flags.link import (
+    router as scenario_flags_link_router,
+)
+
+router.include_router(scenario_flags_link_router)
 # NOTE: scenario_personas removed - replaced by profile_personas on cohort (migration 500)
 from app.api.v4.resources.profile_personas.create import (
     router as profile_personas_router,
@@ -512,6 +517,11 @@ from app.api.v4.resources.scenario_positions.search import (
 router.include_router(scenario_positions_router)
 router.include_router(scenario_positions_get_router)
 router.include_router(scenario_positions_search_router)
+from app.api.v4.resources.scenario_positions.link import (
+    router as scenario_positions_link_router,
+)
+
+router.include_router(scenario_positions_link_router)
 from app.api.v4.resources.scenario_rubrics.create import (
     router as scenario_rubrics_router,
 )
@@ -525,6 +535,11 @@ from app.api.v4.resources.scenario_rubrics.search import (
 router.include_router(scenario_rubrics_router)
 router.include_router(scenario_rubrics_get_router)
 router.include_router(scenario_rubrics_search_router)
+from app.api.v4.resources.scenario_rubrics.link import (
+    router as scenario_rubrics_link_router,
+)
+
+router.include_router(scenario_rubrics_link_router)
 from app.api.v4.resources.scenario_time_limits.create import (
     router as scenario_time_limits_router,
 )
@@ -538,11 +553,18 @@ from app.api.v4.resources.scenario_time_limits.search import (
 router.include_router(scenario_time_limits_router)
 router.include_router(scenario_time_limits_get_router)
 router.include_router(scenario_time_limits_search_router)
+from app.api.v4.resources.scenario_time_limits.link import (
+    router as scenario_time_limits_link_router,
+)
+
+router.include_router(scenario_time_limits_link_router)
 # NOTE: scenarios removed - non-creatable, sync via artifact save (migration 328)
 # GET/Search endpoints available for simulations two-pass architecture
 from app.api.v4.resources.scenarios import router as scenarios_router
+from app.api.v4.resources.scenarios.link import router as scenarios_link_router
 
 router.include_router(scenarios_router)
+router.include_router(scenarios_link_router)
 # NOTE: settings removed - non-creatable, sync via artifact save (migration 328)
 # GET endpoint available for profile context two-pass architecture
 from app.api.v4.resources.settings.get import router as settings_get_router

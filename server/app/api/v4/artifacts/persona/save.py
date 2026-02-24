@@ -145,6 +145,7 @@ async def save_persona_internal(
 async def _resolve_persona_values(
     conn: asyncpg.Connection,
     item: SavePersonaItem,
+    is_update: bool = False,
 ) -> list[SavePersonaFieldError]:
     """Resolve value fields to IDs on the item (mutates in place).
 
@@ -287,20 +288,27 @@ async def _resolve_persona_values(
             )
         )
 
-    # --- Validate required fields have IDs after resolution ---
+    # --- Validate required fields have IDs after resolution (create only) ---
 
-    if item.name_id is None:
-        errors.append(SavePersonaFieldError(field="name", message="Name is required"))
-    if item.color_id is None and item.color is None:
-        errors.append(SavePersonaFieldError(field="color", message="Color is required"))
-    if item.icon_id is None and item.icon is None:
-        errors.append(SavePersonaFieldError(field="icon", message="Icon is required"))
-    if item.instructions_id is None and item.instructions is None:
-        errors.append(
-            SavePersonaFieldError(
-                field="instructions", message="Instructions is required"
+    if not is_update:
+        if item.name_id is None:
+            errors.append(
+                SavePersonaFieldError(field="name", message="Name is required")
             )
-        )
+        if item.color_id is None and item.color is None:
+            errors.append(
+                SavePersonaFieldError(field="color", message="Color is required")
+            )
+        if item.icon_id is None and item.icon is None:
+            errors.append(
+                SavePersonaFieldError(field="icon", message="Icon is required")
+            )
+        if item.instructions_id is None and item.instructions is None:
+            errors.append(
+                SavePersonaFieldError(
+                    field="instructions", message="Instructions is required"
+                )
+            )
 
     return errors
 
@@ -405,7 +413,9 @@ async def save_persona(
         error_results: list[SavePersonaResult] = []
 
         for idx, item in enumerate(request.personas):
-            item_errors = await _resolve_persona_values(conn, item)
+            item_errors = await _resolve_persona_values(
+                conn, item, is_update=item.input_persona_id is not None
+            )
             if item_errors:
                 has_errors = True
                 error_results.append(
@@ -431,18 +441,23 @@ async def save_persona(
 
         async with conn.transaction():
             for idx, item in enumerate(request.personas):
-                # Create denormalized personas_resource
-                personas_resource_id = await create_personas_internal(
-                    conn,
-                    name_id=item.name_id,
-                    description_id=item.description_id,
-                    color_id=item.color_id,
-                    icon_id=item.icon_id,
-                    instructions_id=item.instructions_id,
-                    department_ids=item.department_ids,
-                    example_ids=item.example_ids,
-                    parameter_field_ids=item.parameter_field_ids,
+                # Create denormalized personas_resource (skip for partial updates — SQL handles it)
+                has_all_required = all(
+                    [item.name_id, item.color_id, item.icon_id, item.instructions_id]
                 )
+                personas_resource_id: uuid.UUID | None = None
+                if has_all_required:
+                    personas_resource_id = await create_personas_internal(
+                        conn,
+                        name_id=item.name_id,
+                        description_id=item.description_id,
+                        color_id=item.color_id,
+                        icon_id=item.icon_id,
+                        instructions_id=item.instructions_id,
+                        department_ids=item.department_ids,
+                        example_ids=item.example_ids,
+                        parameter_field_ids=item.parameter_field_ids,
+                    )
 
                 params = SavePersonaSqlParams.from_request(
                     item,

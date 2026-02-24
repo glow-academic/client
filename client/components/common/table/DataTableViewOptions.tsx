@@ -86,6 +86,18 @@ const columnMap = {
   card_description: "Description",
   num_scenarios: "Scenarios",
   num_profiles: "Profiles",
+  // Simulation card view toggles
+  practice_badge: "Practice Badge",
+  card_cohorts: "Cohorts",
+  scenario_dots: "Scenario Dots",
+  // Cohort card view toggles
+  card_members: "Members",
+  card_simulations: "Simulations",
+  // Scenario card view toggles
+  problem_statement: "Problem Statement",
+  card_num_simulations: "Simulations",
+  persona_badges: "Persona Badges",
+  field_badges: "Field Badges",
 };
 
 export interface DataTableViewOptionsProps<TData> {

@@ -6245,6 +6245,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/scenario_flags/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Scenario Flags
+         * @description Record tool call tracking for linking an existing scenario_flags resource.
+         */
+        post: operations["link_scenario_flags_api_v4_resources_scenario_flags_link_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/profile_personas": {
         parameters: {
             query?: never;
@@ -6365,6 +6385,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/scenario_positions/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Scenario Positions
+         * @description Record tool call tracking for linking an existing scenario_positions resource.
+         */
+        post: operations["link_scenario_positions_api_v4_resources_scenario_positions_link_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/scenario_rubrics": {
         parameters: {
             query?: never;
@@ -6419,6 +6459,26 @@ export interface paths {
          * @description Search available scenario rubrics for scenarios.
          */
         post: operations["search_scenario_rubrics_api_v4_resources_scenario_rubrics_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/scenario_rubrics/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Scenario Rubrics
+         * @description Record tool call tracking for linking an existing scenario_rubrics resource.
+         */
+        post: operations["link_scenario_rubrics_api_v4_resources_scenario_rubrics_link_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6485,6 +6545,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/scenario_time_limits/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Scenario Time Limits
+         * @description Record tool call tracking for linking an existing scenario_time_limits resource.
+         */
+        post: operations["link_scenario_time_limits_api_v4_resources_scenario_time_limits_link_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/scenarios/get": {
         parameters: {
             query?: never;
@@ -6519,6 +6599,26 @@ export interface paths {
          * @description Search scenarios with filtering and pagination.
          */
         post: operations["search_scenarios_api_v4_resources_scenarios_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/scenarios/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Scenarios
+         * @description Record tool call tracking for linking an existing scenario resource.
+         */
+        post: operations["link_scenarios_api_v4_resources_scenarios_link_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -32674,6 +32774,146 @@ export interface components {
             success: boolean;
             /** Parameter Fields Id */
             parameter_fields_id?: string | null;
+        };
+        /** LinkScenarioFlagsApiRequest */
+        LinkScenarioFlagsApiRequest: {
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Tool Id
+             * Format: uuid
+             */
+            tool_id: string;
+        };
+        /** LinkScenarioFlagsApiResponse */
+        LinkScenarioFlagsApiResponse: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Scenario Flags Id */
+            scenario_flags_id?: string | null;
+        };
+        /** LinkScenarioPositionsApiRequest */
+        LinkScenarioPositionsApiRequest: {
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Tool Id
+             * Format: uuid
+             */
+            tool_id: string;
+        };
+        /** LinkScenarioPositionsApiResponse */
+        LinkScenarioPositionsApiResponse: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Scenario Positions Id */
+            scenario_positions_id?: string | null;
+        };
+        /** LinkScenarioRubricsApiRequest */
+        LinkScenarioRubricsApiRequest: {
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Tool Id
+             * Format: uuid
+             */
+            tool_id: string;
+        };
+        /** LinkScenarioRubricsApiResponse */
+        LinkScenarioRubricsApiResponse: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Scenario Rubrics Id */
+            scenario_rubrics_id?: string | null;
+        };
+        /** LinkScenarioTimeLimitsApiRequest */
+        LinkScenarioTimeLimitsApiRequest: {
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Tool Id
+             * Format: uuid
+             */
+            tool_id: string;
+        };
+        /** LinkScenarioTimeLimitsApiResponse */
+        LinkScenarioTimeLimitsApiResponse: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Scenario Time Limits Id */
+            scenario_time_limits_id?: string | null;
+        };
+        /** LinkScenariosApiRequest */
+        LinkScenariosApiRequest: {
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Tool Id
+             * Format: uuid
+             */
+            tool_id: string;
+        };
+        /** LinkScenariosApiResponse */
+        LinkScenariosApiResponse: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Scenarios Id */
+            scenarios_id?: string | null;
         };
         /** LinkVoicesApiRequest */
         LinkVoicesApiRequest: {
@@ -61767,6 +62007,43 @@ export interface operations {
             };
         };
     };
+    link_scenario_flags_api_v4_resources_scenario_flags_link_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkScenarioFlagsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkScenarioFlagsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_profile_personas_api_v4_resources_profile_personas_post: {
         parameters: {
             query?: never;
@@ -61989,6 +62266,43 @@ export interface operations {
             };
         };
     };
+    link_scenario_positions_api_v4_resources_scenario_positions_link_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkScenarioPositionsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkScenarioPositionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_scenario_rubrics_api_v4_resources_scenario_rubrics_post: {
         parameters: {
             query?: never;
@@ -62087,6 +62401,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchScenarioRubricsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_scenario_rubrics_api_v4_resources_scenario_rubrics_link_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkScenarioRubricsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkScenarioRubricsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62211,6 +62562,43 @@ export interface operations {
             };
         };
     };
+    link_scenario_time_limits_api_v4_resources_scenario_time_limits_link_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkScenarioTimeLimitsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkScenarioTimeLimitsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_scenarios_api_v4_resources_scenarios_get_post: {
         parameters: {
             query?: never;
@@ -62272,6 +62660,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchScenariosApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_scenarios_api_v4_resources_scenarios_link_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkScenariosApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkScenariosApiResponse"];
                 };
             };
             /** @description Validation Error */

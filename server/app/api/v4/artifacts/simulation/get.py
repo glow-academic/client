@@ -158,8 +158,9 @@ class SimulationInternalData:
     # Resources payload
     resources_payload: SimulationResources
 
-    # Per-resource tool IDs (from selected agents, merged create/link)
+    # Per-resource tool IDs (from selected agents)
     tool_ids_map: dict[str, UUID | None]
+    link_tool_ids_map: dict[str, UUID | None]
 
     # Config resources for websocket generation
     config_agent_resources: list[Any] | None
@@ -274,12 +275,13 @@ async def get_simulation_internal(
             settings_conn, profile_id, bypass_cache
         )
 
-    agent_ids, create_tool_ids, link_tool_ids = resolve_agents_for_artifact(
+    agent_ids, create_tool_ids, link_tool_ids_map = resolve_agents_for_artifact(
         settings_data.agent_tool_entries, SIMULATION_RESOURCES
     )
-    # Merge create/link tool IDs into single tool_ids_map
+    # Keep create and link tool IDs separate
     tool_ids_map: dict[str, UUID | None] = {
-        r: create_tool_ids.get(r) or link_tool_ids.get(r) for r in SIMULATION_RESOURCES
+        r: create_tool_ids.get(r) or link_tool_ids_map.get(r)
+        for r in SIMULATION_RESOURCES
     }
 
     # === COMPUTE SHOW_AI_GENERATE FLAGS ===
@@ -758,6 +760,7 @@ async def get_simulation_internal(
         basic_show_ai_generate=basic_show_ai_generate,
         resources_payload=resources_payload,
         tool_ids_map=tool_ids_map,
+        link_tool_ids_map=link_tool_ids_map,
         config_agent_resources=config_agents_result or None,
         config_model_resources=config_models_result or None,
         config_provider_resources=config_providers_result or None,
@@ -957,6 +960,7 @@ async def get_simulation_client(
             "suggestions": data.suggestions_map.get(resource_key, []),
             "show_ai_generate": data.show_ai_generate_map.get(resource_key, False),
             "tool_id": data.tool_ids_map.get(resource_key),
+            "link_tool_id": data.link_tool_ids_map.get(resource_key),
         }
 
     return GetSimulationApiResponse(

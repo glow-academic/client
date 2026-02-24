@@ -435,7 +435,11 @@ class SavePersonaSqlParams(BaseModel):
         )
 
     def to_tuple(self) -> tuple:
-        """Convert to tuple for SQL execution."""
+        """Convert to tuple for SQL execution.
+
+        Arrays are passed as-is (None preserved) so SQL COALESCE can
+        distinguish 'not provided' (NULL) from 'explicitly empty' ([]).
+        """
         return (
             self.profile_id,
             self.input_persona_id,
@@ -445,10 +449,10 @@ class SavePersonaSqlParams(BaseModel):
             self.icon_id,
             self.instructions_id,
             self.active_flag_id,
-            self.department_ids or [],
-            self.parameter_field_ids or [],
-            self.example_ids or [],
-            self.voice_ids or [],
+            self.department_ids,
+            self.parameter_field_ids,
+            self.example_ids,
+            self.voice_ids,
             self.personas_resource_id,
         )
 

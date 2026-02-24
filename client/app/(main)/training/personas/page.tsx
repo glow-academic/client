@@ -18,6 +18,14 @@ type DuplicatePersonaIn = InputOf<"/api/v4/artifacts/personas/duplicate", "post"
 type DuplicatePersonaOut = OutputOf<"/api/v4/artifacts/personas/duplicate", "post">;
 type DeletePersonaIn = InputOf<"/api/v4/artifacts/personas/delete", "post">;
 type DeletePersonaOut = OutputOf<"/api/v4/artifacts/personas/delete", "post">;
+type SavePersonaIn = InputOf<"/api/v4/artifacts/personas/save", "post">;
+type SavePersonaOut = OutputOf<"/api/v4/artifacts/personas/save", "post">;
+type SearchColorsIn = InputOf<"/api/v4/resources/colors/search", "post">;
+type SearchColorsOut = NonNullable<OutputOf<"/api/v4/resources/colors/search", "post">["items"]>;
+type SearchIconsIn = InputOf<"/api/v4/resources/icons/search", "post">;
+type SearchIconsOut = NonNullable<OutputOf<"/api/v4/resources/icons/search", "post">["items"]>;
+type SearchVoicesIn = InputOf<"/api/v4/resources/voices/search", "post">;
+type SearchVoicesOut = NonNullable<OutputOf<"/api/v4/resources/voices/search", "post">["items"]>;
 
 /** ---- Body type for personas list request ---- */
 type PersonasListBody = {
@@ -57,8 +65,6 @@ async function duplicatePersona(
   input: DuplicatePersonaIn
 ): Promise<DuplicatePersonaOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/artifacts/personas/duplicate", input);
 }
 
@@ -66,9 +72,38 @@ async function deletePersona(
   input: DeletePersonaIn
 ): Promise<DeletePersonaOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/artifacts/personas/delete", input);
+}
+
+async function savePersona(
+  input: SavePersonaIn
+): Promise<SavePersonaOut> {
+  "use server";
+  return api.post("/artifacts/personas/save", input);
+}
+
+async function searchColors(): Promise<SearchColorsOut> {
+  "use server";
+  const res = await api.post("/resources/colors/search", {
+    body: { search: null, limit_count: 100, offset_count: 0, persona: true, setting: false },
+  } as SearchColorsIn);
+  return res.items ?? [];
+}
+
+async function searchIcons(): Promise<SearchIconsOut> {
+  "use server";
+  const res = await api.post("/resources/icons/search", {
+    body: { search: null, limit_count: 100, offset_count: 0, persona: true },
+  } as SearchIconsIn);
+  return res.items ?? [];
+}
+
+async function searchVoices(): Promise<SearchVoicesOut> {
+  "use server";
+  const res = await api.post("/resources/voices/search", {
+    body: { search: null, limit_count: 100, offset_count: 0, persona: true, agent: false, model: false },
+  } as SearchVoicesIn);
+  return res.items ?? [];
 }
 
 /** ---- Docs types for page metadata ---- */
@@ -134,6 +169,10 @@ export default async function PersonasPage({ searchParams }: PersonasPageProps) 
         listData={listData}
         duplicatePersonaAction={duplicatePersona}
         deletePersonaAction={deletePersona}
+        savePersonaAction={savePersona}
+        searchColorsAction={searchColors}
+        searchIconsAction={searchIcons}
+        searchVoicesAction={searchVoices}
         pageIndex={pageIndex}
         pageSize={pageSize}
         totalCount={listData.total_count ?? 0}
@@ -152,4 +191,9 @@ export type {
   DuplicatePersonaIn,
   DuplicatePersonaOut,
   PersonasListOut,
+  SavePersonaIn,
+  SavePersonaOut,
+  SearchColorsOut,
+  SearchIconsOut,
+  SearchVoicesOut,
 };

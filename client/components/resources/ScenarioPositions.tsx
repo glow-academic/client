@@ -37,6 +37,8 @@ type CreateDraftScenarioPositionsOut = OutputOf<
   "/api/v4/resources/scenario_positions",
   "post"
 >;
+type LinkScenarioPositionsIn = InputOf<"/api/v4/resources/scenario_positions/link", "post">;
+type LinkScenarioPositionsOut = OutputOf<"/api/v4/resources/scenario_positions/link", "post">;
 
 // Derive resource item type from the GET endpoint response
 type ScenarioPositionGetResponse = OutputOf<
@@ -85,10 +87,14 @@ export interface ScenarioPositionsProps {
   description?: string;
   group_id?: string | null; // Group ID for linking resources
   create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for linking existing resources
   createScenarioPositionsAction?:
     | ((
         input: CreateDraftScenarioPositionsIn,
       ) => Promise<CreateDraftScenarioPositionsOut>)
+    | undefined;
+  linkScenarioPositionsAction?:
+    | ((input: LinkScenarioPositionsIn) => Promise<LinkScenarioPositionsOut>)
     | undefined;
   onPositionIdsChange?: (ids: string[]) => void;
   onGenerate?: () => void | Promise<void>;
@@ -119,7 +125,9 @@ export function ScenarioPositions({
   description,
   group_id,
   create_tool_id,
+  link_tool_id: _link_tool_id,
   createScenarioPositionsAction,
+  linkScenarioPositionsAction: _linkScenarioPositionsAction,
   onPositionIdsChange,
   onGenerate,
   showAiGenerate = false,

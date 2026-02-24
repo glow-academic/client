@@ -20,6 +20,7 @@ import type {
 } from "@/app/(main)/training/cohorts/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import { Input } from "@/components/ui/input";
 import {
   ColumnDef,
@@ -288,6 +289,47 @@ export default function Cohorts({
           );
         },
       },
+      // Virtual columns for card view toggles
+      {
+        id: "ai_badge",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof cohorts)[number]) => row.generated ?? false,
+      },
+      {
+        id: "status_badge",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof cohorts)[number]) => row.is_inactive ?? false,
+      },
+      {
+        id: "card_description",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof cohorts)[number]) => row.description ?? "",
+      },
+      {
+        id: "card_members",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof cohorts)[number]) => row.num_members ?? 0,
+      },
+      {
+        id: "card_simulations",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof cohorts)[number]) => row.simulation_ids ?? [],
+      },
     ],
     [],
   );
@@ -488,15 +530,15 @@ export default function Cohorts({
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <CardTitle className="text-lg">{cohort.name}</CardTitle>
-            {(cohort.generated || cohort.is_inactive) && (
+            {((columnVisibility.ai_badge !== false && cohort.generated) || (columnVisibility.status_badge !== false && cohort.is_inactive)) && (
               <div className="mt-1 flex items-center gap-2">
-                {cohort.generated && (
+                {columnVisibility.ai_badge !== false && cohort.generated && (
                   <Badge variant="default">
                     <Sparkles className="h-3 w-3 mr-1" />
                     {cohort.mcp ? "MCP" : "AI"}
                   </Badge>
                 )}
-                {cohort.is_inactive && (
+                {columnVisibility.status_badge !== false && cohort.is_inactive && (
                   <Badge variant="secondary">Inactive</Badge>
                 )}
               </div>
@@ -597,19 +639,23 @@ export default function Cohorts({
         </div>
       </CardHeader>
       <CardContent className="pt-0 flex-grow flex flex-col justify-end">
-        <p className="text-sm text-muted-foreground line-clamp-2">
-          {cohort.description || "No description available"}
-        </p>
-        {/* Compact info row: Members • Simulations */}
-        <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground flex-wrap">
-          <span className="flex items-center gap-1">
-            <Users className="h-3 w-3" />
-            {cohort.num_members} members
-          </span>
-          {/* Simulation count */}
-          {cohort.simulation_ids && cohort.simulation_ids.length > 0 && (
-            <>
+        {columnVisibility.card_description !== false && (
+          <p className="text-sm text-muted-foreground line-clamp-2">
+            {cohort.description || "No description available"}
+          </p>
+        )}
+        {(columnVisibility.card_members !== false || columnVisibility.card_simulations !== false) && (
+          <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground flex-wrap">
+            {columnVisibility.card_members !== false && (
+              <span className="flex items-center gap-1">
+                <Users className="h-3 w-3" />
+                {cohort.num_members} members
+              </span>
+            )}
+            {columnVisibility.card_members !== false && columnVisibility.card_simulations !== false && cohort.simulation_ids && cohort.simulation_ids.length > 0 && (
               <span className="text-muted-foreground">•</span>
+            )}
+            {columnVisibility.card_simulations !== false && cohort.simulation_ids && cohort.simulation_ids.length > 0 && (
               <span className="flex items-center gap-1">
                 <Play className="h-3 w-3" />
                 {cohort.simulation_ids.length}{" "}
@@ -617,9 +663,9 @@ export default function Cohorts({
                   ? "simulation"
                   : "simulations"}
               </span>
-            </>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -706,6 +752,7 @@ export default function Cohorts({
                 )}
               </div>
             </div>
+            <DataTableViewOptions table={table} hiddenColumns={["name", "profile_ids", "simulation_ids", "departments", "updated_at"]} />
           </div>
 
           {/* Cards Grid */}

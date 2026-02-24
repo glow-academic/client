@@ -58,6 +58,26 @@ type CreateDraftScenarioTimeLimitsOut = OutputOf<
   "post"
 >;
 
+// Link types for tool call tracking
+type LinkNamesIn = InputOf<"/api/v4/resources/names/link", "post">;
+type LinkNamesOut = OutputOf<"/api/v4/resources/names/link", "post">;
+type LinkDescriptionsIn = InputOf<"/api/v4/resources/descriptions/link", "post">;
+type LinkDescriptionsOut = OutputOf<"/api/v4/resources/descriptions/link", "post">;
+type LinkFlagsIn = InputOf<"/api/v4/resources/flags/link", "post">;
+type LinkFlagsOut = OutputOf<"/api/v4/resources/flags/link", "post">;
+type LinkDepartmentsIn = InputOf<"/api/v4/resources/departments/link", "post">;
+type LinkDepartmentsOut = OutputOf<"/api/v4/resources/departments/link", "post">;
+type LinkScenariosIn = InputOf<"/api/v4/resources/scenarios/link", "post">;
+type LinkScenariosOut = OutputOf<"/api/v4/resources/scenarios/link", "post">;
+type LinkScenarioFlagsIn = InputOf<"/api/v4/resources/scenario_flags/link", "post">;
+type LinkScenarioFlagsOut = OutputOf<"/api/v4/resources/scenario_flags/link", "post">;
+type LinkScenarioPositionsIn = InputOf<"/api/v4/resources/scenario_positions/link", "post">;
+type LinkScenarioPositionsOut = OutputOf<"/api/v4/resources/scenario_positions/link", "post">;
+type LinkScenarioRubricsIn = InputOf<"/api/v4/resources/scenario_rubrics/link", "post">;
+type LinkScenarioRubricsOut = OutputOf<"/api/v4/resources/scenario_rubrics/link", "post">;
+type LinkScenarioTimeLimitsIn = InputOf<"/api/v4/resources/scenario_time_limits/link", "post">;
+type LinkScenarioTimeLimitsOut = OutputOf<"/api/v4/resources/scenario_time_limits/link", "post">;
+
 // Export types for client component (type-only imports)
 export type {
   PatchSimulationDraftIn,
@@ -185,6 +205,52 @@ async function createDraftScenarioTimeLimits(
   return api.post("/resources/scenario_time_limits", input);
 }
 
+// Link server actions for tool call tracking
+async function linkNames(input: LinkNamesIn): Promise<LinkNamesOut> {
+  "use server";
+  return api.post("/resources/names/link", input);
+}
+
+async function linkDescriptions(input: LinkDescriptionsIn): Promise<LinkDescriptionsOut> {
+  "use server";
+  return api.post("/resources/descriptions/link", input);
+}
+
+async function linkFlags(input: LinkFlagsIn): Promise<LinkFlagsOut> {
+  "use server";
+  return api.post("/resources/flags/link", input);
+}
+
+async function linkDepartments(input: LinkDepartmentsIn): Promise<LinkDepartmentsOut> {
+  "use server";
+  return api.post("/resources/departments/link", input);
+}
+
+async function linkScenarios(input: LinkScenariosIn): Promise<LinkScenariosOut> {
+  "use server";
+  return api.post("/resources/scenarios/link", input);
+}
+
+async function linkScenarioFlags(input: LinkScenarioFlagsIn): Promise<LinkScenarioFlagsOut> {
+  "use server";
+  return api.post("/resources/scenario_flags/link", input);
+}
+
+async function linkScenarioPositions(input: LinkScenarioPositionsIn): Promise<LinkScenarioPositionsOut> {
+  "use server";
+  return api.post("/resources/scenario_positions/link", input);
+}
+
+async function linkScenarioRubrics(input: LinkScenarioRubricsIn): Promise<LinkScenarioRubricsOut> {
+  "use server";
+  return api.post("/resources/scenario_rubrics/link", input);
+}
+
+async function linkScenarioTimeLimits(input: LinkScenarioTimeLimitsIn): Promise<LinkScenarioTimeLimitsOut> {
+  "use server";
+  return api.post("/resources/scenario_time_limits/link", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function EditSimulationPage({
   params,
@@ -253,6 +319,15 @@ export default async function EditSimulationPage({
           createScenarioTimeLimitsAction={
             createDraftScenarioTimeLimits
           }
+          linkNamesAction={linkNames}
+          linkDescriptionsAction={linkDescriptions}
+          linkFlagsAction={linkFlags}
+          linkDepartmentsAction={linkDepartments}
+          linkScenariosAction={linkScenarios}
+          linkScenarioFlagsAction={linkScenarioFlags}
+          linkScenarioPositionsAction={linkScenarioPositions}
+          linkScenarioRubricsAction={linkScenarioRubrics}
+          linkScenarioTimeLimitsAction={linkScenarioTimeLimits}
         />
       </div>
     );

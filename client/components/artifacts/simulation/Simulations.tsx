@@ -29,6 +29,7 @@ import { useGenerationModal } from "@/hooks/use-generation-modal";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -301,6 +302,55 @@ export function Simulations({
           );
         },
       },
+      // Virtual columns for card view toggles
+      {
+        id: "ai_badge",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof simulations)[number]) => row.generated ?? false,
+      },
+      {
+        id: "practice_badge",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof simulations)[number]) => row.practice_simulation ?? false,
+      },
+      {
+        id: "status_badge",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof simulations)[number]) => row.is_inactive ?? false,
+      },
+      {
+        id: "card_description",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof simulations)[number]) => row.description ?? "",
+      },
+      {
+        id: "card_cohorts",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof simulations)[number]) => row.num_cohorts ?? 0,
+      },
+      {
+        id: "scenario_dots",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof simulations)[number]) => row.scenario_ids ?? [],
+      },
     ],
     [],
   );
@@ -505,20 +555,20 @@ export function Simulations({
             <CardTitle className="text-lg truncate">
               {simulation.name}
             </CardTitle>
-            {(simulation.generated || simulation.is_inactive || simulation.practice_simulation) && (
+            {((columnVisibility.ai_badge !== false && simulation.generated) || (columnVisibility.practice_badge !== false && simulation.practice_simulation) || (columnVisibility.status_badge !== false && simulation.is_inactive)) && (
             <div className="mt-1 flex flex-wrap items-center gap-2">
-              {simulation.generated && (
+              {columnVisibility.ai_badge !== false && simulation.generated && (
                 <Badge variant="default">
                   <Sparkles className="h-3 w-3 mr-1" />
                   {simulation.mcp ? "MCP" : "AI"}
                 </Badge>
               )}
-              {simulation.practice_simulation && (
+              {columnVisibility.practice_badge !== false && simulation.practice_simulation && (
                 <Badge variant="outline" className="text-xs">
                   Practice
                 </Badge>
               )}
-              {simulation.is_inactive && (
+              {columnVisibility.status_badge !== false && simulation.is_inactive && (
                 <Badge variant="secondary">Inactive</Badge>
               )}
             </div>
@@ -635,51 +685,54 @@ export function Simulations({
         </div>
       </CardHeader>
       <CardContent className="pt-0 flex-grow flex flex-col justify-end">
-        <p className="text-sm text-muted-foreground line-clamp-2">
-          {simulation.description || "No description available"}
-        </p>
-        {/* Compact info row: Cohorts and Scenario dots */}
-        <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <Users className="h-3 w-3" />
-            {simulation.num_cohorts}{" "}
-            {simulation.num_cohorts === 1 ? "cohort" : "cohorts"}
-          </span>
-          <div className="flex-grow" />
-          {/* Scenario dots - colored by persona */}
-          {simulation.scenario_ids && simulation.scenario_ids.length > 0 && (
-            <div className="flex items-center gap-1">
-              {simulation.scenario_ids.map((scenarioId) => {
-                const scenario = scenarioMapping[scenarioId];
-                if (!scenario) return null;
+        {columnVisibility.card_description !== false && (
+          <p className="text-sm text-muted-foreground line-clamp-2">
+            {simulation.description || "No description available"}
+          </p>
+        )}
+        {(columnVisibility.card_cohorts !== false || columnVisibility.scenario_dots !== false) && (
+          <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground">
+            {columnVisibility.card_cohorts !== false && (
+              <span className="flex items-center gap-1">
+                <Users className="h-3 w-3" />
+                {simulation.num_cohorts}{" "}
+                {simulation.num_cohorts === 1 ? "cohort" : "cohorts"}
+              </span>
+            )}
+            <div className="flex-grow" />
+            {columnVisibility.scenario_dots !== false && simulation.scenario_ids && simulation.scenario_ids.length > 0 && (
+              <div className="flex items-center gap-1">
+                {simulation.scenario_ids.map((scenarioId) => {
+                  const scenario = scenarioMapping[scenarioId];
+                  if (!scenario) return null;
 
-                // Get first persona color
-                const firstPersonaId = scenario.persona_ids?.[0];
-                const persona = firstPersonaId && scenario.persona_mapping
-                  ? scenario.persona_mapping.find(p => String(p.persona_id) === String(firstPersonaId))
-                  : null;
-                const personaColor = persona?.color || "#9CA3AF"; // gray-400 fallback
+                  const firstPersonaId = scenario.persona_ids?.[0];
+                  const persona = firstPersonaId && scenario.persona_mapping
+                    ? scenario.persona_mapping.find(p => String(p.persona_id) === String(firstPersonaId))
+                    : null;
+                  const personaColor = persona?.color || "#9CA3AF";
 
-                return (
-                  <Tooltip key={scenarioId}>
-                    <TooltipTrigger asChild>
-                      <div
-                        className="w-2 h-2 rounded-full cursor-pointer"
-                        style={{
-                          backgroundColor: personaColor,
-                        }}
-                        aria-label={scenario.name || undefined}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{scenario.name}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                  return (
+                    <Tooltip key={scenarioId}>
+                      <TooltipTrigger asChild>
+                        <div
+                          className="w-2 h-2 rounded-full cursor-pointer"
+                          style={{
+                            backgroundColor: personaColor,
+                          }}
+                          aria-label={scenario.name || undefined}
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{scenario.name}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
     );
@@ -767,6 +820,7 @@ export function Simulations({
                 )}
               </div>
             </div>
+            <DataTableViewOptions table={table} hiddenColumns={["name", "scenario_ids", "cohort_ids", "departments", "updated_at"]} />
           </div>
 
           {/* Cards Grid */}

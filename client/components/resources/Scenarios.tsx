@@ -24,6 +24,8 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 
 type CreateDraftScenariosIn = InputOf<"/api/v4/resources/scenarios", "post">;
 type CreateDraftScenariosOut = OutputOf<"/api/v4/resources/scenarios", "post">;
+type LinkScenariosIn = InputOf<"/api/v4/resources/scenarios/link", "post">;
+type LinkScenariosOut = OutputOf<"/api/v4/resources/scenarios/link", "post">;
 
 // Derive resource item type from the GET endpoint response
 type ScenariosGetResponse = OutputOf<"/api/v4/resources/scenarios/get", "post">;
@@ -50,6 +52,10 @@ export interface ScenariosProps {
   description?: string;
   searchTerm?: string;
   group_id?: string | null; // Group ID for linking resources
+  link_tool_id?: string | null; // Tool ID for linking existing resources
+  linkScenariosAction?:
+    | ((input: LinkScenariosIn) => Promise<LinkScenariosOut>)
+    | undefined;
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   showSelectedOnly?: boolean;
@@ -70,6 +76,8 @@ export function Scenarios({
   placeholder = "Select scenarios...",
   description,
   group_id,
+  link_tool_id,
+  linkScenariosAction,
   onGenerate,
   showAiGenerate = false,
   searchTerm,
@@ -141,9 +149,15 @@ export function Scenarios({
       const nextSelectedIds = alreadySelected
         ? ids.filter((id) => id !== scenarioId)
         : [...ids, scenarioId];
+      // Fire link tracking when adding a scenario
+      if (!alreadySelected && linkScenariosAction && group_id && link_tool_id) {
+        linkScenariosAction({
+          body: { resource_id: scenarioId, group_id, tool_id: link_tool_id },
+        }).catch(() => {});
+      }
       void handleSelect(nextSelectedIds);
     },
-    [ids, handleSelect]
+    [ids, handleSelect, linkScenariosAction, group_id, link_tool_id]
   );
 
   const normalizedSearch = useMemo(

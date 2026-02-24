@@ -29,6 +29,8 @@ type CreateDraftScenarioRubricsOut = OutputOf<
   "/api/v4/resources/scenario_rubrics",
   "post"
 >;
+type LinkScenarioRubricsIn = InputOf<"/api/v4/resources/scenario_rubrics/link", "post">;
+type LinkScenarioRubricsOut = OutputOf<"/api/v4/resources/scenario_rubrics/link", "post">;
 
 // Derive resource item type from the GET endpoint response
 type ScenarioRubricGetResponse = OutputOf<
@@ -74,10 +76,14 @@ export interface ScenarioRubricsProps {
   description?: string;
   group_id?: string | null;
   create_tool_id?: string | null; // Tool ID for AI generation/creation
+  link_tool_id?: string | null; // Tool ID for linking existing resources
   createScenarioRubricsAction?:
     | ((
         input: CreateDraftScenarioRubricsIn,
       ) => Promise<CreateDraftScenarioRubricsOut>)
+    | undefined;
+  linkScenarioRubricsAction?:
+    | ((input: LinkScenarioRubricsIn) => Promise<LinkScenarioRubricsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
@@ -119,7 +125,9 @@ export function ScenarioRubrics({
   description,
   group_id,
   create_tool_id,
+  link_tool_id: _link_tool_id,
   createScenarioRubricsAction,
+  linkScenarioRubricsAction: _linkScenarioRubricsAction,
   onGenerate,
   showAiGenerate = false,
   isAutosaveEnabled = true,
