@@ -28,7 +28,6 @@ WITH draft_links AS (
     UNION ALL SELECT draft_id, 'objectives'::text AS resource_type, objectives_id AS resource_id FROM scenario_drafts_objectives_connection WHERE active = true
     UNION ALL SELECT draft_id, 'options'::text AS resource_type, options_id AS resource_id FROM scenario_drafts_options_connection WHERE active = true
     UNION ALL SELECT draft_id, 'parameter_fields'::text AS resource_type, parameter_fields_id AS resource_id FROM scenario_drafts_parameter_fields_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'parameters'::text AS resource_type, parameters_id AS resource_id FROM scenario_drafts_parameters_connection WHERE active = true
     UNION ALL SELECT draft_id, 'personas'::text AS resource_type, personas_id AS resource_id FROM scenario_drafts_personas_connection WHERE active = true
     UNION ALL SELECT draft_id, 'problem_statements'::text AS resource_type, problem_statements_id AS resource_id FROM scenario_drafts_problem_statements_connection WHERE active = true
     UNION ALL SELECT draft_id, 'questions'::text AS resource_type, questions_id AS resource_id FROM scenario_drafts_questions_connection WHERE active = true

@@ -28,7 +28,6 @@ WITH draft_links AS (
     UNION ALL SELECT draft_id, 'instructions'::text AS resource_type, instructions_id AS resource_id FROM persona_drafts_instructions_connection WHERE active = true
     UNION ALL SELECT draft_id, 'names'::text AS resource_type, names_id AS resource_id FROM persona_drafts_names_connection WHERE active = true
     UNION ALL SELECT draft_id, 'parameter_fields'::text AS resource_type, parameter_fields_id AS resource_id FROM persona_drafts_parameter_fields_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'parameters'::text AS resource_type, parameters_id AS resource_id FROM persona_drafts_parameters_connection WHERE active = true
     UNION ALL SELECT draft_id, 'personas'::text AS resource_type, personas_id AS resource_id FROM persona_drafts_personas_connection WHERE active = true
     UNION ALL SELECT draft_id, 'voices'::text AS resource_type, voices_id AS resource_id FROM persona_drafts_voices_connection WHERE active = true
 )

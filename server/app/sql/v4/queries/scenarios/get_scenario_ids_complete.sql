@@ -98,10 +98,10 @@ draft_documents_data AS (
     LEFT JOIN scenario_drafts_documents_connection dd ON dd.draft_id = x.draft_id
     LIMIT 1
 ),
+-- scenario_drafts_parameters_connection dropped — parameter_ids now derived from parameter_fields
 draft_parameters_data AS (
-    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(dp.parameters_id ORDER BY dp.created_at), NULL), ARRAY[]::uuid[]) as parameter_ids
+    SELECT ARRAY[]::uuid[] as parameter_ids
     FROM params x
-    LEFT JOIN scenario_drafts_parameters_connection dp ON dp.draft_id = x.draft_id
     LIMIT 1
 ),
 draft_parameter_fields_data AS (
@@ -177,17 +177,9 @@ scenario_documents_junction_data AS (
     FROM params
     LIMIT 1
 ),
+-- scenario_parameters_junction dropped — parameter_ids now derived from parameter_fields
 scenario_parameters_junction_data AS (
-    SELECT
-        CASE
-            WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
-            ELSE COALESCE(
-                (SELECT ARRAY_AGG(sp.parameter_id ORDER BY sp.parameter_id)
-                 FROM scenario_parameters_junction sp
-                 WHERE sp.scenario_id = (SELECT scenario_id FROM params) AND sp.active = true),
-                ARRAY[]::uuid[]
-            )
-        END as parameter_ids
+    SELECT ARRAY[]::uuid[] as parameter_ids
     FROM params
     LIMIT 1
 ),

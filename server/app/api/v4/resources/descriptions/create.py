@@ -1,6 +1,7 @@
 """descriptions endpoint - v4 API following DHH principles."""
 
 from typing import Annotated, Any, cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -20,6 +21,24 @@ from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/resources/descriptions_complete.sql"
+
+
+async def create_descriptions_internal(
+    conn: asyncpg.Connection,
+    description: str,
+    mcp: bool = False,
+) -> UUID:
+    """Create a description resource and return its ID."""
+    params = DescriptionsSqlParams(description=description, mcp=mcp)
+    result = cast(
+        DescriptionsSqlRow,
+        await execute_sql_typed(conn, SQL_PATH, params=params),
+    )
+    if not result or not result.description_id:
+        raise ValueError(f"Failed to create description: {description}")
+
+    await invalidate_tags(["resources", "descriptions"])
+    return result.description_id
 
 
 router = APIRouter()

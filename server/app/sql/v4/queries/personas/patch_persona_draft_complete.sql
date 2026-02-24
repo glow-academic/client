@@ -159,14 +159,7 @@ BEGIN
         END IF;
     END IF;
 
-    IF v_parameter_ids IS NOT NULL THEN
-        IF EXISTS (
-            SELECT 1 FROM UNNEST(v_parameter_ids) as pid
-            WHERE NOT EXISTS (SELECT 1 FROM parameters_resource WHERE id = pid)
-        ) THEN
-            RAISE EXCEPTION 'One or more parameter resource IDs not found in parameters_resource';
-        END IF;
-    END IF;
+    -- persona_drafts_parameters_connection dropped — v_parameter_ids validation removed
 
     IF v_voice_ids IS NOT NULL THEN
         IF EXISTS (
@@ -211,7 +204,7 @@ BEGIN
             DELETE FROM persona_drafts_departments_connection WHERE persona_drafts_departments_connection.draft_id = v_draft_id;
             DELETE FROM persona_drafts_parameter_fields_connection WHERE persona_drafts_parameter_fields_connection.draft_id = v_draft_id;
             DELETE FROM persona_drafts_examples_connection WHERE persona_drafts_examples_connection.draft_id = v_draft_id;
-            DELETE FROM persona_drafts_parameters_connection WHERE persona_drafts_parameters_connection.draft_id = v_draft_id;
+            -- persona_drafts_parameters_connection dropped
             DELETE FROM persona_drafts_voices_connection WHERE persona_drafts_voices_connection.draft_id = v_draft_id;
 
             -- Insert new resource links
@@ -284,14 +277,7 @@ BEGIN
                 SET version = v_new_version;
             END IF;
 
-            IF v_parameter_ids IS NOT NULL THEN
-                DELETE FROM persona_drafts_parameters_connection WHERE persona_drafts_parameters_connection.draft_id = v_draft_id;
-                INSERT INTO persona_drafts_parameters_connection (draft_id, parameters_id, version)
-                SELECT v_draft_id, param_id, v_new_version
-                FROM UNNEST(v_parameter_ids) as param_id
-                ON CONFLICT ON CONSTRAINT persona_drafts_parameters_connection_pkey DO UPDATE
-                SET version = v_new_version;
-            END IF;
+            -- persona_drafts_parameters_connection dropped — v_parameter_ids ignored
 
             IF v_voice_ids IS NOT NULL THEN
                 DELETE FROM persona_drafts_voices_connection WHERE persona_drafts_voices_connection.draft_id = v_draft_id;
@@ -605,13 +591,7 @@ BEGIN
         SET version = v_new_version;
     END IF;
 
-    IF v_parameter_ids IS NOT NULL THEN
-        INSERT INTO persona_drafts_parameters_connection (draft_id, parameters_id, version)
-        SELECT v_draft_id, param_id, v_new_version
-        FROM UNNEST(v_parameter_ids) as param_id
-        ON CONFLICT ON CONSTRAINT persona_drafts_parameters_connection_pkey DO UPDATE
-        SET version = v_new_version;
-    END IF;
+    -- persona_drafts_parameters_connection dropped — v_parameter_ids ignored
 
     IF v_voice_ids IS NOT NULL THEN
         INSERT INTO persona_drafts_voices_connection (draft_id, voices_id, version)

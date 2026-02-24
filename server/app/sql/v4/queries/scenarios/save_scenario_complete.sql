@@ -258,7 +258,7 @@ BEGIN
         UPDATE scenario_departments_junction SET active = false WHERE scenario_id = v_scenario_id AND active = true;
         UPDATE scenario_personas_junction SET active = false WHERE scenario_id = v_scenario_id AND active = true;
         UPDATE scenario_documents_junction SET active = false WHERE scenario_id = v_scenario_id AND active = true;
-        UPDATE scenario_parameters_junction SET active = false WHERE scenario_id = v_scenario_id AND active = true;
+        -- scenario_parameters_junction dropped (parameters now derived from parameter_fields)
         UPDATE scenario_parameter_fields_junction SET active = false WHERE scenario_id = v_scenario_id AND active = true;
         UPDATE scenario_images_junction SET active = false WHERE scenario_id = v_scenario_id AND active = true;
         UPDATE scenario_objectives_junction SET active = false WHERE scenario_id = v_scenario_id AND active = true;
@@ -626,12 +626,7 @@ BEGIN
         ON CONFLICT (scenario_id, document_id) DO UPDATE SET active = true;
     END IF;
 
-    IF v_parameter_ids IS NOT NULL THEN
-        INSERT INTO scenario_parameters_junction (scenario_id, parameter_id, active, created_at)
-        SELECT v_scenario_id, param_id, true, NOW()
-        FROM UNNEST(v_parameter_ids) as param_id
-        ON CONFLICT (scenario_id, parameter_id) DO UPDATE SET active = true;
-    END IF;
+    -- scenario_parameters_junction dropped — v_parameter_ids ignored
 
     IF v_parameter_field_ids IS NOT NULL THEN
         INSERT INTO scenario_parameter_fields_junction (scenario_id, parameter_field_id, active, created_at)

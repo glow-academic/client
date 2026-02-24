@@ -90,13 +90,13 @@ Parameter Fields:
 - id: {{ item.field_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.parameters and resources.parameters|length > 0 %}
+{% if "parameter_fields" in all_gen_types and resources.parameters and resources.parameters|length > 0 %}
 Parameters (context — use parameter_id when creating parameter_fields):
 {% for item in resources.parameters %}
 - id: {{ item.parameter_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.fields and resources.fields|length > 0 %}
+{% if "parameter_fields" in all_gen_types and resources.fields and resources.fields|length > 0 %}
 Fields (context — use field_id when creating parameter_fields):
 {% for item in resources.fields %}
 - id: {{ item.field_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
@@ -147,8 +147,7 @@ Rules:
 - For resource types: use_* when a suitable resource exists, create_* when nothing suitable exists
 - For entry types: always use_* with IDs from available resources
 - Only operate on the resource/entry types listed above
-- Do not invent IDs — use IDs from available resources
-', true, '2026-01-29T14:35:11.795021+00:00', false, false) ON CONFLICT (id) DO NOTHING;
+- Do not invent IDs — use IDs from available resources', true, '2026-01-29T14:35:11.795021+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8ea0-7cef-9ca7-49400d8ff010', 'Scenario', '2025-08-12T12:52:09.818852+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2025-11-01T12:45:21.867971+00:00', 'Your purpose is to create a scenario for a chat between a student and a GTA. You will generate a title, description, and objectives for the scenario.
 

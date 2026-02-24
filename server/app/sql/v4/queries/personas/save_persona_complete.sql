@@ -168,7 +168,7 @@ BEGIN
         DELETE FROM persona_departments_junction WHERE persona_id = v_persona_id;
         DELETE FROM persona_parameter_fields_junction WHERE persona_id = v_persona_id;
         DELETE FROM persona_examples_junction WHERE persona_id = v_persona_id;
-        DELETE FROM persona_parameters_junction WHERE persona_id = v_persona_id;
+        -- persona_parameters_junction dropped (parameters now derived from parameter_fields)
         DELETE FROM persona_voices_junction WHERE persona_id = v_persona_id;
         -- Update existing active flag if it exists
         UPDATE persona_flags_junction SET
@@ -531,20 +531,7 @@ BEGIN
             active = true,
             created_at = EXCLUDED.created_at
     ),
-    -- Link parameters (old ones already deleted above if update)
-    link_parameters AS (
-        INSERT INTO persona_parameters_junction (persona_id, parameter_id, active, created_at)
-        SELECT
-            x.persona_id,
-            param_id,
-            true,
-            NOW()
-        FROM params x
-        CROSS JOIN UNNEST(x.parameter_ids) as param_id
-        WHERE COALESCE(array_length(x.parameter_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT persona_parameters_pkey DO UPDATE SET
-            active = true
-    ),
+    -- persona_parameters_junction dropped — link_parameters removed
     -- Link voices (old ones already deleted above if update)
     link_voices AS (
         INSERT INTO persona_voices_junction (persona_id, voice_id, active, created_at)

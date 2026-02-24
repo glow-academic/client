@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 9vwKMH5FOrp2QMlqszW4JzcNrWd0zr5TCxxdMKQEXV7aL1kUCvUwzoP8oooSDqr
+\restrict zytfOjDVPB3x0BRAZYNYgxmYTaxAnpYNvDJ5FcdGaaMJ0whn47hToIsqYmi1hEU
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -36024,22 +36024,6 @@ CREATE TABLE public.persona_drafts_parameter_fields_connection (
 
 
 --
--- Name: persona_drafts_parameters_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.persona_drafts_parameters_connection (
-    draft_id uuid NOT NULL,
-    parameters_id uuid NOT NULL,
-    version integer DEFAULT 0 NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL,
-    active boolean DEFAULT true NOT NULL
-);
-
-
---
 -- Name: persona_drafts_personas_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -36170,21 +36154,6 @@ CREATE TABLE public.persona_parameter_fields_junction (
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
---
--- Name: persona_parameters_junction; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.persona_parameters_junction (
-    persona_id uuid CONSTRAINT persona_parameters_persona_id_not_null NOT NULL,
-    parameter_id uuid CONSTRAINT persona_parameters_parameter_id_not_null NOT NULL,
-    type public.link_type DEFAULT 'direct'::public.link_type CONSTRAINT persona_parameters_type_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT persona_parameters_created_at_not_null NOT NULL,
-    active boolean DEFAULT true CONSTRAINT persona_parameters_active_not_null NOT NULL,
-    generated boolean DEFAULT false CONSTRAINT persona_parameters_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT persona_parameters_mcp_not_null NOT NULL
 );
 
 
@@ -38345,22 +38314,6 @@ CREATE TABLE public.scenario_drafts_parameter_fields_connection (
 
 
 --
--- Name: scenario_drafts_parameters_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.scenario_drafts_parameters_connection (
-    draft_id uuid NOT NULL,
-    parameters_id uuid NOT NULL,
-    version integer DEFAULT 0 NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL,
-    active boolean DEFAULT true NOT NULL
-);
-
-
---
 -- Name: scenario_drafts_personas_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -38567,21 +38520,6 @@ CREATE TABLE public.scenario_parameter_fields_junction (
     generated boolean DEFAULT false CONSTRAINT scenario_parameter_fields_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT scenario_parameter_fields_mcp_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT scenario_parameter_fields_created_at_not_null NOT NULL
-);
-
-
---
--- Name: scenario_parameters_junction; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.scenario_parameters_junction (
-    active boolean DEFAULT true CONSTRAINT scenario_parameters_active_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT scenario_parameters_created_at_not_null NOT NULL,
-    parameter_id uuid CONSTRAINT scenario_parameters_parameter_id_not_null NOT NULL,
-    scenario_id uuid CONSTRAINT scenario_parameters_scenario_id_not_null NOT NULL,
-    generated boolean DEFAULT false CONSTRAINT scenario_parameters_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT scenario_parameters_mcp_not_null NOT NULL,
-    type public.link_type DEFAULT 'direct'::public.link_type CONSTRAINT scenario_parameters_type_not_null NOT NULL
 );
 
 
@@ -43990,14 +43928,6 @@ ALTER TABLE ONLY public.persona_drafts_parameter_fields_connection
 
 
 --
--- Name: persona_drafts_parameters_connection persona_drafts_parameters_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.persona_drafts_parameters_connection
-    ADD CONSTRAINT persona_drafts_parameters_connection_pkey PRIMARY KEY (draft_id, parameters_id);
-
-
---
 -- Name: persona_drafts_personas_connection persona_drafts_personas_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -44067,14 +43997,6 @@ ALTER TABLE ONLY public.persona_names_junction
 
 ALTER TABLE ONLY public.persona_parameter_fields_junction
     ADD CONSTRAINT persona_parameter_fields_junction_pkey PRIMARY KEY (persona_id, parameter_field_id);
-
-
---
--- Name: persona_parameters_junction persona_parameters_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.persona_parameters_junction
-    ADD CONSTRAINT persona_parameters_pkey PRIMARY KEY (persona_id, parameter_id, type);
 
 
 --
@@ -45254,14 +45176,6 @@ ALTER TABLE ONLY public.scenario_drafts_parameter_fields_connection
 
 
 --
--- Name: scenario_drafts_parameters_connection scenario_drafts_parameters_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.scenario_drafts_parameters_connection
-    ADD CONSTRAINT scenario_drafts_parameters_connection_pkey PRIMARY KEY (draft_id, parameters_id);
-
-
---
 -- Name: scenario_drafts_personas_connection scenario_drafts_personas_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -45371,14 +45285,6 @@ ALTER TABLE ONLY public.scenario_options_junction
 
 ALTER TABLE ONLY public.scenario_parameter_fields_junction
     ADD CONSTRAINT scenario_parameter_fields_pkey PRIMARY KEY (scenario_id, parameter_field_id);
-
-
---
--- Name: scenario_parameters_junction scenario_parameters_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.scenario_parameters_junction
-    ADD CONSTRAINT scenario_parameters_pkey PRIMARY KEY (scenario_id, parameter_id);
 
 
 --
@@ -51787,13 +51693,6 @@ CREATE INDEX idx_persona_drafts_parameter_fields_resource_id ON public.persona_d
 
 
 --
--- Name: idx_persona_drafts_parameters_resource_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_persona_drafts_parameters_resource_id ON public.persona_drafts_parameters_connection USING btree (parameters_id);
-
-
---
 -- Name: idx_persona_drafts_personas_resource_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -52984,13 +52883,6 @@ CREATE INDEX idx_scenario_drafts_parameter_fields_resource_id ON public.scenario
 
 
 --
--- Name: idx_scenario_drafts_parameters_resource_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_scenario_drafts_parameters_resource_id ON public.scenario_drafts_parameters_connection USING btree (parameters_id);
-
-
---
 -- Name: idx_scenario_drafts_personas_resource_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -53114,27 +53006,6 @@ CREATE INDEX idx_scenario_parameter_fields_parameter_field_id ON public.scenario
 --
 
 CREATE INDEX idx_scenario_parameter_fields_scenario_id ON public.scenario_parameter_fields_junction USING btree (scenario_id);
-
-
---
--- Name: idx_scenario_parameters_generated; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_scenario_parameters_generated ON public.scenario_parameters_junction USING btree (generated);
-
-
---
--- Name: idx_scenario_parameters_mcp; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_scenario_parameters_mcp ON public.scenario_parameters_junction USING btree (mcp);
-
-
---
--- Name: idx_scenario_parameters_type; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_scenario_parameters_type ON public.scenario_parameters_junction USING btree (type);
 
 
 --
@@ -55455,48 +55326,6 @@ CREATE INDEX persona_names_persona_id_idx ON public.persona_names_junction USING
 
 
 --
--- Name: persona_parameters_active_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX persona_parameters_active_idx ON public.persona_parameters_junction USING btree (active);
-
-
---
--- Name: persona_parameters_generated_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX persona_parameters_generated_idx ON public.persona_parameters_junction USING btree (generated);
-
-
---
--- Name: persona_parameters_mcp_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX persona_parameters_mcp_idx ON public.persona_parameters_junction USING btree (mcp);
-
-
---
--- Name: persona_parameters_parameter_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX persona_parameters_parameter_id_idx ON public.persona_parameters_junction USING btree (parameter_id);
-
-
---
--- Name: persona_parameters_persona_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX persona_parameters_persona_id_idx ON public.persona_parameters_junction USING btree (persona_id);
-
-
---
--- Name: persona_parameters_type_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX persona_parameters_type_idx ON public.persona_parameters_junction USING btree (type);
-
-
---
 -- Name: persona_personas_persona_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -56558,27 +56387,6 @@ CREATE INDEX scenario_options_scenario_active_idx ON public.scenario_options_jun
 --
 
 CREATE INDEX scenario_options_scenario_id_idx ON public.scenario_options_junction USING btree (scenario_id);
-
-
---
--- Name: scenario_parameters_junction_parameter_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX scenario_parameters_junction_parameter_id_idx ON public.scenario_parameters_junction USING btree (parameter_id);
-
-
---
--- Name: scenario_parameters_parameter_id_v7_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX scenario_parameters_parameter_id_v7_idx ON public.scenario_parameters_junction USING btree (parameter_id);
-
-
---
--- Name: scenario_parameters_scenario_id_v7_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX scenario_parameters_scenario_id_v7_idx ON public.scenario_parameters_junction USING btree (scenario_id);
 
 
 --
@@ -63082,22 +62890,6 @@ ALTER TABLE ONLY public.persona_drafts_parameter_fields_connection
 
 
 --
--- Name: persona_drafts_parameters_connection persona_drafts_parameters_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.persona_drafts_parameters_connection
-    ADD CONSTRAINT persona_drafts_parameters_connection_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.persona_drafts_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: persona_drafts_parameters_connection persona_drafts_parameters_connection_parameters_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.persona_drafts_parameters_connection
-    ADD CONSTRAINT persona_drafts_parameters_connection_parameters_id_fkey FOREIGN KEY (parameters_id) REFERENCES public.parameters_resource(id);
-
-
---
 -- Name: persona_drafts_personas_connection persona_drafts_personas_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -63239,22 +63031,6 @@ ALTER TABLE ONLY public.persona_parameter_fields_junction
 
 ALTER TABLE ONLY public.persona_parameter_fields_junction
     ADD CONSTRAINT persona_parameter_fields_junction_persona_id_fkey FOREIGN KEY (persona_id) REFERENCES public.persona_artifact(id) ON DELETE CASCADE;
-
-
---
--- Name: persona_parameters_junction persona_parameters_parameter_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.persona_parameters_junction
-    ADD CONSTRAINT persona_parameters_parameter_id_fkey FOREIGN KEY (parameter_id) REFERENCES public.parameters_resource(id) ON DELETE CASCADE;
-
-
---
--- Name: persona_parameters_junction persona_parameters_persona_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.persona_parameters_junction
-    ADD CONSTRAINT persona_parameters_persona_id_fkey FOREIGN KEY (persona_id) REFERENCES public.persona_artifact(id) ON DELETE CASCADE;
 
 
 --
@@ -65138,22 +64914,6 @@ ALTER TABLE ONLY public.scenario_drafts_parameter_fields_connection
 
 
 --
--- Name: scenario_drafts_parameters_connection scenario_drafts_parameters_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.scenario_drafts_parameters_connection
-    ADD CONSTRAINT scenario_drafts_parameters_connection_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.scenario_drafts_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: scenario_drafts_parameters_connection scenario_drafts_parameters_connection_parameters_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.scenario_drafts_parameters_connection
-    ADD CONSTRAINT scenario_drafts_parameters_connection_parameters_id_fkey FOREIGN KEY (parameters_id) REFERENCES public.parameters_resource(id);
-
-
---
 -- Name: scenario_drafts_personas_connection scenario_drafts_personas_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -65375,22 +65135,6 @@ ALTER TABLE ONLY public.scenario_parameter_fields_junction
 
 ALTER TABLE ONLY public.scenario_parameter_fields_junction
     ADD CONSTRAINT scenario_parameter_fields_scenario_id_fkey FOREIGN KEY (scenario_id) REFERENCES public.scenario_artifact(id) ON DELETE CASCADE;
-
-
---
--- Name: scenario_parameters_junction scenario_parameters_parameter_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.scenario_parameters_junction
-    ADD CONSTRAINT scenario_parameters_parameter_id_fkey FOREIGN KEY (parameter_id) REFERENCES public.parameters_resource(id) ON DELETE CASCADE;
-
-
---
--- Name: scenario_parameters_junction scenario_parameters_scenario_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.scenario_parameters_junction
-    ADD CONSTRAINT scenario_parameters_scenario_id_fkey FOREIGN KEY (scenario_id) REFERENCES public.scenario_artifact(id) ON DELETE CASCADE;
 
 
 --
@@ -68157,5 +67901,5 @@ ALTER TABLE ONLY public.voices_calls_connection
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 9vwKMH5FOrp2QMlqszW4JzcNrWd0zr5TCxxdMKQEXV7aL1kUCvUwzoP8oooSDqr
+\unrestrict zytfOjDVPB3x0BRAZYNYgxmYTaxAnpYNvDJ5FcdGaaMJ0whn47hToIsqYmi1hEU
 

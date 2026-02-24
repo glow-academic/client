@@ -1,5 +1,6 @@
 """Persona save endpoint - v4 API following DHH principles.
 Unified endpoint that handles both create (persona_id = NULL) and update (persona_id provided).
+Supports bulk operations and dual-mode fields (ID or value).
 """
 
 import uuid
@@ -17,10 +18,22 @@ from app.api.v4.artifacts.persona.types import (
     PersonaResourceAction,
     SavePersonaApiRequest,
     SavePersonaApiResponse,
+    SavePersonaFieldError,
+    SavePersonaItem,
+    SavePersonaResult,
     SavePersonaSqlParams,
     SavePersonaSqlRow,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
+from app.api.v4.resources.colors.search import search_colors_internal
+from app.api.v4.resources.departments.search import search_departments_internal
+from app.api.v4.resources.descriptions.create import create_descriptions_internal
+from app.api.v4.resources.examples.create import create_examples_internal
+from app.api.v4.resources.flags.search import search_flags_internal
+from app.api.v4.resources.icons.search import search_icons_internal
+from app.api.v4.resources.instructions.create import create_instructions_internal
+from app.api.v4.resources.names.create import create_names_internal
+from app.api.v4.resources.voices.search import search_voices_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -90,7 +103,6 @@ async def save_persona_internal(
             departments=_multi("departments"),
             parameter_fields=_multi("parameter_fields"),
             examples=_multi("examples"),
-            parameters=_multi("parameters"),
         )
 
         async with conn.transaction():
@@ -110,13 +122,176 @@ async def save_persona_internal(
         return None
 
 
+async def _resolve_persona_values(
+    conn: asyncpg.Connection,
+    item: SavePersonaItem,
+) -> list[SavePersonaFieldError]:
+    """Resolve value fields to IDs on the item (mutates in place).
+
+    For 'create' resources (name, description, instructions, examples):
+      Creates a new resource and sets the *_id field.
+    For 'match' resources (color, icon, departments, voices, etc.):
+      Searches by name and sets the *_id field, or returns an error.
+
+    Returns a list of errors (empty if all resolved successfully).
+    """
+    errors: list[SavePersonaFieldError] = []
+
+    # --- Create resources (always create new) ---
+
+    if item.name is not None and item.name_id is None:
+        item.name_id = await create_names_internal(conn, item.name)
+
+    if item.description is not None and item.description_id is None:
+        item.description_id = await create_descriptions_internal(conn, item.description)
+
+    if item.instructions is not None and item.instructions_id is None:
+        item.instructions_id = await create_instructions_internal(
+            conn, item.instructions
+        )
+
+    if item.examples is not None and item.example_ids is None:
+        resolved_ids = []
+        for ex in item.examples:
+            eid = await create_examples_internal(conn, ex)
+            resolved_ids.append(eid)
+        item.example_ids = resolved_ids
+
+    # --- Match resources (find existing by name) ---
+
+    if item.color is not None and item.color_id is None:
+        results = await search_colors_internal(
+            conn, search=item.color, limit_count=20, persona=True, setting=False
+        )
+        match = next(
+            (r for r in results if r.name and r.name.lower() == item.color.lower()),
+            None,
+        )
+        if match and match.id:
+            item.color_id = match.id
+        else:
+            errors.append(
+                SavePersonaFieldError(
+                    field="color", message=f'Color "{item.color}" not found'
+                )
+            )
+
+    if item.icon is not None and item.icon_id is None:
+        results = await search_icons_internal(
+            conn, search=item.icon, limit_count=20, persona=True
+        )
+        match = next(
+            (r for r in results if r.name and r.name.lower() == item.icon.lower()),
+            None,
+        )
+        if match and match.id:
+            item.icon_id = match.id
+        else:
+            errors.append(
+                SavePersonaFieldError(
+                    field="icon", message=f'Icon "{item.icon}" not found'
+                )
+            )
+
+    if item.active_flag is not None and item.active_flag_id is None:
+        results = await search_flags_internal(
+            conn, search=None, flag_type="persona_active", limit_count=100, persona=True
+        )
+        match = next(
+            (r for r in results if r.type == "persona_active"),
+            None,
+        )
+        if match and match.id:
+            # active_flag=True → set the flag ID; active_flag=False → leave as None (inactive)
+            if item.active_flag:
+                item.active_flag_id = match.id
+        elif item.active_flag:
+            errors.append(
+                SavePersonaFieldError(
+                    field="active_flag", message="Active flag resource not found"
+                )
+            )
+
+    if item.departments is not None and item.department_ids is None:
+        # Fetch all departments and match by name
+        all_depts = await search_departments_internal(
+            conn, search=None, limit_count=1000, persona=True
+        )
+        dept_name_map = {
+            d.name.lower(): d.department_id
+            for d in all_depts
+            if d.name and d.department_id
+        }
+        resolved_ids = []
+        for dept_name in item.departments:
+            dept_id = dept_name_map.get(dept_name.lower())
+            if dept_id:
+                resolved_ids.append(dept_id)
+            else:
+                errors.append(
+                    SavePersonaFieldError(
+                        field="departments",
+                        message=f'Department "{dept_name}" not found',
+                    )
+                )
+        if not any(e.field == "departments" for e in errors):
+            item.department_ids = resolved_ids
+
+    if item.voices is not None and item.voice_ids is None:
+        all_voices = await search_voices_internal(
+            conn, search=None, limit_count=1000, persona=True, agent=False, model=False
+        )
+        voice_name_map = {v.voice.lower(): v.id for v in all_voices if v.voice and v.id}
+        resolved_ids = []
+        for voice_name in item.voices:
+            vid = voice_name_map.get(voice_name.lower())
+            if vid:
+                resolved_ids.append(vid)
+            else:
+                errors.append(
+                    SavePersonaFieldError(
+                        field="voices",
+                        message=f'Voice "{voice_name}" not found',
+                    )
+                )
+        if not any(e.field == "voices" for e in errors):
+            item.voice_ids = resolved_ids
+
+    # Note: parameter_fields resolution by name is not supported via search_parameter_fields_internal
+    # (it takes parameter_ids, not search text). Use parameter_field_ids directly.
+    if item.parameter_fields is not None and item.parameter_field_ids is None:
+        errors.append(
+            SavePersonaFieldError(
+                field="parameter_fields",
+                message="Parameter fields must be provided as IDs (parameter_field_ids), not names",
+            )
+        )
+
+    # --- Validate required fields have IDs after resolution ---
+
+    if item.name_id is None:
+        errors.append(SavePersonaFieldError(field="name", message="Name is required"))
+    if item.color_id is None and item.color is None:
+        errors.append(SavePersonaFieldError(field="color", message="Color is required"))
+    if item.icon_id is None and item.icon is None:
+        errors.append(SavePersonaFieldError(field="icon", message="Icon is required"))
+    if item.instructions_id is None and item.instructions is None:
+        errors.append(
+            SavePersonaFieldError(
+                field="instructions", message="Instructions is required"
+            )
+        )
+
+    return errors
+
+
 @router.post(
     "/save",
     response_model=SavePersonaApiResponse,
     dependencies=[
         audit_activity(
             "persona.saved",
-            "{{ actor.name }} {% if persona %}updated{% else %}created{% endif %} persona{% if persona %} '{{ persona.name }}'{% endif %}",
+            "{{ actor.name }} saved {{ count }} persona(s)",
         )
     ],
 )
@@ -126,11 +301,15 @@ async def save_persona(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SavePersonaApiResponse:
-    """Save persona - handles both create (persona_id = NULL) and update (persona_id provided)."""
-    tags = ["personas"]  # From router tags
+    """Bulk save personas — all-or-nothing single transaction.
+
+    Each item can provide resource IDs directly or raw values that get
+    resolved to IDs (create or match). If any item has resolution errors,
+    the entire batch fails with per-item error details — no mutation occurs.
+    """
+    tags = ["personas"]
 
     sql_query = load_sql_query(SQL_PATH)
-    sql_params: tuple[Any, ...] | None = None
 
     try:
         # Get profile_id from header (set by router-level dependency)
@@ -141,7 +320,7 @@ async def save_persona(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
+        # Fetch user context once for the whole batch
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -160,113 +339,135 @@ async def save_persona(
             user_role = None
             user_department_ids = []
 
-        # Permission check: get user role and persona info using typed SQL
-        access_params = CheckPersonaSaveAccessSqlParams(
-            profile_id=profile_id,
-            persona_id=request.input_persona_id,
-        )
-        access_result = cast(
-            CheckPersonaSaveAccessSqlRow,
-            await execute_sql_typed(
-                conn,
-                ACCESS_CHECK_SQL_PATH,
-                params=access_params,
-            ),
-        )
-
-        if not access_result:
-            raise HTTPException(
-                status_code=401,
-                detail="Unable to verify user permissions.",
+        # Phase 1: Per-item access + permission checks (outside transaction, fail fast)
+        for idx, item in enumerate(request.personas):
+            access_params = CheckPersonaSaveAccessSqlParams(
+                profile_id=profile_id,
+                persona_id=item.input_persona_id,
             )
-
-        # Permission logic: create vs update mode
-        if not request.input_persona_id:
-            # Create mode: check role and department permissions
-            # Note: For create, we don't have department_ids in the request yet
-            # The actual department validation happens in save SQL based on draft contents
-            # Here we just do role check - department validation is deferred
-            can_save_result = compute_can_create(
-                user_role=user_role,
-                department_ids=None,  # Will be validated when saving from draft
-            )
-        else:
-            # Update mode: full permission check including user department membership
-            can_save_result = compute_can_edit(
-                user_role=user_role,
-                persona_department_ids=access_result.persona_department_ids,
-                active_scenario_count=access_result.active_scenario_count or 0,
-                user_department_ids=user_department_ids,
-            )
-
-        if not can_save_result:
-            raise HTTPException(
-                status_code=403,
-                detail="You don't have permission to save this persona.",
-            )
-
-        # Create group_id in Python (moved from SQL)
-        group_id = None
-        if pool:
-            async with pool.acquire() as group_conn:
-                group_id = await group_conn.fetchval(
-                    "INSERT INTO groups_entry (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id"
-                )
-
-        async with conn.transaction():
-            # Convert API request to SQL params (add profile_id and server-resolved group_id)
-            params = SavePersonaSqlParams.from_request(
-                request, profile_id=profile_id, group_id=group_id
-            )
-            sql_params = params.to_tuple()
-
-            # Execute SQL with typed helper - automatically detects and calls function if present
-            result = cast(
-                SavePersonaSqlRow,
+            access_result = cast(
+                CheckPersonaSaveAccessSqlRow,
                 await execute_sql_typed(
                     conn,
-                    SQL_PATH,
-                    params=params,
+                    ACCESS_CHECK_SQL_PATH,
+                    params=access_params,
                 ),
             )
 
-            if not result or not result.persona_id:
-                if request.input_persona_id:
-                    raise ValueError(f"Persona not found: {request.input_persona_id}")
-                else:
-                    raise ValueError("Failed to create persona")
+            if not access_result:
+                raise HTTPException(
+                    status_code=401,
+                    detail=f"Item {idx}: Unable to verify user permissions.",
+                )
 
-            # Set audit context with actor_name from internal fetch
-            if actor_name:
-                audit_ctx = {"actor": {"name": actor_name, "id": profile_id}}
-                # Only add persona to audit context if input_persona_id was provided (update mode)
-                # For create mode, we don't have the name yet, so we'll use the request name if available
-                if request.input_persona_id:
-                    # Update mode: use request name (from request body)
-                    # Note: In update mode, request should have name field
-                    audit_ctx["persona"] = {
-                        "name": getattr(request, "name", "Persona"),
-                        "id": str(result.persona_id),
-                    }
-                audit_set(http_request, **audit_ctx)
+            if not item.input_persona_id:
+                can_save = compute_can_create(
+                    user_role=user_role,
+                    department_ids=None,
+                )
+            else:
+                can_save = compute_can_edit(
+                    user_role=user_role,
+                    persona_department_ids=access_result.persona_department_ids,
+                    active_scenario_count=access_result.active_scenario_count or 0,
+                    user_department_ids=user_department_ids,
+                )
 
-        # Convert SQL result to API response
-        is_update = request.input_persona_id is not None
-        api_response = SavePersonaApiResponse.model_validate(
-            {
-                "success": True,
-                "persona_id": str(result.persona_id),
-                "message": "Persona updated successfully"
-                if is_update
-                else "Persona created successfully",
-            }
-        )
+            if not can_save:
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Item {idx}: You don't have permission to save this persona.",
+                )
+
+        # Phase 2: Resolve value fields → IDs (outside transaction)
+        # If any item has errors, return all errors without persisting
+        has_errors = False
+        error_results: list[SavePersonaResult] = []
+
+        for idx, item in enumerate(request.personas):
+            item_errors = await _resolve_persona_values(conn, item)
+            if item_errors:
+                has_errors = True
+                error_results.append(
+                    SavePersonaResult(
+                        success=False,
+                        message=f"Item {idx}: Validation errors",
+                        errors=item_errors,
+                    )
+                )
+            else:
+                error_results.append(
+                    SavePersonaResult(
+                        success=True,
+                        message="Validated",
+                    )
+                )
+
+        if has_errors:
+            return SavePersonaApiResponse(results=error_results)
+
+        # Phase 3: Allocate group_ids for each item (outside transaction)
+        group_ids: list[uuid.UUID | None] = []
+        if pool:
+            for _item in request.personas:
+                async with pool.acquire() as group_conn:
+                    gid = await group_conn.fetchval(
+                        "INSERT INTO groups_entry (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id"
+                    )
+                    group_ids.append(gid)
+        else:
+            group_ids = [None] * len(request.personas)
+
+        # Phase 4: Single transaction — execute SQL for each item
+        results: list[SavePersonaResult] = []
+
+        async with conn.transaction():
+            for idx, (item, group_id) in enumerate(zip(request.personas, group_ids, strict=True)):
+                params = SavePersonaSqlParams.from_request(
+                    item, profile_id=profile_id, group_id=group_id
+                )
+
+                result = cast(
+                    SavePersonaSqlRow,
+                    await execute_sql_typed(
+                        conn,
+                        SQL_PATH,
+                        params=params,
+                    ),
+                )
+
+                if not result or not result.persona_id:
+                    if item.input_persona_id:
+                        raise ValueError(
+                            f"Item {idx}: Persona not found: {item.input_persona_id}"
+                        )
+                    else:
+                        raise ValueError(f"Item {idx}: Failed to create persona")
+
+                is_update = item.input_persona_id is not None
+                results.append(
+                    SavePersonaResult(
+                        success=True,
+                        persona_id=result.persona_id,
+                        message="Persona updated successfully"
+                        if is_update
+                        else "Persona created successfully",
+                    )
+                )
+
+        # Audit context
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                count=len(results),
+            )
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return api_response
+        return SavePersonaApiResponse(results=results)
     except HTTPException:
         raise
     except ValueError as e:
@@ -277,6 +478,6 @@ async def save_persona(
             route_path=http_request.url.path,
             operation="save_persona",
             sql_query=sql_query,
-            sql_params=sql_params,
+            sql_params=None,
             request=http_request,
         )

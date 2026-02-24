@@ -1,6 +1,7 @@
 """instructions endpoint - v4 API following DHH principles."""
 
 from typing import Annotated, Any, cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -20,6 +21,24 @@ from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/resources/instructions_complete.sql"
+
+
+async def create_instructions_internal(
+    conn: asyncpg.Connection,
+    template: str,
+    mcp: bool = False,
+) -> UUID:
+    """Create an instructions resource and return its ID."""
+    params = InstructionsSqlParams(template=template, mcp=mcp)
+    result = cast(
+        InstructionsSqlRow,
+        await execute_sql_typed(conn, SQL_PATH, params=params),
+    )
+    if not result or not result.instruction_id:
+        raise ValueError("Failed to create instructions")
+
+    await invalidate_tags(["resources", "instructions"])
+    return result.instruction_id
 
 
 router = APIRouter()

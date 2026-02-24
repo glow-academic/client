@@ -110,20 +110,9 @@ persona_examples_data AS (
     FROM params
     LIMIT 1
 ),
+-- persona_parameters_junction dropped — parameter_ids now derived from parameter_fields
 persona_parameters_data AS (
-    SELECT
-        CASE
-            WHEN (SELECT persona_id FROM params) IS NULL THEN ARRAY[]::uuid[]
-            ELSE COALESCE(
-                (SELECT ARRAY_AGG(pp.parameter_id ORDER BY pp.created_at)
-                 FROM persona_parameters_junction pp
-                 JOIN parameters_resource pr ON pr.id = pp.parameter_id
-                 WHERE pp.persona_id = (SELECT persona_id FROM params)
-                   AND pp.active = true
-                   AND pr.persona_parameter = true),
-                ARRAY[]::uuid[]
-            )
-        END as parameter_ids
+    SELECT ARRAY[]::uuid[] as parameter_ids
     FROM params
     LIMIT 1
 ),

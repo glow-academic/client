@@ -332,32 +332,65 @@ class PersonaMultiResourceAction(BaseModel):
 # ========== Save Endpoint Types ==========
 
 
-class SavePersonaApiRequest(BaseModel):
-    """Request model for save persona endpoint - flat resource IDs."""
+class SavePersonaFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class SavePersonaItem(BaseModel):
+    """Single persona item for save — provide ID or value per field (not both).
+
+    For required fields (name, color, icon, instructions), exactly one of
+    the *_id or value field must be provided.
+    """
 
     input_persona_id: UUID | None = None
-    # Required single-select
-    name_id: UUID
-    color_id: UUID
-    icon_id: UUID
-    instructions_id: UUID
-    # Optional single-select
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    color_id: UUID | None = None
+    color: str | None = None
+    icon_id: UUID | None = None
+    icon: str | None = None
+    instructions_id: UUID | None = None
+    instructions: str | None = None
+    # Optional single-select — provide ID or value
     description_id: UUID | None = None
+    description: str | None = None
     active_flag_id: UUID | None = None
-    # Optional multi-select
+    active_flag: bool | None = None
+    # Optional multi-select — provide IDs or values
     department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
     parameter_field_ids: list[UUID] | None = None
+    parameter_fields: list[str] | None = None
     example_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
+    examples: list[str] | None = None
     voice_ids: list[UUID] | None = None
+    voices: list[str] | None = None
+
+
+class SavePersonaApiRequest(BaseModel):
+    """Request model for bulk save persona endpoint."""
+
+    personas: list[SavePersonaItem]
+
+
+class SavePersonaResult(BaseModel):
+    """Per-item result within a bulk save response."""
+
+    success: bool
+    persona_id: UUID | None = None
+    message: str
+    errors: list[SavePersonaFieldError] | None = None
 
 
 class SavePersonaApiResponse(BaseModel):
-    """Response model for save persona endpoint."""
+    """Response model for bulk save persona endpoint."""
 
-    success: bool
-    persona_id: UUID
-    message: str
+    results: list[SavePersonaResult]
 
 
 class SavePersonaSqlParams(BaseModel):
@@ -375,13 +408,12 @@ class SavePersonaSqlParams(BaseModel):
     departments: PersonaMultiResourceAction
     parameter_fields: PersonaMultiResourceAction
     examples: PersonaMultiResourceAction
-    parameters: PersonaMultiResourceAction
     voices: PersonaMultiResourceAction
 
     @classmethod
     def from_request(
         cls,
-        request: SavePersonaApiRequest,
+        request: SavePersonaItem,
         profile_id: UUID,
         group_id: UUID | None,
     ) -> SavePersonaSqlParams:
@@ -400,7 +432,6 @@ class SavePersonaSqlParams(BaseModel):
                 resource_ids=request.parameter_field_ids
             ),
             examples=PersonaMultiResourceAction(resource_ids=request.example_ids),
-            parameters=PersonaMultiResourceAction(resource_ids=request.parameter_ids),
             voices=PersonaMultiResourceAction(resource_ids=request.voice_ids),
         )
 
@@ -426,7 +457,6 @@ class SavePersonaSqlParams(BaseModel):
             multi(self.departments),
             multi(self.parameter_fields),
             multi(self.examples),
-            multi(self.parameters),
             multi(self.voices),
         )
 
@@ -442,16 +472,23 @@ class SavePersonaSqlRow(BaseModel):
 
 
 class DeletePersonaApiRequest(BaseModel):
-    """Request model for delete persona endpoint."""
+    """Request model for bulk delete persona endpoint."""
 
+    persona_ids: list[UUID]
+
+
+class DeletePersonaResult(BaseModel):
+    """Per-item result within a bulk delete response."""
+
+    success: bool
     persona_id: UUID
+    message: str
 
 
 class DeletePersonaApiResponse(BaseModel):
-    """Response model for delete persona endpoint."""
+    """Response model for bulk delete persona endpoint."""
 
-    success: bool
-    message: str
+    results: list[DeletePersonaResult]
 
 
 # ========== Duplicate Endpoint Types ==========
@@ -582,3 +619,24 @@ class PatchPersonaDraftSqlRow(BaseModel):
     draft_id: UUID | None = None
     new_version: int | None = None
     draft_exists: bool | None = None
+
+
+# ========== Export Endpoint Types ==========
+
+
+class ExportPersonaApiRequest(BaseModel):
+    """Request model for export persona endpoint."""
+
+    # Same filters as list endpoint
+    search: str | None = None
+    scenario_ids: list[str] | None = None
+    field_ids: list[str] | None = None
+    filter_department_ids: list[str] | None = None
+
+
+class ExportPersonaApiResponse(BaseModel):
+    """Response model for export persona endpoint."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int

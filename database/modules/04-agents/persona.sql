@@ -93,13 +93,13 @@ Parameter Fields:
 - id: {{ item.id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.parameters and resources.parameters|length > 0 %}
+{% if "parameter_fields" in all_gen_types and resources.parameters and resources.parameters|length > 0 %}
 Parameters (context — use parameter_id when creating parameter_fields):
 {% for item in resources.parameters %}
 - id: {{ item.parameter_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if resources.fields and resources.fields|length > 0 %}
+{% if "parameter_fields" in all_gen_types and resources.fields and resources.fields|length > 0 %}
 Fields (context — use field_id when creating parameter_fields):
 {% for item in resources.fields %}
 - id: {{ item.field_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
@@ -126,8 +126,7 @@ Rules:
 - For resource types: use_* when a suitable resource exists, create_* when nothing suitable exists
 - For entry types: always use_* with IDs from available resources
 - Only operate on the resource/entry types listed above
-- Do not invent IDs — use IDs from available resources
-', true, '2026-01-28T22:10:10.283595+00:00', false, false) ON CONFLICT (id) DO NOTHING;
+- Do not invent IDs — use IDs from available resources', true, '2026-01-28T22:10:10.283595+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019ba9ff-7490-775f-a5e1-2148751ab900', 'Persona', '2026-01-10T22:20:49.676121+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact

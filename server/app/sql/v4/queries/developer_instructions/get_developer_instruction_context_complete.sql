@@ -39,10 +39,11 @@ WITH agent_has_scenario_artifact AS (
     ) as has_scenario
 ),
 -- Get parameters for scenario (if scenario_id provided and agent has scenario artifact)
+-- Derived from scenario_parameter_fields_junction -> parameter_fields_resource -> parameters_resource
 scenario_parameters_data AS (
-    SELECT 
-        CASE 
-            WHEN EXISTS (SELECT 1 FROM agent_has_scenario_artifact WHERE has_scenario = true) 
+    SELECT
+        CASE
+            WHEN EXISTS (SELECT 1 FROM agent_has_scenario_artifact WHERE has_scenario = true)
                  AND p_scenario_id IS NOT NULL THEN
                 COALESCE(
                     jsonb_agg(
@@ -65,10 +66,16 @@ scenario_parameters_data AS (
                 )
             ELSE '[]'::jsonb
         END as parameters
-    FROM scenario_parameters_junction sp
-    JOIN parameters_resource p ON p.id = sp.parameter_id
-    WHERE (p_scenario_id IS NOT NULL AND sp.scenario_id = p_scenario_id)
-      AND sp.active = true
+    FROM (
+        SELECT DISTINCT pfr.parameter_id
+        FROM scenario_parameter_fields_junction spf
+        JOIN parameter_fields_resource pfr ON pfr.id = spf.parameter_field_id
+        WHERE spf.scenario_id = p_scenario_id
+          AND spf.active = true
+          AND pfr.parameter_id IS NOT NULL
+    ) distinct_params
+    JOIN parameters_resource p ON p.id = distinct_params.parameter_id
+    WHERE p_scenario_id IS NOT NULL
       AND EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'parameter_active' AND pf.value = true)
       AND EXISTS (SELECT 1 FROM agent_has_scenario_artifact WHERE has_scenario = true)
 ),

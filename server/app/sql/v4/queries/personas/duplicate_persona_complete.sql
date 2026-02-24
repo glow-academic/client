@@ -67,12 +67,7 @@ original_examples AS (
     FROM params x
     JOIN persona_examples_junction pej ON pej.persona_id = x.persona_id AND pej.active = true
 ),
-original_parameters AS (
-    -- Get parameter IDs from original persona (including conditional parameters)
-    SELECT ppj.parameter_id, ppj.type
-    FROM params x
-    JOIN persona_parameters_junction ppj ON ppj.persona_id = x.persona_id AND ppj.active = true
-),
+-- persona_parameters_junction dropped — parameters now derived from parameter_fields
 new_persona AS (
     INSERT INTO persona_artifact (
         created_at,
@@ -188,18 +183,9 @@ copy_examples AS (
     CROSS JOIN original_examples oe
     RETURNING persona_id
 ),
-copy_parameters AS (
-    -- Link to existing parameter IDs from original persona (preserving type)
-    INSERT INTO persona_parameters_junction (persona_id, parameter_id, type, active, created_at)
-    SELECT
-        np.id,
-        opr.parameter_id,
-        opr.type,
-        true,
-        NOW()
-    FROM new_persona np
-    CROSS JOIN original_parameters opr
-    RETURNING persona_id
+-- persona_parameters_junction dropped — no copy_parameters needed
+dummy_parameters AS (
+    SELECT NULL::uuid as persona_id WHERE false
 )
 SELECT
     (SELECT id FROM new_persona LIMIT 1) as new_persona_id,

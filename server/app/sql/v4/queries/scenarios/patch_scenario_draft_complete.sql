@@ -248,7 +248,7 @@ BEGIN
             DELETE FROM scenario_drafts_departments_connection WHERE scenario_drafts_departments_connection.draft_id = v_draft_id;
             DELETE FROM scenario_drafts_personas_connection WHERE scenario_drafts_personas_connection.draft_id = v_draft_id;
             DELETE FROM scenario_drafts_documents_connection WHERE scenario_drafts_documents_connection.draft_id = v_draft_id;
-            DELETE FROM scenario_drafts_parameters_connection WHERE scenario_drafts_parameters_connection.draft_id = v_draft_id;
+            -- scenario_drafts_parameters_connection dropped
             DELETE FROM scenario_drafts_parameter_fields_connection WHERE scenario_drafts_parameter_fields_connection.draft_id = v_draft_id;
             DELETE FROM scenario_drafts_images_connection WHERE scenario_drafts_images_connection.draft_id = v_draft_id;
             DELETE FROM scenario_drafts_objectives_connection WHERE scenario_drafts_objectives_connection.draft_id = v_draft_id;
@@ -337,13 +337,7 @@ BEGIN
                 SET version = v_new_version;
             END IF;
 
-            IF parameter_ids IS NOT NULL THEN
-                INSERT INTO scenario_drafts_parameters_connection (draft_id, parameters_id, version)
-                SELECT v_draft_id, param_id, v_new_version
-                FROM unnest(parameter_ids) as param_id
-                ON CONFLICT ON CONSTRAINT scenario_drafts_parameters_connection_pkey DO UPDATE
-                SET version = v_new_version;
-            END IF;
+            -- scenario_drafts_parameters_connection dropped — parameter_ids ignored
 
             IF parameter_field_ids IS NOT NULL THEN
                 INSERT INTO scenario_drafts_parameter_fields_connection (draft_id, parameter_fields_id, version)
@@ -501,13 +495,7 @@ BEGIN
             SET version = v_new_version;
         END IF;
 
-        IF parameter_ids IS NOT NULL THEN
-            INSERT INTO scenario_drafts_parameters_connection (draft_id, parameters_id, version)
-            SELECT v_draft_id, param_id, v_new_version
-            FROM unnest(parameter_ids) as param_id
-            ON CONFLICT ON CONSTRAINT scenario_drafts_parameters_connection_pkey DO UPDATE
-            SET version = v_new_version;
-        END IF;
+        -- scenario_drafts_parameters_connection dropped — parameter_ids ignored
 
         IF parameter_field_ids IS NOT NULL THEN
             INSERT INTO scenario_drafts_parameter_fields_connection (draft_id, parameter_fields_id, version)

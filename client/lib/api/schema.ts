@@ -61,7 +61,11 @@ export interface paths {
         put?: never;
         /**
          * Save Persona
-         * @description Save persona - handles both create (persona_id = NULL) and update (persona_id provided).
+         * @description Bulk save personas — all-or-nothing single transaction.
+         *
+         *     Each item can provide resource IDs directly or raw values that get
+         *     resolved to IDs (create or match). If any item has resolution errors,
+         *     the entire batch fails with per-item error details — no mutation occurs.
          */
         post: operations["save_persona_api_v4_artifacts_personas_save_post"];
         delete?: never;
@@ -101,7 +105,7 @@ export interface paths {
         put?: never;
         /**
          * Delete Persona
-         * @description Delete a persona.
+         * @description Bulk delete personas — all-or-nothing single transaction.
          */
         post: operations["delete_persona_api_v4_artifacts_personas_delete_post"];
         delete?: never;
@@ -141,6 +145,26 @@ export interface paths {
         put?: never;
         /** Get Persona Docs Endpoint */
         post: operations["get_persona_docs_endpoint_api_v4_artifacts_personas_docs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/artifacts/personas/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export Personas
+         * @description Export personas as CSV — stores file via upload infrastructure, returns upload_id.
+         */
+        post: operations["export_personas_api_v4_artifacts_personas_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -24615,22 +24639,32 @@ export interface components {
         };
         /**
          * DeletePersonaApiRequest
-         * @description Request model for delete persona endpoint.
+         * @description Request model for bulk delete persona endpoint.
          */
         DeletePersonaApiRequest: {
+            /** Persona Ids */
+            persona_ids: string[];
+        };
+        /**
+         * DeletePersonaApiResponse
+         * @description Response model for bulk delete persona endpoint.
+         */
+        DeletePersonaApiResponse: {
+            /** Results */
+            results: components["schemas"]["DeletePersonaResult"][];
+        };
+        /**
+         * DeletePersonaResult
+         * @description Per-item result within a bulk delete response.
+         */
+        DeletePersonaResult: {
+            /** Success */
+            success: boolean;
             /**
              * Persona Id
              * Format: uuid
              */
             persona_id: string;
-        };
-        /**
-         * DeletePersonaApiResponse
-         * @description Response model for delete persona endpoint.
-         */
-        DeletePersonaApiResponse: {
-            /** Success */
-            success: boolean;
             /** Message */
             message: string;
         };
@@ -26338,6 +26372,35 @@ export interface components {
             generated?: boolean | null;
             /** Example */
             example?: string | null;
+        };
+        /**
+         * ExportPersonaApiRequest
+         * @description Request model for export persona endpoint.
+         */
+        ExportPersonaApiRequest: {
+            /** Search */
+            search?: string | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Filter Department Ids */
+            filter_department_ids?: string[] | null;
+        };
+        /**
+         * ExportPersonaApiResponse
+         * @description Response model for export persona endpoint.
+         */
+        ExportPersonaApiResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** File Name */
+            file_name: string;
+            /** Row Count */
+            row_count: number;
         };
         /**
          * ExportRequest
@@ -40453,60 +40516,94 @@ export interface components {
         };
         /**
          * SavePersonaApiRequest
-         * @description Request model for save persona endpoint - flat resource IDs.
+         * @description Request model for bulk save persona endpoint.
          */
         SavePersonaApiRequest: {
-            /** Input Persona Id */
-            input_persona_id?: string | null;
-            /**
-             * Name Id
-             * Format: uuid
-             */
-            name_id: string;
-            /**
-             * Color Id
-             * Format: uuid
-             */
-            color_id: string;
-            /**
-             * Icon Id
-             * Format: uuid
-             */
-            icon_id: string;
-            /**
-             * Instructions Id
-             * Format: uuid
-             */
-            instructions_id: string;
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Parameter Field Ids */
-            parameter_field_ids?: string[] | null;
-            /** Example Ids */
-            example_ids?: string[] | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
-            /** Voice Ids */
-            voice_ids?: string[] | null;
+            /** Personas */
+            personas: components["schemas"]["SavePersonaItem"][];
         };
         /**
          * SavePersonaApiResponse
-         * @description Response model for save persona endpoint.
+         * @description Response model for bulk save persona endpoint.
          */
         SavePersonaApiResponse: {
-            /** Success */
-            success: boolean;
-            /**
-             * Persona Id
-             * Format: uuid
-             */
-            persona_id: string;
+            /** Results */
+            results: components["schemas"]["SavePersonaResult"][];
+        };
+        /**
+         * SavePersonaFieldError
+         * @description Per-field error from value resolution.
+         */
+        SavePersonaFieldError: {
+            /** Field */
+            field: string;
             /** Message */
             message: string;
+        };
+        /**
+         * SavePersonaItem
+         * @description Single persona item for save — provide ID or value per field (not both).
+         *
+         *     For required fields (name, color, icon, instructions), exactly one of
+         *     the *_id or value field must be provided.
+         */
+        SavePersonaItem: {
+            /** Input Persona Id */
+            input_persona_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Color Id */
+            color_id?: string | null;
+            /** Color */
+            color?: string | null;
+            /** Icon Id */
+            icon_id?: string | null;
+            /** Icon */
+            icon?: string | null;
+            /** Instructions Id */
+            instructions_id?: string | null;
+            /** Instructions */
+            instructions?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Active Flag */
+            active_flag?: boolean | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Departments */
+            departments?: string[] | null;
+            /** Parameter Field Ids */
+            parameter_field_ids?: string[] | null;
+            /** Parameter Fields */
+            parameter_fields?: string[] | null;
+            /** Example Ids */
+            example_ids?: string[] | null;
+            /** Examples */
+            examples?: string[] | null;
+            /** Voice Ids */
+            voice_ids?: string[] | null;
+            /** Voices */
+            voices?: string[] | null;
+        };
+        /**
+         * SavePersonaResult
+         * @description Per-item result within a bulk save response.
+         */
+        SavePersonaResult: {
+            /** Success */
+            success: boolean;
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Message */
+            message: string;
+            /** Errors */
+            errors?: components["schemas"]["SavePersonaFieldError"][] | null;
         };
         /**
          * SaveProfileRouteApiRequest
@@ -49607,6 +49704,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DocsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_personas_api_v4_artifacts_personas_export_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportPersonaApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportPersonaApiResponse"];
                 };
             };
             /** @description Validation Error */
