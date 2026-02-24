@@ -1,7 +1,6 @@
 """Simulation save endpoint - v4 API following DHH principles.
-
-Unified endpoint that handles both create (input_simulation_id = NULL) and update (input_simulation_id provided).
-Uses two-pass architecture with Python-computed permissions.
+Unified endpoint that handles both create (simulation_id = NULL) and update (simulation_id provided).
+Supports bulk operations and dual-mode fields (ID or value).
 """
 
 import uuid
@@ -18,19 +17,21 @@ from app.api.v4.artifacts.simulation.permissions import (
 from app.api.v4.artifacts.simulation.types import (
     SaveSimulationApiRequest,
     SaveSimulationApiResponse,
+    SaveSimulationFieldError,
+    SaveSimulationItem,
+    SaveSimulationResult,
     SaveSimulationSqlParams,
     SaveSimulationSqlRow,
-    SimulationMultiResourceAction,
-    SimulationResourceAction,
 )
+from app.api.v4.resources.descriptions.create import create_descriptions_internal
+from app.api.v4.resources.names.create import create_names_internal
+from app.api.v4.resources.simulations.create import create_simulations_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
     CheckSimulationSaveAccessSqlParams,
     CheckSimulationSaveAccessSqlRow,
-    GetNameByIdSqlParams,
-    GetNameByIdSqlRow,
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
@@ -39,9 +40,8 @@ from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
-# Load SQL with types at module level - makes it clear what SQL file is used
+# SQL paths
 SQL_PATH = "app/sql/v4/queries/simulations/save_simulation_complete.sql"
-GET_NAME_SQL_PATH = "app/sql/v4/queries/simulations/get_name_by_id_complete.sql"
 ACCESS_SQL_PATH = (
     "app/sql/v4/queries/simulations/check_simulation_save_access_complete.sql"
 )
@@ -53,51 +53,66 @@ router = APIRouter()
 async def save_simulation_internal(
     conn: asyncpg.Connection,
     profile_id: uuid.UUID,
-    group_id: uuid.UUID,
+    group_id: uuid.UUID | None,
     resource_actions: dict[str, Any],
     simulation_id: uuid.UUID | None = None,
 ) -> uuid.UUID | None:
     """Save a simulation from resource actions dict (used by generation complete handler).
 
-    Builds SaveSimulationSqlParams from a flat resource_actions dict, executes the
-    save SQL in a transaction, and invalidates cache.
+    Extracts flat resource IDs from resource_actions, creates the denormalized
+    simulations_resource, then executes the save SQL in a transaction.
 
     Returns the simulation_id on success, None on failure.
     """
     try:
 
-        def _single(key: str) -> SimulationResourceAction:
+        def _id(key: str) -> uuid.UUID | None:
             val = resource_actions.get(key, {})
             if isinstance(val, dict):
-                return SimulationResourceAction(
-                    resource_id=val.get("resource_id"),
-                )
-            return SimulationResourceAction()
+                return val.get("resource_id")
+            return None
 
-        def _multi(key: str) -> SimulationMultiResourceAction:
+        def _ids(key: str) -> list[uuid.UUID] | None:
             val = resource_actions.get(key, {})
             if isinstance(val, dict):
-                return SimulationMultiResourceAction(
-                    resource_ids=val.get("resource_ids"),
-                )
-            return SimulationMultiResourceAction()
+                return val.get("resource_ids")
+            return None
 
-        params = SaveSimulationSqlParams(
-            profile_id=profile_id,
-            input_simulation_id=simulation_id,
-            group_id=group_id,
-            names=_single("names"),
-            descriptions=_single("descriptions"),
-            flags=_multi("flags"),
-            departments=_multi("departments"),
-            scenarios=_multi("scenarios"),
-            scenario_flags=_multi("scenario_flags"),
-            scenario_positions=_multi("scenario_positions"),
-            scenario_rubrics=_multi("scenario_rubrics"),
-            scenario_time_limits=_multi("scenario_time_limits"),
-        )
+        name_id = _id("names")
+        description_id = _id("descriptions")
+        flag_ids = _ids("flags")
+        department_ids = _ids("departments")
+        scenario_ids = _ids("scenarios")
+        scenario_flag_ids = _ids("scenario_flags")
+        scenario_position_ids = _ids("scenario_positions")
+        scenario_rubric_ids = _ids("scenario_rubrics")
+        scenario_time_limit_ids = _ids("scenario_time_limits")
 
         async with conn.transaction():
+            # Create denormalized simulations_resource
+            simulations_resource_id = await create_simulations_internal(
+                conn,
+                name_id=name_id,
+                description_id=description_id,
+                department_ids=department_ids,
+                scenario_ids=scenario_ids,
+            )
+
+            params = SaveSimulationSqlParams(
+                profile_id=profile_id,
+                input_simulation_id=simulation_id,
+                name_id=name_id,
+                description_id=description_id,
+                flag_ids=flag_ids,
+                department_ids=department_ids,
+                scenario_ids=scenario_ids,
+                scenario_flag_ids=scenario_flag_ids,
+                scenario_position_ids=scenario_position_ids,
+                scenario_rubric_ids=scenario_rubric_ids,
+                scenario_time_limit_ids=scenario_time_limit_ids,
+                simulations_resource_id=simulations_resource_id,
+            )
+
             result = cast(
                 SaveSimulationSqlRow,
                 await execute_sql_typed(conn, SQL_PATH, params=params),
@@ -114,13 +129,44 @@ async def save_simulation_internal(
         return None
 
 
+async def _resolve_simulation_values(
+    conn: asyncpg.Connection,
+    item: SaveSimulationItem,
+) -> list[SaveSimulationFieldError]:
+    """Resolve value fields to IDs on the item (mutates in place).
+
+    For 'create' resources (name, description):
+      Creates a new resource and sets the *_id field.
+
+    Returns a list of errors (empty if all resolved successfully).
+    """
+    errors: list[SaveSimulationFieldError] = []
+
+    # --- Create resources (always create new) ---
+
+    if item.name is not None and item.name_id is None:
+        item.name_id = await create_names_internal(conn, item.name)
+
+    if item.description is not None and item.description_id is None:
+        item.description_id = await create_descriptions_internal(conn, item.description)
+
+    # --- Validate required fields have IDs after resolution ---
+
+    if item.name_id is None:
+        errors.append(
+            SaveSimulationFieldError(field="name", message="Name is required")
+        )
+
+    return errors
+
+
 @router.post(
     "/save",
     response_model=SaveSimulationApiResponse,
     dependencies=[
         audit_activity(
             "simulation.saved",
-            "{{ actor.name }} {% if simulation %}updated{% else %}created{% endif %} simulation{% if simulation %} '{{ simulation.name }}'{% endif %}",
+            "{{ actor.name }} saved {{ count }} simulation(s)",
         )
     ],
 )
@@ -130,16 +176,15 @@ async def save_simulation(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SaveSimulationApiResponse:
-    """Save simulation - handles both create (input_simulation_id = NULL) and update (input_simulation_id provided).
+    """Bulk save simulations — all-or-nothing single transaction.
 
-    Uses two-pass architecture:
-    1. Check access and permissions in Python
-    2. Execute save if permitted
+    Each item can provide resource IDs directly or raw values that get
+    resolved to IDs (create or match). If any item has resolution errors,
+    the entire batch fails with per-item error details — no mutation occurs.
     """
-    tags = ["simulations"]  # From router tags
+    tags = ["simulations"]
 
     sql_query = load_sql_query(SQL_PATH)
-    sql_params: tuple[Any, ...] | None = None
 
     try:
         # Get profile_id from header (set by router-level dependency)
@@ -150,7 +195,7 @@ async def save_simulation(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging (lazy import to avoid circular deps)
+        # Fetch user context once for the whole batch
         from app.api.v4.auth.profile import get_auth_profile_internal
 
         pool = get_pool()
@@ -171,146 +216,157 @@ async def save_simulation(
             user_role = None
             user_department_ids = []
 
-        # Pass 1: Check access using typed access query
-        access_params = CheckSimulationSaveAccessSqlParams(
-            profile_id=profile_id,
-            simulation_id=request.input_simulation_id,
-            draft_id=None,  # Not using draft_id - passing explicit values directly
-        )
-
-        access_result = cast(
-            CheckSimulationSaveAccessSqlRow,
-            await execute_sql_typed(
-                conn,
-                ACCESS_SQL_PATH,
-                params=access_params,
-            ),
-        )
-
-        if access_result:
-            # user_role and user_department_ids already fetched from context above
-            simulation_department_ids = (
-                getattr(access_result, "simulation_department_ids", None) or []
+        # Phase 1: Per-item access + permission checks (outside transaction, fail fast)
+        for idx, item in enumerate(request.simulations):
+            access_params = CheckSimulationSaveAccessSqlParams(
+                profile_id=profile_id,
+                simulation_id=item.input_simulation_id,
             )
-            cohort_usage_count = getattr(access_result, "cohort_usage_count", 0) or 0
-            simulation_exists = getattr(access_result, "simulation_exists", None)
+            access_result = cast(
+                CheckSimulationSaveAccessSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    ACCESS_SQL_PATH,
+                    params=access_params,
+                ),
+            )
 
-            if request.input_simulation_id:
-                # Update mode
-                # Check if simulation exists
+            if not access_result:
+                raise HTTPException(
+                    status_code=401,
+                    detail=f"Item {idx}: Unable to verify user permissions.",
+                )
+
+            if not item.input_simulation_id:
+                request_department_ids = (
+                    [str(d) for d in (item.department_ids or [])]
+                    if item.department_ids
+                    else []
+                )
+                can_save = compute_can_create(user_role, request_department_ids)
+            else:
+                simulation_department_ids = (
+                    getattr(access_result, "simulation_department_ids", None) or []
+                )
+                cohort_usage_count = (
+                    getattr(access_result, "cohort_usage_count", 0) or 0
+                )
+                simulation_exists = getattr(access_result, "simulation_exists", None)
+
                 if simulation_exists is False:
                     raise HTTPException(
                         status_code=404,
-                        detail=f"Simulation {request.input_simulation_id} not found",
+                        detail=f"Item {idx}: Simulation {item.input_simulation_id} not found",
                     )
 
-                # Check access permission
                 if not has_access(
                     user_role, user_department_ids, simulation_department_ids
                 ):
                     raise HTTPException(
                         status_code=403,
-                        detail="You don't have access to this simulation.",
+                        detail=f"Item {idx}: You don't have access to this simulation.",
                     )
 
-                # Check save permission using Python
-                if not compute_can_edit(
+                can_save = compute_can_edit(
                     user_role=user_role,
                     simulation_department_ids=simulation_department_ids,
                     cohort_usage_count=cohort_usage_count,
                     user_department_ids=user_department_ids,
-                ):
-                    if cohort_usage_count > 0 and user_role == "staff":
-                        raise HTTPException(
-                            status_code=403,
-                            detail=f"Simulation is used by {cohort_usage_count} cohort(s). Only admins can edit.",
+                )
+
+            if not can_save:
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Item {idx}: You don't have permission to save this simulation.",
+                )
+
+        # Phase 2: Resolve value fields → IDs (outside transaction)
+        has_errors = False
+        error_results: list[SaveSimulationResult] = []
+
+        for idx, item in enumerate(request.simulations):
+            item_errors = await _resolve_simulation_values(conn, item)
+            if item_errors:
+                has_errors = True
+                error_results.append(
+                    SaveSimulationResult(
+                        success=False,
+                        message=f"Item {idx}: Validation errors",
+                        errors=item_errors,
+                    )
+                )
+            else:
+                error_results.append(
+                    SaveSimulationResult(
+                        success=True,
+                        message="Validated",
+                    )
+                )
+
+        if has_errors:
+            return SaveSimulationApiResponse(results=error_results)
+
+        # Phase 3: Single transaction — create resources + save junctions
+        results: list[SaveSimulationResult] = []
+
+        async with conn.transaction():
+            for idx, item in enumerate(request.simulations):
+                # Create denormalized simulations_resource
+                simulations_resource_id = await create_simulations_internal(
+                    conn,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
+                    department_ids=item.department_ids,
+                    scenario_ids=item.scenario_ids,
+                )
+
+                params = SaveSimulationSqlParams.from_request(
+                    item,
+                    profile_id=profile_id,
+                    simulations_resource_id=simulations_resource_id,
+                )
+
+                result = cast(
+                    SaveSimulationSqlRow,
+                    await execute_sql_typed(
+                        conn,
+                        SQL_PATH,
+                        params=params,
+                    ),
+                )
+
+                if not result or not result.simulation_id:
+                    if item.input_simulation_id:
+                        raise ValueError(
+                            f"Item {idx}: Simulation not found: {item.input_simulation_id}"
                         )
                     else:
-                        raise HTTPException(
-                            status_code=403,
-                            detail="You don't have permission to save this simulation.",
-                        )
-            else:
-                # Create mode
-                # Use department_ids from request
-                request_department_ids = (
-                    [str(d) for d in (request.department_ids or [])]
-                    if request.department_ids
-                    else []
+                        raise ValueError(f"Item {idx}: Failed to create simulation")
+
+                is_update = item.input_simulation_id is not None
+                results.append(
+                    SaveSimulationResult(
+                        success=True,
+                        simulation_id=result.simulation_id,
+                        message="Simulation updated successfully"
+                        if is_update
+                        else "Simulation created successfully",
+                    )
                 )
-                if not compute_can_create(user_role, request_department_ids):
-                    raise HTTPException(
-                        status_code=403,
-                        detail="You don't have permission to create simulations.",
-                    )
 
-        # Pass 2: Execute save
-        async with conn.transaction():
-            # Server-resolved group_id: always create a new group for each save
-            group_id = await conn.fetchval(
-                "INSERT INTO groups_entry (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id"
+        # Audit context
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                count=len(results),
             )
-            # Convert flat resource IDs to SQL params
-            params = SaveSimulationSqlParams.from_request(
-                request, profile_id=profile_id, group_id=group_id
-            )
-            sql_params = params.to_tuple()
-
-            # Execute SQL with typed helper - automatically detects and calls function if present
-            result = cast(
-                SaveSimulationSqlRow,
-                await execute_sql_typed(
-                    conn,
-                    SQL_PATH,
-                    params=params,
-                ),
-            )
-
-            if not result or not result.simulation_id:
-                if request.input_simulation_id:
-                    raise ValueError(
-                        f"Simulation not found: {request.input_simulation_id}"
-                    )
-                else:
-                    raise ValueError("Failed to create simulation")
-
-            # Set audit context with data from SQL query
-            if actor_name:
-                audit_ctx = {"actor": {"name": actor_name, "id": profile_id}}
-                # Only add simulation to audit context if input_simulation_id was provided (update mode)
-                # For create mode, we don't have the name yet, so we'll use a placeholder
-                if request.input_simulation_id:
-                    # Update mode: look up name from name_id if available
-                    simulation_name = "Simulation"
-                    if request.name_id:
-                        name_params = GetNameByIdSqlParams(name_id=request.name_id)
-                        name_result = cast(
-                            GetNameByIdSqlRow,
-                            await execute_sql_typed(
-                                conn, GET_NAME_SQL_PATH, params=name_params
-                            ),
-                        )
-                        if name_result and name_result.name:
-                            simulation_name = name_result.name
-                    audit_ctx["simulation"] = {
-                        "name": simulation_name,
-                        "id": str(result.simulation_id),
-                    }
-                audit_set(http_request, **audit_ctx)
-
-        # Convert SQL result to API response
-        api_response = SaveSimulationApiResponse.model_validate(
-            {
-                "simulation_id": str(result.simulation_id),
-                "actor_name": actor_name,
-            }
-        )
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return api_response
+        return SaveSimulationApiResponse(results=results)
     except HTTPException:
         raise
     except ValueError as e:
@@ -321,6 +377,6 @@ async def save_simulation(
             route_path=http_request.url.path,
             operation="save_simulation",
             sql_query=sql_query,
-            sql_params=sql_params,
+            sql_params=None,
             request=http_request,
         )

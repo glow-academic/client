@@ -471,12 +471,28 @@ class SimulationMultiResourceAction(BaseModel):
 # =============================================================================
 
 
-class SaveSimulationApiRequest(BaseModel):
-    """Request for saving a simulation - flat resource IDs."""
+class SaveSimulationFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class SaveSimulationItem(BaseModel):
+    """Single simulation item for save — provide ID or value per field (not both).
+
+    For required fields (name), exactly one of the *_id or value field must
+    be provided.
+    """
 
     input_simulation_id: UUID | None = None
-    name_id: UUID
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
     description_id: UUID | None = None
+    description: str | None = None
+    # Multi-select IDs
     flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     scenario_ids: list[UUID] | None = None
@@ -486,85 +502,84 @@ class SaveSimulationApiRequest(BaseModel):
     scenario_time_limit_ids: list[UUID] | None = None
 
 
-class SaveSimulationApiResponse(BaseModel):
-    """Response for saving a simulation."""
+class SaveSimulationApiRequest(BaseModel):
+    """Request model for bulk save simulation endpoint."""
 
+    simulations: list[SaveSimulationItem]
+
+
+class SaveSimulationResult(BaseModel):
+    """Per-item result within a bulk save response."""
+
+    success: bool
     simulation_id: UUID | None = None
-    actor_name: str | None = None
+    message: str
+    errors: list[SaveSimulationFieldError] | None = None
+
+
+class SaveSimulationApiResponse(BaseModel):
+    """Response model for bulk save simulation endpoint."""
+
+    results: list[SaveSimulationResult]
 
 
 class SaveSimulationSqlParams(BaseModel):
-    """SQL parameters for save simulation."""
+    """SQL parameters for save simulation - flat resource IDs."""
 
     profile_id: UUID
     input_simulation_id: UUID | None = None
-    group_id: UUID
-    names: SimulationResourceAction
-    descriptions: SimulationResourceAction
-    flags: SimulationMultiResourceAction
-    departments: SimulationMultiResourceAction
-    scenarios: SimulationMultiResourceAction
-    scenario_flags: SimulationMultiResourceAction
-    scenario_positions: SimulationMultiResourceAction
-    scenario_rubrics: SimulationMultiResourceAction
-    scenario_time_limits: SimulationMultiResourceAction
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    flag_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    scenario_flag_ids: list[UUID] | None = None
+    scenario_position_ids: list[UUID] | None = None
+    scenario_rubric_ids: list[UUID] | None = None
+    scenario_time_limit_ids: list[UUID] | None = None
+    simulations_resource_id: UUID | None = None
 
     @classmethod
     def from_request(
         cls,
-        request: SaveSimulationApiRequest,
+        request: SaveSimulationItem,
         profile_id: UUID,
-        group_id: UUID | None,
+        simulations_resource_id: UUID | None = None,
     ) -> "SaveSimulationSqlParams":
         return cls(
             profile_id=profile_id,
             input_simulation_id=request.input_simulation_id,
-            group_id=group_id,
-            names=SimulationResourceAction(resource_id=request.name_id),
-            descriptions=SimulationResourceAction(resource_id=request.description_id),
-            flags=SimulationMultiResourceAction(resource_ids=request.flag_ids),
-            departments=SimulationMultiResourceAction(
-                resource_ids=request.department_ids
-            ),
-            scenarios=SimulationMultiResourceAction(resource_ids=request.scenario_ids),
-            scenario_flags=SimulationMultiResourceAction(
-                resource_ids=request.scenario_flag_ids
-            ),
-            scenario_positions=SimulationMultiResourceAction(
-                resource_ids=request.scenario_position_ids
-            ),
-            scenario_rubrics=SimulationMultiResourceAction(
-                resource_ids=request.scenario_rubric_ids
-            ),
-            scenario_time_limits=SimulationMultiResourceAction(
-                resource_ids=request.scenario_time_limit_ids
-            ),
+            name_id=request.name_id,
+            description_id=request.description_id,
+            flag_ids=request.flag_ids,
+            department_ids=request.department_ids,
+            scenario_ids=request.scenario_ids,
+            scenario_flag_ids=request.scenario_flag_ids,
+            scenario_position_ids=request.scenario_position_ids,
+            scenario_rubric_ids=request.scenario_rubric_ids,
+            scenario_time_limit_ids=request.scenario_time_limit_ids,
+            simulations_resource_id=simulations_resource_id,
         )
 
-    def to_tuple(self) -> tuple[Any, ...]:
-        def single(
-            a: SimulationResourceAction,
-        ) -> tuple[UUID | None, UUID | None, UUID | None]:
-            return (a.resource_id, a.tool_id, a.tool_id)
+    def to_tuple(self) -> tuple:
+        """Convert to tuple for SQL execution.
 
-        def multi(
-            a: SimulationMultiResourceAction,
-        ) -> tuple[list[UUID] | None, UUID | None, UUID | None]:
-            return (a.resource_ids, a.tool_id, a.tool_id)
-
+        Arrays are passed as-is (None preserved) so SQL COALESCE can
+        distinguish 'not provided' (NULL) from 'explicitly empty' ([]).
+        """
         return (
             self.profile_id,
             self.input_simulation_id,
-            self.group_id,
-            single(self.names),
-            single(self.descriptions),
-            multi(self.flags),
-            multi(self.departments),
-            multi(self.scenarios),
-            multi(self.scenario_flags),
-            multi(self.scenario_positions),
-            multi(self.scenario_rubrics),
-            multi(self.scenario_time_limits),
+            self.name_id,
+            self.description_id,
+            self.flag_ids,
+            self.department_ids,
+            self.scenario_ids,
+            self.scenario_flag_ids,
+            self.scenario_position_ids,
+            self.scenario_rubric_ids,
+            self.scenario_time_limit_ids,
+            self.simulations_resource_id,
         )
 
 
@@ -572,7 +587,6 @@ class SaveSimulationSqlRow(BaseModel):
     """SQL row for save simulation."""
 
     simulation_id: UUID | None = None
-    actor_name: str | None = None
 
 
 # =============================================================================
@@ -581,18 +595,23 @@ class SaveSimulationSqlRow(BaseModel):
 
 
 class DeleteSimulationApiRequest(BaseModel):
-    """Request for deleting a simulation."""
+    """Request model for bulk delete simulation endpoint."""
 
+    simulation_ids: list[UUID]
+
+
+class DeleteSimulationResult(BaseModel):
+    """Per-item result within a bulk delete response."""
+
+    success: bool
     simulation_id: UUID
+    message: str
 
 
 class DeleteSimulationApiResponse(BaseModel):
-    """Response for deleting a simulation."""
+    """Response model for bulk delete simulation endpoint."""
 
-    usage_count: int | None = None
-    deleted: bool | None = None
-    title: str | None = None
-    actor_name: str | None = None
+    results: list[DeleteSimulationResult]
 
 
 # =============================================================================

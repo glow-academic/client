@@ -1,25 +1,23 @@
-"""Simulation delete endpoint - v4 API following DHH principles.
+"""Simulation delete endpoint - v4 API following DHH principles."""
 
-Uses two-pass architecture with Python-computed permissions.
-"""
-
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.artifacts.simulation.permissions import (
-    compute_can_delete,
-    has_access,
+from app.api.v4.artifacts.simulation.permissions import compute_can_delete
+from app.api.v4.artifacts.simulation.types import (
+    DeleteSimulationApiRequest,
+    DeleteSimulationApiResponse,
+    DeleteSimulationResult,
 )
+from app.api.v4.auth.profile import get_auth_profile_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
     CheckSimulationDeleteAccessSqlParams,
     CheckSimulationDeleteAccessSqlRow,
-    DeleteSimulationApiRequest,
-    DeleteSimulationApiResponse,
     DeleteSimulationSqlParams,
     DeleteSimulationSqlRow,
     load_sql_query,
@@ -27,11 +25,11 @@ from app.sql.types import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-# Load SQL with types at module level
-SQL_PATH = "app/sql/v4/queries/simulations/delete_simulation_complete.sql"
-ACCESS_SQL_PATH = (
+# SQL paths
+ACCESS_CHECK_SQL_PATH = (
     "app/sql/v4/queries/simulations/check_simulation_delete_access_complete.sql"
 )
+DELETE_SQL_PATH = "app/sql/v4/queries/simulations/delete_simulation_complete.sql"
 
 
 router = APIRouter()
@@ -43,7 +41,7 @@ router = APIRouter()
     dependencies=[
         audit_activity(
             "simulation.deleted",
-            "{{ actor.name }} deleted simulation '{{ simulation.name }}'",
+            "{{ actor.name }} deleted {{ count }} simulation(s)",
         )
     ],
 )
@@ -53,16 +51,10 @@ async def delete_simulation(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DeleteSimulationApiResponse:
-    """Delete a simulation (with usage check).
+    """Bulk delete simulations — all-or-nothing single transaction."""
+    tags = ["simulations"]
 
-    Uses two-pass architecture:
-    1. Check access and permissions in Python
-    2. Execute delete if permitted
-    """
-    tags = ["simulations"]  # From router tags
-
-    sql_query = load_sql_query(SQL_PATH)
-    sql_params: tuple[Any, ...] | None = None
+    sql_query = load_sql_query(DELETE_SQL_PATH)
 
     try:
         # Get profile_id from header (set by router-level dependency)
@@ -73,9 +65,7 @@ async def delete_simulation(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging (lazy import to avoid circular deps)
-        from app.api.v4.auth.profile import get_auth_profile_internal
-
+        # Fetch user context once for the whole batch
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -90,121 +80,113 @@ async def delete_simulation(
             actor_name = None
             user_role = None
 
-        # Pass 1: Check access using access query
-        access_params = CheckSimulationDeleteAccessSqlParams(
-            profile_id=profile_id,
-            simulation_id=request.simulation_id,
-        )
-        access_result = cast(
-            CheckSimulationDeleteAccessSqlRow,
-            await execute_sql_typed(conn, ACCESS_SQL_PATH, params=access_params),
-        )
-
-        if access_result:
-            # Extract permission context
-            user_department_ids = (
-                getattr(access_result, "user_department_ids", None) or []
+        # Phase 1: Per-item access + permission checks (outside transaction, fail fast)
+        for idx, simulation_id in enumerate(request.simulation_ids):
+            access_params = CheckSimulationDeleteAccessSqlParams(
+                profile_id=profile_id,
+                simulation_id=simulation_id,
             )
+            access_result = cast(
+                CheckSimulationDeleteAccessSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    ACCESS_CHECK_SQL_PATH,
+                    params=access_params,
+                ),
+            )
+
+            if not access_result:
+                raise HTTPException(
+                    status_code=401,
+                    detail=f"Item {idx}: Unable to verify user permissions.",
+                )
+
             simulation_department_ids = (
                 getattr(access_result, "simulation_department_ids", None) or []
             )
             cohort_usage_count = getattr(access_result, "cohort_usage_count", 0) or 0
-            simulation_exists = getattr(access_result, "simulation_exists", False)
 
-            # Check if simulation exists
-            if not simulation_exists:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Simulation {request.simulation_id} not found",
-                )
+            can_delete = compute_can_delete(
+                user_role=user_role,
+                simulation_department_ids=simulation_department_ids,
+                cohort_usage_count=cohort_usage_count,
+            )
 
-            # Check access permission
-            if not has_access(
-                user_role, user_department_ids, simulation_department_ids
-            ):
-                raise HTTPException(
-                    status_code=403,
-                    detail="You don't have access to this simulation.",
-                )
-
-            # Check delete permission using Python
-            if not compute_can_delete(
-                user_role, simulation_department_ids, cohort_usage_count
-            ):
+            if not can_delete:
                 if cohort_usage_count > 0:
                     raise HTTPException(
                         status_code=400,
-                        detail=f"Cannot delete simulation: in use by {cohort_usage_count} cohort(s)",
+                        detail=f"Item {idx}: Cannot delete simulation: in use by {cohort_usage_count} cohort(s)",
                     )
-                else:
-                    raise HTTPException(
-                        status_code=403,
-                        detail="You don't have permission to delete this simulation.",
-                    )
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Item {idx}: You don't have permission to delete this simulation.",
+                )
 
-        # Pass 2: Execute delete (inside transaction)
+        # Phase 2: Single transaction — execute delete SQL for each item
+        results: list[DeleteSimulationResult] = []
+
         async with conn.transaction():
-            # Convert API request to SQL params (add profile_id from header)
-            params = DeleteSimulationSqlParams(
-                **request.model_dump(), profile_id=profile_id
-            )
-            sql_params = params.to_tuple()
-
-            # Execute query with typed helper
-            result = cast(
-                DeleteSimulationSqlRow,
-                await execute_sql_typed(
-                    conn,
-                    SQL_PATH,
-                    params=params,
-                ),
-            )
-
-            if not result:
-                # Simulation doesn't exist
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Simulation {request.simulation_id} not found",
+            for idx, simulation_id in enumerate(request.simulation_ids):
+                params = DeleteSimulationSqlParams(
+                    simulation_id=simulation_id, profile_id=profile_id
                 )
 
-            # Check if simulation was deleted or is in use
-            if not result.deleted:
-                # Simulation exists but is in use
+                result = cast(
+                    DeleteSimulationSqlRow,
+                    await execute_sql_typed(
+                        conn,
+                        DELETE_SQL_PATH,
+                        params=params,
+                    ),
+                )
+
+                if not result:
+                    raise ValueError(f"Item {idx}: Failed to check simulation usage")
+
                 usage_count = result.usage_count or 0
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Cannot delete simulation: in use by {usage_count} cohort(s)",
+                if usage_count > 0:
+                    raise ValueError(
+                        f"Item {idx}: Cannot delete simulation that is in use by {usage_count} cohort(s)"
+                    )
+
+                if not result.deleted:
+                    raise ValueError(
+                        f"Item {idx}: Simulation not found: {simulation_id}"
+                    )
+
+                simulation_name = result.title or "Unknown"
+                results.append(
+                    DeleteSimulationResult(
+                        success=True,
+                        simulation_id=simulation_id,
+                        message=f"Simulation '{simulation_name}' deleted successfully",
+                    )
                 )
 
-            simulation_name = result.title or "Unknown"
-
-            # Set audit context with data from SQL query
-            if actor_name:
-                audit_set(
-                    http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    simulation={
-                        "name": simulation_name,
-                        "id": str(request.simulation_id),
-                    },
-                )
-
-        # Convert SQL result to API response
-        api_response = DeleteSimulationApiResponse.model_validate(result.model_dump())
+        # Audit context
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                count=len(results),
+            )
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return api_response
+        return DeleteSimulationApiResponse(results=results)
     except HTTPException:
         raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
             operation="delete_simulation",
             sql_query=sql_query,
-            sql_params=sql_params,
+            sql_params=None,
             request=http_request,
         )

@@ -367,11 +367,11 @@ export interface paths {
         put?: never;
         /**
          * Save Simulation
-         * @description Save simulation - handles both create (input_simulation_id = NULL) and update (input_simulation_id provided).
+         * @description Bulk save simulations — all-or-nothing single transaction.
          *
-         *     Uses two-pass architecture:
-         *     1. Check access and permissions in Python
-         *     2. Execute save if permitted
+         *     Each item can provide resource IDs directly or raw values that get
+         *     resolved to IDs (create or match). If any item has resolution errors,
+         *     the entire batch fails with per-item error details — no mutation occurs.
          */
         post: operations["save_simulation_api_v4_artifacts_simulations_save_post"];
         delete?: never;
@@ -41735,18 +41735,48 @@ export interface components {
         };
         /**
          * SaveSimulationApiRequest
-         * @description Request for saving a simulation - flat resource IDs.
+         * @description Request model for bulk save simulation endpoint.
          */
         SaveSimulationApiRequest: {
+            /** Simulations */
+            simulations: components["schemas"]["SaveSimulationItem"][];
+        };
+        /**
+         * SaveSimulationApiResponse
+         * @description Response model for bulk save simulation endpoint.
+         */
+        SaveSimulationApiResponse: {
+            /** Results */
+            results: components["schemas"]["SaveSimulationResult"][];
+        };
+        /**
+         * SaveSimulationFieldError
+         * @description Per-field error from value resolution.
+         */
+        SaveSimulationFieldError: {
+            /** Field */
+            field: string;
+            /** Message */
+            message: string;
+        };
+        /**
+         * SaveSimulationItem
+         * @description Single simulation item for save — provide ID or value per field (not both).
+         *
+         *     For required fields (name), exactly one of the *_id or value field must
+         *     be provided.
+         */
+        SaveSimulationItem: {
             /** Input Simulation Id */
             input_simulation_id?: string | null;
-            /**
-             * Name Id
-             * Format: uuid
-             */
-            name_id: string;
+            /** Name Id */
+            name_id?: string | null;
+            /** Name */
+            name?: string | null;
             /** Description Id */
             description_id?: string | null;
+            /** Description */
+            description?: string | null;
             /** Flag Ids */
             flag_ids?: string[] | null;
             /** Department Ids */
@@ -41763,14 +41793,18 @@ export interface components {
             scenario_time_limit_ids?: string[] | null;
         };
         /**
-         * SaveSimulationApiResponse
-         * @description Response for saving a simulation.
+         * SaveSimulationResult
+         * @description Per-item result within a bulk save response.
          */
-        SaveSimulationApiResponse: {
+        SaveSimulationResult: {
+            /** Success */
+            success: boolean;
             /** Simulation Id */
             simulation_id?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
+            /** Message */
+            message: string;
+            /** Errors */
+            errors?: components["schemas"]["SaveSimulationFieldError"][] | null;
         };
         /**
          * SaveToolApiRequest
