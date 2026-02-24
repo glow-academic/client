@@ -89,7 +89,6 @@ from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_internal
 from app.api.v4.resources.scenario_flags.get import get_scenario_flags_internal
-from app.api.v4.resources.scenario_flags.search import search_scenario_flags_internal
 from app.api.v4.resources.scenario_positions.get import get_scenario_positions_internal
 from app.api.v4.resources.scenario_positions.search import (
     search_scenario_positions_internal,
@@ -906,9 +905,13 @@ async def get_simulation_websocket(
             departments=all_resources.departments if all_resources else None,
             scenarios=all_resources.scenarios if all_resources else None,
             scenario_flags=all_resources.scenario_flags if all_resources else None,
-            scenario_positions=all_resources.scenario_positions if all_resources else None,
+            scenario_positions=all_resources.scenario_positions
+            if all_resources
+            else None,
             scenario_rubrics=all_resources.scenario_rubrics if all_resources else None,
-            scenario_time_limits=all_resources.scenario_time_limits if all_resources else None,
+            scenario_time_limits=all_resources.scenario_time_limits
+            if all_resources
+            else None,
             rubrics=all_resources.rubrics if all_resources else None,
         ),
         config=websocket_config,

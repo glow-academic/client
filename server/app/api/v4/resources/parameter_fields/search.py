@@ -73,9 +73,9 @@ async def search_parameter_fields_internal(
 
     # Execute SQL
     params = SearchParameterFieldsSqlParams(
-        parameter_ids=parameter_ids or [],
-        field_ids=field_ids or [],
-        conditional_parameter_ids=conditional_parameter_ids or [],
+        p_parameter_ids=parameter_ids or [],
+        p_field_ids=field_ids or [],
+        p_conditional_parameter_ids=conditional_parameter_ids or [],
         document=document,
         persona=persona,
         scenario=scenario,

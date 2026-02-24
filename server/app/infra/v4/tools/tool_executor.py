@@ -252,7 +252,6 @@ async def _execute_resource_tool(
         JSON string with result
     """
     try:
-
         # Render tool templates (maps arguments to output columns)
         rendered_values = await render_tool_template(conn, tool_id, arguments)
         mapped_values = await map_template_values_to_table_columns(
@@ -374,10 +373,7 @@ async def _execute_resource_tool(
                     return [_serialize(item) for item in v]
                 return v
 
-            resource_data = {
-                k: _serialize(v)
-                for k, v in dict(existing_row).items()
-            }
+            resource_data = {k: _serialize(v) for k, v in dict(existing_row).items()}
         return json.dumps(
             {
                 "success": True,

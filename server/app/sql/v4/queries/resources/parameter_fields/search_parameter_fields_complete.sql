@@ -21,10 +21,12 @@ BEGIN
 END $$;
 
 -- Create function
+-- NOTE: Parameter names prefixed with p_ to avoid shadowing table columns
+-- (e.g. parameters_resource.field_ids, fields_resource.conditional_parameter_ids)
 CREATE OR REPLACE FUNCTION api_search_parameter_fields_v4(
-    parameter_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    field_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    conditional_parameter_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    p_parameter_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    p_field_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    p_conditional_parameter_ids uuid[] DEFAULT ARRAY[]::uuid[],
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     document boolean DEFAULT false,
     persona boolean DEFAULT false,
@@ -58,25 +60,27 @@ JOIN parameter_parameters_junction ppj ON ppj.parameter_id = pfj.parameter_id
 JOIN parameters_resource pr ON pr.id = ppj.parameters_id
 -- Get field name/description directly from fields_resource (denormalized)
 JOIN fields_resource fr ON fr.id = pfj.field_resource_id
--- Left join to get conditional_parameter_id if this field triggers a conditional parameter
-LEFT JOIN (
-    SELECT fcpj.field_id, cpr.parameter_id as conditional_parameter_id
-    FROM field_conditional_parameters_junction fcpj
-    JOIN conditional_parameters_resource cpr ON cpr.id = fcpj.conditional_parameter_id
-    WHERE fcpj.active = true AND cpr.active = true
-) cp_lookup ON cp_lookup.field_id = fr.id
+-- Left join to get conditional_parameter_id (the "next" parameter to explore)
+-- Uses denormalized fr.conditional_parameter_ids → conditional_parameters_resource.parameter_id
+LEFT JOIN LATERAL (
+    SELECT cpr.parameter_id as conditional_parameter_id
+    FROM conditional_parameters_resource cpr
+    WHERE cpr.id = ANY(fr.conditional_parameter_ids)
+      AND cpr.active = true
+    LIMIT 1
+) cp_lookup ON true
 WHERE pfj.active = true
   AND fr.active = true
   AND fr.name IS NOT NULL
   AND fr.name != ''
-  -- If parameter_ids is empty, return all fields for persona_parameter=true parameters
-  -- If parameter_ids is provided, return fields for those specific parameters (includes conditional params)
+  -- If p_parameter_ids is empty, return all fields for persona_parameter=true parameters
+  -- If p_parameter_ids is provided, return fields for those specific parameters (includes conditional params)
   AND (
-      (COALESCE(array_length(parameter_ids, 1), 0) = 0 AND pr.persona_parameter = true)
-      OR ppj.parameters_id = ANY(parameter_ids)
+      (COALESCE(array_length(p_parameter_ids, 1), 0) = 0 AND pr.persona_parameter = true)
+      OR ppj.parameters_id = ANY(p_parameter_ids)
   )
-  AND (COALESCE(array_length(field_ids, 1), 0) = 0 OR pfj.field_resource_id = ANY(field_ids))
-  AND (COALESCE(array_length(conditional_parameter_ids, 1), 0) = 0 OR cp_lookup.conditional_parameter_id = ANY(conditional_parameter_ids))
+  AND (COALESCE(array_length(p_field_ids, 1), 0) = 0 OR pfj.field_resource_id = ANY(p_field_ids))
+  AND (COALESCE(array_length(p_conditional_parameter_ids, 1), 0) = 0 OR cp_lookup.conditional_parameter_id = ANY(p_conditional_parameter_ids))
   -- Artifact boolean filters
   AND (NOT document OR EXISTS (SELECT 1 FROM document_parameter_fields_junction j WHERE j.parameter_field_id = pfj.field_resource_id AND j.active = true))
   AND (NOT persona OR EXISTS (SELECT 1 FROM persona_parameter_fields_junction j WHERE j.parameter_field_id = pfj.field_resource_id AND j.active = true))

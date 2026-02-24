@@ -114,11 +114,12 @@ class GetPersonaApiRequest(BaseModel):
     icon_search: str | None = None
     descriptions_search: str | None = None
     instructions_search: str | None = None
-    parameter_search: str | None = None
+    parameter_field_search: str | None = None
+    parameter_ids: list[str] | None = None  # URL render filter: which parameter groups are expanded
     # Show selected filters
     color_show_selected: bool | None = None
     icon_show_selected: bool | None = None
-    parameter_show_selected: bool | None = None
+    parameter_field_show_selected: bool | None = None
 
 
 class GetPersonaApiResponse(BaseModel):
@@ -151,6 +152,8 @@ class GetPersonaApiResponse(BaseModel):
     voices: PersonaVoiceSection | None = None
     # Fields catalog (not a section — computed resource, never saved)
     fields: list[QGetFieldsV4Item] | None = None
+    # Resolved parameter IDs (derived from saved parameter_fields)
+    resolved_parameter_ids: list[str] | None = None
 
 
 class PersonaWebsocketEntries(BaseModel):
@@ -257,6 +260,9 @@ class PersonaInternalData:
 
     # Per-resource tool IDs (from selected agents)
     tool_ids_map: dict[str, UUID | None]
+
+    # Resolved parameter IDs (derived from saved parameter_fields)
+    resolved_parameter_ids: list[str]
 
     # Config resources (from denormalized chain, for generation)
     config_agent_resources: list[QGetAgentsV4Item] | None

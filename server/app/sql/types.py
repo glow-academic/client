@@ -26016,18 +26016,18 @@ class ParameterFieldsApiResponse(BaseModel):
 
 class SearchParameterFieldsSqlParams(BaseModel):
 
-    parameter_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    field_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    conditional_parameter_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    p_parameter_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    p_field_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    p_conditional_parameter_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     document: bool | None = False
     persona: bool | None = False
     scenario: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.parameter_ids,
-            self.field_ids,
-            self.conditional_parameter_ids,
+            self.p_parameter_ids,
+            self.p_field_ids,
+            self.p_conditional_parameter_ids,
             self.document,
             self.persona,
             self.scenario,
@@ -26039,9 +26039,9 @@ class SearchParameterFieldsSqlRow(BaseModel):
 
 class SearchParameterFieldsApiRequest(BaseModel):
 
-    parameter_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    field_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    conditional_parameter_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    p_parameter_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    p_field_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    p_conditional_parameter_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     document: bool | None = False
     persona: bool | None = False
     scenario: bool | None = False

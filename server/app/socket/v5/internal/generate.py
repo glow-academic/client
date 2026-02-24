@@ -272,9 +272,7 @@ async def generate_handler(data: dict[str, Any]) -> None:
             return
 
         all_valid_types = set(config.valid_resource_types) | set(config.entry_types)
-        invalid_types = [
-            rt for rt in resource_types if rt not in all_valid_types
-        ]
+        invalid_types = [rt for rt in resource_types if rt not in all_valid_types]
         if invalid_types:
             await _emit_error(
                 sid,
@@ -368,9 +366,7 @@ async def generate_handler(data: dict[str, Any]) -> None:
         # Build lookup dicts for multi-agent resolution
         agents_by_id = {a.id: a for a in config_agents if a.id}
         models_by_id = {m.id: m for m in config_models if m.id}
-        providers_by_id = {
-            p.id: p for p in config_providers if getattr(p, "id", None)
-        }
+        providers_by_id = {p.id: p for p in config_providers if getattr(p, "id", None)}
 
         if not config_agents:
             await _emit_error(
@@ -422,15 +418,11 @@ async def generate_handler(data: dict[str, Any]) -> None:
         )
         all_tool_dicts = convert_tools_to_dict(config_tools)
         all_tool_dicts = _enrich_tools_with_args(all_tool_dicts, result, config)
-        all_tool_dicts = _enrich_tools_with_args_outputs(
-            all_tool_dicts, result, config
-        )
+        all_tool_dicts = _enrich_tools_with_args_outputs(all_tool_dicts, result, config)
 
         createable_resources: set[str] = set()
         for tool in config_tools:
-            if getattr(tool, "createable", False) and getattr(
-                tool, "resource", None
-            ):
+            if getattr(tool, "createable", False) and getattr(tool, "resource", None):
                 createable_resources.add(tool.resource)
 
         # DB operations
@@ -467,7 +459,9 @@ async def generate_handler(data: dict[str, Any]) -> None:
                     p_group_id=existing_group_id,
                     p_agents_resource_id=first_agent.id,
                     p_models_resource_id=first_model.id if first_model else None,
-                    p_providers_resource_id=first_provider.id if first_provider else None,  # type: ignore[union-attr]
+                    p_providers_resource_id=first_provider.id
+                    if first_provider
+                    else None,  # type: ignore[union-attr]
                 )
                 prepare_row = cast(
                     PrepareAgentGenerationSqlRow,
@@ -529,8 +523,7 @@ async def generate_handler(data: dict[str, Any]) -> None:
                 )
                 provider_resource = (
                     providers_by_id.get(model_resource.provider_id)  # type: ignore[arg-type]
-                    if model_resource
-                    and getattr(model_resource, "provider_id", None)
+                    if model_resource and getattr(model_resource, "provider_id", None)
                     else None
                 )
 
@@ -546,9 +539,7 @@ async def generate_handler(data: dict[str, Any]) -> None:
                     continue
 
                 api_key = (
-                    provider_resource.key
-                    if hasattr(provider_resource, "key")
-                    else ""
+                    provider_resource.key if hasattr(provider_resource, "key") else ""
                 )
                 if not api_key:
                     logger.warning(
@@ -578,29 +569,21 @@ async def generate_handler(data: dict[str, Any]) -> None:
                     else None
                 )
                 voice = (
-                    agent_resource.voice
-                    if hasattr(agent_resource, "voice")
-                    else None
+                    agent_resource.voice if hasattr(agent_resource, "voice") else None
                 )
                 quality = (
                     agent_resource.quality
                     if hasattr(agent_resource, "quality")
                     else None
                 )
-                provider_name = (
-                    provider_resource.value or provider_resource.name or ""
-                )
+                provider_name = provider_resource.value or provider_resource.name or ""
 
                 # 13b: Scope resource_types and entry_types for this agent
                 scoped_resource_types = [
-                    rt
-                    for rt in agent_resource_types
-                    if rt in createable_resources
+                    rt for rt in agent_resource_types if rt in createable_resources
                 ]
                 scoped_entry_types = [
-                    rt
-                    for rt in agent_resource_types
-                    if rt not in createable_resources
+                    rt for rt in agent_resource_types if rt not in createable_resources
                 ]
 
                 # 13c: Build scoped jinja context (clone base, inject per-agent)
@@ -620,26 +603,16 @@ async def generate_handler(data: dict[str, Any]) -> None:
                         return ""
 
                 async def _fetch_instructions(ar: Any) -> list[str]:
-                    iids = (
-                        ar.instruction_ids
-                        if hasattr(ar, "instruction_ids")
-                        else []
-                    )
+                    iids = ar.instruction_ids if hasattr(ar, "instruction_ids") else []
                     if not iids:
                         return []
                     async with pool.acquire() as c:  # type: ignore[union-attr]
                         instructions = await get_instructions_internal(c, iids)
-                        return [
-                            inst.template
-                            for inst in instructions
-                            if inst.template
-                        ]
+                        return [inst.template for inst in instructions if inst.template]
 
-                system_prompt, developer_instruction_templates = (
-                    await asyncio.gather(
-                        _fetch_prompt(agent_resource),
-                        _fetch_instructions(agent_resource),
-                    )
+                system_prompt, developer_instruction_templates = await asyncio.gather(
+                    _fetch_prompt(agent_resource),
+                    _fetch_instructions(agent_resource),
                 )
 
                 # 13e: Render developer instructions with scoped jinja context
@@ -677,9 +650,7 @@ async def generate_handler(data: dict[str, Any]) -> None:
 
                 if payload.user_instructions:
                     for instruction in payload.user_instructions:
-                        messages.append(
-                            {"role": "user", "content": instruction}
-                        )
+                        messages.append({"role": "user", "content": instruction})
                         await conn.fetchval(
                             create_message_sql,
                             run_id,
@@ -693,8 +664,7 @@ async def generate_handler(data: dict[str, Any]) -> None:
                 scoped_tool_dicts = [
                     td
                     for td in all_tool_dicts
-                    if td.get("resource") in agent_rt_set
-                    or not td.get("resource")
+                    if td.get("resource") in agent_rt_set or not td.get("resource")
                 ]
 
                 # 13h: Build metadata
@@ -703,9 +673,7 @@ async def generate_handler(data: dict[str, Any]) -> None:
                     value = getattr(payload, field_name, None)
                     if value is not None:
                         metadata[field_name] = (
-                            str(value)
-                            if isinstance(value, uuid.UUID)
-                            else value
+                            str(value) if isinstance(value, uuid.UUID) else value
                         )
                 if payload.grade_id:
                     metadata["grade_id"] = payload.grade_id
@@ -715,13 +683,9 @@ async def generate_handler(data: dict[str, Any]) -> None:
                     metadata["save"] = payload.save
 
                 if resource_agent_ids.get("images"):
-                    metadata["image_agent_id"] = str(
-                        resource_agent_ids["images"]
-                    )
+                    metadata["image_agent_id"] = str(resource_agent_ids["images"])
                 if resource_agent_ids.get("videos"):
-                    metadata["video_agent_id"] = str(
-                        resource_agent_ids["videos"]
-                    )
+                    metadata["video_agent_id"] = str(resource_agent_ids["videos"])
 
                 # 13i: Dispatch to generate_artifact
                 await internal_sio.emit(

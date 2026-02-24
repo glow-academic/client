@@ -96,6 +96,9 @@ from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.resources.parameter_fields.get import get_parameter_fields_internal
+from app.api.v4.resources.parameter_fields.search import (
+    search_parameter_fields_internal,
+)
 from app.api.v4.resources.parameters.get import get_parameters_internal
 from app.api.v4.resources.parameters.search import search_parameters_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
@@ -111,6 +114,7 @@ from app.sql.types import (
     GetPersonaAccessSqlRow,
     GetPersonaIdsSqlParams,
     GetPersonaIdsSqlRow,
+    QGetParameterFieldsV4Item,
     load_sql_query,
 )
 from app.utils.sql_helper import execute_sql_typed
@@ -127,6 +131,7 @@ async def get_persona_internal(
     persona_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    parameter_ids: list[UUID] | None = None,
 ) -> PersonaInternalData:
     """Core data fetching layer (cacheable).
 
@@ -245,7 +250,6 @@ async def get_persona_internal(
     selected_department_ids = ids_result.department_ids or []
     selected_parameter_field_ids = ids_result.parameter_field_ids or []
     selected_example_ids = ids_result.example_ids or []
-    selected_parameter_ids = ids_result.parameter_ids or []
     selected_voice_ids = ids_result.voice_ids or []
 
     # Draft values override canonical persona-junction values.
@@ -269,8 +273,6 @@ async def get_persona_internal(
             selected_parameter_field_ids = draft_item.parameter_field_ids
         if draft_item.example_ids:
             selected_example_ids = draft_item.example_ids
-        if draft_item.parameter_ids:
-            selected_parameter_ids = draft_item.parameter_ids
         if hasattr(draft_item, "voice_ids") and draft_item.voice_ids:
             selected_voice_ids = draft_item.voice_ids
 
@@ -369,7 +371,8 @@ async def get_persona_internal(
     department_ids = selected_department_ids
     parameter_field_ids = selected_parameter_field_ids
     example_ids = selected_example_ids
-    parameter_ids = selected_parameter_ids
+    # parameter_ids comes from URL (function param), not from saved state
+    parameter_ids = parameter_ids or []
     voice_ids_list = selected_voice_ids
 
     # Parallel fetch all resources
@@ -496,9 +499,28 @@ async def get_persona_internal(
 
     async def fetch_parameter_fields():
         async with pool.acquire() as c:
-            return await get_parameter_fields_internal(
+            selected = await get_parameter_fields_internal(
                 c, parameter_field_ids, bypass_cache
             )
+            # Fetch available fields for the currently expanded parameters (from URL)
+            available: list[QGetParameterFieldsV4Item] = []
+            conditional_param_ids: list[UUID] = []
+            if parameter_ids:
+                available = await search_parameter_fields_internal(
+                    c,
+                    parameter_ids=parameter_ids,
+                    bypass_cache=bypass_cache,
+                )
+                # Extract conditional parameter IDs from available fields
+                # These are "next" parameters the client can explore
+                conditional_param_ids = list(
+                    {
+                        UUID(str(f.conditional_parameter_id))
+                        for f in available
+                        if f.conditional_parameter_id
+                    }
+                )
+            return (selected, available, conditional_param_ids)
 
     async def fetch_fields():
         async with pool.acquire() as c:
@@ -531,15 +553,16 @@ async def get_persona_internal(
 
     async def fetch_parameters():
         async with pool.acquire() as c:
+            # Fetch parameters for the URL-expanded IDs (includes conditional params)
             selected = await get_parameters_internal(
                 c,
                 parameter_ids,
                 bypass_cache,
-                persona_parameter=True,  # Only fetch persona parameters
             )
+            # Suggest persona_parameter=true params not yet expanded
             suggestions = await search_parameters_internal(
                 c,
-                search=None,  # No search filter for internal calls
+                search=None,
                 limit_count=20,
                 offset_count=0,
                 persona_parameter=True,
@@ -586,7 +609,7 @@ async def get_persona_internal(
         (instructions_selected, instructions_suggestions),
         (flags_selected, flags_suggestions),
         (departments_selected, departments_suggestions),
-        parameter_fields_selected,
+        (parameter_fields_selected, parameter_fields_available, conditional_param_ids),
         (examples_selected, examples_suggestions),
         (parameters_selected, parameters_suggestions),
         (voices_selected, voices_suggestions),
@@ -639,6 +662,19 @@ async def get_persona_internal(
         parameters_selected + parameters_suggestions,
         "parameter_id",
     )
+    # Fetch conditional parameter metadata (names for "next" parameters revealed by fields)
+    existing_param_ids = {p.parameter_id for p in parameters if p.parameter_id}
+    missing_conditional_ids = [
+        pid for pid in conditional_param_ids if pid not in existing_param_ids
+    ]
+    if missing_conditional_ids:
+        async with pool.acquire() as c:
+            conditional_params = await get_parameters_internal(
+                c, missing_conditional_ids, bypass_cache
+            )
+            parameters = _dedupe_by_id(
+                parameters + conditional_params, "parameter_id"
+            )
     voices = _dedupe_by_id(voices_selected + voices_suggestions, "id")
 
     # Find selected resources
@@ -659,9 +695,12 @@ async def get_persona_internal(
         d for d in departments if d.department_id in selected_department_ids
     ]
     parameter_field_resources = parameter_fields_selected
+    resolved_parameter_ids = list(
+        {str(pf.parameter_id) for pf in parameter_field_resources if pf.parameter_id}
+    )
     example_resources = [e for e in examples if e.id in selected_example_ids]
     parameter_resources = [
-        p for p in parameters if p.parameter_id in selected_parameter_ids
+        p for p in parameters if p.parameter_id in parameter_ids
     ]
     voice_resources = [v for v in voices if v.id in selected_voice_ids]
 
@@ -769,7 +808,7 @@ async def get_persona_internal(
             instructions=instructions_list,
             flags=persona_flags,
             departments=departments,
-            parameter_fields=parameter_fields_selected,
+            parameter_fields=parameter_fields_available,
             examples=examples,
             parameters=parameters,
             voices=voices,
@@ -840,6 +879,8 @@ async def get_persona_internal(
         basic_show_ai_generate=basic_show_ai_generate,
         content_show_ai_generate=content_show_ai_generate,
         parameters_step_show_ai_generate=parameters_step_show_ai_generate,
+        # Resolved parameter IDs
+        resolved_parameter_ids=resolved_parameter_ids,
         # Resources
         resources_payload=resources_payload,
         # Per-resource tool IDs
@@ -1010,6 +1051,7 @@ async def get_persona_client(
     persona_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    parameter_ids: list[UUID] | None = None,
 ) -> GetPersonaApiResponse:
     """BFF response for HTTP endpoint/frontend.
 
@@ -1022,6 +1064,7 @@ async def get_persona_client(
         persona_id=persona_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
+        parameter_ids=parameter_ids,
     )
 
     all_resources = data.resources_payload.resources
@@ -1110,6 +1153,8 @@ async def get_persona_client(
         ),
         # Fields catalog
         fields=all_resources.fields if all_resources else [],
+        # Resolved parameter IDs (derived from saved parameter_fields)
+        resolved_parameter_ids=data.resolved_parameter_ids or None,
     )
 
 
@@ -1167,6 +1212,9 @@ async def get_persona(
             persona_id=request.persona_id,
             draft_id=request.draft_id,
             bypass_cache=bypass_cache,
+            parameter_ids=[UUID(pid) for pid in request.parameter_ids]
+            if request.parameter_ids
+            else None,
         )
 
         # Set audit context

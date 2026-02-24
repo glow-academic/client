@@ -988,9 +988,7 @@ async def get_cohort_websocket(
             if all_resources
             else None,
             profiles=all_resources.profiles if all_resources else None,
-            profile_personas=all_resources.profile_personas
-            if all_resources
-            else None,
+            profile_personas=all_resources.profile_personas if all_resources else None,
             personas=all_resources.personas if all_resources else None,
         ),
         config=websocket_config,

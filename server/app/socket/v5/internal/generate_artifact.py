@@ -439,7 +439,9 @@ async def _generate_artifact_impl(
                 if t_name and t_id:
                     try:
                         tool_id_by_name[t_name] = (
-                            t_id if isinstance(t_id, uuid.UUID) else uuid.UUID(str(t_id))
+                            t_id
+                            if isinstance(t_id, uuid.UUID)
+                            else uuid.UUID(str(t_id))
                         )
                     except (ValueError, AttributeError):
                         pass

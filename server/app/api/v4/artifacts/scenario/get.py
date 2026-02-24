@@ -1311,7 +1311,9 @@ async def get_scenario_websocket(
         resources=ScenarioWebsocketResources(
             names=all_resources.names if all_resources else None,
             descriptions=all_resources.descriptions if all_resources else None,
-            problem_statements=all_resources.problem_statements if all_resources else None,
+            problem_statements=all_resources.problem_statements
+            if all_resources
+            else None,
             flags=all_resources.flags if all_resources else None,
             departments=all_resources.departments if all_resources else None,
             personas=all_resources.personas if all_resources else None,

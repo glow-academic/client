@@ -111,7 +111,11 @@ async def get_rubrics_internal(
     # Generate cache key
     cache_key_val = cache_key(
         "rubrics/get",
-        {"ids": sorted([str(id) for id in effective_ids]) if effective_ids else ["__all__"]},
+        {
+            "ids": sorted([str(id) for id in effective_ids])
+            if effective_ids
+            else ["__all__"]
+        },
     )
 
     # Try cache (unless bypassed)

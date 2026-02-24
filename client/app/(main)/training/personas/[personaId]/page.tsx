@@ -10,7 +10,12 @@ import Persona from "@/components/artifacts/persona/Persona";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
+import {
+  createLoader,
+  parseAsArrayOf,
+  parseAsBoolean,
+  parseAsString,
+} from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetPersonaIn = InputOf<"/api/v4/artifacts/personas/get", "post">;
@@ -191,6 +196,7 @@ export default async function PersonaEditPage({
     fieldShowSelected: parseAsBoolean,
     color: parseAsString,
     icon: parseAsString,
+    parameterIds: parseAsArrayOf(parseAsString),
   };
   const loadPersonaSearchParams = createLoader(personaSearchParams);
   const q = loadPersonaSearchParams(searchParamsObj);
@@ -210,6 +216,7 @@ export default async function PersonaEditPage({
         color_show_selected: q.colorShowSelected ?? null,
         icon_show_selected: q.iconShowSelected ?? null,
         field_show_selected: q.fieldShowSelected ?? null,
+        parameter_ids: q.parameterIds ?? null,
       } as GetPersonaIn["body"],
     };
     const personaDetail = await getPersona(input);
