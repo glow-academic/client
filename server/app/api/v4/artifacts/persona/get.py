@@ -1077,6 +1077,7 @@ async def get_persona_websocket(
             examples=all_resources.examples if all_resources else None,
             parameters=all_resources.parameters if all_resources else None,
             voices=all_resources.voices if all_resources else None,
+            fields=all_resources.fields if all_resources else None,
         ),
         artifacts=websocket_config,
         resource_agent_ids=data.agent_ids,

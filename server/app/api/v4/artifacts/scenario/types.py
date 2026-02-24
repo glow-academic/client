@@ -418,6 +418,7 @@ class ScenarioWebsocketResources(BaseModel):
     videos: list[ScenarioVideo] | None = None
     questions: list[ScenarioQuestion] | None = None
     options: list[ScenarioOption] | None = None
+    fields: list[Any] | None = None
 
 
 # =============================================================================

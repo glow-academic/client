@@ -172,6 +172,112 @@ def _parse_partial_json(partial: str) -> dict[str, Any] | None:
         return None
 
 
+def _parse_bool(val: str | bool | None) -> bool | None:
+    """Parse a string/bool value to bool or None."""
+    if val is None:
+        return None
+    if isinstance(val, bool):
+        return val
+    if isinstance(val, str):
+        return val.lower() in ("true", "1", "yes")
+    return None
+
+
+def _parse_int(val: str | int | None) -> int | None:
+    """Parse a string/int value to int or None."""
+    if val is None:
+        return None
+    if isinstance(val, int):
+        return val
+    if isinstance(val, str):
+        try:
+            return int(val)
+        except ValueError:
+            return None
+    return None
+
+
+def _build_refetch_kwargs(
+    artifact_type: str,
+    arguments: dict[str, Any],
+    profile_id: uuid.UUID | None,
+    artifact_id: uuid.UUID | None,
+    draft_id: uuid.UUID | None,
+    fetcher_id_kwarg: str,
+) -> dict[str, Any]:
+    """Build kwargs for the refetch function call."""
+    kwargs: dict[str, Any] = {"bypass_cache": True}
+
+    if profile_id:
+        kwargs["profile_id"] = profile_id
+
+    if fetcher_id_kwarg and artifact_id:
+        kwargs[fetcher_id_kwarg] = artifact_id
+
+    if draft_id:
+        kwargs["draft_id"] = draft_id
+
+    # Persona-specific: parse parameter_ids and bool search params
+    if artifact_type == "persona":
+        param_ids_str = arguments.get("parameter_ids")
+        if param_ids_str and isinstance(param_ids_str, str):
+            try:
+                kwargs["parameter_ids"] = [
+                    uuid.UUID(pid.strip())
+                    for pid in param_ids_str.split(",")
+                    if pid.strip()
+                ]
+            except ValueError:
+                pass
+        for key in (
+            "color_search",
+            "icon_search",
+            "descriptions_search",
+            "instructions_search",
+            "parameter_field_search",
+        ):
+            val = arguments.get(key)
+            if val:
+                kwargs[key] = val
+        for key in (
+            "color_show_selected",
+            "icon_show_selected",
+            "parameter_field_show_selected",
+        ):
+            val = _parse_bool(arguments.get(key))
+            if val is not None:
+                kwargs[key] = val
+        return kwargs
+
+    # Home/practice: type-convert history params
+    if artifact_type in ("home", "practice"):
+        for key in (
+            "history_sort_by",
+            "history_sort_order",
+            "history_simulation_search",
+            "history_scenario_search",
+        ):
+            val = arguments.get(key)
+            if val:
+                kwargs[key] = val
+        for key in ("history_page", "history_page_size"):
+            val = _parse_int(arguments.get(key))
+            if val is not None:
+                kwargs[key] = val
+        for key in ("history_show_archived", "history_infinite_mode"):
+            val = _parse_bool(arguments.get(key))
+            if val is not None:
+                kwargs[key] = val
+        return kwargs
+
+    # All other agents: pass through any extra string arguments
+    for key, val in arguments.items():
+        if val is not None and val != "":
+            kwargs[key] = val
+
+    return kwargs
+
+
 async def _execute_artifact_tool_inline(
     artifact_type: str,
     arguments: dict[str, Any],
@@ -182,85 +288,83 @@ async def _execute_artifact_tool_inline(
 ) -> tuple[str, list[str]]:
     """Execute artifact tool: re-fetch context, re-render developer messages.
 
+    Uses the REGISTRY to dispatch to the correct fetcher for any artifact type.
+
     Returns:
         (tool_result_json, developer_messages) — result for LLM + messages to inject
     """
+    import importlib
+
     from app.infra.v4.generation.render_developer_instructions import (
         render_developer_instructions,
     )
+    from app.socket.v5.client.registry import REGISTRY
+    from app.socket.v5.internal.generate import _build_jinja_context
 
-    # PoC: only persona supported for now. Generalize via registry later.
-    if artifact_type == "persona":
-        from app.api.v4.artifacts.persona.get import get_persona_websocket
-
-        if not profile_id:
-            return (
-                json.dumps({"success": False, "message": "No profile_id available"}),
-                [],
-            )
-
-        # Parse parameter_ids from comma-separated string to list[UUID]
-        param_ids_str = arguments.get("parameter_ids")
-        param_ids: list[uuid.UUID] | None = None
-        if param_ids_str and isinstance(param_ids_str, str):
-            try:
-                param_ids = [
-                    uuid.UUID(pid.strip())
-                    for pid in param_ids_str.split(",")
-                    if pid.strip()
-                ]
-            except ValueError:
-                param_ids = None
-
-        # Parse bool args
-        def _parse_bool(val: Any) -> bool | None:
-            if val is None:
-                return None
-            if isinstance(val, bool):
-                return val
-            if isinstance(val, str):
-                return val.lower() in ("true", "1", "yes")
-            return None
-
-        result = await get_persona_websocket(
-            profile_id=profile_id,
-            persona_id=artifact_id,
-            draft_id=draft_id,
-            bypass_cache=True,
-            color_search=arguments.get("color_search") or None,
-            icon_search=arguments.get("icon_search") or None,
-            descriptions_search=arguments.get("descriptions_search") or None,
-            instructions_search=arguments.get("instructions_search") or None,
-            parameter_field_search=arguments.get("parameter_field_search") or None,
-            parameter_ids=param_ids,
-            color_show_selected=_parse_bool(arguments.get("color_show_selected")),
-            icon_show_selected=_parse_bool(arguments.get("icon_show_selected")),
-            parameter_field_show_selected=_parse_bool(
-                arguments.get("parameter_field_show_selected")
-            ),
-        )
-
-        # Build Jinja context from the refreshed result
-        from app.socket.v5.internal.generate import _build_jinja_context
-
-        jinja_context = _build_jinja_context(result)
-
-        # Re-render developer instructions
-        rendered_msgs = render_developer_instructions(
-            templates=developer_instruction_templates,
-            jinja_context=jinja_context,
-        )
-
+    config = REGISTRY.get(artifact_type)
+    if not config or not config.fetcher_module or not config.fetcher_func:
         return (
-            json.dumps({"success": True, "message": "Refreshed persona context"}),
-            rendered_msgs,
+            json.dumps(
+                {
+                    "success": False,
+                    "message": f"Unsupported artifact type: {artifact_type}",
+                }
+            ),
+            [],
         )
+
+    if not profile_id:
+        return (
+            json.dumps({"success": False, "message": "No profile_id available"}),
+            [],
+        )
+
+    mod = importlib.import_module(config.fetcher_module)
+    fn = getattr(mod, config.fetcher_func)
+
+    kwargs = _build_refetch_kwargs(
+        artifact_type,
+        arguments,
+        profile_id,
+        artifact_id,
+        draft_id,
+        config.fetcher_id_kwarg,
+    )
+
+    try:
+        if config.needs_conn:
+            async with get_db_connection() as conn:
+                kwargs["conn"] = conn
+                result = await fn(**kwargs)
+        elif config.requires_pool:
+            from app.main import get_pool
+
+            pool = get_pool()
+            kwargs["pool"] = pool
+            result = await fn(**kwargs)
+        else:
+            result = await fn(**kwargs)
+    except Exception as e:
+        return (
+            json.dumps(
+                {
+                    "success": False,
+                    "message": f"Failed to refetch {artifact_type}: {str(e)}",
+                }
+            ),
+            [],
+        )
+
+    # Build Jinja context from the refreshed result and re-render
+    jinja_context = _build_jinja_context(result)
+    rendered_msgs = render_developer_instructions(
+        templates=developer_instruction_templates,
+        jinja_context=jinja_context,
+    )
 
     return (
-        json.dumps(
-            {"success": False, "message": f"Unsupported artifact type: {artifact_type}"}
-        ),
-        [],
+        json.dumps({"success": True, "message": f"Refreshed {artifact_type} context"}),
+        rendered_msgs,
     )
 
 

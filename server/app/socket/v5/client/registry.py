@@ -54,6 +54,13 @@ class ArtifactGenerateConfig:
     # e.g. "agent_id", "chat_entry_id" — empty for non-ID artifacts
     fetcher_id_kwarg: str = ""
 
+    # Whether the fetcher requires an explicit connection (attempt, test)
+    needs_conn: bool = False
+
+    # Module path and function name for the fetcher (for direct import in artifact tools)
+    fetcher_module: str = ""
+    fetcher_func: str = ""
+
     # Async entry types for this artifact
     entry_types: list[str] = field(default_factory=lambda: ["debug_info"])
 
@@ -236,6 +243,8 @@ _register(
         prepare_sql_path="app/sql/v4/queries/generate/agent/prepare_agent_generation_complete.sql",
         draft_view_key="draft_agent",
         fetcher_id_kwarg="agent_id",
+        fetcher_module="app.api.v4.artifacts.agent.get",
+        fetcher_func="get_agent_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.agent.get",
             "get_agent_websocket",
@@ -258,6 +267,8 @@ _register(
         prepare_sql_path="app/sql/v4/queries/generate/auth/prepare_auth_generation_complete.sql",
         draft_view_key="draft_auth",
         fetcher_id_kwarg="auth_id",
+        fetcher_module="app.api.v4.artifacts.auth.get",
+        fetcher_func="get_auth_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.auth.get",
             "get_auth_websocket",
@@ -286,6 +297,8 @@ _register(
         draft_view_key="draft_persona",
         requires_draft=False,
         fetcher_id_kwarg="persona_id",
+        fetcher_module="app.api.v4.artifacts.persona.get",
+        fetcher_func="get_persona_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.persona.get",
             "get_persona_websocket",
@@ -316,6 +329,8 @@ _register(
         draft_view_key="draft_scenario",
         requires_draft=False,
         fetcher_id_kwarg="scenario_id",
+        fetcher_module="app.api.v4.artifacts.scenario.get",
+        fetcher_func="get_scenario_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.scenario.get",
             "get_scenario_websocket",
@@ -342,6 +357,8 @@ _register(
         draft_view_key="draft_simulation",
         requires_draft=False,
         fetcher_id_kwarg="simulation_id",
+        fetcher_module="app.api.v4.artifacts.simulation.get",
+        fetcher_func="get_simulation_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.simulation.get",
             "get_simulation_websocket",
@@ -368,6 +385,8 @@ _register(
         draft_view_key="draft_cohort",
         requires_draft=False,
         fetcher_id_kwarg="cohort_id",
+        fetcher_module="app.api.v4.artifacts.cohort.get",
+        fetcher_func="get_cohort_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.cohort.get",
             "get_cohort_websocket",
@@ -393,6 +412,8 @@ _register(
         draft_view_key="draft_document",
         requires_draft=False,
         fetcher_id_kwarg="document_id",
+        fetcher_module="app.api.v4.artifacts.document.get",
+        fetcher_func="get_document_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.document.get",
             "get_document_websocket",
@@ -415,6 +436,8 @@ _register(
         prepare_sql_path="app/sql/v4/queries/generate/profile/prepare_profile_generation_complete.sql",
         draft_view_key="draft_profile",
         fetcher_id_kwarg="target_profile_id",
+        fetcher_module="app.api.v4.artifacts.profile.get",
+        fetcher_func="get_profile_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.profile.get",
             "get_profile_websocket",
@@ -436,6 +459,8 @@ _register(
         prepare_sql_path="app/sql/v4/queries/generate/parameter/prepare_parameter_generation_complete.sql",
         draft_view_key="draft_parameter",
         fetcher_id_kwarg="parameter_id",
+        fetcher_module="app.api.v4.artifacts.parameter.get",
+        fetcher_func="get_parameter_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.parameter.get",
             "get_parameter_websocket",
@@ -457,6 +482,8 @@ _register(
         prepare_sql_path="app/sql/v4/queries/generate/field/prepare_field_generation_complete.sql",
         draft_view_key="draft_field",
         fetcher_id_kwarg="field_id",
+        fetcher_module="app.api.v4.artifacts.field.get",
+        fetcher_func="get_field_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.field.get",
             "get_field_websocket",
@@ -485,6 +512,8 @@ _register(
         prepare_sql_path="app/sql/v4/queries/generate/model/prepare_model_generation_complete.sql",
         draft_view_key="draft_model",
         fetcher_id_kwarg="model_id",
+        fetcher_module="app.api.v4.artifacts.model.get",
+        fetcher_func="get_model_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.model.get",
             "get_model_websocket",
@@ -507,6 +536,8 @@ _register(
         prepare_sql_path="app/sql/v4/queries/generate/tool/prepare_tool_generation_complete.sql",
         draft_view_key="draft_tool",
         fetcher_id_kwarg="tool_id",
+        fetcher_module="app.api.v4.artifacts.tool.get",
+        fetcher_func="get_tool_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.tool.get",
             "get_tool_websocket",
@@ -527,6 +558,8 @@ _register(
         prepare_sql_path="app/sql/v4/queries/generate/department/prepare_department_generation_complete.sql",
         draft_view_key="draft_department",
         fetcher_id_kwarg="department_id",
+        fetcher_module="app.api.v4.artifacts.department.get",
+        fetcher_func="get_department_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.department.get",
             "get_department_websocket",
@@ -549,6 +582,8 @@ _register(
         prepare_sql_path="app/sql/v4/queries/generate/provider/prepare_provider_generation_complete.sql",
         draft_view_key="draft_provider",
         fetcher_id_kwarg="provider_id",
+        fetcher_module="app.api.v4.artifacts.provider.get",
+        fetcher_func="get_provider_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.provider.get",
             "get_provider_websocket",
@@ -573,6 +608,8 @@ _register(
         prepare_sql_path="app/sql/v4/queries/generate/rubric/prepare_rubric_generation_complete.sql",
         draft_view_key="draft_rubric",
         fetcher_id_kwarg="rubric_id",
+        fetcher_module="app.api.v4.artifacts.rubric.get",
+        fetcher_func="get_rubric_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.rubric.get",
             "get_rubric_websocket",
@@ -599,6 +636,8 @@ _register(
         prepare_sql_path="app/sql/v4/queries/generate/eval/prepare_eval_generation_complete.sql",
         draft_view_key="draft_eval",
         fetcher_id_kwarg="eval_id",
+        fetcher_module="app.api.v4.artifacts.eval.get",
+        fetcher_func="get_eval_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.eval.get",
             "get_eval_websocket",
@@ -625,6 +664,8 @@ _register(
         prepare_sql_path="app/sql/v4/queries/generate/setting/prepare_setting_generation_complete.sql",
         draft_view_key="draft_setting",
         fetcher_id_kwarg="setting_id",
+        fetcher_module="app.api.v4.artifacts.setting.get",
+        fetcher_func="get_setting_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.setting.get",
             "get_setting_websocket",
@@ -659,6 +700,8 @@ _register(
         requires_pool=True,
         fetcher_id_kwarg="chat_entry_id",
         extra_emit_fields=["attempt_id", "chat_resolved_id"],
+        fetcher_module="app.api.v4.artifacts.chat.get",
+        fetcher_func="get_chat_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.chat.get",
             "get_chat_websocket",
@@ -686,6 +729,8 @@ _register(
         draft_view_key="draft_invocation",
         has_artifact_id=False,
         requires_pool=True,
+        fetcher_module="app.api.v4.artifacts.benchmark.get",
+        fetcher_func="get_invocation_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.benchmark.get",
             "get_invocation_websocket",
@@ -715,6 +760,8 @@ _register(
         requires_draft=False,
         requires_pool=True,
         fetcher_id_kwarg="benchmark_entry_id",
+        fetcher_module="app.api.v4.artifacts.invocation.get",
+        fetcher_func="get_invocation_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.invocation.get",
             "get_invocation_websocket",
@@ -739,6 +786,8 @@ _register(
         requires_draft=False,
         has_artifact_id=False,
         requires_pool=True,
+        fetcher_module="app.api.v4.artifacts.activity.get",
+        fetcher_func="get_activity_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.activity.get",
             "get_activity_websocket",
@@ -763,6 +812,8 @@ _register(
         requires_draft=False,
         requires_pool=True,
         fetcher_id_kwarg="session_id",
+        fetcher_module="app.api.v4.artifacts.session.get",
+        fetcher_func="get_session_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.session.get",
             "get_session_websocket",
@@ -787,6 +838,8 @@ _register(
         requires_draft=False,
         has_artifact_id=False,
         requires_pool=True,
+        fetcher_module="app.api.v4.artifacts.pricing.get",
+        fetcher_func="get_pricing_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.pricing.get",
             "get_pricing_websocket",
@@ -811,6 +864,8 @@ _register(
         requires_draft=False,
         has_artifact_id=False,
         requires_pool=True,
+        fetcher_module="app.api.v4.artifacts.reports.get",
+        fetcher_func="get_reports_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.reports.get",
             "get_reports_websocket",
@@ -835,6 +890,8 @@ _register(
         requires_draft=False,
         requires_pool=True,
         fetcher_id_kwarg="group_id",
+        fetcher_module="app.api.v4.artifacts.group.get",
+        fetcher_func="get_group_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.group.get",
             "get_group_websocket",
@@ -859,6 +916,8 @@ _register(
         requires_draft=False,
         has_artifact_id=False,
         requires_pool=True,
+        fetcher_module="app.api.v4.artifacts.health.get",
+        fetcher_func="get_health_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.health.get",
             "get_health_websocket",
@@ -883,6 +942,8 @@ _register(
         requires_draft=False,
         has_artifact_id=False,
         requires_pool=True,
+        fetcher_module="app.api.v4.artifacts.leaderboard.get",
+        fetcher_func="get_leaderboard_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.leaderboard.get",
             "get_leaderboard_websocket",
@@ -907,6 +968,8 @@ _register(
         requires_draft=False,
         requires_pool=True,
         fetcher_id_kwarg="record_id",
+        fetcher_module="app.api.v4.artifacts.record.get",
+        fetcher_func="get_record_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.record.get",
             "get_record_websocket",
@@ -931,6 +994,8 @@ _register(
         requires_draft=False,
         has_artifact_id=False,
         requires_pool=True,
+        fetcher_module="app.api.v4.artifacts.dashboard.get",
+        fetcher_func="get_dashboard_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.dashboard.get",
             "get_dashboard_websocket",
@@ -952,6 +1017,8 @@ _register(
         requires_draft=False,
         has_artifact_id=False,
         requires_pool=True,
+        fetcher_module="app.api.v4.artifacts.home.get",
+        fetcher_func="get_home_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.home.get",
             "get_home_websocket",
@@ -971,6 +1038,8 @@ _register(
         requires_draft=False,
         has_artifact_id=False,
         requires_pool=True,
+        fetcher_module="app.api.v4.artifacts.practice.get",
+        fetcher_func="get_practice_websocket",
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.practice.get",
             "get_practice_websocket",
@@ -1003,6 +1072,9 @@ _register(
         entry_types=["attempt_insights", "debug_info"],
         fetcher_id_kwarg="attempt_id",
         extra_emit_fields=["attempt_id", "chat_id", "grade_id"],
+        fetcher_module="app.api.v4.artifacts.attempt.get",
+        fetcher_func="get_attempt_websocket",
+        needs_conn=True,
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.attempt.get",
             "get_attempt_websocket",
@@ -1024,6 +1096,9 @@ _register(
         requires_draft=False,
         entry_types=["test_insights", "debug_info"],
         fetcher_id_kwarg="test_id",
+        fetcher_module="app.api.v4.artifacts.test.get",
+        fetcher_func="get_test_websocket",
+        needs_conn=True,
         fetcher=_make_fetcher(
             "app.api.v4.artifacts.test.get",
             "get_test_websocket",

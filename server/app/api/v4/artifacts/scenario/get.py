@@ -90,6 +90,7 @@ from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.descriptions.search import search_descriptions_internal
 from app.api.v4.resources.documents.get import get_documents_internal
 from app.api.v4.resources.documents.search import search_documents_internal
+from app.api.v4.resources.fields.search import search_fields_internal
 from app.api.v4.resources.flags.get import get_flags_internal
 from app.api.v4.resources.flags.search import search_flags_internal
 from app.api.v4.resources.images.get import get_images_internal
@@ -1285,11 +1286,29 @@ async def get_scenario_websocket(
         async with pool.acquire() as conn:
             return await get_tools_internal(conn, deduped_tool_ids, bypass_cache)
 
-    draft_view, config_profile_result, runs_result, tools_result = await asyncio.gather(
+    async def fetch_fields():
+        async with pool.acquire() as c:
+            return await search_fields_internal(
+                c,
+                search=None,
+                limit_count=200,
+                offset_count=0,
+                department_ids=None,
+                bypass_cache=bypass_cache,
+            )
+
+    (
+        draft_view,
+        config_profile_result,
+        runs_result,
+        tools_result,
+        fields_catalog,
+    ) = await asyncio.gather(
         fetch_draft(),
         fetch_config_profile(),
         fetch_runs_today(),
         fetch_tools(),
+        fetch_fields(),
     )
 
     all_resources = data.resources_payload.resources
@@ -1383,6 +1402,7 @@ async def get_scenario_websocket(
             videos=all_resources.videos if all_resources else None,
             questions=all_resources.questions if all_resources else None,
             options=all_resources.options if all_resources else None,
+            fields=fields_catalog,
         ),
         artifacts=websocket_config,
     )

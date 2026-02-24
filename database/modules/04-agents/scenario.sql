@@ -19,7 +19,7 @@ Rules:
 - Operate only on the resource/entry types specified in the developer instructions
 - Do not invent IDs — use IDs from context
 - Return only valid tool calls, no narrative text', 'Scenario Agent', 'Default prompt for scenario agent type', true, '019b3be4-36fe-7e85-ad55-bd71c027fb7b', false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2025-08-12T12:52:09.818852+00:00', true, false, false, '019bb25e-e5f2-7e66-be40-89ff408bbce5', 'Scenario', 'Helps create distinct scenarios for chat interactions.', '{}', NULL, NULL, '{019bebc4-d436-7b8d-adb8-3b17bafdda99,019bebc4-d436-7b8b-8443-f82efdfd5790,019bebc4-d436-7c01-b86b-9483883762a6,019bebc4-d436-7b81-9555-1d88249b6d78,019bebc4-d436-7c35-9f98-31957504bf95,019bebc4-d436-7bd2-b670-e4c1b24b1a9c,019bebc4-d436-7b96-b622-c512f3a418da,019bebc4-d436-7b9b-b92c-009fbdb67144,019c0a2d-fc36-756e-b50e-a5987eb4f0d5,019c0a2d-fc35-7eb7-8bc4-4a4d9578918d,019c06a8-2af5-705d-ae92-7905a846a500,019c06a8-2af5-766c-9713-315ab9567235,019c06a8-2af6-727b-b94a-71bddc4d76de,019c0a2d-fc36-7ace-adde-c1e47bc14a89,019c0a2d-fc36-7997-bdca-92935994cb93,019c0a2d-fc36-785a-9b6d-02eca12bb6e6,019c0a2d-fc36-770a-b18d-af61cdf0f908,019c0a2d-fc36-7c0c-80c1-098a75897197,019c06a8-2af4-7c97-ab30-1e863db0e8e3,019c06a8-2af6-7439-b8fb-2a083dd49848,019c0a2d-fc36-7e78-9083-05afa0c8e4d8,019bf207-ca52-70cc-ae3c-a5ca44d6d5e9,019c06a8-2af6-7609-9bc5-2782eb639be2}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019b3be4-36fe-7e85-ad55-bd71c027fb7b', '{019c0a2d-fc41-7ed9-a57b-b348734e1ea6}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2025-08-12T12:52:09.818852+00:00', true, false, false, '019bb25e-e5f2-7e66-be40-89ff408bbce5', 'Scenario', 'Helps create distinct scenarios for chat interactions.', '{}', NULL, NULL, '{019bebc4-d436-7b8d-adb8-3b17bafdda99,019bebc4-d436-7b8b-8443-f82efdfd5790,019bebc4-d436-7c01-b86b-9483883762a6,019bebc4-d436-7b81-9555-1d88249b6d78,019bebc4-d436-7c35-9f98-31957504bf95,019bebc4-d436-7bd2-b670-e4c1b24b1a9c,019bebc4-d436-7b96-b622-c512f3a418da,019bebc4-d436-7b9b-b92c-009fbdb67144,019c0a2d-fc36-756e-b50e-a5987eb4f0d5,019c0a2d-fc35-7eb7-8bc4-4a4d9578918d,019c06a8-2af5-705d-ae92-7905a846a500,019c06a8-2af5-766c-9713-315ab9567235,019c06a8-2af6-727b-b94a-71bddc4d76de,019c0a2d-fc36-7ace-adde-c1e47bc14a89,019c0a2d-fc36-7997-bdca-92935994cb93,019c0a2d-fc36-785a-9b6d-02eca12bb6e6,019c0a2d-fc36-770a-b18d-af61cdf0f908,019c0a2d-fc36-7c0c-80c1-098a75897197,019c06a8-2af4-7c97-ab30-1e863db0e8e3,019c0a2d-fc36-7e78-9083-05afa0c8e4d8,019bf207-ca52-70cc-ae3c-a5ca44d6d5e9,019c06a8-2af6-7609-9bc5-2782eb639be2,019523a0-0020-7000-8000-000000000001}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019b3be4-36fe-7e85-ad55-bd71c027fb7b', '{019c0a2d-fc41-7ed9-a57b-b348734e1ea6}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8ea1-7cad-9f2d-378a5856d842', 'Helps create distinct scenarios for chat interactions.', '2025-08-12T12:52:09.818852+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c0a2d-fc41-7ed9-a57b-b348734e1ea6', '## Current State
 {% set draft = entries.draft_scenario if entries and entries.draft_scenario else None %}
@@ -40,7 +40,7 @@ INSERT INTO public.instructions_resource (id, template, active, created_at, gene
 
 ---
 
-{% set all_gen_types = (config.resource_types or []) + (config.entry_types or []) %}
+{% set all_gen_types = (resources.types or []) + (entries.types or []) %}
 ## Available Resources
 {% if "names" in all_gen_types and resources.names and resources.names|length > 0 %}
 Names:
@@ -84,15 +84,21 @@ Documents:
 - id: {{ item.document_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if "parameters" in all_gen_types and resources.parameters and resources.parameters|length > 0 %}
-Parameters:
+{% if "parameter_fields" in all_gen_types and resources.parameter_fields and resources.parameter_fields|length > 0 %}
+Parameter Fields:
+{% for item in resources.parameter_fields %}
+- id: {{ item.field_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}
+{% endif %}
+{% if resources.parameters and resources.parameters|length > 0 %}
+Parameters (context — use parameter_id when creating parameter_fields):
 {% for item in resources.parameters %}
 - id: {{ item.parameter_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if "parameter_fields" in all_gen_types and resources.parameter_fields and resources.parameter_fields|length > 0 %}
-Parameter Fields:
-{% for item in resources.parameter_fields %}
+{% if resources.fields and resources.fields|length > 0 %}
+Fields (context — use field_id when creating parameter_fields):
+{% for item in resources.fields %}
 - id: {{ item.field_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
@@ -130,18 +136,19 @@ Options:
 ---
 
 ## Generating For
-{% if config.resource_types and config.resource_types|length > 0 %}
-Resource types (create or use): {{ config.resource_types|join(", ") }}
+{% if resources.types and resources.types|length > 0 %}
+Resource types (create or use): {{ resources.types|join(", ") }}
 {% endif %}
-{% if config.entry_types and config.entry_types|length > 0 %}
-Entry types (use only): {{ config.entry_types|join(", ") }}
+{% if entries.types and entries.types|length > 0 %}
+Entry types (use only): {{ entries.types|join(", ") }}
 {% endif %}
 
 Rules:
 - For resource types: use_* when a suitable resource exists, create_* when nothing suitable exists
 - For entry types: always use_* with IDs from available resources
 - Only operate on the resource/entry types listed above
-- Do not invent IDs — use IDs from available resources', true, '2026-01-29T14:35:11.795021+00:00', false, false) ON CONFLICT (id) DO NOTHING;
+- Do not invent IDs — use IDs from available resources
+', true, '2026-01-29T14:35:11.795021+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8ea0-7cef-9ca7-49400d8ff010', 'Scenario', '2025-08-12T12:52:09.818852+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.prompts_resource (created_at, system_prompt, name, description, active, id, generated, mcp) VALUES ('2025-11-01T12:45:21.867971+00:00', 'Your purpose is to create a scenario for a chat between a student and a GTA. You will generate a title, description, and objectives for the scenario.
 
@@ -312,7 +319,6 @@ INSERT INTO public.agent_tools_junction (agent_id, tool_id, active, created_at, 
 INSERT INTO public.agent_tools_junction (agent_id, tool_id, active, created_at, generated, mcp) VALUES ('019b3be4-3112-7685-8967-a5488fadb090', '019c06a8-2af5-705d-ae92-7905a846a500', true, '2026-01-29T14:35:11.795021+00:00', false, false) ON CONFLICT (agent_id, tool_id) DO NOTHING;
 INSERT INTO public.agent_tools_junction (agent_id, tool_id, active, created_at, generated, mcp) VALUES ('019b3be4-3112-7685-8967-a5488fadb090', '019c06a8-2af5-766c-9713-315ab9567235', true, '2026-01-29T14:35:11.795021+00:00', false, false) ON CONFLICT (agent_id, tool_id) DO NOTHING;
 INSERT INTO public.agent_tools_junction (agent_id, tool_id, active, created_at, generated, mcp) VALUES ('019b3be4-3112-7685-8967-a5488fadb090', '019c06a8-2af6-727b-b94a-71bddc4d76de', true, '2026-01-29T14:35:11.795021+00:00', false, false) ON CONFLICT (agent_id, tool_id) DO NOTHING;
-INSERT INTO public.agent_tools_junction (agent_id, tool_id, active, created_at, generated, mcp) VALUES ('019b3be4-3112-7685-8967-a5488fadb090', '019c06a8-2af6-7439-b8fb-2a083dd49848', true, '2026-01-29T14:35:11.795021+00:00', false, false) ON CONFLICT (agent_id, tool_id) DO NOTHING;
 INSERT INTO public.agent_tools_junction (agent_id, tool_id, active, created_at, generated, mcp) VALUES ('019b3be4-3112-7685-8967-a5488fadb090', '019c0a2d-fc35-7eb7-8bc4-4a4d9578918d', true, '2026-01-29T14:35:11.795021+00:00', false, false) ON CONFLICT (agent_id, tool_id) DO NOTHING;
 INSERT INTO public.agent_tools_junction (agent_id, tool_id, active, created_at, generated, mcp) VALUES ('019b3be4-3112-7685-8967-a5488fadb090', '019c0a2d-fc36-756e-b50e-a5987eb4f0d5', true, '2026-01-29T14:35:11.795021+00:00', false, false) ON CONFLICT (agent_id, tool_id) DO NOTHING;
 INSERT INTO public.agent_tools_junction (agent_id, tool_id, active, created_at, generated, mcp) VALUES ('019b3be4-3112-7685-8967-a5488fadb090', '019c0a2d-fc36-770a-b18d-af61cdf0f908', true, '2026-01-29T14:35:11.795021+00:00', false, false) ON CONFLICT (agent_id, tool_id) DO NOTHING;
@@ -323,3 +329,4 @@ INSERT INTO public.agent_tools_junction (agent_id, tool_id, active, created_at, 
 INSERT INTO public.agent_tools_junction (agent_id, tool_id, active, created_at, generated, mcp) VALUES ('019b3be4-3112-7685-8967-a5488fadb090', '019c0a2d-fc36-7e78-9083-05afa0c8e4d8', true, '2026-01-29T14:35:11.795021+00:00', false, false) ON CONFLICT (agent_id, tool_id) DO NOTHING;
 INSERT INTO public.agent_tools_junction (agent_id, tool_id, active, created_at, generated, mcp) VALUES ('019b3be4-3112-7685-8967-a5488fadb090', '019bf207-ca52-70cc-ae3c-a5ca44d6d5e9', true, '2026-02-03T19:33:56.305626+00:00', false, false) ON CONFLICT (agent_id, tool_id) DO NOTHING;
 INSERT INTO public.agent_tools_junction (agent_id, tool_id, active, created_at, generated, mcp) VALUES ('019b3be4-3112-7685-8967-a5488fadb090', '019c06a8-2af6-7609-9bc5-2782eb639be2', true, '2026-02-22T00:20:46.593734+00:00', false, false) ON CONFLICT (agent_id, tool_id) DO NOTHING;
+INSERT INTO public.agent_tools_junction (agent_id, tool_id, active, created_at, generated, mcp) VALUES ('019b3be4-3112-7685-8967-a5488fadb090', '019523a0-0020-7000-8000-000000000001', true, '2026-02-24T13:16:34.035984+00:00', false, false) ON CONFLICT (agent_id, tool_id) DO NOTHING;

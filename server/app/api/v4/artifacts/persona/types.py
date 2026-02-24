@@ -180,6 +180,7 @@ class PersonaWebsocketResources(BaseModel):
     examples: list[QGetExamplesV4Item] | None = None
     parameters: list[QGetParametersV4Item] | None = None
     voices: list[QGetVoicesV4Item] | None = None
+    fields: list[QGetFieldsV4Item] | None = None
 
 
 class GetPersonaWebsocketResponse(BaseModel):

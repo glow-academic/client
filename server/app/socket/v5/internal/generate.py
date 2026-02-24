@@ -425,6 +425,11 @@ async def generate_handler(data: dict[str, Any]) -> None:
             if getattr(tool, "createable", False) and getattr(tool, "resource", None):
                 createable_resources.add(tool.resource)
 
+        # Compute artifact types from all tools (shared across agents)
+        all_artifact_types = list(
+            {td["artifact"] for td in all_tool_dicts if td.get("artifact")}
+        )
+
         # DB operations
         async with get_db_connection() as conn:
             if not pool:
@@ -588,6 +593,10 @@ async def generate_handler(data: dict[str, Any]) -> None:
 
                 # 13c: Build scoped jinja context (clone base, inject per-agent)
                 jinja_context = copy.deepcopy(jinja_context_base)
+                jinja_context["resources"]["types"] = scoped_resource_types
+                jinja_context["entries"]["types"] = scoped_entry_types
+                jinja_context["artifacts"]["types"] = all_artifact_types
+                # Legacy compat (remove after templates verified)
                 jinja_context["artifacts"]["resource_types"] = scoped_resource_types
                 jinja_context["artifacts"]["entry_types"] = scoped_entry_types
 
