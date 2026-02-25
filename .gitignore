@@ -7,7 +7,7 @@ keys.txt
 .env.alpha
 .cursorignore
 
-history/*.sql
+history/
 database/seeds/seed_modules.sql
 .venv/
 uploads/tus_uploads/
