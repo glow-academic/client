@@ -17,10 +17,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { OutputOf } from "@/lib/api/types";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
+
+// Link types for tool call tracking
+type LinkSimulationsIn = InputOf<"/api/v4/resources/simulations/link", "post">;
+type LinkSimulationsOut = OutputOf<"/api/v4/resources/simulations/link", "post">;
 
 // Derive resource item type from the GET endpoint response
 type SimulationGetResponse = OutputOf<"/api/v4/resources/simulations/get", "post">;
@@ -50,6 +54,9 @@ export interface SimulationsProps {
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   searchTerm?: string; // Search term for filtering simulations
   showSelectedFilter?: boolean; // Whether to show only selected simulations
+  // Link tool call tracking
+  link_tool_id?: string | null;
+  linkSimulationsAction?: (input: LinkSimulationsIn) => Promise<LinkSimulationsOut>;
   // Legacy props for backward compatibility
   simulationIds?: string[];
   aiSimulationResources?: Pick<SimulationResourceItem, "simulation_id" | "name">[] | null;
@@ -72,6 +79,9 @@ export function Simulations({
   showAiGenerate = false,
   searchTerm = "",
   showSelectedFilter = false,
+  // Link tool call tracking
+  link_tool_id,
+  linkSimulationsAction,
   // Legacy props for backward compatibility
   simulationIds,
 }: SimulationsProps) {
@@ -169,9 +179,16 @@ export function Simulations({
         ? ids.filter((id) => id !== simulationId)
         : [...ids, simulationId];
 
+      // Fire link tracking when adding (not removing)
+      if (!isSelected && linkSimulationsAction && group_id && link_tool_id) {
+        linkSimulationsAction({
+          body: { resource_id: simulationId, group_id, tool_id: link_tool_id },
+        }).catch(() => {});
+      }
+
       onChange(newIds);
     },
-    [ids, onChange]
+    [ids, onChange, linkSimulationsAction, group_id, link_tool_id]
   );
 
   // Check if any simulation resource is generated (must be before early return)

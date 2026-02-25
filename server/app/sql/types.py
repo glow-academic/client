@@ -2737,57 +2737,55 @@ class PatchCohortDraftApiResponse(BaseModel):
 class SaveCohortSqlParams(BaseModel):
 
     profile_id: UUID
-    group_id: UUID
     input_cohort_id: UUID | None = None
-    names: CohortResourceAction | None = None
-    descriptions: CohortResourceAction | None = None
-    flags: CohortResourceAction | None = None
-    departments: CohortMultiResourceAction | None = None
-    simulations: CohortMultiResourceAction | None = None
-    simulation_positions: CohortMultiResourceAction | None = None
-    simulation_availability: CohortMultiResourceAction | None = None
-    profiles: CohortMultiResourceAction | None = None
-    profile_personas: CohortMultiResourceAction | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    simulation_position_ids: list[UUID] | None = None
+    simulation_availability_ids: list[UUID] | None = None
+    profile_ids: list[UUID] | None = None
+    profile_persona_ids: list[UUID] | None = None
+    cohorts_resource_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
-            self.group_id,
             self.input_cohort_id,
-            self.names,
-            self.descriptions,
-            self.flags,
-            self.departments,
-            self.simulations,
-            self.simulation_positions,
-            self.simulation_availability,
-            self.profiles,
-            self.profile_personas,
+            self.name_id,
+            self.description_id,
+            self.active_flag_id,
+            self.department_ids,
+            self.simulation_ids,
+            self.simulation_position_ids,
+            self.simulation_availability_ids,
+            self.profile_ids,
+            self.profile_persona_ids,
+            self.cohorts_resource_id,
         )
 
 class SaveCohortSqlRow(BaseModel):
 
-    out_cohort_id: UUID | None = None
-    out_actor_name: str | None = None
+    cohort_id: UUID | None = None
 
 class SaveCohortApiRequest(BaseModel):
 
-    group_id: UUID
     input_cohort_id: UUID | None = None
-    names: CohortResourceAction | None = None
-    descriptions: CohortResourceAction | None = None
-    flags: CohortResourceAction | None = None
-    departments: CohortMultiResourceAction | None = None
-    simulations: CohortMultiResourceAction | None = None
-    simulation_positions: CohortMultiResourceAction | None = None
-    simulation_availability: CohortMultiResourceAction | None = None
-    profiles: CohortMultiResourceAction | None = None
-    profile_personas: CohortMultiResourceAction | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    simulation_position_ids: list[UUID] | None = None
+    simulation_availability_ids: list[UUID] | None = None
+    profile_ids: list[UUID] | None = None
+    profile_persona_ids: list[UUID] | None = None
+    cohorts_resource_id: UUID | None = None
 
 class SaveCohortApiResponse(BaseModel):
 
-    out_cohort_id: UUID | None = None
-    out_actor_name: str | None = None
+    cohort_id: UUID | None = None
 
 
 
@@ -23161,6 +23159,49 @@ class SearchBindingsApiResponse(BaseModel):
 
 
 
+# Generated from: create_cohorts
+
+class CreateCohortsSqlParams(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    profile_persona_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name_id,
+            self.description_id,
+            self.department_ids,
+            self.simulation_ids,
+            self.profile_ids,
+            self.profile_persona_ids,
+            self.mcp,
+        )
+
+class CreateCohortsSqlRow(BaseModel):
+
+    cohorts_resource_id: UUID | None = None
+
+class CreateCohortsApiRequest(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    profile_persona_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    mcp: bool | None = False
+
+class CreateCohortsApiResponse(BaseModel):
+
+    cohorts_resource_id: UUID | None = None
+
+
+
 # Generated from: get_cohorts
 
 class GetCohortsSqlParams(BaseModel):
@@ -25635,6 +25676,68 @@ class LinkParameterFieldsApiResponse(BaseModel):
 
 
 
+# Generated from: link_profile_personas
+
+class LinkProfilePersonasSqlParams(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.resource_id,
+            self.group_id,
+            self.tool_id,
+        )
+
+class LinkProfilePersonasSqlRow(BaseModel):
+
+    profile_personas_id: UUID | None = None
+
+class LinkProfilePersonasApiRequest(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+class LinkProfilePersonasApiResponse(BaseModel):
+
+    profile_personas_id: UUID | None = None
+
+
+
+# Generated from: link_profiles
+
+class LinkProfilesSqlParams(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.resource_id,
+            self.group_id,
+            self.tool_id,
+        )
+
+class LinkProfilesSqlRow(BaseModel):
+
+    profiles_id: UUID | None = None
+
+class LinkProfilesApiRequest(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+class LinkProfilesApiResponse(BaseModel):
+
+    profiles_id: UUID | None = None
+
+
+
 # Generated from: link_scenario_flags
 
 class LinkScenarioFlagsSqlParams(BaseModel):
@@ -25787,6 +25890,99 @@ class LinkScenariosApiRequest(BaseModel):
 class LinkScenariosApiResponse(BaseModel):
 
     scenarios_id: UUID | None = None
+
+
+
+# Generated from: link_simulation_availability
+
+class LinkSimulationAvailabilitySqlParams(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.resource_id,
+            self.group_id,
+            self.tool_id,
+        )
+
+class LinkSimulationAvailabilitySqlRow(BaseModel):
+
+    simulation_availability_id: UUID | None = None
+
+class LinkSimulationAvailabilityApiRequest(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+class LinkSimulationAvailabilityApiResponse(BaseModel):
+
+    simulation_availability_id: UUID | None = None
+
+
+
+# Generated from: link_simulation_positions
+
+class LinkSimulationPositionsSqlParams(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.resource_id,
+            self.group_id,
+            self.tool_id,
+        )
+
+class LinkSimulationPositionsSqlRow(BaseModel):
+
+    simulation_positions_id: UUID | None = None
+
+class LinkSimulationPositionsApiRequest(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+class LinkSimulationPositionsApiResponse(BaseModel):
+
+    simulation_positions_id: UUID | None = None
+
+
+
+# Generated from: link_simulations
+
+class LinkSimulationsSqlParams(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.resource_id,
+            self.group_id,
+            self.tool_id,
+        )
+
+class LinkSimulationsSqlRow(BaseModel):
+
+    simulations_id: UUID | None = None
+
+class LinkSimulationsApiRequest(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+class LinkSimulationsApiResponse(BaseModel):
+
+    simulations_id: UUID | None = None
 
 
 
@@ -40343,6 +40539,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchBindingsApiRequest",
         "SearchBindingsApiResponse",
     ),
+    "app/sql/v4/queries/resources/cohorts/create_cohorts_complete.sql": (
+        "CreateCohortsSqlParams",
+        "CreateCohortsSqlRow",
+        "CreateCohortsApiRequest",
+        "CreateCohortsApiResponse",
+    ),
     "app/sql/v4/queries/resources/cohorts/get_cohorts_complete.sql": (
         "GetCohortsSqlParams",
         "GetCohortsSqlRow",
@@ -40727,6 +40929,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "LinkParameterFieldsApiRequest",
         "LinkParameterFieldsApiResponse",
     ),
+    "app/sql/v4/queries/resources/link_profile_personas_complete.sql": (
+        "LinkProfilePersonasSqlParams",
+        "LinkProfilePersonasSqlRow",
+        "LinkProfilePersonasApiRequest",
+        "LinkProfilePersonasApiResponse",
+    ),
+    "app/sql/v4/queries/resources/link_profiles_complete.sql": (
+        "LinkProfilesSqlParams",
+        "LinkProfilesSqlRow",
+        "LinkProfilesApiRequest",
+        "LinkProfilesApiResponse",
+    ),
     "app/sql/v4/queries/resources/link_scenario_flags_complete.sql": (
         "LinkScenarioFlagsSqlParams",
         "LinkScenarioFlagsSqlRow",
@@ -40756,6 +40970,24 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "LinkScenariosSqlRow",
         "LinkScenariosApiRequest",
         "LinkScenariosApiResponse",
+    ),
+    "app/sql/v4/queries/resources/link_simulation_availability_complete.sql": (
+        "LinkSimulationAvailabilitySqlParams",
+        "LinkSimulationAvailabilitySqlRow",
+        "LinkSimulationAvailabilityApiRequest",
+        "LinkSimulationAvailabilityApiResponse",
+    ),
+    "app/sql/v4/queries/resources/link_simulation_positions_complete.sql": (
+        "LinkSimulationPositionsSqlParams",
+        "LinkSimulationPositionsSqlRow",
+        "LinkSimulationPositionsApiRequest",
+        "LinkSimulationPositionsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/link_simulations_complete.sql": (
+        "LinkSimulationsSqlParams",
+        "LinkSimulationsSqlRow",
+        "LinkSimulationsApiRequest",
+        "LinkSimulationsApiResponse",
     ),
     "app/sql/v4/queries/resources/link_voices_complete.sql": (
         "LinkVoicesSqlParams",
@@ -45435,6 +45667,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/cohorts/create_cohorts_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/cohorts/get_cohorts_complete.sql"]
     ) -> SqlString: ...
 
@@ -45755,6 +45992,16 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/link_profile_personas_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/link_profiles_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/link_scenario_flags_complete.sql"]
     ) -> SqlString: ...
 
@@ -45776,6 +46023,21 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/link_scenarios_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/link_simulation_availability_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/link_simulation_positions_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/link_simulations_complete.sql"]
     ) -> SqlString: ...
 
     @overload

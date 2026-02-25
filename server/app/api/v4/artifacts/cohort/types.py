@@ -331,7 +331,7 @@ class ListCohortApiResponse(BaseModel):
 
 
 # =============================================================================
-# SAVE Endpoint Types
+# Resource Action Types (used by draft endpoint)
 # =============================================================================
 
 
@@ -349,13 +349,35 @@ class CohortMultiResourceAction(BaseModel):
     tool_id: UUID | None = None
 
 
-class SaveCohortApiRequest(BaseModel):
-    """Request for saving a cohort - flat resource IDs."""
+# =============================================================================
+# SAVE Endpoint Types
+# =============================================================================
+
+
+class SaveCohortFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class SaveCohortItem(BaseModel):
+    """Single cohort item for save — provide ID or value per field (not both).
+
+    For required fields (name), exactly one of the *_id or value field must
+    be provided.
+    """
 
     input_cohort_id: UUID | None = None
-    name_id: UUID
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
     description_id: UUID | None = None
+    description: str | None = None
+    # Single-select flag
     flag_id: UUID | None = None
+    # Multi-select IDs
     department_ids: list[UUID] | None = None
     simulation_ids: list[UUID] | None = None
     simulation_position_ids: list[UUID] | None = None
@@ -364,93 +386,91 @@ class SaveCohortApiRequest(BaseModel):
     profile_persona_ids: list[UUID] | None = None
 
 
-class SaveCohortApiResponse(BaseModel):
-    """Response for saving a cohort."""
+class SaveCohortApiRequest(BaseModel):
+    """Request model for bulk save cohort endpoint."""
 
+    cohorts: list[SaveCohortItem]
+
+
+class SaveCohortResult(BaseModel):
+    """Per-item result within a bulk save response."""
+
+    success: bool
     cohort_id: UUID | None = None
-    actor_name: str | None = None
+    message: str
+    errors: list[SaveCohortFieldError] | None = None
+
+
+class SaveCohortApiResponse(BaseModel):
+    """Response model for bulk save cohort endpoint."""
+
+    results: list[SaveCohortResult]
 
 
 class SaveCohortSqlParams(BaseModel):
-    """SQL parameters for save cohort."""
+    """SQL parameters for save cohort - flat resource IDs."""
 
-    # Context
-    profile_id: UUID  # Added from header
-    group_id: UUID  # REQUIRED - which group to save to
-    input_cohort_id: UUID | None = None  # For update mode
-
-    names: "CohortResourceAction"
-    descriptions: "CohortResourceAction"
-    flags: "CohortResourceAction"
-    departments: "CohortMultiResourceAction"
-    simulations: "CohortMultiResourceAction"
-    simulation_positions: "CohortMultiResourceAction"
-    simulation_availability: "CohortMultiResourceAction"
-    profiles: "CohortMultiResourceAction"
-    profile_personas: "CohortMultiResourceAction"
+    profile_id: UUID
+    input_cohort_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    simulation_position_ids: list[UUID] | None = None
+    simulation_availability_ids: list[UUID] | None = None
+    profile_ids: list[UUID] | None = None
+    profile_persona_ids: list[UUID] | None = None
+    cohorts_resource_id: UUID | None = None
 
     @classmethod
     def from_request(
         cls,
-        request: SaveCohortApiRequest,
+        request: SaveCohortItem,
         profile_id: UUID,
-        group_id: UUID | None,
+        cohorts_resource_id: UUID | None = None,
     ) -> "SaveCohortSqlParams":
         return cls(
             profile_id=profile_id,
-            group_id=group_id,
             input_cohort_id=request.input_cohort_id,
-            names=CohortResourceAction(resource_id=request.name_id),
-            descriptions=CohortResourceAction(resource_id=request.description_id),
-            flags=CohortResourceAction(resource_id=request.flag_id),
-            departments=CohortMultiResourceAction(resource_ids=request.department_ids),
-            simulations=CohortMultiResourceAction(resource_ids=request.simulation_ids),
-            simulation_positions=CohortMultiResourceAction(
-                resource_ids=request.simulation_position_ids
-            ),
-            simulation_availability=CohortMultiResourceAction(
-                resource_ids=request.simulation_availability_ids
-            ),
-            profiles=CohortMultiResourceAction(resource_ids=request.profile_ids),
-            profile_personas=CohortMultiResourceAction(
-                resource_ids=request.profile_persona_ids
-            ),
+            name_id=request.name_id,
+            description_id=request.description_id,
+            active_flag_id=request.flag_id,
+            department_ids=request.department_ids,
+            simulation_ids=request.simulation_ids,
+            simulation_position_ids=request.simulation_position_ids,
+            simulation_availability_ids=request.simulation_availability_ids,
+            profile_ids=request.profile_ids,
+            profile_persona_ids=request.profile_persona_ids,
+            cohorts_resource_id=cohorts_resource_id,
         )
 
-    def to_tuple(self) -> tuple[Any, ...]:
-        """Convert to tuple for SQL execution."""
+    def to_tuple(self) -> tuple:
+        """Convert to tuple for SQL execution.
 
-        def single(
-            a: CohortResourceAction,
-        ) -> tuple[UUID | None, UUID | None, UUID | None]:
-            return (a.resource_id, a.tool_id, a.tool_id)
-
-        def multi(
-            a: CohortMultiResourceAction,
-        ) -> tuple[list[UUID] | None, UUID | None, UUID | None]:
-            return (a.resource_ids, a.tool_id, a.tool_id)
-
+        Arrays are passed as-is (None preserved) so SQL COALESCE can
+        distinguish 'not provided' (NULL) from 'explicitly empty' ([]).
+        """
         return (
             self.profile_id,
-            self.group_id,
             self.input_cohort_id,
-            single(self.names),
-            single(self.descriptions),
-            single(self.flags),
-            multi(self.departments),
-            multi(self.simulations),
-            multi(self.simulation_positions),
-            multi(self.simulation_availability),
-            multi(self.profiles),
-            multi(self.profile_personas),
+            self.name_id,
+            self.description_id,
+            self.active_flag_id,
+            self.department_ids,
+            self.simulation_ids,
+            self.simulation_position_ids,
+            self.simulation_availability_ids,
+            self.profile_ids,
+            self.profile_persona_ids,
+            self.cohorts_resource_id,
         )
 
 
 class SaveCohortSqlRow(BaseModel):
     """SQL row for save cohort."""
 
-    out_cohort_id: UUID | None = None
-    out_actor_name: str | None = None
+    cohort_id: UUID | None = None
 
 
 # =============================================================================
@@ -459,18 +479,23 @@ class SaveCohortSqlRow(BaseModel):
 
 
 class DeleteCohortApiRequest(BaseModel):
-    """Request for deleting a cohort."""
+    """Request model for bulk delete cohort endpoint."""
 
+    cohort_ids: list[UUID]
+
+
+class DeleteCohortResult(BaseModel):
+    """Per-item result within a bulk delete response."""
+
+    success: bool
     cohort_id: UUID
+    message: str
 
 
 class DeleteCohortApiResponse(BaseModel):
-    """Response for deleting a cohort."""
+    """Response model for bulk delete cohort endpoint."""
 
-    usage_count: int | None = None
-    deleted: bool | None = None
-    name: str | None = None
-    actor_name: str | None = None
+    results: list[DeleteCohortResult]
 
 
 # =============================================================================

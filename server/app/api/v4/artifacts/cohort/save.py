@@ -1,5 +1,6 @@
 """Cohort save endpoint - v4 API following DHH principles.
 Unified endpoint that handles both create (cohort_id = NULL) and update (cohort_id provided).
+Supports bulk operations and dual-mode fields (ID or value).
 """
 
 import uuid
@@ -11,16 +12,20 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.api.v4.artifacts.cohort.permissions import (
     compute_can_create,
     compute_can_edit,
+    has_access,
 )
 from app.api.v4.artifacts.cohort.types import (
-    CohortMultiResourceAction,
-    CohortResourceAction,
     SaveCohortApiRequest,
     SaveCohortApiResponse,
+    SaveCohortFieldError,
+    SaveCohortItem,
+    SaveCohortResult,
     SaveCohortSqlParams,
     SaveCohortSqlRow,
 )
-from app.api.v4.auth.profile import get_auth_profile_internal
+from app.api.v4.resources.cohorts.create import create_cohorts_internal
+from app.api.v4.resources.descriptions.create import create_descriptions_internal
+from app.api.v4.resources.names.create import create_names_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -35,7 +40,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
-# Load SQL with types at module level - makes it clear what SQL file is used
+# SQL paths
 ACCESS_SQL_PATH = "app/sql/v4/queries/cohorts/get_cohort_access_complete.sql"
 SQL_PATH = "app/sql/v4/queries/cohorts/save_cohort_complete.sql"
 
@@ -46,65 +51,111 @@ router = APIRouter()
 async def save_cohort_internal(
     conn: asyncpg.Connection,
     profile_id: uuid.UUID,
-    group_id: uuid.UUID,
+    group_id: uuid.UUID | None,
     resource_actions: dict[str, Any],
     cohort_id: uuid.UUID | None = None,
 ) -> uuid.UUID | None:
     """Save a cohort from resource actions dict (used by generation complete handler).
 
-    Builds SaveCohortSqlParams from a flat resource_actions dict, executes the
-    save SQL in a transaction, and invalidates cache.
+    Extracts flat resource IDs from resource_actions, creates the denormalized
+    cohorts_resource, then executes the save SQL in a transaction.
 
     Returns the cohort_id on success, None on failure.
     """
     try:
 
-        def _single(key: str) -> CohortResourceAction:
+        def _id(key: str) -> uuid.UUID | None:
             val = resource_actions.get(key, {})
             if isinstance(val, dict):
-                return CohortResourceAction(
-                    resource_id=val.get("resource_id"),
-                )
-            return CohortResourceAction()
+                return val.get("resource_id")
+            return None
 
-        def _multi(key: str) -> CohortMultiResourceAction:
+        def _ids(key: str) -> list[uuid.UUID] | None:
             val = resource_actions.get(key, {})
             if isinstance(val, dict):
-                return CohortMultiResourceAction(
-                    resource_ids=val.get("resource_ids"),
-                )
-            return CohortMultiResourceAction()
+                return val.get("resource_ids")
+            return None
 
-        params = SaveCohortSqlParams(
-            profile_id=profile_id,
-            input_cohort_id=cohort_id,
-            group_id=group_id,
-            names=_single("names"),
-            descriptions=_single("descriptions"),
-            flags=_single("flags"),
-            departments=_multi("departments"),
-            simulations=_multi("simulations"),
-            simulation_positions=_multi("simulation_positions"),
-            simulation_availability=_multi("simulation_availability"),
-            profiles=_multi("profiles"),
-            profile_personas=_multi("profile_personas"),
-        )
+        name_id = _id("names")
+        description_id = _id("descriptions")
+        flag_id = _id("flags")
+        department_ids = _ids("departments")
+        simulation_ids = _ids("simulations")
+        simulation_position_ids = _ids("simulation_positions")
+        simulation_availability_ids = _ids("simulation_availability")
+        profile_ids = _ids("profiles")
+        profile_persona_ids = _ids("profile_personas")
 
         async with conn.transaction():
+            # Create denormalized cohorts_resource
+            cohorts_resource_id = await create_cohorts_internal(
+                conn,
+                name_id=name_id,
+                description_id=description_id,
+                department_ids=department_ids,
+                simulation_ids=simulation_ids,
+                profile_ids=profile_ids,
+                profile_persona_ids=profile_persona_ids,
+            )
+
+            params = SaveCohortSqlParams(
+                profile_id=profile_id,
+                input_cohort_id=cohort_id,
+                name_id=name_id,
+                description_id=description_id,
+                active_flag_id=flag_id,
+                department_ids=department_ids,
+                simulation_ids=simulation_ids,
+                simulation_position_ids=simulation_position_ids,
+                simulation_availability_ids=simulation_availability_ids,
+                profile_ids=profile_ids,
+                profile_persona_ids=profile_persona_ids,
+                cohorts_resource_id=cohorts_resource_id,
+            )
+
             result = cast(
                 SaveCohortSqlRow,
                 await execute_sql_typed(conn, SQL_PATH, params=params),
             )
 
-            if not result or not result.out_cohort_id:
+            if not result or not result.cohort_id:
                 return None
 
         await invalidate_tags(["cohorts"])
-        return result.out_cohort_id
+        return result.cohort_id
 
     except Exception as e:
         logger.exception(f"save_cohort_internal failed: {e}")
         return None
+
+
+async def _resolve_cohort_values(
+    conn: asyncpg.Connection,
+    item: SaveCohortItem,
+) -> list[SaveCohortFieldError]:
+    """Resolve value fields to IDs on the item (mutates in place).
+
+    For 'create' resources (name, description):
+      Creates a new resource and sets the *_id field.
+
+    Returns a list of errors (empty if all resolved successfully).
+    """
+    errors: list[SaveCohortFieldError] = []
+
+    # --- Create resources (always create new) ---
+
+    if item.name is not None and item.name_id is None:
+        item.name_id = await create_names_internal(conn, item.name)
+
+    if item.description is not None and item.description_id is None:
+        item.description_id = await create_descriptions_internal(conn, item.description)
+
+    # --- Validate required fields have IDs after resolution ---
+
+    if item.name_id is None:
+        errors.append(SaveCohortFieldError(field="name", message="Name is required"))
+
+    return errors
 
 
 @router.post(
@@ -113,7 +164,7 @@ async def save_cohort_internal(
     dependencies=[
         audit_activity(
             "cohort.saved",
-            "{{ actor.name }} {% if cohort %}updated{% else %}created{% endif %} cohort{% if cohort %} '{{ cohort.name }}'{% endif %}",
+            "{{ actor.name }} saved {{ count }} cohort(s)",
         )
     ],
 )
@@ -123,11 +174,15 @@ async def save_cohort(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SaveCohortApiResponse:
-    """Save cohort - draft-first create/update using draft resources."""
-    tags = ["cohorts"]  # From router tags
+    """Bulk save cohorts — all-or-nothing single transaction.
+
+    Each item can provide resource IDs directly or raw values that get
+    resolved to IDs (create or match). If any item has resolution errors,
+    the entire batch fails with per-item error details — no mutation occurs.
+    """
+    tags = ["cohorts"]
 
     sql_query = load_sql_query(SQL_PATH)
-    sql_params: tuple[Any, ...] | None = None
 
     try:
         # Get profile_id from header (set by router-level dependency)
@@ -138,7 +193,9 @@ async def save_cohort(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
+        # Fetch user context once for the whole batch
+        from app.api.v4.auth.profile import get_auth_profile_internal
+
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -157,88 +214,154 @@ async def save_cohort(
             user_role = None
             user_department_ids = []
 
-        # Permission checks
-        if request.input_cohort_id:
-            # Update mode: check access and save permissions
-            access_params = GetCohortAccessSqlParams(
-                profile_id=profile_id,
-                cohort_id=request.input_cohort_id,
-            )
-            access_result = cast(
-                GetCohortAccessSqlRow,
-                await execute_sql_typed(conn, ACCESS_SQL_PATH, params=access_params),
-            )
-            if access_result and access_result.cohort_exists is False:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Cohort {request.input_cohort_id} not found",
+        # Phase 1: Per-item access + permission checks (outside transaction, fail fast)
+        for idx, item in enumerate(request.cohorts):
+            if not item.input_cohort_id:
+                # Create mode
+                request_department_ids = (
+                    [str(d) for d in (item.department_ids or [])]
+                    if item.department_ids
+                    else []
                 )
-            if not compute_can_edit(
-                user_role=user_role,
-                cohort_department_ids=getattr(
-                    access_result, "cohort_department_ids", None
+                can_save = compute_can_create(user_role, request_department_ids)
+            else:
+                # Update mode
+                access_params = GetCohortAccessSqlParams(
+                    profile_id=profile_id,
+                    cohort_id=item.input_cohort_id,
                 )
-                or [],
-                user_department_ids=user_department_ids,
-            ):
+                access_result = cast(
+                    GetCohortAccessSqlRow,
+                    await execute_sql_typed(
+                        conn, ACCESS_SQL_PATH, params=access_params
+                    ),
+                )
+
+                if not access_result:
+                    raise HTTPException(
+                        status_code=401,
+                        detail=f"Item {idx}: Unable to verify user permissions.",
+                    )
+
+                cohort_department_ids = (
+                    getattr(access_result, "cohort_department_ids", None) or []
+                )
+
+                if access_result.cohort_exists is False:
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"Item {idx}: Cohort {item.input_cohort_id} not found",
+                    )
+
+                if not has_access(
+                    user_role, user_department_ids, cohort_department_ids
+                ):
+                    raise HTTPException(
+                        status_code=403,
+                        detail=f"Item {idx}: You don't have access to this cohort.",
+                    )
+
+                can_save = compute_can_edit(
+                    user_role=user_role,
+                    cohort_department_ids=cohort_department_ids,
+                    user_department_ids=user_department_ids,
+                )
+
+            if not can_save:
                 raise HTTPException(
                     status_code=403,
-                    detail="You don't have permission to save this cohort.",
+                    detail=f"Item {idx}: You don't have permission to save this cohort.",
                 )
-        else:
-            # Create mode: check create permissions
-            request_department_ids = request.department_ids or None
-            if not compute_can_create(user_role or "", request_department_ids):
-                raise HTTPException(
-                    status_code=403,
-                    detail="You don't have permission to create cohorts.",
+
+        # Phase 2: Resolve value fields → IDs (outside transaction)
+        has_errors = False
+        error_results: list[SaveCohortResult] = []
+
+        for idx, item in enumerate(request.cohorts):
+            item_errors = await _resolve_cohort_values(conn, item)
+            if item_errors:
+                has_errors = True
+                error_results.append(
+                    SaveCohortResult(
+                        success=False,
+                        message=f"Item {idx}: Validation errors",
+                        errors=item_errors,
+                    )
                 )
+            else:
+                error_results.append(
+                    SaveCohortResult(
+                        success=True,
+                        message="Validated",
+                    )
+                )
+
+        if has_errors:
+            return SaveCohortApiResponse(results=error_results)
+
+        # Phase 3: Single transaction — create resources + save junctions
+        results: list[SaveCohortResult] = []
 
         async with conn.transaction():
-            # Server-resolved group_id: always create a new group for each save
-            group_id = await conn.fetchval(
-                "INSERT INTO groups_entry (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id"
-            )
-            # Convert flat resource IDs to SQL params (add profile_id and group_id from server)
-            params = SaveCohortSqlParams.from_request(
-                request, profile_id=profile_id, group_id=group_id
-            )
-            sql_params = params.to_tuple()
-
-            # Execute SQL with typed helper - automatically detects and calls function if present
-            result = cast(
-                SaveCohortSqlRow,
-                await execute_sql_typed(
+            for idx, item in enumerate(request.cohorts):
+                # Create denormalized cohorts_resource
+                cohorts_resource_id = await create_cohorts_internal(
                     conn,
-                    SQL_PATH,
-                    params=params,
-                ),
+                    name_id=item.name_id,
+                    description_id=item.description_id,
+                    department_ids=item.department_ids,
+                    simulation_ids=item.simulation_ids,
+                    profile_ids=item.profile_ids,
+                    profile_persona_ids=item.profile_persona_ids,
+                )
+
+                params = SaveCohortSqlParams.from_request(
+                    item,
+                    profile_id=profile_id,
+                    cohorts_resource_id=cohorts_resource_id,
+                )
+
+                result = cast(
+                    SaveCohortSqlRow,
+                    await execute_sql_typed(
+                        conn,
+                        SQL_PATH,
+                        params=params,
+                    ),
+                )
+
+                if not result or not result.cohort_id:
+                    if item.input_cohort_id:
+                        raise ValueError(
+                            f"Item {idx}: Cohort not found: {item.input_cohort_id}"
+                        )
+                    else:
+                        raise ValueError(f"Item {idx}: Failed to create cohort")
+
+                is_update = item.input_cohort_id is not None
+                results.append(
+                    SaveCohortResult(
+                        success=True,
+                        cohort_id=result.cohort_id,
+                        message="Cohort updated successfully"
+                        if is_update
+                        else "Cohort created successfully",
+                    )
+                )
+
+        # Audit context
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                count=len(results),
             )
-
-            if not result or not result.out_cohort_id:
-                if request.input_cohort_id:
-                    raise ValueError(f"Cohort not found: {request.input_cohort_id}")
-                raise ValueError("Failed to save cohort")
-
-            # Set audit context with data from SQL query
-            if actor_name:
-                audit_ctx = {"actor": {"name": actor_name, "id": profile_id}}
-                audit_ctx["cohort"] = {"id": str(result.out_cohort_id)}
-                audit_set(http_request, **audit_ctx)
-
-        # Convert SQL result to API response
-        api_response = SaveCohortApiResponse.model_validate(
-            {
-                "cohort_id": str(result.out_cohort_id),
-                "actor_name": actor_name,
-            }
-        )
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return api_response
+        return SaveCohortApiResponse(results=results)
     except HTTPException:
         raise
     except ValueError as e:
@@ -249,6 +372,6 @@ async def save_cohort(
             route_path=http_request.url.path,
             operation="save_cohort",
             sql_query=sql_query,
-            sql_params=sql_params,
+            sql_params=None,
             request=http_request,
         )

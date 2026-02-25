@@ -17,10 +17,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { OutputOf } from "@/lib/api/types";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
+
+// Link types for tool call tracking
+type LinkProfilesIn = InputOf<"/api/v4/resources/profiles/link", "post">;
+type LinkProfilesOut = OutputOf<"/api/v4/resources/profiles/link", "post">;
 
 // Derive resource item type from the GET endpoint response
 type ProfileGetResponse = OutputOf<"/api/v4/resources/profiles/get", "post">;
@@ -60,6 +64,9 @@ export interface ProfilesProps {
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   searchTerm?: string; // Search term for filtering profiles
   showSelectedFilter?: boolean; // Whether to show only selected profiles
+  // Link tool call tracking
+  link_tool_id?: string | null;
+  linkProfilesAction?: (input: LinkProfilesIn) => Promise<LinkProfilesOut>;
   aiProfileResources?: Array<{
     profile_id?: string | null;
     name?: string | null;
@@ -83,6 +90,8 @@ export function Profiles({
   showAiGenerate = false,
   searchTerm = "",
   showSelectedFilter = false,
+  link_tool_id,
+  linkProfilesAction,
 }: ProfilesProps) {
   const ids = useMemo(() => profile_ids ?? [], [profile_ids]);
   const show = show_profiles ?? false;
@@ -156,9 +165,16 @@ export function Profiles({
         ? ids.filter((id) => id !== profileId)
         : [...ids, profileId];
 
+      // Fire link tracking when adding (not removing)
+      if (!isSelected && linkProfilesAction && group_id && link_tool_id) {
+        linkProfilesAction({
+          body: { resource_id: profileId, group_id, tool_id: link_tool_id },
+        }).catch(() => {});
+      }
+
       onChange(newIds);
     },
-    [ids, onChange]
+    [ids, onChange, linkProfilesAction, group_id, link_tool_id]
   );
 
   // Check if any profile resource is generated (must be before early return)

@@ -371,6 +371,9 @@ from app.api.v4.resources.profiles.search import router as profiles_search_route
 
 router.include_router(profiles_get_router)
 router.include_router(profiles_search_router)
+from app.api.v4.resources.profiles.link import router as profiles_link_router
+
+router.include_router(profiles_link_router)
 from app.api.v4.resources.prompts.create import router as prompts_router
 from app.api.v4.resources.prompts.get import router as prompts_get_router
 
@@ -504,6 +507,11 @@ from app.api.v4.resources.profile_personas.search import (
 router.include_router(profile_personas_router)
 router.include_router(profile_personas_get_router)
 router.include_router(profile_personas_search_router)
+from app.api.v4.resources.profile_personas.link import (
+    router as profile_personas_link_router,
+)
+
+router.include_router(profile_personas_link_router)
 from app.api.v4.resources.scenario_positions.create import (
     router as scenario_positions_router,
 )
@@ -586,6 +594,11 @@ from app.api.v4.resources.simulation_positions.search import (
 router.include_router(simulation_positions_router)
 router.include_router(simulation_positions_get_router)
 router.include_router(simulation_positions_search_router)
+from app.api.v4.resources.simulation_positions.link import (
+    router as simulation_positions_link_router,
+)
+
+router.include_router(simulation_positions_link_router)
 from app.api.v4.resources.simulation_availability.create import (
     router as simulation_availability_router,
 )
@@ -599,6 +612,11 @@ from app.api.v4.resources.simulation_availability.search import (
 router.include_router(simulation_availability_router)
 router.include_router(simulation_availability_get_router)
 router.include_router(simulation_availability_search_router)
+from app.api.v4.resources.simulation_availability.link import (
+    router as simulation_availability_link_router,
+)
+
+router.include_router(simulation_availability_link_router)
 # NOTE: simulations removed - non-creatable, sync via artifact save (migration 328)
 # GET/Search endpoints available for cohorts two-pass architecture
 from app.api.v4.resources.simulations.get import router as simulations_get_router
@@ -606,6 +624,9 @@ from app.api.v4.resources.simulations.search import router as simulations_search
 
 router.include_router(simulations_get_router)
 router.include_router(simulations_search_router)
+from app.api.v4.resources.simulations.link import router as simulations_link_router
+
+router.include_router(simulations_link_router)
 from app.api.v4.resources.slugs.create import router as slugs_router
 from app.api.v4.resources.slugs.get import router as slugs_get_router
 from app.api.v4.resources.slugs.search import router as slugs_search_router

@@ -6,7 +6,7 @@
  * 06/18/2025
  */
 "use client";
-import { Copy, Edit, Eye, Play, Search, Sparkles, Trash2, Users, X } from "lucide-react";
+import { CheckCircle, Copy, Edit, Eye, Pencil, Play, Search, Sparkles, Trash2, Users, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -17,10 +17,14 @@ import type {
   DeleteCohortOut,
   DuplicateCohortIn,
   DuplicateCohortOut,
+  SaveCohortIn,
+  SaveCohortOut,
+  SearchFlagsOut,
 } from "@/app/(main)/training/cohorts/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Input } from "@/components/ui/input";
 import {
   ColumnDef,
@@ -45,6 +49,17 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
   TooltipContent,
@@ -63,6 +78,8 @@ export interface CohortsProps {
     input: DuplicateCohortIn,
   ) => Promise<DuplicateCohortOut>;
   deleteCohortAction?: (input: DeleteCohortIn) => Promise<DeleteCohortOut>;
+  saveCohortAction?: (input: SaveCohortIn) => Promise<SaveCohortOut>;
+  searchFlagsAction?: () => Promise<SearchFlagsOut>;
   // Server-side pagination/filtering state
   pageIndex: number;
   pageSize: number;
@@ -76,6 +93,8 @@ export default function Cohorts({
   listData: serverListData,
   duplicateCohortAction,
   deleteCohortAction,
+  saveCohortAction,
+  searchFlagsAction,
   pageIndex,
   pageSize,
   totalCount,
@@ -99,6 +118,23 @@ export default function Cohorts({
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
+
+  // Selection state
+  const [selectedCohortIds, setSelectedCohortIds] = useState<string[]>([]);
+
+  // Bulk delete state
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  // Bulk edit state
+  const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
+  const [isBulkEditing, setIsBulkEditing] = useState(false);
+  const [bulkEditActiveStatus, setBulkEditActiveStatus] = useState<boolean | null>(null);
+  const [bulkEditDepartmentIds, setBulkEditDepartmentIds] = useState<string[] | null>(null);
+
+  // Lazy-loaded flag options
+  const [flagOptions, setFlagOptions] = useState<{ id: string; name: string; type: string }[]>([]);
+  const [flagsLoaded, setFlagsLoaded] = useState(false);
 
   // Generation modal via shared hook
   type CohortResourceType = "names" | "descriptions" | "flags" | "departments" | "simulations" | "simulation_positions" | "simulation_availability" | "profiles" | "profile_personas";
@@ -186,6 +222,51 @@ export default function Cohorts({
     () => cohortsData?.cohorts || [],
     [cohortsData?.cohorts],
   );
+
+  // Computed selection info
+  const selectedCount = selectedCohortIds.length;
+  const selectedCohorts = useMemo(() => {
+    return cohorts.filter((c) => c.cohort_id && selectedCohortIds.includes(c.cohort_id));
+  }, [cohorts, selectedCohortIds]);
+
+  const deletableCohorts = useMemo(() => {
+    return selectedCohorts.filter((c) => c.can_delete);
+  }, [selectedCohorts]);
+
+  const nonDeletableCohorts = useMemo(() => {
+    return selectedCohorts.filter((c) => !c.can_delete);
+  }, [selectedCohorts]);
+
+  const editableCohorts = useMemo(() => {
+    return selectedCohorts.filter((c) => c.can_edit);
+  }, [selectedCohorts]);
+
+  // Check if all cohorts on the current page are selected
+  const allPageSelected = useMemo(() => {
+    const pageIds = cohorts.filter((c) => c.cohort_id).map((c) => c.cohort_id!);
+    return pageIds.length > 0 && pageIds.every((id) => selectedCohortIds.includes(id));
+  }, [cohorts, selectedCohortIds]);
+
+  // Toggle selection for a single cohort
+  const toggleSelection = useCallback((cohortId: string) => {
+    setSelectedCohortIds((prev) =>
+      prev.includes(cohortId)
+        ? prev.filter((id) => id !== cohortId)
+        : [...prev, cohortId]
+    );
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedCohortIds([]);
+  }, []);
+
+  const selectAllOnPage = useCallback(() => {
+    const pageIds = cohorts.filter((c) => c.cohort_id).map((c) => c.cohort_id!);
+    setSelectedCohortIds((prev) => {
+      const combined = new Set([...prev, ...pageIds]);
+      return Array.from(combined);
+    });
+  }, [cohorts]);
 
   // Use server-provided facet options directly (filtered by search term server-side)
   const simulationOptions = useMemo(
@@ -468,7 +549,7 @@ export default function Cohorts({
 
     setIsDeleting(true);
     try {
-      await deleteCohortAction({ body: { cohort_id: deleteItem.id } });
+      await deleteCohortAction({ body: { cohort_ids: [deleteItem.id] } });
       toast.success("Cohort deleted successfully");
       router.refresh();
     } catch (err) {
@@ -483,6 +564,96 @@ export default function Cohorts({
       setShowDeleteDialog(false);
       setDeleteItem(null);
     }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!deleteCohortAction || deletableCohorts.length === 0) return;
+
+    setIsBulkDeleting(true);
+    try {
+      const ids = deletableCohorts.map((c) => c.cohort_id!);
+      await deleteCohortAction({ body: { cohort_ids: ids } });
+      toast.success(`${ids.length} cohort(s) deleted successfully`);
+      clearSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to delete cohorts";
+      const cleanMsg = msg.replace(/^\d{3}\s*/, "");
+      toast.error(cleanMsg || "Failed to delete cohorts");
+    } finally {
+      setIsBulkDeleting(false);
+      setShowBulkDeleteDialog(false);
+    }
+  };
+
+  const handleBulkEdit = async () => {
+    if (!saveCohortAction || editableCohorts.length === 0) return;
+
+    const hasActiveChange = bulkEditActiveStatus !== null;
+    const hasDeptChange = bulkEditDepartmentIds !== null;
+
+    if (!hasActiveChange && !hasDeptChange) {
+      toast.error("No changes selected");
+      return;
+    }
+
+    // Find the cohort_active flag ID from lazy-loaded flagOptions
+    const activeFlagId = flagOptions.find((f) => f.type === "cohort_active")?.id;
+
+    setIsBulkEditing(true);
+    try {
+      const items = editableCohorts.map((cohort) => {
+        // flag_id is singular: set to the active flag ID when active, null when inactive
+        let flagId: string | null | undefined;
+        if (hasActiveChange) {
+          flagId = bulkEditActiveStatus && activeFlagId ? activeFlagId : null;
+        }
+
+        return {
+          input_cohort_id: cohort.cohort_id!,
+          ...(hasActiveChange && { flag_id: flagId }),
+          ...(hasDeptChange && { department_ids: bulkEditDepartmentIds }),
+        };
+      });
+
+      await saveCohortAction({
+        body: {
+          cohorts: items,
+        },
+      });
+      toast.success(`${items.length} cohort(s) updated successfully`);
+      clearSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to update cohorts";
+      const cleanMsg = msg.replace(/^\d{3}\s*/, "");
+      toast.error(cleanMsg || "Failed to update cohorts");
+    } finally {
+      setIsBulkEditing(false);
+      setShowBulkEditDialog(false);
+    }
+  };
+
+  const openBulkEditDialog = async () => {
+    // Reset form state
+    setBulkEditActiveStatus(null);
+    setBulkEditDepartmentIds(null);
+
+    // Lazy-load flag options
+    if (!flagsLoaded) {
+      try {
+        const flags = await searchFlagsAction?.() ?? [];
+        setFlagOptions(
+          (flags as { id?: string | null; name?: string | null; type?: string | null }[])
+            .filter((f): f is { id: string; name: string; type: string } => !!f.id && !!f.name && !!f.type)
+        );
+        setFlagsLoaded(true);
+      } catch {
+        toast.error("Failed to load flag options");
+      }
+    }
+
+    setShowBulkEditDialog(true);
   };
 
   const handleDuplicate = async (cohortId: string, cohortName: string) => {
@@ -518,18 +689,51 @@ export default function Cohorts({
     router.push(`/training/cohorts/${id}`);
   };
 
-  const renderCohortCard = (cohort: (typeof cohorts)[number]) => (
+  const renderCohortCard = (cohort: (typeof cohorts)[number]) => {
+    const isSelected = cohort.cohort_id ? selectedCohortIds.includes(cohort.cohort_id) : false;
+
+    const handleCardClick = (e: React.MouseEvent) => {
+      // Don't toggle selection if clicking action buttons
+      if ((e.target as HTMLElement).closest("[data-action-button]")) return;
+      if (cohort.cohort_id) {
+        toggleSelection(cohort.cohort_id);
+      }
+    };
+
+    return (
     <Card
       key={cohort.cohort_id || ""}
       {...(cohort.name ? { "aria-label": cohort.name } : {})}
       data-testid="cohort-card"
       {...(cohort.cohort_id ? { "data-cohort-id": cohort.cohort_id } : {})}
-      className="relative flex flex-col h-full"
+      className={`group relative flex flex-col h-full hover:shadow-md transition-all cursor-pointer ${
+        isSelected ? "ring-2 ring-primary" : ""
+      }`}
+      aria-selected={isSelected}
+      onClick={handleCardClick}
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <CardTitle className="text-lg">{cohort.name}</CardTitle>
+            <div className="flex items-center gap-2">
+              {/* Selection checkbox — inline before name */}
+              <div
+                className={`transition-all overflow-hidden flex-shrink-0 ${
+                  selectedCount > 0 ? "w-5 opacity-100" : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
+                }`}
+                data-action-button
+              >
+                <Checkbox
+                  checked={isSelected}
+                  onCheckedChange={() => {
+                    if (cohort.cohort_id) toggleSelection(cohort.cohort_id);
+                  }}
+                  className="rounded-full h-5 w-5"
+                  aria-label={`Select cohort ${cohort.name || "Unnamed"}`}
+                />
+              </div>
+              <CardTitle className="text-lg">{cohort.name}</CardTitle>
+            </div>
             {((columnVisibility.ai_badge !== false && cohort.generated) || (columnVisibility.status_badge !== false && cohort.is_inactive)) && (
               <div className="mt-1 flex items-center gap-2">
                 {columnVisibility.ai_badge !== false && cohort.generated && (
@@ -544,7 +748,7 @@ export default function Cohorts({
               </div>
             )}
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1" data-action-button>
             {cohort.can_edit ? (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -668,7 +872,8 @@ export default function Cohorts({
         )}
       </CardContent>
     </Card>
-  );
+    );
+  };
 
   // Get column references for toolbar
   const profileColumn = table.getColumn("profile_ids");
@@ -680,7 +885,59 @@ export default function Cohorts({
     <TooltipProvider>
       <div className="space-y-6">
         <div className="space-y-4">
-          {/* Toolbar */}
+          {/* Toolbar — swaps between filter bar and selection action bar */}
+          {selectedCount > 0 ? (
+            <div
+              className="flex items-center justify-between gap-2"
+              data-testid="cohorts-toolbar"
+            >
+              <div className="flex items-center gap-2">
+                {deleteCohortAction && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => setShowBulkDeleteDialog(true)}
+                    disabled={deletableCohorts.length === 0}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete {deletableCohorts.length} of {selectedCount}
+                  </Button>
+                )}
+                {saveCohortAction && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={openBulkEditDialog}
+                    disabled={editableCohorts.length === 0}
+                  >
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit {editableCohorts.length} of {selectedCount}
+                  </Button>
+                )}
+                {!allPageSelected && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8"
+                    onClick={selectAllOnPage}
+                  >
+                    Select All
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8"
+                  onClick={clearSelection}
+                >
+                  Unselect All
+                </Button>
+              </div>
+              <DataTableViewOptions table={table} hiddenColumns={["name", "profile_ids", "simulation_ids", "departments", "updated_at"]} />
+            </div>
+          ) : (
           <div
             className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
             data-testid="cohorts-toolbar"
@@ -754,6 +1011,7 @@ export default function Cohorts({
             </div>
             <DataTableViewOptions table={table} hiddenColumns={["name", "profile_ids", "simulation_ids", "departments", "updated_at"]} />
           </div>
+          )}
 
           {/* Cards Grid */}
           <div
@@ -777,7 +1035,7 @@ export default function Cohorts({
           <DataTablePagination table={table} card={true} />
         </div>
 
-        {/* Delete Confirmation Dialog */}
+        {/* Single Delete Confirmation Dialog */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
           <AlertDialogContent
             aria-labelledby="delete-cohort-title"
@@ -810,6 +1068,172 @@ export default function Cohorts({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Bulk Delete Confirmation Dialog */}
+        <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+          <AlertDialogContent
+            aria-labelledby="bulk-delete-cohort-title"
+            data-testid="dialog-bulk-delete-cohort"
+          >
+            <AlertDialogHeader>
+              <AlertDialogTitle id="bulk-delete-cohort-title">
+                Delete {deletableCohorts.length} Cohort(s)
+              </AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-3">
+                  <p>This action cannot be undone.</p>
+                  {deletableCohorts.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                      <ul className="text-sm space-y-0.5">
+                        {deletableCohorts.map((c) => (
+                          <li key={c.cohort_id} className="flex items-center gap-1.5">
+                            <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                            {c.name || "Unnamed Cohort"}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {nonDeletableCohorts.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use):</p>
+                      <ul className="text-sm space-y-0.5">
+                        {nonDeletableCohorts.map((c) => (
+                          <li key={c.cohort_id} className="flex items-center gap-1.5 text-muted-foreground">
+                            <CheckCircle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
+                            {c.name || "Unnamed Cohort"}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isBulkDeleting}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleBulkDelete}
+                disabled={isBulkDeleting}
+                variant="destructive"
+              >
+                {isBulkDeleting ? "Deleting..." : `Delete ${deletableCohorts.length}`}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Bulk Edit Modal */}
+        <Dialog open={showBulkEditDialog} onOpenChange={setShowBulkEditDialog}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Edit {editableCohorts.length} Cohort(s)</DialogTitle>
+              <DialogDescription>
+                Only changed fields will be applied. Unchanged fields keep their current values.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-5 py-4">
+              {/* Active Status — Switch with tri-state */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Active Status</Label>
+                <div className="flex items-center gap-3">
+                  {bulkEditActiveStatus === null ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">No change</span>
+                      <span className="text-xs text-muted-foreground">—</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => setBulkEditActiveStatus(true)}
+                      >
+                        Set Active
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => setBulkEditActiveStatus(false)}
+                      >
+                        Set Inactive
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <Switch
+                        checked={bulkEditActiveStatus}
+                        onCheckedChange={setBulkEditActiveStatus}
+                      />
+                      <span className="text-sm">{bulkEditActiveStatus ? "Active" : "Inactive"}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-xs text-muted-foreground"
+                        onClick={() => setBulkEditActiveStatus(null)}
+                      >
+                        Reset
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Departments — GenericPicker multi-select */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Departments</Label>
+                  {bulkEditDepartmentIds !== null && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => setBulkEditDepartmentIds(null)}
+                    >
+                      Reset
+                    </Button>
+                  )}
+                </div>
+                {bulkEditDepartmentIds === null ? (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-muted-foreground"
+                    onClick={() => setBulkEditDepartmentIds([])}
+                  >
+                    No change — click to edit departments
+                  </Button>
+                ) : (
+                  <GenericPicker
+                    items={departmentOptions}
+                    selectedIds={bulkEditDepartmentIds}
+                    onSelect={setBulkEditDepartmentIds}
+                    multiSelect
+                    getId={(d) => d.value}
+                    getLabel={(d) => d.label}
+                    placeholder="Select departments..."
+                    showClearAction
+                    clearActionLabel="Clear All"
+                    searchPlaceholder="Search departments..."
+                    emptyMessage="No departments found."
+                    groupHeading="Departments"
+                    hideSelectedChips={false}
+                    showClearAll
+                  />
+                )}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowBulkEditDialog(false)} disabled={isBulkEditing}>
+                Cancel
+              </Button>
+              <Button onClick={handleBulkEdit} disabled={isBulkEditing}>
+                {isBulkEditing ? "Applying..." : "Apply Changes"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <GenerateRegenerateModal {...modalProps} />
       </div>

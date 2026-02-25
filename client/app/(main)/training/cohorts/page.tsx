@@ -18,6 +18,10 @@ type DuplicateCohortIn = InputOf<"/api/v4/artifacts/cohorts/duplicate", "post">;
 type DuplicateCohortOut = OutputOf<"/api/v4/artifacts/cohorts/duplicate", "post">;
 type DeleteCohortIn = InputOf<"/api/v4/artifacts/cohorts/delete", "post">;
 type DeleteCohortOut = OutputOf<"/api/v4/artifacts/cohorts/delete", "post">;
+type SaveCohortIn = InputOf<"/api/v4/artifacts/cohorts/save", "post">;
+type SaveCohortOut = OutputOf<"/api/v4/artifacts/cohorts/save", "post">;
+type SearchFlagsIn = InputOf<"/api/v4/resources/flags/search", "post">;
+type SearchFlagsOut = NonNullable<OutputOf<"/api/v4/resources/flags/search", "post">["items"]>;
 
 /** ---- Body type for cohorts list request ---- */
 type CohortsListBody = {
@@ -65,6 +69,19 @@ async function deleteCohort(input: DeleteCohortIn): Promise<DeleteCohortOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/artifacts/cohorts/delete", input);
+}
+
+async function saveCohort(input: SaveCohortIn): Promise<SaveCohortOut> {
+  "use server";
+  return api.post("/artifacts/cohorts/save", input);
+}
+
+async function searchFlags(): Promise<SearchFlagsOut> {
+  "use server";
+  const res = await api.post("/resources/flags/search", {
+    body: { search: null, limit_count: 100, offset_count: 0, cohort: true },
+  } as SearchFlagsIn);
+  return res.items ?? [];
 }
 
 /** ---- Docs types for page metadata ---- */
@@ -130,6 +147,8 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
         listData={listData}
         duplicateCohortAction={duplicateCohort}
         deleteCohortAction={deleteCohort}
+        saveCohortAction={saveCohort}
+        searchFlagsAction={searchFlags}
         pageIndex={pageIndex}
         pageSize={pageSize}
         totalCount={listData.total_count ?? 0}
@@ -148,4 +167,7 @@ export type {
   DeleteCohortOut,
   DuplicateCohortIn,
   DuplicateCohortOut,
+  SaveCohortIn,
+  SaveCohortOut,
+  SearchFlagsOut,
 };

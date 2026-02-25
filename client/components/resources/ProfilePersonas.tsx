@@ -27,6 +27,10 @@ import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 
+// Link types for tool call tracking
+type LinkProfilePersonasIn = InputOf<"/api/v4/resources/profile_personas/link", "post">;
+type LinkProfilePersonasOut = OutputOf<"/api/v4/resources/profile_personas/link", "post">;
+
 type CreateDraftProfilePersonasIn = InputOf<
   "/api/v4/resources/profile_personas",
   "post"
@@ -105,6 +109,9 @@ export interface ProfilePersonasProps {
   aiProfilePersonaResources?:
     | Pick<ProfilePersonasResourceItem, "id" | "profile_id" | "persona_id">[]
     | null;
+  // Link tool call tracking (reserved for future use)
+  link_tool_id?: string | null;
+  linkProfilePersonasAction?: (input: LinkProfilePersonasIn) => Promise<LinkProfilePersonasOut>;
 }
 
 export function ProfilePersonas({
@@ -131,6 +138,8 @@ export function ProfilePersonas({
   isAutosaveEnabled = true,
   registerFlush,
   aiProfilePersonaResources,
+  link_tool_id: _link_tool_id,
+  linkProfilePersonasAction: _linkProfilePersonasAction,
 }: ProfilePersonasProps) {
   const show = show_profile_personas ?? false;
   const allPersonas = useMemo(

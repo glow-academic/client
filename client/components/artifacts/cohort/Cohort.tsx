@@ -93,6 +93,26 @@ type CreateDraftProfilePersonasOut = OutputOf<
 type PatchCohortDraftIn = InputOf<"/api/v4/artifacts/cohorts/draft", "patch">;
 type PatchCohortDraftOut = OutputOf<"/api/v4/artifacts/cohorts/draft", "patch">;
 
+// Link types for tool call tracking
+type LinkNamesIn = InputOf<"/api/v4/resources/names/link", "post">;
+type LinkNamesOut = OutputOf<"/api/v4/resources/names/link", "post">;
+type LinkDescriptionsIn = InputOf<"/api/v4/resources/descriptions/link", "post">;
+type LinkDescriptionsOut = OutputOf<"/api/v4/resources/descriptions/link", "post">;
+type LinkFlagsIn = InputOf<"/api/v4/resources/flags/link", "post">;
+type LinkFlagsOut = OutputOf<"/api/v4/resources/flags/link", "post">;
+type LinkDepartmentsIn = InputOf<"/api/v4/resources/departments/link", "post">;
+type LinkDepartmentsOut = OutputOf<"/api/v4/resources/departments/link", "post">;
+type LinkSimulationsIn = InputOf<"/api/v4/resources/simulations/link", "post">;
+type LinkSimulationsOut = OutputOf<"/api/v4/resources/simulations/link", "post">;
+type LinkSimulationPositionsIn = InputOf<"/api/v4/resources/simulation_positions/link", "post">;
+type LinkSimulationPositionsOut = OutputOf<"/api/v4/resources/simulation_positions/link", "post">;
+type LinkSimulationAvailabilityIn = InputOf<"/api/v4/resources/simulation_availability/link", "post">;
+type LinkSimulationAvailabilityOut = OutputOf<"/api/v4/resources/simulation_availability/link", "post">;
+type LinkProfilesIn = InputOf<"/api/v4/resources/profiles/link", "post">;
+type LinkProfilesOut = OutputOf<"/api/v4/resources/profiles/link", "post">;
+type LinkProfilePersonasIn = InputOf<"/api/v4/resources/profile_personas/link", "post">;
+type LinkProfilePersonasOut = OutputOf<"/api/v4/resources/profile_personas/link", "post">;
+
 type CohortData = OutputOf<"/api/v4/artifacts/cohorts/get", "post">;
 
 // Type for flush results - each resource returns its created ID(s)
@@ -142,6 +162,16 @@ export interface CohortProps {
   createProfilePersonasAction?: (
     input: CreateDraftProfilePersonasIn,
   ) => Promise<CreateDraftProfilePersonasOut>;
+  // Link actions for tool call tracking
+  linkNamesAction?: (input: LinkNamesIn) => Promise<LinkNamesOut>;
+  linkDescriptionsAction?: (input: LinkDescriptionsIn) => Promise<LinkDescriptionsOut>;
+  linkFlagsAction?: (input: LinkFlagsIn) => Promise<LinkFlagsOut>;
+  linkDepartmentsAction?: (input: LinkDepartmentsIn) => Promise<LinkDepartmentsOut>;
+  linkSimulationsAction?: (input: LinkSimulationsIn) => Promise<LinkSimulationsOut>;
+  linkSimulationPositionsAction?: (input: LinkSimulationPositionsIn) => Promise<LinkSimulationPositionsOut>;
+  linkSimulationAvailabilityAction?: (input: LinkSimulationAvailabilityIn) => Promise<LinkSimulationAvailabilityOut>;
+  linkProfilesAction?: (input: LinkProfilesIn) => Promise<LinkProfilesOut>;
+  linkProfilePersonasAction?: (input: LinkProfilePersonasIn) => Promise<LinkProfilePersonasOut>;
 }
 
 const FLUSH_KEYS = ["names", "descriptions", "simulation_positions", "simulation_availability", "profile_personas"] as const;
@@ -215,6 +245,16 @@ function CohortComponent({
   createSimulationPositionsAction,
   createSimulationAvailabilityAction,
   createProfilePersonasAction,
+  // Link actions
+  linkNamesAction,
+  linkDescriptionsAction,
+  linkFlagsAction,
+  linkDepartmentsAction,
+  linkSimulationsAction,
+  linkSimulationPositionsAction,
+  linkSimulationAvailabilityAction,
+  linkProfilesAction,
+  linkProfilePersonasAction,
 }: CohortProps) {
   const router = useRouter();
   const isEditMode = !!cohortId;
@@ -1055,6 +1095,7 @@ function CohortComponent({
                   group_id={s?.group_id ?? null}
                   showAiGenerate={s?.names?.show_ai_generate ?? false}
                   create_tool_id={s?.names?.tool_id ?? null}
+                  link_tool_id={s?.names?.link_tool_id ?? null}
                   createNamesAction={
                     createNamesAction as
                       | ((
@@ -1062,6 +1103,7 @@ function CohortComponent({
                         ) => Promise<CreateDraftNamesOut>)
                       | undefined
                   }
+                  linkNamesAction={linkNamesAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["names"]}
                 />
@@ -1117,7 +1159,9 @@ function CohortComponent({
                   group_id={s?.group_id ?? null}
                   showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
                   create_tool_id={s?.descriptions?.tool_id ?? null}
+                  link_tool_id={s?.descriptions?.link_tool_id ?? null}
                   createDescriptionsAction={createDescriptionsAction}
+                  linkDescriptionsAction={linkDescriptionsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["descriptions"]}
                 />
@@ -1137,6 +1181,8 @@ function CohortComponent({
                   required={s?.departments?.required ?? false}
                   group_id={s?.group_id ?? null}
                   showAiGenerate={s?.departments?.show_ai_generate ?? false}
+                  link_tool_id={s?.departments?.link_tool_id ?? null}
+                  linkDepartmentsAction={linkDepartmentsAction}
                 />
 
                 {/* Active Switch - using Flags resource component */}
@@ -1156,6 +1202,8 @@ function CohortComponent({
                   onGenerate={handleGenerateFlags}
                   group_id={s?.group_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
+                  link_tool_id={s?.flags?.link_tool_id ?? null}
+                  linkFlagsAction={linkFlagsAction}
                 />
               </div>
             </StepCard>
@@ -1263,6 +1311,8 @@ function CohortComponent({
                   showAiGenerate={s?.simulations?.show_ai_generate ?? false}
                   searchTerm={simulationSearchTerm}
                   showSelectedFilter={simulationShowSelected}
+                  link_tool_id={s?.simulations?.link_tool_id ?? null}
+                  linkSimulationsAction={linkSimulationsAction}
                 />
                 <SimulationPositions
                   simulation_ids={formState.simulation_ids ?? []}
@@ -1296,6 +1346,8 @@ function CohortComponent({
                   createSimulationPositionsAction={simulationPositionsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["simulation_positions"]}
+                  link_tool_id={s?.simulation_positions?.link_tool_id ?? null}
+                  linkSimulationPositionsAction={linkSimulationPositionsAction}
                 />
                 <SimulationAvailability
                   simulation_availability_ids={formState.simulation_availability_ids ?? []}
@@ -1329,6 +1381,8 @@ function CohortComponent({
                   }
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["simulation_availability"]}
+                  link_tool_id={s?.simulation_availability?.link_tool_id ?? null}
+                  linkSimulationAvailabilityAction={linkSimulationAvailabilityAction}
                 />
               </div>
             </StepCard>
@@ -1418,6 +1472,8 @@ function CohortComponent({
                 onGenerate={handleGenerateProfiles}
                 searchTerm={profileSearchTerm}
                 showSelectedFilter={profileShowSelected}
+                link_tool_id={s?.profiles?.link_tool_id ?? null}
+                linkProfilesAction={linkProfilesAction}
               />
               <ProfilePersonas
                 profile_persona_ids={formState.profile_persona_ids ?? []}
@@ -1467,6 +1523,8 @@ function CohortComponent({
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["profile_personas"]}
                 aiProfilePersonaResources={[]}
+                link_tool_id={s?.profile_personas?.link_tool_id ?? null}
+                linkProfilePersonasAction={linkProfilePersonasAction}
               />
               </div>
             </StepCard>
@@ -1511,6 +1569,15 @@ function CohortComponent({
       createSimulationPositionsAction,
       createSimulationAvailabilityAction,
       createProfilePersonasAction,
+      linkNamesAction,
+      linkDescriptionsAction,
+      linkFlagsAction,
+      linkDepartmentsAction,
+      linkSimulationsAction,
+      linkSimulationPositionsAction,
+      linkSimulationAvailabilityAction,
+      linkProfilesAction,
+      linkProfilePersonasAction,
       canRegenerate,
       handleOpenStepCardModal,
       isAutosaveEnabled,

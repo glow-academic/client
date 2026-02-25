@@ -876,7 +876,11 @@ export interface paths {
         put?: never;
         /**
          * Save Cohort
-         * @description Save cohort - draft-first create/update using draft resources.
+         * @description Bulk save cohorts — all-or-nothing single transaction.
+         *
+         *     Each item can provide resource IDs directly or raw values that get
+         *     resolved to IDs (create or match). If any item has resolution errors,
+         *     the entire batch fails with per-item error details — no mutation occurs.
          */
         post: operations["save_cohort_api_v4_artifacts_cohorts_save_post"];
         delete?: never;
@@ -916,7 +920,7 @@ export interface paths {
         put?: never;
         /**
          * Delete Cohort
-         * @description Delete a cohort.
+         * @description Bulk delete cohorts — all-or-nothing single transaction.
          */
         post: operations["delete_cohort_api_v4_artifacts_cohorts_delete_post"];
         delete?: never;
@@ -5616,6 +5620,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/profiles/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Profiles
+         * @description Record tool call tracking for linking an existing profile resource.
+         */
+        post: operations["link_profiles_api_v4_resources_profiles_link_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/prompts": {
         parameters: {
             query?: never;
@@ -6321,6 +6345,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/profile_personas/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Profile Personas
+         * @description Record tool call tracking for linking an existing profile persona resource.
+         */
+        post: operations["link_profile_personas_api_v4_resources_profile_personas_link_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/scenario_positions": {
         parameters: {
             query?: never;
@@ -6723,6 +6767,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/simulation_positions/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Simulation Positions
+         * @description Record tool call tracking for linking an existing simulation position resource.
+         */
+        post: operations["link_simulation_positions_api_v4_resources_simulation_positions_link_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/simulation_availability": {
         parameters: {
             query?: never;
@@ -6777,6 +6841,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/simulation_availability/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Simulation Availability
+         * @description Record tool call tracking for linking an existing simulation availability resource.
+         */
+        post: operations["link_simulation_availability_api_v4_resources_simulation_availability_link_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/simulations/get": {
         parameters: {
             query?: never;
@@ -6811,6 +6895,26 @@ export interface paths {
          * @description Search simulations with optional filters.
          */
         post: operations["search_simulations_api_v4_resources_simulations_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/simulations/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Simulations
+         * @description Record tool call tracking for linking an existing simulation resource.
+         */
+        post: operations["link_simulations_api_v4_resources_simulations_link_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -24879,24 +24983,36 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** DeleteCohortApiRequest */
+        /**
+         * DeleteCohortApiRequest
+         * @description Request model for bulk delete cohort endpoint.
+         */
         DeleteCohortApiRequest: {
+            /** Cohort Ids */
+            cohort_ids: string[];
+        };
+        /**
+         * DeleteCohortApiResponse
+         * @description Response model for bulk delete cohort endpoint.
+         */
+        DeleteCohortApiResponse: {
+            /** Results */
+            results: components["schemas"]["DeleteCohortResult"][];
+        };
+        /**
+         * DeleteCohortResult
+         * @description Per-item result within a bulk delete response.
+         */
+        DeleteCohortResult: {
+            /** Success */
+            success: boolean;
             /**
              * Cohort Id
              * Format: uuid
              */
             cohort_id: string;
-        };
-        /** DeleteCohortApiResponse */
-        DeleteCohortApiResponse: {
-            /** Usage Count */
-            usage_count?: number | null;
-            /** Deleted */
-            deleted?: boolean | null;
-            /** Name */
-            name?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
+            /** Message */
+            message: string;
         };
         /** DeleteDepartmentApiRequest */
         DeleteDepartmentApiRequest: {
@@ -32783,6 +32899,62 @@ export interface components {
             /** Parameter Fields Id */
             parameter_fields_id?: string | null;
         };
+        /** LinkProfilePersonasApiRequest */
+        LinkProfilePersonasApiRequest: {
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Tool Id
+             * Format: uuid
+             */
+            tool_id: string;
+        };
+        /** LinkProfilePersonasApiResponse */
+        LinkProfilePersonasApiResponse: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Profile Personas Id */
+            profile_personas_id?: string | null;
+        };
+        /** LinkProfilesApiRequest */
+        LinkProfilesApiRequest: {
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Tool Id
+             * Format: uuid
+             */
+            tool_id: string;
+        };
+        /** LinkProfilesApiResponse */
+        LinkProfilesApiResponse: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Profiles Id */
+            profiles_id?: string | null;
+        };
         /** LinkScenarioFlagsApiRequest */
         LinkScenarioFlagsApiRequest: {
             /**
@@ -32922,6 +33094,90 @@ export interface components {
             success: boolean;
             /** Scenarios Id */
             scenarios_id?: string | null;
+        };
+        /** LinkSimulationAvailabilityApiRequest */
+        LinkSimulationAvailabilityApiRequest: {
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Tool Id
+             * Format: uuid
+             */
+            tool_id: string;
+        };
+        /** LinkSimulationAvailabilityApiResponse */
+        LinkSimulationAvailabilityApiResponse: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Simulation Availability Id */
+            simulation_availability_id?: string | null;
+        };
+        /** LinkSimulationPositionsApiRequest */
+        LinkSimulationPositionsApiRequest: {
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Tool Id
+             * Format: uuid
+             */
+            tool_id: string;
+        };
+        /** LinkSimulationPositionsApiResponse */
+        LinkSimulationPositionsApiResponse: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Simulation Positions Id */
+            simulation_positions_id?: string | null;
+        };
+        /** LinkSimulationsApiRequest */
+        LinkSimulationsApiRequest: {
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Tool Id
+             * Format: uuid
+             */
+            tool_id: string;
+        };
+        /** LinkSimulationsApiResponse */
+        LinkSimulationsApiResponse: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Simulations Id */
+            simulations_id?: string | null;
         };
         /** LinkVoicesApiRequest */
         LinkVoicesApiRequest: {
@@ -41200,18 +41456,48 @@ export interface components {
         };
         /**
          * SaveCohortApiRequest
-         * @description Request for saving a cohort - flat resource IDs.
+         * @description Request model for bulk save cohort endpoint.
          */
         SaveCohortApiRequest: {
+            /** Cohorts */
+            cohorts: components["schemas"]["SaveCohortItem"][];
+        };
+        /**
+         * SaveCohortApiResponse
+         * @description Response model for bulk save cohort endpoint.
+         */
+        SaveCohortApiResponse: {
+            /** Results */
+            results: components["schemas"]["SaveCohortResult"][];
+        };
+        /**
+         * SaveCohortFieldError
+         * @description Per-field error from value resolution.
+         */
+        SaveCohortFieldError: {
+            /** Field */
+            field: string;
+            /** Message */
+            message: string;
+        };
+        /**
+         * SaveCohortItem
+         * @description Single cohort item for save — provide ID or value per field (not both).
+         *
+         *     For required fields (name), exactly one of the *_id or value field must
+         *     be provided.
+         */
+        SaveCohortItem: {
             /** Input Cohort Id */
             input_cohort_id?: string | null;
-            /**
-             * Name Id
-             * Format: uuid
-             */
-            name_id: string;
+            /** Name Id */
+            name_id?: string | null;
+            /** Name */
+            name?: string | null;
             /** Description Id */
             description_id?: string | null;
+            /** Description */
+            description?: string | null;
             /** Flag Id */
             flag_id?: string | null;
             /** Department Ids */
@@ -41228,14 +41514,18 @@ export interface components {
             profile_persona_ids?: string[] | null;
         };
         /**
-         * SaveCohortApiResponse
-         * @description Response for saving a cohort.
+         * SaveCohortResult
+         * @description Per-item result within a bulk save response.
          */
-        SaveCohortApiResponse: {
+        SaveCohortResult: {
+            /** Success */
+            success: boolean;
             /** Cohort Id */
             cohort_id?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
+            /** Message */
+            message: string;
+            /** Errors */
+            errors?: components["schemas"]["SaveCohortFieldError"][] | null;
         };
         /** SaveDepartmentApiRequest */
         SaveDepartmentApiRequest: {
@@ -60902,6 +61192,43 @@ export interface operations {
             };
         };
     };
+    link_profiles_api_v4_resources_profiles_link_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkProfilesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkProfilesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_prompts_api_v4_resources_prompts_post: {
         parameters: {
             query?: never;
@@ -62197,6 +62524,43 @@ export interface operations {
             };
         };
     };
+    link_profile_personas_api_v4_resources_profile_personas_link_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkProfilePersonasApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkProfilePersonasApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_scenario_positions_api_v4_resources_scenario_positions_post: {
         parameters: {
             query?: never;
@@ -62937,6 +63301,43 @@ export interface operations {
             };
         };
     };
+    link_simulation_positions_api_v4_resources_simulation_positions_link_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkSimulationPositionsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkSimulationPositionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_simulation_availability_api_v4_resources_simulation_availability_post: {
         parameters: {
             query?: never;
@@ -63048,6 +63449,43 @@ export interface operations {
             };
         };
     };
+    link_simulation_availability_api_v4_resources_simulation_availability_link_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkSimulationAvailabilityApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkSimulationAvailabilityApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_simulations_api_v4_resources_simulations_get_post: {
         parameters: {
             query?: never;
@@ -63109,6 +63547,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchSimulationsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_simulations_api_v4_resources_simulations_link_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkSimulationsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkSimulationsApiResponse"];
                 };
             };
             /** @description Validation Error */

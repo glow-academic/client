@@ -21,6 +21,10 @@ import { useResourceAi } from "@/hooks/use-resource-ai";
 import { Calendar, Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+// Link types for tool call tracking
+type LinkSimulationAvailabilityIn = InputOf<"/api/v4/resources/simulation_availability/link", "post">;
+type LinkSimulationAvailabilityOut = OutputOf<"/api/v4/resources/simulation_availability/link", "post">;
+
 type CreateDraftSimulationAvailabilityIn = InputOf<
   "/api/v4/resources/simulation_availability",
   "post"
@@ -85,6 +89,9 @@ export interface SimulationAvailabilityProps {
     | null;
   onAccept?: () => void;
   onReject?: () => void;
+  // Link tool call tracking (reserved for future use)
+  link_tool_id?: string | null;
+  linkSimulationAvailabilityAction?: (input: LinkSimulationAvailabilityIn) => Promise<LinkSimulationAvailabilityOut>;
 }
 
 export function SimulationAvailability({
@@ -109,6 +116,8 @@ export function SimulationAvailability({
   aiSimulationAvailabilityResources,
   onAccept: onAcceptProp,
   onReject: onRejectProp,
+  link_tool_id: _link_tool_id,
+  linkSimulationAvailabilityAction: _linkSimulationAvailabilityAction,
 }: SimulationAvailabilityProps) {
   const show = show_simulation_availability ?? false;
   const availabilityResources = useMemo(
