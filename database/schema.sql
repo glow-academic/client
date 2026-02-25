@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict oPjbJpcDGGpEgIc2lqVXwgfUQoebcSShOF4w3xsgoo1AfA4bgg2iUxxIwcg6Ksm
+\restrict eJNtAaFARVn0sbRx9gBm5NdUAxhh7akmTViffbpXlNRMXSd3kDFyXuiMal9iOex
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -31180,8 +31180,7 @@ CREATE TABLE public.chat_entry (
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT training_bundle_entry_updated_at_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT training_bundle_entry_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT training_bundle_entry_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT training_bundle_entry_mcp_not_null NOT NULL,
-    infinite_mode boolean DEFAULT false CONSTRAINT training_bundle_entry_infinite_mode_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT training_bundle_entry_mcp_not_null NOT NULL
 );
 
 
@@ -57848,6 +57847,30 @@ ALTER TABLE ONLY public.args_values_entry
 
 
 --
+-- Name: attempt_analysis_entry attempt_analysis_entry_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_analysis_entry
+    ADD CONSTRAINT attempt_analysis_entry_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls_entry(id);
+
+
+--
+-- Name: attempt_analysis_entry attempt_analysis_entry_grade_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_analysis_entry
+    ADD CONSTRAINT attempt_analysis_entry_grade_id_fkey FOREIGN KEY (grade_id) REFERENCES public.attempt_grade_entry(id) ON DELETE CASCADE;
+
+
+--
+-- Name: attempt_archive_entry attempt_archive_entry_attempt_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_archive_entry
+    ADD CONSTRAINT attempt_archive_entry_attempt_id_fkey FOREIGN KEY (attempt_id) REFERENCES public.attempt_entry(id) ON DELETE CASCADE;
+
+
+--
 -- Name: attempt_chat_entry attempt_chat_entry_attempt_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -57864,11 +57887,123 @@ ALTER TABLE ONLY public.attempt_chat_entry
 
 
 --
+-- Name: attempt_completion_entry attempt_completion_entry_chat_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_completion_entry
+    ADD CONSTRAINT attempt_completion_entry_chat_id_fkey FOREIGN KEY (chat_id) REFERENCES public.chat_resolved_entry(id) ON DELETE CASCADE;
+
+
+--
+-- Name: attempt_content_entry attempt_content_entry_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_content_entry
+    ADD CONSTRAINT attempt_content_entry_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls_entry(id) ON DELETE CASCADE;
+
+
+--
+-- Name: attempt_content_entry attempt_content_entry_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_content_entry
+    ADD CONSTRAINT attempt_content_entry_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.attempt_message_entry(id) ON DELETE CASCADE;
+
+
+--
 -- Name: attempt_content_entry attempt_content_entry_profile_personas_entry_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.attempt_content_entry
     ADD CONSTRAINT attempt_content_entry_profile_personas_entry_id_fkey FOREIGN KEY (profile_personas_entry_id) REFERENCES public.profile_personas_entry(id);
+
+
+--
+-- Name: attempt_feedback_entry attempt_feedback_entry_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_feedback_entry
+    ADD CONSTRAINT attempt_feedback_entry_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls_entry(id);
+
+
+--
+-- Name: attempt_feedback_entry attempt_feedback_entry_grade_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_feedback_entry
+    ADD CONSTRAINT attempt_feedback_entry_grade_id_fkey FOREIGN KEY (grade_id) REFERENCES public.attempt_grade_entry(id) ON DELETE CASCADE;
+
+
+--
+-- Name: attempt_grade_entry attempt_grade_entry_chat_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_grade_entry
+    ADD CONSTRAINT attempt_grade_entry_chat_id_fkey FOREIGN KEY (chat_id) REFERENCES public.chat_resolved_entry(id) ON DELETE CASCADE;
+
+
+--
+-- Name: attempt_grade_entry attempt_grade_entry_rubric_grade_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_grade_entry
+    ADD CONSTRAINT attempt_grade_entry_rubric_grade_agent_id_fkey FOREIGN KEY (rubric_grade_agent_id) REFERENCES public.agents_resource(id);
+
+
+--
+-- Name: attempt_grade_entry attempt_grade_entry_rubric_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_grade_entry
+    ADD CONSTRAINT attempt_grade_entry_rubric_id_fkey FOREIGN KEY (rubric_id) REFERENCES public.rubrics_resource(id);
+
+
+--
+-- Name: attempt_grade_entry attempt_grade_entry_run_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_grade_entry
+    ADD CONSTRAINT attempt_grade_entry_run_id_fkey FOREIGN KEY (run_id) REFERENCES public.runs_entry(id);
+
+
+--
+-- Name: attempt_grade_rubrics_connection attempt_grade_rubrics_connection_grade_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_grade_rubrics_connection
+    ADD CONSTRAINT attempt_grade_rubrics_connection_grade_id_fkey FOREIGN KEY (grade_id) REFERENCES public.attempt_grade_entry(id) ON DELETE CASCADE;
+
+
+--
+-- Name: attempt_grade_rubrics_connection attempt_grade_rubrics_connection_rubrics_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_grade_rubrics_connection
+    ADD CONSTRAINT attempt_grade_rubrics_connection_rubrics_id_fkey FOREIGN KEY (rubrics_id) REFERENCES public.rubrics_resource(id);
+
+
+--
+-- Name: attempt_highlight_entry attempt_highlight_entry_strength_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_highlight_entry
+    ADD CONSTRAINT attempt_highlight_entry_strength_id_fkey FOREIGN KEY (strength_id) REFERENCES public.attempt_strength_entry(id) ON DELETE CASCADE;
+
+
+--
+-- Name: attempt_hint_entry attempt_hint_entry_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_hint_entry
+    ADD CONSTRAINT attempt_hint_entry_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls_entry(id);
+
+
+--
+-- Name: attempt_hint_entry attempt_hint_entry_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_hint_entry
+    ADD CONSTRAINT attempt_hint_entry_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.attempt_message_entry(id) ON DELETE CASCADE;
 
 
 --
@@ -57885,6 +58020,30 @@ ALTER TABLE ONLY public.attempt_home_entry
 
 ALTER TABLE ONLY public.attempt_home_entry
     ADD CONSTRAINT attempt_home_entry_home_id_fkey FOREIGN KEY (home_id) REFERENCES public.home_entry(id);
+
+
+--
+-- Name: attempt_improvement_entry attempt_improvement_entry_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_improvement_entry
+    ADD CONSTRAINT attempt_improvement_entry_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls_entry(id);
+
+
+--
+-- Name: attempt_improvement_entry attempt_improvement_entry_grade_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_improvement_entry
+    ADD CONSTRAINT attempt_improvement_entry_grade_id_fkey FOREIGN KEY (grade_id) REFERENCES public.attempt_grade_entry(id) ON DELETE CASCADE;
+
+
+--
+-- Name: attempt_improvement_entry attempt_improvement_entry_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_improvement_entry
+    ADD CONSTRAINT attempt_improvement_entry_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.attempt_message_entry(id) ON DELETE CASCADE;
 
 
 --
@@ -57920,6 +58079,22 @@ ALTER TABLE ONLY public.attempt_message_entry
 
 
 --
+-- Name: attempt_message_tree_entry attempt_message_tree_entry_child_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_message_tree_entry
+    ADD CONSTRAINT attempt_message_tree_entry_child_id_fkey FOREIGN KEY (child_id) REFERENCES public.attempt_message_entry(id) ON DELETE CASCADE;
+
+
+--
+-- Name: attempt_message_tree_entry attempt_message_tree_entry_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_message_tree_entry
+    ADD CONSTRAINT attempt_message_tree_entry_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.attempt_message_entry(id) ON DELETE CASCADE;
+
+
+--
 -- Name: attempt_practice_entry attempt_practice_entry_attempt_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -57933,6 +58108,54 @@ ALTER TABLE ONLY public.attempt_practice_entry
 
 ALTER TABLE ONLY public.attempt_practice_entry
     ADD CONSTRAINT attempt_practice_entry_practice_id_fkey FOREIGN KEY (practice_id) REFERENCES public.practice_entry(id);
+
+
+--
+-- Name: attempt_profiles_connection attempt_profiles_connection_attempt_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_profiles_connection
+    ADD CONSTRAINT attempt_profiles_connection_attempt_id_fkey FOREIGN KEY (attempt_id) REFERENCES public.attempt_entry(id) ON DELETE CASCADE;
+
+
+--
+-- Name: attempt_profiles_connection attempt_profiles_connection_profiles_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_profiles_connection
+    ADD CONSTRAINT attempt_profiles_connection_profiles_id_fkey FOREIGN KEY (profiles_id) REFERENCES public.profiles_resource(id);
+
+
+--
+-- Name: attempt_replacement_entry attempt_replacement_entry_improvement_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_replacement_entry
+    ADD CONSTRAINT attempt_replacement_entry_improvement_id_fkey FOREIGN KEY (improvement_id) REFERENCES public.attempt_improvement_entry(id) ON DELETE CASCADE;
+
+
+--
+-- Name: attempt_strength_entry attempt_strength_entry_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_strength_entry
+    ADD CONSTRAINT attempt_strength_entry_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls_entry(id);
+
+
+--
+-- Name: attempt_strength_entry attempt_strength_entry_grade_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_strength_entry
+    ADD CONSTRAINT attempt_strength_entry_grade_id_fkey FOREIGN KEY (grade_id) REFERENCES public.attempt_grade_entry(id) ON DELETE CASCADE;
+
+
+--
+-- Name: attempt_strength_entry attempt_strength_entry_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_strength_entry
+    ADD CONSTRAINT attempt_strength_entry_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.attempt_message_entry(id) ON DELETE CASCADE;
 
 
 --
@@ -65560,46 +65783,6 @@ ALTER TABLE ONLY public.settings_calls_connection
 
 
 --
--- Name: attempt_analysis_entry simulation_analyses_entry_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_analysis_entry
-    ADD CONSTRAINT simulation_analyses_entry_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls_entry(id);
-
-
---
--- Name: attempt_analysis_entry simulation_analyses_entry_grade_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_analysis_entry
-    ADD CONSTRAINT simulation_analyses_entry_grade_id_fkey FOREIGN KEY (grade_id) REFERENCES public.attempt_grade_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: attempt_archive_entry simulation_archives_entry_attempt_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_archive_entry
-    ADD CONSTRAINT simulation_archives_entry_attempt_id_fkey FOREIGN KEY (attempt_id) REFERENCES public.attempt_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: attempt_profiles_connection simulation_attempts_profiles_connection_attempt_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_profiles_connection
-    ADD CONSTRAINT simulation_attempts_profiles_connection_attempt_id_fkey FOREIGN KEY (attempt_id) REFERENCES public.attempt_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: attempt_profiles_connection simulation_attempts_profiles_connection_profiles_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_profiles_connection
-    ADD CONSTRAINT simulation_attempts_profiles_connection_profiles_id_fkey FOREIGN KEY (profiles_id) REFERENCES public.profiles_resource(id);
-
-
---
 -- Name: simulation_availability_calls_connection simulation_availability_calls_c_simulation_availability_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -65621,30 +65804,6 @@ ALTER TABLE ONLY public.simulation_availability_calls_connection
 
 ALTER TABLE ONLY public.simulation_availability_resource
     ADD CONSTRAINT simulation_availability_resource_simulation_id_fkey FOREIGN KEY (simulation_id) REFERENCES public.simulations_resource(id) ON DELETE CASCADE;
-
-
---
--- Name: attempt_completion_entry simulation_completions_entry_chat_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_completion_entry
-    ADD CONSTRAINT simulation_completions_entry_chat_fk FOREIGN KEY (chat_id) REFERENCES public.chat_resolved_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: attempt_content_entry simulation_contents_entry_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_content_entry
-    ADD CONSTRAINT simulation_contents_entry_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: attempt_content_entry simulation_contents_entry_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_content_entry
-    ADD CONSTRAINT simulation_contents_entry_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.attempt_message_entry(id) ON DELETE CASCADE;
 
 
 --
@@ -65864,22 +66023,6 @@ ALTER TABLE ONLY public.simulation_drafts_simulations_connection
 
 
 --
--- Name: attempt_feedback_entry simulation_feedbacks_entry_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_feedback_entry
-    ADD CONSTRAINT simulation_feedbacks_entry_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls_entry(id);
-
-
---
--- Name: attempt_feedback_entry simulation_feedbacks_entry_grade_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_feedback_entry
-    ADD CONSTRAINT simulation_feedbacks_entry_grade_id_fkey FOREIGN KEY (grade_id) REFERENCES public.attempt_grade_entry(id) ON DELETE CASCADE;
-
-
---
 -- Name: simulation_flags_junction simulation_flags_flag_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -65893,118 +66036,6 @@ ALTER TABLE ONLY public.simulation_flags_junction
 
 ALTER TABLE ONLY public.simulation_flags_junction
     ADD CONSTRAINT simulation_flags_simulation_id_fkey FOREIGN KEY (simulation_id) REFERENCES public.simulation_artifact(id) ON DELETE CASCADE;
-
-
---
--- Name: attempt_grade_entry simulation_grades_entry_chat_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_grade_entry
-    ADD CONSTRAINT simulation_grades_entry_chat_id_fkey FOREIGN KEY (chat_id) REFERENCES public.chat_resolved_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: attempt_grade_entry simulation_grades_entry_rubric_grade_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_grade_entry
-    ADD CONSTRAINT simulation_grades_entry_rubric_grade_agent_id_fkey FOREIGN KEY (rubric_grade_agent_id) REFERENCES public.agents_resource(id);
-
-
---
--- Name: attempt_grade_entry simulation_grades_entry_rubric_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_grade_entry
-    ADD CONSTRAINT simulation_grades_entry_rubric_id_fkey FOREIGN KEY (rubric_id) REFERENCES public.rubrics_resource(id);
-
-
---
--- Name: attempt_grade_entry simulation_grades_entry_run_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_grade_entry
-    ADD CONSTRAINT simulation_grades_entry_run_id_fkey FOREIGN KEY (run_id) REFERENCES public.runs_entry(id);
-
-
---
--- Name: attempt_grade_rubrics_connection simulation_grades_rubrics_connection_grade_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_grade_rubrics_connection
-    ADD CONSTRAINT simulation_grades_rubrics_connection_grade_id_fkey FOREIGN KEY (grade_id) REFERENCES public.attempt_grade_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: attempt_grade_rubrics_connection simulation_grades_rubrics_connection_rubrics_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_grade_rubrics_connection
-    ADD CONSTRAINT simulation_grades_rubrics_connection_rubrics_id_fkey FOREIGN KEY (rubrics_id) REFERENCES public.rubrics_resource(id);
-
-
---
--- Name: attempt_highlight_entry simulation_highlights_entry_strength_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_highlight_entry
-    ADD CONSTRAINT simulation_highlights_entry_strength_id_fkey FOREIGN KEY (strength_id) REFERENCES public.attempt_strength_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: attempt_hint_entry simulation_hints_entry_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_hint_entry
-    ADD CONSTRAINT simulation_hints_entry_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls_entry(id);
-
-
---
--- Name: attempt_hint_entry simulation_hints_entry_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_hint_entry
-    ADD CONSTRAINT simulation_hints_entry_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.attempt_message_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: attempt_improvement_entry simulation_improvements_entry_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_improvement_entry
-    ADD CONSTRAINT simulation_improvements_entry_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls_entry(id);
-
-
---
--- Name: attempt_improvement_entry simulation_improvements_entry_grade_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_improvement_entry
-    ADD CONSTRAINT simulation_improvements_entry_grade_id_fkey FOREIGN KEY (grade_id) REFERENCES public.attempt_grade_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: attempt_improvement_entry simulation_improvements_entry_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_improvement_entry
-    ADD CONSTRAINT simulation_improvements_entry_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.attempt_message_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: attempt_message_tree_entry simulation_message_tree_entry_child_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_message_tree_entry
-    ADD CONSTRAINT simulation_message_tree_entry_child_id_fkey FOREIGN KEY (child_id) REFERENCES public.attempt_message_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: attempt_message_tree_entry simulation_message_tree_entry_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_message_tree_entry
-    ADD CONSTRAINT simulation_message_tree_entry_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.attempt_message_entry(id) ON DELETE CASCADE;
 
 
 --
@@ -66045,14 +66076,6 @@ ALTER TABLE ONLY public.simulation_positions_calls_connection
 
 ALTER TABLE ONLY public.simulation_positions_resource
     ADD CONSTRAINT simulation_positions_resource_simulation_id_fkey FOREIGN KEY (simulation_id) REFERENCES public.simulations_resource(id) ON DELETE CASCADE;
-
-
---
--- Name: attempt_replacement_entry simulation_replacements_entry_improvement_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_replacement_entry
-    ADD CONSTRAINT simulation_replacements_entry_improvement_id_fkey FOREIGN KEY (improvement_id) REFERENCES public.attempt_improvement_entry(id) ON DELETE CASCADE;
 
 
 --
@@ -66149,30 +66172,6 @@ ALTER TABLE ONLY public.simulation_simulations_junction
 
 ALTER TABLE ONLY public.simulation_simulations_junction
     ADD CONSTRAINT simulation_simulations_simulations_id_fkey FOREIGN KEY (simulations_id) REFERENCES public.simulations_resource(id) ON DELETE CASCADE;
-
-
---
--- Name: attempt_strength_entry simulation_strengths_entry_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_strength_entry
-    ADD CONSTRAINT simulation_strengths_entry_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls_entry(id);
-
-
---
--- Name: attempt_strength_entry simulation_strengths_entry_grade_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_strength_entry
-    ADD CONSTRAINT simulation_strengths_entry_grade_id_fkey FOREIGN KEY (grade_id) REFERENCES public.attempt_grade_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: attempt_strength_entry simulation_strengths_entry_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_strength_entry
-    ADD CONSTRAINT simulation_strengths_entry_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.attempt_message_entry(id) ON DELETE CASCADE;
 
 
 --
@@ -67555,5 +67554,5 @@ ALTER TABLE ONLY public.voices_calls_connection
 -- PostgreSQL database dump complete
 --
 
-\unrestrict oPjbJpcDGGpEgIc2lqVXwgfUQoebcSShOF4w3xsgoo1AfA4bgg2iUxxIwcg6Ksm
+\unrestrict eJNtAaFARVn0sbRx9gBm5NdUAxhh7akmTViffbpXlNRMXSd3kDFyXuiMal9iOex
 
