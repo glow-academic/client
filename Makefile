@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop stop-keycloak install-client install-e2e restore-db migrate-db migrate-db-only migrate-db-all connect-db fresh-db export-schema export-modules build-test-seed typecheck-client build-client openapi-gen gen-client-types sql-compile sql-format watch-sql-types configure deploy deploy-clean
+.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop stop-keycloak install-client install-e2e restore-db migrate-db migrate-db-only migrate-db-all connect-db fresh-db build-test-seed typecheck-client build-client openapi-gen gen-client-types sql-compile sql-format watch-sql-types configure deploy deploy-clean
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -358,11 +358,9 @@ migrate-db:
 	@cd database && bash scripts/start.sh --migrate
 	@echo "✅ Database migrations completed"
 	@echo ""
-	@$(MAKE) export-schema
-	@$(MAKE) export-modules
 	@$(MAKE) generate-test-schema
 	@echo ""
-	@echo "✅ Migration + all regeneration steps complete"
+	@echo "✅ Migration + regeneration complete"
 
 # Migrate database (most recent migration only, no regeneration)
 migrate-db-only:
@@ -430,27 +428,11 @@ connect-db:
 	@cd database && yarn connect
 	@echo "✅ Connected to database"
 
-# Export database schema only
-export-schema:
-	@echo "Exporting database schema..."
-	@cd database/scripts && bash export-db.sh schema
-	@echo "✅ Schema export completed"
-
 # Build test seed from modules
 build-test-seed:
 	@echo "Building test seed from modules..."
 	@bash database/scripts/load-modules.sh database/configs/test.yaml --output database/test-seed.sql
 	@echo "✅ Test seed built at database/test-seed.sql"
-
-# Export modular seed data from live database
-export-modules:
-	@if [ -z "$(ARGS)" ]; then \
-		echo "Exporting all modular seed data..."; \
-		$(VENV_PYTHON) database/scripts/export_modules.py all; \
-	else \
-		echo "Exporting modules: $(ARGS)..."; \
-		$(VENV_PYTHON) database/scripts/export_modules.py $(ARGS); \
-	fi
 
 # Load seed data from modular YAML config
 seed-from-yaml:
@@ -519,8 +501,6 @@ help:
 	@echo "  sql-format     - Check for unused SQL files"
 	@echo "  connect-db     - Connect to database"
 	@echo "  fresh-db       - Interactive setup for fresh database"
-	@echo "  export-schema  - Export database schema (DDL only)"
-	@echo "  export-modules - Export modular seed data from live database"
 	@echo "  build-test-seed - Build test seed SQL from modules"
 	@echo ""
 	@echo "Services:"

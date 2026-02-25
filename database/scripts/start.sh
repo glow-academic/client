@@ -550,7 +550,7 @@ if [[ "$MIGRATE_DB" == true ]]; then
 
           # Step 4: Auto-update schema.sql
           echo "📄 Updating schema.sql..."
-          bash "${script_dir}/export-db.sh" schema
+          pg_dump --schema-only --no-owner --no-privileges --exclude-schema=keycloak --format=plain --file="${script_dir}/../schema.sql" "postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
         else
           echo "❌ Migration failed: $(basename "$migration_file")"
           exit 1

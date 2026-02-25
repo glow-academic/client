@@ -5,7 +5,6 @@
 
 
 -- Resource rows
-INSERT INTO public.departments_resource (created_at, active, generated, mcp, id, name, description, department_ids, setting_ids) VALUES ('2026-02-08T23:18:33.077464+00:00', true, false, false, '019c3f8c-b97f-70eb-86fb-4f3fae4902f8', 'General', 'General department', '{}', '{019c51c3-5130-734a-b5f4-c7e48130cc99}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c3f8c-b97c-723c-b96c-507c4959a807', 'General department', '2026-02-08T23:18:33.077464+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c3f8c-b97b-7bb8-8da7-d3b34193c013', 'General', '2026-02-08T23:18:33.077464+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 
@@ -15,7 +14,6 @@ INSERT INTO public.department_artifact (created_at, updated_at, id, generated, m
 
 -- Junctions
 -- department_departments_junction
-INSERT INTO public.department_departments_junction (department_id, departments_id, active, created_at, generated, mcp) VALUES ('019c3f8c-b97b-7350-8d77-632e29b1c3f9', '019c3f8c-b97f-70eb-86fb-4f3fae4902f8', true, '2026-02-08T23:18:33.077464+00:00', false, false) ON CONFLICT (department_id, departments_id) DO NOTHING;
 -- department_descriptions_junction
 INSERT INTO public.department_descriptions_junction (department_id, description_id, created_at, generated, mcp, active) VALUES ('019c3f8c-b97b-7350-8d77-632e29b1c3f9', '019c3f8c-b97c-723c-b96c-507c4959a807', '2026-02-08T23:18:33.077464+00:00', false, false, true) ON CONFLICT (department_id, description_id) DO NOTHING;
 -- department_flags_junction

@@ -198,19 +198,19 @@ load_setup_categories() {
   # Load each category using the YAML key → directory mapping
   local category subfolder
   local categories=(
+    "settings:10-settings"
     "departments:01-departments"
+    "parameters:05-parameters"
+    "fields:04-fields"
     "personas:02-personas"
     "documents:03-documents"
     "uploads:uploads"
     "texts:texts"
-    "fields:04-fields"
-    "parameters:05-parameters"
     "rubrics:05-rubrics"
     "simulations:06-simulations"
     "scenarios:07-scenarios"
     "cohorts:08-cohorts"
     "profiles:09-profiles"
-    "settings:10-settings"
     "themes:themes"
   )
 
@@ -251,7 +251,7 @@ echo ""
 echo "=== Assembling seed SQL from modules ==="
 echo ""
 
-# --- 01-resources: Always loaded -----------------------------------------------
+# --- 01-resources: Always loaded
 echo "Loading 01-resources/ (always included) ..."
 add_dir_sorted "$modules_dir/01-resources"
 
@@ -294,6 +294,20 @@ if [[ -n "$model_providers" ]]; then
   fi
 fi
 
+# --- 05-tools (before agents — agents reference tools via agent_tools_junction)
+tools=$(read_yaml_list "$config_file" ".modules.tools")
+if [[ -n "$tools" ]]; then
+  echo "Loading 05-tools/ ..."
+  if [[ "$tools" == "all" ]]; then
+    add_dir_sorted "$modules_dir/05-tools"
+  else
+    while IFS= read -r name; do
+      [[ -z "$name" ]] && continue
+      add_file "$modules_dir/05-tools/${name}.sql"
+    done <<< "$tools"
+  fi
+fi
+
 # --- 04-agents ----------------------------------------------------------------
 agents=$(read_yaml_list "$config_file" ".modules.agents")
 if [[ -n "$agents" ]]; then
@@ -305,20 +319,6 @@ if [[ -n "$agents" ]]; then
       [[ -z "$name" ]] && continue
       add_file "$modules_dir/04-agents/${name}.sql"
     done <<< "$agents"
-  fi
-fi
-
-# --- 05-tools ----------------------------------------------------------------
-tools=$(read_yaml_list "$config_file" ".modules.tools")
-if [[ -n "$tools" ]]; then
-  echo "Loading 05-tools/ ..."
-  if [[ "$tools" == "all" ]]; then
-    add_dir_sorted "$modules_dir/05-tools"
-  else
-    while IFS= read -r name; do
-      [[ -z "$name" ]] && continue
-      add_file "$modules_dir/05-tools/${name}.sql"
-    done <<< "$tools"
   fi
 fi
 
@@ -375,7 +375,11 @@ if $output_mode; then
     echo "-- Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
     echo "-- Files: $total_files"
     echo ""
-    echo "SET session_replication_role = replica;"
+    echo "DO \$\$ BEGIN EXECUTE 'SET session_replication_role = replica'; EXCEPTION WHEN insufficient_privilege THEN NULL; END \$\$;"
+    echo ""
+    echo "-- Temporarily drop circular FK: reasoning_levels_resource → model_artifact"
+    echo "-- (reasoning_levels must load before models for junction FKs, but has FK to model_artifact)"
+    echo "ALTER TABLE reasoning_levels_resource DROP CONSTRAINT IF EXISTS reasoning_levels_reasoning_level_id_fkey;"
     echo ""
     for f in "${sql_parts[@]}"; do
       echo "-- ================================================================"
@@ -385,7 +389,10 @@ if $output_mode; then
       echo ""
     done
     echo ""
-    echo "SET session_replication_role = DEFAULT;"
+    echo "-- Restore circular FK"
+    echo "ALTER TABLE reasoning_levels_resource ADD CONSTRAINT reasoning_levels_reasoning_level_id_fkey FOREIGN KEY (reasoning_level_id) REFERENCES model_artifact(id);"
+    echo ""
+    echo "DO \$\$ BEGIN EXECUTE 'SET session_replication_role = DEFAULT'; EXCEPTION WHEN insufficient_privilege THEN NULL; END \$\$;"
   } > "$output_file"
 
   echo ""
@@ -394,12 +401,14 @@ else
   # Pipe directly to psql
   echo "Loading into database: $DB_NAME ..."
   {
-    echo "SET session_replication_role = replica;"
+    echo "DO \$\$ BEGIN EXECUTE 'SET session_replication_role = replica'; EXCEPTION WHEN insufficient_privilege THEN NULL; END \$\$;"
+    echo "ALTER TABLE reasoning_levels_resource DROP CONSTRAINT IF EXISTS reasoning_levels_reasoning_level_id_fkey;"
     for f in "${sql_parts[@]}"; do
       cat "$f"
       echo ""
     done
-    echo "SET session_replication_role = DEFAULT;"
+    echo "ALTER TABLE reasoning_levels_resource ADD CONSTRAINT reasoning_levels_reasoning_level_id_fkey FOREIGN KEY (reasoning_level_id) REFERENCES model_artifact(id);"
+    echo "DO \$\$ BEGIN EXECUTE 'SET session_replication_role = DEFAULT'; EXCEPTION WHEN insufficient_privilege THEN NULL; END \$\$;"
   } | psql "$DB_URL" -v ON_ERROR_STOP=0 --quiet 2>&1 | grep -v "^$" || true
 
   # Copy upload files to the project uploads directory (handles subdirectories)

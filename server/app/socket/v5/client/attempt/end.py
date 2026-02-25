@@ -2,7 +2,9 @@
 
 Handles: attempt_end — end a single chat within an attempt.
 
-Delegates to the internal attempt_chat handler to mark the chat as completed.
+Marks the chat as completed via attempt_proceed(completed_chat_id=...),
+which will auto-proceed to the next scenario or emit attempt_ended.
+Optionally triggers grading if grade=True.
 """
 
 from typing import Any
@@ -11,7 +13,7 @@ from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.main import get_internal_sio, sio
 from app.socket.v5.client.types import AttemptEndPayload
-from app.socket.v5.internal.attempt.types import AttemptErrorData
+from app.socket.v5.internal.attempt.types import AttemptErrorData, AttemptProceedData
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -20,20 +22,10 @@ internal_sio = get_internal_sio()
 
 
 async def _attempt_end_impl(sid: str, data: AttemptEndPayload) -> None:
-    """Handle attempt_end — end a single chat by delegating to attempt_chat."""
+    """Handle attempt_end — mark chat completed, optionally grade, then proceed."""
     try:
         attempt_id = str(data.attempt_id)
         chat_id = str(data.chat_id)
-
-        # Delegate to internal attempt_chat handler
-        await internal_sio.emit(
-            "attempt_chat",
-            {
-                "sid": sid,
-                "attempt_id": attempt_id,
-                "completed_chat_ids": [chat_id],
-            },
-        )
 
         # Trigger grading via internal bus (only if grade=True)
         if data.grade:
@@ -45,6 +37,16 @@ async def _attempt_end_impl(sid: str, data: AttemptEndPayload) -> None:
                     "chat_id": chat_id,
                 },
             )
+
+        # Delegate to attempt_proceed with completed_chat_id
+        await internal_sio.emit(
+            "attempt_proceed",
+            AttemptProceedData(
+                sid=sid,
+                attempt_id=attempt_id,
+                completed_chat_id=chat_id,
+            ).model_dump(mode="json"),
+        )
 
         # Log activity
         try:

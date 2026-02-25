@@ -6,7 +6,6 @@
 -- Simulation resource rows
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8e96-7727-a847-99bf2b14c737', 'Low engagement and a tendency to avoid conflict or assertiveness.', '2025-08-12T12:52:09.984906+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8e93-7fff-9b2a-c4e3b0544563', 'Passive Practice', '2025-08-12T12:52:09.984906+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.scenario_positions_resource (id, value, created_at, generated, mcp, scenario_id, active) VALUES ('019bd1c8-54c3-7483-8c52-6c80416affee', 1, '2026-01-13T02:51:36.057775+00:00', false, false, '019bb25e-e61d-7f2b-90fe-0ddfddd5d737', true) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.simulations_resource (created_at, active, generated, mcp, id, name, description, department_ids, scenario_ids, scenario_rubric_ids, scenario_time_limit_ids, scenario_position_ids, scenario_flag_ids, practice) VALUES ('2025-08-12T12:52:09.984906+00:00', true, false, false, '019bb25e-e62c-78b0-9cc1-39f25f8db3ef', 'Passive Practice', 'Low engagement and a tendency to avoid conflict or assertiveness.', '{}', '{019bb25e-e61d-7f2b-90fe-0ddfddd5d737}', '{}', '{}', '{}', '{}', true) ON CONFLICT (id) DO NOTHING;
 
 -- Scenario resource rows
@@ -59,6 +58,5 @@ INSERT INTO public.simulation_flags_junction (simulation_id, flag_id, value, cre
 -- simulation_names_junction
 INSERT INTO public.simulation_names_junction (simulation_id, name_id, created_at, generated, mcp, active) VALUES ('019b3be4-3cb8-7ad7-ae1a-c8cb23791135', '019b995c-8e93-7fff-9b2a-c4e3b0544563', '2025-08-12T12:52:09.984906+00:00', false, false, true) ON CONFLICT (simulation_id, name_id) DO NOTHING;
 -- simulation_scenario_positions_junction
-INSERT INTO public.simulation_scenario_positions_junction (simulation_id, scenario_position_id, created_at, generated, mcp, active) VALUES ('019b3be4-3cb8-7ad7-ae1a-c8cb23791135', '019bd1c8-54c3-7483-8c52-6c80416affee', '2026-01-13T02:51:36.057775+00:00', false, false, true) ON CONFLICT (simulation_id, scenario_position_id) DO NOTHING;
 -- simulation_simulations_junction
 INSERT INTO public.simulation_simulations_junction (simulation_id, simulations_id, active, created_at, generated, mcp) VALUES ('019b3be4-3cb8-7ad7-ae1a-c8cb23791135', '019bb25e-e62c-78b0-9cc1-39f25f8db3ef', true, '2025-08-12T12:52:09.984906+00:00', false, false) ON CONFLICT (simulation_id, simulations_id) DO NOTHING;

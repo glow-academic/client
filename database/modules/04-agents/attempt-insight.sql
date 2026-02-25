@@ -15,7 +15,6 @@ INSERT INTO public.prompts_resource (created_at, system_prompt, name, descriptio
 - Compare against rubric standards and benchmarks
 - Highlight both strengths and areas for improvement
 - Do not output narrative text — all output must be valid tool calls', 'Attempt Insight Prompt', 'System prompt for attempt insight generation agent', true, '018f0005-0003-7000-8000-000000000001', false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-23T17:47:02.459307+00:00', true, false, false, '018f0005-0006-7000-8000-000000000001', 'Attempt Insight', 'AI agent for generating analytical insights about individual training attempts including performance, conversation quality, and skill development', '{}', NULL, NULL, '{018f0002-0001-7000-8000-000000000002}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '018f0005-0003-7000-8000-000000000001', '{018f0005-0004-7000-8000-000000000001}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('018f0005-0005-7000-8000-000000000001', 'AI agent for generating analytical insights about individual training attempts including performance, conversation quality, and skill development', '2026-02-23T17:47:02.459307+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('018f0005-0004-7000-8000-000000000001', '## Previous Insights
 
@@ -123,7 +122,6 @@ INSERT INTO public.agent_artifact (created_at, updated_at, id, generated, mcp) V
 
 -- Junctions
 -- agent_agents_junction
-INSERT INTO public.agent_agents_junction (agent_id, agents_id, active, created_at, generated, mcp) VALUES ('018f0005-0001-7000-8000-000000000001', '018f0005-0006-7000-8000-000000000001', true, '2026-02-23T17:47:02.459307+00:00', false, false) ON CONFLICT (agent_id, agents_id) DO NOTHING;
 -- agent_descriptions_junction
 INSERT INTO public.agent_descriptions_junction (agent_id, description_id, created_at, generated, mcp, active) VALUES ('018f0005-0001-7000-8000-000000000001', '018f0005-0005-7000-8000-000000000001', '2026-02-23T17:47:02.459307+00:00', false, false, true) ON CONFLICT (agent_id, description_id) DO NOTHING;
 -- agent_flags_junction
@@ -137,4 +135,3 @@ INSERT INTO public.agent_names_junction (agent_id, name_id, created_at, generate
 -- agent_prompts_junction
 INSERT INTO public.agent_prompts_junction (active, created_at, agent_id, prompt_id, generated, mcp) VALUES (true, '2026-02-23T17:47:02.459307+00:00', '018f0005-0001-7000-8000-000000000001', '018f0005-0003-7000-8000-000000000001', false, false) ON CONFLICT (agent_id, prompt_id) DO NOTHING;
 -- agent_tools_junction
-INSERT INTO public.agent_tools_junction (agent_id, tool_id, active, created_at, generated, mcp) VALUES ('018f0005-0001-7000-8000-000000000001', '018f0002-0001-7000-8000-000000000002', true, '2026-02-23T17:36:15.969225+00:00', false, false) ON CONFLICT (agent_id, tool_id) DO NOTHING;

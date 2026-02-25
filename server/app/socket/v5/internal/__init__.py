@@ -9,8 +9,8 @@ Importing this module registers all internal event handlers with the internal So
 - generation_media (intercepts media tool_results → triggers image/video generation)
 - generation_text (text_complete — save assistant messages)
 - attempt_start (auto-proceed after chat completes)
+- attempt_proceed (shared core: completion marking, prepare → check → link/generate)
 - attempt_grade (grading triggered by attempt_end)
-- attempt_chat (create/complete chats within attempts)
 """
 
 from . import (

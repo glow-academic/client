@@ -1,46 +1,56 @@
 # Modular Seed Data
 
-Composable, object-based SQL modules for seeding the database. Each file contains all INSERTs for a single logical object (artifact + junctions + resource rows) with `ON CONFLICT DO NOTHING` for idempotency.
+Static, composable SQL modules for seeding the database. Each file contains all INSERTs for a single logical object (artifact + junctions + resource rows) with `ON CONFLICT DO NOTHING` for idempotency.
+
+These files are the **source of truth** for seed data — edit them directly when adding or modifying seed data.
 
 ## Folder Structure
 
 ```
 modules/
-  00-base/          # System resource tables (always loaded)
-  01-providers/     # One file per AI provider
-  02-models/        # One file per model, grouped by provider
+  01-resources/     # Shared resource tables (colors, icons, flags, voices, etc.)
+  02-providers/     # One file per AI provider
+  03-models/        # One file per model, grouped by provider
     openai/
     gemini/
-  03-agents/        # One file per system agent
-  04-tools/         # All MCP tool definitions
-  05-auth/          # Generic auth providers (Google, Microsoft)
-  10-setups/
+  04-agents/        # One file per system agent
+  05-tools/         # All MCP tool definitions
+  06-auth/          # Generic auth providers (Google, Microsoft)
+  07-rubrics/       # Rubric definitions
+  08-evals/         # Evaluation definitions
+  09-profiles/      # Base profile definitions
+  11-setups/
+    organization/   # Organization-specific seed data
+      01-departments/
+      09-profiles/
+      10-settings/
     university/     # University-specific seed data
       00-auth/      # Institution auth (Purdue SAML, etc.)
       01-departments/
       02-personas/
       03-documents/
       04-fields/
+      05-parameters/
       05-rubrics/
-      06-simulations/  # Each simulation includes inline scenarios
-      07-evals/
+      06-simulations/
+      07-scenarios/
       08-cohorts/
       09-profiles/
       10-settings/
+      uploads/
+      texts/
+      themes/
 ```
 
 ## Quick Start
 
 ```bash
-# Export modules from live database
-make export-modules                    # Export all
-make export-modules ARGS=models        # Export only models
-make export-modules ARGS=base          # Export only base
+# Build test seed SQL from modules (uses YAML config to select modules)
+make build-test-seed
 
-# Load seed data via YAML config
+# Load seed data via YAML config directly into database
 make seed-from-yaml                    # Load using default config
 make seed-from-yaml CONFIG=my.yaml     # Load using custom config
-make seed-file-from-yaml               # Generate SQL file without loading
 ```
 
 ## YAML Config
@@ -63,7 +73,6 @@ modules:
   auth:
     - google
     - microsoft
-  setup: university
   university:
     departments: all
     personas: all
@@ -75,20 +84,24 @@ modules:
 
 Use `all` to include everything in a category, or list specific module names.
 
-## What's Included vs Excluded
+## Load Order
 
-**Included (structural data):**
-- Artifact tables (`*_artifact`)
-- Resource tables (`*_resource`) — names, descriptions, models, pricing, etc.
-- Junction tables (`*_junction`) — artifact-to-resource linkages
-- Relation tables (`*_relation`) — system flag/domain mappings
+The loader (`load-modules.sh`) enforces this order:
 
-**Excluded (runtime/secrets):**
-- Entry tables (`*_entry`) — runtime analytical data
-- Connection tables (`*_connection`) — runtime config data
-- `keys_resource`, `provider_keys_resource`, `auth_item_keys_resource` — encrypted secrets
-- `runs_resource`, `groups_resource` — runtime session data
-- Materialized views — rebuilt via `REFRESH MATERIALIZED VIEW`
+1. `01-resources/` — all shared resources
+2. `02-providers/` — AI providers
+3. `03-models/` — models (references resources + providers)
+4. `05-tools/` — MCP tools (before agents)
+5. `04-agents/` — agents (references tools via junction)
+6. `06-auth/` — auth providers
+7. `07-rubrics/` — rubrics
+8. `08-evals/` — evaluations
+9. `09-profiles/` — base profiles
+10. `11-setups/` — per-setup categories in this order:
+    - settings, departments, parameters, fields, personas, documents,
+      uploads, texts, rubrics, simulations, scenarios, cohorts, profiles, themes
+
+The `reasoning_levels_resource` FK to `model_artifact` creates a circular dependency — the loader temporarily drops and re-adds this constraint during seeding.
 
 ## Module File Format
 
@@ -109,29 +122,12 @@ INSERT INTO public.model_artifact (...) VALUES (...) ON CONFLICT (id) DO NOTHING
 
 -- Junctions
 INSERT INTO public.model_names_junction (...) VALUES (...) ON CONFLICT (...) DO NOTHING;
-INSERT INTO public.model_descriptions_junction (...) VALUES (...) ON CONFLICT (...) DO NOTHING;
 ```
 
-## Dependencies
+## Adding New Seed Data
 
-Load order is enforced by folder numbering:
-- `00-base/` has no dependencies
-- `01-providers/` depends on base flags
-- `02-models/` depends on providers
-- `03-agents/` depends on models (for model references)
-- `06-simulations/` depends on personas, departments
-- `07-evals/` depends on simulations
-- `08-cohorts/` depends on simulations
-- `09-profiles/` depends on departments, cohorts
-- `10-settings/` depends on providers, auth, departments
-
-Within the loader, `session_replication_role = replica` disables FK checks during seeding.
-
-## Regenerating Modules
-
-```bash
-# From project root:
-make export-modules
-```
-
-This queries the live database and regenerates all module files. The export script uses actual FK constraint metadata from `pg_catalog` for correctness.
+1. Create a new `.sql` file in the appropriate module directory
+2. Follow the existing file format (header comment, resource rows, artifact, junctions)
+3. Use `ON CONFLICT (id) DO NOTHING` or `ON CONFLICT (pk1, pk2) DO NOTHING` for idempotency
+4. Add the module name to the relevant YAML config if not using `all`
+5. Run `make build-test-seed` to rebuild the test seed

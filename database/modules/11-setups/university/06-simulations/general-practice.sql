@@ -6,8 +6,6 @@
 -- Simulation resource rows
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8e96-7734-bde8-42600e28f00a', 'A flexible simulation for open-ended practice with any persona.', '2025-08-12T12:52:09.984906+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8e93-7fe5-bd42-3eb6e1517d0a', 'General Practice', '2025-08-12T12:52:09.984906+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.scenario_positions_resource (id, value, created_at, generated, mcp, scenario_id, active) VALUES ('019bd1c8-54c3-74df-9f14-18ef5fa2ed16', 1, '2026-01-13T02:51:36.057775+00:00', false, false, '019bb25e-e61d-7efa-8819-7dcb0cf829f8', true) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.scenario_rubrics_resource (id, created_at, generated, mcp, active, rubric_id, scenario_id) VALUES ('019bebc6-98d8-7d08-bcda-b29a56dc4c64', '2026-01-23T16:53:39.666863+00:00', false, false, true, '019bb25e-e608-7e93-9600-bb8e9405bccc', '019bb25e-e61d-7c04-93b1-4c1a8a18fb8d') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.simulations_resource (created_at, active, generated, mcp, id, name, description, department_ids, scenario_ids, scenario_rubric_ids, scenario_time_limit_ids, scenario_position_ids, scenario_flag_ids, practice) VALUES ('2025-08-12T12:52:09.984906+00:00', true, false, false, '019bb25e-e62c-78a4-a556-64cb01be3d92', 'General Practice', 'A flexible simulation for open-ended practice with any persona.', '{}', '{019bb25e-e61d-7efa-8819-7dcb0cf829f8}', '{}', '{}', '{}', '{}', true) ON CONFLICT (id) DO NOTHING;
 
 -- Scenario resource rows
@@ -55,8 +53,6 @@ INSERT INTO public.simulation_flags_junction (simulation_id, flag_id, value, cre
 -- simulation_names_junction
 INSERT INTO public.simulation_names_junction (simulation_id, name_id, created_at, generated, mcp, active) VALUES ('019b3be4-3cb8-7ab9-b0fb-1469d28aaefa', '019b995c-8e93-7fe5-bd42-3eb6e1517d0a', '2025-08-12T12:52:09.984906+00:00', false, false, true) ON CONFLICT (simulation_id, name_id) DO NOTHING;
 -- simulation_scenario_positions_junction
-INSERT INTO public.simulation_scenario_positions_junction (simulation_id, scenario_position_id, created_at, generated, mcp, active) VALUES ('019b3be4-3cb8-7ab9-b0fb-1469d28aaefa', '019bd1c8-54c3-74df-9f14-18ef5fa2ed16', '2026-01-13T02:51:36.057775+00:00', false, false, true) ON CONFLICT (simulation_id, scenario_position_id) DO NOTHING;
 -- simulation_scenario_rubrics_junction
-INSERT INTO public.simulation_scenario_rubrics_junction (simulation_id, scenario_rubric_id, created_at, generated, mcp, active) VALUES ('019b3be4-3cb8-7ab9-b0fb-1469d28aaefa', '019bebc6-98d8-7d08-bcda-b29a56dc4c64', '2026-01-23T16:53:39.677411+00:00', false, false, true) ON CONFLICT (simulation_id, scenario_rubric_id) DO NOTHING;
 -- simulation_simulations_junction
 INSERT INTO public.simulation_simulations_junction (simulation_id, simulations_id, active, created_at, generated, mcp) VALUES ('019b3be4-3cb8-7ab9-b0fb-1469d28aaefa', '019bb25e-e62c-78a4-a556-64cb01be3d92', true, '2025-08-12T12:52:09.984906+00:00', false, false) ON CONFLICT (simulation_id, simulations_id) DO NOTHING;

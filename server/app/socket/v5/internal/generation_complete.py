@@ -169,42 +169,25 @@ async def handle_run_complete(data: dict[str, Any]) -> None:
         ).model_dump(mode="json"),
     )
 
-    # 4e: Special case — chat: link attempt_chat_entry + emit attempt events
+    # 4e: Special case — chat: emit attempt_chat_started
+    # Bridge + connections already created by resolve_attempt_chat in proceed.py
     if artifact_type == "chat":
         attempt_id_data = metadata.get("attempt_id")
         attempt_chat_id_data = metadata.get("attempt_chat_id")
-        if (
-            should_save
-            and profile_id_str
-            and attempt_id_data
-            and attempt_chat_id_data
-            and artifact_id  # save_chat_internal returned the attempt_chat_id
-        ):
-            try:
-                from app.socket.v5.internal.attempt.helpers import link_attempt_chat
+        if should_save and attempt_id_data and attempt_chat_id_data:
+            async with get_db_connection() as conn:
+                await conn.execute("REFRESH MATERIALIZED VIEW attempt_mv")
+                await conn.execute("REFRESH MATERIALIZED VIEW attempt_chat_mv")
+            await invalidate_tags(["attempt", "attempts"])
 
-                attempt_uuid = uuid.UUID(attempt_id_data)
-                profile_uuid = uuid.UUID(profile_id_str)
-                cr_uuid = uuid.UUID(attempt_chat_id_data)
-
-                async with get_db_connection() as conn:
-                    chat_id = await link_attempt_chat(
-                        conn, profile_uuid, attempt_uuid, cr_uuid
-                    )
-
-                if chat_id:
-                    # Emit attempt_chat_started (for subsequent chats)
-                    # or attempt_started (for first chat)
-                    await internal_sio.emit(
-                        "attempt_chat_started",
-                        AttemptChatStartedData(
-                            sid=sid,
-                            attempt_id=attempt_id_data,
-                            chat_id=str(chat_id),
-                        ).model_dump(mode="json"),
-                    )
-            except Exception as e:
-                logger.exception(f"Failed to link attempt_chat after chat save: {e}")
+            await internal_sio.emit(
+                "attempt_chat_started",
+                AttemptChatStartedData(
+                    sid=sid,
+                    attempt_id=attempt_id_data,
+                    chat_id=attempt_chat_id_data,
+                ).model_dump(mode="json"),
+            )
 
     # 4f: Cleanup
     await cleanup_generation(run_id)

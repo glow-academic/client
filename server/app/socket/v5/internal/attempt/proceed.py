@@ -2,13 +2,18 @@
 
 Handles: @internal_sio.on("attempt_proceed")
 
-Both attempt_start and attempt_next emit attempt_proceed with just attempt_id.
-This handler resolves all context via a single SQL call, then:
+All attempt lifecycle events route through here:
+- attempt_start / attempt_next → proceed with attempt_id
+- attempt_end → proceed with completed_chat_id (marks chat done, then finds next)
+- attempt_end_all → proceed with complete_all=True (marks all done → ended)
 
-1. Check if all chats are done → emit attempt_ended
-2. Resolve attempt_chat via SQL function (create entry, copy connections, create bridge)
-3. If no generation needed → refresh MVs, emit attempt_chat_started
-4. If generation needed → emit generate(resource_types=[true flags])
+Flow:
+1. If completed_chat_id → insert into attempt_completion_entry
+2. If complete_all → mark all remaining chats completed → emit attempt_ended
+3. Check if all chats are done → emit attempt_ended
+4. Resolve attempt_chat via SQL function (create entry, copy connections, create bridge)
+5. If no generation needed → refresh MVs, emit attempt_chat_started
+6. If generation needed → emit generate(resource_types=[true flags])
 """
 
 from __future__ import annotations
@@ -88,8 +93,49 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
         attempt_id = uuid.UUID(payload.attempt_id)
         force_proceed = payload.force_proceed
         draft_id = uuid.UUID(payload.draft_id) if payload.draft_id else None
+        completed_chat_id = (
+            uuid.UUID(payload.completed_chat_id) if payload.completed_chat_id else None
+        )
+        complete_all = payload.complete_all
 
-        # Step 2: Get all context in one SQL call
+        # Step 2a: If completed_chat_id, mark that chat completed first
+        if completed_chat_id:
+            async with get_db_connection() as conn:
+                await conn.execute(
+                    """INSERT INTO attempt_completion_entry (chat_id)
+                    VALUES ($1) ON CONFLICT (chat_id) DO NOTHING""",
+                    completed_chat_id,
+                )
+
+        # Step 2b: If complete_all, mark all remaining chats completed → ended
+        if complete_all:
+            async with get_db_connection() as conn:
+                await conn.execute(
+                    """INSERT INTO attempt_completion_entry (chat_id)
+                    SELECT ac.attempt_chat_id
+                    FROM attempt_chat_bridge_entry ac
+                    JOIN attempt_chat_entry c ON c.id = ac.attempt_chat_id
+                    WHERE ac.attempt_id = $1 AND c.active = TRUE
+                    ON CONFLICT (chat_id) DO NOTHING""",
+                    attempt_id,
+                )
+                await conn.execute("REFRESH MATERIALIZED VIEW attempt_mv")
+                await conn.execute("REFRESH MATERIALIZED VIEW attempt_chat_mv")
+            await invalidate_tags(["attempt", "attempts"])
+
+            await internal_sio.emit(
+                "attempt_ended",
+                AttemptEndedData(
+                    sid=sid,
+                    attempt_id=str(attempt_id),
+                    success=True,
+                    all_scenarios_complete=True,
+                    message="All scenarios completed",
+                ).model_dump(mode="json"),
+            )
+            return
+
+        # Step 3: Get all context in one SQL call
         async with get_db_connection() as conn:
             row = cast(
                 GetAttemptProceedContextSqlRow,
@@ -116,7 +162,7 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
 
         ctx = row.items[0]
 
-        # Step 3: Check if all chats are done
+        # Step 4: Check if all chats are done
         if ctx.chat_entry_id is None or (
             ctx.completed_count is not None
             and ctx.num_chats is not None
@@ -148,7 +194,7 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
             )
             return
 
-        # Step 4: Determine generation needs and user choices
+        # Step 5: Determine generation needs and user choices
         resource_types_to_generate: list[str] = []
         for flag_name, resource_type in GENERATE_FLAG_TO_RESOURCE.items():
             if getattr(ctx, flag_name, False):
@@ -157,7 +203,7 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
         needs_generation = len(resource_types_to_generate) > 0
         has_user_choice = bool(ctx.use_custom) or bool(ctx.use_previous)
 
-        # Step 5: Branch on state
+        # Step 6: Branch on state
         #
         # Path 1: No generation + no user choice → resolve + chat_started
         # Path 2: Generation + no user choice → resolve + generate

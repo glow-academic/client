@@ -38,7 +38,6 @@ INSERT INTO public.scenario_artifact (created_at, updated_at, id, generated, mcp
 -- scenario_descriptions_junction
 INSERT INTO public.scenario_descriptions_junction (scenario_id, description_id, created_at, generated, mcp, active) VALUES ('019b3be4-3c3a-79f1-9490-d4358ed29c92', '019b995c-8e88-73fd-8579-c4a21dae63ef', '2025-12-13T13:42:21.259114+00:00', false, false, true) ON CONFLICT (scenario_id, description_id) DO NOTHING;
 -- scenario_documents_junction
-INSERT INTO public.scenario_documents_junction (active, created_at, document_id, scenario_id, generated, mcp) VALUES (true, '2026-02-11T23:50:02.269303+00:00', 'c2f4d2f1-dbc8-476b-89e7-cfec6ac84cd7', '019b3be4-3c3a-79f1-9490-d4358ed29c92', false, false) ON CONFLICT (scenario_id, document_id) DO NOTHING;
 -- scenario_flags_junction
 INSERT INTO public.scenario_flags_junction (scenario_id, flag_id, value, created_at, generated, mcp, active) VALUES ('019b3be4-3c3a-79f1-9490-d4358ed29c92', '019b995a-86ef-77dc-8ddc-2013a6e3194f', true, '2025-12-13T13:42:21.259114+00:00', false, false, true) ON CONFLICT (scenario_id, flag_id) DO NOTHING;
 INSERT INTO public.scenario_flags_junction (scenario_id, flag_id, value, created_at, generated, mcp, active) VALUES ('019b3be4-3c3a-79f1-9490-d4358ed29c92', '019b995a-86ef-77a3-a2a6-e6b760a9fcfe', true, '2025-12-13T13:42:21.259114+00:00', false, false, true) ON CONFLICT (scenario_id, flag_id) DO NOTHING;

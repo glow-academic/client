@@ -126,5 +126,4 @@ INSERT INTO public.agent_names_junction (agent_id, name_id, created_at, generate
 -- agent_prompts_junction
 INSERT INTO public.agent_prompts_junction (active, created_at, agent_id, prompt_id, generated, mcp) VALUES (true, '2026-02-22T00:20:46.593734+00:00', 'ab000005-0000-0000-0000-000000000005', '019c82b8-5d9d-7046-81b8-1bb8eb191ffe', false, false) ON CONFLICT (agent_id, prompt_id) DO NOTHING;
 -- agent_tools_junction
-INSERT INTO public.agent_tools_junction (agent_id, tool_id, active, created_at, generated, mcp) VALUES ('ab000005-0000-0000-0000-000000000005', '018f0002-0001-7000-8000-000000000006', true, '2026-02-23T17:36:15.969225+00:00', false, false) ON CONFLICT (agent_id, tool_id) DO NOTHING;
 INSERT INTO public.agent_tools_junction (agent_id, tool_id, active, created_at, generated, mcp) VALUES ('ab000005-0000-0000-0000-000000000005', '019522a0-0020-7000-8000-00000000000a', true, '2026-02-24T11:27:01.778199+00:00', false, false) ON CONFLICT (agent_id, tool_id) DO NOTHING;
