@@ -24,8 +24,8 @@ CREATE OR REPLACE FUNCTION socket_prepare_training_start_v4(
     p_draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    chat_resolved_id uuid,
-    scenario_id uuid
+    out_chat_resolved_id uuid,
+    out_scenario_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
@@ -70,23 +70,25 @@ BEGIN
     LIMIT 1;
 
     -- Resolve training scope from bundle.
+    -- chat_entry links to parent (home/practice) via home_chat_entry/practice_chat_entry,
+    -- scenario via chat_scenarios_connection, simulation/cohort via parent connections.
     SELECT
-        tb.chat_id,
-        tb.scenarios_id,
-        t.simulations_id,
-        t.cohorts_id,
-        t.practice,
+        tb.id,
+        scj_conn.scenarios_id,
+        COALESCE(hsc.simulations_id, psc.simulations_id),
+        COALESCE(hcc.cohorts_id, pcc.cohorts_id),
+        (pte.practice_id IS NOT NULL),
         (
             SELECT ssj.simulation_id
             FROM simulation_simulations_junction ssj
-            WHERE ssj.simulations_id = t.simulations_id
+            WHERE ssj.simulations_id = COALESCE(hsc.simulations_id, psc.simulations_id)
               AND ssj.active = true
             LIMIT 1
         ),
         (
             SELECT scj.scenario_id
             FROM scenario_scenarios_junction scj
-            WHERE scj.scenarios_id = tb.scenarios_id
+            WHERE scj.scenarios_id = scj_conn.scenarios_id
               AND scj.active = true
             LIMIT 1
         )
@@ -99,9 +101,17 @@ BEGIN
         v_simulation_artifact_id,
         v_scenario_artifact_id
     FROM chat_entry tb
-    JOIN chat_entry t
-      ON t.id = tb.chat_id
-     AND t.active = true
+    LEFT JOIN home_chat_entry hte ON hte.chat_id = tb.id
+    LEFT JOIN home_entry he ON he.id = hte.home_id AND he.active = true
+    LEFT JOIN practice_chat_entry pte ON pte.chat_id = tb.id
+    LEFT JOIN practice_entry pe ON pe.id = pte.practice_id AND pe.active = true
+    LEFT JOIN home_simulations_connection hsc ON hsc.home_id = he.id AND hsc.active = true
+    LEFT JOIN practice_simulations_connection psc ON psc.practice_id = pe.id AND psc.active = true
+    LEFT JOIN home_cohorts_connection hcc ON hcc.home_id = he.id AND hcc.active = true
+    LEFT JOIN practice_cohorts_connection pcc ON pcc.practice_id = pe.id AND pcc.active = true
+    LEFT JOIN chat_scenarios_connection scj_conn
+      ON scj_conn.chat_id = tb.id
+     AND scj_conn.active = true
     WHERE tb.id = p_chat_entry_id
       AND tb.active = true
     LIMIT 1;
@@ -119,7 +129,9 @@ BEGIN
     END IF;
 
     -- Resolve rubric/persona/problem statement from scenario scope.
-    SELECT srr.rubric_id, rrj.rubric_id
+    -- v_rubrics_resource_id = scenario_rubrics_resource.id (for chat_resolved_rubrics_connection)
+    -- v_rubric_artifact_id = rubric_artifact.id (for standards/standard_groups)
+    SELECT srr.id, rrj.rubric_id
     INTO v_rubrics_resource_id, v_rubric_artifact_id
     FROM simulation_scenario_rubrics_junction ssrj
     JOIN scenario_rubrics_resource srr ON srr.id = ssrj.scenario_rubric_id
@@ -220,10 +232,10 @@ BEGIN
 
     IF v_rubrics_resource_id IS NOT NULL THEN
         INSERT INTO chat_resolved_rubrics_connection (
-            chat_resolved_id, rubrics_id, created_at, active, generated, mcp
+            chat_resolved_id, scenario_rubrics_id, created_at, active, generated, mcp
         )
         VALUES (v_chat_resolved_id, v_rubrics_resource_id, NOW(), true, false, false)
-        ON CONFLICT (chat_resolved_id, rubrics_id) DO NOTHING;
+        ON CONFLICT (chat_resolved_id, scenario_rubrics_id) DO NOTHING;
     END IF;
 
     IF v_problem_statements_resource_id IS NOT NULL THEN
@@ -348,6 +360,6 @@ BEGIN
         ON CONFLICT (chat_resolved_id, standard_groups_id) DO NOTHING;
     END IF;
 
-    RETURN QUERY SELECT v_chat_resolved_id, v_scenario_artifact_id;
+    RETURN QUERY SELECT v_chat_resolved_id AS out_chat_resolved_id, v_scenario_artifact_id AS out_scenario_id;
 END;
 $$;

@@ -17470,8 +17470,8 @@ class PrepareTrainingStartSqlParams(BaseModel):
 
 class PrepareTrainingStartSqlRow(BaseModel):
 
-    chat_resolved_id: UUID | None = None
-    scenario_id: UUID | None = None
+    out_chat_resolved_id: UUID | None = None
+    out_scenario_id: UUID | None = None
 
 class PrepareTrainingStartApiRequest(BaseModel):
 
@@ -17482,8 +17482,8 @@ class PrepareTrainingStartApiRequest(BaseModel):
 
 class PrepareTrainingStartApiResponse(BaseModel):
 
-    chat_resolved_id: UUID | None = None
-    scenario_id: UUID | None = None
+    out_chat_resolved_id: UUID | None = None
+    out_scenario_id: UUID | None = None
 
 
 

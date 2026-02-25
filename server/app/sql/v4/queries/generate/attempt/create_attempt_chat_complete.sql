@@ -26,21 +26,17 @@ LANGUAGE plpgsql
 VOLATILE
 AS $$
 DECLARE
-    v_chat_id uuid;
+    v_chat_id uuid := p_chat_resolved_id;
     v_session_id uuid;
     v_group_id uuid;
     v_trace_id text;
     v_config_id uuid;
     v_entry RECORD;
 BEGIN
-    -- Create chat entry.
-    INSERT INTO chat_resolved_entry (created_at, updated_at, title, departments_id, config_signature)
-    VALUES (NOW(), NOW(), 'Chat', NULL, 'runtime-v1')
-    RETURNING id INTO v_chat_id;
-
-    -- Bridge: link chat to attempt
+    -- Bridge: link existing chat_resolved_entry to attempt
     INSERT INTO attempt_chat_entry (attempt_id, chat_resolved_id)
-    VALUES (p_attempt_id, v_chat_id);
+    VALUES (p_attempt_id, v_chat_id)
+    ON CONFLICT (attempt_id, chat_resolved_id) DO NOTHING;
 
     -- Create per-entry config snapshots by resolving agents server-side.
     SELECT id INTO v_session_id

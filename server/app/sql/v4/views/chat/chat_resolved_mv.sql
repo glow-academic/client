@@ -149,7 +149,7 @@ WITH NO DATA;
 -- ============================================================================
 
 CREATE UNIQUE INDEX chat_resolved_mv_pk
-    ON chat_resolved_mv (chat_id);
+    ON chat_resolved_mv (chat_id, attempt_id);
 
 -- ============================================================================
 -- Step 5: Create Filter/Slicing Indexes

@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useSocket } from "@/contexts/socket-context";
 import { useAttemptLifecycle } from "@/hooks/use-attempt-lifecycle";
-import type { AttemptStartedEvent, AttemptErrorEvent } from "@/hooks/use-attempt-lifecycle";
+import type { AttemptStartedEvent, AttemptChatStartedEvent, AttemptErrorEvent } from "@/hooks/use-attempt-lifecycle";
 import { getIconComponent } from "@/utils/icons";
 import {
   ChevronLeft,
@@ -144,6 +144,17 @@ export default function SimulationCard({
   const { startAttempt } = useAttemptLifecycle({
     socket,
     onStarted: useCallback((data: AttemptStartedEvent) => {
+      if (!isStartingRef.current) return;
+      router.push(`/attempt/${data.attempt_id}`);
+
+      // Dispatch custom event for analytics
+      window.dispatchEvent(
+        new CustomEvent("simulationButtonPressed", {
+          detail: { simulationId: id },
+        })
+      );
+    }, [router, id]),
+    onChatStarted: useCallback((data: AttemptChatStartedEvent) => {
       if (!isStartingRef.current) return;
       router.push(`/attempt/${data.attempt_id}`);
 

@@ -32,7 +32,7 @@ const getChatBundle = async (
     "/artifacts/chat/get",
     {
       body: {
-        training_entry_id: bundleId,
+        chat_entry_id: bundleId,
         draft_id: draftId,
       },
     },

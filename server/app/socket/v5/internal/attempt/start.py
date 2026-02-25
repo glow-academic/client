@@ -140,7 +140,7 @@ async def _link_attempt_chat(
         return None
 
     await conn.execute("REFRESH MATERIALIZED VIEW attempt_mv")
-    await conn.execute("REFRESH MATERIALIZED VIEW attempt_chat_mv")
+    await conn.execute("REFRESH MATERIALIZED VIEW chat_resolved_mv")
     await invalidate_tags(["attempt", "attempts"])
 
     return chat_row.chat_id

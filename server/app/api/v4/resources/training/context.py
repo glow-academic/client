@@ -174,7 +174,7 @@ async def prepare_training_start_internal(
     if not row:
         return None, None
 
-    return row.chat_resolved_id, row.scenario_id
+    return row.out_chat_resolved_id, row.out_scenario_id
 
 
 async def check_resolved_needs_generation(
@@ -190,7 +190,7 @@ async def check_resolved_needs_generation(
     row = await conn.fetchval(
         """
         SELECT COUNT(*) = 0
-        FROM chat_resolved_personas_connection
+        FROM chat_resolved_profile_personas_connection
         WHERE chat_resolved_id = $1 AND active = true
         """,
         chat_resolved_id,
