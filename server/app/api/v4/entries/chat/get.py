@@ -25,6 +25,7 @@ class ChatItem(BaseModel):
 
     # Foreign keys
     attempt_id: UUID
+    chat_entry_id: UUID | None = None
     group_id: UUID | None = None
     attempt_chat_id: UUID | None = None
 
@@ -255,6 +256,7 @@ async def get_chats_internal(
                 ChatItem(
                     chat_id=item.chat_id,
                     attempt_id=item.attempt_id,
+                    chat_entry_id=getattr(item, "chat_entry_id", None),
                     group_id=item.group_id,
                     attempt_chat_id=item.attempt_chat_id,
                     profile_id=item.profile_id,

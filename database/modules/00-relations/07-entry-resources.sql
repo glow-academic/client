@@ -1,4 +1,0 @@
--- Module: entry-resources
--- Category: relations
--- Description: entry-resources relation data
--- ============================================================

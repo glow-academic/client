@@ -80,6 +80,7 @@ SELECT
 
     -- Foreign keys
     ac.attempt_id,
+    c.chat_id AS chat_entry_id,
     c.group_id,
 
     -- Resource IDs (derived from parent home/practice connections)

@@ -1,4 +1,0 @@
--- Module: resource-resources
--- Category: relations
--- Description: resource-resources relation data
--- ============================================================

@@ -1,4 +1,0 @@
--- Module: view-entries
--- Category: relations
--- Description: view-entries relation data
--- ============================================================

@@ -341,17 +341,14 @@ def compute_continuation_options(
 ) -> AvailableContinuationOptions | None:
     """Compute available continuation options from previous attempt chats.
 
-    Derives remaining scenarios and their order from previous attempt chats.
-    Trusts the order of scenario_ids as they appear in previous_chats (the MV
-    returns chats ordered by created_at, which matches scenario position order).
-
-    TODO: Once the MV is updated to order by scenario position explicitly,
-    this will automatically pick up the correct ordering.
+    Keyed by chat_entry_id (the parent template). For each chat_entry not yet
+    completed in the current attempt, find the best graded attempt_chat from
+    previous attempts to reuse via bridge.
 
     Algorithm:
-    1. Build ordered scenario list from previous chats (preserves MV order)
-    2. Filter out scenarios already completed in current attempt
-    3. For each remaining scenario, pick best graded chat (highest score)
+    1. Build ordered chat_entry list from previous chats (preserves MV order)
+    2. Filter out chat_entries already completed in current attempt
+    3. For each remaining chat_entry, pick best graded chat (highest score)
     4. Build consecutive options: [first], [first, second], etc.
     5. Pareto filter dominated options
 
@@ -363,37 +360,37 @@ def compute_continuation_options(
         PreviousChatOption,
     )
 
-    # 1. Find completed scenario IDs in current attempt
-    current_scenario_ids = {
-        str(c.scenario_id) for c in current_chats if c.completed and c.scenario_id
+    # 1. Find completed chat_entry_ids in current attempt
+    current_chat_entry_ids = {
+        str(c.chat_entry_id) for c in current_chats if c.completed and c.chat_entry_id
     }
 
-    # 2. Build ordered scenario list from previous chats, preserving MV order.
-    #    Use first occurrence of each scenario_id to establish position.
-    seen_scenarios: dict[str, int] = {}  # scenario_id -> position
+    # 2. Build ordered chat_entry list from previous chats, preserving MV order.
+    #    Use first occurrence of each chat_entry_id to establish position.
+    seen_entries: dict[str, int] = {}  # chat_entry_id -> position
     for chat in previous_chats:
-        if not chat.scenario_id:
+        if not chat.chat_entry_id:
             continue
-        sid = str(chat.scenario_id)
-        if sid not in seen_scenarios:
-            seen_scenarios[sid] = len(seen_scenarios)
+        ceid = str(chat.chat_entry_id)
+        if ceid not in seen_entries:
+            seen_entries[ceid] = len(seen_entries)
 
-    # 3. Group previous graded chats by scenario_id (only remaining ones)
-    prev_by_scenario: dict[str, list[ChatViewItem]] = {}
+    # 3. Group previous graded chats by chat_entry_id (only remaining ones)
+    prev_by_entry: dict[str, list[ChatViewItem]] = {}
     for chat in previous_chats:
-        if not chat.scenario_id or not chat.grade or not chat.completed:
+        if not chat.chat_entry_id or not chat.grade or not chat.completed:
             continue
-        sid = str(chat.scenario_id)
-        if sid in current_scenario_ids:
+        ceid = str(chat.chat_entry_id)
+        if ceid in current_chat_entry_ids:
             continue
-        prev_by_scenario.setdefault(sid, []).append(chat)
+        prev_by_entry.setdefault(ceid, []).append(chat)
 
-    if not prev_by_scenario:
+    if not prev_by_entry:
         return None
 
-    # 4. Pick best per scenario (highest score, tiebreak: lowest time)
-    best_per_scenario: dict[str, ChatViewItem] = {}
-    for sid, chats_list in prev_by_scenario.items():
+    # 4. Pick best per chat_entry (highest score, tiebreak: lowest time)
+    best_per_entry: dict[str, ChatViewItem] = {}
+    for ceid, chats_list in prev_by_entry.items():
         best = max(
             chats_list,
             key=lambda c: (
@@ -405,29 +402,31 @@ def compute_continuation_options(
                 ),
             ),
         )
-        best_per_scenario[sid] = best
+        best_per_entry[ceid] = best
 
-    # 5. Order remaining scenarios by their position from the MV
+    # 5. Order remaining entries by their position from the MV
     ordered_remaining = sorted(
-        best_per_scenario.items(),
-        key=lambda pair: seen_scenarios.get(pair[0], 999),
+        best_per_entry.items(),
+        key=lambda pair: seen_entries.get(pair[0], 999),
     )
 
     # 6. Build PreviousChatOption list
     remaining_options: list[PreviousChatOption] = []
-    for position, (sid, chat) in enumerate(ordered_remaining):
+    for position, (ceid, chat) in enumerate(ordered_remaining):
         score = chat.grade.score if chat.grade else None
         time_taken = (
             float(chat.grade.time_taken)
             if chat.grade and chat.grade.time_taken
             else 0.0
         )
+        # Use scenario_names keyed by scenario_id for display
+        name = scenario_names.get(str(chat.scenario_id)) if chat.scenario_id else None
 
         remaining_options.append(
             PreviousChatOption(
-                scenario_id=sid,
-                scenario_name=scenario_names.get(sid),
-                previous_chat_id=str(chat.chat_id),
+                chat_entry_id=ceid,
+                scenario_name=name,
+                attempt_chat_id=str(chat.chat_id),
                 score=score,
                 percentage=None,
                 time_taken=time_taken,

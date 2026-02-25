@@ -1,4 +1,0 @@
--- Module: artifact-routes
--- Category: relations
--- Description: artifact-routes relation data
--- ============================================================

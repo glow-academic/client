@@ -1,86 +1,64 @@
 """Attempt use previous handler.
 
-Handles: attempt_use_previous — copy grades from a previous attempt's chats
-by creating skipped chats with the same grades.
+Handles: attempt_use_previous — bridge existing attempt_chats from a previous
+attempt into the current attempt, then delegate to attempt_proceed.
 """
 
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
 from app.socket.v5.client.types import AttemptUsePreviousPayload
-from app.socket.v5.internal.attempt.types import AttemptChatEndedData, AttemptErrorData
-from app.sql.types import (
-    UsePreviousAttemptGradesSqlParams,
-    UsePreviousAttemptGradesSqlRow,
+from app.socket.v5.internal.attempt.types import (
+    AttemptErrorData,
+    AttemptProceedData,
 )
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
 
-SQL_PATH_USE_PREVIOUS = (
-    "app/sql/v4/queries/generate/attempt/use_previous_attempt_grades_complete.sql"
-)
-
 
 async def _attempt_use_previous_impl(sid: str, data: AttemptUsePreviousPayload) -> None:
-    """Handle attempt_use_previous — create skipped chats with copied grades."""
+    """Handle attempt_use_previous — bridge previous attempt_chats, then proceed."""
     try:
-        attempt_id = str(data.attempt_id)
+        attempt_id = uuid.UUID(str(data.attempt_id))
 
         async with get_db_connection() as conn:
-            last_chat_id: str | None = None
-
-            for scenario_id_str, prev_chat_id_str in data.previous_chat_map.items():
-                if not prev_chat_id_str:
+            for _chat_entry_id_str, attempt_chat_id_str in data.previous_chat_map.items():
+                if not attempt_chat_id_str:
                     continue
                 try:
-                    prev_chat_uuid = uuid.UUID(prev_chat_id_str)
-                    prev_scenario_uuid = uuid.UUID(scenario_id_str)
+                    attempt_chat_id = uuid.UUID(attempt_chat_id_str)
 
-                    result_row = cast(
-                        UsePreviousAttemptGradesSqlRow,
-                        await execute_sql_typed(
-                            conn,
-                            SQL_PATH_USE_PREVIOUS,
-                            params=UsePreviousAttemptGradesSqlParams(
-                                p_attempt_id=data.attempt_id,
-                                p_scenario_id=prev_scenario_uuid,
-                                p_previous_chat_id=prev_chat_uuid,
-                            ),
-                        ),
+                    await conn.execute(
+                        """
+                        INSERT INTO attempt_chat_bridge_entry (attempt_id, attempt_chat_id)
+                        VALUES ($1, $2)
+                        ON CONFLICT DO NOTHING
+                        """,
+                        attempt_id,
+                        attempt_chat_id,
                     )
-
-                    if result_row and result_row.skipped_chat_id:
-                        last_chat_id = str(result_row.skipped_chat_id)
-
                 except Exception as e:
                     logger.warning(
-                        f"Failed to create skipped chat for scenario "
-                        f"{scenario_id_str}: {e}"
+                        f"Failed to bridge attempt_chat {attempt_chat_id_str}: {e}"
                     )
                     continue
 
-            # Refresh MVs so changes are immediately visible
-            await conn.execute("REFRESH MATERIALIZED VIEW attempt_mv")
-            await conn.execute("REFRESH MATERIALIZED VIEW attempt_chat_mv")
-
-            # Emit attempt_chat_ended via server layer
-            await internal_sio.emit(
-                "attempt_chat_ended",
-                AttemptChatEndedData(
-                    sid=sid,
-                    chat_id=last_chat_id or "",
-                    is_attempt_finished=None,
-                    grade_id=None,
-                ).model_dump(mode="json"),
-            )
+        # Delegate to attempt_proceed — it will find the next unresolved chat
+        await internal_sio.emit(
+            "attempt_proceed",
+            AttemptProceedData(
+                sid=sid,
+                attempt_id=str(attempt_id),
+                force_proceed=False,
+            ).model_dump(mode="json"),
+        )
 
         # Log activity
         try:
@@ -88,7 +66,7 @@ async def _attempt_use_previous_impl(sid: str, data: AttemptUsePreviousPayload) 
                 sid=sid,
                 event_key="attempt.use_previous.ended",
                 template="{{ actor.name }} used previous attempt grades",
-                context={"attempt_id": attempt_id},
+                context={"attempt_id": str(attempt_id)},
                 endpoint="/socket/v5/attempt/use_previous",
                 error=False,
             )
@@ -109,7 +87,7 @@ async def _attempt_use_previous_impl(sid: str, data: AttemptUsePreviousPayload) 
 
 @sio.event  # type: ignore
 async def attempt_use_previous(sid: str, data: dict[str, Any]) -> None:
-    """Handle attempt_use_previous event — copy grades from previous attempt."""
+    """Handle attempt_use_previous event — bridge previous attempt_chats."""
     try:
         payload = AttemptUsePreviousPayload(**data)
         profile_id_str = await find_profile_by_socket(sid)

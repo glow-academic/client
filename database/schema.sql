@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict n8frvhEYAPOXWbHcff9eCtGlBmEedsdXR59JghvSdFGyJqsuGTZ1cnvCsK5r68A
+\restrict ctKww05sHJoTWPF915TuQ6kGRmdd4GFhZWi4NTgBtK4kIt1ocUwLSQ7hZrIszdn
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -67672,5 +67672,5 @@ ALTER TABLE ONLY public.voices_calls_connection
 -- PostgreSQL database dump complete
 --
 
-\unrestrict n8frvhEYAPOXWbHcff9eCtGlBmEedsdXR59JghvSdFGyJqsuGTZ1cnvCsK5r68A
+\unrestrict ctKww05sHJoTWPF915TuQ6kGRmdd4GFhZWi4NTgBtK4kIt1ocUwLSQ7hZrIszdn
 

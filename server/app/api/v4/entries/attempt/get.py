@@ -77,6 +77,7 @@ class ChatViewItem(BaseModel):
 
     chat_id: UUID
     attempt_id: UUID | None = None
+    chat_entry_id: UUID | None = None
     group_id: UUID | None = None
     scenario_id: UUID | None = None
     rubric_id: UUID | None = None
@@ -321,6 +322,7 @@ async def get_attempt_chats_internal(
             ChatViewItem(
                 chat_id=chat.chat_id,
                 attempt_id=chat.attempt_id,
+                chat_entry_id=getattr(chat, "chat_entry_id", None),
                 group_id=chat.group_id,
                 scenario_id=chat.scenario_id
                 or (config.scenario_id if config else None),

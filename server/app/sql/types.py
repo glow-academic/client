@@ -16025,37 +16025,6 @@ class StartAttemptApiResponse(BaseModel):
 
 
 
-# Generated from: use_previous_attempt_grades
-
-class UsePreviousAttemptGradesSqlParams(BaseModel):
-
-    p_attempt_id: UUID
-    p_scenario_id: UUID
-    p_previous_chat_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_attempt_id,
-            self.p_scenario_id,
-            self.p_previous_chat_id,
-        )
-
-class UsePreviousAttemptGradesSqlRow(BaseModel):
-
-    skipped_chat_id: UUID | None = None
-
-class UsePreviousAttemptGradesApiRequest(BaseModel):
-
-    p_attempt_id: UUID
-    p_scenario_id: UUID
-    p_previous_chat_id: UUID
-
-class UsePreviousAttemptGradesApiResponse(BaseModel):
-
-    skipped_chat_id: UUID | None = None
-
-
-
 # Generated from: prepare_auth_generation
 
 class PrepareAuthGenerationSqlParams(BaseModel):
@@ -40151,12 +40120,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "StartAttemptApiRequest",
         "StartAttemptApiResponse",
     ),
-    "app/sql/v4/queries/generate/attempt/use_previous_attempt_grades_complete.sql": (
-        "UsePreviousAttemptGradesSqlParams",
-        "UsePreviousAttemptGradesSqlRow",
-        "UsePreviousAttemptGradesApiRequest",
-        "UsePreviousAttemptGradesApiResponse",
-    ),
     "app/sql/v4/queries/generate/auth/prepare_auth_generation_complete.sql": (
         "PrepareAuthGenerationSqlParams",
         "PrepareAuthGenerationSqlRow",
@@ -45532,11 +45495,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/attempt/start_attempt_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/generate/attempt/use_previous_attempt_grades_complete.sql"]
     ) -> SqlString: ...
 
     @overload

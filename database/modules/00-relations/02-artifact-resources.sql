@@ -1,4 +1,0 @@
--- Module: artifact-resources
--- Category: relations
--- Description: artifact-resources relation data
--- ============================================================

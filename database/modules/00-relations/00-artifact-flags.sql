@@ -1,4 +1,0 @@
--- Module: artifact-flags
--- Category: relations
--- Description: artifact-flags relation data
--- ============================================================

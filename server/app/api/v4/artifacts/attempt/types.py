@@ -560,11 +560,11 @@ class AggregatedResults(BaseModel):
 
 
 class PreviousChatOption(BaseModel):
-    """A single scenario's best previous graded chat."""
+    """A single chat_entry's best previous graded attempt_chat."""
 
-    scenario_id: str | None = None
+    chat_entry_id: str | None = None
     scenario_name: str | None = None
-    previous_chat_id: str | None = None
+    attempt_chat_id: str | None = None
     score: float | None = None
     percentage: float | None = None
     time_taken: float | None = None

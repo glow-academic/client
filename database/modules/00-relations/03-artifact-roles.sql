@@ -1,4 +1,0 @@
--- Module: artifact-roles
--- Category: relations
--- Description: artifact-roles relation data
--- ============================================================

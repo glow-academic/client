@@ -1,4 +1,0 @@
--- Module: artifact-outputs
--- Category: relations
--- Description: artifact-outputs relation data
--- ============================================================

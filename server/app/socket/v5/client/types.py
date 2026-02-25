@@ -322,9 +322,9 @@ class AttemptEndedEvent(BaseModel):
 
 
 class AttemptUsePreviousPayload(BaseModel):
-    """Client-to-server: copy grades from a previous attempt's chats.
+    """Client-to-server: reuse attempt_chats from a previous attempt.
 
-    previous_chat_map: {scenario_id: previous_chat_id}
+    previous_chat_map: {chat_entry_id: attempt_chat_id}
     """
 
     attempt_id: UUID

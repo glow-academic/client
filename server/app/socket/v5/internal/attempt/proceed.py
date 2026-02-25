@@ -87,6 +87,7 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
         profile_id = uuid.UUID(profile_id_str)
         attempt_id = uuid.UUID(payload.attempt_id)
         force_proceed = payload.force_proceed
+        draft_id = uuid.UUID(payload.draft_id) if payload.draft_id else None
 
         # Step 2: Get all context in one SQL call
         async with get_db_connection() as conn:
@@ -223,6 +224,7 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
                 chat_entry_id=chat_entry_id,
                 department_id=department_id,
                 attempt_chat_id=attempt_chat_id,
+                draft_id=draft_id,
                 resource_types=resource_types_to_generate,
             )
         else:

@@ -1,4 +1,0 @@
--- Module: resource-flags
--- Category: relations
--- Description: resource-flags relation data
--- ============================================================

@@ -251,10 +251,6 @@ echo ""
 echo "=== Assembling seed SQL from modules ==="
 echo ""
 
-# --- 00-relations: Always loaded -----------------------------------------------
-echo "Loading 00-relations/ (always included) ..."
-add_dir_sorted "$modules_dir/00-relations"
-
 # --- 01-resources: Always loaded -----------------------------------------------
 echo "Loading 01-resources/ (always included) ..."
 add_dir_sorted "$modules_dir/01-resources"
@@ -348,9 +344,6 @@ load_root_module "evals" "08-evals"
 
 # --- 09-profiles --------------------------------------------------------------
 load_root_module "profiles" "09-profiles"
-
-# --- 10-settings --------------------------------------------------------------
-load_root_module "settings" "10-settings"
 
 # --- 11-setups: Organization --------------------------------------------------
 load_setup_categories "organization"

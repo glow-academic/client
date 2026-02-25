@@ -128,8 +128,8 @@ export function AttemptLobby({
     // Build previous_chat_map from selected option's scenarios
     const previousChatMap: Record<string, string> = {};
     for (const scenario of selected.scenarios) {
-      if (scenario.scenario_id && scenario.previous_chat_id) {
-        previousChatMap[scenario.scenario_id] = scenario.previous_chat_id;
+      if (scenario.chat_entry_id && scenario.attempt_chat_id) {
+        previousChatMap[scenario.chat_entry_id] = scenario.attempt_chat_id;
       }
     }
 

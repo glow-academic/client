@@ -1,4 +1,0 @@
--- Module: artifact-units
--- Category: relations
--- Description: artifact-units relation data
--- ============================================================

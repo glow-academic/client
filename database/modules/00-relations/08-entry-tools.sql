@@ -1,4 +1,0 @@
--- Module: entry-tools
--- Category: relations
--- Description: entry-tools relation data
--- ============================================================

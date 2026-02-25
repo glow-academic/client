@@ -1,4 +1,0 @@
--- Module: artifact-views
--- Category: relations
--- Description: artifact-views relation data
--- ============================================================

@@ -1,4 +1,0 @@
--- Module: view-outputs
--- Category: relations
--- Description: view-outputs relation data
--- ============================================================

@@ -10,7 +10,6 @@ modules:
   rubrics: all
   evals: all
   profiles: all
-  settings: all
 
   setup: organization
 

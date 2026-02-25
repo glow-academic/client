@@ -1,4 +1,0 @@
--- Module: view-resources
--- Category: relations
--- Description: view-resources relation data
--- ============================================================

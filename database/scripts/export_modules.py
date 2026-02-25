@@ -8,7 +8,6 @@ ON CONFLICT DO NOTHING for idempotency.
 
 Usage:
     python export_modules.py            # Export all modules
-    python export_modules.py relations  # Export only 00-relations/
     python export_modules.py resources  # Export only 01-resources/
     python export_modules.py providers  # Export only 02-providers/
     python export_modules.py models     # Export only 03-models/
@@ -2301,7 +2300,6 @@ async def main() -> None:
         print()
 
         dispatch: dict[str, Any] = {
-            "relations": export_relations,
             "resources": export_resources,
             "providers": export_providers,
             "models": export_models,
@@ -2311,7 +2309,6 @@ async def main() -> None:
             "rubrics": export_rubrics,
             "evals": export_evals,
             "profiles": export_base_profiles,
-            "settings": export_base_settings,
             "documents": export_setup_documents,
             "uploads": export_uploads,
             "texts": export_texts,
@@ -2321,8 +2318,6 @@ async def main() -> None:
 
         if target == "all":
             print("=== Exporting all modular seed data ===\n")
-            await export_relations(conn)
-            print()
             await export_resources(conn)
             print()
             await export_providers(conn)
@@ -2341,8 +2336,6 @@ async def main() -> None:
             print()
             await export_base_profiles(conn)
             print()
-            await export_base_settings(conn)
-            print()
             await export_setup(conn)
             print()
             print("=== Export complete ===")
@@ -2351,11 +2344,10 @@ async def main() -> None:
             await dispatch[target](conn)
         else:
             print(
-                f"Usage: {sys.argv[0]} {{all|relations|resources|providers|models|agents|tools|auth|setup}}"
+                f"Usage: {sys.argv[0]} {{all|resources|providers|models|agents|tools|auth|setup}}"
             )
             print()
             print("  all       - Export all modules (default)")
-            print("  relations - Export 00-relations/")
             print("  resources - Export 01-resources/")
             print("  providers - Export 02-providers/")
             print("  models    - Export 03-models/")
