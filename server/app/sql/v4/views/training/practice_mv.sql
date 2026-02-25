@@ -57,39 +57,6 @@ profile_agg AS (
     WHERE ppc.active = true
     GROUP BY ppc.practice_id
 ),
-rubric_agg AS (
-    SELECT
-        prc.practice_id,
-        ARRAY_AGG(DISTINCT prc.rubrics_id ORDER BY prc.rubrics_id) AS rubric_ids
-    FROM practice_rubrics_connection prc
-    WHERE prc.active = true
-    GROUP BY prc.practice_id
-),
-time_limit_agg AS (
-    SELECT
-        ptlc.practice_id,
-        ARRAY_AGG(DISTINCT ptlc.scenario_time_limits_id ORDER BY ptlc.scenario_time_limits_id) AS time_limit_ids
-    FROM practice_time_limits_connection ptlc
-    WHERE ptlc.active = true
-    GROUP BY ptlc.practice_id
-),
--- Simulation-level scenario resource connections
-flag_agg AS (
-    SELECT
-        psfc.practice_id,
-        ARRAY_AGG(DISTINCT psfc.scenario_flags_id ORDER BY psfc.scenario_flags_id) AS flag_ids
-    FROM practice_scenario_flags_connection psfc
-    WHERE psfc.active = true
-    GROUP BY psfc.practice_id
-),
-position_agg AS (
-    SELECT
-        pspc.practice_id,
-        ARRAY_AGG(DISTINCT pspc.scenario_positions_id ORDER BY pspc.scenario_positions_id) AS position_ids
-    FROM practice_scenario_positions_connection pspc
-    WHERE pspc.active = true
-    GROUP BY pspc.practice_id
-),
 -- Chat level connections (aggregated UP to practice_entry via practice_chat_entry)
 chat_agg AS (
     SELECT
@@ -117,12 +84,6 @@ SELECT
     COALESCE(coh.cohort_ids, ARRAY[]::uuid[]) AS cohort_ids,
     COALESCE(dep.department_ids, ARRAY[]::uuid[]) AS department_ids,
     COALESCE(prof.profile_ids, ARRAY[]::uuid[]) AS profile_ids,
-    COALESCE(rub.rubric_ids, ARRAY[]::uuid[]) AS rubric_ids,
-    COALESCE(tl.time_limit_ids, ARRAY[]::uuid[]) AS time_limit_ids,
-
-    -- Simulation-level scenario resource connections
-    COALESCE(flg.flag_ids, ARRAY[]::uuid[]) AS flag_ids,
-    COALESCE(pos.position_ids, ARRAY[]::uuid[]) AS position_ids,
 
     -- Aggregated UP from chat level
     COALESCE(trn.chat_ids, ARRAY[]::uuid[]) AS chat_ids,
@@ -137,10 +98,6 @@ LEFT JOIN simulation_agg sim ON sim.practice_id = pe.id
 LEFT JOIN cohort_agg coh ON coh.practice_id = pe.id
 LEFT JOIN department_agg dep ON dep.practice_id = pe.id
 LEFT JOIN profile_agg prof ON prof.practice_id = pe.id
-LEFT JOIN rubric_agg rub ON rub.practice_id = pe.id
-LEFT JOIN time_limit_agg tl ON tl.practice_id = pe.id
-LEFT JOIN flag_agg flg ON flg.practice_id = pe.id
-LEFT JOIN position_agg pos ON pos.practice_id = pe.id
 LEFT JOIN chat_agg trn ON trn.practice_id = pe.id
 LEFT JOIN scenario_agg scn ON scn.practice_id = pe.id
 WHERE pe.active = true

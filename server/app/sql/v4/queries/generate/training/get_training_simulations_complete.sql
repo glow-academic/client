@@ -79,9 +79,7 @@ accessible_training AS (
         mh.simulation_ids,
         mh.cohort_ids,
         mh.chat_ids AS chat_entry_ids,
-        mh.scenario_ids,
-        mh.rubric_ids,
-        mh.time_limit_ids
+        mh.scenario_ids
     FROM home_mv mh
     JOIN user_cohorts uc ON mh.cohort_ids && COALESCE(uc.cohort_ids, ARRAY[]::uuid[])
     WHERE (SELECT practice FROM params) = false
@@ -93,9 +91,7 @@ accessible_training AS (
         mp.simulation_ids,
         mp.cohort_ids,
         mp.chat_ids AS chat_entry_ids,
-        mp.scenario_ids,
-        mp.rubric_ids,
-        mp.time_limit_ids
+        mp.scenario_ids
     FROM practice_mv mp
     JOIN user_cohorts uc ON mp.cohort_ids && COALESCE(uc.cohort_ids, ARRAY[]::uuid[])
     WHERE (SELECT practice FROM params) = true
@@ -233,7 +229,6 @@ simulation_stats AS (
     JOIN attempt_entry a
       ON a.id = apc.attempt_id
      AND a.active = true
-     AND a.practice = (SELECT practice FROM params)
     LEFT JOIN LATERAL (
         SELECT archived FROM attempt_archive_entry
         WHERE attempt_id = a.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
@@ -244,6 +239,10 @@ simulation_stats AS (
     LEFT JOIN practice_simulations_connection psc ON psc.practice_id = ape.practice_id AND psc.active = true
     LEFT JOIN latest_attempt_grades lag ON lag.attempt_id = a.id
     WHERE COALESCE(sa_archive2.archived, false) = false
+      AND (
+          ((SELECT practice FROM params) = false AND ahc.attempt_id IS NOT NULL)
+          OR ((SELECT practice FROM params) = true AND ape.attempt_id IS NOT NULL)
+      )
     GROUP BY COALESCE(hsc.simulations_id, psc.simulations_id)
 ),
 simulation_data_with_stats AS (

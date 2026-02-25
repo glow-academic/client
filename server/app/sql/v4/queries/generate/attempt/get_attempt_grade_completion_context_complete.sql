@@ -32,13 +32,15 @@ SELECT
     g.id AS grade_id,
     g.chat_id,
     ac.attempt_id,
-    sas.simulations_id AS simulation_id
+    COALESCE(home_sim.simulations_id, prac_sim.simulations_id) AS simulation_id
 FROM attempt_grade_entry g
 JOIN chat_resolved_entry c ON c.id = g.chat_id
 JOIN attempt_chat_entry ac ON ac.chat_resolved_id = c.id
-LEFT JOIN attempt_simulations_connection sas
-    ON sas.attempt_id = ac.attempt_id
-   AND sas.active = true
+JOIN attempt_entry a ON a.id = ac.attempt_id
+LEFT JOIN attempt_home_entry ahe ON ahe.attempt_id = a.id AND ahe.active = true
+LEFT JOIN attempt_practice_entry ape ON ape.attempt_id = a.id AND ape.active = true
+LEFT JOIN home_simulations_connection home_sim ON home_sim.home_id = ahe.home_id AND home_sim.active = true
+LEFT JOIN practice_simulations_connection prac_sim ON prac_sim.practice_id = ape.practice_id AND prac_sim.active = true
 WHERE g.run_id = p_run_id
 ORDER BY g.created_at DESC
 LIMIT 1

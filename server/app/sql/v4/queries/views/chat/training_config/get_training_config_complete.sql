@@ -104,8 +104,8 @@ AS $$
         LEFT JOIN home_entry he ON he.id = hte.home_id
         LEFT JOIN practice_chat_entry pte ON pte.chat_id = tb.id
         LEFT JOIN practice_entry pe ON pe.id = pte.practice_id
-        LEFT JOIN chat_resolved_time_limits_connection tdtl ON tdtl.chat_resolved_id = tbd.id AND tdtl.active = true
-        LEFT JOIN scenario_time_limits_resource stlr ON stlr.id = tdtl.scenario_time_limits_id AND stlr.active = true
+        LEFT JOIN chat_scenario_time_limits_connection ctlc ON ctlc.chat_id = tb.id AND ctlc.active = true
+        LEFT JOIN scenario_time_limits_resource stlr ON stlr.id = ctlc.scenario_time_limits_id AND stlr.active = true
         LEFT JOIN chat_resolved_scenarios_connection tsc ON tsc.chat_resolved_id = tbd.id AND tsc.active = true
         LEFT JOIN chat_resolved_rubrics_connection trc ON trc.chat_resolved_id = tbd.id AND trc.active = true
         LEFT JOIN chat_resolved_problem_statements_connection tpsc ON tpsc.chat_resolved_id = tbd.id AND tpsc.active = true
@@ -117,8 +117,9 @@ AS $$
         LEFT JOIN chat_resolved_documents_connection tdc ON tdc.chat_resolved_id = tbd.id AND tdc.active = true
         LEFT JOIN chat_resolved_standard_groups_connection tsgc ON tsgc.chat_resolved_id = tbd.id AND tsgc.active = true
         LEFT JOIN chat_resolved_standards_connection tsc2 ON tsc2.chat_resolved_id = tbd.id AND tsc2.active = true
-        LEFT JOIN chat_resolved_profile_personas_connection tppc ON tppc.chat_resolved_id = tbd.id AND tppc.active = true
-        LEFT JOIN profile_personas_resource ppr ON ppr.id = tppc.profile_personas_id AND ppr.active = true
+        LEFT JOIN home_profile_personas_connection hppc ON hppc.home_id = hte.home_id AND hppc.active = true
+        LEFT JOIN practice_profile_personas_connection pppc ON pppc.practice_id = pte.practice_id AND pppc.active = true
+        LEFT JOIN profile_personas_resource ppr ON ppr.id = COALESCE(hppc.profile_personas_id, pppc.profile_personas_id) AND ppr.active = true
         WHERE tbd.id = ANY(chat_resolved_ids)
           AND tbd.active = true
         GROUP BY

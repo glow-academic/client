@@ -57,39 +57,6 @@ profile_agg AS (
     WHERE hpc.active = true
     GROUP BY hpc.home_id
 ),
-rubric_agg AS (
-    SELECT
-        hrc.home_id,
-        ARRAY_AGG(DISTINCT hrc.scenario_rubrics_id ORDER BY hrc.scenario_rubrics_id) AS rubric_ids
-    FROM home_rubrics_connection hrc
-    WHERE hrc.active = true
-    GROUP BY hrc.home_id
-),
-time_limit_agg AS (
-    SELECT
-        htlc.home_id,
-        ARRAY_AGG(DISTINCT htlc.scenario_time_limits_id ORDER BY htlc.scenario_time_limits_id) AS time_limit_ids
-    FROM home_time_limits_connection htlc
-    WHERE htlc.active = true
-    GROUP BY htlc.home_id
-),
--- Simulation-level scenario resource connections
-flag_agg AS (
-    SELECT
-        hsfc.home_id,
-        ARRAY_AGG(DISTINCT hsfc.scenario_flags_id ORDER BY hsfc.scenario_flags_id) AS flag_ids
-    FROM home_scenario_flags_connection hsfc
-    WHERE hsfc.active = true
-    GROUP BY hsfc.home_id
-),
-position_agg AS (
-    SELECT
-        hspc.home_id,
-        ARRAY_AGG(DISTINCT hspc.scenario_positions_id ORDER BY hspc.scenario_positions_id) AS position_ids
-    FROM home_scenario_positions_connection hspc
-    WHERE hspc.active = true
-    GROUP BY hspc.home_id
-),
 -- Chat level connections (aggregated UP to home_entry via home_chat_entry)
 chat_agg AS (
     SELECT
@@ -117,12 +84,6 @@ SELECT
     COALESCE(coh.cohort_ids, ARRAY[]::uuid[]) AS cohort_ids,
     COALESCE(dep.department_ids, ARRAY[]::uuid[]) AS department_ids,
     COALESCE(prof.profile_ids, ARRAY[]::uuid[]) AS profile_ids,
-    COALESCE(rub.rubric_ids, ARRAY[]::uuid[]) AS rubric_ids,
-    COALESCE(tl.time_limit_ids, ARRAY[]::uuid[]) AS time_limit_ids,
-
-    -- Simulation-level scenario resource connections
-    COALESCE(flg.flag_ids, ARRAY[]::uuid[]) AS flag_ids,
-    COALESCE(pos.position_ids, ARRAY[]::uuid[]) AS position_ids,
 
     -- Aggregated UP from chat level
     COALESCE(trn.chat_ids, ARRAY[]::uuid[]) AS chat_ids,
@@ -137,10 +98,6 @@ LEFT JOIN simulation_agg sim ON sim.home_id = he.id
 LEFT JOIN cohort_agg coh ON coh.home_id = he.id
 LEFT JOIN department_agg dep ON dep.home_id = he.id
 LEFT JOIN profile_agg prof ON prof.home_id = he.id
-LEFT JOIN rubric_agg rub ON rub.home_id = he.id
-LEFT JOIN time_limit_agg tl ON tl.home_id = he.id
-LEFT JOIN flag_agg flg ON flg.home_id = he.id
-LEFT JOIN position_agg pos ON pos.home_id = he.id
 LEFT JOIN chat_agg trn ON trn.home_id = he.id
 LEFT JOIN scenario_agg scn ON scn.home_id = he.id
 WHERE he.active = true

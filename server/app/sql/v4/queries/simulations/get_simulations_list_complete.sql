@@ -107,13 +107,17 @@ simulation_scenarios_data AS (
     JOIN scenarios_resource sr ON sr.id = scen_id
     GROUP BY ssj.simulation_id
 ),
--- Attempt counts via attempt_simulations_connection
+-- Attempt counts derived from parent home/practice connections
 attempt_counts AS (
     SELECT
         ssj.simulation_id,
-        COUNT(DISTINCT sac.attempt_id) as attempt_count
+        COUNT(DISTINCT a.id) as attempt_count
     FROM simulation_simulations_junction ssj
-    JOIN attempt_simulations_connection sac ON sac.simulations_id = ssj.simulations_id
+    LEFT JOIN home_simulations_connection hsc ON hsc.simulations_id = ssj.simulations_id AND hsc.active = true
+    LEFT JOIN attempt_home_entry ahe ON ahe.home_id = hsc.home_id AND ahe.active = true
+    LEFT JOIN practice_simulations_connection psc ON psc.simulations_id = ssj.simulations_id AND psc.active = true
+    LEFT JOIN attempt_practice_entry ape ON ape.practice_id = psc.practice_id AND ape.active = true
+    LEFT JOIN attempt_entry a ON (a.id = ahe.attempt_id OR a.id = ape.attempt_id) AND a.active = true
     GROUP BY ssj.simulation_id
 ),
 -- Cohort data via cohorts_resource.simulation_ids (reverse lookup, replaces view_simulation_edit_state + cohort_simulations_junction)

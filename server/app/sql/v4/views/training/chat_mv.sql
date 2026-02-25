@@ -58,14 +58,6 @@ parameter_field_agg AS (
     WHERE tbpfc.active = true
     GROUP BY tbpfc.chat_id
 ),
-parameter_agg AS (
-    SELECT
-        tbpc.chat_id,
-        ARRAY_AGG(DISTINCT tbpc.parameters_id ORDER BY tbpc.parameters_id) AS parameter_ids
-    FROM chat_parameters_connection tbpc
-    WHERE tbpc.active = true
-    GROUP BY tbpc.chat_id
-),
 question_agg AS (
     SELECT
         tbqc.chat_id,
@@ -177,7 +169,6 @@ SELECT
     COALESCE(dep.department_ids, ARRAY[]::uuid[]) AS department_ids,
     COALESCE(doc.document_ids, ARRAY[]::uuid[]) AS document_ids,
     COALESCE(pf.parameter_field_ids, ARRAY[]::uuid[]) AS parameter_field_ids,
-    COALESCE(par.parameter_ids, ARRAY[]::uuid[]) AS parameter_ids,
     COALESCE(que.question_ids, ARRAY[]::uuid[]) AS question_ids,
     COALESCE(opt.option_ids, ARRAY[]::uuid[]) AS option_ids,
     COALESCE(vid.video_ids, ARRAY[]::uuid[]) AS video_ids,
@@ -206,7 +197,6 @@ LEFT JOIN scenario_single ss ON ss.chat_id = tbe.id
 LEFT JOIN department_agg dep ON dep.chat_id = tbe.id
 LEFT JOIN document_agg doc ON doc.chat_id = tbe.id
 LEFT JOIN parameter_field_agg pf ON pf.chat_id = tbe.id
-LEFT JOIN parameter_agg par ON par.chat_id = tbe.id
 LEFT JOIN question_agg que ON que.chat_id = tbe.id
 LEFT JOIN option_agg opt ON opt.chat_id = tbe.id
 LEFT JOIN video_agg vid ON vid.chat_id = tbe.id

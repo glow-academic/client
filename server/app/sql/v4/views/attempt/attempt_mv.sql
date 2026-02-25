@@ -61,14 +61,14 @@ SELECT
     -- Primary key
     a.id AS attempt_id,
 
-    -- Resource IDs (from connections for _resource joins at runtime)
-    asc_conn.simulations_id AS simulation_id,
+    -- Resource IDs (derived from parent home/practice connections)
+    COALESCE(home_sim.simulations_id, prac_sim.simulations_id) AS simulation_id,
     apc.profiles_id AS profile_id,
-    acc.cohorts_id AS cohort_id,
-    adc.departments_id AS department_id,
+    COALESCE(home_coh.cohorts_id, prac_coh.cohorts_id) AS cohort_id,
+    COALESCE(home_dep.departments_id, prac_dep.departments_id) AS department_id,
 
-    -- Practice flag (exposed as column for filtering)
-    COALESCE(a.practice, FALSE) AS practice,
+    -- Practice flag (derived from which bridge table has a row)
+    (ape.attempt_id IS NOT NULL) AS practice,
 
     -- Attempt timestamps and flags
     a.created_at AS attempt_created_at,
@@ -86,11 +86,17 @@ SELECT
 
 FROM attempt_entry a
 -- Attempt connections (required)
-JOIN attempt_simulations_connection asc_conn ON asc_conn.attempt_id = a.id
 JOIN attempt_profiles_connection apc ON apc.attempt_id = a.id
--- Attempt connections (optional)
-LEFT JOIN attempt_departments_connection adc ON adc.attempt_id = a.id
-LEFT JOIN attempt_cohorts_connection acc ON acc.attempt_id = a.id
+-- Parent bridges
+LEFT JOIN attempt_home_entry ahe ON ahe.attempt_id = a.id AND ahe.active = true
+LEFT JOIN attempt_practice_entry ape ON ape.attempt_id = a.id AND ape.active = true
+-- Derive simulation/cohort/department from parent home/practice connections
+LEFT JOIN home_simulations_connection home_sim ON home_sim.home_id = ahe.home_id AND home_sim.active = true
+LEFT JOIN practice_simulations_connection prac_sim ON prac_sim.practice_id = ape.practice_id AND prac_sim.active = true
+LEFT JOIN home_cohorts_connection home_coh ON home_coh.home_id = ahe.home_id AND home_coh.active = true
+LEFT JOIN practice_cohorts_connection prac_coh ON prac_coh.practice_id = ape.practice_id AND prac_coh.active = true
+LEFT JOIN home_departments_connection home_dep ON home_dep.home_id = ahe.home_id AND home_dep.active = true
+LEFT JOIN practice_departments_connection prac_dep ON prac_dep.practice_id = ape.practice_id AND prac_dep.active = true
 -- Scenario IDs (optional)
 LEFT JOIN attempt_scenarios ascn ON ascn.attempt_id = a.id
 -- Training context: resolve chat_entry_id + chat_resolved_id (LATERAL for 1:1)
@@ -99,9 +105,7 @@ LEFT JOIN LATERAL (
         COALESCE(pte.chat_id, hte.chat_id) AS chat_entry_id,
         cr.id AS chat_resolved_id
     FROM (SELECT 1) _dummy
-    LEFT JOIN attempt_practice_entry ape ON ape.attempt_id = a.id AND ape.active = true
     LEFT JOIN practice_chat_entry pte ON pte.practice_id = ape.practice_id AND pte.active = true
-    LEFT JOIN attempt_home_entry ahe ON ahe.attempt_id = a.id AND ahe.active = true
     LEFT JOIN home_chat_entry hte ON hte.home_id = ahe.home_id AND hte.active = true
     LEFT JOIN attempt_chat_entry ac_ctx ON ac_ctx.attempt_id = a.id
     LEFT JOIN chat_resolved_entry cr ON cr.id = ac_ctx.chat_resolved_id AND cr.active = true

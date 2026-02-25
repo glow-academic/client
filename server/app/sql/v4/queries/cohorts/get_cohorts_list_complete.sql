@@ -121,13 +121,17 @@ cohort_departments_data AS (
     WHERE cd.active = true
     GROUP BY cd.cohort_id
 ),
--- Usage count: count of simulation attempts linked to this cohort's resource
+-- Usage count: count of attempts linked to this cohort via home/practice connections
 cohort_usage AS (
     SELECT
         crb.cohort_id,
-        COUNT(DISTINCT sac.attempt_id)::bigint as usage_count
+        COUNT(DISTINCT a.id)::bigint as usage_count
     FROM cohort_resource_bridge crb
-    JOIN attempt_cohorts_connection sac ON sac.cohorts_id = crb.resource_id AND sac.active = true
+    LEFT JOIN home_cohorts_connection hcc ON hcc.cohorts_id = crb.resource_id AND hcc.active = true
+    LEFT JOIN attempt_home_entry ahe ON ahe.home_id = hcc.home_id AND ahe.active = true
+    LEFT JOIN practice_cohorts_connection pcc ON pcc.cohorts_id = crb.resource_id AND pcc.active = true
+    LEFT JOIN attempt_practice_entry ape ON ape.practice_id = pcc.practice_id AND ape.active = true
+    LEFT JOIN attempt_entry a ON (a.id = ahe.attempt_id OR a.id = ape.attempt_id) AND a.active = true
     GROUP BY crb.cohort_id
 ),
 -- Profiles per cohort via denormalized cohorts_resource.profile_ids

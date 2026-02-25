@@ -36,14 +36,18 @@ LANGUAGE sql
 STABLE
 AS $$
 WITH chat_info AS (
-    -- Get chat and related IDs
+    -- Get chat and related IDs (simulation derived from parent home/practice)
     SELECT
         c.id as chat_id,
         ac.attempt_id,
-        sas.simulations_id as simulation_id
+        COALESCE(home_sim.simulations_id, prac_sim.simulations_id) as simulation_id
     FROM chat_resolved_entry c
     JOIN attempt_chat_entry ac ON ac.chat_resolved_id = c.id
-    JOIN attempt_simulations_connection sas ON sas.attempt_id = ac.attempt_id AND sas.active = true
+    JOIN attempt_entry a ON a.id = ac.attempt_id
+    LEFT JOIN attempt_home_entry ahe ON ahe.attempt_id = a.id AND ahe.active = true
+    LEFT JOIN attempt_practice_entry ape ON ape.attempt_id = a.id AND ape.active = true
+    LEFT JOIN home_simulations_connection home_sim ON home_sim.home_id = ahe.home_id AND home_sim.active = true
+    LEFT JOIN practice_simulations_connection prac_sim ON prac_sim.practice_id = ape.practice_id AND prac_sim.active = true
     WHERE c.id = p_chat_id
     LIMIT 1
 ),

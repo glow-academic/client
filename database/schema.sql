@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict zytfOjDVPB3x0BRAZYNYgxmYTaxAnpYNvDJ5FcdGaaMJ0whn47hToIsqYmi1hEU
+\restrict oPjbJpcDGGpEgIc2lqVXwgfUQoebcSShOF4w3xsgoo1AfA4bgg2iUxxIwcg6Ksm
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -30005,26 +30005,12 @@ CREATE TABLE public.attempt_archive_entry (
 --
 
 CREATE TABLE public.attempt_chat_entry (
-    attempt_id uuid CONSTRAINT attempt_chat_bridge_attempt_id_not_null NOT NULL,
-    chat_resolved_id uuid CONSTRAINT attempt_chat_bridge_chat_resolved_id_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT attempt_chat_bridge_created_at_not_null NOT NULL,
-    active boolean DEFAULT true CONSTRAINT attempt_chat_bridge_active_not_null NOT NULL,
-    generated boolean DEFAULT false CONSTRAINT attempt_chat_bridge_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT attempt_chat_bridge_mcp_not_null NOT NULL
-);
-
-
---
--- Name: attempt_cohorts_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.attempt_cohorts_connection (
-    attempt_id uuid CONSTRAINT simulation_attempts_cohorts_connection_attempt_id_not_null NOT NULL,
-    cohorts_id uuid CONSTRAINT simulation_attempts_cohorts_connection_cohorts_id_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_attempts_cohorts_connection_created_at_not_null NOT NULL,
-    active boolean DEFAULT true CONSTRAINT simulation_attempts_cohorts_connection_active_not_null NOT NULL,
-    generated boolean DEFAULT false CONSTRAINT simulation_attempts_cohorts_connection_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT simulation_attempts_cohorts_connection_mcp_not_null NOT NULL
+    attempt_id uuid NOT NULL,
+    chat_resolved_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -30062,32 +30048,17 @@ CREATE TABLE public.attempt_content_entry (
 
 
 --
--- Name: attempt_departments_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.attempt_departments_connection (
-    attempt_id uuid CONSTRAINT simulation_attempts_departments_connection_attempt_id_not_null NOT NULL,
-    departments_id uuid CONSTRAINT simulation_attempts_departments_connect_departments_id_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_attempts_departments_connection_created_at_not_null NOT NULL,
-    active boolean DEFAULT true CONSTRAINT simulation_attempts_departments_connection_active_not_null NOT NULL,
-    generated boolean DEFAULT false CONSTRAINT simulation_attempts_departments_connection_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT simulation_attempts_departments_connection_mcp_not_null NOT NULL
-);
-
-
---
 -- Name: attempt_entry; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.attempt_entry (
-    id uuid DEFAULT uuidv7() CONSTRAINT simulation_attempts_entry_id_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_attempts_entry_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_attempts_entry_updated_at_not_null NOT NULL,
-    infinite_mode boolean DEFAULT false CONSTRAINT simulation_attempts_entry_infinite_mode_not_null NOT NULL,
-    practice boolean DEFAULT false CONSTRAINT simulation_attempts_entry_practice_not_null NOT NULL,
-    generated boolean DEFAULT false CONSTRAINT simulation_attempts_entry_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT simulation_attempts_entry_mcp_not_null NOT NULL,
-    active boolean DEFAULT true CONSTRAINT simulation_attempts_entry_active_not_null NOT NULL
+    id uuid DEFAULT uuidv7() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    infinite_mode boolean DEFAULT false NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    active boolean DEFAULT true NOT NULL
 );
 
 
@@ -30233,12 +30204,11 @@ CREATE TABLE public.attempt_insights_entry (
 --
 
 CREATE TABLE public.attempt_message_entry (
-    id uuid DEFAULT uuidv7() CONSTRAINT simulation_messages_entry_id_not_null NOT NULL,
-    chat_id uuid CONSTRAINT simulation_messages_entry_chat_id_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_messages_entry_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_messages_entry_updated_at_not_null NOT NULL,
-    message_id uuid,
-    simulation_type public.simulation_message_type
+    id uuid DEFAULT uuidv7() NOT NULL,
+    chat_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    message_id uuid
 );
 
 
@@ -30300,34 +30270,6 @@ CREATE TABLE public.attempt_replacement_entry (
     generated boolean DEFAULT false CONSTRAINT simulation_replacements_entry_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT simulation_replacements_entry_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT simulation_replacements_entry_active_not_null NOT NULL
-);
-
-
---
--- Name: attempt_roles_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.attempt_roles_connection (
-    attempt_id uuid CONSTRAINT simulation_attempts_roles_connection_attempt_id_not_null NOT NULL,
-    roles_id uuid CONSTRAINT simulation_attempts_roles_connection_roles_id_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_attempts_roles_connection_created_at_not_null NOT NULL,
-    active boolean DEFAULT true CONSTRAINT simulation_attempts_roles_connection_active_not_null NOT NULL,
-    generated boolean DEFAULT false CONSTRAINT simulation_attempts_roles_connection_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT simulation_attempts_roles_connection_mcp_not_null NOT NULL
-);
-
-
---
--- Name: attempt_simulations_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.attempt_simulations_connection (
-    attempt_id uuid CONSTRAINT simulation_attempts_simulations_connection_attempt_id_not_null NOT NULL,
-    simulations_id uuid CONSTRAINT simulation_attempts_simulations_connect_simulations_id_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_attempts_simulations_connection_created_at_not_null NOT NULL,
-    active boolean DEFAULT true CONSTRAINT simulation_attempts_simulations_connection_active_not_null NOT NULL,
-    generated boolean DEFAULT false CONSTRAINT simulation_attempts_simulations_connection_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT simulation_attempts_simulations_connection_mcp_not_null NOT NULL
 );
 
 
@@ -31244,20 +31186,6 @@ CREATE TABLE public.chat_entry (
 
 
 --
--- Name: chat_fields_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.chat_fields_connection (
-    chat_id uuid CONSTRAINT training_bundle_fields_connection_training_bundle_id_not_null NOT NULL,
-    fields_id uuid CONSTRAINT training_bundle_fields_connection_fields_id_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT training_bundle_fields_connection_created_at_not_null NOT NULL,
-    active boolean DEFAULT true CONSTRAINT training_bundle_fields_connection_active_not_null NOT NULL,
-    generated boolean DEFAULT false CONSTRAINT training_bundle_fields_connection_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT training_bundle_fields_connection_mcp_not_null NOT NULL
-);
-
-
---
 -- Name: chat_flags_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -31342,16 +31270,16 @@ CREATE TABLE public.chat_parameter_fields_connection (
 
 
 --
--- Name: chat_parameters_connection; Type: TABLE; Schema: public; Owner: -
+-- Name: chat_personas_connection; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.chat_parameters_connection (
-    chat_id uuid CONSTRAINT training_bundle_parameters_connecti_training_bundle_id_not_null NOT NULL,
-    parameters_id uuid CONSTRAINT training_bundle_parameters_connection_parameters_id_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT training_bundle_parameters_connection_created_at_not_null NOT NULL,
-    active boolean DEFAULT true CONSTRAINT training_bundle_parameters_connection_active_not_null NOT NULL,
-    generated boolean DEFAULT false CONSTRAINT training_bundle_parameters_connection_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT training_bundle_parameters_connection_mcp_not_null NOT NULL
+CREATE TABLE public.chat_personas_connection (
+    chat_id uuid NOT NULL,
+    personas_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -31402,17 +31330,16 @@ CREATE TABLE public.chat_resolved_documents_connection (
 --
 
 CREATE TABLE public.chat_resolved_entry (
-    id uuid DEFAULT uuidv7() CONSTRAINT simulation_chats_entry_id_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_chats_entry_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_chats_entry_updated_at_not_null NOT NULL,
-    title text DEFAULT ''::text CONSTRAINT simulation_chats_entry_title_not_null NOT NULL,
-    generated boolean DEFAULT false CONSTRAINT simulation_chats_entry_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT simulation_chats_entry_mcp_not_null NOT NULL,
-    active boolean DEFAULT true CONSTRAINT simulation_chats_entry_active_not_null NOT NULL,
+    id uuid DEFAULT uuidv7() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    title text DEFAULT ''::text NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    active boolean DEFAULT true NOT NULL,
     group_id uuid,
-    chat_id uuid CONSTRAINT attempt_chat_entry_chat_id_not_null NOT NULL,
-    departments_id uuid CONSTRAINT attempt_chat_entry_departments_id_not_null NOT NULL,
-    config_signature text CONSTRAINT attempt_chat_entry_config_signature_not_null NOT NULL
+    chat_id uuid NOT NULL,
+    config_signature text NOT NULL
 );
 
 
@@ -31501,20 +31428,6 @@ CREATE TABLE public.chat_resolved_problem_statements_connection (
 
 
 --
--- Name: chat_resolved_profile_personas_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.chat_resolved_profile_personas_connection (
-    chat_resolved_id uuid CONSTRAINT chat_resolved_profile_personas_connec_chat_resolved_id_not_null NOT NULL,
-    profile_personas_id uuid CONSTRAINT chat_resolved_profile_personas_con_profile_personas_id_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL
-);
-
-
---
 -- Name: chat_resolved_questions_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -31585,12 +31498,12 @@ CREATE TABLE public.chat_resolved_standards_connection (
 
 
 --
--- Name: chat_resolved_time_limits_connection; Type: TABLE; Schema: public; Owner: -
+-- Name: chat_resolved_videos_connection; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.chat_resolved_time_limits_connection (
+CREATE TABLE public.chat_resolved_videos_connection (
     chat_resolved_id uuid NOT NULL,
-    scenario_time_limits_id uuid CONSTRAINT chat_resolved_time_limits_conn_scenario_time_limits_id_not_null NOT NULL,
+    videos_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
@@ -31599,12 +31512,54 @@ CREATE TABLE public.chat_resolved_time_limits_connection (
 
 
 --
--- Name: chat_resolved_videos_connection; Type: TABLE; Schema: public; Owner: -
+-- Name: chat_rubrics_connection; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.chat_resolved_videos_connection (
-    chat_resolved_id uuid NOT NULL,
-    videos_id uuid NOT NULL,
+CREATE TABLE public.chat_rubrics_connection (
+    chat_id uuid NOT NULL,
+    rubrics_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
+);
+
+
+--
+-- Name: chat_scenario_flags_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.chat_scenario_flags_connection (
+    chat_id uuid NOT NULL,
+    scenario_flags_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
+);
+
+
+--
+-- Name: chat_scenario_positions_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.chat_scenario_positions_connection (
+    chat_id uuid NOT NULL,
+    scenario_positions_id uuid CONSTRAINT chat_scenario_positions_connecti_scenario_positions_id_not_null NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
+);
+
+
+--
+-- Name: chat_scenario_time_limits_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.chat_scenario_time_limits_connection (
+    chat_id uuid NOT NULL,
+    scenario_time_limits_id uuid CONSTRAINT chat_scenario_time_limits_conn_scenario_time_limits_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
@@ -33857,32 +33812,6 @@ CREATE TABLE public.highlights_entry (
 
 
 --
--- Name: hints_entry; Type: VIEW; Schema: public; Owner: -
---
-
-CREATE VIEW public.hints_entry AS
- SELECT h.id,
-    h.message_id,
-    h.hint,
-    ((row_number() OVER (PARTITION BY h.message_id ORDER BY h.created_at) - 1))::integer AS idx,
-    h.created_at,
-    h.updated_at,
-    h.generated,
-    h.mcp,
-    h.active,
-    h.call_id,
-        CASE
-            WHEN (a.practice IS TRUE) THEN 'practice'::text
-            ELSE 'general'::text
-        END AS type
-   FROM ((((public.attempt_hint_entry h
-     LEFT JOIN public.attempt_message_entry m ON ((m.id = h.message_id)))
-     LEFT JOIN public.chat_resolved_entry c ON ((c.id = m.chat_id)))
-     LEFT JOIN public.attempt_chat_entry ac ON ((ac.chat_resolved_id = c.id)))
-     LEFT JOIN public.attempt_entry a ON ((a.id = ac.attempt_id)));
-
-
---
 -- Name: home_chat_entry; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -33962,6 +33891,20 @@ CREATE TABLE public.home_insights_entry (
 
 
 --
+-- Name: home_profile_personas_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.home_profile_personas_connection (
+    home_id uuid NOT NULL,
+    profile_personas_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
+);
+
+
+--
 -- Name: home_profiles_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -33976,26 +33919,12 @@ CREATE TABLE public.home_profiles_connection (
 
 
 --
--- Name: home_rubrics_connection; Type: TABLE; Schema: public; Owner: -
+-- Name: home_simulation_availability_connection; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.home_rubrics_connection (
+CREATE TABLE public.home_simulation_availability_connection (
     home_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL,
-    scenario_rubrics_id uuid NOT NULL
-);
-
-
---
--- Name: home_scenario_flags_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.home_scenario_flags_connection (
-    home_id uuid NOT NULL,
-    scenario_flags_id uuid NOT NULL,
+    simulation_availability_id uuid CONSTRAINT home_simulation_availabilit_simulation_availability_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
@@ -34004,12 +33933,12 @@ CREATE TABLE public.home_scenario_flags_connection (
 
 
 --
--- Name: home_scenario_positions_connection; Type: TABLE; Schema: public; Owner: -
+-- Name: home_simulation_positions_connection; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.home_scenario_positions_connection (
+CREATE TABLE public.home_simulation_positions_connection (
     home_id uuid NOT NULL,
-    scenario_positions_id uuid CONSTRAINT home_scenario_positions_connecti_scenario_positions_id_not_null NOT NULL,
+    simulation_positions_id uuid CONSTRAINT home_simulation_positions_conn_simulation_positions_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
@@ -34024,20 +33953,6 @@ CREATE TABLE public.home_scenario_positions_connection (
 CREATE TABLE public.home_simulations_connection (
     home_id uuid NOT NULL,
     simulations_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL
-);
-
-
---
--- Name: home_time_limits_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.home_time_limits_connection (
-    home_id uuid NOT NULL,
-    scenario_time_limits_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
@@ -36327,6 +36242,20 @@ CREATE TABLE public.practice_insights_entry (
 
 
 --
+-- Name: practice_profile_personas_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.practice_profile_personas_connection (
+    practice_id uuid NOT NULL,
+    profile_personas_id uuid CONSTRAINT practice_profile_personas_connecti_profile_personas_id_not_null NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
+);
+
+
+--
 -- Name: practice_profiles_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -36341,12 +36270,12 @@ CREATE TABLE public.practice_profiles_connection (
 
 
 --
--- Name: practice_rubrics_connection; Type: TABLE; Schema: public; Owner: -
+-- Name: practice_simulation_availability_connection; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.practice_rubrics_connection (
-    practice_id uuid NOT NULL,
-    rubrics_id uuid NOT NULL,
+CREATE TABLE public.practice_simulation_availability_connection (
+    practice_id uuid CONSTRAINT practice_simulation_availability_connectio_practice_id_not_null NOT NULL,
+    simulation_availability_id uuid CONSTRAINT practice_simulation_availab_simulation_availability_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
@@ -36355,26 +36284,12 @@ CREATE TABLE public.practice_rubrics_connection (
 
 
 --
--- Name: practice_scenario_flags_connection; Type: TABLE; Schema: public; Owner: -
+-- Name: practice_simulation_positions_connection; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.practice_scenario_flags_connection (
+CREATE TABLE public.practice_simulation_positions_connection (
     practice_id uuid NOT NULL,
-    scenario_flags_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL
-);
-
-
---
--- Name: practice_scenario_positions_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.practice_scenario_positions_connection (
-    practice_id uuid NOT NULL,
-    scenario_positions_id uuid CONSTRAINT practice_scenario_positions_conn_scenario_positions_id_not_null NOT NULL,
+    simulation_positions_id uuid CONSTRAINT practice_simulation_positions__simulation_positions_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
@@ -36389,20 +36304,6 @@ CREATE TABLE public.practice_scenario_positions_connection (
 CREATE TABLE public.practice_simulations_connection (
     practice_id uuid NOT NULL,
     simulations_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL
-);
-
-
---
--- Name: practice_time_limits_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.practice_time_limits_connection (
-    practice_id uuid NOT NULL,
-    scenario_time_limits_id uuid CONSTRAINT practice_time_limits_connectio_scenario_time_limits_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
@@ -41080,11 +40981,19 @@ ALTER TABLE ONLY public.artifacts_resource
 
 
 --
--- Name: attempt_chat_entry attempt_chat_bridge_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: attempt_chat_entry attempt_chat_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.attempt_chat_entry
-    ADD CONSTRAINT attempt_chat_bridge_pkey PRIMARY KEY (attempt_id, chat_resolved_id);
+    ADD CONSTRAINT attempt_chat_entry_pkey PRIMARY KEY (attempt_id, chat_resolved_id);
+
+
+--
+-- Name: attempt_entry attempt_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_entry
+    ADD CONSTRAINT attempt_entry_pkey PRIMARY KEY (id);
 
 
 --
@@ -41101,6 +41010,14 @@ ALTER TABLE ONLY public.attempt_home_entry
 
 ALTER TABLE ONLY public.attempt_insights_entry
     ADD CONSTRAINT attempt_insights_entry_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: attempt_message_entry attempt_message_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_message_entry
+    ADD CONSTRAINT attempt_message_entry_pkey PRIMARY KEY (id);
 
 
 --
@@ -41688,11 +41605,27 @@ ALTER TABLE ONLY public.chat_drafts_profiles_connection
 
 
 --
+-- Name: chat_personas_connection chat_personas_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chat_personas_connection
+    ADD CONSTRAINT chat_personas_connection_pkey PRIMARY KEY (chat_id, personas_id);
+
+
+--
 -- Name: chat_resolved_documents_connection chat_resolved_documents_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.chat_resolved_documents_connection
     ADD CONSTRAINT chat_resolved_documents_connection_pkey PRIMARY KEY (chat_resolved_id, documents_id);
+
+
+--
+-- Name: chat_resolved_entry chat_resolved_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chat_resolved_entry
+    ADD CONSTRAINT chat_resolved_entry_pkey PRIMARY KEY (id);
 
 
 --
@@ -41744,14 +41677,6 @@ ALTER TABLE ONLY public.chat_resolved_problem_statements_connection
 
 
 --
--- Name: chat_resolved_profile_personas_connection chat_resolved_profile_personas_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.chat_resolved_profile_personas_connection
-    ADD CONSTRAINT chat_resolved_profile_personas_connection_pkey PRIMARY KEY (chat_resolved_id, profile_personas_id);
-
-
---
 -- Name: chat_resolved_questions_connection chat_resolved_questions_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -41792,19 +41717,43 @@ ALTER TABLE ONLY public.chat_resolved_standards_connection
 
 
 --
--- Name: chat_resolved_time_limits_connection chat_resolved_time_limits_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.chat_resolved_time_limits_connection
-    ADD CONSTRAINT chat_resolved_time_limits_connection_pkey PRIMARY KEY (chat_resolved_id, scenario_time_limits_id);
-
-
---
 -- Name: chat_resolved_videos_connection chat_resolved_videos_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.chat_resolved_videos_connection
     ADD CONSTRAINT chat_resolved_videos_connection_pkey PRIMARY KEY (chat_resolved_id, videos_id);
+
+
+--
+-- Name: chat_rubrics_connection chat_rubrics_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chat_rubrics_connection
+    ADD CONSTRAINT chat_rubrics_connection_pkey PRIMARY KEY (chat_id, rubrics_id);
+
+
+--
+-- Name: chat_scenario_flags_connection chat_scenario_flags_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chat_scenario_flags_connection
+    ADD CONSTRAINT chat_scenario_flags_connection_pkey PRIMARY KEY (chat_id, scenario_flags_id);
+
+
+--
+-- Name: chat_scenario_positions_connection chat_scenario_positions_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chat_scenario_positions_connection
+    ADD CONSTRAINT chat_scenario_positions_connection_pkey PRIMARY KEY (chat_id, scenario_positions_id);
+
+
+--
+-- Name: chat_scenario_time_limits_connection chat_scenario_time_limits_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chat_scenario_time_limits_connection
+    ADD CONSTRAINT chat_scenario_time_limits_connection_pkey PRIMARY KEY (chat_id, scenario_time_limits_id);
 
 
 --
@@ -43072,6 +43021,14 @@ ALTER TABLE ONLY public.home_insights_entry
 
 
 --
+-- Name: home_profile_personas_connection home_profile_personas_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.home_profile_personas_connection
+    ADD CONSTRAINT home_profile_personas_connection_pkey PRIMARY KEY (home_id, profile_personas_id);
+
+
+--
 -- Name: home_profiles_connection home_profiles_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -43080,27 +43037,19 @@ ALTER TABLE ONLY public.home_profiles_connection
 
 
 --
--- Name: home_rubrics_connection home_rubrics_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: home_simulation_availability_connection home_simulation_availability_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.home_rubrics_connection
-    ADD CONSTRAINT home_rubrics_connection_pkey PRIMARY KEY (home_id, scenario_rubrics_id);
-
-
---
--- Name: home_scenario_flags_connection home_scenario_flags_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.home_scenario_flags_connection
-    ADD CONSTRAINT home_scenario_flags_connection_pkey PRIMARY KEY (home_id, scenario_flags_id);
+ALTER TABLE ONLY public.home_simulation_availability_connection
+    ADD CONSTRAINT home_simulation_availability_connection_pkey PRIMARY KEY (home_id, simulation_availability_id);
 
 
 --
--- Name: home_scenario_positions_connection home_scenario_positions_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: home_simulation_positions_connection home_simulation_positions_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.home_scenario_positions_connection
-    ADD CONSTRAINT home_scenario_positions_connection_pkey PRIMARY KEY (home_id, scenario_positions_id);
+ALTER TABLE ONLY public.home_simulation_positions_connection
+    ADD CONSTRAINT home_simulation_positions_connection_pkey PRIMARY KEY (home_id, simulation_positions_id);
 
 
 --
@@ -43109,14 +43058,6 @@ ALTER TABLE ONLY public.home_scenario_positions_connection
 
 ALTER TABLE ONLY public.home_simulations_connection
     ADD CONSTRAINT home_simulations_connection_pkey PRIMARY KEY (home_id, simulations_id);
-
-
---
--- Name: home_time_limits_connection home_time_limits_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.home_time_limits_connection
-    ADD CONSTRAINT home_time_limits_connection_pkey PRIMARY KEY (home_id, scenario_time_limits_id);
 
 
 --
@@ -44088,6 +44029,14 @@ ALTER TABLE ONLY public.practice_insights_entry
 
 
 --
+-- Name: practice_profile_personas_connection practice_profile_personas_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.practice_profile_personas_connection
+    ADD CONSTRAINT practice_profile_personas_connection_pkey PRIMARY KEY (practice_id, profile_personas_id);
+
+
+--
 -- Name: practice_profiles_connection practice_profiles_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -44096,27 +44045,19 @@ ALTER TABLE ONLY public.practice_profiles_connection
 
 
 --
--- Name: practice_rubrics_connection practice_rubrics_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: practice_simulation_availability_connection practice_simulation_availability_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.practice_rubrics_connection
-    ADD CONSTRAINT practice_rubrics_connection_pkey PRIMARY KEY (practice_id, rubrics_id);
-
-
---
--- Name: practice_scenario_flags_connection practice_scenario_flags_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.practice_scenario_flags_connection
-    ADD CONSTRAINT practice_scenario_flags_connection_pkey PRIMARY KEY (practice_id, scenario_flags_id);
+ALTER TABLE ONLY public.practice_simulation_availability_connection
+    ADD CONSTRAINT practice_simulation_availability_connection_pkey PRIMARY KEY (practice_id, simulation_availability_id);
 
 
 --
--- Name: practice_scenario_positions_connection practice_scenario_positions_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: practice_simulation_positions_connection practice_simulation_positions_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.practice_scenario_positions_connection
-    ADD CONSTRAINT practice_scenario_positions_connection_pkey PRIMARY KEY (practice_id, scenario_positions_id);
+ALTER TABLE ONLY public.practice_simulation_positions_connection
+    ADD CONSTRAINT practice_simulation_positions_connection_pkey PRIMARY KEY (practice_id, simulation_positions_id);
 
 
 --
@@ -44125,14 +44066,6 @@ ALTER TABLE ONLY public.practice_scenario_positions_connection
 
 ALTER TABLE ONLY public.practice_simulations_connection
     ADD CONSTRAINT practice_simulations_connection_pkey PRIMARY KEY (practice_id, simulations_id);
-
-
---
--- Name: practice_time_limits_connection practice_time_limits_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.practice_time_limits_connection
-    ADD CONSTRAINT practice_time_limits_connection_pkey PRIMARY KEY (practice_id, scenario_time_limits_id);
 
 
 --
@@ -45672,51 +45605,11 @@ ALTER TABLE ONLY public.attempt_archive_entry
 
 
 --
--- Name: attempt_cohorts_connection simulation_attempts_cohorts_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_cohorts_connection
-    ADD CONSTRAINT simulation_attempts_cohorts_connection_pkey PRIMARY KEY (attempt_id, cohorts_id);
-
-
---
--- Name: attempt_departments_connection simulation_attempts_departments_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_departments_connection
-    ADD CONSTRAINT simulation_attempts_departments_connection_pkey PRIMARY KEY (attempt_id, departments_id);
-
-
---
--- Name: attempt_entry simulation_attempts_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_entry
-    ADD CONSTRAINT simulation_attempts_entry_pkey PRIMARY KEY (id);
-
-
---
 -- Name: attempt_profiles_connection simulation_attempts_profiles_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.attempt_profiles_connection
     ADD CONSTRAINT simulation_attempts_profiles_connection_pkey PRIMARY KEY (attempt_id, profiles_id);
-
-
---
--- Name: attempt_roles_connection simulation_attempts_roles_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_roles_connection
-    ADD CONSTRAINT simulation_attempts_roles_connection_pkey PRIMARY KEY (attempt_id, roles_id);
-
-
---
--- Name: attempt_simulations_connection simulation_attempts_simulations_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_simulations_connection
-    ADD CONSTRAINT simulation_attempts_simulations_connection_pkey PRIMARY KEY (attempt_id, simulations_id);
 
 
 --
@@ -45741,14 +45634,6 @@ ALTER TABLE ONLY public.simulation_availability_resource
 
 ALTER TABLE ONLY public.simulation_availability_resource
     ADD CONSTRAINT simulation_availability_resource_simulation_id_type_key UNIQUE (simulation_id, type);
-
-
---
--- Name: chat_resolved_entry simulation_chats_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.chat_resolved_entry
-    ADD CONSTRAINT simulation_chats_entry_pkey PRIMARY KEY (id);
 
 
 --
@@ -45949,14 +45834,6 @@ ALTER TABLE ONLY public.attempt_improvement_entry
 
 ALTER TABLE ONLY public.attempt_message_tree_entry
     ADD CONSTRAINT simulation_message_tree_entry_pkey PRIMARY KEY (parent_id, child_id);
-
-
---
--- Name: attempt_message_entry simulation_messages_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_message_entry
-    ADD CONSTRAINT simulation_messages_entry_pkey PRIMARY KEY (id);
 
 
 --
@@ -46576,14 +46453,6 @@ ALTER TABLE ONLY public.chat_entry
 
 
 --
--- Name: chat_fields_connection training_bundle_fields_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.chat_fields_connection
-    ADD CONSTRAINT training_bundle_fields_connection_pkey PRIMARY KEY (chat_id, fields_id);
-
-
---
 -- Name: chat_flags_connection training_bundle_flags_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -46629,14 +46498,6 @@ ALTER TABLE ONLY public.chat_options_connection
 
 ALTER TABLE ONLY public.chat_parameter_fields_connection
     ADD CONSTRAINT training_bundle_parameter_fields_connection_pkey PRIMARY KEY (chat_id, parameter_fields_id);
-
-
---
--- Name: chat_parameters_connection training_bundle_parameters_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.chat_parameters_connection
-    ADD CONSTRAINT training_bundle_parameters_connection_pkey PRIMARY KEY (chat_id, parameters_id);
 
 
 --
@@ -49012,6 +48873,27 @@ CREATE INDEX idx_attempt_insights_entry_group_id ON public.attempt_insights_entr
 
 
 --
+-- Name: idx_attempt_message_entry_chat_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_attempt_message_entry_chat_id ON public.attempt_message_entry USING btree (chat_id);
+
+
+--
+-- Name: idx_attempt_message_entry_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_attempt_message_entry_created_at ON public.attempt_message_entry USING btree (created_at);
+
+
+--
+-- Name: idx_attempt_message_entry_message_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_attempt_message_entry_message_id ON public.attempt_message_entry USING btree (message_id);
+
+
+--
 -- Name: idx_attempt_practice_practice_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -49579,10 +49461,17 @@ CREATE INDEX idx_chat_resolved_entry_chat_id ON public.chat_resolved_entry USING
 
 
 --
--- Name: idx_chat_resolved_entry_departments_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_chat_resolved_entry_created_at; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_chat_resolved_entry_departments_id ON public.chat_resolved_entry USING btree (departments_id);
+CREATE INDEX idx_chat_resolved_entry_created_at ON public.chat_resolved_entry USING btree (created_at);
+
+
+--
+-- Name: idx_chat_resolved_entry_group_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_chat_resolved_entry_group_id ON public.chat_resolved_entry USING btree (group_id);
 
 
 --
@@ -50790,38 +50679,10 @@ CREATE INDEX idx_home_profiles_profiles_id ON public.home_profiles_connection US
 
 
 --
--- Name: idx_home_rubrics_scenario_rubrics_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_home_rubrics_scenario_rubrics_id ON public.home_rubrics_connection USING btree (scenario_rubrics_id);
-
-
---
--- Name: idx_home_scenario_flags_scenario_flags_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_home_scenario_flags_scenario_flags_id ON public.home_scenario_flags_connection USING btree (scenario_flags_id);
-
-
---
--- Name: idx_home_scenario_positions_scenario_positions_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_home_scenario_positions_scenario_positions_id ON public.home_scenario_positions_connection USING btree (scenario_positions_id);
-
-
---
 -- Name: idx_home_simulations_simulations_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_home_simulations_simulations_id ON public.home_simulations_connection USING btree (simulations_id);
-
-
---
--- Name: idx_home_time_limits_scenario_time_limits_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_home_time_limits_scenario_time_limits_id ON public.home_time_limits_connection USING btree (scenario_time_limits_id);
 
 
 --
@@ -51868,38 +51729,10 @@ CREATE INDEX idx_practice_profiles_profiles_id ON public.practice_profiles_conne
 
 
 --
--- Name: idx_practice_rubrics_rubrics_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_practice_rubrics_rubrics_id ON public.practice_rubrics_connection USING btree (rubrics_id);
-
-
---
--- Name: idx_practice_scenario_flags_scenario_flags_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_practice_scenario_flags_scenario_flags_id ON public.practice_scenario_flags_connection USING btree (scenario_flags_id);
-
-
---
--- Name: idx_practice_scenario_positions_scenario_positions_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_practice_scenario_positions_scenario_positions_id ON public.practice_scenario_positions_connection USING btree (scenario_positions_id);
-
-
---
 -- Name: idx_practice_simulations_simulations_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_practice_simulations_simulations_id ON public.practice_simulations_connection USING btree (simulations_id);
-
-
---
--- Name: idx_practice_time_limits_scenario_time_limits_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_practice_time_limits_scenario_time_limits_id ON public.practice_time_limits_connection USING btree (scenario_time_limits_id);
 
 
 --
@@ -53443,59 +53276,10 @@ CREATE INDEX idx_simulation_analyses_grade_id ON public.attempt_analysis_entry U
 
 
 --
--- Name: idx_simulation_attempts_cohorts_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_simulation_attempts_cohorts_id ON public.attempt_cohorts_connection USING btree (cohorts_id);
-
-
---
--- Name: idx_simulation_attempts_departments_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_simulation_attempts_departments_id ON public.attempt_departments_connection USING btree (departments_id);
-
-
---
--- Name: idx_simulation_attempts_practice; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_simulation_attempts_practice ON public.attempt_entry USING btree (practice);
-
-
---
 -- Name: idx_simulation_attempts_profiles_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_simulation_attempts_profiles_id ON public.attempt_profiles_connection USING btree (profiles_id);
-
-
---
--- Name: idx_simulation_attempts_roles_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_simulation_attempts_roles_id ON public.attempt_roles_connection USING btree (roles_id);
-
-
---
--- Name: idx_simulation_attempts_simulations_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_simulation_attempts_simulations_id ON public.attempt_simulations_connection USING btree (simulations_id);
-
-
---
--- Name: idx_simulation_chats_created_at; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_simulation_chats_created_at ON public.chat_resolved_entry USING btree (created_at);
-
-
---
--- Name: idx_simulation_chats_entry_group_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_simulation_chats_entry_group_id ON public.chat_resolved_entry USING btree (group_id);
 
 
 --
@@ -53727,34 +53511,6 @@ CREATE INDEX idx_simulation_improvements_message_id ON public.attempt_improvemen
 --
 
 CREATE INDEX idx_simulation_message_tree_child_id ON public.attempt_message_tree_entry USING btree (child_id);
-
-
---
--- Name: idx_simulation_messages_chat_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_simulation_messages_chat_id ON public.attempt_message_entry USING btree (chat_id);
-
-
---
--- Name: idx_simulation_messages_created_at; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_simulation_messages_created_at ON public.attempt_message_entry USING btree (created_at);
-
-
---
--- Name: idx_simulation_messages_message_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_simulation_messages_message_id ON public.attempt_message_entry USING btree (message_id);
-
-
---
--- Name: idx_simulation_messages_simulation_type; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_simulation_messages_simulation_type ON public.attempt_message_entry USING btree (simulation_type);
 
 
 --
@@ -54255,13 +54011,6 @@ CREATE INDEX idx_training_bundle_documents_documents_id ON public.chat_documents
 
 
 --
--- Name: idx_training_bundle_fields_fields_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_training_bundle_fields_fields_id ON public.chat_fields_connection USING btree (fields_id);
-
-
---
 -- Name: idx_training_bundle_flags_flags_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -54301,13 +54050,6 @@ CREATE INDEX idx_training_bundle_options_options_id ON public.chat_options_conne
 --
 
 CREATE INDEX idx_training_bundle_parameter_fields_parameter_fields_id ON public.chat_parameter_fields_connection USING btree (parameter_fields_id);
-
-
---
--- Name: idx_training_bundle_parameters_parameters_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_training_bundle_parameters_parameters_id ON public.chat_parameters_connection USING btree (parameters_id);
 
 
 --
@@ -58106,19 +57848,19 @@ ALTER TABLE ONLY public.args_values_entry
 
 
 --
--- Name: attempt_chat_entry attempt_chat_bridge_attempt_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: attempt_chat_entry attempt_chat_entry_attempt_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.attempt_chat_entry
-    ADD CONSTRAINT attempt_chat_bridge_attempt_id_fkey FOREIGN KEY (attempt_id) REFERENCES public.attempt_entry(id) ON DELETE CASCADE;
+    ADD CONSTRAINT attempt_chat_entry_attempt_id_fkey FOREIGN KEY (attempt_id) REFERENCES public.attempt_entry(id) ON DELETE CASCADE;
 
 
 --
--- Name: attempt_chat_entry attempt_chat_bridge_chat_resolved_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: attempt_chat_entry attempt_chat_entry_chat_resolved_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.attempt_chat_entry
-    ADD CONSTRAINT attempt_chat_bridge_chat_resolved_id_fkey FOREIGN KEY (chat_resolved_id) REFERENCES public.chat_resolved_entry(id) ON DELETE CASCADE;
+    ADD CONSTRAINT attempt_chat_entry_chat_resolved_id_fkey FOREIGN KEY (chat_resolved_id) REFERENCES public.chat_resolved_entry(id) ON DELETE CASCADE;
 
 
 --
@@ -58151,6 +57893,30 @@ ALTER TABLE ONLY public.attempt_home_entry
 
 ALTER TABLE ONLY public.attempt_insights_entry
     ADD CONSTRAINT attempt_insights_entry_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups_entry(id);
+
+
+--
+-- Name: attempt_message_entry attempt_message_entry_chat_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_message_entry
+    ADD CONSTRAINT attempt_message_entry_chat_id_fkey FOREIGN KEY (chat_id) REFERENCES public.chat_resolved_entry(id) ON DELETE CASCADE;
+
+
+--
+-- Name: attempt_message_entry attempt_message_entry_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_message_entry
+    ADD CONSTRAINT attempt_message_entry_id_fkey FOREIGN KEY (id) REFERENCES public.messages_entry(id) ON DELETE CASCADE;
+
+
+--
+-- Name: attempt_message_entry attempt_message_entry_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_message_entry
+    ADD CONSTRAINT attempt_message_entry_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.messages_entry(id) ON DELETE CASCADE;
 
 
 --
@@ -59162,6 +58928,22 @@ ALTER TABLE ONLY public.chat_drafts_profiles_connection
 
 
 --
+-- Name: chat_personas_connection chat_personas_connection_chat_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chat_personas_connection
+    ADD CONSTRAINT chat_personas_connection_chat_id_fkey FOREIGN KEY (chat_id) REFERENCES public.chat_entry(id) ON DELETE CASCADE;
+
+
+--
+-- Name: chat_personas_connection chat_personas_connection_personas_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chat_personas_connection
+    ADD CONSTRAINT chat_personas_connection_personas_id_fkey FOREIGN KEY (personas_id) REFERENCES public.personas_resource(id);
+
+
+--
 -- Name: chat_resolved_documents_connection chat_resolved_documents_connection_chat_resolved_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -59186,11 +58968,11 @@ ALTER TABLE ONLY public.chat_resolved_entry
 
 
 --
--- Name: chat_resolved_entry chat_resolved_entry_departments_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: chat_resolved_entry chat_resolved_entry_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.chat_resolved_entry
-    ADD CONSTRAINT chat_resolved_entry_departments_id_fkey FOREIGN KEY (departments_id) REFERENCES public.departments_resource(id);
+    ADD CONSTRAINT chat_resolved_entry_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups_entry(id);
 
 
 --
@@ -59290,22 +59072,6 @@ ALTER TABLE ONLY public.chat_resolved_problem_statements_connection
 
 
 --
--- Name: chat_resolved_profile_personas_connection chat_resolved_profile_personas_connect_profile_personas_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.chat_resolved_profile_personas_connection
-    ADD CONSTRAINT chat_resolved_profile_personas_connect_profile_personas_id_fkey FOREIGN KEY (profile_personas_id) REFERENCES public.profile_personas_resource(id);
-
-
---
--- Name: chat_resolved_profile_personas_connection chat_resolved_profile_personas_connection_chat_resolved_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.chat_resolved_profile_personas_connection
-    ADD CONSTRAINT chat_resolved_profile_personas_connection_chat_resolved_id_fkey FOREIGN KEY (chat_resolved_id) REFERENCES public.chat_resolved_entry(id) ON DELETE CASCADE;
-
-
---
 -- Name: chat_resolved_questions_connection chat_resolved_questions_connection_chat_resolved_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -59386,22 +59152,6 @@ ALTER TABLE ONLY public.chat_resolved_standards_connection
 
 
 --
--- Name: chat_resolved_time_limits_connection chat_resolved_time_limits_connecti_scenario_time_limits_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.chat_resolved_time_limits_connection
-    ADD CONSTRAINT chat_resolved_time_limits_connecti_scenario_time_limits_id_fkey FOREIGN KEY (scenario_time_limits_id) REFERENCES public.scenario_time_limits_resource(id);
-
-
---
--- Name: chat_resolved_time_limits_connection chat_resolved_time_limits_connection_chat_resolved_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.chat_resolved_time_limits_connection
-    ADD CONSTRAINT chat_resolved_time_limits_connection_chat_resolved_id_fkey FOREIGN KEY (chat_resolved_id) REFERENCES public.chat_resolved_entry(id) ON DELETE CASCADE;
-
-
---
 -- Name: chat_resolved_videos_connection chat_resolved_videos_connection_chat_resolved_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -59415,6 +59165,70 @@ ALTER TABLE ONLY public.chat_resolved_videos_connection
 
 ALTER TABLE ONLY public.chat_resolved_videos_connection
     ADD CONSTRAINT chat_resolved_videos_connection_videos_id_fkey FOREIGN KEY (videos_id) REFERENCES public.videos_resource(id);
+
+
+--
+-- Name: chat_rubrics_connection chat_rubrics_connection_chat_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chat_rubrics_connection
+    ADD CONSTRAINT chat_rubrics_connection_chat_id_fkey FOREIGN KEY (chat_id) REFERENCES public.chat_entry(id) ON DELETE CASCADE;
+
+
+--
+-- Name: chat_rubrics_connection chat_rubrics_connection_rubrics_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chat_rubrics_connection
+    ADD CONSTRAINT chat_rubrics_connection_rubrics_id_fkey FOREIGN KEY (rubrics_id) REFERENCES public.rubrics_resource(id);
+
+
+--
+-- Name: chat_scenario_flags_connection chat_scenario_flags_connection_chat_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chat_scenario_flags_connection
+    ADD CONSTRAINT chat_scenario_flags_connection_chat_id_fkey FOREIGN KEY (chat_id) REFERENCES public.chat_entry(id) ON DELETE CASCADE;
+
+
+--
+-- Name: chat_scenario_flags_connection chat_scenario_flags_connection_scenario_flags_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chat_scenario_flags_connection
+    ADD CONSTRAINT chat_scenario_flags_connection_scenario_flags_id_fkey FOREIGN KEY (scenario_flags_id) REFERENCES public.scenario_flags_resource(id);
+
+
+--
+-- Name: chat_scenario_positions_connection chat_scenario_positions_connection_chat_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chat_scenario_positions_connection
+    ADD CONSTRAINT chat_scenario_positions_connection_chat_id_fkey FOREIGN KEY (chat_id) REFERENCES public.chat_entry(id) ON DELETE CASCADE;
+
+
+--
+-- Name: chat_scenario_positions_connection chat_scenario_positions_connection_scenario_positions_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chat_scenario_positions_connection
+    ADD CONSTRAINT chat_scenario_positions_connection_scenario_positions_id_fkey FOREIGN KEY (scenario_positions_id) REFERENCES public.scenario_positions_resource(id);
+
+
+--
+-- Name: chat_scenario_time_limits_connection chat_scenario_time_limits_connecti_scenario_time_limits_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chat_scenario_time_limits_connection
+    ADD CONSTRAINT chat_scenario_time_limits_connecti_scenario_time_limits_id_fkey FOREIGN KEY (scenario_time_limits_id) REFERENCES public.scenario_time_limits_resource(id);
+
+
+--
+-- Name: chat_scenario_time_limits_connection chat_scenario_time_limits_connection_chat_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chat_scenario_time_limits_connection
+    ADD CONSTRAINT chat_scenario_time_limits_connection_chat_id_fkey FOREIGN KEY (chat_id) REFERENCES public.chat_entry(id) ON DELETE CASCADE;
 
 
 --
@@ -61402,6 +61216,22 @@ ALTER TABLE ONLY public.home_insights_entry
 
 
 --
+-- Name: home_profile_personas_connection home_profile_personas_connection_home_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.home_profile_personas_connection
+    ADD CONSTRAINT home_profile_personas_connection_home_id_fkey FOREIGN KEY (home_id) REFERENCES public.home_entry(id) ON DELETE CASCADE;
+
+
+--
+-- Name: home_profile_personas_connection home_profile_personas_connection_profile_personas_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.home_profile_personas_connection
+    ADD CONSTRAINT home_profile_personas_connection_profile_personas_id_fkey FOREIGN KEY (profile_personas_id) REFERENCES public.profile_personas_resource(id);
+
+
+--
 -- Name: home_profiles_connection home_profiles_connection_home_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -61418,51 +61248,35 @@ ALTER TABLE ONLY public.home_profiles_connection
 
 
 --
--- Name: home_rubrics_connection home_rubrics_connection_home_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: home_simulation_availability_connection home_simulation_availability_co_simulation_availability_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.home_rubrics_connection
-    ADD CONSTRAINT home_rubrics_connection_home_id_fkey FOREIGN KEY (home_id) REFERENCES public.home_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: home_rubrics_connection home_rubrics_connection_scenario_rubrics_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.home_rubrics_connection
-    ADD CONSTRAINT home_rubrics_connection_scenario_rubrics_id_fkey FOREIGN KEY (scenario_rubrics_id) REFERENCES public.scenario_rubrics_resource(id);
+ALTER TABLE ONLY public.home_simulation_availability_connection
+    ADD CONSTRAINT home_simulation_availability_co_simulation_availability_id_fkey FOREIGN KEY (simulation_availability_id) REFERENCES public.simulation_availability_resource(id);
 
 
 --
--- Name: home_scenario_flags_connection home_scenario_flags_connection_home_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: home_simulation_availability_connection home_simulation_availability_connection_home_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.home_scenario_flags_connection
-    ADD CONSTRAINT home_scenario_flags_connection_home_id_fkey FOREIGN KEY (home_id) REFERENCES public.home_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: home_scenario_flags_connection home_scenario_flags_connection_scenario_flags_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.home_scenario_flags_connection
-    ADD CONSTRAINT home_scenario_flags_connection_scenario_flags_id_fkey FOREIGN KEY (scenario_flags_id) REFERENCES public.scenario_flags_resource(id);
+ALTER TABLE ONLY public.home_simulation_availability_connection
+    ADD CONSTRAINT home_simulation_availability_connection_home_id_fkey FOREIGN KEY (home_id) REFERENCES public.home_entry(id) ON DELETE CASCADE;
 
 
 --
--- Name: home_scenario_positions_connection home_scenario_positions_connection_home_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: home_simulation_positions_connection home_simulation_positions_connecti_simulation_positions_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.home_scenario_positions_connection
-    ADD CONSTRAINT home_scenario_positions_connection_home_id_fkey FOREIGN KEY (home_id) REFERENCES public.home_entry(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.home_simulation_positions_connection
+    ADD CONSTRAINT home_simulation_positions_connecti_simulation_positions_id_fkey FOREIGN KEY (simulation_positions_id) REFERENCES public.simulation_positions_resource(id);
 
 
 --
--- Name: home_scenario_positions_connection home_scenario_positions_connection_scenario_positions_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: home_simulation_positions_connection home_simulation_positions_connection_home_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.home_scenario_positions_connection
-    ADD CONSTRAINT home_scenario_positions_connection_scenario_positions_id_fkey FOREIGN KEY (scenario_positions_id) REFERENCES public.scenario_positions_resource(id);
+ALTER TABLE ONLY public.home_simulation_positions_connection
+    ADD CONSTRAINT home_simulation_positions_connection_home_id_fkey FOREIGN KEY (home_id) REFERENCES public.home_entry(id) ON DELETE CASCADE;
 
 
 --
@@ -61479,22 +61293,6 @@ ALTER TABLE ONLY public.home_simulations_connection
 
 ALTER TABLE ONLY public.home_simulations_connection
     ADD CONSTRAINT home_simulations_connection_simulations_id_fkey FOREIGN KEY (simulations_id) REFERENCES public.simulations_resource(id);
-
-
---
--- Name: home_time_limits_connection home_time_limits_connection_home_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.home_time_limits_connection
-    ADD CONSTRAINT home_time_limits_connection_home_id_fkey FOREIGN KEY (home_id) REFERENCES public.home_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: home_time_limits_connection home_time_limits_connection_scenario_time_limits_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.home_time_limits_connection
-    ADD CONSTRAINT home_time_limits_connection_scenario_time_limits_id_fkey FOREIGN KEY (scenario_time_limits_id) REFERENCES public.scenario_time_limits_resource(id);
 
 
 --
@@ -63138,6 +62936,22 @@ ALTER TABLE ONLY public.practice_insights_entry
 
 
 --
+-- Name: practice_profile_personas_connection practice_profile_personas_connection_practice_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.practice_profile_personas_connection
+    ADD CONSTRAINT practice_profile_personas_connection_practice_id_fkey FOREIGN KEY (practice_id) REFERENCES public.practice_entry(id) ON DELETE CASCADE;
+
+
+--
+-- Name: practice_profile_personas_connection practice_profile_personas_connection_profile_personas_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.practice_profile_personas_connection
+    ADD CONSTRAINT practice_profile_personas_connection_profile_personas_id_fkey FOREIGN KEY (profile_personas_id) REFERENCES public.profile_personas_resource(id);
+
+
+--
 -- Name: practice_profiles_connection practice_profiles_connection_practice_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -63154,51 +62968,35 @@ ALTER TABLE ONLY public.practice_profiles_connection
 
 
 --
--- Name: practice_rubrics_connection practice_rubrics_connection_practice_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: practice_simulation_availability_connection practice_simulation_availabilit_simulation_availability_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.practice_rubrics_connection
-    ADD CONSTRAINT practice_rubrics_connection_practice_id_fkey FOREIGN KEY (practice_id) REFERENCES public.practice_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: practice_rubrics_connection practice_rubrics_connection_rubrics_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.practice_rubrics_connection
-    ADD CONSTRAINT practice_rubrics_connection_rubrics_id_fkey FOREIGN KEY (rubrics_id) REFERENCES public.rubrics_resource(id);
+ALTER TABLE ONLY public.practice_simulation_availability_connection
+    ADD CONSTRAINT practice_simulation_availabilit_simulation_availability_id_fkey FOREIGN KEY (simulation_availability_id) REFERENCES public.simulation_availability_resource(id);
 
 
 --
--- Name: practice_scenario_flags_connection practice_scenario_flags_connection_practice_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: practice_simulation_availability_connection practice_simulation_availability_connection_practice_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.practice_scenario_flags_connection
-    ADD CONSTRAINT practice_scenario_flags_connection_practice_id_fkey FOREIGN KEY (practice_id) REFERENCES public.practice_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: practice_scenario_flags_connection practice_scenario_flags_connection_scenario_flags_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.practice_scenario_flags_connection
-    ADD CONSTRAINT practice_scenario_flags_connection_scenario_flags_id_fkey FOREIGN KEY (scenario_flags_id) REFERENCES public.scenario_flags_resource(id);
+ALTER TABLE ONLY public.practice_simulation_availability_connection
+    ADD CONSTRAINT practice_simulation_availability_connection_practice_id_fkey FOREIGN KEY (practice_id) REFERENCES public.practice_entry(id) ON DELETE CASCADE;
 
 
 --
--- Name: practice_scenario_positions_connection practice_scenario_positions_connecti_scenario_positions_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: practice_simulation_positions_connection practice_simulation_positions_conn_simulation_positions_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.practice_scenario_positions_connection
-    ADD CONSTRAINT practice_scenario_positions_connecti_scenario_positions_id_fkey FOREIGN KEY (scenario_positions_id) REFERENCES public.scenario_positions_resource(id);
+ALTER TABLE ONLY public.practice_simulation_positions_connection
+    ADD CONSTRAINT practice_simulation_positions_conn_simulation_positions_id_fkey FOREIGN KEY (simulation_positions_id) REFERENCES public.simulation_positions_resource(id);
 
 
 --
--- Name: practice_scenario_positions_connection practice_scenario_positions_connection_practice_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: practice_simulation_positions_connection practice_simulation_positions_connection_practice_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.practice_scenario_positions_connection
-    ADD CONSTRAINT practice_scenario_positions_connection_practice_id_fkey FOREIGN KEY (practice_id) REFERENCES public.practice_entry(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.practice_simulation_positions_connection
+    ADD CONSTRAINT practice_simulation_positions_connection_practice_id_fkey FOREIGN KEY (practice_id) REFERENCES public.practice_entry(id) ON DELETE CASCADE;
 
 
 --
@@ -63215,22 +63013,6 @@ ALTER TABLE ONLY public.practice_simulations_connection
 
 ALTER TABLE ONLY public.practice_simulations_connection
     ADD CONSTRAINT practice_simulations_connection_simulations_id_fkey FOREIGN KEY (simulations_id) REFERENCES public.simulations_resource(id);
-
-
---
--- Name: practice_time_limits_connection practice_time_limits_connection_practice_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.practice_time_limits_connection
-    ADD CONSTRAINT practice_time_limits_connection_practice_id_fkey FOREIGN KEY (practice_id) REFERENCES public.practice_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: practice_time_limits_connection practice_time_limits_connection_scenario_time_limits_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.practice_time_limits_connection
-    ADD CONSTRAINT practice_time_limits_connection_scenario_time_limits_id_fkey FOREIGN KEY (scenario_time_limits_id) REFERENCES public.scenario_time_limits_resource(id);
 
 
 --
@@ -65802,38 +65584,6 @@ ALTER TABLE ONLY public.attempt_archive_entry
 
 
 --
--- Name: attempt_cohorts_connection simulation_attempts_cohorts_connection_attempt_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_cohorts_connection
-    ADD CONSTRAINT simulation_attempts_cohorts_connection_attempt_id_fkey FOREIGN KEY (attempt_id) REFERENCES public.attempt_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: attempt_cohorts_connection simulation_attempts_cohorts_connection_cohorts_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_cohorts_connection
-    ADD CONSTRAINT simulation_attempts_cohorts_connection_cohorts_id_fkey FOREIGN KEY (cohorts_id) REFERENCES public.cohorts_resource(id);
-
-
---
--- Name: attempt_departments_connection simulation_attempts_departments_connection_attempt_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_departments_connection
-    ADD CONSTRAINT simulation_attempts_departments_connection_attempt_id_fkey FOREIGN KEY (attempt_id) REFERENCES public.attempt_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: attempt_departments_connection simulation_attempts_departments_connection_departments_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_departments_connection
-    ADD CONSTRAINT simulation_attempts_departments_connection_departments_id_fkey FOREIGN KEY (departments_id) REFERENCES public.departments_resource(id);
-
-
---
 -- Name: attempt_profiles_connection simulation_attempts_profiles_connection_attempt_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -65847,38 +65597,6 @@ ALTER TABLE ONLY public.attempt_profiles_connection
 
 ALTER TABLE ONLY public.attempt_profiles_connection
     ADD CONSTRAINT simulation_attempts_profiles_connection_profiles_id_fkey FOREIGN KEY (profiles_id) REFERENCES public.profiles_resource(id);
-
-
---
--- Name: attempt_roles_connection simulation_attempts_roles_connection_attempt_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_roles_connection
-    ADD CONSTRAINT simulation_attempts_roles_connection_attempt_id_fkey FOREIGN KEY (attempt_id) REFERENCES public.attempt_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: attempt_roles_connection simulation_attempts_roles_connection_roles_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_roles_connection
-    ADD CONSTRAINT simulation_attempts_roles_connection_roles_id_fkey FOREIGN KEY (roles_id) REFERENCES public.roles_resource(id);
-
-
---
--- Name: attempt_simulations_connection simulation_attempts_simulations_connection_attempt_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_simulations_connection
-    ADD CONSTRAINT simulation_attempts_simulations_connection_attempt_id_fkey FOREIGN KEY (attempt_id) REFERENCES public.attempt_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: attempt_simulations_connection simulation_attempts_simulations_connection_simulations_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_simulations_connection
-    ADD CONSTRAINT simulation_attempts_simulations_connection_simulations_id_fkey FOREIGN KEY (simulations_id) REFERENCES public.simulations_resource(id);
 
 
 --
@@ -65903,14 +65621,6 @@ ALTER TABLE ONLY public.simulation_availability_calls_connection
 
 ALTER TABLE ONLY public.simulation_availability_resource
     ADD CONSTRAINT simulation_availability_resource_simulation_id_fkey FOREIGN KEY (simulation_id) REFERENCES public.simulations_resource(id) ON DELETE CASCADE;
-
-
---
--- Name: chat_resolved_entry simulation_chats_entry_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.chat_resolved_entry
-    ADD CONSTRAINT simulation_chats_entry_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups_entry(id);
 
 
 --
@@ -66295,30 +66005,6 @@ ALTER TABLE ONLY public.attempt_message_tree_entry
 
 ALTER TABLE ONLY public.attempt_message_tree_entry
     ADD CONSTRAINT simulation_message_tree_entry_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.attempt_message_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: attempt_message_entry simulation_messages_entry_chat_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_message_entry
-    ADD CONSTRAINT simulation_messages_entry_chat_id_fkey FOREIGN KEY (chat_id) REFERENCES public.chat_resolved_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: attempt_message_entry simulation_messages_entry_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_message_entry
-    ADD CONSTRAINT simulation_messages_entry_id_fkey FOREIGN KEY (id) REFERENCES public.messages_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: attempt_message_entry simulation_messages_entry_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_message_entry
-    ADD CONSTRAINT simulation_messages_entry_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.messages_entry(id) ON DELETE CASCADE;
 
 
 --
@@ -67314,22 +67000,6 @@ ALTER TABLE ONLY public.chat_documents_connection
 
 
 --
--- Name: chat_fields_connection training_bundle_fields_connection_fields_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.chat_fields_connection
-    ADD CONSTRAINT training_bundle_fields_connection_fields_id_fkey FOREIGN KEY (fields_id) REFERENCES public.fields_resource(id);
-
-
---
--- Name: chat_fields_connection training_bundle_fields_connection_training_bundle_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.chat_fields_connection
-    ADD CONSTRAINT training_bundle_fields_connection_training_bundle_id_fkey FOREIGN KEY (chat_id) REFERENCES public.chat_entry(id) ON DELETE CASCADE;
-
-
---
 -- Name: chat_flags_connection training_bundle_flags_connection_flags_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -67423,22 +67093,6 @@ ALTER TABLE ONLY public.chat_parameter_fields_connection
 
 ALTER TABLE ONLY public.chat_parameter_fields_connection
     ADD CONSTRAINT training_bundle_parameter_fields_connec_training_bundle_id_fkey FOREIGN KEY (chat_id) REFERENCES public.chat_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: chat_parameters_connection training_bundle_parameters_connection_parameters_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.chat_parameters_connection
-    ADD CONSTRAINT training_bundle_parameters_connection_parameters_id_fkey FOREIGN KEY (parameters_id) REFERENCES public.parameters_resource(id);
-
-
---
--- Name: chat_parameters_connection training_bundle_parameters_connection_training_bundle_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.chat_parameters_connection
-    ADD CONSTRAINT training_bundle_parameters_connection_training_bundle_id_fkey FOREIGN KEY (chat_id) REFERENCES public.chat_entry(id) ON DELETE CASCADE;
 
 
 --
@@ -67901,5 +67555,5 @@ ALTER TABLE ONLY public.voices_calls_connection
 -- PostgreSQL database dump complete
 --
 
-\unrestrict zytfOjDVPB3x0BRAZYNYgxmYTaxAnpYNvDJ5FcdGaaMJ0whn47hToIsqYmi1hEU
+\unrestrict oPjbJpcDGGpEgIc2lqVXwgfUQoebcSShOF4w3xsgoo1AfA4bgg2iUxxIwcg6Ksm
 

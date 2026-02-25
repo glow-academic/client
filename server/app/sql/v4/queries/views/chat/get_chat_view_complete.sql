@@ -63,7 +63,6 @@ CREATE TYPE types.q_get_chat_view_v4_item AS (
     department_id uuid,
     simulation_id uuid,
     scenario_id uuid,
-    user_persona_id uuid,
     rubric_id uuid,
 
     -- Grade measures
@@ -124,8 +123,7 @@ RETURNS TABLE (
     simulation_options types.q_get_chat_view_v4_option[],
     cohort_options types.q_get_chat_view_v4_option[],
     department_options types.q_get_chat_view_v4_option[],
-    scenario_options types.q_get_chat_view_v4_option[],
-    persona_options types.q_get_chat_view_v4_option[]
+    scenario_options types.q_get_chat_view_v4_option[]
 )
 LANGUAGE sql
 STABLE
@@ -143,7 +141,6 @@ AS $$
             ch.department_id,
             ch.simulation_id,
             ch.scenario_id,
-            ch.user_persona_id,
             ch.rubric_id,
             ch.grade_score,
             ch.grade_total_points,
@@ -206,7 +203,6 @@ AS $$
                     department_id,
                     simulation_id,
                     scenario_id,
-                    user_persona_id,
                     rubric_id,
                     grade_score,
                     grade_total_points,
@@ -297,24 +293,6 @@ AS $$
             ARRAY[]::types.q_get_chat_view_v4_option[]
         ) AS options
         FROM scenario_options_cte
-    ),
-    -- Persona filter options
-    persona_options_cte AS (
-        SELECT
-            f.user_persona_id::text AS value,
-            f.user_persona_id::text AS label,
-            COUNT(DISTINCT f.chat_id)::int AS count
-        FROM filtered f
-        WHERE f.user_persona_id IS NOT NULL
-        GROUP BY f.user_persona_id
-        ORDER BY count DESC, value
-    ),
-    persona_options_agg AS (
-        SELECT COALESCE(
-            ARRAY_AGG((value, label, count)::types.q_get_chat_view_v4_option),
-            ARRAY[]::types.q_get_chat_view_v4_option[]
-        ) AS options
-        FROM persona_options_cte
     )
     SELECT
         (SELECT items FROM items_agg),
@@ -322,6 +300,5 @@ AS $$
         (SELECT options FROM simulation_options_agg),
         (SELECT options FROM cohort_options_agg),
         (SELECT options FROM department_options_agg),
-        (SELECT options FROM scenario_options_agg),
-        (SELECT options FROM persona_options_agg);
+        (SELECT options FROM scenario_options_agg);
 $$;

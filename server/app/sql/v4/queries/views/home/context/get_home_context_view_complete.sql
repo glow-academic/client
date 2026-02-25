@@ -37,8 +37,6 @@ CREATE TYPE types.q_get_home_context_view_v4_item AS (
     chat_entry_ids uuid[],
     scenario_ids uuid[],
     cohort_ids uuid[],
-    rubric_ids uuid[],
-    time_limit_ids uuid[],
     home_ids uuid[]
 );
 
@@ -78,9 +76,7 @@ accessible_training AS (
         mh.simulation_ids,
         mh.cohort_ids,
         mh.chat_ids AS chat_entry_ids,
-        mh.scenario_ids,
-        mh.rubric_ids,
-        mh.time_limit_ids
+        mh.scenario_ids
     FROM home_mv mh
     JOIN user_cohorts uc ON mh.cohort_ids && COALESCE(uc.cohort_ids, ARRAY[]::uuid[])
 ),
@@ -112,10 +108,6 @@ simulation_scope AS (
             FILTER (WHERE scid.scenario_id IS NOT NULL) AS scenario_ids,
         ARRAY_AGG(DISTINCT coid.cohort_id ORDER BY coid.cohort_id)
             FILTER (WHERE coid.cohort_id IS NOT NULL) AS cohort_ids,
-        ARRAY_AGG(DISTINCT rid.rubric_id ORDER BY rid.rubric_id)
-            FILTER (WHERE rid.rubric_id IS NOT NULL) AS rubric_ids,
-        ARRAY_AGG(DISTINCT tlid.time_limit_id ORDER BY tlid.time_limit_id)
-            FILTER (WHERE tlid.time_limit_id IS NOT NULL) AS time_limit_ids,
         ARRAY_AGG(DISTINCT at2.parent_id ORDER BY at2.parent_id)
             FILTER (WHERE at2.parent_id IS NOT NULL) AS home_ids
     FROM active_simulations asim
@@ -124,8 +116,6 @@ simulation_scope AS (
     LEFT JOIN LATERAL unnest(at2.chat_entry_ids) tbeid(chat_entry_id) ON TRUE
     LEFT JOIN LATERAL unnest(at2.scenario_ids) scid(scenario_id) ON TRUE
     LEFT JOIN LATERAL unnest(at2.cohort_ids) coid(cohort_id) ON TRUE
-    LEFT JOIN LATERAL unnest(at2.rubric_ids) rid(rubric_id) ON TRUE
-    LEFT JOIN LATERAL unnest(at2.time_limit_ids) tlid(time_limit_id) ON TRUE
     GROUP BY asim.simulation_id
 )
 SELECT
@@ -137,8 +127,6 @@ SELECT
                     ss.chat_entry_ids,
                     ss.scenario_ids,
                     ss.cohort_ids,
-                    ss.rubric_ids,
-                    ss.time_limit_ids,
                     ss.home_ids
                 )::types.q_get_home_context_view_v4_item
                 ORDER BY ss.simulation_id
