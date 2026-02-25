@@ -327,7 +327,7 @@ export default function Home({ homeData }: HomeProps) {
                     <SimulationCard
                       key={item.simulation_id || ""}
                       id={item.simulation_id || ""}
-                      chatEntryId={item.chat_entry_id || null}
+                      homeId={item.home_id || null}
                       {...(typeof item.time_limit === "number" && {
                         timeLimit: item.time_limit,
                       })}

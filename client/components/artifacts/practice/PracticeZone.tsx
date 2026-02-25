@@ -130,7 +130,7 @@ export default function PracticeZone({
               <SimulationCard
                 key={simulationId}
                 id={simulationId}
-                chatEntryId={simulation.chat_entry_id || null}
+                practiceId={simulation.practice_id || null}
                 {...(typeof simulation.time_limit === "number" && {
                   timeLimit: simulation.time_limit,
                 })}

@@ -102,7 +102,9 @@ async def link_problem_statements(
                 tool_id=request.tool_id,
             )
 
-            return LinkProblemStatementsApiResponse(success=True, problem_statements_id=problem_statements_id)
+            return LinkProblemStatementsApiResponse(
+                success=True, problem_statements_id=problem_statements_id
+            )
     except HTTPException:
         raise
     except ValueError as e:

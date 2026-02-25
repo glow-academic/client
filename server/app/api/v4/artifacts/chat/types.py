@@ -236,6 +236,8 @@ class ChatSimulationOperational(BaseModel):
     simulation_description: str | None = None
     time_limit: int | None = None
     chat_entry_id: UUID | None = None
+    home_id: UUID | None = None
+    practice_id: UUID | None = None
     scenario_ids: list[UUID] | None = None  # Ordered list of scenario IDs
     cohort_ids: list[UUID] | None = None  # Cohorts this simulation belongs to
     # Display metadata

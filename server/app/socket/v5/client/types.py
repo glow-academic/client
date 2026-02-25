@@ -8,7 +8,7 @@ generic artifact_id field. The registry maps these to the correct fetcher kwarg.
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 
 class GeneratePayload(BaseModel):
@@ -256,8 +256,17 @@ class TestErrorEvent(BaseModel):
 class AttemptStartPayload(BaseModel):
     """Client-to-server: create a new attempt."""
 
-    chat_entry_id: UUID
+    home_id: UUID | None = None
+    practice_id: UUID | None = None
     infinite_mode: bool = False
+
+    @model_validator(mode="after")
+    def _exactly_one_parent(self) -> "AttemptStartPayload":
+        if not self.home_id and not self.practice_id:
+            raise ValueError("Either home_id or practice_id must be provided")
+        if self.home_id and self.practice_id:
+            raise ValueError("Only one of home_id or practice_id can be provided")
+        return self
 
 
 class AttemptNextPayload(BaseModel):

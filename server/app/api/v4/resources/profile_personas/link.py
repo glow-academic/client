@@ -102,7 +102,9 @@ async def link_profile_personas(
                 tool_id=request.tool_id,
             )
 
-            return LinkProfilePersonasApiResponse(success=True, profile_personas_id=profile_personas_id)
+            return LinkProfilePersonasApiResponse(
+                success=True, profile_personas_id=profile_personas_id
+            )
     except HTTPException:
         raise
     except ValueError as e:

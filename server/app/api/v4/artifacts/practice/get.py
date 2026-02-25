@@ -766,6 +766,7 @@ async def get_practice_internal(
             )
 
             chat_entry_id = item.chat_entry_ids[0] if item.chat_entry_ids else None
+            practice_id = item.practice_ids[0] if item.practice_ids else None
 
             attempt_count = ps.get("attempt_count", 0)
             status = compute_status(has_passed, attempt_count)
@@ -779,6 +780,7 @@ async def get_practice_internal(
                     ),
                     time_limit=time_limit_minutes,
                     chat_entry_id=chat_entry_id,
+                    practice_id=practice_id,
                     scenario_ids=item.scenario_ids,
                     cohort_ids=item.cohort_ids,
                     color=color,

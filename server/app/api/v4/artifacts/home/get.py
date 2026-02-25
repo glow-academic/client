@@ -886,6 +886,7 @@ async def get_home_internal(
             )
 
             chat_entry_id = item.chat_entry_ids[0] if item.chat_entry_ids else None
+            home_id = item.home_ids[0] if item.home_ids else None
 
             attempt_count = ps.get("attempt_count", 0)
             if is_instructional and instructional_stats is not None:
@@ -911,6 +912,7 @@ async def get_home_internal(
                     ),
                     time_limit=time_limit_minutes,
                     chat_entry_id=chat_entry_id,
+                    home_id=home_id,
                     scenario_ids=item.scenario_ids,
                     cohort_ids=item.cohort_ids,
                     color=color,

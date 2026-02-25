@@ -22838,11 +22838,10 @@ export interface components {
          * @description Client-to-server: create a new attempt.
          */
         AttemptStartPayload: {
-            /**
-             * Chat Entry Id
-             * Format: uuid
-             */
-            chat_entry_id: string;
+            /** Home Id */
+            home_id?: string | null;
+            /** Practice Id */
+            practice_id?: string | null;
             /**
              * Infinite Mode
              * @default false
@@ -23907,6 +23906,10 @@ export interface components {
             time_limit?: number | null;
             /** Chat Entry Id */
             chat_entry_id?: string | null;
+            /** Home Id */
+            home_id?: string | null;
+            /** Practice Id */
+            practice_id?: string | null;
             /** Scenario Ids */
             scenario_ids?: string[] | null;
             /** Cohort Ids */

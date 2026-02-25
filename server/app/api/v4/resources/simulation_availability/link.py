@@ -102,7 +102,9 @@ async def link_simulation_availability(
                 tool_id=request.tool_id,
             )
 
-            return LinkSimulationAvailabilityApiResponse(success=True, simulation_availability_id=simulation_availability_id)
+            return LinkSimulationAvailabilityApiResponse(
+                success=True, simulation_availability_id=simulation_availability_id
+            )
     except HTTPException:
         raise
     except ValueError as e:

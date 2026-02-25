@@ -3,21 +3,19 @@
 Handles: @internal_sio.on("attempt_start")
 
 Flow:
-1. Resolve training context, create attempt_entry
-2. Emit attempt_proceed with resolved context
+1. Resolve context inline from home_id / practice_id
+2. Create attempt_entry
+3. Emit attempt_proceed with resolved context
 """
 
 from __future__ import annotations
 
 import uuid
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.api.v4.resources.training.context import (
-    get_training_attempt_context_internal,
-)
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio
@@ -28,13 +26,9 @@ from app.socket.v5.internal.attempt.types import (
     AttemptStartedData,
     GenerateRequestData,
 )
-from app.sql.types import CreateAttemptSqlParams, CreateAttemptSqlRow
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
-
-if TYPE_CHECKING:
-    from app.api.v4.resources.training.context import TrainingAttemptContext
 
 logger = get_logger(__name__)
 
@@ -68,50 +62,112 @@ SQL_REMAINING_SCENARIOS = """
 """
 
 
-SQL_PATH_CREATE_ATTEMPT = (
-    "app/sql/v4/queries/artifacts/attempt/create_attempt_complete.sql"
-)
-
 SQL_PATH_CREATE_CHAT = (
     "app/sql/v4/queries/generate/attempt/create_attempt_chat_complete.sql"
 )
 
 
-async def create_attempt_with_context_internal(
+async def _resolve_context_inline(
     conn: asyncpg.Connection,
-    context: TrainingAttemptContext,
-    infinite_mode: bool = False,
-) -> UUID:
-    """Create attempt entry using pre-resolved training context.
+    profile_id: UUID,
+    payload: AttemptStartPayload,
+) -> tuple[UUID, UUID, bool, UUID | None, UUID | None, UUID | None, UUID | None, UUID | None]:
+    """Resolve all attempt context from home_id / practice_id in inline queries.
 
-    Used by socket handlers (home/practice/attempt).
-    Returns the new attempt_id.
+    Returns:
+        (chat_entry_id, profiles_resource_id, is_practice,
+         simulations_resource_id, cohorts_resource_id, departments_resource_id,
+         roles_resource_id, parent_id)
     """
-    row = cast(
-        CreateAttemptSqlRow,
-        await execute_sql_typed(
-            conn,
-            SQL_PATH_CREATE_ATTEMPT,
-            params=CreateAttemptSqlParams(
-                p_practice=context.is_practice,
-                p_infinite_mode=infinite_mode,
-                p_practice_id=context.practice_id,
-                p_home_id=context.home_id,
-                p_simulations_resource_id=context.simulations_resource_id,
-                p_profiles_resource_id=context.profiles_resource_id,
-                p_cohorts_resource_id=context.cohorts_resource_id,
-                p_departments_resource_id=context.departments_resource_id,
-                p_roles_resource_id=context.roles_resource_id,
-            ),
-        ),
+    is_practice = payload.practice_id is not None
+    parent_id: UUID | None = payload.practice_id if is_practice else payload.home_id
+
+    # 1. chat_entry_id — from bridge table
+    if is_practice:
+        chat_entry_id = await conn.fetchval(
+            "SELECT chat_id FROM practice_chat_entry "
+            "WHERE practice_id = $1 AND active = true "
+            "ORDER BY created_at LIMIT 1",
+            parent_id,
+        )
+    else:
+        chat_entry_id = await conn.fetchval(
+            "SELECT chat_id FROM home_chat_entry "
+            "WHERE home_id = $1 AND active = true "
+            "ORDER BY created_at LIMIT 1",
+            parent_id,
+        )
+    if not chat_entry_id:
+        raise ValueError(f"No chat entry for parent {parent_id}")
+
+    # 2. profiles_resource_id — from profile junction
+    profiles_resource_id = await conn.fetchval(
+        "SELECT profiles_id FROM profile_profiles_junction "
+        "WHERE profile_id = $1 AND active = true LIMIT 1",
+        profile_id,
+    )
+    if not profiles_resource_id:
+        raise ValueError(f"Profile resource not found for profile_id {profile_id}")
+
+    # 3. roles_resource_id — optional
+    roles_resource_id = await conn.fetchval(
+        "SELECT role_id FROM profile_roles_junction "
+        "WHERE profile_id = $1 AND active = true LIMIT 1",
+        profile_id,
     )
 
-    if not row or not row.out_attempt_id:
-        raise ValueError("Failed to create attempt entry")
+    # 4. departments_resource_id — from parent connection
+    if is_practice:
+        departments_resource_id = await conn.fetchval(
+            "SELECT departments_id FROM practice_departments_connection "
+            "WHERE practice_id = $1 AND active = true LIMIT 1",
+            parent_id,
+        )
+    else:
+        departments_resource_id = await conn.fetchval(
+            "SELECT departments_id FROM home_departments_connection "
+            "WHERE home_id = $1 AND active = true LIMIT 1",
+            parent_id,
+        )
 
-    await invalidate_tags(["attempt", "attempts"])
+    # 5. simulations_resource_id — from parent connection
+    if is_practice:
+        simulations_resource_id = await conn.fetchval(
+            "SELECT simulations_id FROM practice_simulations_connection "
+            "WHERE practice_id = $1 AND active = true LIMIT 1",
+            parent_id,
+        )
+    else:
+        simulations_resource_id = await conn.fetchval(
+            "SELECT simulations_id FROM home_simulations_connection "
+            "WHERE home_id = $1 AND active = true LIMIT 1",
+            parent_id,
+        )
 
-    return row.out_attempt_id
+    # 6. cohorts_resource_id — from parent connection
+    if is_practice:
+        cohorts_resource_id = await conn.fetchval(
+            "SELECT cohorts_id FROM practice_cohorts_connection "
+            "WHERE practice_id = $1 AND active = true LIMIT 1",
+            parent_id,
+        )
+    else:
+        cohorts_resource_id = await conn.fetchval(
+            "SELECT cohorts_id FROM home_cohorts_connection "
+            "WHERE home_id = $1 AND active = true LIMIT 1",
+            parent_id,
+        )
+
+    return (
+        chat_entry_id,
+        profiles_resource_id,
+        is_practice,
+        simulations_resource_id,
+        cohorts_resource_id,
+        departments_resource_id,
+        roles_resource_id,
+        parent_id,
+    )
 
 
 async def _link_attempt_chat(
@@ -121,6 +177,8 @@ async def _link_attempt_chat(
     chat_resolved_id: UUID,
 ) -> UUID | None:
     """Create attempt_chat_entry linking attempt to chat_resolved, refresh MVs."""
+    from typing import cast
+
     from app.sql.types import CreateAttemptChatSqlParams, CreateAttemptChatSqlRow
 
     chat_row = cast(
@@ -202,23 +260,81 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
         return
 
     try:
-        chat_entry_id = payload.chat_entry_id
-
-        # Step 1: Resolve training context
+        # Step 1: Resolve all context inline from home_id / practice_id
         async with get_db_connection() as conn:
-            ctx = await get_training_attempt_context_internal(
-                conn, profile_id, chat_entry_id
+            (
+                chat_entry_id,
+                profiles_resource_id,
+                is_practice,
+                simulations_resource_id,
+                cohorts_resource_id,
+                departments_resource_id,
+                roles_resource_id,
+                parent_id,
+            ) = await _resolve_context_inline(conn, profile_id, payload)
+
+        # Step 2: Create attempt (inline — one INSERT per table)
+        async with get_db_connection() as conn:
+            # 2a. attempt_entry
+            attempt_id = await conn.fetchval(
+                "INSERT INTO attempt_entry (created_at, updated_at, practice, infinite_mode) "
+                "VALUES (NOW(), NOW(), $1, $2) RETURNING id",
+                is_practice,
+                payload.infinite_mode,
+            )
+            if not attempt_id:
+                raise ValueError("Failed to create attempt entry")
+
+            # 2b. Parent bridge (home or practice)
+            if payload.home_id:
+                await conn.execute(
+                    "INSERT INTO attempt_home_entry (attempt_id, home_id) VALUES ($1, $2)",
+                    attempt_id, payload.home_id,
+                )
+            else:
+                await conn.execute(
+                    "INSERT INTO attempt_practice_entry (attempt_id, practice_id) VALUES ($1, $2)",
+                    attempt_id, payload.practice_id,
+                )
+
+            # 2c. Required connections
+            await conn.execute(
+                "INSERT INTO attempt_simulations_connection (simulations_id, attempt_id, active) "
+                "VALUES ($1, $2, true) ON CONFLICT (attempt_id, simulations_id) DO NOTHING",
+                simulations_resource_id, attempt_id,
+            )
+            await conn.execute(
+                "INSERT INTO attempt_profiles_connection (profiles_id, attempt_id, active) "
+                "VALUES ($1, $2, true) ON CONFLICT (attempt_id, profiles_id) DO NOTHING",
+                profiles_resource_id, attempt_id,
             )
 
-        # Step 2: Create attempt
-        async with get_db_connection() as conn:
-            attempt_id = await create_attempt_with_context_internal(
-                conn, context=ctx, infinite_mode=payload.infinite_mode
-            )
+            # 2d. Optional connections
+            if cohorts_resource_id:
+                await conn.execute(
+                    "INSERT INTO attempt_cohorts_connection (cohorts_id, attempt_id, active) "
+                    "VALUES ($1, $2, true) ON CONFLICT (attempt_id, cohorts_id) DO NOTHING",
+                    cohorts_resource_id, attempt_id,
+                )
+            if departments_resource_id:
+                await conn.execute(
+                    "INSERT INTO attempt_departments_connection (departments_id, attempt_id, active) "
+                    "VALUES ($1, $2, true) ON CONFLICT (attempt_id, departments_id) DO NOTHING",
+                    departments_resource_id, attempt_id,
+                )
+            if roles_resource_id:
+                await conn.execute(
+                    "INSERT INTO attempt_roles_connection (roles_id, attempt_id, active) "
+                    "VALUES ($1, $2, true) ON CONFLICT (attempt_id, roles_id) DO NOTHING",
+                    roles_resource_id, attempt_id,
+                )
+
+            # 2e. Refresh MV so attempt is immediately visible
+            await conn.execute("REFRESH MATERIALIZED VIEW attempt_mv")
+            await invalidate_tags(["attempt", "attempts"])
 
         # Step 3: Get department_id — if missing, emit attempt_started (user picks)
-        department_id = ctx.departments_resource_id
-        if not department_id:
+        if not departments_resource_id:
             logger.warning(f"No department_id in context for attempt {attempt_id}")
             await internal_sio.emit(
                 "attempt_started",
@@ -238,7 +354,7 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
                 profile_id=str(profile_id),
                 attempt_id=str(attempt_id),
                 chat_entry_id=str(chat_entry_id),
-                department_id=str(department_id),
+                department_id=str(departments_resource_id),
                 force_proceed=False,
             ).model_dump(mode="json"),
         )

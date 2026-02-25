@@ -91,7 +91,8 @@ export interface RubricItem {
 
 export interface SimulationCardProps {
   id: string;
-  chatEntryId?: string | null;
+  homeId?: string | null;
+  practiceId?: string | null;
   timeLimit?: number;
   numSessions: number;
   highestScore?: number;
@@ -112,7 +113,8 @@ export interface SimulationCardProps {
 
 export default function SimulationCard({
   id,
-  chatEntryId,
+  homeId,
+  practiceId,
   timeLimit,
   numSessions,
   highestScore,
@@ -178,7 +180,7 @@ export default function SimulationCard({
   // Start training function - emits attempt_start via hook
   const handleStartTraining = useCallback(
     (infiniteMode: boolean = false) => {
-      if (!chatEntryId) {
+      if (!homeId && !practiceId) {
         toast.error("Training bundle is missing for this simulation.");
         return;
       }
@@ -197,9 +199,13 @@ export default function SimulationCard({
         }
       );
 
-      startAttempt(chatEntryId, { infiniteMode });
+      startAttempt({
+        homeId: homeId ?? undefined,
+        practiceId: practiceId ?? undefined,
+        infiniteMode,
+      });
     },
-    [chatEntryId, socket, isConnected, startAttempt]
+    [homeId, practiceId, socket, isConnected, startAttempt]
   );
 
   // Get persona configuration and icon based on persona data

@@ -33,10 +33,11 @@ interface UseAttemptLifecycleConfig {
 }
 
 export interface UseAttemptLifecycleReturn {
-  startAttempt: (
-    chatEntryId: string,
-    opts?: { infiniteMode?: boolean },
-  ) => void;
+  startAttempt: (opts: {
+    homeId?: string;
+    practiceId?: string;
+    infiniteMode?: boolean;
+  }) => void;
   nextScenario: (attemptId: string, opts?: { draftId?: string }) => void;
   endChat: (
     attemptId: string,
@@ -147,14 +148,16 @@ export function useAttemptLifecycle({
   // --- Emission methods ---
 
   const startAttempt = useCallback(
-    (
-      chatEntryId: string,
-      opts?: { infiniteMode?: boolean },
-    ) => {
+    (opts: {
+      homeId?: string;
+      practiceId?: string;
+      infiniteMode?: boolean;
+    }) => {
       if (!socket) return;
       socket.emit("attempt_start", {
-        chat_entry_id: chatEntryId,
-        infinite_mode: opts?.infiniteMode ?? false,
+        ...(opts.homeId && { home_id: opts.homeId }),
+        ...(opts.practiceId && { practice_id: opts.practiceId }),
+        infinite_mode: opts.infiniteMode ?? false,
       });
     },
     [socket],

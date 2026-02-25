@@ -38,7 +38,8 @@ CREATE TYPE types.q_get_practice_context_view_v4_item AS (
     scenario_ids uuid[],
     cohort_ids uuid[],
     rubric_ids uuid[],
-    time_limit_ids uuid[]
+    time_limit_ids uuid[],
+    practice_ids uuid[]
 );
 
 CREATE OR REPLACE FUNCTION api_get_practice_context_view_v4(
@@ -114,7 +115,9 @@ simulation_scope AS (
         ARRAY_AGG(DISTINCT rid.rubric_id ORDER BY rid.rubric_id)
             FILTER (WHERE rid.rubric_id IS NOT NULL) AS rubric_ids,
         ARRAY_AGG(DISTINCT tlid.time_limit_id ORDER BY tlid.time_limit_id)
-            FILTER (WHERE tlid.time_limit_id IS NOT NULL) AS time_limit_ids
+            FILTER (WHERE tlid.time_limit_id IS NOT NULL) AS time_limit_ids,
+        ARRAY_AGG(DISTINCT at2.parent_id ORDER BY at2.parent_id)
+            FILTER (WHERE at2.parent_id IS NOT NULL) AS practice_ids
     FROM active_simulations asim
     JOIN accessible_training at2
       ON asim.simulation_id = ANY(at2.simulation_ids)
@@ -135,7 +138,8 @@ SELECT
                     ss.scenario_ids,
                     ss.cohort_ids,
                     ss.rubric_ids,
-                    ss.time_limit_ids
+                    ss.time_limit_ids,
+                    ss.practice_ids
                 )::types.q_get_practice_context_view_v4_item
                 ORDER BY ss.simulation_id
             )

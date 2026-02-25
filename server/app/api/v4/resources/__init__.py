@@ -166,9 +166,8 @@ router.include_router(examples_search_router)
 # NOTE: fields removed - non-creatable, sync via artifact save (migration 328)
 # GET endpoint available for personas two-pass architecture
 from app.api.v4.resources.fields.get import router as fields_get_router
-from app.api.v4.resources.fields.search import router as fields_search_router
-
 from app.api.v4.resources.fields.link import router as fields_link_router
+from app.api.v4.resources.fields.search import router as fields_search_router
 
 router.include_router(fields_get_router)
 router.include_router(fields_link_router)
@@ -243,7 +242,6 @@ router.include_router(icons_link_router)
 router.include_router(icons_search_router)
 from app.api.v4.resources.images.create import router as images_router
 from app.api.v4.resources.images.get import router as images_get_router
-
 from app.api.v4.resources.images.link import router as images_link_router
 
 router.include_router(images_router)
@@ -319,7 +317,6 @@ router.include_router(names_link_router)
 router.include_router(names_search_router)
 from app.api.v4.resources.objectives.create import router as objectives_router
 from app.api.v4.resources.objectives.get import router as objectives_get_router
-
 from app.api.v4.resources.objectives.link import router as objectives_link_router
 
 router.include_router(objectives_router)
@@ -330,7 +327,6 @@ from app.api.v4.resources.objectives.search import router as objectives_search_r
 router.include_router(objectives_search_router)
 from app.api.v4.resources.options.create import router as options_router
 from app.api.v4.resources.options.get import router as options_get_router
-
 from app.api.v4.resources.options.link import router as options_link_router
 
 router.include_router(options_router)
@@ -379,7 +375,6 @@ from app.api.v4.resources.problem_statements.create import (
 from app.api.v4.resources.problem_statements.get import (
     router as problem_statements_get_router,
 )
-
 from app.api.v4.resources.problem_statements.link import (
     router as problem_statements_link_router,
 )
@@ -434,7 +429,6 @@ router.include_router(qualities_get_router)
 router.include_router(qualities_search_router)
 from app.api.v4.resources.questions.create import router as questions_router
 from app.api.v4.resources.questions.get import router as questions_get_router
-
 from app.api.v4.resources.questions.link import router as questions_link_router
 
 router.include_router(questions_router)
@@ -717,7 +711,6 @@ router.include_router(values_get_router)
 router.include_router(values_search_router)
 from app.api.v4.resources.videos.create import router as videos_router
 from app.api.v4.resources.videos.get import router as videos_get_router
-
 from app.api.v4.resources.videos.link import router as videos_link_router
 
 router.include_router(videos_router)
