@@ -106,6 +106,61 @@ type CreateDraftQuestionsOut = OutputOf<"/api/v4/resources/questions", "post">;
 type CreateDraftOptionsIn = InputOf<"/api/v4/resources/options", "post">;
 type CreateDraftOptionsOut = OutputOf<"/api/v4/resources/options", "post">;
 
+// Link types for tool call tracking
+type LinkNamesIn = InputOf<"/api/v4/resources/names/link", "post">;
+type LinkNamesOut = OutputOf<"/api/v4/resources/names/link", "post">;
+type LinkDescriptionsIn = InputOf<
+  "/api/v4/resources/descriptions/link",
+  "post"
+>;
+type LinkDescriptionsOut = OutputOf<
+  "/api/v4/resources/descriptions/link",
+  "post"
+>;
+type LinkProblemStatementsIn = InputOf<
+  "/api/v4/resources/problem_statements/link",
+  "post"
+>;
+type LinkProblemStatementsOut = OutputOf<
+  "/api/v4/resources/problem_statements/link",
+  "post"
+>;
+type LinkObjectivesIn = InputOf<"/api/v4/resources/objectives/link", "post">;
+type LinkObjectivesOut = OutputOf<"/api/v4/resources/objectives/link", "post">;
+type LinkScenarioFlagsIn = InputOf<
+  "/api/v4/resources/scenario_flags/link",
+  "post"
+>;
+type LinkScenarioFlagsOut = OutputOf<
+  "/api/v4/resources/scenario_flags/link",
+  "post"
+>;
+type LinkDepartmentsIn = InputOf<"/api/v4/resources/departments/link", "post">;
+type LinkDepartmentsOut = OutputOf<
+  "/api/v4/resources/departments/link",
+  "post"
+>;
+type LinkPersonasIn = InputOf<"/api/v4/resources/personas/link", "post">;
+type LinkPersonasOut = OutputOf<"/api/v4/resources/personas/link", "post">;
+type LinkDocumentsIn = InputOf<"/api/v4/resources/documents/link", "post">;
+type LinkDocumentsOut = OutputOf<"/api/v4/resources/documents/link", "post">;
+type LinkParameterFieldsIn = InputOf<
+  "/api/v4/resources/parameter_fields/link",
+  "post"
+>;
+type LinkParameterFieldsOut = OutputOf<
+  "/api/v4/resources/parameter_fields/link",
+  "post"
+>;
+type LinkImagesIn = InputOf<"/api/v4/resources/images/link", "post">;
+type LinkImagesOut = OutputOf<"/api/v4/resources/images/link", "post">;
+type LinkVideosIn = InputOf<"/api/v4/resources/videos/link", "post">;
+type LinkVideosOut = OutputOf<"/api/v4/resources/videos/link", "post">;
+type LinkQuestionsIn = InputOf<"/api/v4/resources/questions/link", "post">;
+type LinkQuestionsOut = OutputOf<"/api/v4/resources/questions/link", "post">;
+type LinkOptionsIn = InputOf<"/api/v4/resources/options/link", "post">;
+type LinkOptionsOut = OutputOf<"/api/v4/resources/options/link", "post">;
+
 type ScenarioResourceType =
   | "names"
   | "descriptions"
@@ -194,6 +249,32 @@ export interface ScenarioProps {
   createOptionsAction?: (
     input: CreateDraftOptionsIn,
   ) => Promise<CreateDraftOptionsOut>;
+  // Link actions for tool call tracking
+  linkNamesAction?: (input: LinkNamesIn) => Promise<LinkNamesOut>;
+  linkDescriptionsAction?: (
+    input: LinkDescriptionsIn,
+  ) => Promise<LinkDescriptionsOut>;
+  linkProblemStatementsAction?: (
+    input: LinkProblemStatementsIn,
+  ) => Promise<LinkProblemStatementsOut>;
+  linkObjectivesAction?: (
+    input: LinkObjectivesIn,
+  ) => Promise<LinkObjectivesOut>;
+  linkScenarioFlagsAction?: (
+    input: LinkScenarioFlagsIn,
+  ) => Promise<LinkScenarioFlagsOut>;
+  linkDepartmentsAction?: (
+    input: LinkDepartmentsIn,
+  ) => Promise<LinkDepartmentsOut>;
+  linkPersonasAction?: (input: LinkPersonasIn) => Promise<LinkPersonasOut>;
+  linkDocumentsAction?: (input: LinkDocumentsIn) => Promise<LinkDocumentsOut>;
+  linkParameterFieldsAction?: (
+    input: LinkParameterFieldsIn,
+  ) => Promise<LinkParameterFieldsOut>;
+  linkImagesAction?: (input: LinkImagesIn) => Promise<LinkImagesOut>;
+  linkVideosAction?: (input: LinkVideosIn) => Promise<LinkVideosOut>;
+  linkQuestionsAction?: (input: LinkQuestionsIn) => Promise<LinkQuestionsOut>;
+  linkOptionsAction?: (input: LinkOptionsIn) => Promise<LinkOptionsOut>;
 }
 
 const FLUSH_KEYS = [
@@ -295,6 +376,19 @@ function ScenarioComponent({
   createVideosAction,
   createQuestionsAction,
   createOptionsAction,
+  linkNamesAction,
+  linkDescriptionsAction,
+  linkProblemStatementsAction,
+  linkObjectivesAction,
+  linkScenarioFlagsAction,
+  linkDepartmentsAction,
+  linkPersonasAction,
+  linkDocumentsAction,
+  linkParameterFieldsAction,
+  linkImagesAction,
+  linkVideosAction,
+  linkQuestionsAction,
+  linkOptionsAction,
 }: ScenarioProps) {
   const router = useRouter();
   const isEditMode = !!scenarioId;
@@ -1529,6 +1623,8 @@ function ScenarioComponent({
                   }
                   registerFlush={registerFlushCallbacks["names"]}
                   isAutosaveEnabled={isAutosaveEnabled}
+                  link_tool_id={s?.names?.link_tool_id ?? null}
+                  linkNamesAction={linkNamesAction}
                 />
               }
               resetFields={["name", "description", "departments"]}
@@ -1581,6 +1677,8 @@ function ScenarioComponent({
                   }
                   registerFlush={registerFlushCallbacks["descriptions"]}
                   isAutosaveEnabled={isAutosaveEnabled}
+                  link_tool_id={s?.descriptions?.link_tool_id ?? null}
+                  linkDescriptionsAction={linkDescriptionsAction}
                 />
 
                 <Departments
@@ -1598,6 +1696,8 @@ function ScenarioComponent({
                   group_id={s?.group_id ?? null}
                   showAiGenerate={s?.departments?.show_ai_generate ?? false}
                   onGenerate={generateHandlers["departments"]}
+                  link_tool_id={s?.departments?.link_tool_id ?? null}
+                  linkDepartmentsAction={linkDepartmentsAction}
                 />
 
                 {/* Server-driven Flags - single component for all flags */}
@@ -1639,6 +1739,8 @@ function ScenarioComponent({
                   }}
                   onGenerate={generateHandlers["scenario_flags"]}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
+                  link_tool_id={s?.flags?.link_tool_id ?? null}
+                  linkFlagsAction={linkScenarioFlagsAction}
                 />
               </div>
             </StepCard>
@@ -1698,6 +1800,8 @@ function ScenarioComponent({
                     maxImages={3}
                     isAutosaveEnabled={isAutosaveEnabled}
                     registerFlush={registerFlushCallbacks["images"]}
+                    link_tool_id={s?.images?.link_tool_id ?? null}
+                    linkImagesAction={linkImagesAction}
                   />
                 )}
                 {showProblemStatementSection && (
@@ -1742,6 +1846,8 @@ function ScenarioComponent({
                     }
                     registerFlush={registerFlushCallbacks["problem_statements"]}
                     isAutosaveEnabled={isAutosaveEnabled}
+                    link_tool_id={s?.problem_statements?.link_tool_id ?? null}
+                    linkProblemStatementsAction={linkProblemStatementsAction}
                   />
                 )}
                 {showObjectivesSection && (
@@ -1769,6 +1875,8 @@ function ScenarioComponent({
                     onGenerate={generateHandlers["objectives"]}
                     isAutosaveEnabled={isAutosaveEnabled}
                     registerFlush={registerFlushCallbacks["objectives"]}
+                    link_tool_id={s?.objectives?.link_tool_id ?? null}
+                    linkObjectivesAction={linkObjectivesAction}
                   />
                 )}
               </div>
@@ -1830,6 +1938,8 @@ function ScenarioComponent({
                   onGenerate={generateHandlers["personas"]}
                   showAiGenerate={s?.personas?.show_ai_generate ?? false}
                   videoEnabled={videoEnabled}
+                  link_tool_id={s?.personas?.link_tool_id ?? null}
+                  linkPersonasAction={linkPersonasAction}
                 />
               </div>
             </StepCard>
@@ -1890,6 +2000,8 @@ function ScenarioComponent({
                   onGenerate={generateHandlers["documents"]}
                   showAiGenerate={s?.documents?.show_ai_generate ?? false}
                   videoEnabled={videoEnabled}
+                  link_tool_id={s?.documents?.link_tool_id ?? null}
+                  linkDocumentsAction={linkDocumentsAction}
                 />
               </div>
             </StepCard>
@@ -1967,6 +2079,8 @@ function ScenarioComponent({
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["parameter_fields"]}
                   create_tool_id={s?.parameter_fields?.tool_id ?? null}
+                  link_tool_id={s?.parameter_fields?.link_tool_id ?? null}
+                  linkParameterFieldsAction={linkParameterFieldsAction}
                 />
               </div>
             </StepCard>
@@ -2024,6 +2138,8 @@ function ScenarioComponent({
                     create_tool_id={s?.videos?.tool_id ?? null}
                     isAutosaveEnabled={isAutosaveEnabled}
                     registerFlush={registerFlushCallbacks["videos"]}
+                    link_tool_id={s?.videos?.link_tool_id ?? null}
+                    linkVideosAction={linkVideosAction}
                   />
                 )}
                 {showQuestionsSection && (
@@ -2055,6 +2171,8 @@ function ScenarioComponent({
                     isAutosaveEnabled={isAutosaveEnabled}
                     registerFlush={registerFlushCallbacks["questions"]}
                     onInternalQuestionsChange={setInternalQuestions}
+                    link_tool_id={s?.questions?.link_tool_id ?? null}
+                    linkQuestionsAction={linkQuestionsAction}
                   />
                 )}
                 {showQuestionsSection && internalQuestions.length > 0 && (
@@ -2082,6 +2200,8 @@ function ScenarioComponent({
                     }
                     isAutosaveEnabled={isAutosaveEnabled}
                     registerFlush={registerFlushCallbacks["options"]}
+                    link_tool_id={s?.options?.link_tool_id ?? null}
+                    linkOptionsAction={linkOptionsAction}
                   />
                 )}
               </div>
@@ -2108,6 +2228,19 @@ function ScenarioComponent({
       createVideosAction,
       createQuestionsAction,
       createOptionsAction,
+      linkNamesAction,
+      linkDescriptionsAction,
+      linkProblemStatementsAction,
+      linkObjectivesAction,
+      linkScenarioFlagsAction,
+      linkDepartmentsAction,
+      linkPersonasAction,
+      linkDocumentsAction,
+      linkParameterFieldsAction,
+      linkImagesAction,
+      linkVideosAction,
+      linkQuestionsAction,
+      linkOptionsAction,
       handleOpenStepCardModal,
       canRegenerate,
       stepResources,

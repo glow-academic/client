@@ -7,11 +7,13 @@
  */
 "use client";
 import {
+  CheckCircle,
   ChevronDown,
   ChevronRight,
   Copy,
   Edit,
   Eye,
+  Pencil,
   Sparkles,
   Trash2,
   Users,
@@ -30,11 +32,15 @@ import type {
   DeleteScenarioOut,
   DuplicateScenarioIn,
   DuplicateScenarioOut,
+  SaveScenarioIn,
+  SaveScenarioOut,
   ScenariosListOut,
+  SearchFlagsOut,
 } from "@/app/(main)/training/scenarios/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,7 +54,18 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
   TooltipContent,
@@ -75,6 +92,8 @@ export interface ScenariosProps {
   deleteScenarioAction?: (
     input: DeleteScenarioIn,
   ) => Promise<DeleteScenarioOut>;
+  saveScenarioAction?: (input: SaveScenarioIn) => Promise<SaveScenarioOut>;
+  searchFlagsAction?: () => Promise<SearchFlagsOut>;
   // Server-side pagination/filtering state
   pageIndex: number;
   pageSize: number;
@@ -88,6 +107,8 @@ export function Scenarios({
   listData: serverListData,
   duplicateScenarioAction,
   deleteScenarioAction,
+  saveScenarioAction,
+  searchFlagsAction,
   pageIndex,
   pageSize,
   totalCount,
@@ -108,6 +129,23 @@ export function Scenarios({
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
     new Set(),
   );
+
+  // Selection state (root/parent scenarios only)
+  const [selectedScenarioIds, setSelectedScenarioIds] = useState<string[]>([]);
+
+  // Bulk delete state
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  // Bulk edit state
+  const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
+  const [isBulkEditing, setIsBulkEditing] = useState(false);
+  const [bulkEditActiveStatus, setBulkEditActiveStatus] = useState<boolean | null>(null);
+  const [bulkEditDepartmentIds, setBulkEditDepartmentIds] = useState<string[] | null>(null);
+
+  // Lazy-loaded flag options
+  const [flagOptions, setFlagOptions] = useState<{ id: string; name: string; type: string }[]>([]);
+  const [flagsLoaded, setFlagsLoaded] = useState(false);
 
   // Generation via useArtifactAi hook
   type ScenarioResourceType = "names" | "descriptions" | "problem_statements" | "objectives" | "scenario_flags" | "departments" | "personas" | "documents" | "parameters" | "parameter_fields" | "images" | "videos" | "questions";
@@ -252,6 +290,55 @@ export function Scenarios({
     parent: (typeof scenarios)[number];
     children: (typeof scenarios)[number][];
   };
+
+  // Computed selection info (only root/parent scenarios)
+  const parentScenarios = useMemo(() => {
+    return scenarios.filter((scenario) => !scenario.parent_scenario_id);
+  }, [scenarios]);
+
+  const selectedCount = selectedScenarioIds.length;
+  const selectedScenarios = useMemo(() => {
+    return parentScenarios.filter((s) => s.scenario_id && selectedScenarioIds.includes(s.scenario_id));
+  }, [parentScenarios, selectedScenarioIds]);
+
+  const deletableScenarios = useMemo(() => {
+    return selectedScenarios.filter((s) => s.can_delete);
+  }, [selectedScenarios]);
+
+  const nonDeletableScenarios = useMemo(() => {
+    return selectedScenarios.filter((s) => !s.can_delete);
+  }, [selectedScenarios]);
+
+  const editableScenarios = useMemo(() => {
+    return selectedScenarios.filter((s) => s.can_edit);
+  }, [selectedScenarios]);
+
+  // Check if all parent scenarios on the current page are selected
+  const allPageSelected = useMemo(() => {
+    const pageIds = parentScenarios.filter((s) => s.scenario_id).map((s) => s.scenario_id!);
+    return pageIds.length > 0 && pageIds.every((id) => selectedScenarioIds.includes(id));
+  }, [parentScenarios, selectedScenarioIds]);
+
+  // Toggle selection for a single scenario
+  const toggleSelection = useCallback((scenarioId: string) => {
+    setSelectedScenarioIds((prev) =>
+      prev.includes(scenarioId)
+        ? prev.filter((id) => id !== scenarioId)
+        : [...prev, scenarioId]
+    );
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedScenarioIds([]);
+  }, []);
+
+  const selectAllOnPage = useCallback(() => {
+    const pageIds = parentScenarios.filter((s) => s.scenario_id).map((s) => s.scenario_id!);
+    setSelectedScenarioIds((prev) => {
+      const combined = new Set([...prev, ...pageIds]);
+      return Array.from(combined);
+    });
+  }, [parentScenarios]);
 
   // Use server-provided facet options directly (filtered by search term server-side)
   const personaOptions = useMemo(
@@ -462,11 +549,6 @@ export function Scenarios({
     return groups;
   }, [scenarios]);
 
-  // Create parent scenarios for table (root scenarios only - for pagination display)
-  const parentScenarios = useMemo(() => {
-    return scenarios.filter((scenario) => !scenario.parent_scenario_id);
-  }, [scenarios]);
-
   // Page count for manual pagination
   const pageCount = Math.ceil(totalCount / pageSize);
 
@@ -524,7 +606,7 @@ export function Scenarios({
 
     setIsDeleting(true);
     try {
-      await deleteScenarioAction({ body: { scenario_id: deleteItem.id } });
+      await deleteScenarioAction({ body: { scenario_ids: [deleteItem.id] } });
       toast.success("Scenario deleted successfully");
       router.refresh();
     } catch (err) {
@@ -539,6 +621,96 @@ export function Scenarios({
       setShowDeleteDialog(false);
       setDeleteItem(null);
     }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!deleteScenarioAction || deletableScenarios.length === 0) return;
+
+    setIsBulkDeleting(true);
+    try {
+      const ids = deletableScenarios.map((s) => s.scenario_id!);
+      await deleteScenarioAction({ body: { scenario_ids: ids } });
+      toast.success(`${ids.length} scenario(s) deleted successfully`);
+      clearSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to delete scenarios";
+      const cleanMsg = msg.replace(/^\d{3}\s*/, "");
+      toast.error(cleanMsg || "Failed to delete scenarios");
+    } finally {
+      setIsBulkDeleting(false);
+      setShowBulkDeleteDialog(false);
+    }
+  };
+
+  const handleBulkEdit = async () => {
+    if (!saveScenarioAction || editableScenarios.length === 0) return;
+
+    const hasActiveChange = bulkEditActiveStatus !== null;
+    const hasDeptChange = bulkEditDepartmentIds !== null;
+
+    if (!hasActiveChange && !hasDeptChange) {
+      toast.error("No changes selected");
+      return;
+    }
+
+    // Find the scenario_active flag ID from lazy-loaded flagOptions
+    const activeFlagId = flagOptions.find((f) => f.type === "scenario_active")?.id;
+
+    setIsBulkEditing(true);
+    try {
+      const items = editableScenarios.map((scenario) => {
+        // active_flag_id is a dedicated field: set to the active flag ID when active, null when inactive
+        let activeFlag: string | null | undefined;
+        if (hasActiveChange) {
+          activeFlag = bulkEditActiveStatus && activeFlagId ? activeFlagId : null;
+        }
+
+        return {
+          input_scenario_id: scenario.scenario_id!,
+          ...(hasActiveChange && { active_flag_id: activeFlag }),
+          ...(hasDeptChange && { department_ids: bulkEditDepartmentIds }),
+        };
+      });
+
+      await saveScenarioAction({
+        body: {
+          scenarios: items,
+        },
+      });
+      toast.success(`${items.length} scenario(s) updated successfully`);
+      clearSelection();
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to update scenarios";
+      const cleanMsg = msg.replace(/^\d{3}\s*/, "");
+      toast.error(cleanMsg || "Failed to update scenarios");
+    } finally {
+      setIsBulkEditing(false);
+      setShowBulkEditDialog(false);
+    }
+  };
+
+  const openBulkEditDialog = async () => {
+    // Reset form state
+    setBulkEditActiveStatus(null);
+    setBulkEditDepartmentIds(null);
+
+    // Lazy-load flag options
+    if (!flagsLoaded) {
+      try {
+        const flags = await searchFlagsAction?.() ?? [];
+        setFlagOptions(
+          (flags as { id?: string | null; name?: string | null; type?: string | null }[])
+            .filter((f): f is { id: string; name: string; type: string } => !!f.id && !!f.name && !!f.type)
+        );
+        setFlagsLoaded(true);
+      } catch {
+        toast.error("Failed to load flag options");
+      }
+    }
+
+    setShowBulkEditDialog(true);
   };
 
   const handleDuplicate = async (scenarioId: string, scenarioName: string) => {
@@ -672,130 +844,86 @@ export function Scenarios({
     showDropdown?: boolean,
     isCollapsed?: boolean,
     onToggleCollapse?: () => void,
-  ) => (
-    <Card
-      key={scenario.scenario_id}
-      data-testid="scenario-card"
-      data-scenario-id={scenario.scenario_id}
-      className={`hover:shadow-md transition-shadow flex flex-col h-full ${
-        isChild ? "ml-8 border-l-2 border-l-blue-200" : ""
-      }`}
-    >
-      <CardHeader className="pb-3">
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-          <div className="space-y-2 flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              {showDropdown && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 hover:bg-muted flex-shrink-0 -ml-1"
-                  onClick={onToggleCollapse}
-                >
-                  {isCollapsed ? (
-                    <ChevronRight className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
+  ) => {
+    const isSelected = !isChild && scenario.scenario_id ? selectedScenarioIds.includes(scenario.scenario_id) : false;
+
+    const handleCardClick = (e: React.MouseEvent) => {
+      // Don't toggle selection if clicking action buttons or if it's a child scenario
+      if (isChild) return;
+      if ((e.target as HTMLElement).closest("[data-action-button]")) return;
+      if (scenario.scenario_id) {
+        toggleSelection(scenario.scenario_id);
+      }
+    };
+
+    return (
+      <Card
+        key={scenario.scenario_id}
+        data-testid="scenario-card"
+        data-scenario-id={scenario.scenario_id}
+        className={`group relative flex flex-col h-full hover:shadow-md transition-all ${
+          isChild ? "ml-8 border-l-2 border-l-blue-200" : "cursor-pointer"
+        } ${isSelected ? "ring-2 ring-primary" : ""}`}
+        aria-selected={!isChild ? isSelected : undefined}
+        onClick={handleCardClick}
+      >
+        <CardHeader className="pb-3">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div className="space-y-2 flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                {/* Selection checkbox — inline before name (parent only) */}
+                {!isChild && (
+                  <div
+                    className={`transition-all overflow-hidden flex-shrink-0 ${
+                      selectedCount > 0 ? "w-5 opacity-100" : "w-0 opacity-0 group-hover:w-5 group-hover:opacity-100"
+                    }`}
+                    data-action-button
+                  >
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={() => {
+                        if (scenario.scenario_id) toggleSelection(scenario.scenario_id);
+                      }}
+                      className="rounded-full h-5 w-5"
+                      aria-label={`Select scenario ${scenario.name || "Unnamed"}`}
+                    />
+                  </div>
+                )}
+                {showDropdown && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 hover:bg-muted flex-shrink-0 -ml-1"
+                    onClick={onToggleCollapse}
+                    data-action-button
+                  >
+                    {isCollapsed ? (
+                      <ChevronRight className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </Button>
+                )}
+                <CardTitle className="text-lg flex-1 min-w-0 truncate">
+                  {scenario.name || "Unnamed Scenario"}
+                </CardTitle>
+                <div className="flex gap-1 flex-wrap flex-shrink-0">
+                  {columnVisibility.ai_badge !== false && scenario.generated && (
+                    <Badge variant="default">
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      {scenario.mcp ? "MCP" : "AI"}
+                    </Badge>
                   )}
-                </Button>
-              )}
-              <CardTitle className="text-lg flex-1 min-w-0 truncate">
-                {scenario.name || "Unnamed Scenario"}
-              </CardTitle>
-              <div className="flex gap-1 flex-wrap flex-shrink-0">
-                {columnVisibility.ai_badge !== false && scenario.generated && (
-                  <Badge variant="default">
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    {scenario.mcp ? "MCP" : "AI"}
-                  </Badge>
-                )}
-                {columnVisibility.status_badge !== false && scenario.is_inactive && (
-                  <Badge variant="secondary">Inactive</Badge>
-                )}
+                  {columnVisibility.status_badge !== false && scenario.is_inactive && (
+                    <Badge variant="secondary">Inactive</Badge>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-          <div className="flex flex-wrap gap-2 items-center">
-            {scenario.generated ? (
-              // For generated scenarios: only show preview and duplicate
-              <>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      data-testid="btn-view-scenario"
-                      onClick={() =>
-                        scenario.scenario_id &&
-                        handleView(scenario.scenario_id)
-                      }
-                      className="h-9 px-3"
-                    >
-                      <Eye className="h-4 w-4 md:mr-0 mr-2" />
-                      <span className="md:hidden">View</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>View</TooltipContent>
-                </Tooltip>
-                {scenario.can_duplicate && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        data-testid="btn-duplicate-scenario"
-                        onClick={() =>
-                          scenario.scenario_id &&
-                          handleDuplicate(
-                            scenario.scenario_id,
-                            scenario.name || "Unnamed Scenario"
-                          )
-                        }
-                        disabled={
-                          isDuplicating === scenario.scenario_id ||
-                          !scenario.scenario_id
-                        }
-                        className="h-9 px-3"
-                      >
-                        {isDuplicating === scenario.scenario_id ? (
-                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 mr-2" />
-                        ) : (
-                          <Copy className="h-4 w-4 md:mr-0 mr-2" />
-                        )}
-                        <span className="md:hidden">
-                          {isDuplicating === scenario.scenario_id
-                            ? "Duplicating..."
-                            : "Duplicate"}
-                        </span>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Duplicate</TooltipContent>
-                  </Tooltip>
-                )}
-              </>
-            ) : (
-              // For non-generated scenarios: show edit, duplicate, and delete
-              <>
-                {scenario.can_edit ? (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        data-testid="btn-edit-scenario"
-                        onClick={() =>
-                          scenario.scenario_id &&
-                          handleEdit(scenario.scenario_id)
-                        }
-                        className="h-9 px-3"
-                      >
-                        <Edit className="h-4 w-4 md:mr-0 mr-2" />
-                        <span className="md:hidden">Edit</span>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Edit</TooltipContent>
-                  </Tooltip>
-                ) : (
+            <div className="flex flex-wrap gap-2 items-center" data-action-button>
+              {scenario.generated ? (
+                // For generated scenarios: only show preview and duplicate
+                <>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -814,157 +942,235 @@ export function Scenarios({
                     </TooltipTrigger>
                     <TooltipContent>View</TooltipContent>
                   </Tooltip>
-                )}
-                {scenario.can_duplicate && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        data-testid="btn-duplicate-scenario"
-                        onClick={() =>
-                          scenario.scenario_id &&
-                          handleDuplicate(
-                            scenario.scenario_id,
-                            scenario.name || "Unnamed Scenario"
-                          )
-                        }
-                        disabled={
-                          isDuplicating === scenario.scenario_id ||
-                          !scenario.scenario_id
-                        }
-                        className="h-9 px-3"
-                      >
-                        {isDuplicating === scenario.scenario_id ? (
-                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 mr-2" />
-                        ) : (
-                          <Copy className="h-4 w-4 md:mr-0 mr-2" />
-                        )}
-                        <span className="md:hidden">
-                          {isDuplicating === scenario.scenario_id
-                            ? "Duplicating..."
-                            : "Duplicate"}
-                        </span>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Duplicate</TooltipContent>
-                  </Tooltip>
-                )}
-
-                {scenario.can_delete && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        data-testid="btn-delete-scenario"
-                        onClick={() =>
-                          scenario.scenario_id &&
-                          handleDeleteClick(
-                            scenario.scenario_id,
-                            scenario.name || "Unnamed Scenario"
-                          )
-                        }
-                        className="h-9 px-3"
-                      >
-                        <Trash2 className="h-4 w-4 md:mr-0 mr-2" />
-                        <span className="md:hidden">Delete</span>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Delete</TooltipContent>
-                  </Tooltip>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0 flex-grow flex flex-col justify-end">
-        {columnVisibility.problem_statement !== false && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {scenario.problem_statement ||
-              "Scenario will be dynamically generated."}
-          </p>
-        )}
-        {!isChild && (columnVisibility.card_num_simulations !== false || columnVisibility.persona_badges !== false || columnVisibility.field_badges !== false) && (
-          <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground flex-wrap">
-            {columnVisibility.card_num_simulations !== false && (
-              <span className="flex items-center gap-1">
-                <Users className="h-3 w-3" />
-                {scenario.num_simulations} simulation
-                {scenario.num_simulations !== 1 ? "s" : ""}
-              </span>
-            )}
-            {columnVisibility.persona_badges !== false && scenario.persona_ids && scenario.persona_ids.length > 0 && (
-              <>
-                {columnVisibility.card_num_simulations !== false && (
-                  <span className="text-muted-foreground">•</span>
-                )}
-                <div className="flex items-center gap-1 flex-wrap">
-                  {scenario.persona_ids.map((personaId) => {
-                    const persona = personaMapping[personaId];
-                    if (!persona) return null;
-                    return (
-                      <Tooltip key={personaId}>
-                        <TooltipTrigger asChild>
-                          <Badge
-                            variant="outline"
-                            className="text-xs"
-                            style={{
-                              backgroundColor: persona.color
-                                ? `${persona.color}20`
-                                : undefined,
-                              borderColor: persona.color || undefined,
-                              color: persona.color || undefined,
-                            }}
-                          >
-                            {persona.name}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{persona.description || persona.name}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-            {columnVisibility.field_badges !== false && scenario.field_ids && scenario.field_ids.length > 0 && (
-              <>
-                {(columnVisibility.card_num_simulations !== false || (columnVisibility.persona_badges !== false && scenario.persona_ids && scenario.persona_ids.length > 0)) && (
-                  <span className="text-muted-foreground">•</span>
-                )}
-                <div className="flex items-center gap-1 flex-wrap">
-                  {scenario.field_ids.slice(0, 4).map((fieldId) => {
-                    const field = fieldMapping[fieldId];
-                    if (!field) return null;
-                    return (
-                      <Tooltip key={fieldId}>
-                        <TooltipTrigger asChild>
-                          <Badge variant="outline" className="text-xs">
-                            {field.name}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{field.description || field.name}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    );
-                  })}
-                  {scenario.field_ids.length > 4 && (
-                    <span className="text-xs text-muted-foreground">
-                      +{scenario.field_ids.length - 4} more
-                    </span>
+                  {scenario.can_duplicate && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          data-testid="btn-duplicate-scenario"
+                          onClick={() =>
+                            scenario.scenario_id &&
+                            handleDuplicate(
+                              scenario.scenario_id,
+                              scenario.name || "Unnamed Scenario"
+                            )
+                          }
+                          disabled={
+                            isDuplicating === scenario.scenario_id ||
+                            !scenario.scenario_id
+                          }
+                          className="h-9 px-3"
+                        >
+                          {isDuplicating === scenario.scenario_id ? (
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 mr-2" />
+                          ) : (
+                            <Copy className="h-4 w-4 md:mr-0 mr-2" />
+                          )}
+                          <span className="md:hidden">
+                            {isDuplicating === scenario.scenario_id
+                              ? "Duplicating..."
+                              : "Duplicate"}
+                          </span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Duplicate</TooltipContent>
+                    </Tooltip>
                   )}
-                </div>
-              </>
-            )}
+                </>
+              ) : (
+                // For non-generated scenarios: show edit, duplicate, and delete
+                <>
+                  {scenario.can_edit ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          data-testid="btn-edit-scenario"
+                          onClick={() =>
+                            scenario.scenario_id &&
+                            handleEdit(scenario.scenario_id)
+                          }
+                          className="h-9 px-3"
+                        >
+                          <Edit className="h-4 w-4 md:mr-0 mr-2" />
+                          <span className="md:hidden">Edit</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Edit</TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          data-testid="btn-view-scenario"
+                          onClick={() =>
+                            scenario.scenario_id &&
+                            handleView(scenario.scenario_id)
+                          }
+                          className="h-9 px-3"
+                        >
+                          <Eye className="h-4 w-4 md:mr-0 mr-2" />
+                          <span className="md:hidden">View</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>View</TooltipContent>
+                    </Tooltip>
+                  )}
+                  {scenario.can_duplicate && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          data-testid="btn-duplicate-scenario"
+                          onClick={() =>
+                            scenario.scenario_id &&
+                            handleDuplicate(
+                              scenario.scenario_id,
+                              scenario.name || "Unnamed Scenario"
+                            )
+                          }
+                          disabled={
+                            isDuplicating === scenario.scenario_id ||
+                            !scenario.scenario_id
+                          }
+                          className="h-9 px-3"
+                        >
+                          {isDuplicating === scenario.scenario_id ? (
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 mr-2" />
+                          ) : (
+                            <Copy className="h-4 w-4 md:mr-0 mr-2" />
+                          )}
+                          <span className="md:hidden">
+                            {isDuplicating === scenario.scenario_id
+                              ? "Duplicating..."
+                              : "Duplicate"}
+                          </span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Duplicate</TooltipContent>
+                    </Tooltip>
+                  )}
+
+                  {scenario.can_delete && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          data-testid="btn-delete-scenario"
+                          onClick={() =>
+                            scenario.scenario_id &&
+                            handleDeleteClick(
+                              scenario.scenario_id,
+                              scenario.name || "Unnamed Scenario"
+                            )
+                          }
+                          className="h-9 px-3"
+                        >
+                          <Trash2 className="h-4 w-4 md:mr-0 mr-2" />
+                          <span className="md:hidden">Delete</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Delete</TooltipContent>
+                    </Tooltip>
+                  )}
+                </>
+              )}
+            </div>
           </div>
-        )}
-      </CardContent>
-    </Card>
-  );
+        </CardHeader>
+        <CardContent className="pt-0 flex-grow flex flex-col justify-end">
+          {columnVisibility.problem_statement !== false && (
+            <p className="text-sm text-muted-foreground line-clamp-2">
+              {scenario.problem_statement ||
+                "Scenario will be dynamically generated."}
+            </p>
+          )}
+          {!isChild && (columnVisibility.card_num_simulations !== false || columnVisibility.persona_badges !== false || columnVisibility.field_badges !== false) && (
+            <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground flex-wrap">
+              {columnVisibility.card_num_simulations !== false && (
+                <span className="flex items-center gap-1">
+                  <Users className="h-3 w-3" />
+                  {scenario.num_simulations} simulation
+                  {scenario.num_simulations !== 1 ? "s" : ""}
+                </span>
+              )}
+              {columnVisibility.persona_badges !== false && scenario.persona_ids && scenario.persona_ids.length > 0 && (
+                <>
+                  {columnVisibility.card_num_simulations !== false && (
+                    <span className="text-muted-foreground">•</span>
+                  )}
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {scenario.persona_ids.map((personaId) => {
+                      const persona = personaMapping[personaId];
+                      if (!persona) return null;
+                      return (
+                        <Tooltip key={personaId}>
+                          <TooltipTrigger asChild>
+                            <Badge
+                              variant="outline"
+                              className="text-xs"
+                              style={{
+                                backgroundColor: persona.color
+                                  ? `${persona.color}20`
+                                  : undefined,
+                                borderColor: persona.color || undefined,
+                                color: persona.color || undefined,
+                              }}
+                            >
+                              {persona.name}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{persona.description || persona.name}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+              {columnVisibility.field_badges !== false && scenario.field_ids && scenario.field_ids.length > 0 && (
+                <>
+                  {(columnVisibility.card_num_simulations !== false || (columnVisibility.persona_badges !== false && scenario.persona_ids && scenario.persona_ids.length > 0)) && (
+                    <span className="text-muted-foreground">•</span>
+                  )}
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {scenario.field_ids.slice(0, 4).map((fieldId) => {
+                      const field = fieldMapping[fieldId];
+                      if (!field) return null;
+                      return (
+                        <Tooltip key={fieldId}>
+                          <TooltipTrigger asChild>
+                            <Badge variant="outline" className="text-xs">
+                              {field.name}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{field.description || field.name}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
+                    {scenario.field_ids.length > 4 && (
+                      <span className="text-xs text-muted-foreground">
+                        +{scenario.field_ids.length - 4} more
+                      </span>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
 
   const renderGroupedScenarios = () => {
     return currentPageGroupedScenarios.map((group) => {
@@ -1005,7 +1211,59 @@ export function Scenarios({
     <TooltipProvider>
       <div className="space-y-8" data-page="scenarios-index">
         <div className="space-y-4">
-          {/* Toolbar */}
+          {/* Toolbar — swaps between filter bar and selection action bar */}
+          {selectedCount > 0 ? (
+            <div
+              className="flex items-center justify-between gap-2"
+              data-testid="scenarios-toolbar"
+            >
+              <div className="flex items-center gap-2">
+                {deleteScenarioAction && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => setShowBulkDeleteDialog(true)}
+                    disabled={deletableScenarios.length === 0}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete {deletableScenarios.length} of {selectedCount}
+                  </Button>
+                )}
+                {saveScenarioAction && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={openBulkEditDialog}
+                    disabled={editableScenarios.length === 0}
+                  >
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit {editableScenarios.length} of {selectedCount}
+                  </Button>
+                )}
+                {!allPageSelected && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8"
+                    onClick={selectAllOnPage}
+                  >
+                    Select All
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8"
+                  onClick={clearSelection}
+                >
+                  Unselect All
+                </Button>
+              </div>
+              <DataTableViewOptions table={table} hiddenColumns={["name", "problem_statement", "persona_id", "simulation_ids", "departments", "persona_display", "updated_at"]} />
+            </div>
+          ) : (
           <div
             className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
             data-testid="scenarios-toolbar"
@@ -1076,6 +1334,7 @@ export function Scenarios({
             </div>
             <DataTableViewOptions table={table} hiddenColumns={["name", "problem_statement", "persona_id", "simulation_ids", "departments", "persona_display", "updated_at"]} />
           </div>
+          )}
 
           {/* Grouped Scenarios */}
           <div
@@ -1097,7 +1356,7 @@ export function Scenarios({
           <DataTablePagination table={table} />
         </div>
 
-        {/* Delete Confirmation Dialog */}
+        {/* Single Delete Confirmation Dialog */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
           <AlertDialogContent
             aria-labelledby="delete-scenario-title"
@@ -1130,6 +1389,172 @@ export function Scenarios({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Bulk Delete Confirmation Dialog */}
+        <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+          <AlertDialogContent
+            aria-labelledby="bulk-delete-scenario-title"
+            data-testid="dialog-bulk-delete-scenario"
+          >
+            <AlertDialogHeader>
+              <AlertDialogTitle id="bulk-delete-scenario-title">
+                Delete {deletableScenarios.length} Scenario(s)
+              </AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-3">
+                  <p>This action cannot be undone.</p>
+                  {deletableScenarios.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-destructive mb-1">Will be deleted:</p>
+                      <ul className="text-sm space-y-0.5">
+                        {deletableScenarios.map((s) => (
+                          <li key={s.scenario_id} className="flex items-center gap-1.5">
+                            <Trash2 className="h-3 w-3 text-destructive flex-shrink-0" />
+                            {s.name || "Unnamed Scenario"}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {nonDeletableScenarios.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">Cannot be deleted (in use by simulations):</p>
+                      <ul className="text-sm space-y-0.5">
+                        {nonDeletableScenarios.map((s) => (
+                          <li key={s.scenario_id} className="flex items-center gap-1.5 text-muted-foreground">
+                            <CheckCircle className="h-3 w-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
+                            {s.name || "Unnamed Scenario"}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isBulkDeleting}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleBulkDelete}
+                disabled={isBulkDeleting}
+                variant="destructive"
+              >
+                {isBulkDeleting ? "Deleting..." : `Delete ${deletableScenarios.length}`}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Bulk Edit Modal */}
+        <Dialog open={showBulkEditDialog} onOpenChange={setShowBulkEditDialog}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Edit {editableScenarios.length} Scenario(s)</DialogTitle>
+              <DialogDescription>
+                Only changed fields will be applied. Unchanged fields keep their current values.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-5 py-4">
+              {/* Active Status — Switch with tri-state */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Active Status</Label>
+                <div className="flex items-center gap-3">
+                  {bulkEditActiveStatus === null ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">No change</span>
+                      <span className="text-xs text-muted-foreground">—</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => setBulkEditActiveStatus(true)}
+                      >
+                        Set Active
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => setBulkEditActiveStatus(false)}
+                      >
+                        Set Inactive
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <Switch
+                        checked={bulkEditActiveStatus}
+                        onCheckedChange={setBulkEditActiveStatus}
+                      />
+                      <span className="text-sm">{bulkEditActiveStatus ? "Active" : "Inactive"}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-xs text-muted-foreground"
+                        onClick={() => setBulkEditActiveStatus(null)}
+                      >
+                        Reset
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Departments — GenericPicker multi-select */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Departments</Label>
+                  {bulkEditDepartmentIds !== null && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => setBulkEditDepartmentIds(null)}
+                    >
+                      Reset
+                    </Button>
+                  )}
+                </div>
+                {bulkEditDepartmentIds === null ? (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-muted-foreground"
+                    onClick={() => setBulkEditDepartmentIds([])}
+                  >
+                    No change — click to edit departments
+                  </Button>
+                ) : (
+                  <GenericPicker
+                    items={departmentOptions}
+                    selectedIds={bulkEditDepartmentIds}
+                    onSelect={setBulkEditDepartmentIds}
+                    multiSelect
+                    getId={(d) => d.value}
+                    getLabel={(d) => d.label}
+                    placeholder="Select departments..."
+                    showClearAction
+                    clearActionLabel="Clear All"
+                    searchPlaceholder="Search departments..."
+                    emptyMessage="No departments found."
+                    groupHeading="Departments"
+                    hideSelectedChips={false}
+                    showClearAll
+                  />
+                )}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowBulkEditDialog(false)} disabled={isBulkEditing}>
+                Cancel
+              </Button>
+              <Button onClick={handleBulkEdit} disabled={isBulkEditing}>
+                {isBulkEditing ? "Applying..." : "Apply Changes"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <GenerateRegenerateModal {...modalProps} />
       </div>

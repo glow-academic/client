@@ -23,6 +23,10 @@ import { Check, GripVertical, Loader2, PlusCircle, Sparkles, Target, Trash2, X }
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
+// Link types for tool call tracking
+type LinkObjectivesIn = InputOf<"/api/v4/resources/objectives/link", "post">;
+type LinkObjectivesOut = OutputOf<"/api/v4/resources/objectives/link", "post">;
+
 type CreateDraftObjectivesIn = InputOf<"/api/v4/resources/objectives", "post">;
 type CreateDraftObjectivesOut = OutputOf<
   "/api/v4/resources/objectives",
@@ -169,6 +173,9 @@ export interface ObjectivesProps {
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ objective_ids: string[] } | void>) => void;
   aiObjectiveResources?: Pick<ObjectiveResourceItem, "objective_id" | "objective">[] | null;
+  // Link tool call tracking (reserved for future use)
+  link_tool_id?: string | null;
+  linkObjectivesAction?: (input: LinkObjectivesIn) => Promise<LinkObjectivesOut>;
 }
 
 export function Objectives({
@@ -195,6 +202,8 @@ export function Objectives({
   isAutosaveEnabled = true,
   registerFlush,
   aiObjectiveResources: _aiObjectiveResources,
+  link_tool_id: _link_tool_id,
+  linkObjectivesAction: _linkObjectivesAction,
 }: ObjectivesProps) {
   // Use standardized props
   const ids = useMemo(() => objective_ids ?? [], [objective_ids]);

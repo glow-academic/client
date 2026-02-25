@@ -522,20 +522,25 @@ class ListScenarioApiResponse(BaseModel):
 # =============================================================================
 
 
-class SaveScenarioApiRequest(BaseModel):
-    """Request for saving a scenario - flat resource IDs."""
+class SaveScenarioItem(BaseModel):
+    """Per-item shape for saving a scenario — dual-mode fields (ID or value)."""
 
     input_scenario_id: UUID | None = None
-    # No group_id — server-resolved
+    # Dual-mode: provide ID or raw value (value resolved to ID server-side)
     name_id: UUID | None = None
+    name: str | None = None
     description_id: UUID | None = None
+    description: str | None = None
     problem_statement_id: UUID | None = None
+    problem_statement: str | None = None
+    # Flag IDs (individual typed flags)
     active_flag_id: UUID | None = None
     objectives_enabled_flag_id: UUID | None = None
     images_enabled_flag_id: UUID | None = None
     video_enabled_flag_id: UUID | None = None
     questions_enabled_flag_id: UUID | None = None
     problem_statement_enabled_flag_id: UUID | None = None
+    # Multi-select resource IDs
     department_ids: list[UUID] | None = None
     persona_ids: list[UUID] | None = None
     document_ids: list[UUID] | None = None
@@ -548,8 +553,36 @@ class SaveScenarioApiRequest(BaseModel):
     option_ids: list[UUID] | None = None
 
 
+class SaveScenarioApiRequest(BaseModel):
+    """Bulk save request — wraps list of items."""
+
+    scenarios: list[SaveScenarioItem]
+
+
+class SaveScenarioFieldError(BaseModel):
+    """Per-field validation error."""
+
+    field: str
+    message: str
+
+
+class SaveScenarioResult(BaseModel):
+    """Per-item result from bulk save."""
+
+    success: bool = False
+    scenario_id: UUID | None = None
+    message: str | None = None
+    errors: list[SaveScenarioFieldError] | None = None
+
+
+class SaveScenarioApiResponse(BaseModel):
+    """Bulk save response."""
+
+    results: list[SaveScenarioResult]
+
+
 class ScenarioResourceAction(BaseModel):
-    """Internal type for SQL composite serialization."""
+    """Internal type for SQL composite serialization (used by draft endpoint)."""
 
     resource_id: UUID | None = None
     create_tool_id: UUID | None = None
@@ -557,19 +590,11 @@ class ScenarioResourceAction(BaseModel):
 
 
 class ScenarioMultiResourceAction(BaseModel):
-    """Internal type for SQL composite serialization."""
+    """Internal type for SQL composite serialization (used by draft endpoint)."""
 
     resource_ids: list[UUID] | None = None
     create_tool_id: UUID | None = None
     link_tool_id: UUID | None = None
-
-
-class SaveScenarioApiResponse(BaseModel):
-    """Response for saving a scenario."""
-
-    success: bool = False
-    scenario_id: UUID | None = None
-    message: str | None = None
 
 
 # =============================================================================
@@ -578,20 +603,23 @@ class SaveScenarioApiResponse(BaseModel):
 
 
 class DeleteScenarioApiRequest(BaseModel):
-    """Request for deleting a scenario."""
+    """Bulk delete request."""
 
-    scenario_id: UUID
+    scenario_ids: list[UUID]
+
+
+class DeleteScenarioResult(BaseModel):
+    """Per-item result from bulk delete."""
+
+    success: bool = False
+    scenario_id: UUID | None = None
+    message: str | None = None
 
 
 class DeleteScenarioApiResponse(BaseModel):
-    """Response for deleting a scenario."""
+    """Bulk delete response."""
 
-    scenario_exists: bool | None = None
-    scenario_id: UUID | None = None
-    name: str | None = None
-    usage_count: int | None = None
-    deleted: bool | None = None
-    actor_name: str | None = None
+    results: list[DeleteScenarioResult]
 
 
 # =============================================================================
@@ -916,98 +944,84 @@ class GetScenariosListApiRequest(BaseModel):
 
 
 class SaveScenarioSqlParams(BaseModel):
-    """SQL parameters for save scenario - nested resource actions."""
+    """SQL parameters for save scenario — flat resource IDs, no composites."""
 
     profile_id: UUID
     input_scenario_id: UUID | None = None
-    group_id: UUID | None = None
-    names: ScenarioResourceAction
-    descriptions: ScenarioResourceAction
-    problem_statements: ScenarioResourceAction
-    flags: ScenarioMultiResourceAction
-    departments: ScenarioMultiResourceAction
-    personas: ScenarioMultiResourceAction
-    documents: ScenarioMultiResourceAction
-    parameters: ScenarioMultiResourceAction
-    parameter_fields: ScenarioMultiResourceAction
-    images: ScenarioMultiResourceAction
-    objectives: ScenarioMultiResourceAction
-    videos: ScenarioMultiResourceAction
-    questions: ScenarioMultiResourceAction
-    options: ScenarioMultiResourceAction
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    problem_statement_id: UUID | None = None
+    flag_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    objective_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+    question_ids: list[UUID] | None = None
+    option_ids: list[UUID] | None = None
+    scenarios_resource_id: UUID | None = None
 
     @classmethod
     def from_request(
         cls,
-        request: SaveScenarioApiRequest,
+        item: SaveScenarioItem,
         profile_id: UUID,
-        group_id: UUID | None,
+        scenarios_resource_id: UUID | None = None,
     ) -> "SaveScenarioSqlParams":
         flag_ids = [
             fid
             for fid in [
-                request.active_flag_id,
-                request.objectives_enabled_flag_id,
-                request.images_enabled_flag_id,
-                request.video_enabled_flag_id,
-                request.questions_enabled_flag_id,
-                request.problem_statement_enabled_flag_id,
+                item.active_flag_id,
+                item.objectives_enabled_flag_id,
+                item.images_enabled_flag_id,
+                item.video_enabled_flag_id,
+                item.questions_enabled_flag_id,
+                item.problem_statement_enabled_flag_id,
             ]
             if fid is not None
         ]
         return cls(
             profile_id=profile_id,
-            input_scenario_id=request.input_scenario_id,
-            group_id=group_id,
-            names=ScenarioResourceAction(resource_id=request.name_id),
-            descriptions=ScenarioResourceAction(resource_id=request.description_id),
-            problem_statements=ScenarioResourceAction(
-                resource_id=request.problem_statement_id
-            ),
-            flags=ScenarioMultiResourceAction(
-                resource_ids=flag_ids or None,
-            ),
-            departments=ScenarioMultiResourceAction(
-                resource_ids=request.department_ids
-            ),
-            personas=ScenarioMultiResourceAction(resource_ids=request.persona_ids),
-            documents=ScenarioMultiResourceAction(resource_ids=request.document_ids),
-            parameters=ScenarioMultiResourceAction(resource_ids=request.parameter_ids),
-            parameter_fields=ScenarioMultiResourceAction(
-                resource_ids=request.parameter_field_ids
-            ),
-            images=ScenarioMultiResourceAction(resource_ids=request.image_ids),
-            objectives=ScenarioMultiResourceAction(resource_ids=request.objective_ids),
-            videos=ScenarioMultiResourceAction(resource_ids=request.video_ids),
-            questions=ScenarioMultiResourceAction(resource_ids=request.question_ids),
-            options=ScenarioMultiResourceAction(resource_ids=request.option_ids),
+            input_scenario_id=item.input_scenario_id,
+            name_id=item.name_id,
+            description_id=item.description_id,
+            problem_statement_id=item.problem_statement_id,
+            flag_ids=flag_ids or None,
+            department_ids=item.department_ids,
+            persona_ids=item.persona_ids,
+            document_ids=item.document_ids,
+            parameter_ids=item.parameter_ids,
+            parameter_field_ids=item.parameter_field_ids,
+            image_ids=item.image_ids,
+            objective_ids=item.objective_ids,
+            video_ids=item.video_ids,
+            question_ids=item.question_ids,
+            option_ids=item.option_ids,
+            scenarios_resource_id=scenarios_resource_id,
         )
 
     def to_tuple(self) -> tuple[Any, ...]:
-        def single(a: ScenarioResourceAction) -> tuple[Any, Any, Any]:
-            return (a.resource_id, a.create_tool_id, a.link_tool_id)
-
-        def multi(a: ScenarioMultiResourceAction) -> tuple[Any, Any, Any]:
-            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
-
         return (
             self.profile_id,
             self.input_scenario_id,
-            self.group_id,
-            single(self.names),
-            single(self.descriptions),
-            single(self.problem_statements),
-            multi(self.flags),
-            multi(self.departments),
-            multi(self.personas),
-            multi(self.documents),
-            multi(self.parameters),
-            multi(self.parameter_fields),
-            multi(self.images),
-            multi(self.objectives),
-            multi(self.videos),
-            multi(self.questions),
-            multi(self.options),
+            self.name_id,
+            self.description_id,
+            self.problem_statement_id,
+            self.flag_ids,
+            self.department_ids or [],
+            self.persona_ids or [],
+            self.document_ids or [],
+            self.parameter_ids,
+            self.parameter_field_ids or [],
+            self.image_ids or [],
+            self.objective_ids or [],
+            self.video_ids or [],
+            self.question_ids or [],
+            self.option_ids or [],
+            self.scenarios_resource_id,
         )
 
 
@@ -1015,32 +1029,6 @@ class SaveScenarioSqlRow(BaseModel):
     """SQL row for save scenario."""
 
     scenario_id: UUID | None = None
-    actor_name: str | None = None
-
-
-class DeleteScenarioSqlParams(BaseModel):
-    """SQL parameters for delete scenario."""
-
-    scenario_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        """Convert to tuple for SQL execution."""
-        return (
-            self.scenario_id,
-            self.profile_id,
-        )
-
-
-class DeleteScenarioSqlRow(BaseModel):
-    """SQL row for delete scenario."""
-
-    scenario_exists: bool | None = None
-    scenario_id: UUID | None = None
-    name: str | None = None
-    usage_count: int | None = None
-    deleted: bool | None = None
-    actor_name: str | None = None
 
 
 class DuplicateScenarioSqlParams(BaseModel):

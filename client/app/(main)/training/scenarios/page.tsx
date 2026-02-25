@@ -18,6 +18,10 @@ type DuplicateScenarioIn = InputOf<"/api/v4/artifacts/scenarios/duplicate", "pos
 type DuplicateScenarioOut = OutputOf<"/api/v4/artifacts/scenarios/duplicate", "post">;
 type DeleteScenarioIn = InputOf<"/api/v4/artifacts/scenarios/delete", "post">;
 type DeleteScenarioOut = OutputOf<"/api/v4/artifacts/scenarios/delete", "post">;
+type SaveScenarioIn = InputOf<"/api/v4/artifacts/scenarios/save", "post">;
+type SaveScenarioOut = OutputOf<"/api/v4/artifacts/scenarios/save", "post">;
+type SearchFlagsIn = InputOf<"/api/v4/resources/flags/search", "post">;
+type SearchFlagsOut = NonNullable<OutputOf<"/api/v4/resources/flags/search", "post">["items"]>;
 
 /** ---- Body type for scenarios list request ---- */
 type ScenariosListBody = {
@@ -67,6 +71,21 @@ async function deleteScenario(
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/artifacts/scenarios/delete", input);
+}
+
+async function saveScenario(
+  input: SaveScenarioIn,
+): Promise<SaveScenarioOut> {
+  "use server";
+  return api.post("/artifacts/scenarios/save", input);
+}
+
+async function searchFlags(): Promise<SearchFlagsOut> {
+  "use server";
+  const res = await api.post("/resources/flags/search", {
+    body: { search: null, limit_count: 100, offset_count: 0, scenario: true },
+  } as SearchFlagsIn);
+  return res.items ?? [];
 }
 
 /** ---- Docs types for page metadata ---- */
@@ -132,6 +151,8 @@ export default async function ScenariosPage({ searchParams }: ScenariosPageProps
         listData={listData}
         duplicateScenarioAction={duplicateScenario}
         deleteScenarioAction={deleteScenario}
+        saveScenarioAction={saveScenario}
+        searchFlagsAction={searchFlags}
         pageIndex={pageIndex}
         pageSize={pageSize}
         totalCount={listData.total_count ?? 0}
@@ -149,5 +170,8 @@ export type {
   DeleteScenarioOut,
   DuplicateScenarioIn,
   DuplicateScenarioOut,
+  SaveScenarioIn,
+  SaveScenarioOut,
+  SearchFlagsOut,
   ScenariosListOut,
 };

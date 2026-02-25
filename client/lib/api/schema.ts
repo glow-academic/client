@@ -228,7 +228,11 @@ export interface paths {
         put?: never;
         /**
          * Save Scenario
-         * @description Save scenario - handles both create (input_scenario_id = NULL) and update (input_scenario_id provided).
+         * @description Bulk save scenarios — all-or-nothing single transaction.
+         *
+         *     Each item can provide resource IDs directly or raw values that get
+         *     resolved to IDs (create or match). If any item has resolution errors,
+         *     the entire batch fails with per-item error details — no mutation occurs.
          */
         post: operations["save_scenario_api_v4_artifacts_scenarios_save_post"];
         delete?: never;
@@ -268,7 +272,7 @@ export interface paths {
         put?: never;
         /**
          * Delete Scenario
-         * @description Delete a scenario.
+         * @description Bulk delete scenarios — all-or-nothing single transaction.
          */
         post: operations["delete_scenario_api_v4_artifacts_scenarios_delete_post"];
         delete?: never;
@@ -4090,6 +4094,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/documents/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Documents
+         * @description Record tool call tracking for linking an existing documents resource.
+         */
+        post: operations["link_documents_api_v4_resources_documents_link_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/documents/search": {
         parameters: {
             query?: never;
@@ -4361,6 +4385,26 @@ export interface paths {
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
         post: operations["get_fields_api_v4_resources_fields_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/fields/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Fields
+         * @description Record tool call tracking for linking an existing fields resource.
+         */
+        post: operations["link_fields_api_v4_resources_fields_link_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4779,6 +4823,26 @@ export interface paths {
          * @description Get image by ID.
          */
         post: operations["get_image_api_v4_resources_images_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/images/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Images
+         * @description Record tool call tracking for linking an existing images resource.
+         */
+        post: operations["link_images_api_v4_resources_images_link_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5262,6 +5326,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/objectives/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Objectives
+         * @description Record tool call tracking for linking an existing objectives resource.
+         */
+        post: operations["link_objectives_api_v4_resources_objectives_link_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/objectives/search": {
         parameters: {
             query?: never;
@@ -5316,6 +5400,26 @@ export interface paths {
          * @description Get options by IDs.
          */
         post: operations["get_options_api_v4_resources_options_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/options/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Options
+         * @description Record tool call tracking for linking an existing options resource.
+         */
+        post: operations["link_options_api_v4_resources_options_link_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5395,6 +5499,26 @@ export interface paths {
          * @description Get persona by ID.
          */
         post: operations["get_persona_api_v4_resources_personas_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/personas/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Personas
+         * @description Record tool call tracking for linking an existing personas resource.
+         */
+        post: operations["link_personas_api_v4_resources_personas_link_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5572,6 +5696,26 @@ export interface paths {
          * @description Get problem statement by ID.
          */
         post: operations["get_problem_statement_api_v4_resources_problem_statements_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/problem_statements/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Problem Statements
+         * @description Record tool call tracking for linking an existing problem_statements resource.
+         */
+        post: operations["link_problem_statements_api_v4_resources_problem_statements_link_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5873,6 +6017,26 @@ export interface paths {
          * @description Get question by ID.
          */
         post: operations["get_question_api_v4_resources_questions_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/questions/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Questions
+         * @description Record tool call tracking for linking an existing questions resource.
+         */
+        post: operations["link_questions_api_v4_resources_questions_link_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7295,6 +7459,26 @@ export interface paths {
          * @description Get video by ID.
          */
         post: operations["get_video_api_v4_resources_videos_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/videos/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Videos
+         * @description Record tool call tracking for linking an existing videos resource.
+         */
+        post: operations["link_videos_api_v4_resources_videos_link_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -25179,32 +25363,34 @@ export interface components {
         };
         /**
          * DeleteScenarioApiRequest
-         * @description Request for deleting a scenario.
+         * @description Bulk delete request.
          */
         DeleteScenarioApiRequest: {
-            /**
-             * Scenario Id
-             * Format: uuid
-             */
-            scenario_id: string;
+            /** Scenario Ids */
+            scenario_ids: string[];
         };
         /**
          * DeleteScenarioApiResponse
-         * @description Response for deleting a scenario.
+         * @description Bulk delete response.
          */
         DeleteScenarioApiResponse: {
-            /** Scenario Exists */
-            scenario_exists?: boolean | null;
+            /** Results */
+            results: components["schemas"]["DeleteScenarioResult"][];
+        };
+        /**
+         * DeleteScenarioResult
+         * @description Per-item result from bulk delete.
+         */
+        DeleteScenarioResult: {
+            /**
+             * Success
+             * @default false
+             */
+            success: boolean;
             /** Scenario Id */
             scenario_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Usage Count */
-            usage_count?: number | null;
-            /** Deleted */
-            deleted?: boolean | null;
-            /** Actor Name */
-            actor_name?: string | null;
+            /** Message */
+            message?: string | null;
         };
         /**
          * DeleteSettingApiRequest
@@ -32731,6 +32917,34 @@ export interface components {
             /** Description Id */
             description_id?: string | null;
         };
+        /** LinkDocumentsApiRequest */
+        LinkDocumentsApiRequest: {
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Tool Id
+             * Format: uuid
+             */
+            tool_id: string;
+        };
+        /** LinkDocumentsApiResponse */
+        LinkDocumentsApiResponse: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Documents Id */
+            documents_id?: string | null;
+        };
         /** LinkExamplesApiRequest */
         LinkExamplesApiRequest: {
             /**
@@ -32758,6 +32972,34 @@ export interface components {
             success: boolean;
             /** Example Id */
             example_id?: string | null;
+        };
+        /** LinkFieldsApiRequest */
+        LinkFieldsApiRequest: {
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Tool Id
+             * Format: uuid
+             */
+            tool_id: string;
+        };
+        /** LinkFieldsApiResponse */
+        LinkFieldsApiResponse: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Fields Id */
+            fields_id?: string | null;
         };
         /** LinkFlagsApiRequest */
         LinkFlagsApiRequest: {
@@ -32815,6 +33057,34 @@ export interface components {
             /** Icon Id */
             icon_id?: string | null;
         };
+        /** LinkImagesApiRequest */
+        LinkImagesApiRequest: {
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Tool Id
+             * Format: uuid
+             */
+            tool_id: string;
+        };
+        /** LinkImagesApiResponse */
+        LinkImagesApiResponse: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Images Id */
+            images_id?: string | null;
+        };
         /** LinkInstructionsApiRequest */
         LinkInstructionsApiRequest: {
             /**
@@ -32871,6 +33141,62 @@ export interface components {
             /** Name Id */
             name_id?: string | null;
         };
+        /** LinkObjectivesApiRequest */
+        LinkObjectivesApiRequest: {
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Tool Id
+             * Format: uuid
+             */
+            tool_id: string;
+        };
+        /** LinkObjectivesApiResponse */
+        LinkObjectivesApiResponse: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Objectives Id */
+            objectives_id?: string | null;
+        };
+        /** LinkOptionsApiRequest */
+        LinkOptionsApiRequest: {
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Tool Id
+             * Format: uuid
+             */
+            tool_id: string;
+        };
+        /** LinkOptionsApiResponse */
+        LinkOptionsApiResponse: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Options Id */
+            options_id?: string | null;
+        };
         /** LinkParameterFieldsApiRequest */
         LinkParameterFieldsApiRequest: {
             /**
@@ -32898,6 +33224,62 @@ export interface components {
             success: boolean;
             /** Parameter Fields Id */
             parameter_fields_id?: string | null;
+        };
+        /** LinkPersonasApiRequest */
+        LinkPersonasApiRequest: {
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Tool Id
+             * Format: uuid
+             */
+            tool_id: string;
+        };
+        /** LinkPersonasApiResponse */
+        LinkPersonasApiResponse: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Personas Id */
+            personas_id?: string | null;
+        };
+        /** LinkProblemStatementsApiRequest */
+        LinkProblemStatementsApiRequest: {
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Tool Id
+             * Format: uuid
+             */
+            tool_id: string;
+        };
+        /** LinkProblemStatementsApiResponse */
+        LinkProblemStatementsApiResponse: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Problem Statements Id */
+            problem_statements_id?: string | null;
         };
         /** LinkProfilePersonasApiRequest */
         LinkProfilePersonasApiRequest: {
@@ -32954,6 +33336,34 @@ export interface components {
             success: boolean;
             /** Profiles Id */
             profiles_id?: string | null;
+        };
+        /** LinkQuestionsApiRequest */
+        LinkQuestionsApiRequest: {
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Tool Id
+             * Format: uuid
+             */
+            tool_id: string;
+        };
+        /** LinkQuestionsApiResponse */
+        LinkQuestionsApiResponse: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Questions Id */
+            questions_id?: string | null;
         };
         /** LinkScenarioFlagsApiRequest */
         LinkScenarioFlagsApiRequest: {
@@ -33178,6 +33588,34 @@ export interface components {
             success: boolean;
             /** Simulations Id */
             simulations_id?: string | null;
+        };
+        /** LinkVideosApiRequest */
+        LinkVideosApiRequest: {
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Tool Id
+             * Format: uuid
+             */
+            tool_id: string;
+        };
+        /** LinkVideosApiResponse */
+        LinkVideosApiResponse: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Videos Id */
+            videos_id?: string | null;
         };
         /** LinkVoicesApiRequest */
         LinkVoicesApiRequest: {
@@ -41918,17 +42356,49 @@ export interface components {
         };
         /**
          * SaveScenarioApiRequest
-         * @description Request for saving a scenario - flat resource IDs.
+         * @description Bulk save request — wraps list of items.
          */
         SaveScenarioApiRequest: {
+            /** Scenarios */
+            scenarios: components["schemas"]["SaveScenarioItem"][];
+        };
+        /**
+         * SaveScenarioApiResponse
+         * @description Bulk save response.
+         */
+        SaveScenarioApiResponse: {
+            /** Results */
+            results: components["schemas"]["SaveScenarioResult"][];
+        };
+        /**
+         * SaveScenarioFieldError
+         * @description Per-field validation error.
+         */
+        SaveScenarioFieldError: {
+            /** Field */
+            field: string;
+            /** Message */
+            message: string;
+        };
+        /**
+         * SaveScenarioItem
+         * @description Per-item shape for saving a scenario — dual-mode fields (ID or value).
+         */
+        SaveScenarioItem: {
             /** Input Scenario Id */
             input_scenario_id?: string | null;
             /** Name Id */
             name_id?: string | null;
+            /** Name */
+            name?: string | null;
             /** Description Id */
             description_id?: string | null;
+            /** Description */
+            description?: string | null;
             /** Problem Statement Id */
             problem_statement_id?: string | null;
+            /** Problem Statement */
+            problem_statement?: string | null;
             /** Active Flag Id */
             active_flag_id?: string | null;
             /** Objectives Enabled Flag Id */
@@ -41963,10 +42433,10 @@ export interface components {
             option_ids?: string[] | null;
         };
         /**
-         * SaveScenarioApiResponse
-         * @description Response for saving a scenario.
+         * SaveScenarioResult
+         * @description Per-item result from bulk save.
          */
-        SaveScenarioApiResponse: {
+        SaveScenarioResult: {
             /**
              * Success
              * @default false
@@ -41976,6 +42446,8 @@ export interface components {
             scenario_id?: string | null;
             /** Message */
             message?: string | null;
+            /** Errors */
+            errors?: components["schemas"]["SaveScenarioFieldError"][] | null;
         };
         /**
          * SaveSettingApiRequest
@@ -58343,6 +58815,43 @@ export interface operations {
             };
         };
     };
+    link_documents_api_v4_resources_documents_link_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkDocumentsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkDocumentsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     search_documents_api_v4_resources_documents_search_post: {
         parameters: {
             query?: never;
@@ -58848,6 +59357,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetFieldsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_fields_api_v4_resources_fields_link_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkFieldsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkFieldsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59625,6 +60171,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetImageApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_images_api_v4_resources_images_link_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkImagesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkImagesApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60526,6 +61109,43 @@ export interface operations {
             };
         };
     };
+    link_objectives_api_v4_resources_objectives_link_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkObjectivesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkObjectivesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     search_objectives_api_v4_resources_objectives_search_post: {
         parameters: {
             query?: never;
@@ -60624,6 +61244,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetOptionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_options_api_v4_resources_options_link_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkOptionsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkOptionsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60772,6 +61429,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetPersonaResourceApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_personas_api_v4_resources_personas_link_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkPersonasApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkPersonasApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61105,6 +61799,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetProblemStatementApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_problem_statements_api_v4_resources_problem_statements_link_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkProblemStatementsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkProblemStatementsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61660,6 +62391,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetQuestionApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_questions_api_v4_resources_questions_link_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkQuestionsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkQuestionsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -64287,6 +65055,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetVideoApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_videos_api_v4_resources_videos_link_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkVideosApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkVideosApiResponse"];
                 };
             };
             /** @description Validation Error */

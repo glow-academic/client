@@ -27,6 +27,10 @@ import { toast } from "sonner";
 import * as tus from "tus-js-client";
 import { v4 as uuidv4 } from "uuid";
 
+// Link types for tool call tracking
+type LinkImagesIn = InputOf<"/api/v4/resources/images/link", "post">;
+type LinkImagesOut = OutputOf<"/api/v4/resources/images/link", "post">;
+
 type CreateDraftImagesIn = InputOf<"/api/v4/resources/images", "post">;
 type CreateDraftImagesOut = OutputOf<"/api/v4/resources/images", "post">;
 
@@ -79,6 +83,9 @@ export interface ImagesProps {
     message?: string;
   }>;
   aiImageResources?: Pick<ImageResourceItem, "image_id" | "name">[] | null;
+  // Link tool call tracking (reserved for future use)
+  link_tool_id?: string | null;
+  linkImagesAction?: (input: LinkImagesIn) => Promise<LinkImagesOut>;
 }
 
 export function Images({
@@ -109,6 +116,8 @@ export function Images({
   registerFlush,
   finalizeUploadAction,
   aiImageResources: _aiImageResources,
+  link_tool_id: _link_tool_id,
+  linkImagesAction: _linkImagesAction,
 }: ImagesProps) {
   const ids = useMemo(() => image_ids ?? [], [image_ids]);
   const show = show_images ?? false;

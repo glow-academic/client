@@ -16,7 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { OutputOf } from "@/lib/api/types";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { getIconComponent } from "@/utils/icons";
 import { useResourceAi } from "@/hooks/use-resource-ai";
@@ -43,6 +43,10 @@ const generateGradientFromHex = (hexColor: string): string => {
 
   return `linear-gradient(135deg, ${lighterHex} 0%, ${hexColor} 100%)`;
 };
+
+// Link types for tool call tracking
+type LinkPersonasIn = InputOf<"/api/v4/resources/personas/link", "post">;
+type LinkPersonasOut = OutputOf<"/api/v4/resources/personas/link", "post">;
 
 // Derive resource item type from the GET endpoint response
 type PersonaGetResponse = OutputOf<"/api/v4/resources/personas/get", "post">;
@@ -73,6 +77,9 @@ export interface PersonasProps {
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   videoEnabled?: boolean; // Whether video mode is enabled (for filtering)
+  // Link tool call tracking
+  link_tool_id?: string | null;
+  linkPersonasAction?: (input: LinkPersonasIn) => Promise<LinkPersonasOut>;
   aiPersonaResources?: Pick<PersonaResourceItem, "persona_id" | "name">[] | null;
 }
 
@@ -93,6 +100,8 @@ export function Personas({
   onGenerate,
   showAiGenerate = false,
   videoEnabled = false,
+  link_tool_id,
+  linkPersonasAction,
   aiPersonaResources,
 }: PersonasProps) {
   const ids = useMemo(() => persona_ids ?? [], [persona_ids]);
@@ -163,9 +172,17 @@ export function Personas({
       const newIds = isCurrentlySelected
         ? ids.filter((id) => id !== personaId)
         : [...ids, personaId];
+
+      // Fire link tracking when adding (not removing)
+      if (!isCurrentlySelected && linkPersonasAction && group_id && link_tool_id) {
+        linkPersonasAction({
+          body: { resource_id: personaId, group_id, tool_id: link_tool_id },
+        }).catch(() => {});
+      }
+
       onChange(newIds);
     },
-    [ids, onChange]
+    [ids, onChange, linkPersonasAction, group_id, link_tool_id]
   );
 
   // Check if any persona resource is generated (must be before early return)

@@ -35,6 +35,9 @@ import type { QuestionsResourceItem } from "./Questions";
 type CreateDraftOptionsIn = InputOf<"/api/v4/resources/options", "post">;
 type CreateDraftOptionsOut = OutputOf<"/api/v4/resources/options", "post">;
 
+type LinkOptionsIn = InputOf<"/api/v4/resources/options/link", "post">;
+type LinkOptionsOut = OutputOf<"/api/v4/resources/options/link", "post">;
+
 // Derive resource item type from the GET endpoint response
 type OptionsGetResponse = OutputOf<"/api/v4/resources/options/get", "post">;
 export type OptionResourceItem = NonNullable<
@@ -72,6 +75,10 @@ export interface OptionsProps {
   registerFlush?: (flush: () => Promise<FlushResult>) => void;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
+  link_tool_id?: string | null;
+  linkOptionsAction?:
+    | ((input: LinkOptionsIn) => Promise<LinkOptionsOut>)
+    | undefined;
 }
 
 export function Options({
@@ -91,6 +98,8 @@ export function Options({
   registerFlush,
   showAiGenerate = false,
   onGenerate,
+  link_tool_id: _link_tool_id,
+  linkOptionsAction: _linkOptionsAction,
 }: OptionsProps) {
   const ids = useMemo(() => option_ids ?? [], [option_ids]);
   const show = show_options ?? false;

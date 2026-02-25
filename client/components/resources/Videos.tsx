@@ -26,6 +26,10 @@ import { toast } from "sonner";
 import * as tus from "tus-js-client";
 import { v4 as uuidv4 } from "uuid";
 
+// Link types for tool call tracking
+type LinkVideosIn = InputOf<"/api/v4/resources/videos/link", "post">;
+type LinkVideosOut = OutputOf<"/api/v4/resources/videos/link", "post">;
+
 type CreateDraftVideosIn = InputOf<"/api/v4/resources/videos", "post">;
 type CreateDraftVideosOut = OutputOf<"/api/v4/resources/videos", "post">;
 
@@ -76,6 +80,9 @@ export interface VideosProps {
     message?: string;
   }>;
   aiVideoResources?: Pick<VideoResourceItem, "video_id" | "name">[] | null;
+  // Link tool call tracking (reserved for future use)
+  link_tool_id?: string | null;
+  linkVideosAction?: (input: LinkVideosIn) => Promise<LinkVideosOut>;
 }
 
 export function Videos({
@@ -104,6 +111,8 @@ export function Videos({
   registerFlush,
   finalizeUploadAction,
   aiVideoResources: _aiVideoResources,
+  link_tool_id: _link_tool_id,
+  linkVideosAction: _linkVideosAction,
 }: VideosProps) {
   const ids = useMemo(() => video_ids ?? [], [video_ids]);
   const show = show_videos ?? false;

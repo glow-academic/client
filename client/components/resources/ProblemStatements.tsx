@@ -23,6 +23,10 @@ import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+// Link types for tool call tracking
+type LinkProblemStatementsIn = InputOf<"/api/v4/resources/problem_statements/link", "post">;
+type LinkProblemStatementsOut = OutputOf<"/api/v4/resources/problem_statements/link", "post">;
+
 type CreateDraftProblemStatementsIn = InputOf<
   "/api/v4/resources/problem_statements",
   "post"
@@ -179,6 +183,9 @@ export interface ProblemStatementsProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created ID */
   registerFlush?: (flush: () => Promise<{ problem_statement_id: string | null } | void>) => void;
+  // Link tool call tracking (reserved for future use)
+  link_tool_id?: string | null;
+  linkProblemStatementsAction?: (input: LinkProblemStatementsIn) => Promise<LinkProblemStatementsOut>;
 }
 
 export function ProblemStatements({
@@ -205,6 +212,8 @@ export function ProblemStatements({
   onSearchChange,
   isAutosaveEnabled = true,
   registerFlush,
+  link_tool_id: _link_tool_id,
+  linkProblemStatementsAction: _linkProblemStatementsAction,
 }: ProblemStatementsProps) {
   const resource = problem_statement_resource ?? null;
   const resourceId = problem_statement_id ?? null;

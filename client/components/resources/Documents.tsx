@@ -26,11 +26,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { OutputOf } from "@/lib/api/types";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
 import { Check, Eye, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+
+// Link types for tool call tracking
+type LinkDocumentsIn = InputOf<"/api/v4/resources/documents/link", "post">;
+type LinkDocumentsOut = OutputOf<"/api/v4/resources/documents/link", "post">;
 
 // Derive resource item type from the GET endpoint response
 type DocumentGetResponse = OutputOf<"/api/v4/resources/documents/get", "post">;
@@ -60,6 +64,9 @@ export interface DocumentsProps {
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   videoEnabled?: boolean; // Whether video mode is enabled (for filtering)
+  // Link tool call tracking
+  link_tool_id?: string | null;
+  linkDocumentsAction?: (input: LinkDocumentsIn) => Promise<LinkDocumentsOut>;
   aiDocumentResources?: Pick<DocumentResourceItem, "document_id" | "name">[] | null;
 }
 
@@ -80,6 +87,8 @@ export function Documents({
   onGenerate,
   showAiGenerate = false,
   videoEnabled = false,
+  link_tool_id,
+  linkDocumentsAction,
   aiDocumentResources: _aiDocumentResources,
 }: DocumentsProps) {
   const ids = useMemo(() => document_ids ?? [], [document_ids]);
@@ -147,9 +156,17 @@ export function Documents({
       const newIds = isCurrentlySelected
         ? ids.filter((id) => id !== documentId)
         : [...ids, documentId];
+
+      // Fire link tracking when adding (not removing)
+      if (!isCurrentlySelected && linkDocumentsAction && group_id && link_tool_id) {
+        linkDocumentsAction({
+          body: { resource_id: documentId, group_id, tool_id: link_tool_id },
+        }).catch(() => {});
+      }
+
       onChange(newIds);
     },
-    [ids, onChange]
+    [ids, onChange, linkDocumentsAction, group_id, link_tool_id]
   );
 
   // Check if any document resource is generated (must be before early return)

@@ -125,6 +125,9 @@ router.include_router(domains_search_router)
 from app.api.v4.resources.documents.get import router as documents_get_router
 
 router.include_router(documents_get_router)
+from app.api.v4.resources.documents.link import router as documents_link_router
+
+router.include_router(documents_link_router)
 from app.api.v4.resources.documents.search import router as documents_search_router
 
 router.include_router(documents_search_router)
@@ -165,7 +168,10 @@ router.include_router(examples_search_router)
 from app.api.v4.resources.fields.get import router as fields_get_router
 from app.api.v4.resources.fields.search import router as fields_search_router
 
+from app.api.v4.resources.fields.link import router as fields_link_router
+
 router.include_router(fields_get_router)
+router.include_router(fields_link_router)
 router.include_router(fields_search_router)
 # Parameter fields endpoints for personas two-pass architecture
 from app.api.v4.resources.parameter_fields.create import (
@@ -238,8 +244,11 @@ router.include_router(icons_search_router)
 from app.api.v4.resources.images.create import router as images_router
 from app.api.v4.resources.images.get import router as images_get_router
 
+from app.api.v4.resources.images.link import router as images_link_router
+
 router.include_router(images_router)
 router.include_router(images_get_router)
+router.include_router(images_link_router)
 from app.api.v4.resources.images.search import router as images_search_router
 
 router.include_router(images_search_router)
@@ -311,16 +320,22 @@ router.include_router(names_search_router)
 from app.api.v4.resources.objectives.create import router as objectives_router
 from app.api.v4.resources.objectives.get import router as objectives_get_router
 
+from app.api.v4.resources.objectives.link import router as objectives_link_router
+
 router.include_router(objectives_router)
 router.include_router(objectives_get_router)
+router.include_router(objectives_link_router)
 from app.api.v4.resources.objectives.search import router as objectives_search_router
 
 router.include_router(objectives_search_router)
 from app.api.v4.resources.options.create import router as options_router
 from app.api.v4.resources.options.get import router as options_get_router
 
+from app.api.v4.resources.options.link import router as options_link_router
+
 router.include_router(options_router)
 router.include_router(options_get_router)
+router.include_router(options_link_router)
 from app.api.v4.resources.options.search import router as options_search_router
 
 router.include_router(options_search_router)
@@ -336,6 +351,9 @@ router.include_router(parameters_search_router)
 from app.api.v4.resources.personas.get import router as personas_get_router
 
 router.include_router(personas_get_router)
+from app.api.v4.resources.personas.link import router as personas_link_router
+
+router.include_router(personas_link_router)
 from app.api.v4.resources.personas.search import router as personas_search_router
 
 router.include_router(personas_search_router)
@@ -362,8 +380,13 @@ from app.api.v4.resources.problem_statements.get import (
     router as problem_statements_get_router,
 )
 
+from app.api.v4.resources.problem_statements.link import (
+    router as problem_statements_link_router,
+)
+
 router.include_router(problem_statements_router)
 router.include_router(problem_statements_get_router)
+router.include_router(problem_statements_link_router)
 # NOTE: profiles removed - non-creatable, sync via artifact save (migration 328)
 # GET endpoint available for profile context two-pass architecture
 from app.api.v4.resources.profiles.get import router as profiles_get_router
@@ -412,8 +435,11 @@ router.include_router(qualities_search_router)
 from app.api.v4.resources.questions.create import router as questions_router
 from app.api.v4.resources.questions.get import router as questions_get_router
 
+from app.api.v4.resources.questions.link import router as questions_link_router
+
 router.include_router(questions_router)
 router.include_router(questions_get_router)
+router.include_router(questions_link_router)
 # NOTE: reasoning_levels removed - non-creatable (migration 328)
 # GET/Search endpoints available for agent two-pass architecture
 from app.api.v4.resources.reasoning_levels.get import (
@@ -692,8 +718,11 @@ router.include_router(values_search_router)
 from app.api.v4.resources.videos.create import router as videos_router
 from app.api.v4.resources.videos.get import router as videos_get_router
 
+from app.api.v4.resources.videos.link import router as videos_link_router
+
 router.include_router(videos_router)
 router.include_router(videos_get_router)
+router.include_router(videos_link_router)
 from app.api.v4.resources.voices.create import router as voices_router
 from app.api.v4.resources.voices.get import router as voices_get_router
 from app.api.v4.resources.voices.link import router as voices_link_router

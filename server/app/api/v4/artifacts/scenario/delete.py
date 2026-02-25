@@ -1,6 +1,6 @@
 """Scenario delete endpoint - v4 API following DHH principles."""
 
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -12,6 +12,7 @@ from app.api.v4.artifacts.scenario.permissions import (
 from app.api.v4.artifacts.scenario.types import (
     DeleteScenarioApiRequest,
     DeleteScenarioApiResponse,
+    DeleteScenarioResult,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
@@ -27,11 +28,11 @@ from app.sql.types import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-# Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/queries/scenario/delete_scenario_complete.sql"
-ACCESS_SQL_PATH = (
+# SQL paths
+ACCESS_CHECK_SQL_PATH = (
     "app/sql/v4/queries/scenario/check_scenario_delete_access_complete.sql"
 )
+DELETE_SQL_PATH = "app/sql/v4/queries/scenario/delete_scenario_complete.sql"
 
 
 router = APIRouter()
@@ -43,7 +44,7 @@ router = APIRouter()
     dependencies=[
         audit_activity(
             "scenario.deleted",
-            "{{ actor.name }} deleted scenario '{{ scenario.name }}'",
+            "{{ actor.name }} deleted {{ count }} scenario(s)",
         )
     ],
 )
@@ -53,11 +54,10 @@ async def delete_scenario(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DeleteScenarioApiResponse:
-    """Delete a scenario."""
-    tags = ["scenarios"]  # From router tags
+    """Bulk delete scenarios — all-or-nothing single transaction."""
+    tags = ["scenarios"]
 
-    sql_query = load_sql_query(SQL_PATH)
-    sql_params: tuple[Any, ...] | None = None
+    sql_query = load_sql_query(DELETE_SQL_PATH)
 
     try:
         # Get profile_id from header (set by router-level dependency)
@@ -68,7 +68,7 @@ async def delete_scenario(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
+        # Fetch user context once for the whole batch
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -87,96 +87,94 @@ async def delete_scenario(
             user_role = None
             user_department_ids = []
 
-        # Permission check
-        access_params = CheckScenarioDeleteAccessSqlParams(
-            profile_id=profile_id,
-            scenario_id=request.scenario_id,
-        )
-        access_result = cast(
-            CheckScenarioDeleteAccessSqlRow,
-            await execute_sql_typed(
-                conn,
-                ACCESS_SQL_PATH,
-                params=access_params,
-            ),
-        )
-
-        if not access_result:
-            raise HTTPException(
-                status_code=401,
-                detail="Unable to verify user permissions.",
+        # Phase 1: Per-item access + permission checks (outside transaction, fail fast)
+        for idx, scenario_id in enumerate(request.scenario_ids):
+            access_params = CheckScenarioDeleteAccessSqlParams(
+                profile_id=profile_id,
+                scenario_id=scenario_id,
             )
-
-        if not access_result.scenario_exists:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Scenario not found: {request.scenario_id}",
-            )
-
-        if not has_access(
-            user_role,
-            user_department_ids,
-            access_result.scenario_department_ids or [],
-        ):
-            raise HTTPException(
-                status_code=403,
-                detail="You don't have access to this scenario.",
-            )
-
-        usage_count = access_result.usage_count or 0
-        if not compute_can_delete(
-            user_role, access_result.scenario_department_ids, usage_count
-        ):
-            raise HTTPException(
-                status_code=403,
-                detail="You don't have permission to delete this scenario.",
-            )
-
-        # Execute delete (inside transaction)
-        async with conn.transaction():
-            # Convert API request to SQL params (add profile_id from header)
-            params = DeleteScenarioSqlParams(
-                **request.model_dump(), profile_id=profile_id
-            )
-            sql_params = params.to_tuple()
-
-            # Execute SQL with typed helper (single row result)
-            result = cast(
-                DeleteScenarioSqlRow,
+            access_result = cast(
+                CheckScenarioDeleteAccessSqlRow,
                 await execute_sql_typed(
                     conn,
-                    SQL_PATH,
-                    params=params,
+                    ACCESS_CHECK_SQL_PATH,
+                    params=access_params,
                 ),
             )
 
-            # Check if scenario was deleted or is in use
-            if not result.deleted:
-                # Scenario exists but is in use
-                usage_count = result.usage_count
+            if not access_result:
                 raise HTTPException(
-                    status_code=400,
-                    detail=f"Cannot delete scenario that is in use by {usage_count} simulation(s)",
+                    status_code=401,
+                    detail=f"Item {idx}: Unable to verify user permissions.",
                 )
 
-            scenario_name = result.name
-
-            # Set audit context with data from SQL query
-            if actor_name:
-                audit_set(
-                    http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    scenario={"name": scenario_name, "id": str(request.scenario_id)},
+            if not access_result.scenario_exists:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Item {idx}: Scenario not found: {scenario_id}",
                 )
 
-        # Convert SQL result to API response
-        api_response = DeleteScenarioApiResponse.model_validate(result.model_dump())
+            scenario_department_ids = access_result.scenario_department_ids or []
+
+            if not has_access(user_role, user_department_ids, scenario_department_ids):
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Item {idx}: You don't have access to this scenario.",
+                )
+
+            usage_count = access_result.usage_count or 0
+            if not compute_can_delete(user_role, scenario_department_ids, usage_count):
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Item {idx}: You don't have permission to delete this scenario.",
+                )
+
+        # Phase 2: Single transaction — execute delete SQL for each item
+        results: list[DeleteScenarioResult] = []
+
+        async with conn.transaction():
+            for idx, scenario_id in enumerate(request.scenario_ids):
+                params = DeleteScenarioSqlParams(
+                    scenario_id=scenario_id, profile_id=profile_id
+                )
+
+                result = cast(
+                    DeleteScenarioSqlRow,
+                    await execute_sql_typed(
+                        conn,
+                        DELETE_SQL_PATH,
+                        params=params,
+                    ),
+                )
+
+                if not result:
+                    raise ValueError(f"Item {idx}: Failed to delete scenario")
+
+                if not result.deleted:
+                    raise ValueError(f"Item {idx}: Scenario not found: {scenario_id}")
+
+                scenario_name = result.name or "Unknown"
+                results.append(
+                    DeleteScenarioResult(
+                        success=True,
+                        scenario_id=scenario_id,
+                        message=f"Scenario '{scenario_name}' deleted successfully",
+                    )
+                )
+
+        # Audit context
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                count=len(results),
+            )
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return api_response
+        return DeleteScenarioApiResponse(results=results)
     except HTTPException:
         raise
     except ValueError as e:
@@ -187,6 +185,6 @@ async def delete_scenario(
             route_path=http_request.url.path,
             operation="delete_scenario",
             sql_query=sql_query,
-            sql_params=sql_params,
+            sql_params=None,
             request=http_request,
         )

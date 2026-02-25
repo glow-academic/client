@@ -25490,6 +25490,37 @@ class LinkDescriptionsApiResponse(BaseModel):
 
 
 
+# Generated from: link_documents
+
+class LinkDocumentsSqlParams(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.resource_id,
+            self.group_id,
+            self.tool_id,
+        )
+
+class LinkDocumentsSqlRow(BaseModel):
+
+    documents_id: UUID | None = None
+
+class LinkDocumentsApiRequest(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+class LinkDocumentsApiResponse(BaseModel):
+
+    documents_id: UUID | None = None
+
+
+
 # Generated from: link_examples
 
 class LinkExamplesSqlParams(BaseModel):
@@ -25518,6 +25549,37 @@ class LinkExamplesApiRequest(BaseModel):
 class LinkExamplesApiResponse(BaseModel):
 
     example_id: UUID | None = None
+
+
+
+# Generated from: link_fields
+
+class LinkFieldsSqlParams(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.resource_id,
+            self.group_id,
+            self.tool_id,
+        )
+
+class LinkFieldsSqlRow(BaseModel):
+
+    fields_id: UUID | None = None
+
+class LinkFieldsApiRequest(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+class LinkFieldsApiResponse(BaseModel):
+
+    fields_id: UUID | None = None
 
 
 
@@ -25583,6 +25645,37 @@ class LinkIconsApiResponse(BaseModel):
 
 
 
+# Generated from: link_images
+
+class LinkImagesSqlParams(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.resource_id,
+            self.group_id,
+            self.tool_id,
+        )
+
+class LinkImagesSqlRow(BaseModel):
+
+    images_id: UUID | None = None
+
+class LinkImagesApiRequest(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+class LinkImagesApiResponse(BaseModel):
+
+    images_id: UUID | None = None
+
+
+
 # Generated from: link_instructions
 
 class LinkInstructionsSqlParams(BaseModel):
@@ -25645,6 +25738,68 @@ class LinkNamesApiResponse(BaseModel):
 
 
 
+# Generated from: link_objectives
+
+class LinkObjectivesSqlParams(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.resource_id,
+            self.group_id,
+            self.tool_id,
+        )
+
+class LinkObjectivesSqlRow(BaseModel):
+
+    objectives_id: UUID | None = None
+
+class LinkObjectivesApiRequest(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+class LinkObjectivesApiResponse(BaseModel):
+
+    objectives_id: UUID | None = None
+
+
+
+# Generated from: link_options
+
+class LinkOptionsSqlParams(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.resource_id,
+            self.group_id,
+            self.tool_id,
+        )
+
+class LinkOptionsSqlRow(BaseModel):
+
+    options_id: UUID | None = None
+
+class LinkOptionsApiRequest(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+class LinkOptionsApiResponse(BaseModel):
+
+    options_id: UUID | None = None
+
+
+
 # Generated from: link_parameter_fields
 
 class LinkParameterFieldsSqlParams(BaseModel):
@@ -25673,6 +25828,68 @@ class LinkParameterFieldsApiRequest(BaseModel):
 class LinkParameterFieldsApiResponse(BaseModel):
 
     parameter_fields_id: UUID | None = None
+
+
+
+# Generated from: link_personas
+
+class LinkPersonasSqlParams(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.resource_id,
+            self.group_id,
+            self.tool_id,
+        )
+
+class LinkPersonasSqlRow(BaseModel):
+
+    personas_id: UUID | None = None
+
+class LinkPersonasApiRequest(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+class LinkPersonasApiResponse(BaseModel):
+
+    personas_id: UUID | None = None
+
+
+
+# Generated from: link_problem_statements
+
+class LinkProblemStatementsSqlParams(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.resource_id,
+            self.group_id,
+            self.tool_id,
+        )
+
+class LinkProblemStatementsSqlRow(BaseModel):
+
+    problem_statements_id: UUID | None = None
+
+class LinkProblemStatementsApiRequest(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+class LinkProblemStatementsApiResponse(BaseModel):
+
+    problem_statements_id: UUID | None = None
 
 
 
@@ -25735,6 +25952,37 @@ class LinkProfilesApiRequest(BaseModel):
 class LinkProfilesApiResponse(BaseModel):
 
     profiles_id: UUID | None = None
+
+
+
+# Generated from: link_questions
+
+class LinkQuestionsSqlParams(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.resource_id,
+            self.group_id,
+            self.tool_id,
+        )
+
+class LinkQuestionsSqlRow(BaseModel):
+
+    questions_id: UUID | None = None
+
+class LinkQuestionsApiRequest(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+class LinkQuestionsApiResponse(BaseModel):
+
+    questions_id: UUID | None = None
 
 
 
@@ -25983,6 +26231,37 @@ class LinkSimulationsApiRequest(BaseModel):
 class LinkSimulationsApiResponse(BaseModel):
 
     simulations_id: UUID | None = None
+
+
+
+# Generated from: link_videos
+
+class LinkVideosSqlParams(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.resource_id,
+            self.group_id,
+            self.tool_id,
+        )
+
+class LinkVideosSqlRow(BaseModel):
+
+    videos_id: UUID | None = None
+
+class LinkVideosApiRequest(BaseModel):
+
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+    tool_id: UUID | None = None
+
+class LinkVideosApiResponse(BaseModel):
+
+    videos_id: UUID | None = None
 
 
 
@@ -29188,6 +29467,64 @@ class ScenarioTimeLimitsApiResponse(BaseModel):
 
 
 
+# Generated from: create_scenarios
+
+class CreateScenariosSqlParams(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    persona_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    parameter_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    parameter_field_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    problem_statement_enabled: bool | None = True
+    objectives_enabled: bool | None = True
+    video_enabled: bool | None = False
+    images_enabled: bool | None = False
+    questions_enabled: bool | None = False
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name_id,
+            self.description_id,
+            self.department_ids,
+            self.persona_ids,
+            self.parameter_ids,
+            self.parameter_field_ids,
+            self.problem_statement_enabled,
+            self.objectives_enabled,
+            self.video_enabled,
+            self.images_enabled,
+            self.questions_enabled,
+            self.mcp,
+        )
+
+class CreateScenariosSqlRow(BaseModel):
+
+    scenarios_resource_id: UUID | None = None
+
+class CreateScenariosApiRequest(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    persona_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    parameter_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    parameter_field_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    problem_statement_enabled: bool | None = True
+    objectives_enabled: bool | None = True
+    video_enabled: bool | None = False
+    images_enabled: bool | None = False
+    questions_enabled: bool | None = False
+    mcp: bool | None = False
+
+class CreateScenariosApiResponse(BaseModel):
+
+    scenarios_resource_id: UUID | None = None
+
+
+
 # Generated from: get_scenarios
 
 class GetScenariosSqlParams(BaseModel):
@@ -32288,71 +32625,69 @@ class SaveScenarioSqlParams(BaseModel):
 
     profile_id: UUID
     input_scenario_id: UUID | None = None
-    group_id: UUID | None = None
-    names: ScenarioResourceAction | None = None
-    descriptions: ScenarioResourceAction | None = None
-    problem_statements: ScenarioResourceAction | None = None
-    flags: ScenarioMultiResourceAction | None = None
-    departments: ScenarioMultiResourceAction | None = None
-    personas: ScenarioMultiResourceAction | None = None
-    documents: ScenarioMultiResourceAction | None = None
-    parameters: ScenarioMultiResourceAction | None = None
-    parameter_fields: ScenarioMultiResourceAction | None = None
-    images: ScenarioMultiResourceAction | None = None
-    objectives: ScenarioMultiResourceAction | None = None
-    videos: ScenarioMultiResourceAction | None = None
-    questions: ScenarioMultiResourceAction | None = None
-    options: ScenarioMultiResourceAction | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    problem_statement_id: UUID | None = None
+    flag_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    objective_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+    question_ids: list[UUID] | None = None
+    option_ids: list[UUID] | None = None
+    scenarios_resource_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.input_scenario_id,
-            self.group_id,
-            self.names,
-            self.descriptions,
-            self.problem_statements,
-            self.flags,
-            self.departments,
-            self.personas,
-            self.documents,
-            self.parameters,
-            self.parameter_fields,
-            self.images,
-            self.objectives,
-            self.videos,
-            self.questions,
-            self.options,
+            self.name_id,
+            self.description_id,
+            self.problem_statement_id,
+            self.flag_ids,
+            self.department_ids,
+            self.persona_ids,
+            self.document_ids,
+            self.parameter_ids,
+            self.parameter_field_ids,
+            self.image_ids,
+            self.objective_ids,
+            self.video_ids,
+            self.question_ids,
+            self.option_ids,
+            self.scenarios_resource_id,
         )
 
 class SaveScenarioSqlRow(BaseModel):
 
     scenario_id: UUID | None = None
-    actor_name: str | None = None
 
 class SaveScenarioApiRequest(BaseModel):
 
     input_scenario_id: UUID | None = None
-    group_id: UUID | None = None
-    names: ScenarioResourceAction | None = None
-    descriptions: ScenarioResourceAction | None = None
-    problem_statements: ScenarioResourceAction | None = None
-    flags: ScenarioMultiResourceAction | None = None
-    departments: ScenarioMultiResourceAction | None = None
-    personas: ScenarioMultiResourceAction | None = None
-    documents: ScenarioMultiResourceAction | None = None
-    parameters: ScenarioMultiResourceAction | None = None
-    parameter_fields: ScenarioMultiResourceAction | None = None
-    images: ScenarioMultiResourceAction | None = None
-    objectives: ScenarioMultiResourceAction | None = None
-    videos: ScenarioMultiResourceAction | None = None
-    questions: ScenarioMultiResourceAction | None = None
-    options: ScenarioMultiResourceAction | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    problem_statement_id: UUID | None = None
+    flag_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    objective_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+    question_ids: list[UUID] | None = None
+    option_ids: list[UUID] | None = None
+    scenarios_resource_id: UUID | None = None
 
 class SaveScenarioApiResponse(BaseModel):
 
     scenario_id: UUID | None = None
-    actor_name: str | None = None
 
 
 
@@ -40893,11 +41228,23 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "LinkDescriptionsApiRequest",
         "LinkDescriptionsApiResponse",
     ),
+    "app/sql/v4/queries/resources/link_documents_complete.sql": (
+        "LinkDocumentsSqlParams",
+        "LinkDocumentsSqlRow",
+        "LinkDocumentsApiRequest",
+        "LinkDocumentsApiResponse",
+    ),
     "app/sql/v4/queries/resources/link_examples_complete.sql": (
         "LinkExamplesSqlParams",
         "LinkExamplesSqlRow",
         "LinkExamplesApiRequest",
         "LinkExamplesApiResponse",
+    ),
+    "app/sql/v4/queries/resources/link_fields_complete.sql": (
+        "LinkFieldsSqlParams",
+        "LinkFieldsSqlRow",
+        "LinkFieldsApiRequest",
+        "LinkFieldsApiResponse",
     ),
     "app/sql/v4/queries/resources/link_flags_complete.sql": (
         "LinkFlagsSqlParams",
@@ -40911,6 +41258,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "LinkIconsApiRequest",
         "LinkIconsApiResponse",
     ),
+    "app/sql/v4/queries/resources/link_images_complete.sql": (
+        "LinkImagesSqlParams",
+        "LinkImagesSqlRow",
+        "LinkImagesApiRequest",
+        "LinkImagesApiResponse",
+    ),
     "app/sql/v4/queries/resources/link_instructions_complete.sql": (
         "LinkInstructionsSqlParams",
         "LinkInstructionsSqlRow",
@@ -40923,11 +41276,35 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "LinkNamesApiRequest",
         "LinkNamesApiResponse",
     ),
+    "app/sql/v4/queries/resources/link_objectives_complete.sql": (
+        "LinkObjectivesSqlParams",
+        "LinkObjectivesSqlRow",
+        "LinkObjectivesApiRequest",
+        "LinkObjectivesApiResponse",
+    ),
+    "app/sql/v4/queries/resources/link_options_complete.sql": (
+        "LinkOptionsSqlParams",
+        "LinkOptionsSqlRow",
+        "LinkOptionsApiRequest",
+        "LinkOptionsApiResponse",
+    ),
     "app/sql/v4/queries/resources/link_parameter_fields_complete.sql": (
         "LinkParameterFieldsSqlParams",
         "LinkParameterFieldsSqlRow",
         "LinkParameterFieldsApiRequest",
         "LinkParameterFieldsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/link_personas_complete.sql": (
+        "LinkPersonasSqlParams",
+        "LinkPersonasSqlRow",
+        "LinkPersonasApiRequest",
+        "LinkPersonasApiResponse",
+    ),
+    "app/sql/v4/queries/resources/link_problem_statements_complete.sql": (
+        "LinkProblemStatementsSqlParams",
+        "LinkProblemStatementsSqlRow",
+        "LinkProblemStatementsApiRequest",
+        "LinkProblemStatementsApiResponse",
     ),
     "app/sql/v4/queries/resources/link_profile_personas_complete.sql": (
         "LinkProfilePersonasSqlParams",
@@ -40940,6 +41317,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "LinkProfilesSqlRow",
         "LinkProfilesApiRequest",
         "LinkProfilesApiResponse",
+    ),
+    "app/sql/v4/queries/resources/link_questions_complete.sql": (
+        "LinkQuestionsSqlParams",
+        "LinkQuestionsSqlRow",
+        "LinkQuestionsApiRequest",
+        "LinkQuestionsApiResponse",
     ),
     "app/sql/v4/queries/resources/link_scenario_flags_complete.sql": (
         "LinkScenarioFlagsSqlParams",
@@ -40988,6 +41371,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "LinkSimulationsSqlRow",
         "LinkSimulationsApiRequest",
         "LinkSimulationsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/link_videos_complete.sql": (
+        "LinkVideosSqlParams",
+        "LinkVideosSqlRow",
+        "LinkVideosApiRequest",
+        "LinkVideosApiResponse",
     ),
     "app/sql/v4/queries/resources/link_voices_complete.sql": (
         "LinkVoicesSqlParams",
@@ -41504,6 +41893,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ScenarioTimeLimitsSqlRow",
         "ScenarioTimeLimitsApiRequest",
         "ScenarioTimeLimitsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/scenarios/create_scenarios_complete.sql": (
+        "CreateScenariosSqlParams",
+        "CreateScenariosSqlRow",
+        "CreateScenariosApiRequest",
+        "CreateScenariosApiResponse",
     ),
     "app/sql/v4/queries/resources/scenarios/get_scenarios_complete.sql": (
         "GetScenariosSqlParams",
@@ -45962,7 +46357,17 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/link_documents_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/link_examples_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/link_fields_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -45977,6 +46382,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/link_images_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/link_instructions_complete.sql"]
     ) -> SqlString: ...
 
@@ -45987,7 +46397,27 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/link_objectives_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/link_options_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/link_parameter_fields_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/link_personas_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/link_problem_statements_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -45998,6 +46428,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/link_profiles_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/link_questions_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -46038,6 +46473,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/link_simulations_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/link_videos_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -46468,6 +46908,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/scenario_time_limits_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/scenarios/create_scenarios_complete.sql"]
     ) -> SqlString: ...
 
     @overload

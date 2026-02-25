@@ -33,6 +33,10 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
+// Link types for tool call tracking
+type LinkQuestionsIn = InputOf<"/api/v4/resources/questions/link", "post">;
+type LinkQuestionsOut = OutputOf<"/api/v4/resources/questions/link", "post">;
+
 type CreateDraftQuestionsIn = InputOf<"/api/v4/resources/questions", "post">;
 type CreateDraftQuestionsOut = OutputOf<
   "/api/v4/resources/questions",
@@ -76,6 +80,9 @@ export interface QuestionsProps {
   aiQuestionResources?: Pick<QuestionsResourceItem, "question_id" | "question_text">[] | null;
   /** Called whenever internal questions change (including unflushed) — allows parent to show dependent UI immediately */
   onInternalQuestionsChange?: (questions: { id: string; question_text: string }[]) => void;
+  // Link tool call tracking (reserved for future use)
+  link_tool_id?: string | null;
+  linkQuestionsAction?: (input: LinkQuestionsIn) => Promise<LinkQuestionsOut>;
 }
 
 // Internal question type (matching ContentSection pattern)
@@ -112,6 +119,8 @@ export function Questions({
   registerFlush,
   aiQuestionResources: _aiQuestionResources,
   onInternalQuestionsChange,
+  link_tool_id: _link_tool_id,
+  linkQuestionsAction: _linkQuestionsAction,
 }: QuestionsProps) {
   // Use standardized props
   const ids = useMemo(() => question_ids ?? [], [question_ids]);
