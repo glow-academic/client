@@ -45,15 +45,15 @@ attempt_scenarios AS (
     SELECT
         ac.attempt_id,
         COALESCE(
-            ARRAY_AGG(DISTINCT tsc.scenarios_id ORDER BY tsc.scenarios_id)
-            FILTER (WHERE tsc.scenarios_id IS NOT NULL),
+            ARRAY_AGG(DISTINCT csc.scenarios_id ORDER BY csc.scenarios_id)
+            FILTER (WHERE csc.scenarios_id IS NOT NULL),
             ARRAY[]::uuid[]
         ) AS scenario_ids
     FROM attempt_chat_entry c
     JOIN attempt_chat_bridge_entry ac ON ac.attempt_chat_id = c.id
     JOIN attempt_entry a2 ON a2.id = ac.attempt_id AND a2.active = TRUE
-    LEFT JOIN attempt_chat_scenarios_connection tsc
-        ON tsc.attempt_chat_id = c.id AND tsc.active = TRUE
+    LEFT JOIN chat_scenarios_connection csc
+        ON csc.chat_id = c.chat_id AND csc.active = TRUE
     WHERE c.active = TRUE
     GROUP BY ac.attempt_id
 )

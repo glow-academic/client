@@ -48,6 +48,8 @@ CREATE TYPE types.i_sync_chat_v4 AS (
     sim_index int,                    -- 1-based index into p_simulations array
     scenario_id uuid,
     rubric_ids uuid[],                -- resolved rubrics_resource.id values
+    name text,
+    description text,
     "position" int,
     time_limit int,
     negative_time boolean,
@@ -71,7 +73,8 @@ CREATE TYPE types.i_sync_chat_v4 AS (
     scenario_time_limit_ids uuid[], persona_ids uuid[],
     document_ids uuid[], image_ids uuid[], video_ids uuid[],
     question_ids uuid[], option_ids uuid[], problem_statement_ids uuid[],
-    objective_ids uuid[], parameter_field_ids uuid[]
+    objective_ids uuid[], parameter_field_ids uuid[],
+    standard_group_ids uuid[], standard_ids uuid[]
 );
 
 CREATE OR REPLACE FUNCTION api_sync_cohort_entries_v4(
@@ -221,7 +224,7 @@ BEGIN
         FOR v_chat IN
             SELECT c.*
             FROM UNNEST(p_chats) AS c(
-                sim_index, scenario_id, rubric_ids, "position", time_limit, negative_time,
+                sim_index, scenario_id, rubric_ids, name, description, "position", time_limit, negative_time,
                 audio_enabled, text_enabled, hints_enabled,
                 copy_paste_allowed, show_images, show_objectives,
                 show_problem_statement, analyses_enabled,
@@ -238,13 +241,14 @@ BEGIN
                 scenario_time_limit_ids, persona_ids,
                 document_ids, image_ids, video_ids,
                 question_ids, option_ids, problem_statement_ids,
-                objective_ids, parameter_field_ids
+                objective_ids, parameter_field_ids,
+                standard_group_ids, standard_ids
             )
             WHERE c.sim_index = v_sim.sim_ord
         LOOP
             -- Insert chat_entry with all denormalized columns
             INSERT INTO chat_entry (
-                created_at, "position", time_limit, negative_time,
+                created_at, name, description, "position", time_limit, negative_time,
                 audio_enabled, text_enabled, hints_enabled,
                 copy_paste_allowed, show_images, show_objectives,
                 show_problem_statement, analyses_enabled,
@@ -259,7 +263,8 @@ BEGIN
                 generate_descriptions
             )
             VALUES (
-                v_now, v_chat."position", v_chat.time_limit, COALESCE(v_chat.negative_time, false),
+                v_now, COALESCE(v_chat.name, ''), COALESCE(v_chat.description, ''),
+                v_chat."position", v_chat.time_limit, COALESCE(v_chat.negative_time, false),
                 COALESCE(v_chat.audio_enabled, true), COALESCE(v_chat.text_enabled, true),
                 COALESCE(v_chat.hints_enabled, true), COALESCE(v_chat.copy_paste_allowed, true),
                 COALESCE(v_chat.show_images, true), COALESCE(v_chat.show_objectives, true),
@@ -393,6 +398,22 @@ BEGIN
             IF v_chat.parameter_field_ids IS NOT NULL THEN
                 FOREACH v_rid IN ARRAY v_chat.parameter_field_ids LOOP
                     INSERT INTO chat_parameter_fields_connection (chat_id, parameter_fields_id, created_at)
+                    VALUES (v_chat_id, v_rid, v_now);
+                END LOOP;
+            END IF;
+
+            -- chat_standard_groups_connection
+            IF v_chat.standard_group_ids IS NOT NULL THEN
+                FOREACH v_rid IN ARRAY v_chat.standard_group_ids LOOP
+                    INSERT INTO chat_standard_groups_connection (chat_id, standard_groups_id, created_at)
+                    VALUES (v_chat_id, v_rid, v_now);
+                END LOOP;
+            END IF;
+
+            -- chat_standards_connection
+            IF v_chat.standard_ids IS NOT NULL THEN
+                FOREACH v_rid IN ARRAY v_chat.standard_ids LOOP
+                    INSERT INTO chat_standards_connection (chat_id, standards_id, created_at)
                     VALUES (v_chat_id, v_rid, v_now);
                 END LOOP;
             END IF;

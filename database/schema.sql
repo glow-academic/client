@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict y5C0pfjKbgMF5GkJavSrhChfSGn3Eq4x7xAnJ2BaKu8c5YrnyGmNtiUlctijZDY
+\restrict 4Db8ZAwLG5ZAr9gfBcuZ3FboBPdB0O2KoshB1ifEnznmgu4o1x1ov7aogBfJqQ9
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -30015,6 +30015,34 @@ CREATE TABLE public.attempt_chat_bridge_entry (
 
 
 --
+-- Name: attempt_chat_departments_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.attempt_chat_departments_connection (
+    attempt_chat_id uuid NOT NULL,
+    departments_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
+);
+
+
+--
+-- Name: attempt_chat_descriptions_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.attempt_chat_descriptions_connection (
+    attempt_chat_id uuid NOT NULL,
+    descriptions_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
+);
+
+
+--
 -- Name: attempt_chat_documents_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -30082,6 +30110,20 @@ CREATE TABLE public.attempt_chat_images_connection (
 
 
 --
+-- Name: attempt_chat_names_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.attempt_chat_names_connection (
+    attempt_chat_id uuid NOT NULL,
+    names_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
+);
+
+
+--
 -- Name: attempt_chat_objectives_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -30138,6 +30180,20 @@ CREATE TABLE public.attempt_chat_parameters_connection (
 
 
 --
+-- Name: attempt_chat_personas_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.attempt_chat_personas_connection (
+    attempt_chat_id uuid NOT NULL,
+    personas_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
+);
+
+
+--
 -- Name: attempt_chat_problem_statements_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -30176,20 +30232,6 @@ CREATE TABLE public.attempt_chat_rubrics_connection (
     generated boolean DEFAULT false CONSTRAINT chat_resolved_rubrics_connection_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT chat_resolved_rubrics_connection_mcp_not_null NOT NULL,
     rubrics_id uuid NOT NULL
-);
-
-
---
--- Name: attempt_chat_scenarios_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.attempt_chat_scenarios_connection (
-    attempt_chat_id uuid CONSTRAINT chat_resolved_scenarios_connection_chat_resolved_id_not_null NOT NULL,
-    scenarios_id uuid CONSTRAINT chat_resolved_scenarios_connection_scenarios_id_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT chat_resolved_scenarios_connection_created_at_not_null NOT NULL,
-    active boolean DEFAULT true CONSTRAINT chat_resolved_scenarios_connection_active_not_null NOT NULL,
-    generated boolean DEFAULT false CONSTRAINT chat_resolved_scenarios_connection_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT chat_resolved_scenarios_connection_mcp_not_null NOT NULL
 );
 
 
@@ -31416,7 +31458,9 @@ CREATE TABLE public.chat_entry (
     generate_personas boolean DEFAULT false NOT NULL,
     generate_documents boolean DEFAULT false NOT NULL,
     generate_options boolean DEFAULT false NOT NULL,
-    generate_parameter_fields boolean DEFAULT false NOT NULL
+    generate_parameter_fields boolean DEFAULT false NOT NULL,
+    name text DEFAULT ''::text NOT NULL,
+    description text DEFAULT ''::text NOT NULL
 );
 
 
@@ -31613,6 +31657,34 @@ CREATE TABLE public.chat_scenarios_connection (
     active boolean DEFAULT true CONSTRAINT training_bundle_scenarios_connection_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT training_bundle_scenarios_connection_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT training_bundle_scenarios_connection_mcp_not_null NOT NULL
+);
+
+
+--
+-- Name: chat_standard_groups_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.chat_standard_groups_connection (
+    chat_id uuid NOT NULL,
+    standard_groups_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
+);
+
+
+--
+-- Name: chat_standards_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.chat_standards_connection (
+    chat_id uuid NOT NULL,
+    standards_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -41012,6 +41084,22 @@ ALTER TABLE ONLY public.attempt_chat_bridge_entry
 
 
 --
+-- Name: attempt_chat_departments_connection attempt_chat_departments_connection_pk; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_chat_departments_connection
+    ADD CONSTRAINT attempt_chat_departments_connection_pk PRIMARY KEY (attempt_chat_id, departments_id);
+
+
+--
+-- Name: attempt_chat_descriptions_connection attempt_chat_descriptions_connection_pk; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_chat_descriptions_connection
+    ADD CONSTRAINT attempt_chat_descriptions_connection_pk PRIMARY KEY (attempt_chat_id, descriptions_id);
+
+
+--
 -- Name: attempt_chat_documents_connection attempt_chat_documents_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -41033,6 +41121,14 @@ ALTER TABLE ONLY public.attempt_chat_entry
 
 ALTER TABLE ONLY public.attempt_chat_images_connection
     ADD CONSTRAINT attempt_chat_images_connection_pkey PRIMARY KEY (attempt_chat_id, images_id);
+
+
+--
+-- Name: attempt_chat_names_connection attempt_chat_names_connection_pk; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_chat_names_connection
+    ADD CONSTRAINT attempt_chat_names_connection_pk PRIMARY KEY (attempt_chat_id, names_id);
 
 
 --
@@ -41068,6 +41164,14 @@ ALTER TABLE ONLY public.attempt_chat_parameters_connection
 
 
 --
+-- Name: attempt_chat_personas_connection attempt_chat_personas_connection_pk; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_chat_personas_connection
+    ADD CONSTRAINT attempt_chat_personas_connection_pk PRIMARY KEY (attempt_chat_id, personas_id);
+
+
+--
 -- Name: attempt_chat_problem_statements_connection attempt_chat_problem_statements_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -41089,14 +41193,6 @@ ALTER TABLE ONLY public.attempt_chat_questions_connection
 
 ALTER TABLE ONLY public.attempt_chat_rubrics_connection
     ADD CONSTRAINT attempt_chat_rubrics_connection_pkey PRIMARY KEY (attempt_chat_id, rubrics_id);
-
-
---
--- Name: attempt_chat_scenarios_connection attempt_chat_scenarios_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_chat_scenarios_connection
-    ADD CONSTRAINT attempt_chat_scenarios_connection_pkey PRIMARY KEY (attempt_chat_id, scenarios_id);
 
 
 --
@@ -41769,6 +41865,22 @@ ALTER TABLE ONLY public.chat_scenario_positions_connection
 
 ALTER TABLE ONLY public.chat_scenario_time_limits_connection
     ADD CONSTRAINT chat_scenario_time_limits_connection_pkey PRIMARY KEY (chat_id, scenario_time_limits_id);
+
+
+--
+-- Name: chat_standard_groups_connection chat_standard_groups_connection_pk; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chat_standard_groups_connection
+    ADD CONSTRAINT chat_standard_groups_connection_pk PRIMARY KEY (chat_id, standard_groups_id);
+
+
+--
+-- Name: chat_standards_connection chat_standards_connection_pk; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chat_standards_connection
+    ADD CONSTRAINT chat_standards_connection_pk PRIMARY KEY (chat_id, standards_id);
 
 
 --
@@ -57846,6 +57958,38 @@ ALTER TABLE ONLY public.attempt_chat_bridge_entry
 
 
 --
+-- Name: attempt_chat_departments_connection attempt_chat_departments_connection_attempt_chat_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_chat_departments_connection
+    ADD CONSTRAINT attempt_chat_departments_connection_attempt_chat_id_fkey FOREIGN KEY (attempt_chat_id) REFERENCES public.attempt_chat_entry(id);
+
+
+--
+-- Name: attempt_chat_departments_connection attempt_chat_departments_connection_departments_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_chat_departments_connection
+    ADD CONSTRAINT attempt_chat_departments_connection_departments_id_fkey FOREIGN KEY (departments_id) REFERENCES public.departments_resource(id);
+
+
+--
+-- Name: attempt_chat_descriptions_connection attempt_chat_descriptions_connection_attempt_chat_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_chat_descriptions_connection
+    ADD CONSTRAINT attempt_chat_descriptions_connection_attempt_chat_id_fkey FOREIGN KEY (attempt_chat_id) REFERENCES public.attempt_chat_entry(id);
+
+
+--
+-- Name: attempt_chat_descriptions_connection attempt_chat_descriptions_connection_descriptions_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_chat_descriptions_connection
+    ADD CONSTRAINT attempt_chat_descriptions_connection_descriptions_id_fkey FOREIGN KEY (descriptions_id) REFERENCES public.descriptions_resource(id);
+
+
+--
 -- Name: attempt_chat_documents_connection attempt_chat_documents_connection_attempt_chat_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -57875,6 +58019,22 @@ ALTER TABLE ONLY public.attempt_chat_entry
 
 ALTER TABLE ONLY public.attempt_chat_images_connection
     ADD CONSTRAINT attempt_chat_images_connection_attempt_chat_id_fkey FOREIGN KEY (attempt_chat_id) REFERENCES public.attempt_chat_entry(id) ON DELETE CASCADE;
+
+
+--
+-- Name: attempt_chat_names_connection attempt_chat_names_connection_attempt_chat_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_chat_names_connection
+    ADD CONSTRAINT attempt_chat_names_connection_attempt_chat_id_fkey FOREIGN KEY (attempt_chat_id) REFERENCES public.attempt_chat_entry(id);
+
+
+--
+-- Name: attempt_chat_names_connection attempt_chat_names_connection_names_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_chat_names_connection
+    ADD CONSTRAINT attempt_chat_names_connection_names_id_fkey FOREIGN KEY (names_id) REFERENCES public.names_resource(id);
 
 
 --
@@ -57910,6 +58070,22 @@ ALTER TABLE ONLY public.attempt_chat_parameters_connection
 
 
 --
+-- Name: attempt_chat_personas_connection attempt_chat_personas_connection_attempt_chat_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_chat_personas_connection
+    ADD CONSTRAINT attempt_chat_personas_connection_attempt_chat_id_fkey FOREIGN KEY (attempt_chat_id) REFERENCES public.attempt_chat_entry(id);
+
+
+--
+-- Name: attempt_chat_personas_connection attempt_chat_personas_connection_personas_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_chat_personas_connection
+    ADD CONSTRAINT attempt_chat_personas_connection_personas_id_fkey FOREIGN KEY (personas_id) REFERENCES public.personas_resource(id);
+
+
+--
 -- Name: attempt_chat_problem_statements_connection attempt_chat_problem_statements_connection_attempt_chat_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -57939,14 +58115,6 @@ ALTER TABLE ONLY public.attempt_chat_rubrics_connection
 
 ALTER TABLE ONLY public.attempt_chat_rubrics_connection
     ADD CONSTRAINT attempt_chat_rubrics_connection_rubrics_id_fkey FOREIGN KEY (rubrics_id) REFERENCES public.rubrics_resource(id);
-
-
---
--- Name: attempt_chat_scenarios_connection attempt_chat_scenarios_connection_attempt_chat_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_chat_scenarios_connection
-    ADD CONSTRAINT attempt_chat_scenarios_connection_attempt_chat_id_fkey FOREIGN KEY (attempt_chat_id) REFERENCES public.attempt_chat_entry(id) ON DELETE CASCADE;
 
 
 --
@@ -59262,14 +59430,6 @@ ALTER TABLE ONLY public.attempt_chat_questions_connection
 
 
 --
--- Name: attempt_chat_scenarios_connection chat_resolved_scenarios_connection_scenarios_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_chat_scenarios_connection
-    ADD CONSTRAINT chat_resolved_scenarios_connection_scenarios_id_fkey FOREIGN KEY (scenarios_id) REFERENCES public.scenarios_resource(id);
-
-
---
 -- Name: attempt_chat_standard_groups_connection chat_resolved_standard_groups_connectio_standard_groups_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -59355,6 +59515,38 @@ ALTER TABLE ONLY public.chat_scenario_time_limits_connection
 
 ALTER TABLE ONLY public.chat_scenario_time_limits_connection
     ADD CONSTRAINT chat_scenario_time_limits_connection_chat_id_fkey FOREIGN KEY (chat_id) REFERENCES public.chat_entry(id) ON DELETE CASCADE;
+
+
+--
+-- Name: chat_standard_groups_connection chat_standard_groups_connection_chat_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chat_standard_groups_connection
+    ADD CONSTRAINT chat_standard_groups_connection_chat_id_fkey FOREIGN KEY (chat_id) REFERENCES public.chat_entry(id);
+
+
+--
+-- Name: chat_standard_groups_connection chat_standard_groups_connection_standard_groups_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chat_standard_groups_connection
+    ADD CONSTRAINT chat_standard_groups_connection_standard_groups_id_fkey FOREIGN KEY (standard_groups_id) REFERENCES public.standard_groups_resource(id);
+
+
+--
+-- Name: chat_standards_connection chat_standards_connection_chat_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chat_standards_connection
+    ADD CONSTRAINT chat_standards_connection_chat_id_fkey FOREIGN KEY (chat_id) REFERENCES public.chat_entry(id);
+
+
+--
+-- Name: chat_standards_connection chat_standards_connection_standards_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chat_standards_connection
+    ADD CONSTRAINT chat_standards_connection_standards_id_fkey FOREIGN KEY (standards_id) REFERENCES public.standards_resource(id);
 
 
 --
@@ -67457,5 +67649,5 @@ ALTER TABLE ONLY public.voices_calls_connection
 -- PostgreSQL database dump complete
 --
 
-\unrestrict y5C0pfjKbgMF5GkJavSrhChfSGn3Eq4x7xAnJ2BaKu8c5YrnyGmNtiUlctijZDY
+\unrestrict 4Db8ZAwLG5ZAr9gfBcuZ3FboBPdB0O2KoshB1ifEnznmgu4o1x1ov7aogBfJqQ9
 

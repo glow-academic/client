@@ -31085,10 +31085,22 @@ export interface components {
             description?: string | null;
             /** Department Ids */
             department_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Scenario Rubric Ids */
+            scenario_rubric_ids?: string[] | null;
+            /** Scenario Time Limit Ids */
+            scenario_time_limit_ids?: string[] | null;
+            /** Scenario Position Ids */
+            scenario_position_ids?: string[] | null;
+            /** Scenario Flag Ids */
+            scenario_flag_ids?: string[] | null;
             /** Active */
             active?: boolean | null;
             /** Generated */
             generated?: boolean | null;
+            /** Practice */
+            practice?: boolean | null;
         };
         /** GetSlugsApiRequest */
         GetSlugsApiRequest: {
@@ -38426,6 +38438,10 @@ export interface components {
             active?: boolean | null;
             /** Department Ids */
             department_ids?: string[] | null;
+            /** Simulation Position Ids */
+            simulation_position_ids?: string[] | null;
+            /** Simulation Availability Ids */
+            simulation_availability_ids?: string[] | null;
         };
         /** QGetColorsV4Item */
         QGetColorsV4Item: {
@@ -50872,8 +50888,20 @@ export interface components {
             persona_ids?: string[] | null;
             /** Parameter Field Ids */
             parameter_field_ids?: string[] | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
+            /** Objective Ids */
+            objective_ids?: string[] | null;
+            /** Image Ids */
+            image_ids?: string[] | null;
+            /** Video Ids */
+            video_ids?: string[] | null;
+            /** Question Ids */
+            question_ids?: string[] | null;
+            /** Option Ids */
+            option_ids?: string[] | null;
+            /** Problem Statement Ids */
+            problem_statement_ids?: string[] | null;
         };
         /**
          * QGetRolesV4Item
@@ -51027,8 +51055,20 @@ export interface components {
             persona_ids: string[] | null;
             /** Parameter Field Ids */
             parameter_field_ids: string[] | null;
-            /** Parameter Ids */
-            parameter_ids: string[] | null;
+            /** Document Ids */
+            document_ids: string[] | null;
+            /** Objective Ids */
+            objective_ids: string[] | null;
+            /** Image Ids */
+            image_ids: string[] | null;
+            /** Video Ids */
+            video_ids: string[] | null;
+            /** Question Ids */
+            question_ids: string[] | null;
+            /** Option Ids */
+            option_ids: string[] | null;
+            /** Problem Statement Ids */
+            problem_statement_ids: string[] | null;
         };
         /** QGetSettingsV4Auth */
         app__sql__types__QGetSettingsV4Auth: {

@@ -104,7 +104,7 @@ AS $$
         LEFT JOIN practice_chat_entry pte ON pte.chat_id = tb.id
         LEFT JOIN chat_scenario_time_limits_connection ctlc ON ctlc.chat_id = tb.id AND ctlc.active = true
         LEFT JOIN scenario_time_limits_resource stlr ON stlr.id = ctlc.scenario_time_limits_id AND stlr.active = true
-        LEFT JOIN attempt_chat_scenarios_connection tsc ON tsc.attempt_chat_id = tbd.id AND tsc.active = true
+        LEFT JOIN chat_scenarios_connection tsc ON tsc.chat_id = tb.id AND tsc.active = true
         LEFT JOIN attempt_chat_rubrics_connection trc ON trc.attempt_chat_id = tbd.id AND trc.active = true
         LEFT JOIN attempt_chat_problem_statements_connection tpsc ON tpsc.attempt_chat_id = tbd.id AND tpsc.active = true
         LEFT JOIN attempt_chat_objectives_connection toc ON toc.attempt_chat_id = tbd.id AND toc.active = true

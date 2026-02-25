@@ -43,12 +43,6 @@ BEGIN
         RETURN;
     END IF;
 
-    -- Link scenario to the skipped chat
-    INSERT INTO attempt_chat_scenarios_connection
-        (chat_id, scenarios_id, active)
-    VALUES (v_skipped_chat_id, p_scenario_id, true)
-    ON CONFLICT DO NOTHING;
-
     -- Mark as completed
     INSERT INTO attempt_completion_entry (chat_id)
     VALUES (v_skipped_chat_id)

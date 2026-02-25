@@ -7230,6 +7230,8 @@ class ISyncChatV4(BaseModel):
     sim_index: int | None
     scenario_id: UUID | None
     rubric_ids: list[UUID] | None
+    name: str | None
+    description: str | None
     position: int | None
     time_limit: int | None
     negative_time: bool | None
@@ -7274,6 +7276,8 @@ class ISyncChatV4(BaseModel):
     problem_statement_ids: list[UUID] | None
     objective_ids: list[UUID] | None
     parameter_field_ids: list[UUID] | None
+    standard_group_ids: list[UUID] | None
+    standard_ids: list[UUID] | None
 
 
 
@@ -7305,7 +7309,7 @@ class SyncCohortEntriesSqlParams(BaseModel):
         ]
         # Convert p_chats composite array to tuples for asyncpg
         p_chats_tuples = [
-            (conn.sim_index, conn.scenario_id, conn.rubric_ids, conn.position, conn.time_limit, conn.negative_time, conn.audio_enabled, conn.text_enabled, conn.hints_enabled, conn.copy_paste_allowed, conn.show_images, conn.show_objectives, conn.show_problem_statement, conn.analyses_enabled, conn.improvements_enabled, conn.replacements_enabled, conn.strengths_enabled, conn.use_custom, conn.use_previous, conn.problem_statement_enabled, conn.objectives_enabled, conn.video_enabled, conn.images_enabled, conn.questions_enabled, conn.generate_problem_statements, conn.generate_objectives, conn.generate_videos, conn.generate_images, conn.generate_questions, conn.generate_personas, conn.generate_documents, conn.generate_options, conn.generate_parameter_fields, conn.generate_names, conn.generate_descriptions, conn.scenario_flag_ids, conn.scenario_position_ids, conn.scenario_time_limit_ids, conn.persona_ids, conn.document_ids, conn.image_ids, conn.video_ids, conn.question_ids, conn.option_ids, conn.problem_statement_ids, conn.objective_ids, conn.parameter_field_ids)
+            (conn.sim_index, conn.scenario_id, conn.rubric_ids, conn.name, conn.description, conn.position, conn.time_limit, conn.negative_time, conn.audio_enabled, conn.text_enabled, conn.hints_enabled, conn.copy_paste_allowed, conn.show_images, conn.show_objectives, conn.show_problem_statement, conn.analyses_enabled, conn.improvements_enabled, conn.replacements_enabled, conn.strengths_enabled, conn.use_custom, conn.use_previous, conn.problem_statement_enabled, conn.objectives_enabled, conn.video_enabled, conn.images_enabled, conn.questions_enabled, conn.generate_problem_statements, conn.generate_objectives, conn.generate_videos, conn.generate_images, conn.generate_questions, conn.generate_personas, conn.generate_documents, conn.generate_options, conn.generate_parameter_fields, conn.generate_names, conn.generate_descriptions, conn.scenario_flag_ids, conn.scenario_position_ids, conn.scenario_time_limit_ids, conn.persona_ids, conn.document_ids, conn.image_ids, conn.video_ids, conn.question_ids, conn.option_ids, conn.problem_statement_ids, conn.objective_ids, conn.parameter_field_ids, conn.standard_group_ids, conn.standard_ids)
             for conn in (self.p_chats or [])
         ]
         return (
@@ -15556,6 +15560,52 @@ class GetAttemptMessageContextApiResponse(BaseModel):
     chat_id: UUID | None = None
     group_id: UUID | None = None
     hints_enabled: bool | None = None
+
+
+
+# Generated from: get_attempt_proceed_context
+
+class GetAttemptProceedContextSqlParams(BaseModel):
+
+    p_attempt_id: UUID
+    p_profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_attempt_id,
+            self.p_profile_id,
+        )
+
+class QGetAttemptProceedContextV4Result(BaseModel):
+
+    num_chats: int | None
+    completed_count: int | None
+    chat_entry_id: UUID | None
+    department_id: UUID | None
+    generate_problem_statements: bool | None
+    generate_objectives: bool | None
+    generate_videos: bool | None
+    generate_images: bool | None
+    generate_questions: bool | None
+    generate_names: bool | None
+    generate_descriptions: bool | None
+    generate_personas: bool | None
+    generate_documents: bool | None
+    generate_options: bool | None
+    generate_parameter_fields: bool | None
+
+class GetAttemptProceedContextSqlRow(BaseModel):
+
+    items: list[QGetAttemptProceedContextV4Result] | None = None
+
+class GetAttemptProceedContextApiRequest(BaseModel):
+
+    p_attempt_id: UUID
+    p_profile_id: UUID
+
+class GetAttemptProceedContextApiResponse(BaseModel):
+
+    items: list[QGetAttemptProceedContextV4Result] | None = None
 
 
 
@@ -39969,6 +40019,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAttemptMessageContextApiRequest",
         "GetAttemptMessageContextApiResponse",
     ),
+    "app/sql/v4/queries/generate/attempt/get_attempt_proceed_context_complete.sql": (
+        "GetAttemptProceedContextSqlParams",
+        "GetAttemptProceedContextSqlRow",
+        "GetAttemptProceedContextApiRequest",
+        "GetAttemptProceedContextApiResponse",
+    ),
     "app/sql/v4/queries/generate/attempt/get_audio_start_context_complete.sql": (
         "GetAudioStartContextSqlParams",
         "GetAudioStartContextSqlRow",
@@ -45349,6 +45405,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/attempt/get_attempt_message_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/attempt/get_attempt_proceed_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload

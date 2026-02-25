@@ -17,7 +17,6 @@ logger = get_logger(__name__)
 # Map resource_type → (connection_table, fk_column)
 ATTEMPT_CHAT_CONNECTION_MAP: dict[str, tuple[str, str]] = {
     "personas": ("attempt_chat_personas_connection", "personas_id"),
-    "scenarios": ("attempt_chat_scenarios_connection", "scenarios_id"),
     "parameters": ("attempt_chat_parameters_connection", "parameters_id"),
     "fields": ("attempt_chat_fields_connection", "fields_id"),
     "departments": ("attempt_chat_departments_connection", "departments_id"),
@@ -36,6 +35,8 @@ ATTEMPT_CHAT_CONNECTION_MAP: dict[str, tuple[str, str]] = {
         "problem_statements_id",
     ),
     "objectives": ("attempt_chat_objectives_connection", "objectives_id"),
+    "names": ("attempt_chat_names_connection", "names_id"),
+    "descriptions": ("attempt_chat_descriptions_connection", "descriptions_id"),
 }
 
 

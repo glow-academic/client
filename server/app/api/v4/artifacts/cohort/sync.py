@@ -81,6 +81,7 @@ async def sync_cohort_entries(
     2. Parallel fetch all sub-resources
     3. Build composite tuples and call SQL function
     """
+    from app.api.v4.resources.rubrics.get import get_rubrics_internal
     from app.api.v4.resources.scenario_flags.get import get_scenario_flags_internal
     from app.api.v4.resources.scenario_positions.get import (
         get_scenario_positions_internal,
@@ -99,6 +100,7 @@ async def sync_cohort_entries(
         get_simulation_positions_internal,
     )
     from app.api.v4.resources.simulations.get import get_simulations_internal
+    from app.api.v4.resources.standards.search import search_standards_internal
 
     if not simulation_ids:
         return 0
@@ -129,7 +131,7 @@ async def sync_cohort_entries(
             UUID(s) for s in (sim.scenario_time_limit_ids or [])
         )
 
-    # ── Pass 2: Parallel fetch all sub-resources ──
+    # ── Pass 2a: Parallel fetch all sub-resources ──
     gather_results = await asyncio.gather(
         get_scenarios_internal(conn, all_scenario_ids, bypass_cache=True),
         get_scenario_rubrics_internal(conn, all_scenario_rubric_ids, bypass_cache=True),
@@ -155,6 +157,35 @@ async def sync_cohort_entries(
     sim_positions: list[Any] = cast(list[Any], gather_results[5])
     sim_availability: list[Any] = cast(list[Any], gather_results[6])
 
+    # ── Pass 2b: Resolve rubrics → standard_group_ids → standards ──
+    # Collect all resolved rubric IDs (rubrics_resource.id) from scenario_rubrics
+    all_rubric_ids: list[UUID] = []
+    for sr in scenario_rubrics:
+        if sr.rubric_id:
+            all_rubric_ids.append(sr.rubric_id)
+    all_rubric_ids = list(set(all_rubric_ids))
+
+    rubrics: list[Any] = []
+    standards: list[Any] = []
+    if all_rubric_ids:
+        rubrics = await get_rubrics_internal(conn, all_rubric_ids, bypass_cache=True)
+
+        # Collect all standard_group_ids from rubrics
+        all_standard_group_ids: list[UUID] = []
+        for rub in rubrics:
+            if rub.standard_group_ids:
+                all_standard_group_ids.extend(rub.standard_group_ids)
+        all_standard_group_ids = list(set(all_standard_group_ids))
+
+        if all_standard_group_ids:
+            # Fetch all standards belonging to these groups via search internal
+            standards = await search_standards_internal(
+                conn,
+                standard_group_ids=all_standard_group_ids,
+                limit_count=10000,
+                bypass_cache=True,
+            )
+
     # ── Pass 3: Build lookup dicts ──
 
     # scenario_id → scenario data
@@ -165,6 +196,20 @@ async def sync_cohort_entries(
     for r in scenario_rubrics:
         if r.id and r.rubric_id:
             rubric_map[r.id] = r.rubric_id
+
+    # rubric_id → standard_group_ids
+    rubric_sg_map: dict[UUID, list[UUID]] = {}
+    for rub in rubrics:
+        if rub.id and rub.standard_group_ids:
+            rubric_sg_map[rub.id] = list(rub.standard_group_ids)
+
+    # standard_group_id → list of standard_ids
+    sg_standards_map: dict[UUID, list[UUID]] = {}
+    for std in standards:
+        if std.standard_group_id and std.standard_id:
+            sg_standards_map.setdefault(std.standard_group_id, []).append(
+                std.standard_id
+            )
 
     # scenario_flag_id → {column_name: True}
     flag_map: dict[UUID, dict[str, bool]] = {}
@@ -377,11 +422,24 @@ async def sync_cohort_entries(
                 if t.scenario_id == scenario_id and t.id
             ]
 
+            # Resolve standard_group_ids and standard_ids from rubrics
+            chat_standard_group_ids: list[UUID] = []
+            chat_standard_ids: list[UUID] = []
+            for rub_id in resolved_rubric_ids:
+                for sg_id in rubric_sg_map.get(rub_id, []):
+                    if sg_id not in chat_standard_group_ids:
+                        chat_standard_group_ids.append(sg_id)
+                    for std_id in sg_standards_map.get(sg_id, []):
+                        if std_id not in chat_standard_ids:
+                            chat_standard_ids.append(std_id)
+
             chat_tuples.append(
                 (
                     sim_1based,
                     scenario_id,
                     resolved_rubric_ids,
+                    scenario.name or "",
+                    scenario.description or "",
                     chat_position,
                     chat_time_limit,
                     chat_negative_time,
@@ -430,6 +488,8 @@ async def sync_cohort_entries(
                     list(scenario.problem_statement_ids or []),
                     list(scenario.objective_ids or []),
                     list(scenario.parameter_field_ids or []),
+                    chat_standard_group_ids,
+                    chat_standard_ids,
                 )
             )
 

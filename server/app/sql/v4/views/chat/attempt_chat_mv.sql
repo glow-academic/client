@@ -66,11 +66,11 @@ chat_rubric AS (
 chat_scope AS (
     SELECT
         c.id AS chat_id,
-        (ARRAY_AGG(tsc.scenarios_id ORDER BY tsc.created_at)
-            FILTER (WHERE tsc.scenarios_id IS NOT NULL))[1] AS scenario_id
+        (ARRAY_AGG(csc.scenarios_id ORDER BY csc.created_at)
+            FILTER (WHERE csc.scenarios_id IS NOT NULL))[1] AS scenario_id
     FROM attempt_chat_entry c
-    LEFT JOIN attempt_chat_scenarios_connection tsc
-        ON tsc.attempt_chat_id = c.id AND tsc.active = TRUE
+    LEFT JOIN chat_scenarios_connection csc
+        ON csc.chat_id = c.chat_id AND csc.active = TRUE
     WHERE c.active = TRUE
     GROUP BY c.id
 )
