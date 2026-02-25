@@ -19,24 +19,24 @@ END $$;
 CREATE OR REPLACE FUNCTION socket_create_attempt_chat_v4(
     p_profile_id uuid,
     p_attempt_id uuid,
-    p_chat_resolved_id uuid
+    p_attempt_chat_id uuid
 )
 RETURNS TABLE (chat_id uuid)
 LANGUAGE plpgsql
 VOLATILE
 AS $$
 DECLARE
-    v_chat_id uuid := p_chat_resolved_id;
+    v_chat_id uuid := p_attempt_chat_id;
     v_session_id uuid;
     v_group_id uuid;
     v_trace_id text;
     v_config_id uuid;
     v_entry RECORD;
 BEGIN
-    -- Bridge: link existing chat_resolved_entry to attempt
-    INSERT INTO attempt_chat_entry (attempt_id, chat_resolved_id)
+    -- Bridge: link existing attempt_chat_entry to attempt
+    INSERT INTO attempt_chat_bridge_entry (attempt_id, attempt_chat_id)
     VALUES (p_attempt_id, v_chat_id)
-    ON CONFLICT (attempt_id, chat_resolved_id) DO NOTHING;
+    ON CONFLICT (attempt_id, attempt_chat_id) DO NOTHING;
 
     -- Create per-entry config snapshots by resolving agents server-side.
     SELECT id INTO v_session_id
@@ -61,7 +61,7 @@ BEGIN
         VALUES (NOW(), NOW(), v_session_id)
         RETURNING id, trace_id INTO v_group_id, v_trace_id;
 
-        UPDATE chat_resolved_entry
+        UPDATE attempt_chat_entry
         SET group_id = v_group_id
         WHERE id = v_chat_id;
 

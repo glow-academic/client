@@ -25,7 +25,7 @@ class AttemptChatRequestData(BaseModel):
 
     sid: str
     attempt_id: str
-    chat_resolved_id: str
+    attempt_chat_id: str
     profile_id: str
 
 
@@ -41,7 +41,7 @@ class GenerateRequestData(BaseModel):
     draft_id: str | None = None
     user_instructions: list[str] | None = None
     attempt_id: str | None = None
-    chat_resolved_id: str | None = None
+    attempt_chat_id: str | None = None
     run_id: str | None = None
     group_id: str | None = None
     chat_id: str | None = None
@@ -53,10 +53,7 @@ class AttemptProceedData(BaseModel):
     """Internal bus payload for attempt_proceed — shared core logic."""
 
     sid: str
-    profile_id: str
     attempt_id: str
-    chat_entry_id: str
-    department_id: str
     draft_id: str | None = None
     force_proceed: bool = False
 

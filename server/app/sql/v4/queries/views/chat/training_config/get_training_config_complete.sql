@@ -1,10 +1,10 @@
 -- ============================================================================
 -- Query: get_training_config
--- Purpose: Fetch training department config by chat_resolved_ids
+-- Purpose: Fetch training department config by attempt_chat_ids
 -- Section: VIEWS/CHAT/TRAINING_CONFIG
 --
 -- Replaces the subbundle_snapshot CTE from attempt_chat_mv.
--- Returns config flags + resource ID arrays per chat_resolved_id.
+-- Returns config flags + resource ID arrays per attempt_chat_id.
 -- ============================================================================
 
 DO $$
@@ -36,7 +36,7 @@ BEGIN
 END $$;
 
 CREATE TYPE types.q_get_training_config_v4_item AS (
-    chat_resolved_id uuid,
+    attempt_chat_id uuid,
     -- Config flags
     copy_paste_allowed boolean,
     text_enabled boolean,
@@ -64,7 +64,7 @@ CREATE TYPE types.q_get_training_config_v4_item AS (
 );
 
 CREATE OR REPLACE FUNCTION api_get_training_config_v4(
-    chat_resolved_ids uuid[]
+    attempt_chat_ids uuid[]
 )
 RETURNS TABLE (
     items types.q_get_training_config_v4_item[]
@@ -74,19 +74,19 @@ STABLE
 AS $$
     WITH config AS (
         SELECT
-            tbd.id AS chat_resolved_id,
-            COALESCE(he.copy_paste_allowed, pe.copy_paste_allowed, true) AS copy_paste_allowed,
-            COALESCE(he.text_enabled, pe.text_enabled, true) AS text_enabled,
-            COALESCE(he.audio_enabled, pe.audio_enabled, true) AS audio_enabled,
-            COALESCE(he.hints_enabled, pe.hints_enabled, true) AS hints_enabled,
-            COALESCE(he.show_images, pe.show_images, true) AS show_images,
-            COALESCE(he.show_objectives, pe.show_objectives, true) AS show_objectives,
-            COALESCE(he.show_problem_statement, pe.show_problem_statement, true) AS show_problem_statement,
+            tbd.id AS attempt_chat_id,
+            tb.copy_paste_allowed,
+            tb.text_enabled,
+            tb.audio_enabled,
+            tb.hints_enabled,
+            tb.show_images,
+            tb.show_objectives,
+            tb.show_problem_statement,
             COALESCE(MAX(stlr.time_limit_seconds), 0)::int AS time_limit_seconds,
             COALESCE(BOOL_OR(stlr.negative), false) AS negative,
             -- singular picks (first by created_at)
             (ARRAY_AGG(tsc.scenarios_id ORDER BY tsc.created_at) FILTER (WHERE tsc.scenarios_id IS NOT NULL))[1] AS scenario_id,
-            (ARRAY_AGG(trc.scenario_rubrics_id ORDER BY trc.created_at) FILTER (WHERE trc.scenario_rubrics_id IS NOT NULL))[1] AS rubric_id,
+            (ARRAY_AGG(trc.rubrics_id ORDER BY trc.created_at) FILTER (WHERE trc.rubrics_id IS NOT NULL))[1] AS rubric_id,
             (ARRAY_AGG(tpsc.problem_statements_id ORDER BY tpsc.created_at) FILTER (WHERE tpsc.problem_statements_id IS NOT NULL))[1] AS problem_statement_id,
             COALESCE(ARRAY_AGG(DISTINCT ppr.persona_id ORDER BY ppr.persona_id) FILTER (WHERE ppr.persona_id IS NOT NULL), ARRAY[]::uuid[]) AS persona_ids,
             -- plural sets
@@ -98,45 +98,38 @@ AS $$
             COALESCE(ARRAY_AGG(DISTINCT tdc.documents_id ORDER BY tdc.documents_id) FILTER (WHERE tdc.documents_id IS NOT NULL), ARRAY[]::uuid[]) AS document_ids,
             COALESCE(ARRAY_AGG(DISTINCT tsgc.standard_groups_id ORDER BY tsgc.standard_groups_id) FILTER (WHERE tsgc.standard_groups_id IS NOT NULL), ARRAY[]::uuid[]) AS standard_group_ids,
             COALESCE(ARRAY_AGG(DISTINCT tsc2.standards_id ORDER BY tsc2.standards_id) FILTER (WHERE tsc2.standards_id IS NOT NULL), ARRAY[]::uuid[]) AS standard_ids
-        FROM chat_resolved_entry tbd
+        FROM attempt_chat_entry tbd
         JOIN chat_entry tb ON tb.id = tbd.chat_id
         LEFT JOIN home_chat_entry hte ON hte.chat_id = tb.id
-        LEFT JOIN home_entry he ON he.id = hte.home_id
         LEFT JOIN practice_chat_entry pte ON pte.chat_id = tb.id
-        LEFT JOIN practice_entry pe ON pe.id = pte.practice_id
         LEFT JOIN chat_scenario_time_limits_connection ctlc ON ctlc.chat_id = tb.id AND ctlc.active = true
         LEFT JOIN scenario_time_limits_resource stlr ON stlr.id = ctlc.scenario_time_limits_id AND stlr.active = true
-        LEFT JOIN chat_resolved_scenarios_connection tsc ON tsc.chat_resolved_id = tbd.id AND tsc.active = true
-        LEFT JOIN chat_resolved_rubrics_connection trc ON trc.chat_resolved_id = tbd.id AND trc.active = true
-        LEFT JOIN chat_resolved_problem_statements_connection tpsc ON tpsc.chat_resolved_id = tbd.id AND tpsc.active = true
-        LEFT JOIN chat_resolved_objectives_connection toc ON toc.chat_resolved_id = tbd.id AND toc.active = true
-        LEFT JOIN chat_resolved_questions_connection tqc ON tqc.chat_resolved_id = tbd.id AND tqc.active = true
-        LEFT JOIN chat_resolved_options_connection topt ON topt.chat_resolved_id = tbd.id AND topt.active = true
-        LEFT JOIN chat_resolved_images_connection tic ON tic.chat_resolved_id = tbd.id AND tic.active = true
-        LEFT JOIN chat_resolved_videos_connection tvc ON tvc.chat_resolved_id = tbd.id AND tvc.active = true
-        LEFT JOIN chat_resolved_documents_connection tdc ON tdc.chat_resolved_id = tbd.id AND tdc.active = true
-        LEFT JOIN chat_resolved_standard_groups_connection tsgc ON tsgc.chat_resolved_id = tbd.id AND tsgc.active = true
-        LEFT JOIN chat_resolved_standards_connection tsc2 ON tsc2.chat_resolved_id = tbd.id AND tsc2.active = true
+        LEFT JOIN attempt_chat_scenarios_connection tsc ON tsc.attempt_chat_id = tbd.id AND tsc.active = true
+        LEFT JOIN attempt_chat_rubrics_connection trc ON trc.attempt_chat_id = tbd.id AND trc.active = true
+        LEFT JOIN attempt_chat_problem_statements_connection tpsc ON tpsc.attempt_chat_id = tbd.id AND tpsc.active = true
+        LEFT JOIN attempt_chat_objectives_connection toc ON toc.attempt_chat_id = tbd.id AND toc.active = true
+        LEFT JOIN attempt_chat_questions_connection tqc ON tqc.attempt_chat_id = tbd.id AND tqc.active = true
+        LEFT JOIN attempt_chat_options_connection topt ON topt.attempt_chat_id = tbd.id AND topt.active = true
+        LEFT JOIN attempt_chat_images_connection tic ON tic.attempt_chat_id = tbd.id AND tic.active = true
+        LEFT JOIN attempt_chat_videos_connection tvc ON tvc.attempt_chat_id = tbd.id AND tvc.active = true
+        LEFT JOIN attempt_chat_documents_connection tdc ON tdc.attempt_chat_id = tbd.id AND tdc.active = true
+        LEFT JOIN attempt_chat_standard_groups_connection tsgc ON tsgc.attempt_chat_id = tbd.id AND tsgc.active = true
+        LEFT JOIN attempt_chat_standards_connection tsc2 ON tsc2.attempt_chat_id = tbd.id AND tsc2.active = true
         LEFT JOIN home_profile_personas_connection hppc ON hppc.home_id = hte.home_id AND hppc.active = true
         LEFT JOIN practice_profile_personas_connection pppc ON pppc.practice_id = pte.practice_id AND pppc.active = true
         LEFT JOIN profile_personas_resource ppr ON ppr.id = COALESCE(hppc.profile_personas_id, pppc.profile_personas_id) AND ppr.active = true
-        WHERE tbd.id = ANY(chat_resolved_ids)
+        WHERE tbd.id = ANY(attempt_chat_ids)
           AND tbd.active = true
         GROUP BY
             tbd.id,
-            he.copy_paste_allowed, pe.copy_paste_allowed,
-            he.text_enabled, pe.text_enabled,
-            he.audio_enabled, pe.audio_enabled,
-            he.hints_enabled, pe.hints_enabled,
-            he.show_images, pe.show_images,
-            he.show_objectives, pe.show_objectives,
-            he.show_problem_statement, pe.show_problem_statement
+            tb.copy_paste_allowed, tb.text_enabled, tb.audio_enabled, tb.hints_enabled,
+            tb.show_images, tb.show_objectives, tb.show_problem_statement
     ),
     items_agg AS (
         SELECT COALESCE(
             ARRAY_AGG(
                 (
-                    chat_resolved_id,
+                    attempt_chat_id,
                     copy_paste_allowed, text_enabled, audio_enabled, hints_enabled,
                     show_images, show_objectives, show_problem_statement,
                     time_limit_seconds, negative,

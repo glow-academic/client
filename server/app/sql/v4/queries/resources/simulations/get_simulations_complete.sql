@@ -39,8 +39,14 @@ CREATE TYPE types.q_get_simulations_v4_item AS (
     name text,
     description text,
     department_ids text[],
+    scenario_ids text[],
+    scenario_rubric_ids text[],
+    scenario_time_limit_ids text[],
+    scenario_position_ids text[],
+    scenario_flag_ids text[],
     active boolean,
-    generated boolean
+    generated boolean,
+    practice boolean
 );
 
 -- Accepts simulation resource IDs and returns simulation details
@@ -60,8 +66,14 @@ SELECT COALESCE(
             s.name,
             COALESCE(s.description, ''),
             COALESCE(s.department_ids::text[], ARRAY[]::text[]),
+            COALESCE(s.scenario_ids::text[], ARRAY[]::text[]),
+            COALESCE(s.scenario_rubric_ids::text[], ARRAY[]::text[]),
+            COALESCE(s.scenario_time_limit_ids::text[], ARRAY[]::text[]),
+            COALESCE(s.scenario_position_ids::text[], ARRAY[]::text[]),
+            COALESCE(s.scenario_flag_ids::text[], ARRAY[]::text[]),
             s.active,
-            COALESCE(s.generated, false)
+            COALESCE(s.generated, false),
+            COALESCE(s.practice, false)
         )::types.q_get_simulations_v4_item
         ORDER BY array_position(ids, s.id)
     ),

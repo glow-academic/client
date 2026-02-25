@@ -24,6 +24,8 @@ CREATE OR REPLACE FUNCTION api_create_cohorts_v4(
     simulation_ids uuid[] DEFAULT ARRAY[]::uuid[],
     profile_ids uuid[] DEFAULT ARRAY[]::uuid[],
     profile_persona_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    simulation_position_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    simulation_availability_ids uuid[] DEFAULT ARRAY[]::uuid[],
     mcp boolean DEFAULT false
 )
 RETURNS TABLE (
@@ -43,6 +45,8 @@ BEGIN
         simulation_ids,
         profile_ids,
         profile_persona_ids,
+        simulation_position_ids,
+        simulation_availability_ids,
         mcp,
         generated
     )
@@ -53,6 +57,8 @@ BEGIN
         api_create_cohorts_v4.simulation_ids,
         api_create_cohorts_v4.profile_ids,
         api_create_cohorts_v4.profile_persona_ids,
+        api_create_cohorts_v4.simulation_position_ids,
+        api_create_cohorts_v4.simulation_availability_ids,
         api_create_cohorts_v4.mcp,
         api_create_cohorts_v4.mcp
     FROM (SELECT 1) AS dummy

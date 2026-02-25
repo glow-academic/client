@@ -109,14 +109,10 @@ chat_data AS (
         (EXISTS (SELECT 1 FROM attempt_completion_entry comp WHERE comp.chat_id = c.id AND comp.active = TRUE)) as chat_is_completed,
         ac.attempt_id,
         c.group_id,
-        COALESCE(he.hints_enabled, pe.hints_enabled, true) as hints_enabled
-    FROM chat_resolved_entry c
-    JOIN attempt_chat_entry ac ON ac.chat_resolved_id = c.id
-    LEFT JOIN attempt_entry a ON a.id = ac.attempt_id
-    LEFT JOIN attempt_home_entry ahc ON ahc.attempt_id = a.id AND ahc.active = true
-    LEFT JOIN home_entry he ON he.id = ahc.home_id
-    LEFT JOIN attempt_practice_entry apc ON apc.attempt_id = a.id AND apc.active = true
-    LEFT JOIN practice_entry pe ON pe.id = apc.practice_id
+        COALESCE(ce.hints_enabled, true) as hints_enabled
+    FROM attempt_chat_entry c
+    LEFT JOIN chat_entry ce ON ce.id = c.chat_id
+    JOIN attempt_chat_bridge_entry ac ON ac.attempt_chat_id = c.id
     CROSS JOIN params p
     WHERE c.id = p.chat_id
     LIMIT 1

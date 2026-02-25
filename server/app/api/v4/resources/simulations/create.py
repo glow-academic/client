@@ -19,7 +19,12 @@ class CreateSimulationsSqlParams(BaseModel):
     description_id: UUID | None = None
     department_ids: list[UUID] | None = None
     scenario_ids: list[UUID] | None = None
+    scenario_rubric_ids: list[UUID] | None = None
+    scenario_time_limit_ids: list[UUID] | None = None
+    scenario_position_ids: list[UUID] | None = None
+    scenario_flag_ids: list[UUID] | None = None
     mcp: bool = False
+    practice: bool = False
 
     def to_tuple(self) -> tuple:
         return (
@@ -27,7 +32,12 @@ class CreateSimulationsSqlParams(BaseModel):
             self.description_id,
             self.department_ids or [],
             self.scenario_ids or [],
+            self.scenario_rubric_ids or [],
+            self.scenario_time_limit_ids or [],
+            self.scenario_position_ids or [],
+            self.scenario_flag_ids or [],
             self.mcp,
+            self.practice,
         )
 
 
@@ -43,7 +53,12 @@ async def create_simulations_internal(
     description_id: UUID | None = None,
     department_ids: list[UUID] | None = None,
     scenario_ids: list[UUID] | None = None,
+    scenario_rubric_ids: list[UUID] | None = None,
+    scenario_time_limit_ids: list[UUID] | None = None,
+    scenario_position_ids: list[UUID] | None = None,
+    scenario_flag_ids: list[UUID] | None = None,
     mcp: bool = False,
+    practice: bool = False,
 ) -> UUID:
     """Create a denormalized simulations_resource and return its ID.
 
@@ -56,7 +71,12 @@ async def create_simulations_internal(
         description_id=description_id,
         department_ids=department_ids,
         scenario_ids=scenario_ids,
+        scenario_rubric_ids=scenario_rubric_ids,
+        scenario_time_limit_ids=scenario_time_limit_ids,
+        scenario_position_ids=scenario_position_ids,
+        scenario_flag_ids=scenario_flag_ids,
         mcp=mcp,
+        practice=practice,
     )
     result = await execute_sql_typed(conn, SQL_PATH, params=params)
     if not result or not result.simulations_resource_id:

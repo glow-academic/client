@@ -106,15 +106,15 @@ async def _attempt_chat_impl(sid: str, data: dict[str, Any]) -> None:
 
         else:
             # === CREATE MODE ===
-            chat_resolved_id_str = data.get("chat_resolved_id")
-            if not profile_id_str or not chat_resolved_id_str:
+            attempt_chat_id_str = data.get("attempt_chat_id")
+            if not profile_id_str or not attempt_chat_id_str:
                 logger.warning(
-                    "attempt_chat create mode: missing profile_id or chat_resolved_id"
+                    "attempt_chat create mode: missing profile_id or attempt_chat_id"
                 )
                 return
 
             profile_id = uuid.UUID(profile_id_str)
-            chat_resolved_id = uuid.UUID(chat_resolved_id_str)
+            attempt_chat_id = uuid.UUID(attempt_chat_id_str)
 
             async with get_db_connection() as conn:
                 chat_row = cast(
@@ -125,7 +125,7 @@ async def _attempt_chat_impl(sid: str, data: dict[str, Any]) -> None:
                         params=CreateAttemptChatSqlParams(
                             p_profile_id=profile_id,
                             p_attempt_id=attempt_id,
-                            p_chat_resolved_id=chat_resolved_id,
+                            p_attempt_chat_id=attempt_chat_id,
                         ),
                     ),
                 )

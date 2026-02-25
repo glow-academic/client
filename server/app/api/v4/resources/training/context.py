@@ -1,6 +1,6 @@
 """Training context helpers for attempt lifecycle.
 
-Contains prepare_training_start (creates chat_resolved_entry) and
+Contains prepare_training_start (creates attempt_chat_entry) and
 check_resolved_needs_generation (checks if generation is needed).
 """
 
@@ -28,10 +28,10 @@ async def prepare_training_start_internal(
 ) -> tuple[UUID | None, UUID | None]:
     """Call prepare_training_start SQL function.
 
-    Creates a chat_resolved_entry (if missing) and populates canonical scope links
+    Creates a attempt_chat_entry (if missing) and populates canonical scope links
     (scenarios, rubrics, documents, etc.) from the scenario config.
 
-    Returns (chat_resolved_id, scenario_id).
+    Returns (attempt_chat_id, scenario_id).
     """
     from typing import cast
 
@@ -52,12 +52,12 @@ async def prepare_training_start_internal(
     if not row:
         return None, None
 
-    return row.out_chat_resolved_id, row.out_scenario_id
+    return row.out_attempt_chat_id, row.out_scenario_id
 
 
 async def check_resolved_needs_generation(
     conn: asyncpg.Connection,
-    chat_resolved_id: UUID,
+    attempt_chat_id: UUID,
 ) -> bool:
     """Return True if the resolved entry is missing generated persona connections.
 
@@ -68,9 +68,9 @@ async def check_resolved_needs_generation(
     row = await conn.fetchval(
         """
         SELECT COUNT(*) = 0
-        FROM chat_resolved_profile_personas_connection
-        WHERE chat_resolved_id = $1 AND active = true
+        FROM attempt_chat_profile_personas_connection
+        WHERE attempt_chat_id = $1 AND active = true
         """,
-        chat_resolved_id,
+        attempt_chat_id,
     )
     return bool(row)

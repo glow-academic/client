@@ -40,8 +40,8 @@ DECLARE
     refreshed text[] := ARRAY[]::text[];
 BEGIN
     -- Refresh attempt MVs needed for dashboard analytics
-    REFRESH MATERIALIZED VIEW CONCURRENTLY chat_resolved_mv;
-    refreshed := array_append(refreshed, 'chat_resolved_mv');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY attempt_chat_mv;
+    refreshed := array_append(refreshed, 'attempt_chat_mv');
 
     REFRESH MATERIALIZED VIEW CONCURRENTLY attempt_mv;
     refreshed := array_append(refreshed, 'attempt_mv');

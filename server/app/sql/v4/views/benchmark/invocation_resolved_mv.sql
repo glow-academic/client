@@ -5,7 +5,7 @@
 -- Filter: active = TRUE only
 --
 -- Purpose: Provides invocation-level resource IDs and grade data for
--- parallel fetching. Follows chat_resolved_mv pattern: resource-ID-rich
+-- parallel fetching. Follows attempt_chat_mv pattern: resource-ID-rich
 -- via bundle_snapshot, grade data denormalized. Feedbacks fetched separately
 -- via test_feedback_mv using grade_id.
 --
@@ -65,18 +65,9 @@ latest_grade AS (
     WHERE g.active = true
     ORDER BY g.invocation_id, g.created_at DESC
 ),
--- Rubric from grade (via test_grade_rubrics_connection)
-grade_rubric AS (
-    SELECT DISTINCT ON (lg.invocation_id)
-        lg.invocation_id,
-        grc.rubrics_id AS rubric_id
-    FROM latest_grade lg
-    JOIN test_grade_rubrics_connection grc ON grc.grade_id = lg.grade_id
-    ORDER BY lg.invocation_id
-),
 -- ============================================================================
 -- Bundle snapshot: configured resource IDs from invocation_resolved_*
--- Analogous to subbundle_snapshot in chat_resolved_mv
+-- Analogous to subbundle_snapshot in attempt_chat_mv
 -- ============================================================================
 bundle_snapshot AS (
     SELECT
@@ -142,7 +133,7 @@ SELECT
     lg.grade_score,
     lg.grade_passed,
     lg.grade_time_taken,
-    gr.rubric_id,
+    NULL::uuid AS rubric_id,
 
     -- Actual execution runs (from invocation-level connection)
     COALESCE(irl.invocation_run_ids, ARRAY[]::uuid[]) AS invocation_run_ids,
@@ -168,7 +159,6 @@ FROM invocation_resolved_entry i
 JOIN test_invocation_entry ti ON ti.invocation_resolved_id = i.id
 LEFT JOIN invocation_run_links irl ON irl.invocation_resolved_id = i.id
 LEFT JOIN latest_grade lg ON lg.invocation_id = i.id
-LEFT JOIN grade_rubric gr ON gr.invocation_id = i.id
 LEFT JOIN bundle_snapshot bs ON bs.invocation_resolved_id = i.id
 LEFT JOIN historical_runs hr ON hr.invocation_id = i.id
 WHERE i.active = true

@@ -11,4 +11,4 @@ class AttemptChatEntryData(BaseModel):
     created_at: str | None = None
     title: str | None = None
     group_id: str | None = None
-    chat_resolved_id: str | None = None
+    attempt_chat_id: str | None = None

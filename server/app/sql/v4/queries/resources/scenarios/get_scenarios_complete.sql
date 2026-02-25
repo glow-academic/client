@@ -47,7 +47,13 @@ CREATE TYPE types.q_get_scenarios_v4_item AS (
     -- Denormalized persona_ids for list hydration
     persona_ids uuid[],
     parameter_field_ids uuid[],
-    parameter_ids uuid[]
+    document_ids uuid[],
+    objective_ids uuid[],
+    image_ids uuid[],
+    video_ids uuid[],
+    question_ids uuid[],
+    option_ids uuid[],
+    problem_statement_ids uuid[]
 );
 
 CREATE OR REPLACE FUNCTION api_get_scenarios_v4(
@@ -73,7 +79,13 @@ SELECT COALESCE(
             s.questions_enabled,
             COALESCE(s.persona_ids, ARRAY[]::uuid[]),
             COALESCE(s.parameter_field_ids, ARRAY[]::uuid[]),
-            COALESCE(s.parameter_ids, ARRAY[]::uuid[])
+            COALESCE(s.document_ids, ARRAY[]::uuid[]),
+            COALESCE(s.objective_ids, ARRAY[]::uuid[]),
+            COALESCE(s.image_ids, ARRAY[]::uuid[]),
+            COALESCE(s.video_ids, ARRAY[]::uuid[]),
+            COALESCE(s.question_ids, ARRAY[]::uuid[]),
+            COALESCE(s.option_ids, ARRAY[]::uuid[]),
+            COALESCE(s.problem_statement_ids, ARRAY[]::uuid[])
         )::types.q_get_scenarios_v4_item
         ORDER BY s.name
     ),

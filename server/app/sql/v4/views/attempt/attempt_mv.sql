@@ -40,7 +40,7 @@ CREATE MATERIALIZED VIEW attempt_mv AS
 -- Simple attempt-level data only
 -- All aggregates (total_chats, scores, etc.) derived in service layer from chats
 WITH
--- Collect scenario_ids per attempt from chats → chat_resolved scenarios
+-- Collect scenario_ids per attempt from chats → attempt_chat scenarios
 attempt_scenarios AS (
     SELECT
         ac.attempt_id,
@@ -49,11 +49,11 @@ attempt_scenarios AS (
             FILTER (WHERE tsc.scenarios_id IS NOT NULL),
             ARRAY[]::uuid[]
         ) AS scenario_ids
-    FROM chat_resolved_entry c
-    JOIN attempt_chat_entry ac ON ac.chat_resolved_id = c.id
+    FROM attempt_chat_entry c
+    JOIN attempt_chat_bridge_entry ac ON ac.attempt_chat_id = c.id
     JOIN attempt_entry a2 ON a2.id = ac.attempt_id AND a2.active = TRUE
-    LEFT JOIN chat_resolved_scenarios_connection tsc
-        ON tsc.chat_resolved_id = c.id AND tsc.active = TRUE
+    LEFT JOIN attempt_chat_scenarios_connection tsc
+        ON tsc.attempt_chat_id = c.id AND tsc.active = TRUE
     WHERE c.active = TRUE
     GROUP BY ac.attempt_id
 )
@@ -82,7 +82,7 @@ SELECT
 
     -- Training context (for socket handlers — replaces inline SQL_ATTEMPT_CONTEXT)
     training_ctx.chat_entry_id,
-    training_ctx.chat_resolved_id
+    training_ctx.attempt_chat_id
 
 FROM attempt_entry a
 -- Attempt connections (required)
@@ -99,16 +99,16 @@ LEFT JOIN home_departments_connection home_dep ON home_dep.home_id = ahe.home_id
 LEFT JOIN practice_departments_connection prac_dep ON prac_dep.practice_id = ape.practice_id AND prac_dep.active = true
 -- Scenario IDs (optional)
 LEFT JOIN attempt_scenarios ascn ON ascn.attempt_id = a.id
--- Training context: resolve chat_entry_id + chat_resolved_id (LATERAL for 1:1)
+-- Training context: resolve chat_entry_id + attempt_chat_id (LATERAL for 1:1)
 LEFT JOIN LATERAL (
     SELECT
         COALESCE(pte.chat_id, hte.chat_id) AS chat_entry_id,
-        cr.id AS chat_resolved_id
+        cr.id AS attempt_chat_id
     FROM (SELECT 1) _dummy
     LEFT JOIN practice_chat_entry pte ON pte.practice_id = ape.practice_id AND pte.active = true
     LEFT JOIN home_chat_entry hte ON hte.home_id = ahe.home_id AND hte.active = true
-    LEFT JOIN attempt_chat_entry ac_ctx ON ac_ctx.attempt_id = a.id
-    LEFT JOIN chat_resolved_entry cr ON cr.id = ac_ctx.chat_resolved_id AND cr.active = true
+    LEFT JOIN attempt_chat_bridge_entry ac_ctx ON ac_ctx.attempt_id = a.id
+    LEFT JOIN attempt_chat_entry cr ON cr.id = ac_ctx.attempt_chat_id AND cr.active = true
     LIMIT 1
 ) training_ctx ON true
 -- Latest archive state (append-only)

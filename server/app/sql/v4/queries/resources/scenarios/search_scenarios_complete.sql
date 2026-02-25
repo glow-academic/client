@@ -43,7 +43,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.scenario_id, q.name, q.description, q.generated, q.problem_statement_enabled, q.objectives_enabled, q.video_enabled, q.images_enabled, q.questions_enabled, q.persona_ids, q.parameter_field_ids, q.parameter_ids)::types.q_get_scenarios_v4_item
+        (q.scenario_id, q.name, q.description, q.generated, q.problem_statement_enabled, q.objectives_enabled, q.video_enabled, q.images_enabled, q.questions_enabled, q.persona_ids, q.parameter_field_ids, q.document_ids, q.objective_ids, q.image_ids, q.video_ids, q.question_ids, q.option_ids, q.problem_statement_ids)::types.q_get_scenarios_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_scenarios_v4_item[]
@@ -61,7 +61,13 @@ FROM (
         s.questions_enabled,
         COALESCE(s.persona_ids, ARRAY[]::uuid[]) as persona_ids,
         COALESCE(s.parameter_field_ids, ARRAY[]::uuid[]) as parameter_field_ids,
-        COALESCE(s.parameter_ids, ARRAY[]::uuid[]) as parameter_ids
+        COALESCE(s.document_ids, ARRAY[]::uuid[]) as document_ids,
+        COALESCE(s.objective_ids, ARRAY[]::uuid[]) as objective_ids,
+        COALESCE(s.image_ids, ARRAY[]::uuid[]) as image_ids,
+        COALESCE(s.video_ids, ARRAY[]::uuid[]) as video_ids,
+        COALESCE(s.question_ids, ARRAY[]::uuid[]) as question_ids,
+        COALESCE(s.option_ids, ARRAY[]::uuid[]) as option_ids,
+        COALESCE(s.problem_statement_ids, ARRAY[]::uuid[]) as problem_statement_ids
     FROM scenarios_resource s
     WHERE s.active = true
       -- Search filter
@@ -81,7 +87,6 @@ FROM (
       -- Exclude specified IDs
       AND (COALESCE(array_length(exclude_ids, 1), 0) = 0 OR NOT s.id = ANY(exclude_ids))
       AND (COALESCE(array_length(persona_ids, 1), 0) = 0 OR s.persona_ids && persona_ids)
-      AND (COALESCE(array_length(parameter_ids, 1), 0) = 0 OR s.parameter_ids && parameter_ids)
       AND (problem_statement_enabled IS NULL OR s.problem_statement_enabled = problem_statement_enabled)
       AND (objectives_enabled IS NULL OR s.objectives_enabled = objectives_enabled)
       AND (video_enabled IS NULL OR s.video_enabled = video_enabled)

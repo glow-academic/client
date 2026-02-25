@@ -200,10 +200,16 @@ class QGetScenariosV4Item(BaseModel):
     video_enabled: bool | None = None
     images_enabled: bool | None = None
     questions_enabled: bool | None = None
-    # Denormalized persona_ids for list hydration
+    # Denormalized resource IDs
     persona_ids: list[UUID] | None = None
     parameter_field_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+    objective_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+    question_ids: list[UUID] | None = None
+    option_ids: list[UUID] | None = None
+    problem_statement_ids: list[UUID] | None = None
 
 
 class GetScenariosSqlParams(BaseModel):

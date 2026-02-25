@@ -48,7 +48,7 @@ class GradeItem(BaseModel):
 class TrainingConfig(BaseModel):
     """Training department config flags + resource ID arrays."""
 
-    chat_resolved_id: UUID
+    attempt_chat_id: UUID
     copy_paste_allowed: bool = True
     text_enabled: bool = True
     audio_enabled: bool = True
@@ -125,18 +125,18 @@ class AttemptMessageViewItem(BaseModel):
 
 async def _fetch_training_config(
     conn: asyncpg.Connection,
-    chat_resolved_ids: list[UUID],
+    attempt_chat_ids: list[UUID],
     bypass_cache: bool = False,
 ) -> dict[UUID, TrainingConfig]:
-    """Fetch training config for a batch of chat_resolved_ids."""
-    if not chat_resolved_ids:
+    """Fetch training config for a batch of attempt_chat_ids."""
+    if not attempt_chat_ids:
         return {}
 
     from app.sql.types import GetTrainingConfigSqlParams
 
     tc_cache_key = cache_key(
         "entries/chat/training_config/get",
-        {"ids": sorted(str(i) for i in chat_resolved_ids)},
+        {"ids": sorted(str(i) for i in attempt_chat_ids)},
     )
 
     if not bypass_cache:
@@ -147,14 +147,14 @@ async def _fetch_training_config(
                 configs[UUID(key)] = TrainingConfig.model_validate(val)
             return configs
 
-    params = GetTrainingConfigSqlParams(chat_resolved_ids=chat_resolved_ids)
+    params = GetTrainingConfigSqlParams(attempt_chat_ids=attempt_chat_ids)
     result = await execute_sql_typed(conn, TRAINING_CONFIG_SQL, params=params)
 
     configs = {}
     if result and result.items:
         for item in result.items:
-            configs[item.chat_resolved_id] = TrainingConfig(
-                chat_resolved_id=item.chat_resolved_id,
+            configs[item.attempt_chat_id] = TrainingConfig(
+                attempt_chat_id=item.attempt_chat_id,
                 copy_paste_allowed=item.copy_paste_allowed
                 if item.copy_paste_allowed is not None
                 else True,
@@ -290,24 +290,20 @@ async def get_attempt_chats_internal(
         )
         all_items.extend(chats_result.items)
 
-    # Pass 2: Get training config for all unique chat_resolved_ids
-    cr_ids = list(
-        {item.chat_resolved_id for item in all_items if item.chat_resolved_id}
-    )
+    # Pass 2: Get training config for all unique attempt_chat_ids
+    cr_ids = list({item.attempt_chat_id for item in all_items if item.attempt_chat_id})
     config_map = {}
     if cr_ids:
         config_map = await _fetch_training_config(
             conn=conn,
-            chat_resolved_ids=cr_ids,
+            attempt_chat_ids=cr_ids,
             bypass_cache=bypass_cache,
         )
 
     # Compose ChatViewItem from both sources
     items: list[ChatViewItem] = []
     for chat in all_items:
-        config = (
-            config_map.get(chat.chat_resolved_id) if chat.chat_resolved_id else None
-        )
+        config = config_map.get(chat.attempt_chat_id) if chat.attempt_chat_id else None
 
         grade = None
         if chat.grade_score is not None or chat.grade_passed is not None:

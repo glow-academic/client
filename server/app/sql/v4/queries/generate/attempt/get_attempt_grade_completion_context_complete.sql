@@ -34,8 +34,8 @@ SELECT
     ac.attempt_id,
     COALESCE(home_sim.simulations_id, prac_sim.simulations_id) AS simulation_id
 FROM attempt_grade_entry g
-JOIN chat_resolved_entry c ON c.id = g.chat_id
-JOIN attempt_chat_entry ac ON ac.chat_resolved_id = c.id
+JOIN attempt_chat_entry c ON c.id = g.chat_id
+JOIN attempt_chat_bridge_entry ac ON ac.attempt_chat_id = c.id
 JOIN attempt_entry a ON a.id = ac.attempt_id
 LEFT JOIN attempt_home_entry ahe ON ahe.attempt_id = a.id AND ahe.active = true
 LEFT JOIN attempt_practice_entry ape ON ape.attempt_id = a.id AND ape.active = true

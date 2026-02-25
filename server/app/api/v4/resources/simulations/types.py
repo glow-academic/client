@@ -15,8 +15,14 @@ class GetSimulationsV4Item(BaseModel):
     name: str | None = None
     description: str | None = None
     department_ids: list[str] | None = None
+    scenario_ids: list[str] | None = None
+    scenario_rubric_ids: list[str] | None = None
+    scenario_time_limit_ids: list[str] | None = None
+    scenario_position_ids: list[str] | None = None
+    scenario_flag_ids: list[str] | None = None
     active: bool | None = None
     generated: bool | None = None
+    practice: bool | None = None
 
 
 class GetSimulationsApiRequest(BaseModel):
@@ -125,5 +131,11 @@ class SimulationsResourceData(BaseModel):
     name: str | None = None
     description: str | None = None
     department_ids: list[str] | None = None
+    scenario_ids: list[str] | None = None
+    scenario_rubric_ids: list[str] | None = None
+    scenario_time_limit_ids: list[str] | None = None
+    scenario_position_ids: list[str] | None = None
+    scenario_flag_ids: list[str] | None = None
     active: bool | None = None
     generated: bool | None = None
+    practice: bool | None = None

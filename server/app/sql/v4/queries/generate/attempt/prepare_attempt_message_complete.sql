@@ -48,13 +48,13 @@ DECLARE
     v_created_at timestamptz;
 BEGIN
 
-    -- Get group_id directly from chat_resolved_entry
+    -- Get group_id directly from attempt_chat_entry
     -- If p_group_id is provided (regeneration), use that directly
     IF p_group_id IS NOT NULL THEN
         v_group_id := p_group_id;
     ELSE
         SELECT sc.group_id INTO v_group_id
-        FROM chat_resolved_entry sc
+        FROM attempt_chat_entry sc
         WHERE sc.id = p_chat_id;
     END IF;
 

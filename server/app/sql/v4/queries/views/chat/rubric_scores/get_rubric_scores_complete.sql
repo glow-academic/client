@@ -88,15 +88,15 @@ AS $$
         WHERE g.active = TRUE
         ORDER BY g.chat_id, g.created_at DESC
     ),
-    grade_rubric AS (
-        SELECT DISTINCT ON (grc.grade_id)
-            grc.grade_id,
-            grc.rubrics_id AS rubric_id
-        FROM attempt_grade_rubrics_connection grc
-        WHERE grc.active = TRUE
-        ORDER BY grc.grade_id, grc.created_at DESC
+    chat_rubric AS (
+        SELECT DISTINCT ON (acrc.attempt_chat_id)
+            acrc.attempt_chat_id,
+            acrc.rubrics_id AS rubric_id
+        FROM attempt_chat_rubrics_connection acrc
+        WHERE acrc.active = TRUE
+        ORDER BY acrc.attempt_chat_id, acrc.created_at DESC
     ),
-    -- Join chat_resolved_mv with grade/rubric/feedback chain to compute scores per standard_group
+    -- Join attempt_chat_mv with grade/rubric/feedback chain to compute scores per standard_group
     scored AS (
         SELECT
             ch.chat_id,
@@ -113,9 +113,10 @@ AS $$
             ch.attempt_date,
             ch.attempt_type,
             ch.is_archived
-        FROM chat_resolved_mv ch
+        FROM attempt_chat_mv ch
         JOIN latest_grade lg ON lg.chat_id = ch.chat_id
-        JOIN grade_rubric gr ON gr.grade_id = lg.grade_id
+        JOIN attempt_chat_entry ace ON ace.id = lg.chat_id AND ace.active = TRUE
+        JOIN chat_rubric gr ON gr.attempt_chat_id = ace.id
         JOIN attempt_feedback_entry fe ON fe.grade_id = lg.grade_id AND fe.active = TRUE
         JOIN feedbacks_standards_connection fsc ON fsc.feedbacks_id = fe.id
         JOIN standards_resource s ON s.id = fsc.standard_id

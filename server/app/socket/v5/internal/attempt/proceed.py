@@ -5,10 +5,10 @@ Handles: @internal_sio.on("attempt_proceed")
 Both attempt_start and attempt_next resolve context, then emit attempt_proceed.
 This handler owns the prepare → check → link/generate flow:
 
-1. prepare_training_start (creates/reuses chat_resolved_entry)
+1. prepare_training_start (creates/reuses attempt_chat_entry)
 2. check_resolved_needs_generation
 3. If ready → link attempt_chat_entry, emit attempt_chat_started
-4. If needs generation + should_proceed → _emit_chat_generate
+4. If needs generation + should_proceed → emit_chat_generate
 5. If needs generation + !should_proceed → emit attempt_started (lobby)
 """
 
@@ -23,9 +23,9 @@ from app.api.v4.resources.training.context import (
 )
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio
-from app.socket.v5.internal.attempt.start import (
-    _emit_chat_generate,
-    _link_attempt_chat,
+from app.socket.v5.internal.attempt.helpers import (
+    emit_chat_generate,
+    link_attempt_chat,
 )
 from app.socket.v5.internal.attempt.types import (
     AttemptChatStartedData,
@@ -65,9 +65,9 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
 
         should_proceed = payload.force_proceed or SHOULD_PROCEED
 
-        # Step 1: prepare_training_start (creates/reuses chat_resolved_entry)
+        # Step 1: prepare_training_start (creates/reuses attempt_chat_entry)
         async with get_db_connection() as conn:
-            chat_resolved_id, scenario_id = await prepare_training_start_internal(
+            attempt_chat_id, scenario_id = await prepare_training_start_internal(
                 conn,
                 profile_id=profile_id,
                 chat_entry_id=chat_entry_id,
@@ -75,9 +75,9 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
                 draft_id=draft_id,
             )
 
-        if not chat_resolved_id:
+        if not attempt_chat_id:
             logger.warning(
-                f"prepare_training_start returned no chat_resolved_id for attempt {attempt_id}"
+                f"prepare_training_start returned no attempt_chat_id for attempt {attempt_id}"
             )
             await internal_sio.emit(
                 "attempt_error",
@@ -92,14 +92,14 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
         # Step 2: Check if resolved entry needs generation
         async with get_db_connection() as conn:
             needs_generation = await check_resolved_needs_generation(
-                conn, chat_resolved_id
+                conn, attempt_chat_id
             )
 
         if not needs_generation:
             # Resources already populated — link and proceed immediately
             async with get_db_connection() as conn:
-                chat_id = await _link_attempt_chat(
-                    conn, profile_id, attempt_id, chat_resolved_id
+                chat_id = await link_attempt_chat(
+                    conn, profile_id, attempt_id, attempt_chat_id
                 )
 
             if chat_id:
@@ -114,13 +114,13 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
         elif should_proceed:
             # Auto-generate: emit generate with save=True
             # generation_complete will handle linking + emit
-            await _emit_chat_generate(
+            await emit_chat_generate(
                 sid=sid,
                 profile_id=profile_id,
                 attempt_id=attempt_id,
                 chat_entry_id=chat_entry_id,
                 department_id=department_id,
-                chat_resolved_id=chat_resolved_id,
+                attempt_chat_id=attempt_chat_id,
                 draft_id=draft_id,
             )
         else:

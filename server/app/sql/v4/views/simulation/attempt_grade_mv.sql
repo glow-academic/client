@@ -43,8 +43,6 @@ WITH latest_grade AS (
         g.score,
         g.passed,
         g.time_taken,
-        g.total_points,
-        g.pass_points,
         g.created_at
     FROM attempt_grade_entry g
     WHERE g.active = TRUE
@@ -56,12 +54,14 @@ SELECT
     lg.score::float AS score,
     lg.passed,
     lg.time_taken,
-    lg.total_points,
-    lg.pass_points,
-    grc.rubrics_id AS rubric_id,
+    r.total_points,
+    r.pass_points,
+    acrc.rubrics_id AS rubric_id,
     lg.created_at
 FROM latest_grade lg
-LEFT JOIN attempt_grade_rubrics_connection grc ON grc.grade_id = lg.grade_id
+LEFT JOIN attempt_chat_entry ace ON ace.id = lg.chat_id AND ace.active = TRUE
+LEFT JOIN attempt_chat_rubrics_connection acrc ON acrc.attempt_chat_id = ace.id AND acrc.active = TRUE
+LEFT JOIN rubrics_resource r ON r.id = acrc.rubrics_id
 WITH NO DATA;
 
 -- ============================================================================

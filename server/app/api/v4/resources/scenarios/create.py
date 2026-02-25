@@ -19,8 +19,14 @@ class CreateScenariosSqlParams(BaseModel):
     description_id: UUID | None = None
     department_ids: list[UUID] | None = None
     persona_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
     parameter_field_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+    objective_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+    question_ids: list[UUID] | None = None
+    option_ids: list[UUID] | None = None
+    problem_statement_ids: list[UUID] | None = None
     problem_statement_enabled: bool = True
     objectives_enabled: bool = True
     video_enabled: bool = False
@@ -34,8 +40,14 @@ class CreateScenariosSqlParams(BaseModel):
             self.description_id,
             self.department_ids or [],
             self.persona_ids or [],
-            self.parameter_ids or [],
             self.parameter_field_ids or [],
+            self.document_ids or [],
+            self.objective_ids or [],
+            self.image_ids or [],
+            self.video_ids or [],
+            self.question_ids or [],
+            self.option_ids or [],
+            self.problem_statement_ids or [],
             self.problem_statement_enabled,
             self.objectives_enabled,
             self.video_enabled,
@@ -57,8 +69,14 @@ async def create_scenarios_internal(
     description_id: UUID | None = None,
     department_ids: list[UUID] | None = None,
     persona_ids: list[UUID] | None = None,
-    parameter_ids: list[UUID] | None = None,
     parameter_field_ids: list[UUID] | None = None,
+    document_ids: list[UUID] | None = None,
+    objective_ids: list[UUID] | None = None,
+    image_ids: list[UUID] | None = None,
+    video_ids: list[UUID] | None = None,
+    question_ids: list[UUID] | None = None,
+    option_ids: list[UUID] | None = None,
+    problem_statement_ids: list[UUID] | None = None,
     problem_statement_enabled: bool = True,
     objectives_enabled: bool = True,
     video_enabled: bool = False,
@@ -77,8 +95,14 @@ async def create_scenarios_internal(
         description_id=description_id,
         department_ids=department_ids,
         persona_ids=persona_ids,
-        parameter_ids=parameter_ids,
         parameter_field_ids=parameter_field_ids,
+        document_ids=document_ids,
+        objective_ids=objective_ids,
+        image_ids=image_ids,
+        video_ids=video_ids,
+        question_ids=question_ids,
+        option_ids=option_ids,
+        problem_statement_ids=problem_statement_ids,
         problem_statement_enabled=problem_statement_enabled,
         objectives_enabled=objectives_enabled,
         video_enabled=video_enabled,

@@ -17,4 +17,10 @@ class ScenariosResourceData(BaseModel):
     questions_enabled: bool | None = None
     persona_ids: list[str] | None = None
     parameter_field_ids: list[str] | None = None
-    parameter_ids: list[str] | None = None
+    document_ids: list[str] | None = None
+    objective_ids: list[str] | None = None
+    image_ids: list[str] | None = None
+    video_ids: list[str] | None = None
+    question_ids: list[str] | None = None
+    option_ids: list[str] | None = None
+    problem_statement_ids: list[str] | None = None

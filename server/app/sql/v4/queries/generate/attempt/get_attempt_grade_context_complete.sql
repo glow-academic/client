@@ -111,8 +111,8 @@ chat_data AS (
     SELECT
         sc.id as chat_id,
         sc.group_id
-    FROM chat_resolved_entry sc
-    JOIN attempt_chat_entry ac ON ac.chat_resolved_id = sc.id
+    FROM attempt_chat_entry sc
+    JOIN attempt_chat_bridge_entry ac ON ac.attempt_chat_id = sc.id
     CROSS JOIN params p
     WHERE ac.attempt_id = p.attempt_id
       AND sc.active = TRUE

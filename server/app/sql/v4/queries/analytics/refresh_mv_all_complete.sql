@@ -61,8 +61,8 @@ BEGIN
     refreshed := array_append(refreshed, 'calls_mv');
 
     -- Attempt MVs
-    REFRESH MATERIALIZED VIEW CONCURRENTLY chat_resolved_mv;
-    refreshed := array_append(refreshed, 'chat_resolved_mv');
+    REFRESH MATERIALIZED VIEW CONCURRENTLY attempt_chat_mv;
+    refreshed := array_append(refreshed, 'attempt_chat_mv');
 
     REFRESH MATERIALIZED VIEW CONCURRENTLY attempt_mv;
     refreshed := array_append(refreshed, 'attempt_mv');

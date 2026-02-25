@@ -9,7 +9,7 @@ RETURNS TABLE (
 LANGUAGE sql
 AS $$
 WITH update_chat AS (
-    UPDATE chat_resolved_entry
+    UPDATE attempt_chat_entry
     SET created_at = api_update_chat_created_at_v4.created_at,
         updated_at = NOW()
     WHERE id = api_update_chat_created_at_v4.chat_id

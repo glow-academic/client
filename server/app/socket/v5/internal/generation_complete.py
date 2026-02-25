@@ -115,12 +115,12 @@ async def handle_run_complete(data: dict[str, Any]) -> None:
             if rt and rid:
                 resource_actions[rt] = {"resource_id": rid}
 
-    # 4a-chat: Inject _chat_resolved_id into resource_actions for chat saves
+    # 4a-chat: Inject _attempt_chat_id into resource_actions for chat saves
     metadata = data.get("metadata") or {}
     if artifact_type == "chat":
-        chat_resolved_id_meta = metadata.get("chat_resolved_id")
-        if chat_resolved_id_meta:
-            resource_actions["_chat_resolved_id"] = chat_resolved_id_meta
+        attempt_chat_id_meta = metadata.get("attempt_chat_id")
+        if attempt_chat_id_meta:
+            resource_actions["_attempt_chat_id"] = attempt_chat_id_meta
 
     # 4b: Auto-save if applicable
     if should_save and profile_id_str and group_id_str:
@@ -172,23 +172,23 @@ async def handle_run_complete(data: dict[str, Any]) -> None:
     # 4e: Special case — chat: link attempt_chat_entry + emit attempt events
     if artifact_type == "chat":
         attempt_id_data = metadata.get("attempt_id")
-        chat_resolved_id_data = metadata.get("chat_resolved_id")
+        attempt_chat_id_data = metadata.get("attempt_chat_id")
         if (
             should_save
             and profile_id_str
             and attempt_id_data
-            and chat_resolved_id_data
-            and artifact_id  # save_chat_internal returned the chat_resolved_id
+            and attempt_chat_id_data
+            and artifact_id  # save_chat_internal returned the attempt_chat_id
         ):
             try:
-                from app.socket.v5.internal.attempt.start import _link_attempt_chat
+                from app.socket.v5.internal.attempt.helpers import link_attempt_chat
 
                 attempt_uuid = uuid.UUID(attempt_id_data)
                 profile_uuid = uuid.UUID(profile_id_str)
-                cr_uuid = uuid.UUID(chat_resolved_id_data)
+                cr_uuid = uuid.UUID(attempt_chat_id_data)
 
                 async with get_db_connection() as conn:
-                    chat_id = await _link_attempt_chat(
+                    chat_id = await link_attempt_chat(
                         conn, profile_uuid, attempt_uuid, cr_uuid
                     )
 

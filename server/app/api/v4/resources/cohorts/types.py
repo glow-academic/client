@@ -14,6 +14,8 @@ class QGetCohortsV4Item(BaseModel):
     description: str | None = None
     active: bool | None = None
     department_ids: list[str] | None = None
+    simulation_position_ids: list[str] | None = None
+    simulation_availability_ids: list[str] | None = None
 
 
 class GetCohortsApiRequest(BaseModel):
@@ -115,3 +117,5 @@ class CohortsResourceData(BaseModel):
     description: str | None = None
     active: bool | None = None
     department_ids: list[str] | None = None
+    simulation_position_ids: list[str] | None = None
+    simulation_availability_ids: list[str] | None = None

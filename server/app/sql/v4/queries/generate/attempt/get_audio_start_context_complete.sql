@@ -60,8 +60,8 @@ chat_data AS (
             SELECT 1 FROM attempt_completion_entry comp
             WHERE comp.chat_id = c.id AND comp.active = TRUE
         ) as chat_is_completed
-    FROM chat_resolved_entry c
-    JOIN attempt_chat_entry ac ON ac.chat_resolved_id = c.id
+    FROM attempt_chat_entry c
+    JOIN attempt_chat_bridge_entry ac ON ac.attempt_chat_id = c.id
     WHERE c.id = p_chat_id AND c.active = TRUE
     LIMIT 1
 ),

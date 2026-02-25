@@ -41,8 +41,8 @@ WITH chat_info AS (
         c.id as chat_id,
         ac.attempt_id,
         COALESCE(home_sim.simulations_id, prac_sim.simulations_id) as simulation_id
-    FROM chat_resolved_entry c
-    JOIN attempt_chat_entry ac ON ac.chat_resolved_id = c.id
+    FROM attempt_chat_entry c
+    JOIN attempt_chat_bridge_entry ac ON ac.attempt_chat_id = c.id
     JOIN attempt_entry a ON a.id = ac.attempt_id
     LEFT JOIN attempt_home_entry ahe ON ahe.attempt_id = a.id AND ahe.active = true
     LEFT JOIN attempt_practice_entry ape ON ape.attempt_id = a.id AND ape.active = true

@@ -22,7 +22,12 @@ CREATE OR REPLACE FUNCTION api_create_simulations_v4(
     description_id uuid DEFAULT NULL,
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     scenario_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    mcp boolean DEFAULT false
+    scenario_rubric_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    scenario_time_limit_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    scenario_position_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    scenario_flag_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    mcp boolean DEFAULT false,
+    practice boolean DEFAULT false
 )
 RETURNS TABLE (
     simulations_resource_id uuid
@@ -39,16 +44,26 @@ BEGIN
         description,
         department_ids,
         scenario_ids,
+        scenario_rubric_ids,
+        scenario_time_limit_ids,
+        scenario_position_ids,
+        scenario_flag_ids,
         mcp,
-        generated
+        generated,
+        practice
     )
     SELECT
         n.name,
         d.description,
         api_create_simulations_v4.department_ids,
         api_create_simulations_v4.scenario_ids,
+        api_create_simulations_v4.scenario_rubric_ids,
+        api_create_simulations_v4.scenario_time_limit_ids,
+        api_create_simulations_v4.scenario_position_ids,
+        api_create_simulations_v4.scenario_flag_ids,
         api_create_simulations_v4.mcp,
-        api_create_simulations_v4.mcp
+        api_create_simulations_v4.mcp,
+        api_create_simulations_v4.practice
     FROM (SELECT 1) AS dummy
     LEFT JOIN names_resource n ON n.id = api_create_simulations_v4.name_id
     LEFT JOIN descriptions_resource d ON d.id = api_create_simulations_v4.description_id

@@ -697,7 +697,7 @@ _register(
         draft_view_key="draft_chat",
         requires_pool=True,
         fetcher_id_kwarg="chat_entry_id",
-        extra_emit_fields=["attempt_id", "chat_resolved_id"],
+        extra_emit_fields=["attempt_id", "attempt_chat_id"],
         fetcher_module="app.api.v4.artifacts.chat.get",
         fetcher_func="get_chat_websocket",
         fetcher=_make_fetcher(

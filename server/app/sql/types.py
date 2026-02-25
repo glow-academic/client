@@ -4906,6 +4906,124 @@ class SearchAttemptArchiveEntriesApiResponse(BaseModel):
 
 
 
+# Generated from: create_attempt_chat_entries
+
+class CreateAttemptChatEntriesSqlParams(BaseModel):
+
+    call_id: UUID | None = None
+    mcp: bool | None = False
+    entry_data: Any | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.call_id,
+            self.mcp,
+            self.entry_data,
+        )
+
+class CreateAttemptChatEntriesSqlRow(BaseModel):
+
+    id: UUID | None = None
+    already_exists: bool | None = None
+
+class CreateAttemptChatEntriesApiRequest(BaseModel):
+
+    call_id: UUID | None = None
+    mcp: bool | None = False
+    entry_data: Any | None = None
+
+class CreateAttemptChatEntriesApiResponse(BaseModel):
+
+    id: UUID | None = None
+    already_exists: bool | None = None
+
+
+
+# Generated from: get_attempt_chat_entries
+
+class GetAttemptChatEntriesSqlParams(BaseModel):
+
+    ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.ids,
+        )
+
+class GetAttemptChatEntriesSqlRow(BaseModel):
+
+    items: Any | None = None
+
+class GetAttemptChatEntriesApiRequest(BaseModel):
+
+    ids: list[UUID]
+
+class GetAttemptChatEntriesApiResponse(BaseModel):
+
+    items: Any | None = None
+
+
+
+# Generated from: search_attempt_chat_entries
+
+class SearchAttemptChatEntriesSqlParams(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    attempt_id: UUID | None = None
+    group_id: UUID | None = None
+    attempt_chat_id: UUID | None = None
+    profile_id: UUID | None = None
+    cohort_id: UUID | None = None
+    department_id: UUID | None = None
+    simulation_id: UUID | None = None
+    scenario_id: UUID | None = None
+    user_persona_id: UUID | None = None
+    rubric_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.attempt_id,
+            self.group_id,
+            self.attempt_chat_id,
+            self.profile_id,
+            self.cohort_id,
+            self.department_id,
+            self.simulation_id,
+            self.scenario_id,
+            self.user_persona_id,
+            self.rubric_id,
+        )
+
+class SearchAttemptChatEntriesSqlRow(BaseModel):
+
+    items: Any | None = None
+
+class SearchAttemptChatEntriesApiRequest(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    attempt_id: UUID | None = None
+    group_id: UUID | None = None
+    attempt_chat_id: UUID | None = None
+    cohort_id: UUID | None = None
+    department_id: UUID | None = None
+    simulation_id: UUID | None = None
+    scenario_id: UUID | None = None
+    user_persona_id: UUID | None = None
+    rubric_id: UUID | None = None
+
+class SearchAttemptChatEntriesApiResponse(BaseModel):
+
+    items: Any | None = None
+
+
+
 # Generated from: create_attempt_completion_entries
 
 class CreateAttemptCompletionEntriesSqlParams(BaseModel):
@@ -6993,124 +7111,6 @@ class SearchChatDraftsEntriesApiResponse(BaseModel):
 
 
 
-# Generated from: create_chat_resolved_entries
-
-class CreateChatResolvedEntriesSqlParams(BaseModel):
-
-    call_id: UUID | None = None
-    mcp: bool | None = False
-    entry_data: Any | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.call_id,
-            self.mcp,
-            self.entry_data,
-        )
-
-class CreateChatResolvedEntriesSqlRow(BaseModel):
-
-    id: UUID | None = None
-    already_exists: bool | None = None
-
-class CreateChatResolvedEntriesApiRequest(BaseModel):
-
-    call_id: UUID | None = None
-    mcp: bool | None = False
-    entry_data: Any | None = None
-
-class CreateChatResolvedEntriesApiResponse(BaseModel):
-
-    id: UUID | None = None
-    already_exists: bool | None = None
-
-
-
-# Generated from: get_chat_resolved_entries
-
-class GetChatResolvedEntriesSqlParams(BaseModel):
-
-    ids: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.ids,
-        )
-
-class GetChatResolvedEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class GetChatResolvedEntriesApiRequest(BaseModel):
-
-    ids: list[UUID]
-
-class GetChatResolvedEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
-# Generated from: search_chat_resolved_entries
-
-class SearchChatResolvedEntriesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    attempt_id: UUID | None = None
-    group_id: UUID | None = None
-    chat_resolved_id: UUID | None = None
-    profile_id: UUID | None = None
-    cohort_id: UUID | None = None
-    department_id: UUID | None = None
-    simulation_id: UUID | None = None
-    scenario_id: UUID | None = None
-    user_persona_id: UUID | None = None
-    rubric_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.attempt_id,
-            self.group_id,
-            self.chat_resolved_id,
-            self.profile_id,
-            self.cohort_id,
-            self.department_id,
-            self.simulation_id,
-            self.scenario_id,
-            self.user_persona_id,
-            self.rubric_id,
-        )
-
-class SearchChatResolvedEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class SearchChatResolvedEntriesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    attempt_id: UUID | None = None
-    group_id: UUID | None = None
-    chat_resolved_id: UUID | None = None
-    cohort_id: UUID | None = None
-    department_id: UUID | None = None
-    simulation_id: UUID | None = None
-    scenario_id: UUID | None = None
-    user_persona_id: UUID | None = None
-    rubric_id: UUID | None = None
-
-class SearchChatResolvedEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
 # Generated from: create_cohort_drafts_entries
 
 class CreateCohortDraftsEntriesSqlParams(BaseModel):
@@ -7220,6 +7220,119 @@ class SearchCohortDraftsEntriesApiRequest(BaseModel):
 class SearchCohortDraftsEntriesApiResponse(BaseModel):
 
     items: Any | None = None
+
+
+
+# Generated from: sync_cohort_entries
+
+class ISyncChatV4(BaseModel):
+
+    sim_index: int | None
+    scenario_id: UUID | None
+    rubric_ids: list[UUID] | None
+    position: int | None
+    time_limit: int | None
+    negative_time: bool | None
+    audio_enabled: bool | None
+    text_enabled: bool | None
+    hints_enabled: bool | None
+    copy_paste_allowed: bool | None
+    show_images: bool | None
+    show_objectives: bool | None
+    show_problem_statement: bool | None
+    analyses_enabled: bool | None
+    improvements_enabled: bool | None
+    replacements_enabled: bool | None
+    strengths_enabled: bool | None
+    use_custom: bool | None
+    use_previous: bool | None
+    problem_statement_enabled: bool | None
+    objectives_enabled: bool | None
+    video_enabled: bool | None
+    images_enabled: bool | None
+    questions_enabled: bool | None
+    generate_problem_statements: bool | None
+    generate_objectives: bool | None
+    generate_videos: bool | None
+    generate_images: bool | None
+    generate_questions: bool | None
+    generate_personas: bool | None
+    generate_documents: bool | None
+    generate_options: bool | None
+    generate_parameter_fields: bool | None
+    generate_names: bool | None
+    generate_descriptions: bool | None
+    scenario_flag_ids: list[UUID] | None
+    scenario_position_ids: list[UUID] | None
+    scenario_time_limit_ids: list[UUID] | None
+    persona_ids: list[UUID] | None
+    document_ids: list[UUID] | None
+    image_ids: list[UUID] | None
+    video_ids: list[UUID] | None
+    question_ids: list[UUID] | None
+    option_ids: list[UUID] | None
+    problem_statement_ids: list[UUID] | None
+    objective_ids: list[UUID] | None
+    parameter_field_ids: list[UUID] | None
+
+
+
+
+class ISyncSimV4(BaseModel):
+
+    resource_id: UUID | None
+    practice: bool | None
+    position: int | None
+    start_time: datetime | None
+    end_time: datetime | None
+    position_resource_ids: list[UUID] | None
+    availability_resource_ids: list[UUID] | None
+
+class SyncCohortEntriesSqlParams(BaseModel):
+
+    p_cohorts_resource_id: UUID
+    p_department_ids: list[UUID]
+    p_profile_ids: list[UUID]
+    p_profile_persona_ids: list[UUID]
+    p_simulations: list[ISyncSimV4]
+    p_chats: list[ISyncChatV4]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert p_simulations composite array to tuples for asyncpg
+        p_simulations_tuples = [
+            (conn.resource_id, conn.practice, conn.position, conn.start_time, conn.end_time, conn.position_resource_ids, conn.availability_resource_ids)
+            for conn in (self.p_simulations or [])
+        ]
+        # Convert p_chats composite array to tuples for asyncpg
+        p_chats_tuples = [
+            (conn.sim_index, conn.scenario_id, conn.rubric_ids, conn.position, conn.time_limit, conn.negative_time, conn.audio_enabled, conn.text_enabled, conn.hints_enabled, conn.copy_paste_allowed, conn.show_images, conn.show_objectives, conn.show_problem_statement, conn.analyses_enabled, conn.improvements_enabled, conn.replacements_enabled, conn.strengths_enabled, conn.use_custom, conn.use_previous, conn.problem_statement_enabled, conn.objectives_enabled, conn.video_enabled, conn.images_enabled, conn.questions_enabled, conn.generate_problem_statements, conn.generate_objectives, conn.generate_videos, conn.generate_images, conn.generate_questions, conn.generate_personas, conn.generate_documents, conn.generate_options, conn.generate_parameter_fields, conn.generate_names, conn.generate_descriptions, conn.scenario_flag_ids, conn.scenario_position_ids, conn.scenario_time_limit_ids, conn.persona_ids, conn.document_ids, conn.image_ids, conn.video_ids, conn.question_ids, conn.option_ids, conn.problem_statement_ids, conn.objective_ids, conn.parameter_field_ids)
+            for conn in (self.p_chats or [])
+        ]
+        return (
+            self.p_cohorts_resource_id,
+            self.p_department_ids,
+            self.p_profile_ids,
+            self.p_profile_persona_ids,
+            p_simulations_tuples,
+            p_chats_tuples,
+        )
+
+class SyncCohortEntriesSqlRow(BaseModel):
+
+    entry_count: int | None = None
+
+class SyncCohortEntriesApiRequest(BaseModel):
+
+    p_cohorts_resource_id: UUID
+    p_department_ids: list[UUID]
+    p_profile_ids: list[UUID]
+    p_profile_persona_ids: list[UUID]
+    p_simulations: list[ISyncSimV4]
+    p_chats: list[ISyncChatV4]
+
+class SyncCohortEntriesApiResponse(BaseModel):
+
+    entry_count: int | None = None
 
 
 
@@ -15149,13 +15262,13 @@ class CreateAttemptChatSqlParams(BaseModel):
 
     p_profile_id: UUID
     p_attempt_id: UUID
-    p_chat_resolved_id: UUID
+    p_attempt_chat_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.p_profile_id,
             self.p_attempt_id,
-            self.p_chat_resolved_id,
+            self.p_attempt_chat_id,
         )
 
 class CreateAttemptChatSqlRow(BaseModel):
@@ -15166,7 +15279,7 @@ class CreateAttemptChatApiRequest(BaseModel):
 
     p_profile_id: UUID
     p_attempt_id: UUID
-    p_chat_resolved_id: UUID
+    p_attempt_chat_id: UUID
 
 class CreateAttemptChatApiResponse(BaseModel):
 
@@ -15755,6 +15868,44 @@ class SaveAttemptMessageContentApiRequest(BaseModel):
 class SaveAttemptMessageContentApiResponse(BaseModel):
 
     success: bool | None = None
+
+
+
+# Generated from: start_attempt
+
+class StartAttemptSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_home_id: UUID | None = None
+    p_practice_id: UUID | None = None
+    p_infinite_mode: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_home_id,
+            self.p_practice_id,
+            self.p_infinite_mode,
+        )
+
+class QStartAttemptV4Result(BaseModel):
+
+    attempt_id: UUID | None
+
+class StartAttemptSqlRow(BaseModel):
+
+    items: list[QStartAttemptV4Result] | None = None
+
+class StartAttemptApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_home_id: UUID | None = None
+    p_practice_id: UUID | None = None
+    p_infinite_mode: bool | None = False
+
+class StartAttemptApiResponse(BaseModel):
+
+    items: list[QStartAttemptV4Result] | None = None
 
 
 
@@ -17470,7 +17621,7 @@ class PrepareTrainingStartSqlParams(BaseModel):
 
 class PrepareTrainingStartSqlRow(BaseModel):
 
-    out_chat_resolved_id: UUID | None = None
+    out_attempt_chat_id: UUID | None = None
     out_scenario_id: UUID | None = None
 
 class PrepareTrainingStartApiRequest(BaseModel):
@@ -17482,7 +17633,7 @@ class PrepareTrainingStartApiRequest(BaseModel):
 
 class PrepareTrainingStartApiResponse(BaseModel):
 
-    out_chat_resolved_id: UUID | None = None
+    out_attempt_chat_id: UUID | None = None
     out_scenario_id: UUID | None = None
 
 
@@ -23169,6 +23320,8 @@ class CreateCohortsSqlParams(BaseModel):
     simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     profile_persona_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_position_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_availability_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -23179,6 +23332,8 @@ class CreateCohortsSqlParams(BaseModel):
             self.simulation_ids,
             self.profile_ids,
             self.profile_persona_ids,
+            self.simulation_position_ids,
+            self.simulation_availability_ids,
             self.mcp,
         )
 
@@ -23194,6 +23349,8 @@ class CreateCohortsApiRequest(BaseModel):
     simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     profile_persona_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_position_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_availability_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     mcp: bool | None = False
 
 class CreateCohortsApiResponse(BaseModel):
@@ -23222,6 +23379,8 @@ class QGetCohortsV4Item(BaseModel):
     department_ids: list[str] | None
     profile_ids: list[str] | None
     profile_persona_ids: list[str] | None
+    simulation_position_ids: list[str] | None
+    simulation_availability_ids: list[str] | None
 
 class GetCohortsSqlRow(BaseModel):
 
@@ -29475,8 +29634,14 @@ class CreateScenariosSqlParams(BaseModel):
     description_id: UUID | None = None
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     persona_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    parameter_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     parameter_field_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    document_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    objective_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    image_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    video_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    question_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    option_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    problem_statement_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     problem_statement_enabled: bool | None = True
     objectives_enabled: bool | None = True
     video_enabled: bool | None = False
@@ -29490,8 +29655,14 @@ class CreateScenariosSqlParams(BaseModel):
             self.description_id,
             self.department_ids,
             self.persona_ids,
-            self.parameter_ids,
             self.parameter_field_ids,
+            self.document_ids,
+            self.objective_ids,
+            self.image_ids,
+            self.video_ids,
+            self.question_ids,
+            self.option_ids,
+            self.problem_statement_ids,
             self.problem_statement_enabled,
             self.objectives_enabled,
             self.video_enabled,
@@ -29510,8 +29681,14 @@ class CreateScenariosApiRequest(BaseModel):
     description_id: UUID | None = None
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     persona_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    parameter_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     parameter_field_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    document_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    objective_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    image_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    video_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    question_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    option_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    problem_statement_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     problem_statement_enabled: bool | None = True
     objectives_enabled: bool | None = True
     video_enabled: bool | None = False
@@ -29549,7 +29726,13 @@ class QGetScenariosV4Item(BaseModel):
     questions_enabled: bool | None
     persona_ids: list[UUID] | None
     parameter_field_ids: list[UUID] | None
-    parameter_ids: list[UUID] | None
+    document_ids: list[UUID] | None
+    objective_ids: list[UUID] | None
+    image_ids: list[UUID] | None
+    video_ids: list[UUID] | None
+    question_ids: list[UUID] | None
+    option_ids: list[UUID] | None
+    problem_statement_ids: list[UUID] | None
 
 class GetScenariosSqlRow(BaseModel):
 
@@ -29982,7 +30165,12 @@ class CreateSimulationsSqlParams(BaseModel):
     description_id: UUID | None = None
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_rubric_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_time_limit_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_position_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_flag_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     mcp: bool | None = False
+    practice: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -29990,7 +30178,12 @@ class CreateSimulationsSqlParams(BaseModel):
             self.description_id,
             self.department_ids,
             self.scenario_ids,
+            self.scenario_rubric_ids,
+            self.scenario_time_limit_ids,
+            self.scenario_position_ids,
+            self.scenario_flag_ids,
             self.mcp,
+            self.practice,
         )
 
 class CreateSimulationsSqlRow(BaseModel):
@@ -30003,7 +30196,12 @@ class CreateSimulationsApiRequest(BaseModel):
     description_id: UUID | None = None
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_rubric_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_time_limit_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_position_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_flag_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     mcp: bool | None = False
+    practice: bool | None = False
 
 class CreateSimulationsApiResponse(BaseModel):
 
@@ -30028,8 +30226,14 @@ class QGetSimulationsV4Item(BaseModel):
     name: str | None
     description: str | None
     department_ids: list[str] | None
+    scenario_ids: list[str] | None
+    scenario_rubric_ids: list[str] | None
+    scenario_time_limit_ids: list[str] | None
+    scenario_position_ids: list[str] | None
+    scenario_flag_ids: list[str] | None
     active: bool | None
     generated: bool | None
+    practice: bool | None
 
 class GetSimulationsSqlRow(BaseModel):
 
@@ -35822,7 +36026,7 @@ class QGetChatViewV4Item(BaseModel):
     chat_id: UUID | None
     attempt_id: UUID | None
     group_id: UUID | None
-    chat_resolved_id: UUID | None
+    attempt_chat_id: UUID | None
     profile_id: UUID | None
     cohort_id: UUID | None
     department_id: UUID | None
@@ -36012,16 +36216,16 @@ class GetRubricScoresApiResponse(BaseModel):
 
 class GetTrainingConfigSqlParams(BaseModel):
 
-    chat_resolved_ids: list[UUID]
+    attempt_chat_ids: list[UUID]
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.chat_resolved_ids,
+            self.attempt_chat_ids,
         )
 
 class QGetTrainingConfigV4Item(BaseModel):
 
-    chat_resolved_id: UUID | None
+    attempt_chat_id: UUID | None
     copy_paste_allowed: bool | None
     text_enabled: bool | None
     audio_enabled: bool | None
@@ -36050,7 +36254,7 @@ class GetTrainingConfigSqlRow(BaseModel):
 
 class GetTrainingConfigApiRequest(BaseModel):
 
-    chat_resolved_ids: list[UUID]
+    attempt_chat_ids: list[UUID]
 
 class GetTrainingConfigApiResponse(BaseModel):
 
@@ -37893,6 +38097,24 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchAttemptArchiveEntriesApiRequest",
         "SearchAttemptArchiveEntriesApiResponse",
     ),
+    "app/sql/v4/queries/entries/attempt_chat/create_attempt_chat_entries_complete.sql": (
+        "CreateAttemptChatEntriesSqlParams",
+        "CreateAttemptChatEntriesSqlRow",
+        "CreateAttemptChatEntriesApiRequest",
+        "CreateAttemptChatEntriesApiResponse",
+    ),
+    "app/sql/v4/queries/entries/attempt_chat/get_attempt_chat_entries_complete.sql": (
+        "GetAttemptChatEntriesSqlParams",
+        "GetAttemptChatEntriesSqlRow",
+        "GetAttemptChatEntriesApiRequest",
+        "GetAttemptChatEntriesApiResponse",
+    ),
+    "app/sql/v4/queries/entries/attempt_chat/search_attempt_chat_entries_complete.sql": (
+        "SearchAttemptChatEntriesSqlParams",
+        "SearchAttemptChatEntriesSqlRow",
+        "SearchAttemptChatEntriesApiRequest",
+        "SearchAttemptChatEntriesApiResponse",
+    ),
     "app/sql/v4/queries/entries/attempt_completion/create_attempt_completion_entries_complete.sql": (
         "CreateAttemptCompletionEntriesSqlParams",
         "CreateAttemptCompletionEntriesSqlRow",
@@ -38289,24 +38511,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchChatDraftsEntriesApiRequest",
         "SearchChatDraftsEntriesApiResponse",
     ),
-    "app/sql/v4/queries/entries/chat_resolved/create_chat_resolved_entries_complete.sql": (
-        "CreateChatResolvedEntriesSqlParams",
-        "CreateChatResolvedEntriesSqlRow",
-        "CreateChatResolvedEntriesApiRequest",
-        "CreateChatResolvedEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/chat_resolved/get_chat_resolved_entries_complete.sql": (
-        "GetChatResolvedEntriesSqlParams",
-        "GetChatResolvedEntriesSqlRow",
-        "GetChatResolvedEntriesApiRequest",
-        "GetChatResolvedEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/chat_resolved/search_chat_resolved_entries_complete.sql": (
-        "SearchChatResolvedEntriesSqlParams",
-        "SearchChatResolvedEntriesSqlRow",
-        "SearchChatResolvedEntriesApiRequest",
-        "SearchChatResolvedEntriesApiResponse",
-    ),
     "app/sql/v4/queries/entries/cohort_drafts/create_cohort_drafts_entries_complete.sql": (
         "CreateCohortDraftsEntriesSqlParams",
         "CreateCohortDraftsEntriesSqlRow",
@@ -38324,6 +38528,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchCohortDraftsEntriesSqlRow",
         "SearchCohortDraftsEntriesApiRequest",
         "SearchCohortDraftsEntriesApiResponse",
+    ),
+    "app/sql/v4/queries/entries/cohort_sync/sync_cohort_entries_complete.sql": (
+        "SyncCohortEntriesSqlParams",
+        "SyncCohortEntriesSqlRow",
+        "SyncCohortEntriesApiRequest",
+        "SyncCohortEntriesApiResponse",
     ),
     "app/sql/v4/queries/entries/config/create_config_entries_complete.sql": (
         "CreateConfigEntriesSqlParams",
@@ -39806,6 +40016,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SaveAttemptMessageContentSqlRow",
         "SaveAttemptMessageContentApiRequest",
         "SaveAttemptMessageContentApiResponse",
+    ),
+    "app/sql/v4/queries/generate/attempt/start_attempt_complete.sql": (
+        "StartAttemptSqlParams",
+        "StartAttemptSqlRow",
+        "StartAttemptApiRequest",
+        "StartAttemptApiResponse",
     ),
     "app/sql/v4/queries/generate/attempt/use_previous_attempt_grades_complete.sql": (
         "UsePreviousAttemptGradesSqlParams",
@@ -43577,6 +43793,21 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/entries/attempt_chat/create_attempt_chat_entries_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/entries/attempt_chat/get_attempt_chat_entries_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/entries/attempt_chat/search_attempt_chat_entries_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/entries/attempt_completion/create_attempt_completion_entries_complete.sql"]
     ) -> SqlString: ...
 
@@ -43907,21 +44138,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/chat_resolved/create_chat_resolved_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/chat_resolved/get_chat_resolved_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/chat_resolved/search_chat_resolved_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/entries/cohort_drafts/create_cohort_drafts_entries_complete.sql"]
     ) -> SqlString: ...
 
@@ -43933,6 +44149,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/entries/cohort_drafts/search_cohort_drafts_entries_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/entries/cohort_sync/sync_cohort_entries_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -45168,6 +45389,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/attempt/save_attempt_message_content_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/attempt/start_attempt_complete.sql"]
     ) -> SqlString: ...
 
     @overload

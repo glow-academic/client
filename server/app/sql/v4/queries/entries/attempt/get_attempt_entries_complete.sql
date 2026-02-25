@@ -36,7 +36,7 @@ BEGIN
             'is_archived', m.is_archived,
             'scenario_ids', m.scenario_ids,
             'chat_entry_id', m.chat_entry_id,
-            'chat_resolved_id', m.chat_resolved_id
+            'attempt_chat_id', m.attempt_chat_id
         )
     ) AS items
     FROM attempt_mv m

@@ -21,6 +21,8 @@ class CreateCohortsSqlParams(BaseModel):
     simulation_ids: list[UUID] | None = None
     profile_ids: list[UUID] | None = None
     profile_persona_ids: list[UUID] | None = None
+    simulation_position_ids: list[UUID] | None = None
+    simulation_availability_ids: list[UUID] | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
@@ -31,6 +33,8 @@ class CreateCohortsSqlParams(BaseModel):
             self.simulation_ids or [],
             self.profile_ids or [],
             self.profile_persona_ids or [],
+            self.simulation_position_ids or [],
+            self.simulation_availability_ids or [],
             self.mcp,
         )
 
@@ -49,6 +53,8 @@ async def create_cohorts_internal(
     simulation_ids: list[UUID] | None = None,
     profile_ids: list[UUID] | None = None,
     profile_persona_ids: list[UUID] | None = None,
+    simulation_position_ids: list[UUID] | None = None,
+    simulation_availability_ids: list[UUID] | None = None,
     mcp: bool = False,
 ) -> UUID:
     """Create a denormalized cohorts_resource and return its ID.
@@ -64,6 +70,8 @@ async def create_cohorts_internal(
         simulation_ids=simulation_ids,
         profile_ids=profile_ids,
         profile_persona_ids=profile_persona_ids,
+        simulation_position_ids=simulation_position_ids,
+        simulation_availability_ids=simulation_availability_ids,
         mcp=mcp,
     )
     result = await execute_sql_typed(conn, SQL_PATH, params=params)

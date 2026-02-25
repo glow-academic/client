@@ -188,7 +188,7 @@ async def fetch_profile_facts_filters(
     str | None,
     str | None,
 ]:
-    """Fetch filter options from chat_resolved_mv."""
+    """Fetch filter options from attempt_chat_mv."""
     dept_opts: list[AnalyticsFilterOption] = []
     cohort_opts: list[AnalyticsFilterOption] = []
     earliest: str | None = None
@@ -199,7 +199,7 @@ async def fetch_profile_facts_filters(
             rows = await c.fetch(
                 """
                 SELECT DISTINCT pf.department_id, dr.name
-                FROM chat_resolved_mv pf
+                FROM attempt_chat_mv pf
                 JOIN departments_resource dr ON dr.id = pf.department_id
                 WHERE pf.department_id = ANY($1::uuid[])
                 ORDER BY dr.name
@@ -216,7 +216,7 @@ async def fetch_profile_facts_filters(
             rows = await c.fetch(
                 """
                 SELECT DISTINCT pf.cohort_id, cr.name
-                FROM chat_resolved_mv pf
+                FROM attempt_chat_mv pf
                 JOIN cohorts_resource cr ON cr.id = pf.cohort_id
                 WHERE pf.cohort_id = ANY($1::uuid[])
                 ORDER BY cr.name
@@ -234,7 +234,7 @@ async def fetch_profile_facts_filters(
                 """
                 SELECT MIN(attempt_date) as earliest,
                        MAX(attempt_date) as latest
-                FROM chat_resolved_mv
+                FROM attempt_chat_mv
                 WHERE department_id = ANY($1::uuid[])
                 """,
                 [UUID(did) for did in dept_ids],

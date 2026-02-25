@@ -38,8 +38,8 @@ BEGIN
     -- Mark all existing incomplete chats as completed
     FOR v_chat_record IN
         SELECT c.id
-        FROM chat_resolved_entry c
-        JOIN attempt_chat_entry ac ON ac.chat_resolved_id = c.id
+        FROM attempt_chat_entry c
+        JOIN attempt_chat_bridge_entry ac ON ac.attempt_chat_id = c.id
         WHERE ac.attempt_id = p_attempt_id AND c.active = TRUE
     LOOP
         INSERT INTO attempt_completion_entry (chat_id)
@@ -50,8 +50,8 @@ BEGIN
 
     -- Count existing chats
     SELECT COUNT(*) INTO v_existing_chat_count
-    FROM chat_resolved_entry c
-    JOIN attempt_chat_entry ac ON ac.chat_resolved_id = c.id
+    FROM attempt_chat_entry c
+    JOIN attempt_chat_bridge_entry ac ON ac.attempt_chat_id = c.id
     WHERE ac.attempt_id = p_attempt_id AND c.active = TRUE;
 
     -- Count expected scenarios from training bundle
@@ -69,12 +69,12 @@ BEGIN
     -- Create stub chats for missing scenarios (count-based, no scenario linkage)
     FOR v_i IN 1..GREATEST(v_expected_scenario_count - v_existing_chat_count, 0)
     LOOP
-        INSERT INTO chat_resolved_entry (active)
+        INSERT INTO attempt_chat_entry (active)
         VALUES (true)
         RETURNING id INTO v_stub_chat_id;
 
         -- Bridge: link stub chat to attempt
-        INSERT INTO attempt_chat_entry (attempt_id, chat_resolved_id)
+        INSERT INTO attempt_chat_bridge_entry (attempt_id, attempt_chat_id)
         VALUES (p_attempt_id, v_stub_chat_id);
 
         IF v_stub_chat_id IS NOT NULL THEN

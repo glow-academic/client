@@ -39,7 +39,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.id, q.name, q.description, q.department_ids, q.active, q.generated)::types.q_get_simulations_v4_item
+        (q.id, q.name, q.description, q.department_ids, q.scenario_ids, q.scenario_rubric_ids, q.scenario_time_limit_ids, q.scenario_position_ids, q.scenario_flag_ids, q.active, q.generated, q.practice)::types.q_get_simulations_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_simulations_v4_item[]
@@ -50,8 +50,14 @@ FROM (
         s.name,
         COALESCE(s.description, '') as description,
         COALESCE(s.department_ids::text[], ARRAY[]::text[]) as department_ids,
+        COALESCE(s.scenario_ids::text[], ARRAY[]::text[]) as scenario_ids,
+        COALESCE(s.scenario_rubric_ids::text[], ARRAY[]::text[]) as scenario_rubric_ids,
+        COALESCE(s.scenario_time_limit_ids::text[], ARRAY[]::text[]) as scenario_time_limit_ids,
+        COALESCE(s.scenario_position_ids::text[], ARRAY[]::text[]) as scenario_position_ids,
+        COALESCE(s.scenario_flag_ids::text[], ARRAY[]::text[]) as scenario_flag_ids,
         s.active,
-        COALESCE(s.generated, false) as generated
+        COALESCE(s.generated, false) as generated,
+        COALESCE(s.practice, false) as practice
     FROM simulations_resource s
     WHERE s.active = true
       AND s.name IS NOT NULL

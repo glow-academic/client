@@ -613,7 +613,7 @@ async def get_dashboard_internal(
     persona_ids_set: set[UUID] = set()
     cohort_ids_set: set[UUID] = set()
     scenario_ids_set: set[UUID] = set()
-    chat_resolved_ids_set: set[UUID] = set()
+    attempt_chat_ids_set: set[UUID] = set()
     chat_ids: list[UUID] = []
 
     for item in chat_items:
@@ -626,8 +626,8 @@ async def get_dashboard_internal(
             cohort_ids_set.add(item.cohort_id)
         if item.scenario_id:
             scenario_ids_set.add(item.scenario_id)
-        if item.chat_resolved_id:
-            chat_resolved_ids_set.add(item.chat_resolved_id)
+        if item.attempt_chat_id:
+            attempt_chat_ids_set.add(item.attempt_chat_id)
         if item.persona_id:
             persona_ids_set.add(item.persona_id)
 
@@ -699,12 +699,12 @@ async def get_dashboard_internal(
             )
 
     async def _get_training_doc_ids() -> dict[UUID, list[UUID]]:
-        if not chat_resolved_ids_set:
+        if not attempt_chat_ids_set:
             return {}
         async with pool.acquire() as c:
             return await fetch_training_doc_ids(
                 conn=c,
-                chat_resolved_ids=list(chat_resolved_ids_set),
+                attempt_chat_ids=list(attempt_chat_ids_set),
                 bypass_cache=bypass_cache,
             )
 
@@ -749,8 +749,8 @@ async def get_dashboard_internal(
 
     # Phase 4b — Enrich chat items with document_ids from training config
     for item in chat_items:
-        if item.chat_resolved_id:
-            doc_ids = doc_map.get(item.chat_resolved_id)
+        if item.attempt_chat_id:
+            doc_ids = doc_map.get(item.attempt_chat_id)
             if doc_ids:
                 item.document_ids = list(doc_ids)
 

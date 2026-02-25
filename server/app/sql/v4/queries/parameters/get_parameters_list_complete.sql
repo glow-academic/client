@@ -83,8 +83,8 @@ user_departments AS (
     FROM params x
     JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
--- Scenario linkage via denormalized scenarios_resource.parameter_ids
--- parameter_artifact → parameter_parameters_junction → parameters_resource → scenarios_resource WHERE parameter_ids @> ARRAY[parameters_resource.id]
+-- Scenario linkage via parameter_fields_resource → scenarios_resource.parameter_field_ids
+-- parameter_artifact → parameter_parameters_junction → parameters_resource → parameter_fields_resource → scenarios_resource
 parameter_scenarios AS (
     SELECT
         ppj.parameter_id,
@@ -92,7 +92,8 @@ parameter_scenarios AS (
         COUNT(DISTINCT sr.id)::int as num_scenarios
     FROM parameter_parameters_junction ppj
     JOIN parameters_resource pr ON pr.id = ppj.parameters_id
-    JOIN scenarios_resource sr ON pr.id = ANY(sr.parameter_ids)
+    JOIN parameter_fields_resource pfr ON pfr.parameter_id = pr.id
+    JOIN scenarios_resource sr ON pfr.id = ANY(sr.parameter_field_ids)
     GROUP BY ppj.parameter_id
 ),
 -- Active scenario count (for edit permission - scenarios with active flag)
@@ -102,7 +103,8 @@ parameter_active_scenario_links AS (
         COUNT(DISTINCT sr.id) as active_scenario_count
     FROM parameter_parameters_junction ppj
     JOIN parameters_resource pr ON pr.id = ppj.parameters_id
-    JOIN scenarios_resource sr ON pr.id = ANY(sr.parameter_ids)
+    JOIN parameter_fields_resource pfr ON pfr.parameter_id = pr.id
+    JOIN scenarios_resource sr ON pfr.id = ANY(sr.parameter_field_ids)
     JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = sr.id
     JOIN scenario_flags_junction sf ON sf.scenario_id = ssj.scenario_id
     JOIN flags_resource f ON sf.flag_id = f.id AND f.type = 'scenario_active' AND sf.value = true

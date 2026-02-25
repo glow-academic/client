@@ -46,7 +46,9 @@ SELECT COALESCE(
             q.active,
             q.department_ids,
             q.profile_ids,
-            q.profile_persona_ids
+            q.profile_persona_ids,
+            q.simulation_position_ids,
+            q.simulation_availability_ids
         )::types.q_get_cohorts_v4_item
         ORDER BY q.name
     ),
@@ -69,7 +71,15 @@ FROM (
         COALESCE(
             (SELECT ARRAY_AGG(pp::text) FROM unnest(cr.profile_persona_ids) pp),
             ARRAY[]::text[]
-        ) AS profile_persona_ids
+        ) AS profile_persona_ids,
+        COALESCE(
+            (SELECT ARRAY_AGG(sp::text) FROM unnest(cr.simulation_position_ids) sp),
+            ARRAY[]::text[]
+        ) AS simulation_position_ids,
+        COALESCE(
+            (SELECT ARRAY_AGG(sa::text) FROM unnest(cr.simulation_availability_ids) sa),
+            ARRAY[]::text[]
+        ) AS simulation_availability_ids
     FROM cohorts_resource cr
     WHERE cr.active = true
       AND (search IS NULL OR search = '' OR LOWER(cr.name) LIKE '%' || LOWER(search) || '%')

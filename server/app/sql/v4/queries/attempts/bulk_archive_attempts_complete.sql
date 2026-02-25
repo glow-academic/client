@@ -194,7 +194,7 @@ BEGIN
             SELECT DISTINCT
                 mc.attempt_id,
                 ARRAY_AGG(DISTINCT mc.scenario_id) FILTER (WHERE mc.scenario_id IS NOT NULL) AS scenario_ids
-            FROM chat_resolved_mv mc
+            FROM attempt_chat_mv mc
             WHERE mc.attempt_id IN (SELECT attempt_id FROM history_attempts_with_filters)
             GROUP BY mc.attempt_id
         ),
@@ -209,7 +209,7 @@ BEGIN
             SELECT
                 mc.attempt_id,
                 array_agg(DISTINCT sp.persona_id) FILTER (WHERE sp.persona_id IS NOT NULL) AS persona_ids
-            FROM chat_resolved_mv mc
+            FROM attempt_chat_mv mc
             LEFT JOIN scenario_personas_junction sp ON sp.scenario_id = mc.scenario_id AND sp.active = TRUE
             WHERE mc.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
             GROUP BY mc.attempt_id

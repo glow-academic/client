@@ -636,18 +636,18 @@ TRAINING_CONFIG_SQL = (
 
 async def fetch_training_doc_ids(
     conn: asyncpg.Connection,
-    chat_resolved_ids: list[UUID],
+    attempt_chat_ids: list[UUID],
     bypass_cache: bool = False,
 ) -> dict[UUID, list[UUID]]:
-    """Fetch document_ids from training config for a batch of chat_resolved_ids."""
-    if not chat_resolved_ids:
+    """Fetch document_ids from training config for a batch of attempt_chat_ids."""
+    if not attempt_chat_ids:
         return {}
 
     from app.sql.types import GetTrainingConfigSqlParams
 
     tc_cache_key = cache_key(
         "dashboard/training_doc_ids",
-        {"ids": sorted(str(i) for i in chat_resolved_ids)},
+        {"ids": sorted(str(i) for i in attempt_chat_ids)},
     )
 
     if not bypass_cache:
@@ -655,14 +655,14 @@ async def fetch_training_doc_ids(
         if cached:
             return {UUID(k): [UUID(d) for d in v] for k, v in cached.items() if v}
 
-    params = GetTrainingConfigSqlParams(chat_resolved_ids=chat_resolved_ids)
+    params = GetTrainingConfigSqlParams(attempt_chat_ids=attempt_chat_ids)
     result = await execute_sql_typed(conn, TRAINING_CONFIG_SQL, params=params)
 
     doc_map: dict[UUID, list[UUID]] = {}
     if result and result.items:
         for item in result.items:
             if item.document_ids:
-                doc_map[item.chat_resolved_id] = list(item.document_ids)
+                doc_map[item.attempt_chat_id] = list(item.document_ids)
 
     await set_cached(
         tc_cache_key,

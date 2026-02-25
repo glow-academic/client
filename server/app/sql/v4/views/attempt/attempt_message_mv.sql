@@ -72,8 +72,8 @@ base_messages AS (
         aa.audio_id
     FROM attempt_message_entry sm
     JOIN messages_entry m ON m.id = sm.id
-    JOIN chat_resolved_entry c ON c.id = sm.chat_id
-    JOIN attempt_chat_entry ac ON ac.chat_resolved_id = c.id
+    JOIN attempt_chat_entry c ON c.id = sm.chat_id
+    JOIN attempt_chat_bridge_entry ac ON ac.attempt_chat_id = c.id
     JOIN attempt_entry a ON a.id = ac.attempt_id
     LEFT JOIN runs_resource_agg rra ON rra.run_id = m.run_id
     LEFT JOIN texts_entry te ON te.id = m.text_id
