@@ -7,6 +7,8 @@
 --   - num_chats, completed_count (done check)
 --   - next chat_entry_id by position (NULL if all done)
 --   - resolved department_id (from chat departments, fallback to profile primary)
+--   - name, description (prefilled scenario defaults)
+--   - use_custom, use_previous (behavior flags)
 --   - all 11 generate_* flags from the next chat_entry
 -- ============================================================================
 
@@ -43,6 +45,12 @@ CREATE TYPE types.q_get_attempt_proceed_context_v4_result AS (
     completed_count int,
     chat_entry_id uuid,
     department_id uuid,
+    -- prefilled name/description from chat_entry (scenario defaults)
+    name text,
+    description text,
+    -- behavior flags from chat_entry
+    use_custom boolean,
+    use_previous boolean,
     -- generate flags from chat_entry
     generate_problem_statements boolean,
     generate_objectives boolean,
@@ -124,6 +132,8 @@ BEGIN
         SELECT ARRAY[
             ROW(v_num_chats, v_completed_count,
                 NULL::uuid, NULL::uuid,
+                ''::text, ''::text,
+                false, false,
                 false, false, false, false, false,
                 false, false, false, false, false, false
             )::types.q_get_attempt_proceed_context_v4_result
@@ -166,10 +176,12 @@ BEGIN
         v_department_id := v_profile_dept_id;
     END IF;
 
-    -- 5. Build result with generate flags from chat_entry
+    -- 5. Build result with name, description, behavior flags, and generate flags from chat_entry
     SELECT ROW(
         v_num_chats, v_completed_count,
         v_next_chat_entry_id, v_department_id,
+        ce.name, ce.description,
+        ce.use_custom, ce.use_previous,
         ce.generate_problem_statements,
         ce.generate_objectives,
         ce.generate_videos,

@@ -15582,6 +15582,10 @@ class QGetAttemptProceedContextV4Result(BaseModel):
     completed_count: int | None
     chat_entry_id: UUID | None
     department_id: UUID | None
+    name: str | None
+    description: str | None
+    use_custom: bool | None
+    use_previous: bool | None
     generate_problem_statements: bool | None
     generate_objectives: bool | None
     generate_videos: bool | None
@@ -15851,6 +15855,68 @@ class ResolveAgentByEntryTypesApiResponse(BaseModel):
     resolved_agent_id: UUID | None = None
     matching_count: int | None = None
     error_code: str | None = None
+
+
+
+# Generated from: resolve_attempt_chat
+
+class ResolveAttemptChatSqlParams(BaseModel):
+
+    p_attempt_id: UUID
+    p_chat_entry_id: UUID
+    p_department_id: UUID
+    p_generate_personas: bool | None = False
+    p_generate_problem_statements: bool | None = False
+    p_generate_objectives: bool | None = False
+    p_generate_questions: bool | None = False
+    p_generate_options: bool | None = False
+    p_generate_videos: bool | None = False
+    p_generate_images: bool | None = False
+    p_generate_documents: bool | None = False
+    p_generate_parameter_fields: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_attempt_id,
+            self.p_chat_entry_id,
+            self.p_department_id,
+            self.p_generate_personas,
+            self.p_generate_problem_statements,
+            self.p_generate_objectives,
+            self.p_generate_questions,
+            self.p_generate_options,
+            self.p_generate_videos,
+            self.p_generate_images,
+            self.p_generate_documents,
+            self.p_generate_parameter_fields,
+        )
+
+class QResolveAttemptChatV4Result(BaseModel):
+
+    attempt_chat_id: UUID | None
+
+class ResolveAttemptChatSqlRow(BaseModel):
+
+    items: list[QResolveAttemptChatV4Result] | None = None
+
+class ResolveAttemptChatApiRequest(BaseModel):
+
+    p_attempt_id: UUID
+    p_chat_entry_id: UUID
+    p_department_id: UUID
+    p_generate_personas: bool | None = False
+    p_generate_problem_statements: bool | None = False
+    p_generate_objectives: bool | None = False
+    p_generate_questions: bool | None = False
+    p_generate_options: bool | None = False
+    p_generate_videos: bool | None = False
+    p_generate_images: bool | None = False
+    p_generate_documents: bool | None = False
+    p_generate_parameter_fields: bool | None = False
+
+class ResolveAttemptChatApiResponse(BaseModel):
+
+    items: list[QResolveAttemptChatV4Result] | None = None
 
 
 
@@ -40061,6 +40127,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ResolveAgentByEntryTypesApiRequest",
         "ResolveAgentByEntryTypesApiResponse",
     ),
+    "app/sql/v4/queries/generate/attempt/resolve_attempt_chat_complete.sql": (
+        "ResolveAttemptChatSqlParams",
+        "ResolveAttemptChatSqlRow",
+        "ResolveAttemptChatApiRequest",
+        "ResolveAttemptChatApiResponse",
+    ),
     "app/sql/v4/queries/generate/attempt/resolve_attempt_entries_complete.sql": (
         "ResolveAttemptEntriesSqlParams",
         "ResolveAttemptEntriesSqlRow",
@@ -45440,6 +45512,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/attempt/resolve_agent_by_entry_types_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/attempt/resolve_attempt_chat_complete.sql"]
     ) -> SqlString: ...
 
     @overload

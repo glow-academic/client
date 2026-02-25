@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 4Db8ZAwLG5ZAr9gfBcuZ3FboBPdB0O2KoshB1ifEnznmgu4o1x1ov7aogBfJqQ9
+\restrict aS39nFB8BgZwPDbaCmSow0xlPdwXinbPX3sxA0bvDdfqJcg5kuix0Q5vULkbkC5
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -30070,7 +30070,6 @@ CREATE TABLE public.attempt_chat_entry (
     active boolean DEFAULT true CONSTRAINT chat_resolved_entry_active_not_null NOT NULL,
     group_id uuid,
     chat_id uuid CONSTRAINT chat_resolved_entry_chat_id_not_null NOT NULL,
-    config_signature text CONSTRAINT chat_resolved_entry_config_signature_not_null NOT NULL,
     "position" integer DEFAULT 0 NOT NULL,
     time_limit integer,
     negative_time boolean DEFAULT false NOT NULL,
@@ -67649,5 +67648,5 @@ ALTER TABLE ONLY public.voices_calls_connection
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 4Db8ZAwLG5ZAr9gfBcuZ3FboBPdB0O2KoshB1ifEnznmgu4o1x1ov7aogBfJqQ9
+\unrestrict aS39nFB8BgZwPDbaCmSow0xlPdwXinbPX3sxA0bvDdfqJcg5kuix0Q5vULkbkC5
 
