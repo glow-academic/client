@@ -122,7 +122,7 @@ SELECT
 FROM attempt_chat_entry c
 JOIN attempt_chat_bridge_entry ac ON ac.attempt_chat_id = c.id
 JOIN attempt_entry a ON a.id = ac.attempt_id
-JOIN attempt_profiles_connection apc ON apc.attempt_id = a.id
+JOIN profile_personas_profiles_connection apc ON apc.profile_personas_entry_id = a.profile_personas_entry_id
 -- Parent bridges
 LEFT JOIN attempt_home_entry ahe ON ahe.attempt_id = a.id AND ahe.active = true
 LEFT JOIN attempt_practice_entry ape ON ape.attempt_id = a.id AND ape.active = true

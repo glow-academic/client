@@ -24,7 +24,6 @@ CREATE UNIQUE INDEX profile_personas_mv_pk ON profile_personas_mv (id);
 
 -- Step 5: Filter indexes
 CREATE INDEX profile_personas_mv_created_at_idx ON profile_personas_mv (created_at DESC);
-CREATE INDEX profile_personas_mv_chat_id_idx ON profile_personas_mv (chat_id);
 
 -- Step 6: Refresh
 REFRESH MATERIALIZED VIEW profile_personas_mv;

@@ -223,11 +223,10 @@ simulation_stats AS (
         MAX(lag.score_percent) AS highest_score_percent,
         BOOL_OR(COALESCE(lag.has_passed, false)) AS has_passed
     FROM profile_resource pr
-    JOIN attempt_profiles_connection apc
-      ON apc.profiles_id = pr.profiles_id
-     AND apc.active = true
+    JOIN profile_personas_profiles_connection pppc
+      ON pppc.profiles_id = pr.profiles_id
     JOIN attempt_entry a
-      ON a.id = apc.attempt_id
+      ON a.profile_personas_entry_id = pppc.profile_personas_entry_id
      AND a.active = true
     LEFT JOIN LATERAL (
         SELECT archived FROM attempt_archive_entry

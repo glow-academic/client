@@ -85,8 +85,8 @@ SELECT
     training_ctx.attempt_chat_id
 
 FROM attempt_entry a
--- Attempt connections (required)
-JOIN attempt_profiles_connection apc ON apc.attempt_id = a.id
+-- Profile (via profile_personas_entry → profiles connection)
+JOIN profile_personas_profiles_connection apc ON apc.profile_personas_entry_id = a.profile_personas_entry_id
 -- Parent bridges
 LEFT JOIN attempt_home_entry ahe ON ahe.attempt_id = a.id AND ahe.active = true
 LEFT JOIN attempt_practice_entry ape ON ape.attempt_id = a.id AND ape.active = true

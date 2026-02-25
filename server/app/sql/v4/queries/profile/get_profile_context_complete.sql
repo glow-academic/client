@@ -364,7 +364,10 @@ earliest_attempt AS (
         SELECT id, created_at FROM attempt_entry
     ),
     all_attempt_profiles AS (
-        SELECT attempt_id, profiles_id FROM attempt_profiles_connection
+        SELECT ae.id AS attempt_id, pppc.profiles_id
+        FROM attempt_entry ae
+        JOIN profile_personas_profiles_connection pppc
+            ON pppc.profile_personas_entry_id = ae.profile_personas_entry_id
     )
     SELECT MIN(sa.created_at) as earliest
     -- Get all departments for the effective profile
@@ -372,7 +375,7 @@ earliest_attempt AS (
     -- Get all profiles in those departments
     JOIN profile_departments_junction pd_all ON pd_all.department_id = pd_effective.department_id
         AND pd_all.active = true
-    -- Get attempts for those profiles (via unified attempt_profiles connection)
+    -- Get attempts for those profiles (via profile_personas_entry → profiles connection)
     JOIN profile_profiles_junction ppj ON ppj.profile_id = pd_all.profile_id
     JOIN all_attempt_profiles aap ON aap.profiles_id = ppj.profiles_id
     JOIN all_attempts sa ON sa.id = aap.attempt_id

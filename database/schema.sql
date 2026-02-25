@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict aS39nFB8BgZwPDbaCmSow0xlPdwXinbPX3sxA0bvDdfqJcg5kuix0Q5vULkbkC5
+\restrict n8frvhEYAPOXWbHcff9eCtGlBmEedsdXR59JghvSdFGyJqsuGTZ1cnvCsK5r68A
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -30321,7 +30321,8 @@ CREATE TABLE public.attempt_entry (
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL,
-    num_chats integer DEFAULT 1 NOT NULL
+    num_chats integer DEFAULT 1 NOT NULL,
+    profile_personas_entry_id uuid
 );
 
 
@@ -30483,20 +30484,6 @@ CREATE TABLE public.attempt_practice_entry (
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL
-);
-
-
---
--- Name: attempt_profiles_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.attempt_profiles_connection (
-    attempt_id uuid CONSTRAINT simulation_attempts_profiles_connection_attempt_id_not_null NOT NULL,
-    profiles_id uuid CONSTRAINT simulation_attempts_profiles_connection_profiles_id_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_attempts_profiles_connection_created_at_not_null NOT NULL,
-    active boolean DEFAULT true CONSTRAINT simulation_attempts_profiles_connection_active_not_null NOT NULL,
-    generated boolean DEFAULT false CONSTRAINT simulation_attempts_profiles_connection_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT simulation_attempts_profiles_connection_mcp_not_null NOT NULL
 );
 
 
@@ -36720,12 +36707,25 @@ CREATE TABLE public.profile_personas_calls_connection (
 
 CREATE TABLE public.profile_personas_entry (
     id uuid DEFAULT uuidv7() CONSTRAINT persona_entry_id_not_null NOT NULL,
-    chat_id uuid CONSTRAINT persona_entry_training_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT persona_entry_created_at_not_null NOT NULL,
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT persona_entry_updated_at_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT persona_entry_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT persona_entry_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT persona_entry_mcp_not_null NOT NULL
+);
+
+
+--
+-- Name: profile_personas_personas_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.profile_personas_personas_connection (
+    profile_personas_entry_id uuid CONSTRAINT profile_personas_personas_co_profile_personas_entry_id_not_null NOT NULL,
+    personas_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -36737,6 +36737,20 @@ CREATE TABLE public.profile_personas_profile_personas_connection (
     profile_personas_entry_id uuid CONSTRAINT profile_personas_profile_per_profile_personas_entry_id_not_null NOT NULL,
     profile_personas_id uuid CONSTRAINT profile_personas_profile_personas__profile_personas_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT profile_personas_profile_personas_connectio_created_at_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
+);
+
+
+--
+-- Name: profile_personas_profiles_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.profile_personas_profiles_connection (
+    profile_personas_entry_id uuid CONSTRAINT profile_personas_profiles_co_profile_personas_entry_id_not_null NOT NULL,
+    profiles_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL
@@ -44371,11 +44385,27 @@ ALTER TABLE ONLY public.profile_personas_entry
 
 
 --
+-- Name: profile_personas_personas_connection profile_personas_personas_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.profile_personas_personas_connection
+    ADD CONSTRAINT profile_personas_personas_connection_pkey PRIMARY KEY (profile_personas_entry_id, personas_id);
+
+
+--
 -- Name: profile_personas_profile_personas_connection profile_personas_profile_personas_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.profile_personas_profile_personas_connection
     ADD CONSTRAINT profile_personas_profile_personas_connection_pkey PRIMARY KEY (profile_personas_entry_id, profile_personas_id);
+
+
+--
+-- Name: profile_personas_profiles_connection profile_personas_profiles_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.profile_personas_profiles_connection
+    ADD CONSTRAINT profile_personas_profiles_connection_pkey PRIMARY KEY (profile_personas_entry_id, profiles_id);
 
 
 --
@@ -45728,14 +45758,6 @@ ALTER TABLE ONLY public.attempt_analysis_entry
 
 ALTER TABLE ONLY public.attempt_archive_entry
     ADD CONSTRAINT simulation_archives_entry_pkey PRIMARY KEY (id);
-
-
---
--- Name: attempt_profiles_connection simulation_attempts_profiles_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_profiles_connection
-    ADD CONSTRAINT simulation_attempts_profiles_connection_pkey PRIMARY KEY (attempt_id, profiles_id);
 
 
 --
@@ -52029,13 +52051,6 @@ CREATE INDEX idx_profile_names_mcp ON public.profile_names_junction USING btree 
 
 
 --
--- Name: idx_profile_personas_entry_chat_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_profile_personas_entry_chat_id ON public.profile_personas_entry USING btree (chat_id);
-
-
---
 -- Name: idx_profile_personas_entry_created_at; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -53363,13 +53378,6 @@ CREATE INDEX idx_settings_resource_department_ids ON public.settings_resource US
 --
 
 CREATE INDEX idx_simulation_analyses_grade_id ON public.attempt_analysis_entry USING btree (grade_id);
-
-
---
--- Name: idx_simulation_attempts_profiles_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_simulation_attempts_profiles_id ON public.attempt_profiles_connection USING btree (profiles_id);
 
 
 --
@@ -58173,6 +58181,14 @@ ALTER TABLE ONLY public.attempt_content_entry
 
 
 --
+-- Name: attempt_entry attempt_entry_profile_personas_entry_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_entry
+    ADD CONSTRAINT attempt_entry_profile_personas_entry_id_fkey FOREIGN KEY (profile_personas_entry_id) REFERENCES public.profile_personas_entry(id);
+
+
+--
 -- Name: attempt_feedback_entry attempt_feedback_entry_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -58330,22 +58346,6 @@ ALTER TABLE ONLY public.attempt_practice_entry
 
 ALTER TABLE ONLY public.attempt_practice_entry
     ADD CONSTRAINT attempt_practice_entry_practice_id_fkey FOREIGN KEY (practice_id) REFERENCES public.practice_entry(id);
-
-
---
--- Name: attempt_profiles_connection attempt_profiles_connection_attempt_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_profiles_connection
-    ADD CONSTRAINT attempt_profiles_connection_attempt_id_fkey FOREIGN KEY (attempt_id) REFERENCES public.attempt_entry(id) ON DELETE CASCADE;
-
-
---
--- Name: attempt_profiles_connection attempt_profiles_connection_profiles_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_profiles_connection
-    ADD CONSTRAINT attempt_profiles_connection_profiles_id_fkey FOREIGN KEY (profiles_id) REFERENCES public.profiles_resource(id);
 
 
 --
@@ -63597,11 +63597,19 @@ ALTER TABLE ONLY public.profile_personas_calls_connection
 
 
 --
--- Name: profile_personas_entry profile_personas_entry_chat_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: profile_personas_personas_connection profile_personas_personas_conn_entry_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.profile_personas_entry
-    ADD CONSTRAINT profile_personas_entry_chat_id_fkey FOREIGN KEY (chat_id) REFERENCES public.chat_entry(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.profile_personas_personas_connection
+    ADD CONSTRAINT profile_personas_personas_conn_entry_id_fkey FOREIGN KEY (profile_personas_entry_id) REFERENCES public.profile_personas_entry(id) ON DELETE CASCADE;
+
+
+--
+-- Name: profile_personas_personas_connection profile_personas_personas_conn_personas_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.profile_personas_personas_connection
+    ADD CONSTRAINT profile_personas_personas_conn_personas_id_fkey FOREIGN KEY (personas_id) REFERENCES public.personas_resource(id);
 
 
 --
@@ -63618,6 +63626,22 @@ ALTER TABLE ONLY public.profile_personas_profile_personas_connection
 
 ALTER TABLE ONLY public.profile_personas_profile_personas_connection
     ADD CONSTRAINT profile_personas_profile_personas_conn_profile_personas_id_fkey FOREIGN KEY (profile_personas_id) REFERENCES public.profile_personas_resource(id) ON DELETE CASCADE;
+
+
+--
+-- Name: profile_personas_profiles_connection profile_personas_profiles_conn_entry_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.profile_personas_profiles_connection
+    ADD CONSTRAINT profile_personas_profiles_conn_entry_id_fkey FOREIGN KEY (profile_personas_entry_id) REFERENCES public.profile_personas_entry(id) ON DELETE CASCADE;
+
+
+--
+-- Name: profile_personas_profiles_connection profile_personas_profiles_conn_profiles_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.profile_personas_profiles_connection
+    ADD CONSTRAINT profile_personas_profiles_conn_profiles_id_fkey FOREIGN KEY (profiles_id) REFERENCES public.profiles_resource(id);
 
 
 --
@@ -67648,5 +67672,5 @@ ALTER TABLE ONLY public.voices_calls_connection
 -- PostgreSQL database dump complete
 --
 
-\unrestrict aS39nFB8BgZwPDbaCmSow0xlPdwXinbPX3sxA0bvDdfqJcg5kuix0Q5vULkbkC5
+\unrestrict n8frvhEYAPOXWbHcff9eCtGlBmEedsdXR59JghvSdFGyJqsuGTZ1cnvCsK5r68A
 
