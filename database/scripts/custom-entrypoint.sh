@@ -265,6 +265,11 @@ esac
 
 # --- FINALIZATION SCRIPT ---------------------------------------------
 if [ "$DB_OPERATION" != "" ] && [ "$DB_OPERATION" != "skip" ]; then
+  # Create keycloak schema (Keycloak's Liquibase manages the actual tables).
+  cat > /docker-entrypoint-initdb.d/15-keycloak-stub.sql << 'EOF'
+CREATE SCHEMA IF NOT EXISTS keycloak;
+EOF
+
   cat > /docker-entrypoint-initdb.d/99-finalize.sql << 'EOF'
 -- Finalization Script
 DO $$

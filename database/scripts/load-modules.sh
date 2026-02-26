@@ -198,8 +198,8 @@ load_setup_categories() {
   # Load each category using the YAML key → directory mapping
   local category subfolder
   local categories=(
-    "settings:10-settings"
     "departments:01-departments"
+    "settings:10-settings"
     "parameters:05-parameters"
     "fields:04-fields"
     "personas:02-personas"

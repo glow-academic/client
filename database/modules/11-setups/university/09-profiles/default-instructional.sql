@@ -4,6 +4,7 @@
 -- ============================================================
 
 -- profile_departments_junction
+INSERT INTO public.profile_departments_junction (profile_id, department_id, is_primary, active, created_at, generated, mcp) VALUES ('019b3be4-36f0-785d-9d61-32eae65689ca', '019bb25e-e624-73da-8cef-166028a1065a', false, true, '2026-02-13T16:57:49.051925+00:00', false, false) ON CONFLICT (profile_id, department_id) DO NOTHING;
 -- emails_resource
 INSERT INTO public.emails_resource (id, email, created_at, active, generated, mcp) VALUES ('019c57ef-f302-77c7-9d8b-77047838df8e', 'default-instructional@university.edu', '2026-02-13T16:57:49.056138+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 -- profile_emails_junction

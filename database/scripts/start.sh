@@ -588,6 +588,14 @@ if [[ "$CLEAN_MODULES" == true ]]; then
   export PGPASSWORD="$DB_PASSWORD"
   psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$script_dir/../schema.sql"
 
+  # Create keycloak schema (Keycloak's Liquibase manages the actual tables).
+  # We only create the schema — Keycloak will populate tables on first start.
+  # sql-compile handles its own stub for keycloak.org if needed.
+  echo "📄 Creating keycloak schema..."
+  psql "$USER_CONN" -v ON_ERROR_STOP=0 --quiet -c "
+    CREATE SCHEMA IF NOT EXISTS keycloak;
+  " 2>/dev/null || true
+
   # Load seed modules
   echo "🌱 Loading seed modules..."
   bash "$script_dir/load-modules.sh" "$project_root/config.yaml"

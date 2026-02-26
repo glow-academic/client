@@ -1268,6 +1268,36 @@ async def compile_sql_types(
         print(f"   URL: postgresql://{db_user}:***@{db_host}:{db_port}/{db_name}")
         return False, error_msg
 
+    # Ensure keycloak.org exists for sql-compile (Keycloak creates the real table
+    # on first start, but sql-compile may run before Keycloak has started).
+    # We create a temporary stub table if it doesn't exist, and track whether we
+    # created it so we can drop it in the finally block (avoiding conflicts with
+    # Keycloak's Liquibase migrations which do CREATE TABLE without IF NOT EXISTS).
+    _created_keycloak_stub = False
+    try:
+        await conn.execute("CREATE SCHEMA IF NOT EXISTS keycloak")
+        # Check if keycloak.org already exists (created by Keycloak)
+        exists = await conn.fetchval(
+            "SELECT EXISTS(SELECT 1 FROM information_schema.tables "
+            "WHERE table_schema = 'keycloak' AND table_name = 'org')"
+        )
+        if not exists:
+            await conn.execute("""
+                CREATE TABLE keycloak.org (
+                    id varchar(255) NOT NULL PRIMARY KEY,
+                    enabled boolean NOT NULL DEFAULT false,
+                    realm_id varchar(255) NOT NULL DEFAULT '',
+                    group_id varchar(255) NOT NULL DEFAULT '',
+                    name varchar(255) NOT NULL DEFAULT '',
+                    description varchar(4000),
+                    alias varchar(255) NOT NULL DEFAULT '',
+                    redirect_url varchar(2048)
+                )
+            """)
+            _created_keycloak_stub = True
+    except Exception:
+        pass  # Non-fatal — sql-compile will just skip get_login_data_complete.sql
+
     try:
         # Load existing type definitions for fallback preservation (both incremental and full mode)
         existing_app_types: dict[str, tuple[str, str, str, str, str, str, str]] = {}
@@ -1569,4 +1599,11 @@ async def compile_sql_types(
         )
 
     finally:
+        # Drop the temporary keycloak stub if we created it, so Keycloak's
+        # Liquibase can CREATE TABLE without conflict on next start.
+        if _created_keycloak_stub:
+            try:
+                await conn.execute("DROP TABLE IF EXISTS keycloak.org")
+            except Exception:
+                pass
         await conn.close()

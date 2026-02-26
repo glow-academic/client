@@ -82,6 +82,7 @@ INSERT INTO public.setting_auth_values_junction (value, created_at, auth_id, aut
 -- setting_auths_junction
 INSERT INTO public.setting_auths_junction (active, created_at, auth_id, settings_id, generated, mcp) VALUES (true, '2025-12-12T13:26:55.664826+00:00', '019bb25e-e5e2-74c2-aaf3-42c5403f26f9', '019b3be4-3c61-76ff-befb-69b082df2acd', false, false) ON CONFLICT (settings_id, auth_id) DO NOTHING;
 -- setting_departments_junction
+INSERT INTO public.setting_departments_junction (setting_id, department_id, active, created_at, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019bb25e-e624-73da-8cef-166028a1065a', true, '2025-12-12T13:26:55.664826+00:00', false, false) ON CONFLICT (setting_id, department_id) DO NOTHING;
 -- setting_descriptions_junction
 INSERT INTO public.setting_descriptions_junction (setting_id, description_id, created_at, generated, mcp, active) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019b995c-8eb3-7615-afbd-17de2a204302', '2025-12-12T13:26:55.664826+00:00', false, false, true) ON CONFLICT (setting_id, description_id) DO NOTHING;
 -- setting_flags_junction
@@ -99,3 +100,5 @@ INSERT INTO public.setting_settings_junction (setting_id, settings_id, active, c
 INSERT INTO public.setting_thresholds_junction (setting_id, threshold_id, type, created_at, generated, mcp, active) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019b995b-5308-7a8e-9d31-b08127742439', 'success', '2025-12-12T13:26:55.664826+00:00', false, false, true) ON CONFLICT (setting_id, threshold_id, type) DO NOTHING;
 INSERT INTO public.setting_thresholds_junction (setting_id, threshold_id, type, created_at, generated, mcp, active) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019b995b-5309-714f-a5f6-5614613257b1', 'warning', '2025-12-12T13:26:55.664826+00:00', false, false, true) ON CONFLICT (setting_id, threshold_id, type) DO NOTHING;
 INSERT INTO public.setting_thresholds_junction (setting_id, threshold_id, type, created_at, generated, mcp, active) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019b995b-5309-74df-991a-c28980b294f2', 'danger', '2025-12-12T13:26:55.664826+00:00', false, false, true) ON CONFLICT (setting_id, threshold_id, type) DO NOTHING;
+-- department_settings_junction (moved from department file — needs settings_resource to exist)
+INSERT INTO public.department_settings_junction (active, created_at, department_id, settings_id, generated, mcp) VALUES (true, '2025-12-12T13:26:55.664826+00:00', '019b3be4-3247-7cb0-bd74-9b2467b5e32d', '019bb25e-e615-7952-a7d4-4fdee85d18cc', false, false) ON CONFLICT (department_id, settings_id) DO NOTHING;

@@ -1960,6 +1960,57 @@ class GetAuthListApiResponse(BaseModel):
 
 
 
+# Generated from: get_login_data
+
+class GetLoginDataSqlParams(BaseModel):
+
+    department_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.department_id,
+        )
+
+class QGetLoginDataV4Department(BaseModel):
+
+    id: str | None
+    title: str | None
+    description: str | None
+
+
+
+
+class QGetLoginDataV4Provider(BaseModel):
+
+    id: str | None
+    name: str | None
+    icon: str | None
+    is_default: bool | None
+
+class GetLoginDataSqlRow(BaseModel):
+
+    providers: list[QGetLoginDataV4Provider] | None = None
+    departments: list[QGetLoginDataV4Department] | None = None
+    guest_login_enabled: bool | None = None
+    default_department_id: str | None = None
+    realm_name: str | None = None
+    organization_id: str | None = None
+
+class GetLoginDataApiRequest(BaseModel):
+
+    department_id: UUID | None = None
+
+class GetLoginDataApiResponse(BaseModel):
+
+    providers: list[QGetLoginDataV4Provider] | None = None
+    departments: list[QGetLoginDataV4Department] | None = None
+    guest_login_enabled: bool | None = None
+    default_department_id: str | None = None
+    realm_name: str | None = None
+    organization_id: str | None = None
+
+
+
 # Generated from: patch_auth_draft
 
 class AuthItemInput(BaseModel):
@@ -37587,6 +37638,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAuthListApiRequest",
         "GetAuthListApiResponse",
     ),
+    "app/sql/v4/queries/auth/get_login_data_complete.sql": (
+        "GetLoginDataSqlParams",
+        "GetLoginDataSqlRow",
+        "GetLoginDataApiRequest",
+        "GetLoginDataApiResponse",
+    ),
     "app/sql/v4/queries/auth/patch_auth_draft_complete.sql": (
         "PatchAuthDraftSqlParams",
         "PatchAuthDraftSqlRow",
@@ -43337,6 +43394,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/auth/get_auth_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/auth/get_login_data_complete.sql"]
     ) -> SqlString: ...
 
     @overload
