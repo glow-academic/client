@@ -22921,13 +22921,17 @@ export interface components {
         };
         /**
          * AttemptUserStartEvent
-         * @description Server-to-client: user speech detected in voice mode.
+         * @description Server-to-client: user message started (text or audio).
          */
         AttemptUserStartEvent: {
             /** Chat Id */
             chat_id: string;
+            /** Message Id */
+            message_id: string;
+            /** Created At */
+            created_at: string;
             /** Item Id */
-            item_id: string;
+            item_id?: string | null;
         };
         /** AuthDescriptionSection */
         AuthDescriptionSection: {

@@ -3,15 +3,15 @@
 Handles: attempt_message — send a user message in an attempt chat.
 
 Flow:
-1. Resolve group_id from attempt_chat_entry
-2. Create run + profile link (config created by internal/generate.py)
-3. Emit attempt_user_start (before DB write)
-4. Create user message (progress not needed — full text known upfront)
-5. Emit attempt_user_complete (after DB write)
-6. Create assistant placeholder + emit attempt_assistant_start
-7. Emit generate with pre-created run_id/group_id
+1. Validate + resolve profile, group_id
+2. Create run + profile link
+3. Emit attempt_user_received_start (internal handler creates message shell)
+4. Emit attempt_user_received_complete (internal handler writes content + marks complete)
+   (user_progress not needed for text — full message is known upfront)
+5. Create assistant placeholder + emit attempt_assistant_start
+6. Emit generate with pre-created run_id/group_id
 
-All attempt_* emits go to internal bus → server/ handlers → client socket.
+All attempt_* emits go to internal bus → internal/ handlers (DB) → server/ handlers → client.
 """
 
 import uuid
@@ -25,8 +25,8 @@ from app.socket.v5.client.types import AttemptMessagePayload
 from app.socket.v5.internal.attempt.types import (
     AttemptAssistantStartData,
     AttemptErrorData,
-    AttemptUserCompleteData,
-    AttemptUserStartData,
+    AttemptUserReceivedCompleteData,
+    AttemptUserReceivedStartData,
     GenerateRequestData,
 )
 from app.utils.logging.db_logger import get_logger
@@ -34,9 +34,6 @@ from app.utils.logging.db_logger import get_logger
 logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
-
-# Hardcoded Student persona for user messages
-STUDENT_PERSONA_ID = uuid.UUID("019bb25e-e60c-7352-9b81-f411f56092a9")
 
 
 @sio.event  # type: ignore
@@ -74,6 +71,8 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
             )
             return
 
+        rooms = [sid, f"attempt_{chat_id}"]
+
         async with get_db_connection() as conn:
             # Step 1: Resolve group_id from attempt_chat_entry
             group_id = await conn.fetchval(
@@ -93,7 +92,7 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
                 )
                 return
 
-            # Step 2: Create run + profile link (config created by internal/generate.py)
+            # Step 2: Create run + profile link
             run_id = await conn.fetchval(
                 """INSERT INTO runs_entry (group_id)
                 VALUES ($1) RETURNING id""",
@@ -110,53 +109,38 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
                 run_id,
             )
 
-            # Step 3: Emit user_start (before DB write)
-            await internal_sio.emit(
-                "attempt_user_start",
-                AttemptUserStartData(
-                    sid=sid,
-                    chat_id=str(chat_id),
-                    item_id="",  # No item_id for text messages
-                ).model_dump(mode="json"),
-            )
+        # Step 3: Emit user_received_start → internal handler creates message shell
+        await internal_sio.emit(
+            "attempt_user_received_start",
+            AttemptUserReceivedStartData(
+                sid=sid,
+                chat_id=str(chat_id),
+                run_id=str(run_id),
+                profile_id=profile_id_str,
+                rooms=rooms,
+            ).model_dump(mode="json"),
+        )
 
-            # Step 4: Create user message
-            # Note: user_progress is not needed for text — full message is known upfront
+        # Step 4: Emit user_received_complete → internal handler writes content
+        # (user_progress not needed for text — full message known upfront)
+        await internal_sio.emit(
+            "attempt_user_received_complete",
+            AttemptUserReceivedCompleteData(
+                sid=sid,
+                chat_id=str(chat_id),
+                run_id=str(run_id),
+                content=message,
+                rooms=rooms,
+            ).model_dump(mode="json"),
+        )
+
+        # Step 5: Create assistant placeholder + emit assistant_start
+        async with get_db_connection() as conn:
             created_at = await conn.fetchval("SELECT NOW()")
 
-            user_message_id = await conn.fetchval(
-                """INSERT INTO messages_entry (run_id, role, created_at, updated_at)
-                VALUES ($1, 'user'::message_type, $2, $2)
-                RETURNING id""",
-                run_id,
-                created_at,
-            )
-
-            await conn.execute(
-                """INSERT INTO messages_completions_entry (message_id)
-                VALUES ($1)""",
-                user_message_id,
-            )
-
-            await conn.execute(
-                """INSERT INTO attempt_message_entry (id, chat_id)
-                VALUES ($1, $2)""",
-                user_message_id,
-                chat_id,
-            )
-
-            await conn.execute(
-                """INSERT INTO attempt_content_entry (message_id, content, persona_id)
-                VALUES ($1, $2, $3)""",
-                user_message_id,
-                message,
-                STUDENT_PERSONA_ID,
-            )
-
-            # Step 5: Create assistant placeholder (messages_entry + attempt_message_entry only)
             assistant_message_id = await conn.fetchval(
                 """INSERT INTO messages_entry (run_id, role, created_at, updated_at)
-                VALUES ($1, 'assistant'::message_type, $2 + interval '1 millisecond', $2 + interval '1 millisecond')
+                VALUES ($1, 'assistant'::message_type, $2, $2)
                 RETURNING id""",
                 run_id,
                 created_at,
@@ -169,33 +153,17 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
                 chat_id,
             )
 
-        created_at_str = created_at.isoformat() if created_at else ""
-
-        # Step 5: Emit user_complete (after DB write)
-        await internal_sio.emit(
-            "attempt_user_complete",
-            AttemptUserCompleteData(
-                sid=sid,
-                rooms=[sid, f"attempt_{chat_id}"],
-                chat_id=str(chat_id),
-                message_id=str(user_message_id),
-                content=message,
-                created_at=created_at_str,
-            ).model_dump(mode="json"),
-        )
-
-        # Step 6: Emit assistant_start
         await internal_sio.emit(
             "attempt_assistant_start",
             AttemptAssistantStartData(
                 sid=sid,
                 chat_id=str(chat_id),
                 message_id=str(assistant_message_id),
-                created_at=created_at_str,
+                created_at=created_at.isoformat() if created_at else "",
             ).model_dump(mode="json"),
         )
 
-        # Step 7: Emit to generate pipeline (pre-created run_id skips prepare)
+        # Step 6: Emit to generate pipeline
         resource_types = payload.resource_types or ["contents", "hints"]
 
         await internal_sio.emit(

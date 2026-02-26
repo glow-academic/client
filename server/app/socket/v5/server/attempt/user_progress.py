@@ -16,7 +16,7 @@ async def attempt_user_progress_server_handler(data: dict[str, Any]) -> None:
         return
     event = AttemptUserProgressEvent(
         chat_id=data.get("chat_id", ""),
-        item_id=data.get("item_id", ""),
+        item_id=data.get("item_id"),
         transcript=data.get("transcript", ""),
     )
     for room in data.get("rooms") or [sid]:

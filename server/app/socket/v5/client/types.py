@@ -471,17 +471,19 @@ class AttemptAudioStopPayload(BaseModel):
 
 
 class AttemptUserStartEvent(BaseModel):
-    """Server-to-client: user speech detected in voice mode."""
+    """Server-to-client: user message started (text or audio)."""
 
     chat_id: str
-    item_id: str
+    message_id: str
+    created_at: str
+    item_id: str | None = None  # Audio only (VAD item)
 
 
 class AttemptUserProgressEvent(BaseModel):
-    """Server-to-client: user transcription progress (audio mode)."""
+    """Server-to-client: user transcription progress (audio only)."""
 
     chat_id: str
-    item_id: str
+    item_id: str | None = None
     transcript: str
 
 

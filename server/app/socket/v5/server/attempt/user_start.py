@@ -16,7 +16,9 @@ async def attempt_user_start_server_handler(data: dict[str, Any]) -> None:
         return
     event = AttemptUserStartEvent(
         chat_id=data.get("chat_id", ""),
-        item_id=data.get("item_id", ""),
+        message_id=data.get("message_id", ""),
+        created_at=data.get("created_at", ""),
+        item_id=data.get("item_id"),
     )
     for room in data.get("rooms") or [sid]:
         await sio.emit("attempt_user_start", event.model_dump(mode="json"), room=room)
