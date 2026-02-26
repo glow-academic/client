@@ -65,160 +65,92 @@ You only need to do ONE of these operations per resource — not both. Check the
 - Do not output narrative text
 ', 'Document Agent System Prompt', 'System prompt for document generation agents', true, '019b3be4-36fe-7be0-9e4c-1981f6603d55', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8ea1-7cc3-af43-22701005aebd', 'Agent for generating and working with documents, templates, and structured content', '2025-12-02T13:15:00.683340+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019b8c1f-2a67-7352-9eb5-3bfe0b853b10', '## Current Form State
+INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019b8c1f-2a67-7352-9eb5-3bfe0b853b10', '## Current State
+{% set draft = entries.draft_document if entries and entries.draft_document else None %}
+{% if draft and draft.name_ids and draft.name_ids|length > 0 %}{% set selected = [] %}{% for item in resources.names if item.id|string in draft.name_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Names: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Names: ({{ draft.name_ids|length }} selected by ID){% endif %}{% else %}Names: (not set){% endif %}
+{% if draft and draft.description_ids and draft.description_ids|length > 0 %}{% set selected = [] %}{% for item in resources.descriptions if item.id|string in draft.description_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Descriptions: {% for item in selected %}{{ item.description[:100] }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Descriptions: ({{ draft.description_ids|length }} selected by ID){% endif %}{% else %}Descriptions: (not set){% endif %}
+{% if draft and draft.flag_ids and draft.flag_ids|length > 0 %}{% set selected = [] %}{% for item in resources.flags if item.flag_option_id|string in draft.flag_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Flags: {% for item in selected %}{{ item.label or item.key }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Flags: ({{ draft.flag_ids|length }} selected by ID){% endif %}{% else %}Flags: (not set){% endif %}
+{% if draft and draft.department_ids and draft.department_ids|length > 0 %}{% set selected = [] %}{% for item in resources.departments if item.department_id|string in draft.department_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Departments: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Departments: ({{ draft.department_ids|length }} selected by ID){% endif %}{% else %}Departments: (not set){% endif %}
+{% if draft and draft.image_ids and draft.image_ids|length > 0 %}{% set selected = [] %}{% for item in resources.images if item.id|string in draft.image_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Images: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Images: ({{ draft.image_ids|length }} selected by ID){% endif %}{% else %}Images: (not set){% endif %}
+{% if draft and draft.parameter_field_ids and draft.parameter_field_ids|length > 0 %}{% set selected = [] %}{% for item in resources.parameter_fields if item.id|string in draft.parameter_field_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Parameter Fields: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Parameter Fields: ({{ draft.parameter_field_ids|length }} selected by ID){% endif %}{% else %}Parameter Fields: (not set){% endif %}
+{% if draft and draft.parameter_ids and draft.parameter_ids|length > 0 %}{% set selected = [] %}{% for item in resources.parameters if item.parameter_id|string in draft.parameter_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Parameters: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Parameters: ({{ draft.parameter_ids|length }} selected by ID){% endif %}{% else %}Parameters: (not set){% endif %}
+{% if draft and draft.text_ids and draft.text_ids|length > 0 %}{% set selected = [] %}{% for item in resources.texts if item.id|string in draft.text_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Texts: {% for item in selected %}{{ item.text[:80] }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Texts: ({{ draft.text_ids|length }} selected by ID){% endif %}{% else %}Texts: (not set){% endif %}
+{% if draft and draft.upload_ids and draft.upload_ids|length > 0 %}{% set selected = [] %}{% for item in resources.uploads if item.id|string in draft.upload_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Uploads: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Uploads: ({{ draft.upload_ids|length }} selected by ID){% endif %}{% else %}Uploads: (not set){% endif %}
 
-The user is currently editing a document with the following selections:
+---
 
-{% set draft = views.draft_document if views and views.draft_document else None %}
-
-{% if names and names|length > 0 %}
-**Current Names:** {% for name in names %}{{ name.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.name_ids and draft.name_ids|length > 0 %}
-**Current Names IDs:** {% for id in draft.name_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Names:** (not selected)
+{% set all_gen_types = (resources.types or []) + (entries.types or []) %}
+## Available Resources
+{% if "names" in all_gen_types and resources.names and resources.names|length > 0 %}
+Names:
+{% for item in resources.names %}
+- id: {{ item.id }} | {{ item.name }}
+{% endfor %}
 {% endif %}
-
-{% if descriptions and descriptions|length > 0 %}
-**Current Descriptions:** {% for desc in descriptions %}{{ desc.description[:100] }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.description_ids and draft.description_ids|length > 0 %}
-**Current Descriptions IDs:** {% for id in draft.description_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Descriptions:** (not selected)
+{% if "descriptions" in all_gen_types and resources.descriptions and resources.descriptions|length > 0 %}
+Descriptions:
+{% for item in resources.descriptions %}
+- id: {{ item.id }} | {{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}
+{% endfor %}
 {% endif %}
-
-{% if flags and flags|length > 0 %}
-**Current Flags:** {% for item in flags %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.flag_ids and draft.flag_ids|length > 0 %}
-**Current Flags IDs:** {% for id in draft.flag_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Flags:** (not selected)
+{% if "flags" in all_gen_types and resources.flags and resources.flags|length > 0 %}
+Flags:
+{% for item in resources.flags %}
+- id: {{ item.flag_option_id }} | {{ item.label or item.key }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}
 {% endif %}
-
-{% if departments and departments|length > 0 %}
-**Current Departments:** {% for item in departments %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.department_ids and draft.department_ids|length > 0 %}
-**Current Departments IDs:** {% for id in draft.department_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Departments:** (not selected)
+{% if "departments" in all_gen_types and resources.departments and resources.departments|length > 0 %}
+Departments:
+{% for item in resources.departments %}
+- id: {{ item.department_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}
 {% endif %}
-
-{% if images and images|length > 0 %}
-**Current Images:** {% for item in images %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.image_ids and draft.image_ids|length > 0 %}
-**Current Images IDs:** {% for id in draft.image_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Images:** (not selected)
+{% if "images" in all_gen_types and resources.images and resources.images|length > 0 %}
+Images:
+{% for item in resources.images %}
+- id: {{ item.id }} | {{ item.name }}
+{% endfor %}
 {% endif %}
-
-{% if parameter_fields and parameter_fields|length > 0 %}
-**Current Parameter Fields:** {% for item in parameter_fields %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.parameter_field_ids and draft.parameter_field_ids|length > 0 %}
-**Current Parameter Fields IDs:** {% for id in draft.parameter_field_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Parameter Fields:** (not selected)
+{% if "parameter_fields" in all_gen_types and resources.parameter_fields and resources.parameter_fields|length > 0 %}
+Parameter Fields:
+{% for item in resources.parameter_fields %}
+- id: {{ item.id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}
 {% endif %}
-
-{% if parameters and parameters|length > 0 %}
-**Current Parameters:** {% for item in parameters %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.parameter_ids and draft.parameter_ids|length > 0 %}
-**Current Parameters IDs:** {% for id in draft.parameter_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Parameters:** (not selected)
+{% if "parameters" in all_gen_types and resources.parameters and resources.parameters|length > 0 %}
+Parameters:
+{% for item in resources.parameters %}
+- id: {{ item.parameter_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}
 {% endif %}
-
-{% if texts and texts|length > 0 %}
-**Current Texts:** {% for t in texts %}{{ t.text[:80] }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.text_ids and draft.text_ids|length > 0 %}
-**Current Texts IDs:** {% for id in draft.text_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Texts:** (not selected)
+{% if "texts" in all_gen_types and resources.texts and resources.texts|length > 0 %}
+Texts:
+{% for item in resources.texts %}
+- id: {{ item.id }} | {{ item.text[:80] }}{% if item.text|length > 80 %}...{% endif %}
+{% endfor %}
 {% endif %}
-
-{% if uploads and uploads|length > 0 %}
-**Current Uploads:** {% for item in uploads %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.upload_ids and draft.upload_ids|length > 0 %}
-**Current Uploads IDs:** {% for id in draft.upload_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Uploads:** (not selected)
+{% if "uploads" in all_gen_types and resources.uploads and resources.uploads|length > 0 %}
+Uploads:
+{% for item in resources.uploads %}
+- id: {{ item.id }} | {{ item.name }}
+{% endfor %}
 {% endif %}
 
 ---
 
-## Available Context Resources
-
-You have access to the following existing resources. Either **use_*** an existing resource OR **create_*** a new one — you only need to do ONE.
-
-{% if names and names|length > 0 %}
-### Available Names
-{% for item in names %}
-- id: {{ item.id }} | name: {{ item.name }}
-{% endfor %}
+## Generating For
+{% if resources.types and resources.types|length > 0 %}
+Resource types (create or use): {{ resources.types|join(", ") }}
+{% endif %}
+{% if entries.types and entries.types|length > 0 %}
+Entry types (use only): {{ entries.types|join(", ") }}
 {% endif %}
 
-{% if descriptions and descriptions|length > 0 %}
-### Available Descriptions
-{% for item in descriptions %}
-- id: {{ item.id }} | description: {{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}
-{% endfor %}
-{% endif %}
-
-{% if flags and flags|length > 0 %}
-### Available Flags
-{% for item in flags %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
-
-{% if departments and departments|length > 0 %}
-### Available Departments
-{% for item in departments %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
-
-{% if images and images|length > 0 %}
-### Available Images
-{% for item in images %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
-
-{% if parameter_fields and parameter_fields|length > 0 %}
-### Available Parameter Fields
-{% for item in parameter_fields %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
-
-{% if parameters and parameters|length > 0 %}
-### Available Parameters
-{% for item in parameters %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
-
-{% if texts and texts|length > 0 %}
-### Available Texts
-{% for item in texts %}
-- id: {{ item.id }} | text: {{ item.text[:80] }}{% if item.text|length > 80 %}...{% endif %}
-{% endfor %}
-{% endif %}
-
-{% if uploads and uploads|length > 0 %}
-### Available Uploads
-{% for item in uploads %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
-
-## Tool Usage (Either/Or)
-
-For each resource, choose ONE approach:
-- **use_*** tools: When a suitable resource ALREADY EXISTS above (pass the existing id)
-- **create_*** tools: When you need to generate NEW content (nothing suitable exists)
-
-You do NOT need to both create and use — pick one based on whether a suitable resource exists.
+Rules:
+- For resource types: use_* when a suitable resource exists, create_* when nothing suitable exists
+- For entry types: always use_* with IDs from available resources
+- Only operate on the resource/entry types listed above
+- Do not invent IDs — use IDs from available resources
 ', true, '2026-01-05T03:06:51.366493+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8ea0-7d03-a4e4-614e3dca72a2', 'Document', '2025-12-02T13:15:00.683340+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 

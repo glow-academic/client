@@ -62,130 +62,78 @@ You only need to do ONE of these operations per resource — not both. Check the
 ', 'Auth Agent System Prompt', 'System prompt for auth generation agents that create and manage auth resources', true, '22222222-3333-3333-3333-222222222222', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-13T03:41:54.664757+00:00', true, false, false, '019c5517-4672-7c5f-953f-8c064353f7d4', 'Auth', 'AI agent for generating and managing auth resources including names, descriptions, flags, protocols, slugs, and items using GPT-5.1', '{}', NULL, NULL, '{019bebc4-d436-7c35-9f98-31957504bf95,019bebc4-d436-7c8f-9f19-28ba6dc8519f,019bebc4-d436-7c96-b29a-80cc1f4d73b1,019bebc4-d436-7c99-9c5d-1d6d7e0aeb46,019bebc4-d436-7c01-b86b-9483883762a6,019c06a8-2af6-727b-b94a-71bddc4d76de,019c06a8-2af5-766c-9713-315ab9567235,019c06a8-2af5-705d-ae92-7905a846a500,019c06a8-2af4-7c97-ab30-1e863db0e8e3,ee01c972-7196-4fdd-ad4d-a55a41523396,5e11556a-3a07-4dc2-8fb2-a6efeac86c88,d07bff92-18d9-4b75-a8d2-deefb5a0616c}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '22222222-3333-3333-3333-222222222222', '{019c2f13-4500-7c00-8000-000000000001}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019bcd1b-0c97-704a-8b0a-99075990e1e5', 'AI agent for generating and managing auth resources including names, descriptions, flags, protocols, slugs, and items using GPT-5.1', '2026-01-17T17:57:40.627996+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c2f13-4500-7c00-8000-000000000001', '## Current Form State
+INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c2f13-4500-7c00-8000-000000000001', '## Current State
+{% set draft = entries.draft_auth if entries and entries.draft_auth else None %}
+{% if draft and draft.name_ids and draft.name_ids|length > 0 %}{% set selected = [] %}{% for item in resources.names if item.id|string in draft.name_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Names: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Names: ({{ draft.name_ids|length }} selected by ID){% endif %}{% else %}Names: (not set){% endif %}
+{% if draft and draft.description_ids and draft.description_ids|length > 0 %}{% set selected = [] %}{% for item in resources.descriptions if item.id|string in draft.description_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Descriptions: {% for item in selected %}{{ item.description[:100] }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Descriptions: ({{ draft.description_ids|length }} selected by ID){% endif %}{% else %}Descriptions: (not set){% endif %}
+{% if draft and draft.flag_ids and draft.flag_ids|length > 0 %}{% set selected = [] %}{% for item in resources.flags if item.flag_option_id|string in draft.flag_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Flags: {% for item in selected %}{{ item.label or item.key }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Flags: ({{ draft.flag_ids|length }} selected by ID){% endif %}{% else %}Flags: (not set){% endif %}
+{% if draft and draft.department_ids and draft.department_ids|length > 0 %}{% set selected = [] %}{% for item in resources.departments if item.department_id|string in draft.department_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Departments: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Departments: ({{ draft.department_ids|length }} selected by ID){% endif %}{% else %}Departments: (not set){% endif %}
+{% if draft and draft.item_ids and draft.item_ids|length > 0 %}{% set selected = [] %}{% for item in resources.items if item.id|string in draft.item_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Items: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Items: ({{ draft.item_ids|length }} selected by ID){% endif %}{% else %}Items: (not set){% endif %}
+{% if draft and draft.protocol_ids and draft.protocol_ids|length > 0 %}{% set selected = [] %}{% for item in resources.protocols if item.id|string in draft.protocol_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Protocols: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Protocols: ({{ draft.protocol_ids|length }} selected by ID){% endif %}{% else %}Protocols: (not set){% endif %}
+{% if draft and draft.slug_ids and draft.slug_ids|length > 0 %}{% set selected = [] %}{% for item in resources.slugs if item.id|string in draft.slug_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Slugs: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Slugs: ({{ draft.slug_ids|length }} selected by ID){% endif %}{% else %}Slugs: (not set){% endif %}
 
-The user is currently editing a auth with the following selections:
+---
 
-{% set draft = views.draft_auth if views and views.draft_auth else None %}
-
-{% if names and names|length > 0 %}
-**Current Names:** {% for name in names %}{{ name.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.name_ids and draft.name_ids|length > 0 %}
-**Current Names IDs:** {% for id in draft.name_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Names:** (not selected)
+{% set all_gen_types = (resources.types or []) + (entries.types or []) %}
+## Available Resources
+{% if "names" in all_gen_types and resources.names and resources.names|length > 0 %}
+Names:
+{% for item in resources.names %}
+- id: {{ item.id }} | {{ item.name }}
+{% endfor %}
 {% endif %}
-
-{% if descriptions and descriptions|length > 0 %}
-**Current Descriptions:** {% for desc in descriptions %}{{ desc.description[:100] }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.description_ids and draft.description_ids|length > 0 %}
-**Current Descriptions IDs:** {% for id in draft.description_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Descriptions:** (not selected)
+{% if "descriptions" in all_gen_types and resources.descriptions and resources.descriptions|length > 0 %}
+Descriptions:
+{% for item in resources.descriptions %}
+- id: {{ item.id }} | {{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}
+{% endfor %}
 {% endif %}
-
-{% if flags and flags|length > 0 %}
-**Current Flags:** {% for item in flags %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.flag_ids and draft.flag_ids|length > 0 %}
-**Current Flags IDs:** {% for id in draft.flag_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Flags:** (not selected)
+{% if "flags" in all_gen_types and resources.flags and resources.flags|length > 0 %}
+Flags:
+{% for item in resources.flags %}
+- id: {{ item.flag_option_id }} | {{ item.label or item.key }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}
 {% endif %}
-
-{% if departments and departments|length > 0 %}
-**Current Departments:** {% for item in departments %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.department_ids and draft.department_ids|length > 0 %}
-**Current Departments IDs:** {% for id in draft.department_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Departments:** (not selected)
+{% if "departments" in all_gen_types and resources.departments and resources.departments|length > 0 %}
+Departments:
+{% for item in resources.departments %}
+- id: {{ item.department_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}
 {% endif %}
-
-{% if items and items|length > 0 %}
-**Current Items:** {% for item in items %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.item_ids and draft.item_ids|length > 0 %}
-**Current Items IDs:** {% for id in draft.item_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Items:** (not selected)
+{% if "items" in all_gen_types and resources.items and resources.items|length > 0 %}
+Items:
+{% for item in resources.items %}
+- id: {{ item.id }} | {{ item.name }}
+{% endfor %}
 {% endif %}
-
-{% if protocols and protocols|length > 0 %}
-**Current Protocols:** {% for item in protocols %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.protocol_ids and draft.protocol_ids|length > 0 %}
-**Current Protocols IDs:** {% for id in draft.protocol_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Protocols:** (not selected)
+{% if "protocols" in all_gen_types and resources.protocols and resources.protocols|length > 0 %}
+Protocols:
+{% for item in resources.protocols %}
+- id: {{ item.id }} | {{ item.name }}
+{% endfor %}
 {% endif %}
-
-{% if slugs and slugs|length > 0 %}
-**Current Slugs:** {% for item in slugs %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.slug_ids and draft.slug_ids|length > 0 %}
-**Current Slugs IDs:** {% for id in draft.slug_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Slugs:** (not selected)
+{% if "slugs" in all_gen_types and resources.slugs and resources.slugs|length > 0 %}
+Slugs:
+{% for item in resources.slugs %}
+- id: {{ item.id }} | {{ item.name }}
+{% endfor %}
 {% endif %}
 
 ---
 
-## Available Context Resources
-
-You have access to the following existing resources. Either **use_*** an existing resource OR **create_*** a new one — you only need to do ONE.
-
-{% if names and names|length > 0 %}
-### Available Names
-{% for item in names %}
-- id: {{ item.id }} | name: {{ item.name }}
-{% endfor %}
+## Generating For
+{% if resources.types and resources.types|length > 0 %}
+Resource types (create or use): {{ resources.types|join(", ") }}
+{% endif %}
+{% if entries.types and entries.types|length > 0 %}
+Entry types (use only): {{ entries.types|join(", ") }}
 {% endif %}
 
-{% if descriptions and descriptions|length > 0 %}
-### Available Descriptions
-{% for item in descriptions %}
-- id: {{ item.id }} | description: {{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}
-{% endfor %}
-{% endif %}
-
-{% if flags and flags|length > 0 %}
-### Available Flags
-{% for item in flags %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
-
-{% if departments and departments|length > 0 %}
-### Available Departments
-{% for item in departments %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
-
-{% if items and items|length > 0 %}
-### Available Items
-{% for item in items %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
-
-{% if protocols and protocols|length > 0 %}
-### Available Protocols
-{% for item in protocols %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
-
-{% if slugs and slugs|length > 0 %}
-### Available Slugs
-{% for item in slugs %}
-- id: {{ item.id }} | value: {{ item.value if item.value is defined else item.id }}
-{% endfor %}
-{% endif %}
-
-## Tool Usage (Either/Or)
-
-For each resource, choose ONE approach:
-- **use_*** tools: When a suitable resource ALREADY EXISTS above (pass the existing id)
-- **create_*** tools: When you need to generate NEW content (nothing suitable exists)
-
-You do NOT need to both create and use — pick one based on whether a suitable resource exists.
+Rules:
+- For resource types: use_* when a suitable resource exists, create_* when nothing suitable exists
+- For entry types: always use_* with IDs from available resources
+- Only operate on the resource/entry types listed above
+- Do not invent IDs — use IDs from available resources
 ', true, '2026-02-10T19:15:00.738862+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019bb798-89c6-7172-b3b1-ad7eccd868da', 'Auth', '2026-01-13T13:43:05.923847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 

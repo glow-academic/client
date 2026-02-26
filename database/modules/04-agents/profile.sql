@@ -62,130 +62,78 @@ You only need to do ONE of these operations per resource — not both. Check the
 ', 'Profile Agent System Prompt', 'System prompt for profile generation agents that create and manage profile resources', true, '33333333-4444-4444-4444-333333333333', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-13T03:41:54.664757+00:00', true, false, false, '019c5517-4673-759e-81e6-40d247dea759', 'Profile', 'AI agent for generating and managing profile resources including names, descriptions, flags, departments, emails, cohorts, and request limits using GPT-5.1', '{}', NULL, NULL, '{019bebc4-d436-7be9-a1d4-e55d4017097e,019bebc4-d436-7c35-9f98-31957504bf95,019bebc4-d436-7cb5-b393-0f9756ccc867,019bebc4-d436-7cbe-a7bf-4b364674f3e0,019bebc4-d436-7d28-8f22-23d852477486,019c06a8-2af4-7c97-ab30-1e863db0e8e3,f54cfc67-dd10-4677-b076-5c91a63db489,4f07ae5c-a08c-4dee-a8f8-60f20dbf96e2,611f8ec9-1863-402d-8c7a-88329f5721bb,019c4f27-1774-759b-acb1-e09575f36f0d,019c06a8-2af6-727b-b94a-71bddc4d76de,eb52f323-b454-48c8-8385-69fad8f8388b,019c06a8-2af5-766c-9713-315ab9567235}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '33333333-4444-4444-4444-333333333333', '{019c2f11-4100-7c00-8000-000000000002}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019bcd1b-0c9b-745c-8a86-2c7fa4b8f759', 'AI agent for generating and managing profile resources including names, descriptions, flags, departments, emails, cohorts, and request limits using GPT-5.1', '2026-01-17T17:57:40.632192+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c2f11-4100-7c00-8000-000000000002', '## Current Form State
+INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c2f11-4100-7c00-8000-000000000002', '## Current State
+{% set draft = entries.draft_profile if entries and entries.draft_profile else None %}
+{% if draft and draft.name_ids and draft.name_ids|length > 0 %}{% set selected = [] %}{% for item in resources.names if item.id|string in draft.name_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Names: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Names: ({{ draft.name_ids|length }} selected by ID){% endif %}{% else %}Names: (not set){% endif %}
+{% if draft and draft.flag_ids and draft.flag_ids|length > 0 %}{% set selected = [] %}{% for item in resources.flags if item.flag_option_id|string in draft.flag_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Flags: {% for item in selected %}{{ item.label or item.key }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Flags: ({{ draft.flag_ids|length }} selected by ID){% endif %}{% else %}Flags: (not set){% endif %}
+{% if draft and draft.department_ids and draft.department_ids|length > 0 %}{% set selected = [] %}{% for item in resources.departments if item.department_id|string in draft.department_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Departments: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Departments: ({{ draft.department_ids|length }} selected by ID){% endif %}{% else %}Departments: (not set){% endif %}
+{% if draft and draft.email_ids and draft.email_ids|length > 0 %}{% set selected = [] %}{% for item in resources.emails if item.id|string in draft.email_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Emails: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Emails: ({{ draft.email_ids|length }} selected by ID){% endif %}{% else %}Emails: (not set){% endif %}
+{% if draft and draft.cohort_ids and draft.cohort_ids|length > 0 %}{% set selected = [] %}{% for item in resources.cohorts if item.id|string in draft.cohort_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Cohorts: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Cohorts: ({{ draft.cohort_ids|length }} selected by ID){% endif %}{% else %}Cohorts: (not set){% endif %}
+{% if draft and draft.request_limit_ids and draft.request_limit_ids|length > 0 %}{% set selected = [] %}{% for item in resources.request_limits if item.id|string in draft.request_limit_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Request Limits: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Request Limits: ({{ draft.request_limit_ids|length }} selected by ID){% endif %}{% else %}Request Limits: (not set){% endif %}
+{% if draft and draft.role_ids and draft.role_ids|length > 0 %}{% set selected = [] %}{% for item in resources.roles if item.id|string in draft.role_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Roles: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Roles: ({{ draft.role_ids|length }} selected by ID){% endif %}{% else %}Roles: (not set){% endif %}
 
-The user is currently editing a profile with the following selections:
+---
 
-{% set draft = views.draft_profile if views and views.draft_profile else None %}
-
-{% if names and names|length > 0 %}
-**Current Names:** {% for name in names %}{{ name.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.name_ids and draft.name_ids|length > 0 %}
-**Current Names IDs:** {% for id in draft.name_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Names:** (not selected)
+{% set all_gen_types = (resources.types or []) + (entries.types or []) %}
+## Available Resources
+{% if "names" in all_gen_types and resources.names and resources.names|length > 0 %}
+Names:
+{% for item in resources.names %}
+- id: {{ item.id }} | {{ item.name }}
+{% endfor %}
 {% endif %}
-
-{% if flags and flags|length > 0 %}
-**Current Flags:** {% for item in flags %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.flag_ids and draft.flag_ids|length > 0 %}
-**Current Flags IDs:** {% for id in draft.flag_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Flags:** (not selected)
+{% if "flags" in all_gen_types and resources.flags and resources.flags|length > 0 %}
+Flags:
+{% for item in resources.flags %}
+- id: {{ item.flag_option_id }} | {{ item.label or item.key }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}
 {% endif %}
-
-{% if departments and departments|length > 0 %}
-**Current Departments:** {% for item in departments %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.department_ids and draft.department_ids|length > 0 %}
-**Current Departments IDs:** {% for id in draft.department_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Departments:** (not selected)
+{% if "departments" in all_gen_types and resources.departments and resources.departments|length > 0 %}
+Departments:
+{% for item in resources.departments %}
+- id: {{ item.department_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
+{% endfor %}
 {% endif %}
-
-{% if emails and emails|length > 0 %}
-**Current Emails:** {% for item in emails %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.email_ids and draft.email_ids|length > 0 %}
-**Current Emails IDs:** {% for id in draft.email_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Emails:** (not selected)
+{% if "emails" in all_gen_types and resources.emails and resources.emails|length > 0 %}
+Emails:
+{% for item in resources.emails %}
+- id: {{ item.id }} | {{ item.name }}
+{% endfor %}
 {% endif %}
-
-{% if cohorts and cohorts|length > 0 %}
-**Current Cohorts:** {% for item in cohorts %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.cohort_ids and draft.cohort_ids|length > 0 %}
-**Current Cohorts IDs:** {% for id in draft.cohort_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Cohorts:** (not selected)
+{% if "cohorts" in all_gen_types and resources.cohorts and resources.cohorts|length > 0 %}
+Cohorts:
+{% for item in resources.cohorts %}
+- id: {{ item.id }} | {{ item.name }}
+{% endfor %}
 {% endif %}
-
-{% if request_limits and request_limits|length > 0 %}
-**Current Request Limits:** {% for item in request_limits %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.request_limit_ids and draft.request_limit_ids|length > 0 %}
-**Current Request Limits IDs:** {% for id in draft.request_limit_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Request Limits:** (not selected)
+{% if "request_limits" in all_gen_types and resources.request_limits and resources.request_limits|length > 0 %}
+Request Limits:
+{% for item in resources.request_limits %}
+- id: {{ item.id }} | {{ item.name }}
+{% endfor %}
 {% endif %}
-
-{% if roles and roles|length > 0 %}
-**Current Roles:** {% for item in roles %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% elif draft and draft.role_ids and draft.role_ids|length > 0 %}
-**Current Roles IDs:** {% for id in draft.role_ids %}{{ id }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% else %}
-**Current Roles:** (not selected)
+{% if "roles" in all_gen_types and resources.roles and resources.roles|length > 0 %}
+Roles:
+{% for item in resources.roles %}
+- id: {{ item.id }} | {{ item.name }}
+{% endfor %}
 {% endif %}
 
 ---
 
-## Available Context Resources
-
-You have access to the following existing resources. Either **use_*** an existing resource OR **create_*** a new one — you only need to do ONE.
-
-{% if names and names|length > 0 %}
-### Available Names
-{% for item in names %}
-- id: {{ item.id }} | name: {{ item.name }}
-{% endfor %}
+## Generating For
+{% if resources.types and resources.types|length > 0 %}
+Resource types (create or use): {{ resources.types|join(", ") }}
+{% endif %}
+{% if entries.types and entries.types|length > 0 %}
+Entry types (use only): {{ entries.types|join(", ") }}
 {% endif %}
 
-{% if flags and flags|length > 0 %}
-### Available Flags
-{% for item in flags %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
-
-{% if departments and departments|length > 0 %}
-### Available Departments
-{% for item in departments %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
-
-{% if emails and emails|length > 0 %}
-### Available Emails
-{% for item in emails %}
-- id: {{ item.id }} | value: {{ item.value if item.value is defined else item.id }}
-{% endfor %}
-{% endif %}
-
-{% if cohorts and cohorts|length > 0 %}
-### Available Cohorts
-{% for item in cohorts %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
-
-{% if request_limits and request_limits|length > 0 %}
-### Available Request Limits
-{% for item in request_limits %}
-- id: {{ item.id }} | value: {{ item.value }}
-{% endfor %}
-{% endif %}
-
-{% if roles and roles|length > 0 %}
-### Available Roles
-{% for item in roles %}
-- id: {{ item.id }} | name: {{ item.name }}{% if item.description is defined and item.description %} | {{ item.description[:50] }}{% endif %}
-{% endfor %}
-{% endif %}
-
-## Tool Usage (Either/Or)
-
-For each resource, choose ONE approach:
-- **use_*** tools: When a suitable resource ALREADY EXISTS above (pass the existing id)
-- **create_*** tools: When you need to generate NEW content (nothing suitable exists)
-
-You do NOT need to both create and use — pick one based on whether a suitable resource exists.
+Rules:
+- For resource types: use_* when a suitable resource exists, create_* when nothing suitable exists
+- For entry types: always use_* with IDs from available resources
+- Only operate on the resource/entry types listed above
+- Do not invent IDs — use IDs from available resources
 ', true, '2026-02-10T19:11:19.088528+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019bb553-e78d-7ce8-b02f-e1450a346d66', 'Profile', '2026-01-13T03:08:53.512903+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 
