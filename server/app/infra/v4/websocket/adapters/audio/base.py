@@ -27,13 +27,49 @@ class AudioEventEmitter(Protocol):
     directly, keeping the infra layer decoupled from the socket layer.
     """
 
+    # -- Assistant audio --
+
     async def on_audio_delta(self, group_id: str, audio: bytes) -> None:
         """Assistant audio chunk (PCM16 bytes)."""
+        ...
+
+    # -- Assistant transcript (text alongside audio) --
+
+    async def on_transcript_start(self, group_id: str, item_id: str) -> None:
+        """Assistant transcript started (new output item)."""
         ...
 
     async def on_transcript_delta(self, group_id: str, transcript: str) -> None:
         """Assistant transcript chunk."""
         ...
+
+    async def on_transcript_complete(
+        self, group_id: str, item_id: str, transcript: str
+    ) -> None:
+        """Assistant transcript finalized (full text)."""
+        ...
+
+    # -- Tool calls --
+
+    async def on_tool_call_start(
+        self, group_id: str, item_id: str, call_id: str, name: str
+    ) -> None:
+        """Tool call started (function_call output item added)."""
+        ...
+
+    async def on_tool_call_delta(
+        self, group_id: str, call_id: str, arguments_delta: str
+    ) -> None:
+        """Tool call arguments streaming chunk."""
+        ...
+
+    async def on_tool_call_complete(
+        self, group_id: str, call_id: str, name: str, arguments: str
+    ) -> None:
+        """Tool call arguments finalized."""
+        ...
+
+    # -- User speech --
 
     async def on_user_speech_start(self, group_id: str, item_id: str) -> None:
         """VAD detected user started speaking."""
@@ -50,6 +86,8 @@ class AudioEventEmitter(Protocol):
     ) -> None:
         """User speech finalized."""
         ...
+
+    # -- Lifecycle --
 
     async def on_error(self, group_id: str, error_message: str) -> None:
         """Adapter or provider error."""

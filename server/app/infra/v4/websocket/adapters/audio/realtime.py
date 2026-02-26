@@ -274,15 +274,22 @@ class RealtimeAudioAdapter(BaseAudioAdapter):
                 event = json.loads(message)
                 event_type = event.get("type", "")
 
-                # Log events for debugging (except frequent audio deltas)
-                if event_type != "response.audio.delta":
+                # Log events for debugging (except frequent audio/transcript deltas)
+                if event_type not in (
+                    "response.audio.delta",
+                    "response.audio_transcript.delta",
+                ):
                     logger.debug(f"Provider event: {event_type} - group_id={group_id}")
+
+                # -- Session lifecycle --
 
                 if event_type == "session.created":
                     logger.info(f"Session created - group_id={group_id}")
 
                 elif event_type == "session.updated":
                     logger.info(f"Session updated - group_id={group_id}")
+
+                # -- User speech --
 
                 elif event_type == "input_audio_buffer.speech_started":
                     item_id = event.get("item_id", f"user-{group_id}")
@@ -307,16 +314,62 @@ class RealtimeAudioAdapter(BaseAudioAdapter):
                         group_id, item_id, transcript
                     )
 
+                # -- Assistant output items --
+
+                elif event_type == "response.output_item.added":
+                    item = event.get("item", {})
+                    item_id = item.get("id", "")
+                    item_type = item.get("type", "")
+                    if item_type == "message":
+                        await self._emitter.on_transcript_start(group_id, item_id)
+                    elif item_type == "function_call":
+                        call_id = item.get("call_id", "")
+                        name = item.get("name", "")
+                        await self._emitter.on_tool_call_start(
+                            group_id, item_id, call_id, name
+                        )
+
+                # -- Assistant audio --
+
                 elif event_type == "response.audio.delta":
                     audio_b64 = event.get("delta", "")
                     if audio_b64:
                         audio_bytes = base64.b64decode(audio_b64)
                         await self._emitter.on_audio_delta(group_id, audio_bytes)
 
+                # -- Assistant transcript --
+
                 elif event_type == "response.audio_transcript.delta":
                     transcript = event.get("delta", "")
                     if transcript:
                         await self._emitter.on_transcript_delta(group_id, transcript)
+
+                elif event_type == "response.audio_transcript.done":
+                    item_id = event.get("item_id", "")
+                    transcript = event.get("transcript", "")
+                    await self._emitter.on_transcript_complete(
+                        group_id, item_id, transcript
+                    )
+
+                # -- Tool calls --
+
+                elif event_type == "response.function_call_arguments.delta":
+                    call_id = event.get("call_id", "")
+                    delta = event.get("delta", "")
+                    if delta:
+                        await self._emitter.on_tool_call_delta(
+                            group_id, call_id, delta
+                        )
+
+                elif event_type == "response.function_call_arguments.done":
+                    call_id = event.get("call_id", "")
+                    name = event.get("name", "")
+                    arguments = event.get("arguments", "")
+                    await self._emitter.on_tool_call_complete(
+                        group_id, call_id, name, arguments
+                    )
+
+                # -- Response lifecycle --
 
                 elif event_type == "response.done":
                     response = event.get("response", {})

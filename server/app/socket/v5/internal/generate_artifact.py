@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 import uuid
 from collections.abc import AsyncIterator
 from typing import Any, cast
@@ -25,6 +24,12 @@ from app.infra.v4.artifacts import (
 )
 from app.infra.v4.tools.tool_executor import execute_tool_call
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.tool_call_utils import (
+    build_tool_output_schemas,
+    extract_template_var,
+    parse_partial_json,
+    resolve_output_fields,
+)
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio
 from app.socket.v5.types import GenerateErrorApiRequest
@@ -95,81 +100,9 @@ class GenerateArtifactPayload(BaseModel):
     developer_instruction_templates: list[str] | None = None
 
 
-def _extract_template_var(template: str) -> str | None:
-    """Extract variable name from a Jinja template like '{{ content }}'."""
-    match = re.search(r"\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)", template)
-    return match.group(1) if match else None
-
-
-def _resolve_output_fields(
-    parsed_args: dict[str, Any] | None,
-    tool_name: str | None,
-    tool_output_schemas: dict[str, dict[str, str]],
-) -> dict[str, Any] | None:
-    """Resolve output schema fields from parsed tool arguments."""
-    if not parsed_args or not tool_name or tool_name not in tool_output_schemas:
-        return None
-    schema = tool_output_schemas[tool_name]
-    resolved = {
-        col: parsed_args[arg] for col, arg in schema.items() if arg in parsed_args
-    }
-    return resolved or None
-
-
-def _parse_partial_json(partial: str) -> dict[str, Any] | None:
-    """Parse partial JSON by closing open strings and structures.
-
-    Handles streaming tool call arguments that are incomplete JSON.
-    Returns the parsed dict if successful, None otherwise.
-    """
-    if not partial or not partial.strip():
-        return None
-
-    candidate = partial.rstrip()
-
-    # Try as-is first (might already be complete)
-    try:
-        result = json.loads(candidate)
-        return result if isinstance(result, dict) else None
-    except json.JSONDecodeError:
-        pass
-
-    # Walk the string tracking state to figure out what closings are needed
-    in_string = False
-    escape_next = False
-    open_stack: list[str] = []
-
-    for ch in candidate:
-        if escape_next:
-            escape_next = False
-            continue
-        if ch == "\\" and in_string:
-            escape_next = True
-            continue
-        if ch == '"':
-            in_string = not in_string
-            continue
-        if not in_string:
-            if ch == "{":
-                open_stack.append("}")
-            elif ch == "[":
-                open_stack.append("]")
-            elif ch in ("}", "]") and open_stack:
-                open_stack.pop()
-
-    # Close open string if needed
-    if in_string:
-        candidate += '"'
-
-    # Close open structures
-    for closer in reversed(open_stack):
-        candidate += closer
-
-    try:
-        result = json.loads(candidate)
-        return result if isinstance(result, dict) else None
-    except json.JSONDecodeError:
-        return None
+_extract_template_var = extract_template_var
+_resolve_output_fields = resolve_output_fields
+_parse_partial_json = parse_partial_json
 
 
 def _parse_bool(val: str | bool | None) -> bool | None:
@@ -633,6 +566,7 @@ async def _generate_artifact_impl(
         if data.tools:
             openai_tools = convert_tools_to_openai_format(data.tools)
             responses_tools = convert_tools_to_responses_format(data.tools)
+            tool_output_schemas = build_tool_output_schemas(data.tools)
             for tool_def in data.tools:
                 if not isinstance(tool_def, dict):
                     continue
@@ -660,20 +594,6 @@ async def _generate_artifact_impl(
                         tool_artifact_type_by_name[t_name] = t_artifact
                     if t_createable is not None:
                         tool_createable_by_name[t_name] = bool(t_createable)
-                t_args_outputs = tool_def.get("_args_outputs")
-                if t_name and isinstance(t_args_outputs, list):
-                    resolved: dict[str, str] = {}
-                    for ao in t_args_outputs:
-                        if not isinstance(ao, dict):
-                            continue
-                        col = ao.get("name")
-                        template = ao.get("template")
-                        if col and template:
-                            arg_name = _extract_template_var(template)
-                            if arg_name:
-                                resolved[col] = arg_name
-                    if resolved:
-                        tool_output_schemas[t_name] = resolved
 
         tool_choice = model_config.tool_choice or "auto"
         await _emit_modality_event(
@@ -791,7 +711,11 @@ async def _generate_artifact_impl(
                 run_id=data.run_id,
                 group_id=group_id,
                 conversation_id=metadata.get("conversation_id"),
+                artifact_type=data.artifact_type,
+                resource_type=resource_type,
+                metadata=metadata,
             )
+            session.tool_output_schemas = tool_output_schemas
             adapter = get_audio_adapter()
 
             try:

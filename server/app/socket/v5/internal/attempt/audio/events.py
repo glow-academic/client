@@ -7,18 +7,27 @@ This module provides:
 The adapter (realtime.py) receives an AudioEventEmitter via its constructor,
 keeping the infra layer decoupled from the socket layer.
 
-Event naming convention: generate_audio_{sub}_{phase}
-  - generate_audio_delta                — assistant audio chunk
-  - generate_audio_error                — adapter or provider error
-  - generate_audio_transcript_delta     — assistant transcript chunk
-  - generate_audio_user_speech_start    — VAD detected user speaking
-  - generate_audio_user_speech_delta    — user speech transcript chunk
-  - generate_audio_user_speech_complete — user speech finalized
-  - generate_audio_response_done        — provider response completed
+Assistant transcript and tool call events emit canonical generate_text_* and
+generate_call_* events (same shape as generate_artifact.py) so they flow
+through the same downstream handlers. The session store provides the generation
+context (sid, artifact_type, tool_output_schemas, etc.).
+
+Events emitted:
+  - generate_audio_delta                    — assistant audio chunk (audio-only)
+  - generate_text_start/progress/complete   — assistant transcript (canonical text events)
+  - generate_call_start/progress/complete   — tool calls (canonical call events)
+  - generate_audio_user_speech_start        — VAD detected user speaking
+  - generate_audio_user_speech_delta        — user speech transcript chunk
+  - generate_audio_user_speech_complete     — user speech finalized
+  - generate_audio_error                    — adapter or provider error
+  - generate_audio_response_done            — provider response completed
 """
 
+import json
 from typing import Any
 
+from app.infra.v4.websocket.session_store import get_session_by_group_id
+from app.infra.v4.websocket.tool_call_utils import parse_partial_json, resolve_output_fields
 from app.main import get_internal_sio
 
 
@@ -32,6 +41,31 @@ class InternalBusAudioEmitter:
     def __init__(self) -> None:
         self._bus = get_internal_sio()
 
+    def _session_context(self, group_id: str) -> dict[str, Any]:
+        """Build canonical generate_text_* base payload from session store."""
+        session = get_session_by_group_id(group_id)
+        if not session:
+            return {
+                "modality": "audio",
+                "sid": "",
+                "artifact_type": "",
+                "resource_type": "",
+                "run_id": "",
+                "group_id": group_id,
+                "metadata": {},
+            }
+        return {
+            "modality": "audio",
+            "sid": session.sid,
+            "artifact_type": session.artifact_type or "",
+            "resource_type": session.resource_type or "",
+            "run_id": session.run_id,
+            "group_id": group_id,
+            "metadata": session.metadata,
+        }
+
+    # -- Assistant audio --
+
     async def on_audio_delta(self, group_id: str, audio: bytes) -> None:
         """Assistant audio chunk (PCM16 bytes)."""
         await self._bus.emit(
@@ -39,12 +73,139 @@ class InternalBusAudioEmitter:
             {"group_id": group_id, "audio": audio},
         )
 
-    async def on_transcript_delta(self, group_id: str, transcript: str) -> None:
-        """Assistant transcript chunk (for display alongside audio)."""
+    # -- Assistant transcript (emits canonical generate_text_* events) --
+
+    async def on_transcript_start(self, group_id: str, item_id: str) -> None:
+        """Assistant transcript started — emits generate_text_start."""
+        ctx = self._session_context(group_id)
         await self._bus.emit(
-            "generate_audio_transcript_delta",
-            {"group_id": group_id, "transcript": transcript},
+            "generate_text_start",
+            {
+                **ctx,
+                "type": "start",
+                "event_type": "text_start",
+            },
         )
+
+    async def on_transcript_delta(self, group_id: str, transcript: str) -> None:
+        """Assistant transcript chunk — emits generate_text_progress."""
+        ctx = self._session_context(group_id)
+        await self._bus.emit(
+            "generate_text_progress",
+            {
+                **ctx,
+                "type": "progress",
+                "event_type": "text_delta",
+                "delta": transcript,
+                "accumulated_content": "",
+            },
+        )
+
+    async def on_transcript_complete(
+        self, group_id: str, item_id: str, transcript: str
+    ) -> None:
+        """Assistant transcript finalized — emits generate_text_complete."""
+        ctx = self._session_context(group_id)
+        await self._bus.emit(
+            "generate_text_complete",
+            {
+                **ctx,
+                "type": "complete",
+                "event_type": "text_complete",
+                "text": transcript,
+            },
+        )
+
+    # -- Tool calls (emits canonical generate_call_* events) --
+
+    async def on_tool_call_start(
+        self, group_id: str, item_id: str, call_id: str, name: str
+    ) -> None:
+        """Tool call started — emits generate_call_start."""
+        session = get_session_by_group_id(group_id)
+        if session:
+            session.tool_call_states[call_id] = {
+                "call_id": call_id,
+                "tool_name": name,
+                "arguments": "",
+            }
+        ctx = self._session_context(group_id)
+        await self._bus.emit(
+            "generate_call_start",
+            {
+                **ctx,
+                "modality": "call",
+                "type": "start",
+                "event_type": "tool_call_start",
+                "tool_call_id": call_id,
+            },
+        )
+
+    async def on_tool_call_delta(
+        self, group_id: str, call_id: str, arguments_delta: str
+    ) -> None:
+        """Tool call arguments streaming — emits generate_call_progress."""
+        session = get_session_by_group_id(group_id)
+        st: dict[str, Any] = {}
+        parsed_args: dict[str, Any] | None = None
+        resolved_fields: dict[str, Any] | None = None
+        if session:
+            st = session.tool_call_states.get(call_id, {})
+            st["arguments"] = st.get("arguments", "") + arguments_delta
+            parsed_args = parse_partial_json(st["arguments"])
+            resolved_fields = resolve_output_fields(
+                parsed_args, st.get("tool_name"), session.tool_output_schemas
+            )
+        ctx = self._session_context(group_id)
+        await self._bus.emit(
+            "generate_call_progress",
+            {
+                **ctx,
+                "modality": "call",
+                "type": "progress",
+                "event_type": "tool_call_delta",
+                "tool_call_id": call_id,
+                "delta": arguments_delta,
+                "tool_name": st.get("tool_name"),
+                "arguments_delta": arguments_delta,
+                "arguments": parsed_args,
+                "resolved_fields": resolved_fields,
+            },
+        )
+
+    async def on_tool_call_complete(
+        self, group_id: str, call_id: str, name: str, arguments: str
+    ) -> None:
+        """Tool call arguments finalized — emits generate_call_complete."""
+        session = get_session_by_group_id(group_id)
+        try:
+            arguments_dict = json.loads(arguments) if arguments else {}
+        except json.JSONDecodeError:
+            arguments_dict = {}
+        resolved_fields: dict[str, Any] | None = None
+        if session:
+            resolved_fields = resolve_output_fields(
+                arguments_dict, name, session.tool_output_schemas
+            )
+            session.tool_call_states.pop(call_id, None)
+        ctx = self._session_context(group_id)
+        await self._bus.emit(
+            "generate_call_complete",
+            {
+                **ctx,
+                "modality": "call",
+                "type": "complete",
+                "event_type": "tool_call_complete",
+                "tool_call_id": call_id,
+                "tool_name": name,
+                "arguments": arguments_dict,
+                "arguments_delta": arguments,
+                "call_id": call_id,
+                "resolved_fields": resolved_fields,
+            },
+        )
+
+    # -- User speech --
 
     async def on_user_speech_start(self, group_id: str, item_id: str) -> None:
         """VAD detected user started speaking."""
@@ -70,6 +231,8 @@ class InternalBusAudioEmitter:
             "generate_audio_user_speech_complete",
             {"group_id": group_id, "item_id": item_id, "transcript": transcript},
         )
+
+    # -- Lifecycle --
 
     async def on_error(self, group_id: str, error_message: str) -> None:
         """Adapter or provider error."""

@@ -26,12 +26,24 @@ class AudioSession:
         run_id: str,
         group_id: str,
         conversation_id: str | None = None,
+        artifact_type: str | None = None,
+        resource_type: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ):
         self.sid = sid
         self.chat_id = chat_id
         self.run_id = run_id
         self.group_id = group_id
         self.conversation_id = conversation_id
+        # Generation context — set at session creation so the emitter can
+        # build canonical generate_text_*/generate_call_* payloads without extra lookups.
+        self.artifact_type = artifact_type
+        self.resource_type = resource_type
+        self.metadata = metadata or {}
+        # Tool call context — schemas for resolving output fields, state for
+        # accumulating streaming arguments (same logic as generate_artifact.py).
+        self.tool_output_schemas: dict[str, dict[str, str]] = {}
+        self.tool_call_states: dict[str, dict[str, Any]] = {}
         self.inbound_queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue(maxsize=500)
         self.outbound_queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
         self.last_activity: float = time.monotonic()
@@ -47,9 +59,17 @@ def create_session(
     run_id: str,
     group_id: str,
     conversation_id: str | None = None,
+    artifact_type: str | None = None,
+    resource_type: str | None = None,
+    metadata: dict[str, Any] | None = None,
 ) -> AudioSession:
     """Create a new audio session, keyed by chat_id, run_id, and group_id."""
-    session = AudioSession(sid, chat_id, run_id, group_id, conversation_id)
+    session = AudioSession(
+        sid, chat_id, run_id, group_id, conversation_id,
+        artifact_type=artifact_type,
+        resource_type=resource_type,
+        metadata=metadata,
+    )
     _session_store[chat_id] = session
     _session_store[run_id] = session
     _session_store[group_id] = session
