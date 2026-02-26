@@ -782,8 +782,16 @@ async def _generate_artifact_impl(
             voice = model_config.voice or "alloy"
             group_id = data.group_id or str(uuid.uuid4())
 
-            # Create session -- chat_id stored for domain translator lookups
-            session = create_session(sid, group_id, data.chat_id or group_id)
+            # Create session -- keyed by chat_id, run_id, group_id
+            chat_id = data.chat_id or group_id
+            metadata = data.metadata or {}
+            session = create_session(
+                sid=sid,
+                chat_id=chat_id,
+                run_id=data.run_id,
+                group_id=group_id,
+                conversation_id=metadata.get("conversation_id"),
+            )
             adapter = get_audio_adapter()
 
             try:

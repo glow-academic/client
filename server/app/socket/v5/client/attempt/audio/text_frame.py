@@ -6,14 +6,17 @@ for injection into a running voice session.
 
 from typing import Any
 
-from app.infra.v4.websocket.session_store import get_session_by_sid
+from app.infra.v4.websocket.session_store import get_session_by_chat_id
 from app.main import sio
 
 
 @sio.event  # type: ignore
 async def attempt_text_frame(sid: str, data: dict[str, Any]) -> None:
     """Push text message into session inbound queue."""
-    session = get_session_by_sid(sid)
+    chat_id = data.get("chat_id")
+    if not chat_id:
+        return
+    session = get_session_by_chat_id(chat_id)
     if not session:
         return
     message = data.get("message")

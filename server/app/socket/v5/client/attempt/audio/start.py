@@ -91,7 +91,15 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
                 run_id,
             )
 
-        # Step 3: Emit to generate pipeline with modality=audio
+            # Step 3: Create conversations_entry
+            conversation_id = await conn.fetchval(
+                """INSERT INTO conversations_entry (chat_id, run_id)
+                VALUES ($1, $2) RETURNING id""",
+                chat_id,
+                run_id,
+            )
+
+        # Step 4: Emit to generate pipeline with modality=audio
         resource_types = ["contents", "hints"]
 
         await internal_sio.emit(
@@ -109,6 +117,7 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
                 metadata={
                     "attempt_id": str(attempt_id),
                     "chat_id": str(chat_id),
+                    "conversation_id": str(conversation_id),
                 },
             ).model_dump(mode="json"),
         )

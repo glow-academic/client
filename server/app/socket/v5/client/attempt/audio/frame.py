@@ -8,14 +8,17 @@ import asyncio
 import time
 from typing import Any
 
-from app.infra.v4.websocket.session_store import get_session_by_sid
+from app.infra.v4.websocket.session_store import get_session_by_chat_id
 from app.main import sio
 
 
 @sio.event  # type: ignore
 async def attempt_audio_frame(sid: str, data: dict[str, Any]) -> None:
     """Push audio frame into session inbound queue."""
-    session = get_session_by_sid(sid)
+    chat_id = data.get("chat_id")
+    if not chat_id:
+        return
+    session = get_session_by_chat_id(chat_id)
     if not session:
         return
     audio_data = data.get("audio")

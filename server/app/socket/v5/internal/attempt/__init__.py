@@ -21,4 +21,7 @@ from . import (
     next,  # noqa: F401 — registers attempt_next internal event
     proceed,  # noqa: F401 — registers attempt_proceed internal event
     start,  # noqa: F401 — registers attempt_start internal event
+    user_complete,  # noqa: F401 — registers attempt_user_received_complete
+    user_progress,  # noqa: F401 — registers attempt_user_received_progress
+    user_start,  # noqa: F401 — registers attempt_user_received_start
 )

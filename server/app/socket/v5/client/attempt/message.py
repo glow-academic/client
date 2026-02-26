@@ -5,10 +5,13 @@ Handles: attempt_message — send a user message in an attempt chat.
 Flow:
 1. Resolve group_id from attempt_chat_entry
 2. Create run + profile link (config created by internal/generate.py)
-3. Create user message (messages_entry + attempt_message_entry + attempt_content_entry)
-4. Create assistant placeholder (messages_entry + attempt_message_entry)
-5. Emit attempt_user_complete + attempt_assistant_start
-6. Emit generate with pre-created run_id/group_id
+3. Emit attempt_user_start (before DB write)
+4. Create user message (progress not needed — full text known upfront)
+5. Emit attempt_user_complete (after DB write)
+6. Create assistant placeholder + emit attempt_assistant_start
+7. Emit generate with pre-created run_id/group_id
+
+All attempt_* emits go to internal bus → server/ handlers → client socket.
 """
 
 import uuid
@@ -23,6 +26,7 @@ from app.socket.v5.internal.attempt.types import (
     AttemptAssistantStartData,
     AttemptErrorData,
     AttemptUserCompleteData,
+    AttemptUserStartData,
     GenerateRequestData,
 )
 from app.utils.logging.db_logger import get_logger
@@ -106,7 +110,18 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
                 run_id,
             )
 
-            # Step 3: Create user message
+            # Step 3: Emit user_start (before DB write)
+            await internal_sio.emit(
+                "attempt_user_start",
+                AttemptUserStartData(
+                    sid=sid,
+                    chat_id=str(chat_id),
+                    item_id="",  # No item_id for text messages
+                ).model_dump(mode="json"),
+            )
+
+            # Step 4: Create user message
+            # Note: user_progress is not needed for text — full message is known upfront
             created_at = await conn.fetchval("SELECT NOW()")
 
             user_message_id = await conn.fetchval(
@@ -138,7 +153,7 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
                 STUDENT_PERSONA_ID,
             )
 
-            # Step 4: Create assistant placeholder (messages_entry + attempt_message_entry only)
+            # Step 5: Create assistant placeholder (messages_entry + attempt_message_entry only)
             assistant_message_id = await conn.fetchval(
                 """INSERT INTO messages_entry (run_id, role, created_at, updated_at)
                 VALUES ($1, 'assistant'::message_type, $2 + interval '1 millisecond', $2 + interval '1 millisecond')
@@ -156,7 +171,7 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
 
         created_at_str = created_at.isoformat() if created_at else ""
 
-        # Step 5: Emit sync events
+        # Step 5: Emit user_complete (after DB write)
         await internal_sio.emit(
             "attempt_user_complete",
             AttemptUserCompleteData(
@@ -169,6 +184,7 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
             ).model_dump(mode="json"),
         )
 
+        # Step 6: Emit assistant_start
         await internal_sio.emit(
             "attempt_assistant_start",
             AttemptAssistantStartData(
@@ -179,7 +195,7 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
             ).model_dump(mode="json"),
         )
 
-        # Step 6: Emit to generate pipeline (pre-created run_id skips prepare)
+        # Step 7: Emit to generate pipeline (pre-created run_id skips prepare)
         resource_types = payload.resource_types or ["contents", "hints"]
 
         await internal_sio.emit(

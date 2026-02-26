@@ -171,18 +171,21 @@ export function useAttemptVoice({
 
   const sendFrame = useCallback(
     (audio: ArrayBuffer) => {
-      if (!socket) return;
-      socket.emit("attempt_audio_frame", { audio });
+      if (!socket || !chatIdRef.current) return;
+      socket.emit("attempt_audio_frame", { chat_id: chatIdRef.current, audio });
     },
-    [socket],
+    [socket, chatIdRef],
   );
 
   const setMicMute = useCallback(
     (muted: boolean) => {
-      if (!socket) return;
-      socket.emit("attempt_mic_mute", { muted });
+      if (!socket || !chatIdRef.current) return;
+      socket.emit("attempt_audio_mute", {
+        chat_id: chatIdRef.current,
+        muted,
+      });
     },
-    [socket],
+    [socket, chatIdRef],
   );
 
   return {

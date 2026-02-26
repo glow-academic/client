@@ -104,18 +104,55 @@ class AttemptJoinedData(BaseModel):
     success: bool = True
 
 
-# --- User ---
+# --- User (received — pre-DB, emitted by client/audio handlers) ---
+class AttemptUserReceivedStartData(BaseModel):
+    """A user message is starting. DB: creates message shell."""
+
+    sid: str
+    chat_id: str
+    run_id: str
+    profile_id: str
+    item_id: str | None = None  # Audio only (VAD item)
+    rooms: list[str] | None = None
+
+
+class AttemptUserReceivedProgressData(BaseModel):
+    """User message streaming (audio transcription). No DB write."""
+
+    sid: str
+    chat_id: str
+    item_id: str | None = None
+    transcript: str = ""
+    rooms: list[str] | None = None
+
+
+class AttemptUserReceivedCompleteData(BaseModel):
+    """User message finalized. DB: writes content + marks complete."""
+
+    sid: str
+    chat_id: str
+    run_id: str
+    content: str
+    item_id: str | None = None
+    rooms: list[str] | None = None
+
+
+# --- User (confirmed — post-DB, emitted to server/ layer) ---
 class AttemptUserStartData(BaseModel):
     sid: str
     chat_id: str
-    item_id: str
+    message_id: str
+    created_at: str
+    item_id: str | None = None
+    rooms: list[str] | None = None
 
 
 class AttemptUserProgressData(BaseModel):
     sid: str
     chat_id: str
-    item_id: str
-    transcript: str
+    item_id: str | None = None
+    transcript: str = ""
+    rooms: list[str] | None = None
 
 
 class AttemptUserCompleteData(BaseModel):
