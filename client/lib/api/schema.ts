@@ -28436,6 +28436,8 @@ export interface components {
              * Format: uuid
              */
             chat_entry_id: string;
+            /** Attempt Id */
+            attempt_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
         };

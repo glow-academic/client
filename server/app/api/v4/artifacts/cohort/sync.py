@@ -145,27 +145,39 @@ async def sync_cohort_entries(
 
     async def _fetch_scenario_rubrics() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_scenario_rubrics_internal(c, all_scenario_rubric_ids, bypass_cache=True)
+            return await get_scenario_rubrics_internal(
+                c, all_scenario_rubric_ids, bypass_cache=True
+            )
 
     async def _fetch_scenario_flags() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_scenario_flags_internal(c, all_scenario_flag_ids, bypass_cache=True)
+            return await get_scenario_flags_internal(
+                c, all_scenario_flag_ids, bypass_cache=True
+            )
 
     async def _fetch_scenario_positions() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_scenario_positions_internal(c, all_scenario_position_ids, bypass_cache=True)
+            return await get_scenario_positions_internal(
+                c, all_scenario_position_ids, bypass_cache=True
+            )
 
     async def _fetch_scenario_time_limits() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_scenario_time_limits_internal(c, all_scenario_time_limit_ids, bypass_cache=True)
+            return await get_scenario_time_limits_internal(
+                c, all_scenario_time_limit_ids, bypass_cache=True
+            )
 
     async def _fetch_sim_positions() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_simulation_positions_internal(c, simulation_position_ids, bypass_cache=True)
+            return await get_simulation_positions_internal(
+                c, simulation_position_ids, bypass_cache=True
+            )
 
     async def _fetch_sim_availability() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_simulation_availability_internal(c, simulation_availability_ids, bypass_cache=True)
+            return await get_simulation_availability_internal(
+                c, simulation_availability_ids, bypass_cache=True
+            )
 
     gather_results = await asyncio.gather(
         _fetch_scenarios(),
@@ -196,7 +208,9 @@ async def sync_cohort_entries(
     standards: list[Any] = []
     if all_rubric_ids:
         async with pool.acquire() as rub_conn:
-            rubrics = await get_rubrics_internal(rub_conn, all_rubric_ids, bypass_cache=True)
+            rubrics = await get_rubrics_internal(
+                rub_conn, all_rubric_ids, bypass_cache=True
+            )
 
         # Collect all standard_group_ids from rubrics
         all_standard_group_ids: list[UUID] = []
@@ -291,9 +305,17 @@ async def sync_cohort_entries(
         for a in sim_availability:
             if a.simulation_id and UUID(str(a.simulation_id)) == sim.simulation_id:
                 if a.type == "start":
-                    start_time = a.time if isinstance(a.time, datetime) else (datetime.fromisoformat(a.time) if a.time else None)
+                    start_time = (
+                        a.time
+                        if isinstance(a.time, datetime)
+                        else (datetime.fromisoformat(a.time) if a.time else None)
+                    )
                 elif a.type == "end":
-                    end_time = a.time if isinstance(a.time, datetime) else (datetime.fromisoformat(a.time) if a.time else None)
+                    end_time = (
+                        a.time
+                        if isinstance(a.time, datetime)
+                        else (datetime.fromisoformat(a.time) if a.time else None)
+                    )
 
         # Resolve position and availability resource IDs for this simulation
         sim_pos_resource_ids = [

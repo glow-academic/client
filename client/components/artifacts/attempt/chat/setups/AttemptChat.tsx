@@ -72,16 +72,9 @@ type AttemptResources = {
   standards?: AttemptResourceMap<components["schemas"]["StandardEntry"]>;
 };
 
-type AttemptViews = {
-  simulation_attempts?: components["schemas"]["AttemptViewItem"][] | null;
-  attempt_chat?: components["schemas"]["ChatData"][] | null;
-  simulation_messages?: components["schemas"]["MessageData"][] | null;
-};
-
 /** Attempt data from server - strongly typed from OpenAPI */
 type AttemptData = OutputOf<"/api/v4/artifacts/attempt/get", "post"> & {
   resources?: AttemptResources;
-  views?: AttemptViews;
 };
 
 /** Message data from OpenAPI schema - used for optimistic messages */
@@ -165,8 +158,8 @@ export function AttemptChat({
   );
 
   const messagesByChat = useMemo(
-    () => groupMessagesByChat(attemptData?.views?.simulation_messages),
-    [attemptData?.views?.simulation_messages, groupMessagesByChat]
+    () => groupMessagesByChat(attemptData?.entries?.attempt_message),
+    [attemptData?.entries?.attempt_message, groupMessagesByChat]
   );
 
   // Refs
@@ -288,12 +281,12 @@ export function AttemptChat({
       if (!hasInitializedFromServerRef.current) {
         setCurrentChatIndex(initialAttemptData.current_chat_index ?? 0);
         hasInitializedFromServerRef.current = true;
-      } else if (initialAttemptData.views?.attempt_chat) {
-        const currentChatId = attemptData?.views?.attempt_chat?.[currentChatIndex]?.id;
-        const currentChatStillExists = initialAttemptData.views.attempt_chat.some(
+      } else if (initialAttemptData.entries?.attempt_chat) {
+        const currentChatId = attemptData?.entries?.attempt_chat?.[currentChatIndex]?.id;
+        const currentChatStillExists = initialAttemptData.entries?.attempt_chat.some(
           (c) => c.id === currentChatId
         );
-        if (!currentChatStillExists && initialAttemptData.views.attempt_chat.length > 0) {
+        if (!currentChatStillExists && initialAttemptData.entries?.attempt_chat.length > 0) {
           setCurrentChatIndex(initialAttemptData.current_chat_index ?? 0);
         }
       }
@@ -302,9 +295,9 @@ export function AttemptChat({
   }, [attemptData, currentChatIndex, initialAttemptData, groupMessagesByChat]);
 
   useEffect(() => {
-    if (!pendingNextChatIdRef.current || !attemptData?.views?.attempt_chat) return;
+    if (!pendingNextChatIdRef.current || !attemptData?.entries?.attempt_chat) return;
     const nextChatId = pendingNextChatIdRef.current;
-    const sortedChats = [...attemptData.views.attempt_chat]
+    const sortedChats = [...attemptData.entries?.attempt_chat]
       .filter((chat): chat is NonNullable<typeof chat> => chat !== null)
       .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
     const nextIndex = sortedChats.findIndex((c) => c.id === nextChatId);
@@ -319,7 +312,7 @@ export function AttemptChat({
   // ---------------------------------------------------------------------------
 
   const currentChat = useMemo(() => {
-    const chats = attemptData?.views?.attempt_chat ?? [];
+    const chats = attemptData?.entries?.attempt_chat ?? [];
     if (chats.length === 0) return null;
     return chats[currentChatIndex] || chats[0] || null;
   }, [attemptData, currentChatIndex]);
@@ -426,7 +419,7 @@ export function AttemptChat({
 
   const chats = useMemo(
     () =>
-      attemptData?.views?.attempt_chat?.filter(
+      attemptData?.entries?.attempt_chat?.filter(
         (chat): chat is NonNullable<typeof chat> => chat !== null
       ) || [],
     [attemptData]
@@ -595,7 +588,7 @@ export function AttemptChat({
 
   // Auto-show grades/rubric or responses when all chats are completed
   useEffect(() => {
-    const chats = attemptData?.views?.attempt_chat ?? [];
+    const chats = attemptData?.entries?.attempt_chat ?? [];
 
     if (showResults && chats.length > 0 && !userHasManuallyToggledGrades) {
       const allCompleted = chats.every((chat) => chat.completed);
@@ -611,7 +604,7 @@ export function AttemptChat({
     }
   }, [
     attemptData?.show_results,
-    attemptData?.views?.attempt_chat,
+    attemptData?.entries?.attempt_chat,
     userHasManuallyToggledGrades,
     attemptData,
     currentChatIndex,
@@ -657,7 +650,7 @@ export function AttemptChat({
 
   const chatAreaViewMode: ChatAreaViewMode = useMemo(() => {
     if (showGrades) return "rubric";
-    const currentChatData = attemptData?.views?.attempt_chat?.[currentChatIndex];
+    const currentChatData = attemptData?.entries?.attempt_chat?.[currentChatIndex];
     const hasVideo = !!resolvedChat?.video?.upload_id;
     const hasVideoQuestions = resolvedChat?.questions && resolvedChat.questions.length > 0;
 
@@ -861,7 +854,7 @@ export function AttemptChat({
   const chatHeaderProps: ChatHeaderProps = useMemo(() => {
     const chatDocuments = resolvedChat?.documents || [];
     const hasContent = chatDocuments.length > 0;
-    const currentChatData = attemptData?.views?.attempt_chat?.[currentChatIndex];
+    const currentChatData = attemptData?.entries?.attempt_chat?.[currentChatIndex];
     const hasVideoQuestions = (resolvedChat?.questions?.length ?? 0) > 0;
     return {
       timer: attemptData?.timer ? displayTimer : undefined,
@@ -883,7 +876,7 @@ export function AttemptChat({
       attempt: attemptData?.attempt || null,
       simulation: attemptData?.simulation || null,
       current_dynamic_rubric: (() => {
-        const chatData = attemptData?.views?.attempt_chat?.[currentChatIndex];
+        const chatData = attemptData?.entries?.attempt_chat?.[currentChatIndex];
         const grade = chatData?.grade;
         if (!grade || !chatData?.id) return null;
         return {
@@ -895,7 +888,7 @@ export function AttemptChat({
       })(),
       expected_chat_count: attemptData?.expected_chat_count || 1,
       chats:
-        attemptData?.views?.attempt_chat?.map((c) => ({
+        attemptData?.entries?.attempt_chat?.map((c) => ({
           id: c.id || "",
           completed: c.completed ?? null,
         })) || [],
@@ -920,7 +913,7 @@ export function AttemptChat({
   ]);
 
   const chatAreaProps = useMemo(() => {
-    const currentChatData = attemptData?.views?.attempt_chat?.[currentChatIndex];
+    const currentChatData = attemptData?.entries?.attempt_chat?.[currentChatIndex];
     const resolvedMessages =
       (currentChat?.id ? messagesByChat[String(currentChat.id)] : null) || [];
 
@@ -1020,7 +1013,7 @@ export function AttemptChat({
   const inputAreaProps = useMemo(() => {
     const textEnabled = scenario?.text_enabled !== false;
     const audioEnabled = scenario?.audio_enabled === true;
-    const currentChatData = attemptData?.views?.attempt_chat?.[currentChatIndex];
+    const currentChatData = attemptData?.entries?.attempt_chat?.[currentChatIndex];
     const hasVideoQuestions =
       resolvedChat?.questions && resolvedChat.questions.length > 0;
 

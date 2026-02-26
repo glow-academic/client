@@ -130,6 +130,14 @@ description_agg AS (
     WHERE tbdc.active = true
     GROUP BY tbdc.chat_id
 ),
+persona_agg AS (
+    SELECT
+        tbpc.chat_id,
+        ARRAY_AGG(DISTINCT tbpc.personas_id ORDER BY tbpc.personas_id) AS persona_ids
+    FROM chat_personas_connection tbpc
+    WHERE tbpc.active = true
+    GROUP BY tbpc.chat_id
+),
 -- Scenario flags: resolved from scenario_flags_junction via scenario_scenarios_junction.
 -- Each bundle has one scenario (via chat_scenarios_connection);
 -- we resolve scenario_artifact via scenario_scenarios_junction
@@ -178,6 +186,7 @@ SELECT
     COALESCE(flg.flag_ids, ARRAY[]::uuid[]) AS flag_ids,
     COALESCE(nm.name_ids, ARRAY[]::uuid[]) AS name_ids,
     COALESCE(dsc.description_ids, ARRAY[]::uuid[]) AS description_ids,
+    COALESCE(per.persona_ids, ARRAY[]::uuid[]) AS persona_ids,
 
     -- Scenario flags (resolved from scenario_flags_junction — fixed booleans)
     COALESCE(fp.video_enabled, false) AS video_enabled,
@@ -206,6 +215,7 @@ LEFT JOIN objective_agg obj ON obj.chat_id = tbe.id
 LEFT JOIN flag_agg flg ON flg.chat_id = tbe.id
 LEFT JOIN name_agg nm ON nm.chat_id = tbe.id
 LEFT JOIN description_agg dsc ON dsc.chat_id = tbe.id
+LEFT JOIN persona_agg per ON per.chat_id = tbe.id
 LEFT JOIN flag_pivot fp ON fp.chat_id = tbe.id
 WHERE tbe.active = true
 WITH NO DATA;

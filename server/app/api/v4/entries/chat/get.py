@@ -35,7 +35,7 @@ class ChatItem(BaseModel):
     department_id: UUID | None = None
     simulation_id: UUID
     scenario_id: UUID | None = None
-    user_persona_id: UUID | None = None
+    persona_ids: list[UUID] | None = None
     rubric_id: UUID | None = None
 
     # Grade measures (raw values — consumers compute grade_percent)
@@ -81,8 +81,8 @@ class ChatItem(BaseModel):
 
     @property
     def persona_id(self) -> UUID | None:
-        """Alias for user_persona_id (compat with old *FactsItem types)."""
-        return self.user_persona_id
+        """First persona_id for compat with old *FactsItem types."""
+        return self.persona_ids[0] if self.persona_ids else None
 
     @property
     def time_taken_seconds(self) -> int | None:
@@ -264,7 +264,7 @@ async def get_chats_internal(
                     department_id=item.department_id,
                     simulation_id=item.simulation_id,
                     scenario_id=item.scenario_id,
-                    user_persona_id=item.user_persona_id,
+                    persona_ids=list(item.persona_ids) if item.persona_ids else None,
                     rubric_id=item.rubric_id,
                     grade_score=item.grade_score,
                     grade_total_points=item.grade_total_points,

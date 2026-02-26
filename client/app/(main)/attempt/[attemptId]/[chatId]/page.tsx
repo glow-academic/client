@@ -26,6 +26,7 @@ type PatchChatDraftOut = OutputOf<
 
 const getChatBundle = async (
   bundleId: string,
+  attemptId: string,
   draftId: string | null,
 ): Promise<GetChatBundleOut> => {
   return api.post(
@@ -33,6 +34,7 @@ const getChatBundle = async (
     {
       body: {
         chat_entry_id: bundleId,
+        attempt_id: attemptId,
         draft_id: draftId,
       },
     },
@@ -76,7 +78,7 @@ export default async function ChatPage({
         ? (rawDraftId[0] ?? null)
         : null;
 
-  const bundleData = await getChatBundle(chatId, draftId);
+  const bundleData = await getChatBundle(chatId, attemptId, draftId);
 
   return (
     <ChatBundle

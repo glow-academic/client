@@ -93,7 +93,6 @@ async def get_training_view_internal(
         persona_ids=list(row.persona_ids or []),
         document_ids=list(row.document_ids or []),
         parameter_field_ids=list(row.parameter_field_ids or []),
-        parameter_ids=list(row.parameter_ids or []),
         question_ids=list(row.question_ids or []),
         option_ids=list(row.option_ids or []),
         video_ids=list(row.video_ids or []),

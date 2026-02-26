@@ -29,7 +29,10 @@ async def _attempt_use_previous_impl(sid: str, data: AttemptUsePreviousPayload) 
         attempt_id = uuid.UUID(str(data.attempt_id))
 
         async with get_db_connection() as conn:
-            for _chat_entry_id_str, attempt_chat_id_str in data.previous_chat_map.items():
+            for (
+                _chat_entry_id_str,
+                attempt_chat_id_str,
+            ) in data.previous_chat_map.items():
                 if not attempt_chat_id_str:
                     continue
                 try:

@@ -273,6 +273,7 @@ class GetChatRequest(BaseModel):
     """Client API request for one chat bundle customization payload."""
 
     chat_entry_id: UUID
+    attempt_id: UUID | None = None
     draft_id: UUID | None = None
 
 

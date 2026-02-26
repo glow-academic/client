@@ -272,6 +272,7 @@ async def get_chat_internal(
     pool: asyncpg.Pool,
     profile_id: UUID,
     chat_entry_id: UUID,
+    attempt_id: UUID | None = None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> ChatInternalData:
@@ -287,7 +288,23 @@ async def get_chat_internal(
     if not view_data.chat_entry_id:
         raise HTTPException(status_code=404, detail="Chat bundle not found")
 
-    if not view_data.profile_has_access:
+    # Access check: if attempt_id provided, verify profile owns the attempt
+    if attempt_id:
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """SELECT 1 FROM attempt_mv mv
+                   JOIN profile_profiles_junction ppj
+                     ON ppj.profiles_id = mv.profile_id AND ppj.active = true
+                   WHERE mv.attempt_id = $1 AND ppj.profile_id = $2""",
+                attempt_id,
+                profile_id,
+            )
+            if not row:
+                raise HTTPException(
+                    status_code=403,
+                    detail="You do not have access to this chat bundle.",
+                )
+    elif not view_data.profile_has_access:
         raise HTTPException(
             status_code=403,
             detail="You do not have access to this chat bundle.",
@@ -602,6 +619,7 @@ async def get_chat_client(
     pool: asyncpg.Pool,
     profile_id: UUID,
     chat_entry_id: UUID,
+    attempt_id: UUID | None = None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> GetChatResponse:
@@ -610,6 +628,7 @@ async def get_chat_client(
         pool=pool,
         profile_id=profile_id,
         chat_entry_id=chat_entry_id,
+        attempt_id=attempt_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
     )
@@ -682,6 +701,7 @@ async def chat_get(
             pool=pool,
             profile_id=cast(UUID, profile_id),
             chat_entry_id=request.chat_entry_id,
+            attempt_id=request.attempt_id,
             draft_id=request.draft_id,
             bypass_cache=bypass_cache,
         )

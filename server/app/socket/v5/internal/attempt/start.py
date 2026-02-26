@@ -21,6 +21,7 @@ from app.socket.v5.internal.attempt.types import (
     AttemptProceedData,
 )
 from app.sql.types import StartAttemptSqlParams, StartAttemptSqlRow
+from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
 
@@ -73,7 +74,13 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
 
         attempt_id = row.items[0].attempt_id
 
-        # Step 2: Delegate to attempt_proceed
+        # Step 2: Refresh MVs so the attempt is visible immediately
+        async with get_db_connection() as conn:
+            await conn.execute("REFRESH MATERIALIZED VIEW attempt_mv")
+            await conn.execute("REFRESH MATERIALIZED VIEW attempt_chat_mv")
+        await invalidate_tags(["attempt", "attempts"])
+
+        # Step 3: Delegate to attempt_proceed
         await internal_sio.emit(
             "attempt_proceed",
             AttemptProceedData(

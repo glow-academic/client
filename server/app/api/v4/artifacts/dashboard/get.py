@@ -620,16 +620,14 @@ async def get_dashboard_internal(
         chat_ids.append(item.chat_id)
         if item.simulation_id:
             simulation_ids_set.add(item.simulation_id)
-        if item.user_persona_id:
-            persona_ids_set.add(item.user_persona_id)
+        if item.persona_ids:
+            persona_ids_set.update(item.persona_ids)
         if item.cohort_id:
             cohort_ids_set.add(item.cohort_id)
         if item.scenario_id:
             scenario_ids_set.add(item.scenario_id)
         if item.attempt_chat_id:
             attempt_chat_ids_set.add(item.attempt_chat_id)
-        if item.persona_id:
-            persona_ids_set.add(item.persona_id)
 
     rubric_ids_set: set[UUID] = set()
     for item in rubric_items:
