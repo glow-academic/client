@@ -18,7 +18,7 @@ INSERT INTO public.prompts_resource (created_at, system_prompt, name, descriptio
 - Be consistent and objective across evaluations
 - Reference specific rubric standards in your feedback
 - Do not output narrative text — all output must be valid tool calls', 'Test Prompt', 'Benchmark test grading agent for evaluating model outputs against rubric standards', true, '019c82b8-5d9c-7527-b0a1-ae3381521b71', false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-22T00:20:46.593734+00:00', true, false, false, '019c82b8-5d9c-75f6-8468-7af07ed62ce7', 'Test', 'Benchmark test grading agent for evaluating model outputs against rubric standards', '{}', NULL, NULL, '{019bebc4-d436-7ba4-963e-758c7971447d,019522a0-0020-7000-8000-00000000000d}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019c82b8-5d9c-7527-b0a1-ae3381521b71', '{019c82b8-5d9c-757d-9ca9-3247ce810ff2}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-22T00:20:46.593734+00:00', true, false, false, '019c82b8-5d9c-75f6-8468-7af07ed62ce7', 'Test Grade', 'Benchmark test grading agent for evaluating model outputs against rubric standards', '{}', NULL, NULL, '{019bebc4-d436-7ba4-963e-758c7971447d,019522a0-0020-7000-8000-00000000000d}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019c82b8-5d9c-7527-b0a1-ae3381521b71', '{019c82b8-5d9c-757d-9ca9-3247ce810ff2}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c82b8-5d9c-77ad-9589-47756200136f', 'Benchmark test grading agent for evaluating model outputs against rubric standards', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c82b8-5d9c-757d-9ca9-3247ce810ff2', '## Previous Insights
 
@@ -68,7 +68,7 @@ No previous insights have been generated yet.
 ## Task
 
 Evaluate the model outputs against the rubric standards above. Use **create_feedback** to grade each standard group (1-5 score with evidence). Use **create_test_insights** for broader analytical observations about test results.', true, '2026-02-22T00:20:46.593734+00:00', false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c82b8-5d9c-7738-ae5c-8c25724b54be', 'Test', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c82b8-5d9c-7738-ae5c-8c25724b54be', 'Test Grade', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- agent_artifact
