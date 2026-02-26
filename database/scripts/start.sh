@@ -4,6 +4,7 @@ set -euo pipefail
 # --- LOAD .env -------------------------------------------------------
 # put KEY=value pairs (no quotes) in ../.env
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+project_root="$(cd "$script_dir/../.." && pwd)"
 if [[ -f "${script_dir}/../.env" ]]; then
   set -a                # export every sourced var
   source "${script_dir}/../.env"
@@ -22,6 +23,7 @@ mkdir -p "$HISTORY_DIR"
 
 # Parse command line arguments
 CLEAN_DB=false
+CLEAN_MODULES=false
 MIGRATE_DB=false
 MIGRATE_ALL=false
 CONNECT_DB=false
@@ -30,6 +32,10 @@ for arg in "$@"; do
   case $arg in
     --clean)
       CLEAN_DB=true
+      shift
+      ;;
+    --clean-modules)
+      CLEAN_MODULES=true
       shift
       ;;
     --migrate)
@@ -51,12 +57,13 @@ for arg in "$@"; do
         MIGRATE_ALL=true
         shift
       else
-        echo "Usage: $0 [--clean|--migrate [--all]|--migrate-all|--connect]"
-        echo "  --clean       : Create backup, then start fresh database from init.sql"
-        echo "  --migrate     : Apply most recent migration from migrate/ folder"
+        echo "Usage: $0 [--clean|--clean-modules|--migrate [--all]|--migrate-all|--connect]"
+        echo "  --clean         : Create backup, then start fresh database from seed file"
+        echo "  --clean-modules : Create backup, rebuild from schema + modules + bootstrap keys"
+        echo "  --migrate       : Apply most recent migration from migrate/ folder"
         echo "  --migrate --all or --migrate-all : Apply all migrations from migrate/ folder"
-        echo "  --connect     : Connect to existing database"
-        echo "  (default)     : Start from latest backup (no migrations)"
+        echo "  --connect       : Connect to existing database"
+        echo "  (default)       : Start from latest backup (no migrations)"
         exit 1
       fi
       ;;
@@ -563,6 +570,33 @@ if [[ "$MIGRATE_DB" == true ]]; then
     echo "📝 No migration files found in migrate/ folder"
   fi
   
+  exit 0
+fi
+
+# Handle clean-modules mode
+if [[ "$CLEAN_MODULES" == true ]]; then
+  echo "🧹 Clean modules mode: Building database from schema + modules..."
+
+  # Create backup first
+  create_backup
+
+  # Setup fresh database
+  setup_database
+
+  # Load schema
+  echo "📄 Loading schema.sql..."
+  export PGPASSWORD="$DB_PASSWORD"
+  psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$script_dir/../schema.sql"
+
+  # Load seed modules
+  echo "🌱 Loading seed modules..."
+  bash "$script_dir/load-modules.sh" "$project_root/config.yaml"
+
+  # Bootstrap keys
+  echo "🔑 Bootstrapping API keys..."
+  bash "$script_dir/bootstrap-keys.sh" || echo "⚠️  Key bootstrap skipped (non-fatal)"
+
+  echo "✅ Database ready (schema + modules + keys)!"
   exit 0
 fi
 

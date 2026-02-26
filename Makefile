@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop stop-keycloak install-client install-e2e restore-db migrate-db migrate-db-only migrate-db-all connect-db fresh-db build-test-seed typecheck-client build-client openapi-gen gen-client-types sql-compile sql-format watch-sql-types configure deploy deploy-clean
+.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop stop-keycloak install-client install-e2e restore-db migrate-db migrate-db-only migrate-db-all connect-db fresh-db bootstrap-keys build-test-seed typecheck-client build-client openapi-gen gen-client-types sql-compile sql-format watch-sql-types configure deploy deploy-clean
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -56,6 +56,7 @@ deploy:
 	@echo "🚀 Deploying Glow..."
 	@python3 scripts/generate-env.py
 	@bash database/scripts/load-modules.sh config.yaml --output database/seeds/seed_modules.sql
+	@bash database/scripts/bootstrap-keys.sh --append database/seeds/seed_modules.sql || echo "⚠️  Key bootstrap skipped"
 	@docker compose up -d --build
 	@echo "✅ Deploy complete"
 
@@ -64,6 +65,7 @@ deploy-clean:
 	@echo "🚀 Deploying Glow (clean)..."
 	@python3 scripts/generate-env.py
 	@bash database/scripts/load-modules.sh config.yaml --output database/seeds/seed_modules.sql
+	@bash database/scripts/bootstrap-keys.sh --append database/seeds/seed_modules.sql || echo "⚠️  Key bootstrap skipped"
 	@docker compose down -v
 	@docker compose up -d --build
 	@echo "✅ Clean deploy complete"
@@ -452,13 +454,16 @@ seed-file-from-yaml:
 		cd database/scripts && bash load-modules.sh $(CONFIG) --output; \
 	fi
 
-# Start database with fresh data (interactive setup)
+# Build fresh database from schema + modules + bootstrap keys
 fresh-db:
-	@echo "Starting interactive database setup..."
-	@python3 scripts/setup.py
-	@echo "✅ Interactive setup completed"
+	@python3 scripts/generate-env.py 2>/dev/null || true
+	@cd database && bash scripts/start.sh --clean-modules
 	@echo ""
-	@echo "To deploy, run: make deploy"
+	@echo "To start services, run: make run"
+
+# Bootstrap API keys from config.yaml into the database
+bootstrap-keys:
+	@bash database/scripts/bootstrap-keys.sh
 
 
 # MCP setup for Cursor IDE
@@ -494,14 +499,15 @@ help:
 	@echo "  install-client - Install client dependencies with yarn"
 	@echo ""
 	@echo "Database:"
-	@echo "  restore-db     - Restore database from latest backup"
-	@echo "  migrate-db     - Run most recent database migration"
-	@echo "  migrate-db-all - Run all database migrations"
-	@echo "  sql-compile    - Compile SQL files and generate types (migration safety gate)"
-	@echo "  sql-format     - Check for unused SQL files"
-	@echo "  connect-db     - Connect to database"
-	@echo "  fresh-db       - Interactive setup for fresh database"
-	@echo "  build-test-seed - Build test seed SQL from modules"
+	@echo "  restore-db       - Restore database from latest backup"
+	@echo "  migrate-db       - Run most recent database migration"
+	@echo "  migrate-db-all   - Run all database migrations"
+	@echo "  sql-compile      - Compile SQL files and generate types (migration safety gate)"
+	@echo "  sql-format       - Check for unused SQL files"
+	@echo "  connect-db       - Connect to database"
+	@echo "  fresh-db         - Build fresh DB from schema + modules + keys"
+	@echo "  bootstrap-keys   - Encrypt and inject API keys from config.yaml"
+	@echo "  build-test-seed  - Build test seed SQL from modules"
 	@echo ""
 	@echo "Services:"
 	@echo "  run          - Start all services in foreground (Ctrl+C to stop)"
