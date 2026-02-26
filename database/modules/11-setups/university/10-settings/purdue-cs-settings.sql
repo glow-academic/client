@@ -1,6 +1,6 @@
--- Module: Purdue CS Settings
+-- Module: University Settings
 -- Category: setting (university)
--- Description: Purdue CS Settings setting
+-- Description: University Settings setting
 -- ============================================================
 
 
@@ -21,13 +21,13 @@ INSERT INTO public.items_resource (id, name, description, encrypted, position, a
 INSERT INTO public.items_resource (id, name, description, encrypted, position, active, created_at, generated, mcp) VALUES ('019b3be4-311a-7021-860b-266da671533f', 'entityId', 'SAML Entity ID', false, 2, true, '2025-11-23T04:09:25.809914+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.items_resource (id, name, description, encrypted, position, active, created_at, generated, mcp) VALUES ('019b3be4-311a-7024-971e-93dd94bd826e', 'metadataUrl', 'SAML Metadata URL', false, 3, true, '2025-11-23T04:09:25.809914+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.items_resource (id, name, description, encrypted, position, active, created_at, generated, mcp) VALUES ('019b3be4-311a-701a-8784-4a7e20ffc51c', 'ssoUrl', 'SAML SSO Service URL', false, 1, true, '2025-11-23T04:09:25.809914+00:00', false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8eb3-7615-afbd-17de2a204302', 'Department-specific settings for Purdue CS', '2025-12-12T13:26:55.664826+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8eb2-79fe-9f43-b82f75849bb4', 'Purdue CS Settings', '2025-12-12T13:26:55.664826+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8eb3-7615-afbd-17de2a204302', 'Department-specific settings for University', '2025-12-12T13:26:55.664826+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8eb2-79fe-9f43-b82f75849bb4', 'University Settings', '2025-12-12T13:26:55.664826+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.keys_resource (id, key_id, created_at, active, generated, mcp, key, name, description) VALUES ('019bbdcb-6d52-7889-8484-ed84e9180139', '019bbdcb-6d52-7889-8484-ed84e9180139', '2026-02-15T02:02:12.273323+00:00', true, false, false, 'dummy-key-value', 'OPENAI_API_KEY', 'OPENAI_API_KEY') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.provider_keys_resource (id, provider_id, key_id, created_at, active, generated, mcp, key, name, description) VALUES ('019c441a-0eb9-7665-a01c-a6fec156d716', '019bb2af-b2a7-7d85-a61a-0dc4fd93b3c6', '019bbdcb-6d52-7889-8484-ed84e9180139', '2025-12-07T20:37:05.145538+00:00', true, false, false, 'dummy-provider-key-value', 'OPENAI_API_KEY', 'OPENAI_API_KEY') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.keys_resource (id, key_id, created_at, active, generated, mcp, key, name, description) VALUES ('019bbdcb-6d52-7d32-803f-3f5c8c2a9af7', '019bbdcb-6d52-7d32-803f-3f5c8c2a9af7', '2026-02-15T02:02:12.274466+00:00', true, false, false, 'dummy-key-value', 'GEMINI_API_KEY', 'GEMINI_API_KEY') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.provider_keys_resource (id, provider_id, key_id, created_at, active, generated, mcp, key, name, description) VALUES ('019c441a-0eb9-7938-8d65-ccfc25d92856', '019bb2af-b2a8-7035-bbfd-664ba627bd44', '019bbdcb-6d52-7d32-803f-3f5c8c2a9af7', '2025-12-07T20:37:05.145538+00:00', true, false, false, 'dummy-provider-key-value', 'GEMINI_API_KEY', 'GEMINI_API_KEY') ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.settings_resource (created_at, active, generated, mcp, id, name, description, department_ids, agent_ids, provider_key_ids, auth_ids) VALUES ('2025-12-12T13:26:55.664826+00:00', true, false, false, '019bb25e-e615-7952-a7d4-4fdee85d18cc', 'Purdue CS Settings', 'Department-specific settings for Purdue CS', '{}', '{}', '{}', '{019bb25e-e5e2-74c2-aaf3-42c5403f26f9}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.settings_resource (created_at, active, generated, mcp, id, name, description, department_ids, agent_ids, provider_key_ids, auth_ids) VALUES ('2025-12-12T13:26:55.664826+00:00', true, false, false, '019bb25e-e615-7952-a7d4-4fdee85d18cc', 'University Settings', 'Department-specific settings for University', '{}', '{}', '{}', '{019bb25e-e5e2-74c2-aaf3-42c5403f26f9}') ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- setting_artifact

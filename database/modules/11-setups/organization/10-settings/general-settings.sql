@@ -1,6 +1,6 @@
--- Module: General Settings
+-- Module: Organization Settings
 -- Category: setting (organization)
--- Description: General Settings setting
+-- Description: Organization Settings setting
 -- ============================================================
 
 
@@ -17,13 +17,13 @@ INSERT INTO public.items_resource (id, name, description, encrypted, position, a
 INSERT INTO public.items_resource (id, name, description, encrypted, position, active, created_at, generated, mcp) VALUES ('019b3be4-311a-7008-8bba-868f8b70fe13', 'clientAuthMethod', 'Microsoft Client Auth Method', false, 6, true, '2025-11-23T04:41:11.809003+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.items_resource (id, name, description, encrypted, position, active, created_at, generated, mcp) VALUES ('019b3be4-311a-700d-8fc0-9ba72a9bd318', 'authorizationUrl', 'Microsoft Authorization Endpoint', false, 7, true, '2025-11-23T04:41:11.809003+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.items_resource (id, name, description, encrypted, position, active, created_at, generated, mcp) VALUES ('019b3be4-311a-7014-96a8-573949e45256', 'tokenUrl', 'Microsoft Token Endpoint', false, 8, true, '2025-11-23T04:41:11.809003+00:00', false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c5801-d003-75de-80fa-9515249c9c6b', 'Settings for the General department', '2026-02-13T17:17:19.747282+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c5801-d002-7d04-9dc2-9105beb0a88f', 'General Settings', '2026-02-13T17:17:19.746492+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c5801-d003-75de-80fa-9515249c9c6b', 'Settings for the Organization department', '2026-02-13T17:17:19.747282+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c5801-d002-7d04-9dc2-9105beb0a88f', 'Organization Settings', '2026-02-13T17:17:19.746492+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.keys_resource (id, key_id, created_at, active, generated, mcp, key, name, description) VALUES ('019bbdcb-6d52-7889-8484-ed84e9180139', '019bbdcb-6d52-7889-8484-ed84e9180139', '2026-02-15T02:02:12.273323+00:00', true, false, false, 'dummy-key-value', 'OPENAI_API_KEY', 'OPENAI_API_KEY') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.provider_keys_resource (id, provider_id, key_id, created_at, active, generated, mcp, key, name, description) VALUES ('019c441a-0eb9-7665-a01c-a6fec156d716', '019bb2af-b2a7-7d85-a61a-0dc4fd93b3c6', '019bbdcb-6d52-7889-8484-ed84e9180139', '2025-12-07T20:37:05.145538+00:00', true, false, false, 'dummy-provider-key-value', 'OPENAI_API_KEY', 'OPENAI_API_KEY') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.keys_resource (id, key_id, created_at, active, generated, mcp, key, name, description) VALUES ('019bbdcb-6d52-7d32-803f-3f5c8c2a9af7', '019bbdcb-6d52-7d32-803f-3f5c8c2a9af7', '2026-02-15T02:02:12.274466+00:00', true, false, false, 'dummy-key-value', 'GEMINI_API_KEY', 'GEMINI_API_KEY') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.provider_keys_resource (id, provider_id, key_id, created_at, active, generated, mcp, key, name, description) VALUES ('019c441a-0eb9-7938-8d65-ccfc25d92856', '019bb2af-b2a8-7035-bbfd-664ba627bd44', '019bbdcb-6d52-7d32-803f-3f5c8c2a9af7', '2025-12-07T20:37:05.145538+00:00', true, false, false, 'dummy-provider-key-value', 'GEMINI_API_KEY', 'GEMINI_API_KEY') ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.settings_resource (created_at, active, generated, mcp, id, name, description, department_ids, agent_ids, provider_key_ids, auth_ids) VALUES ('2026-02-12T12:11:20.750426+00:00', true, false, false, '019c51c3-5130-734a-b5f4-c7e48130cc99', 'General Settings', 'Settings for the General department', '{}', '{}', '{}', '{019bb25e-e5e2-73eb-9313-57d774b30875}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.settings_resource (created_at, active, generated, mcp, id, name, description, department_ids, agent_ids, provider_key_ids, auth_ids) VALUES ('2026-02-12T12:11:20.750426+00:00', true, false, false, '019c51c3-5130-734a-b5f4-c7e48130cc99', 'Organization Settings', 'Settings for the Organization department', '{}', '{}', '{}', '{019bb25e-e5e2-73eb-9313-57d774b30875}') ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- setting_artifact

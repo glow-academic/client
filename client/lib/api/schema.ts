@@ -22883,9 +22883,9 @@ export interface components {
         };
         /**
          * AttemptUsePreviousPayload
-         * @description Client-to-server: copy grades from a previous attempt's chats.
+         * @description Client-to-server: reuse attempt_chats from a previous attempt.
          *
-         *     previous_chat_map: {scenario_id: previous_chat_id}
+         *     previous_chat_map: {chat_entry_id: attempt_chat_id}
          */
         AttemptUsePreviousPayload: {
             /**
@@ -37082,15 +37082,15 @@ export interface components {
         };
         /**
          * PreviousChatOption
-         * @description A single scenario's best previous graded chat.
+         * @description A single chat_entry's best previous graded attempt_chat.
          */
         PreviousChatOption: {
-            /** Scenario Id */
-            scenario_id?: string | null;
+            /** Chat Entry Id */
+            chat_entry_id?: string | null;
             /** Scenario Name */
             scenario_name?: string | null;
-            /** Previous Chat Id */
-            previous_chat_id?: string | null;
+            /** Attempt Chat Id */
+            attempt_chat_id?: string | null;
             /** Score */
             score?: number | null;
             /** Percentage */

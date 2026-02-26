@@ -1,12 +1,12 @@
--- Module: Purdue CS
+-- Module: University
 -- Category: department (university)
--- Description: Purdue CS department
+-- Description: University department
 -- ============================================================
 
 
 -- Resource rows
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8eac-785c-b2f2-6fb4529330ce', 'Innovative base of knowledge in the emerging field of computing', '2025-10-08T14:16:28.317660+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8ea9-7b10-a229-070dd66dee55', 'Purdue CS', '2025-10-08T14:16:28.317660+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8ea9-7b10-a229-070dd66dee55', 'University', '2025-10-08T14:16:28.317660+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- department_artifact

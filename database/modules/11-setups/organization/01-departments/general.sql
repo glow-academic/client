@@ -1,12 +1,12 @@
--- Module: General
+-- Module: Organization
 -- Category: department (organization)
--- Description: General department
+-- Description: Organization department
 -- ============================================================
 
 
 -- Resource rows
-INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c3f8c-b97c-723c-b96c-507c4959a807', 'General department', '2026-02-08T23:18:33.077464+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c3f8c-b97b-7bb8-8da7-d3b34193c013', 'General', '2026-02-08T23:18:33.077464+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c3f8c-b97c-723c-b96c-507c4959a807', 'Organization department', '2026-02-08T23:18:33.077464+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c3f8c-b97b-7bb8-8da7-d3b34193c013', 'Organization', '2026-02-08T23:18:33.077464+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- department_artifact

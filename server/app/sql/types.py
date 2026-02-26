@@ -1960,57 +1960,6 @@ class GetAuthListApiResponse(BaseModel):
 
 
 
-# Generated from: get_login_data
-
-class GetLoginDataSqlParams(BaseModel):
-
-    department_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.department_id,
-        )
-
-class QGetLoginDataV4Department(BaseModel):
-
-    id: str | None
-    title: str | None
-    description: str | None
-
-
-
-
-class QGetLoginDataV4Provider(BaseModel):
-
-    id: str | None
-    name: str | None
-    icon: str | None
-    is_default: bool | None
-
-class GetLoginDataSqlRow(BaseModel):
-
-    providers: list[QGetLoginDataV4Provider] | None = None
-    departments: list[QGetLoginDataV4Department] | None = None
-    guest_login_enabled: bool | None = None
-    default_department_id: str | None = None
-    realm_name: str | None = None
-    organization_id: str | None = None
-
-class GetLoginDataApiRequest(BaseModel):
-
-    department_id: UUID | None = None
-
-class GetLoginDataApiResponse(BaseModel):
-
-    providers: list[QGetLoginDataV4Provider] | None = None
-    departments: list[QGetLoginDataV4Department] | None = None
-    guest_login_enabled: bool | None = None
-    default_department_id: str | None = None
-    realm_name: str | None = None
-    organization_id: str | None = None
-
-
-
 # Generated from: patch_auth_draft
 
 class AuthItemInput(BaseModel):
@@ -15257,94 +15206,6 @@ class CompleteAttemptMessageApiRequest(BaseModel):
 class CompleteAttemptMessageApiResponse(BaseModel):
 
     persona_id: str | None = None
-
-
-
-# Generated from: create_attempt_chat
-
-class CreateAttemptChatSqlParams(BaseModel):
-
-    p_profile_id: UUID
-    p_attempt_id: UUID
-    p_attempt_chat_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-            self.p_attempt_id,
-            self.p_attempt_chat_id,
-        )
-
-class CreateAttemptChatSqlRow(BaseModel):
-
-    chat_id: UUID | None = None
-
-class CreateAttemptChatApiRequest(BaseModel):
-
-    p_profile_id: UUID
-    p_attempt_id: UUID
-    p_attempt_chat_id: UUID
-
-class CreateAttemptChatApiResponse(BaseModel):
-
-    chat_id: UUID | None = None
-
-
-
-# Generated from: end_all_attempt_chats
-
-class EndAllAttemptChatsSqlParams(BaseModel):
-
-    p_attempt_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_attempt_id,
-        )
-
-class EndAllAttemptChatsSqlRow(BaseModel):
-
-    chats_completed: int | None = None
-    stubs_created: int | None = None
-
-class EndAllAttemptChatsApiRequest(BaseModel):
-
-    p_attempt_id: UUID
-
-class EndAllAttemptChatsApiResponse(BaseModel):
-
-    chats_completed: int | None = None
-    stubs_created: int | None = None
-
-
-
-# Generated from: end_attempt_chat
-
-class EndAttemptChatSqlParams(BaseModel):
-
-    p_attempt_id: UUID
-    p_chat_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_attempt_id,
-            self.p_chat_id,
-        )
-
-class EndAttemptChatSqlRow(BaseModel):
-
-    success: bool | None = None
-    chat_id: UUID | None = None
-
-class EndAttemptChatApiRequest(BaseModel):
-
-    p_attempt_id: UUID
-    p_chat_id: UUID
-
-class EndAttemptChatApiResponse(BaseModel):
-
-    success: bool | None = None
-    chat_id: UUID | None = None
 
 
 
@@ -37726,12 +37587,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAuthListApiRequest",
         "GetAuthListApiResponse",
     ),
-    "app/sql/v4/queries/auth/get_login_data_complete.sql": (
-        "GetLoginDataSqlParams",
-        "GetLoginDataSqlRow",
-        "GetLoginDataApiRequest",
-        "GetLoginDataApiResponse",
-    ),
     "app/sql/v4/queries/auth/patch_auth_draft_complete.sql": (
         "PatchAuthDraftSqlParams",
         "PatchAuthDraftSqlRow",
@@ -40005,24 +39860,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CompleteAttemptMessageSqlRow",
         "CompleteAttemptMessageApiRequest",
         "CompleteAttemptMessageApiResponse",
-    ),
-    "app/sql/v4/queries/generate/attempt/create_attempt_chat_complete.sql": (
-        "CreateAttemptChatSqlParams",
-        "CreateAttemptChatSqlRow",
-        "CreateAttemptChatApiRequest",
-        "CreateAttemptChatApiResponse",
-    ),
-    "app/sql/v4/queries/generate/attempt/end_all_attempt_chats_complete.sql": (
-        "EndAllAttemptChatsSqlParams",
-        "EndAllAttemptChatsSqlRow",
-        "EndAllAttemptChatsApiRequest",
-        "EndAllAttemptChatsApiResponse",
-    ),
-    "app/sql/v4/queries/generate/attempt/end_attempt_chat_complete.sql": (
-        "EndAttemptChatSqlParams",
-        "EndAttemptChatSqlRow",
-        "EndAttemptChatApiRequest",
-        "EndAttemptChatApiResponse",
     ),
     "app/sql/v4/queries/generate/attempt/get_agent_entry_tools_complete.sql": (
         "GetAgentEntryToolsSqlParams",
@@ -43504,11 +43341,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/auth/get_login_data_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/auth/patch_auth_draft_complete.sql"]
     ) -> SqlString: ...
 
@@ -45400,21 +45232,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/attempt/complete_attempt_message_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/generate/attempt/create_attempt_chat_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/generate/attempt/end_all_attempt_chats_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/generate/attempt/end_attempt_chat_complete.sql"]
     ) -> SqlString: ...
 
     @overload
