@@ -16,7 +16,7 @@ Per-agent steps (scoped per agent_group):
 import asyncio
 import copy
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from app.api.v4.resources.instructions.get import get_instructions_internal
 from app.api.v4.resources.prompts.get import get_prompts_internal
@@ -34,12 +34,8 @@ from app.socket.v5.client.types import GeneratePayload
 from app.socket.v5.internal.generate_artifact import GenerateArtifactPayload
 from app.socket.v5.internal.generation_types import GenerationStartedData
 from app.socket.v5.types import GenerateErrorApiRequest
-from app.sql.types import (
-    PrepareAgentGenerationSqlParams,
-    PrepareAgentGenerationSqlRow,
-)
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed, load_sql
+from app.utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
@@ -290,10 +286,11 @@ async def generate_handler(data: dict[str, Any]) -> None:
             )
             return
 
-        # Step 4: Resolve artifact_id (handle profile's staff_id special case)
+        # Step 4: Resolve artifact_id
         artifact_id = payload.artifact_id
-        if artifact_type == "profile" and not artifact_id and payload.staff_id:
-            artifact_id = uuid.UUID(payload.staff_id)
+        payload_metadata = payload.metadata or {}
+        if artifact_type == "profile" and not artifact_id and payload_metadata.get("staff_id"):
+            artifact_id = uuid.UUID(payload_metadata["staff_id"])
 
         # Step 5: Fetch pre-hydrated artifact data via registry fetcher
         pool = get_pool() if config.requires_pool else None
@@ -408,7 +405,6 @@ async def generate_handler(data: dict[str, Any]) -> None:
             return
 
         jinja_context_base = _build_jinja_context(result)
-        existing_group_id = result.group_id if hasattr(result, "group_id") else None
 
         # Step 9: Read all tools, enrich, and build createable set (shared)
         config_tools = (
@@ -430,6 +426,18 @@ async def generate_handler(data: dict[str, Any]) -> None:
             {td["artifact"] for td in all_tool_dicts if td.get("artifact")}
         )
 
+        # Step 10: Require run_id and group_id from payload
+        if not payload.run_id or not payload.group_id:
+            await _emit_error(
+                sid,
+                "run_id and group_id are required",
+                artifact_type,
+            )
+            return
+
+        run_id = uuid.UUID(payload.run_id)
+        group_id = uuid.UUID(payload.group_id)
+
         # DB operations
         async with get_db_connection() as conn:
             if not pool:
@@ -437,8 +445,7 @@ async def generate_handler(data: dict[str, Any]) -> None:
             if not pool:
                 raise RuntimeError("Database pool not initialized")
 
-            # Step 10: Prepare generation (run-level — one run for all agents)
-            # Use first agent for the config snapshot
+            # Step 11: Create config snapshot (canonical — always done here)
             first_agent = config_agents[0]
             first_model = (
                 models_by_id.get(first_agent.model_id)  # type: ignore[arg-type]
@@ -451,52 +458,43 @@ async def generate_handler(data: dict[str, Any]) -> None:
                 else None
             )
 
-            if payload.run_id:
-                run_id = uuid.UUID(payload.run_id)
-                group_id = (
-                    uuid.UUID(payload.group_id)
-                    if payload.group_id
-                    else existing_group_id
+            config_id = await conn.fetchval(
+                """INSERT INTO config_entry (created_at, updated_at, generated, mcp, active, run_id)
+                VALUES (NOW(), NOW(), false, false, true, $1) RETURNING id""",
+                run_id,
+            )
+
+            if first_agent.id:
+                await conn.execute(
+                    """INSERT INTO config_agents_connection (config_id, agents_id, created_at, active, generated, mcp)
+                    VALUES ($1, $2, NOW(), true, false, false)
+                    ON CONFLICT (config_id, agents_id) DO NOTHING""",
+                    config_id,
+                    first_agent.id,
                 )
-            else:
-                prepare_params = PrepareAgentGenerationSqlParams(
-                    p_profile_id=profile_id,
-                    p_group_id=existing_group_id,
-                    p_agents_resource_id=first_agent.id,
-                    p_models_resource_id=first_model.id if first_model else None,
-                    p_providers_resource_id=first_provider.id
-                    if first_provider
-                    else None,  # type: ignore[union-attr]
+            if first_model and first_model.id:
+                await conn.execute(
+                    """INSERT INTO config_models_connection (config_id, models_id, created_at, active, generated, mcp)
+                    VALUES ($1, $2, NOW(), true, false, false)
+                    ON CONFLICT (config_id, models_id) DO NOTHING""",
+                    config_id,
+                    first_model.id,
                 )
-                prepare_row = cast(
-                    PrepareAgentGenerationSqlRow,
-                    await execute_sql_typed(
-                        conn, config.prepare_sql_path, params=prepare_params
-                    ),
+            if first_provider and getattr(first_provider, "id", None):
+                await conn.execute(
+                    """INSERT INTO config_providers_connection (config_id, providers_id, created_at, active, generated, mcp)
+                    VALUES ($1, $2, NOW(), true, false, false)
+                    ON CONFLICT (config_id, providers_id) DO NOTHING""",
+                    config_id,
+                    first_provider.id,
                 )
 
-                if not prepare_row.run_id:
-                    logger.error(
-                        f"{artifact_type.capitalize()} generation preparation failed - "
-                        f"profile_id={profile_id}, agent_id={agent_id}"
-                    )
-                    await _emit_error(
-                        sid,
-                        f"Failed to prepare {artifact_type} generation: Unknown error",
-                        artifact_type,
-                        group_id=str(existing_group_id) if existing_group_id else None,
-                    )
-                    return
-
-                run_id = prepare_row.run_id
-                group_id = prepare_row.group_id
-
-            # Step 11: Initialize generation tracker (run-level)
+            # Step 12: Initialize generation tracker (run-level)
             num_agents = len(agent_groups)
             await init_generation(str(run_id), num_agents)
             await init_resource_progress(str(run_id), len(resource_types))
 
-            # Step 12: Emit generation_started (run-level)
+            # Step 13: Emit generation_started (run-level)
             await internal_sio.emit(
                 "generation_started",
                 GenerationStartedData(
@@ -683,21 +681,10 @@ async def generate_handler(data: dict[str, Any]) -> None:
                     )
                 ]
 
-                # 13h: Build metadata
-                metadata: dict[str, Any] = {}
-                for field_name in config.extra_emit_fields:
-                    value = getattr(payload, field_name, None)
-                    if value is not None:
-                        metadata[field_name] = (
-                            str(value) if isinstance(value, uuid.UUID) else value
-                        )
-                if payload.grade_id:
-                    metadata["grade_id"] = payload.grade_id
-                if payload.chat_id:
-                    metadata["chat_id"] = payload.chat_id
+                # 13h: Build metadata (pass-through from caller + media agent IDs)
+                metadata: dict[str, Any] = dict(payload_metadata)
                 if payload.save is not None:
                     metadata["save"] = payload.save
-
                 if resource_agent_ids.get("images"):
                     metadata["image_agent_id"] = str(resource_agent_ids["images"])
                 if resource_agent_ids.get("videos"):

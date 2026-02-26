@@ -7,7 +7,6 @@ from . import (
     audio,  # noqa: F401 — registers @sio.event on import
     end,  # noqa: F401
     end_all,  # noqa: F401
-    grade,  # noqa: F401
     join,  # noqa: F401
     leave,  # noqa: F401
     message,  # noqa: F401

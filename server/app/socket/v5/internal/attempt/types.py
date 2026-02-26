@@ -40,13 +40,10 @@ class GenerateRequestData(BaseModel):
     save: bool = True
     draft_id: str | None = None
     user_instructions: list[str] | None = None
-    attempt_id: str | None = None
-    attempt_chat_id: str | None = None
     run_id: str | None = None
     group_id: str | None = None
-    chat_id: str | None = None
-    grade_id: str | None = None
     extra_messages: list[dict[str, str]] | None = None
+    metadata: dict[str, Any] | None = None
 
 
 class AttemptProceedData(BaseModel):

@@ -15,31 +15,17 @@ class GeneratePayload(BaseModel):
     """Unified client-to-server payload for the `generate` WebSocket event.
 
     Fields:
-        artifact_type: Registry key (e.g. "agent", "training", "auth").
+        artifact_type: Registry key (e.g. "agent", "chat", "attempt").
         artifact_id:   Generic artifact ID — maps to agent_id, chat_entry_id, etc.
         draft_id:      Optional draft ID (required for most artifacts).
         resource_types: Which resources to generate.
         user_instructions: Optional user instructions forwarded to LLM.
         save:          Whether to auto-save on completion.
-
-        # Pass-through fields (training-specific, forwarded to internal emit)
-        attempt_id:    Optional attempt context.
-        attempt_chat_id: Optional chat resolved context.
-        staff_id:      Optional staff ID (profile artifact resolves to target_profile_id).
-
-        # Pre-created IDs (skip prepare step when populated)
-        run_id:        Pre-created run ID from handler prepare SQL.
-        group_id:      Pre-created or existing group ID.
-
-        # Extra pass-through for attempt message/grade
-        chat_id:       Chat ID for message/grade context.
-        grade_id:      Grade ID for grade context.
-        message:       User message text.
-        voice_mode:    Whether message is from voice input.
-        upload_id:     Optional upload attachment ID.
-
-        # Extra messages (chat history, appended after developer msgs)
+        run_id:        Pre-created run ID (required — created by caller).
+        group_id:      Pre-created group ID (required — created by caller).
         extra_messages: Pre-built messages (e.g. chat history) — not persisted.
+        metadata:      Pass-through metadata forwarded to generate_artifact and
+                       downstream handlers (e.g. attempt_id, chat_id, grade_id).
     """
 
     artifact_type: str
@@ -49,24 +35,15 @@ class GeneratePayload(BaseModel):
     user_instructions: list[str] | None = None
     save: bool = False
 
-    # Pass-through context fields
-    attempt_id: str | None = None
-    attempt_chat_id: str | None = None
-    staff_id: str | None = None
-
-    # Pre-created IDs (skip prepare step when populated)
+    # Pre-created IDs (required — created by caller)
     run_id: str | None = None
     group_id: str | None = None
 
-    # Extra pass-through for attempt message/grade
-    chat_id: str | None = None
-    grade_id: str | None = None
-    message: str | None = None
-    voice_mode: bool = False
-    upload_id: str | None = None
-
     # Extra messages (chat history, appended after developer msgs)
     extra_messages: list[dict[str, str]] | None = None
+
+    # Pass-through metadata for downstream handlers
+    metadata: dict[str, Any] | None = None
 
 
 # ---------------------------------------------------------------------------

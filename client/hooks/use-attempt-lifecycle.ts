@@ -49,11 +49,6 @@ export interface UseAttemptLifecycleReturn {
     attemptId: string,
     previousChatMap: Record<string, string>,
   ) => void;
-  gradeChat: (
-    simulationId: string,
-    attemptId: string,
-    chatId: string,
-  ) => void;
 }
 
 export function useAttemptLifecycle({
@@ -211,24 +206,11 @@ export function useAttemptLifecycle({
     [socket],
   );
 
-  const gradeChat = useCallback(
-    (simulationId: string, attemptIdArg: string, chatIdArg: string) => {
-      if (!socket) return;
-      socket.emit("attempt_grade", {
-        simulation_id: simulationId,
-        attempt_id: attemptIdArg,
-        chat_id: chatIdArg,
-      });
-    },
-    [socket],
-  );
-
   return {
     startAttempt,
     nextScenario,
     endChat,
     endAll,
     usePrevious,
-    gradeChat,
   };
 }

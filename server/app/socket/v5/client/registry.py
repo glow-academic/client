@@ -64,8 +64,6 @@ class ArtifactGenerateConfig:
     # Async entry types for this artifact
     entry_types: list[str] = field(default_factory=lambda: ["debug_info"])
 
-    # Extra fields to forward from the client payload to generate_artifact emit
-    extra_emit_fields: list[str] = field(default_factory=list)
 
     # Async fetcher adapter — uniform signature:
     #   (profile_id, artifact_id, draft_id, pool) -> response
@@ -697,7 +695,6 @@ _register(
         draft_view_key="draft_chat",
         requires_pool=True,
         fetcher_id_kwarg="chat_entry_id",
-        extra_emit_fields=["attempt_id", "attempt_chat_id"],
         fetcher_module="app.api.v4.artifacts.chat.get",
         fetcher_func="get_chat_websocket",
         fetcher=_make_fetcher(
@@ -1069,7 +1066,6 @@ _register(
         requires_draft=False,
         entry_types=["attempt_insights", "debug_info"],
         fetcher_id_kwarg="attempt_id",
-        extra_emit_fields=["attempt_id", "chat_id", "grade_id"],
         fetcher_module="app.api.v4.artifacts.attempt.get",
         fetcher_func="get_attempt_websocket",
         needs_conn=True,
