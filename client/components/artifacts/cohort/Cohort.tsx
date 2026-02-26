@@ -877,18 +877,20 @@ function CohortComponent({
       try {
         await saveCohortAction({
           body: {
-            input_cohort_id: isEditMode && cohortId ? cohortId : null,
-            name_id: effectiveFormState.name_id!,
-            description_id: effectiveFormState.description_id || null,
-            flag_id: effectiveFormState.active_flag_id || null,
-            department_ids: effectiveFormState.department_ids.length > 0 ? effectiveFormState.department_ids : null,
-            simulation_ids: effectiveFormState.simulation_ids.length > 0 ? effectiveFormState.simulation_ids : null,
-            simulation_position_ids: effectiveFormState.simulation_position_ids?.length > 0 ? effectiveFormState.simulation_position_ids : null,
-            simulation_availability_ids: effectiveFormState.simulation_availability_ids?.length > 0 ? effectiveFormState.simulation_availability_ids : null,
-            profile_ids: effectiveFormState.profile_ids?.length > 0 ? effectiveFormState.profile_ids : null,
-            profile_persona_ids: effectiveFormState.profile_persona_ids?.length > 0 ? effectiveFormState.profile_persona_ids : null,
+            cohorts: [{
+              input_cohort_id: isEditMode && cohortId ? cohortId : null,
+              name_id: effectiveFormState.name_id!,
+              description_id: effectiveFormState.description_id || null,
+              flag_id: effectiveFormState.active_flag_id || null,
+              department_ids: effectiveFormState.department_ids.length > 0 ? effectiveFormState.department_ids : null,
+              simulation_ids: effectiveFormState.simulation_ids.length > 0 ? effectiveFormState.simulation_ids : null,
+              simulation_position_ids: effectiveFormState.simulation_position_ids?.length > 0 ? effectiveFormState.simulation_position_ids : null,
+              simulation_availability_ids: effectiveFormState.simulation_availability_ids?.length > 0 ? effectiveFormState.simulation_availability_ids : null,
+              profile_ids: effectiveFormState.profile_ids?.length > 0 ? effectiveFormState.profile_ids : null,
+              profile_persona_ids: effectiveFormState.profile_persona_ids?.length > 0 ? effectiveFormState.profile_persona_ids : null,
+            }],
           },
-        } as SaveCohortIn);
+        });
         toast.success(
           `Cohort ${isEditMode ? "updated" : "created"} successfully!`,
         );

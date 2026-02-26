@@ -84,7 +84,7 @@ class CohortSimulationAvailability(BaseModel):
 
     id: UUID | None = None
     simulation_id: UUID | None = None
-    time: str | None = None
+    time: datetime | None = None
     type: str | None = None
     generated: bool | None = None
     mcp: bool | None = None

@@ -75,6 +75,26 @@ scenario_agg AS (
       ON tsc.chat_id = pte.chat_id AND tsc.active = true
     WHERE pte.active = true
     GROUP BY pte.practice_id
+),
+rubric_agg AS (
+    SELECT
+        pte.practice_id,
+        ARRAY_AGG(DISTINCT crc.rubrics_id ORDER BY crc.rubrics_id) AS rubric_ids
+    FROM practice_chat_entry pte
+    JOIN chat_rubrics_connection crc
+      ON crc.chat_id = pte.chat_id AND crc.active = true
+    WHERE pte.active = true
+    GROUP BY pte.practice_id
+),
+scenario_time_limit_agg AS (
+    SELECT
+        pte.practice_id,
+        ARRAY_AGG(DISTINCT cstlc.scenario_time_limits_id ORDER BY cstlc.scenario_time_limits_id) AS scenario_time_limit_ids
+    FROM practice_chat_entry pte
+    JOIN chat_scenario_time_limits_connection cstlc
+      ON cstlc.chat_id = pte.chat_id AND cstlc.active = true
+    WHERE pte.active = true
+    GROUP BY pte.practice_id
 )
 SELECT
     pe.id AS practice_id,
@@ -88,6 +108,8 @@ SELECT
     -- Aggregated UP from chat level
     COALESCE(trn.chat_ids, ARRAY[]::uuid[]) AS chat_ids,
     COALESCE(scn.scenario_ids, ARRAY[]::uuid[]) AS scenario_ids,
+    COALESCE(rub.rubric_ids, ARRAY[]::uuid[]) AS rubric_ids,
+    COALESCE(stl.scenario_time_limit_ids, ARRAY[]::uuid[]) AS scenario_time_limit_ids,
 
     pe.created_at,
     pe.updated_at,
@@ -100,6 +122,8 @@ LEFT JOIN department_agg dep ON dep.practice_id = pe.id
 LEFT JOIN profile_agg prof ON prof.practice_id = pe.id
 LEFT JOIN chat_agg trn ON trn.practice_id = pe.id
 LEFT JOIN scenario_agg scn ON scn.practice_id = pe.id
+LEFT JOIN rubric_agg rub ON rub.practice_id = pe.id
+LEFT JOIN scenario_time_limit_agg stl ON stl.practice_id = pe.id
 WHERE pe.active = true
 WITH NO DATA;
 

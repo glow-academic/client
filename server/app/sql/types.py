@@ -36669,6 +36669,8 @@ class QGetPracticeContextViewV4Item(BaseModel):
     scenario_ids: list[UUID] | None
     cohort_ids: list[UUID] | None
     practice_ids: list[UUID] | None
+    rubric_ids: list[UUID] | None
+    scenario_time_limit_ids: list[UUID] | None
 
 class GetPracticeContextViewSqlRow(BaseModel):
 

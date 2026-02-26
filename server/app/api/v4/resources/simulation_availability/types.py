@@ -1,5 +1,6 @@
 """Canonical simulation_availability resource type — single source of truth for resource fields."""
 
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
@@ -11,7 +12,7 @@ class SimulationAvailabilityV4Item(BaseModel):
 
     id: UUID | None = None
     simulation_id: UUID | None = None
-    time: str | None = None
+    time: datetime | None = None
     type: str | None = None
     generated: bool | None = None
     mcp: bool | None = None
@@ -93,7 +94,7 @@ class SimulationAvailabilityResourceData(BaseModel):
 
     id: str | None = None
     simulation_id: str | None = None
-    time: str | None = None
+    time: datetime | None = None
     type: str | None = None
     generated: bool | None = None
     mcp: bool | None = None

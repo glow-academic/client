@@ -37,7 +37,9 @@ CREATE TYPE types.q_get_practice_context_view_v4_item AS (
     chat_entry_ids uuid[],
     scenario_ids uuid[],
     cohort_ids uuid[],
-    practice_ids uuid[]
+    practice_ids uuid[],
+    rubric_ids uuid[],
+    scenario_time_limit_ids uuid[]
 );
 
 CREATE OR REPLACE FUNCTION api_get_practice_context_view_v4(
@@ -76,7 +78,9 @@ accessible_training AS (
         mp.simulation_ids,
         mp.cohort_ids,
         mp.chat_ids AS chat_entry_ids,
-        mp.scenario_ids
+        mp.scenario_ids,
+        mp.rubric_ids,
+        mp.scenario_time_limit_ids
     FROM practice_mv mp
     JOIN user_cohorts uc ON mp.cohort_ids && COALESCE(uc.cohort_ids, ARRAY[]::uuid[])
 ),
@@ -109,13 +113,19 @@ simulation_scope AS (
         ARRAY_AGG(DISTINCT coid.cohort_id ORDER BY coid.cohort_id)
             FILTER (WHERE coid.cohort_id IS NOT NULL) AS cohort_ids,
         ARRAY_AGG(DISTINCT at2.parent_id ORDER BY at2.parent_id)
-            FILTER (WHERE at2.parent_id IS NOT NULL) AS practice_ids
+            FILTER (WHERE at2.parent_id IS NOT NULL) AS practice_ids,
+        ARRAY_AGG(DISTINCT rid.rubric_id ORDER BY rid.rubric_id)
+            FILTER (WHERE rid.rubric_id IS NOT NULL) AS rubric_ids,
+        ARRAY_AGG(DISTINCT stlid.scenario_time_limit_id ORDER BY stlid.scenario_time_limit_id)
+            FILTER (WHERE stlid.scenario_time_limit_id IS NOT NULL) AS scenario_time_limit_ids
     FROM active_simulations asim
     JOIN accessible_training at2
       ON asim.simulation_id = ANY(at2.simulation_ids)
     LEFT JOIN LATERAL unnest(at2.chat_entry_ids) tbeid(chat_entry_id) ON TRUE
     LEFT JOIN LATERAL unnest(at2.scenario_ids) scid(scenario_id) ON TRUE
     LEFT JOIN LATERAL unnest(at2.cohort_ids) coid(cohort_id) ON TRUE
+    LEFT JOIN LATERAL unnest(at2.rubric_ids) rid(rubric_id) ON TRUE
+    LEFT JOIN LATERAL unnest(at2.scenario_time_limit_ids) stlid(scenario_time_limit_id) ON TRUE
     GROUP BY asim.simulation_id
 )
 SELECT
@@ -127,7 +137,9 @@ SELECT
                     ss.chat_entry_ids,
                     ss.scenario_ids,
                     ss.cohort_ids,
-                    ss.practice_ids
+                    ss.practice_ids,
+                    ss.rubric_ids,
+                    ss.scenario_time_limit_ids
                 )::types.q_get_practice_context_view_v4_item
                 ORDER BY ss.simulation_id
             )

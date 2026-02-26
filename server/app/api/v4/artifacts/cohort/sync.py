@@ -101,9 +101,14 @@ async def sync_cohort_entries(
     )
     from app.api.v4.resources.simulations.get import get_simulations_internal
     from app.api.v4.resources.standards.search import search_standards_internal
+    from app.main import get_pool
 
     if not simulation_ids:
         return 0
+
+    pool = get_pool()
+    if not pool:
+        raise RuntimeError("Database pool not initialized")
 
     # ── Pass 1: Fetch simulations ──
     simulations = await get_simulations_internal(
@@ -132,22 +137,44 @@ async def sync_cohort_entries(
         )
 
     # ── Pass 2a: Parallel fetch all sub-resources ──
+    # Each fetch acquires its own connection from the pool to avoid
+    # asyncpg "another operation is in progress" on concurrent queries.
+    async def _fetch_scenarios() -> list[Any]:
+        async with pool.acquire() as c:
+            return await get_scenarios_internal(c, all_scenario_ids, bypass_cache=True)
+
+    async def _fetch_scenario_rubrics() -> list[Any]:
+        async with pool.acquire() as c:
+            return await get_scenario_rubrics_internal(c, all_scenario_rubric_ids, bypass_cache=True)
+
+    async def _fetch_scenario_flags() -> list[Any]:
+        async with pool.acquire() as c:
+            return await get_scenario_flags_internal(c, all_scenario_flag_ids, bypass_cache=True)
+
+    async def _fetch_scenario_positions() -> list[Any]:
+        async with pool.acquire() as c:
+            return await get_scenario_positions_internal(c, all_scenario_position_ids, bypass_cache=True)
+
+    async def _fetch_scenario_time_limits() -> list[Any]:
+        async with pool.acquire() as c:
+            return await get_scenario_time_limits_internal(c, all_scenario_time_limit_ids, bypass_cache=True)
+
+    async def _fetch_sim_positions() -> list[Any]:
+        async with pool.acquire() as c:
+            return await get_simulation_positions_internal(c, simulation_position_ids, bypass_cache=True)
+
+    async def _fetch_sim_availability() -> list[Any]:
+        async with pool.acquire() as c:
+            return await get_simulation_availability_internal(c, simulation_availability_ids, bypass_cache=True)
+
     gather_results = await asyncio.gather(
-        get_scenarios_internal(conn, all_scenario_ids, bypass_cache=True),
-        get_scenario_rubrics_internal(conn, all_scenario_rubric_ids, bypass_cache=True),
-        get_scenario_flags_internal(conn, all_scenario_flag_ids, bypass_cache=True),
-        get_scenario_positions_internal(
-            conn, all_scenario_position_ids, bypass_cache=True
-        ),
-        get_scenario_time_limits_internal(
-            conn, all_scenario_time_limit_ids, bypass_cache=True
-        ),
-        get_simulation_positions_internal(
-            conn, simulation_position_ids, bypass_cache=True
-        ),
-        get_simulation_availability_internal(
-            conn, simulation_availability_ids, bypass_cache=True
-        ),
+        _fetch_scenarios(),
+        _fetch_scenario_rubrics(),
+        _fetch_scenario_flags(),
+        _fetch_scenario_positions(),
+        _fetch_scenario_time_limits(),
+        _fetch_sim_positions(),
+        _fetch_sim_availability(),
     )
     scenarios: list[Any] = cast(list[Any], gather_results[0])
     scenario_rubrics: list[Any] = cast(list[Any], gather_results[1])
@@ -168,7 +195,8 @@ async def sync_cohort_entries(
     rubrics: list[Any] = []
     standards: list[Any] = []
     if all_rubric_ids:
-        rubrics = await get_rubrics_internal(conn, all_rubric_ids, bypass_cache=True)
+        async with pool.acquire() as rub_conn:
+            rubrics = await get_rubrics_internal(rub_conn, all_rubric_ids, bypass_cache=True)
 
         # Collect all standard_group_ids from rubrics
         all_standard_group_ids: list[UUID] = []
@@ -179,12 +207,13 @@ async def sync_cohort_entries(
 
         if all_standard_group_ids:
             # Fetch all standards belonging to these groups via search internal
-            standards = await search_standards_internal(
-                conn,
-                standard_group_ids=all_standard_group_ids,
-                limit_count=10000,
-                bypass_cache=True,
-            )
+            async with pool.acquire() as std_conn:
+                standards = await search_standards_internal(
+                    std_conn,
+                    standard_group_ids=all_standard_group_ids,
+                    limit_count=10000,
+                    bypass_cache=True,
+                )
 
     # ── Pass 3: Build lookup dicts ──
 
@@ -262,9 +291,9 @@ async def sync_cohort_entries(
         for a in sim_availability:
             if a.simulation_id and UUID(str(a.simulation_id)) == sim.simulation_id:
                 if a.type == "start":
-                    start_time = datetime.fromisoformat(a.time) if a.time else None
+                    start_time = a.time if isinstance(a.time, datetime) else (datetime.fromisoformat(a.time) if a.time else None)
                 elif a.type == "end":
-                    end_time = datetime.fromisoformat(a.time) if a.time else None
+                    end_time = a.time if isinstance(a.time, datetime) else (datetime.fromisoformat(a.time) if a.time else None)
 
         # Resolve position and availability resource IDs for this simulation
         sim_pos_resource_ids = [

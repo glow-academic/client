@@ -563,8 +563,8 @@ async def get_practice_internal(
                 all_cohort_ids.update(item.cohort_ids)
             if item.rubric_ids:
                 all_rubric_ids.update(item.rubric_ids)
-            if item.time_limit_ids:
-                all_time_limit_ids.update(item.time_limit_ids)
+            if item.scenario_time_limit_ids:
+                all_time_limit_ids.update(item.scenario_time_limit_ids)
 
     cohort_ids_list = list(all_cohort_ids)
     rubric_ids_list = list(all_rubric_ids)

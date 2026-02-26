@@ -154,7 +154,7 @@ BEGIN
         LIMIT 1;
     ELSE
         -- 0 or >1: fall back to profile's primary department
-        SELECT pdj.departments_id INTO v_profile_dept_id
+        SELECT pdj.department_id INTO v_profile_dept_id
         FROM profile_departments_junction pdj
         WHERE pdj.profile_id = p_profile_id AND pdj.active = true
         ORDER BY pdj.created_at
@@ -177,7 +177,7 @@ BEGIN
     END IF;
 
     -- 5. Build result with name, description, behavior flags, and generate flags from chat_entry
-    SELECT ROW(
+    SELECT (ROW(
         v_num_chats, v_completed_count,
         v_next_chat_entry_id, v_department_id,
         ce.name, ce.description,
@@ -193,7 +193,7 @@ BEGIN
         ce.generate_documents,
         ce.generate_options,
         ce.generate_parameter_fields
-    )::types.q_get_attempt_proceed_context_v4_result
+    )::types.q_get_attempt_proceed_context_v4_result).*
     INTO v_result
     FROM chat_entry ce
     WHERE ce.id = v_next_chat_entry_id;
