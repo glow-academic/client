@@ -178,6 +178,9 @@ modules:
   organization:
     departments:
       - general
+    personas: all
+    fields: all
+    parameters: all
 
   # Setup-specific modules (10-setups/university/)
   university:
