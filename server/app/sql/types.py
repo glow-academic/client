@@ -36042,6 +36042,7 @@ class QGetChatViewV4Item(BaseModel):
     attempt_type: str | None
     is_archived: bool | None
     infinite_mode: bool | None
+    persona_ids: list[UUID] | None
 
 
 
@@ -36060,6 +36061,7 @@ class GetChatViewSqlRow(BaseModel):
     cohort_options: list[QGetChatViewV4Option] | None = None
     department_options: list[QGetChatViewV4Option] | None = None
     scenario_options: list[QGetChatViewV4Option] | None = None
+    persona_options: list[QGetChatViewV4Option] | None = None
 
 class GetChatViewApiRequest(BaseModel):
 
@@ -36087,6 +36089,7 @@ class GetChatViewApiResponse(BaseModel):
     cohort_options: list[QGetChatViewV4Option] | None = None
     department_options: list[QGetChatViewV4Option] | None = None
     scenario_options: list[QGetChatViewV4Option] | None = None
+    persona_options: list[QGetChatViewV4Option] | None = None
 
 
 

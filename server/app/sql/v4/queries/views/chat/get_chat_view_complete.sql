@@ -83,7 +83,10 @@ CREATE TYPE types.q_get_chat_view_v4_item AS (
     -- Filters
     attempt_type text,
     is_archived boolean,
-    infinite_mode boolean
+    infinite_mode boolean,
+
+    -- Array fields
+    persona_ids uuid[]
 );
 
 -- Filter option type for dropdowns
@@ -123,7 +126,8 @@ RETURNS TABLE (
     simulation_options types.q_get_chat_view_v4_option[],
     cohort_options types.q_get_chat_view_v4_option[],
     department_options types.q_get_chat_view_v4_option[],
-    scenario_options types.q_get_chat_view_v4_option[]
+    scenario_options types.q_get_chat_view_v4_option[],
+    persona_options types.q_get_chat_view_v4_option[]
 )
 LANGUAGE sql
 STABLE
@@ -153,7 +157,8 @@ AS $$
             ch.attempt_date,
             ch.attempt_type,
             ch.is_archived,
-            ch.infinite_mode
+            ch.infinite_mode,
+            ch.persona_ids
         FROM attempt_chat_mv ch
         WHERE
             (profile_id_filter IS NULL OR ch.profile_id = profile_id_filter)
@@ -215,7 +220,8 @@ AS $$
                     attempt_date,
                     attempt_type,
                     is_archived,
-                    infinite_mode
+                    infinite_mode,
+                    persona_ids
                 )::types.q_get_chat_view_v4_item
             ),
             ARRAY[]::types.q_get_chat_view_v4_item[]
@@ -293,6 +299,23 @@ AS $$
             ARRAY[]::types.q_get_chat_view_v4_option[]
         ) AS options
         FROM scenario_options_cte
+    ),
+    -- Persona filter options
+    persona_options_cte AS (
+        SELECT
+            p.persona_id::text AS value,
+            p.persona_id::text AS label,
+            COUNT(DISTINCT f.chat_id)::int AS count
+        FROM filtered f, UNNEST(f.persona_ids) AS p(persona_id)
+        GROUP BY p.persona_id
+        ORDER BY count DESC, value
+    ),
+    persona_options_agg AS (
+        SELECT COALESCE(
+            ARRAY_AGG((value, label, count)::types.q_get_chat_view_v4_option),
+            ARRAY[]::types.q_get_chat_view_v4_option[]
+        ) AS options
+        FROM persona_options_cte
     )
     SELECT
         (SELECT items FROM items_agg),
@@ -300,5 +323,6 @@ AS $$
         (SELECT options FROM simulation_options_agg),
         (SELECT options FROM cohort_options_agg),
         (SELECT options FROM department_options_agg),
-        (SELECT options FROM scenario_options_agg);
+        (SELECT options FROM scenario_options_agg),
+        (SELECT options FROM persona_options_agg);
 $$;

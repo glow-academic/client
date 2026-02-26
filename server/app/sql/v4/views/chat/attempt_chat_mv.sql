@@ -73,6 +73,16 @@ chat_scope AS (
         ON csc.chat_id = c.chat_id AND csc.active = TRUE
     WHERE c.active = TRUE
     GROUP BY c.id
+),
+chat_personas AS (
+    SELECT
+        c.id AS chat_id,
+        ARRAY_AGG(cpc.personas_id) FILTER (WHERE cpc.personas_id IS NOT NULL) AS persona_ids
+    FROM attempt_chat_entry c
+    LEFT JOIN attempt_chat_personas_connection cpc
+        ON cpc.attempt_chat_id = c.id AND cpc.active = TRUE
+    WHERE c.active = TRUE
+    GROUP BY c.id
 )
 SELECT
     -- Primary key
@@ -91,6 +101,9 @@ SELECT
 
     -- Resource IDs (from training department scope)
     cs.scenario_id,
+
+    -- Persona IDs (from chat personas connection)
+    cp.persona_ids,
 
     -- Rubric ID (from chat's rubric connection)
     cr.rubric_id,
@@ -135,6 +148,7 @@ LEFT JOIN practice_cohorts_connection prac_coh ON prac_coh.practice_id = ape.pra
 LEFT JOIN home_departments_connection home_dep ON home_dep.home_id = ahe.home_id AND home_dep.active = true
 LEFT JOIN practice_departments_connection prac_dep ON prac_dep.practice_id = ape.practice_id AND prac_dep.active = true
 LEFT JOIN chat_scope cs ON cs.chat_id = c.id
+LEFT JOIN chat_personas cp ON cp.chat_id = c.id
 LEFT JOIN latest_grade lg ON lg.chat_id = c.id
 LEFT JOIN chat_rubric cr ON cr.attempt_chat_id = c.id
 LEFT JOIN LATERAL (
@@ -230,6 +244,11 @@ CREATE INDEX attempt_chat_mv_sim_scenario_idx
 CREATE INDEX attempt_chat_mv_scenario_date_idx
     ON attempt_chat_mv (scenario_id, attempt_date DESC)
     WHERE scenario_id IS NOT NULL;
+
+-- Persona IDs GIN index
+CREATE INDEX attempt_chat_mv_persona_ids_idx
+    ON attempt_chat_mv USING GIN (persona_ids)
+    WHERE persona_ids IS NOT NULL;
 
 -- Rubric indexes (primary section)
 CREATE INDEX attempt_chat_mv_rubric_chat_idx
