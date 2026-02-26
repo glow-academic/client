@@ -701,6 +701,7 @@ async def generate_handler(data: dict[str, Any]) -> None:
                         else artifact_type,
                         run_id=str(run_id),
                         group_id=str(group_id) if group_id else None,
+                        modality=payload.modality,
                         message_id=None,
                         messages=messages,
                         llm_config={

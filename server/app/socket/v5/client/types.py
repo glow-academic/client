@@ -39,6 +39,9 @@ class GeneratePayload(BaseModel):
     run_id: str | None = None
     group_id: str | None = None
 
+    # Modality: "call" (tool calls, default) or "audio" (realtime voice)
+    modality: str = "call"
+
     # Extra messages (chat history, appended after developer msgs)
     extra_messages: list[dict[str, str]] | None = None
 
@@ -322,13 +325,11 @@ class AttemptErrorEvent(BaseModel):
 
 
 class AttemptMessagePayload(BaseModel):
-    """Client-to-server: send a message in an attempt chat."""
+    """Client-to-server: send a text message in an attempt chat (modality=call)."""
 
     attempt_id: UUID
     chat_id: UUID
     message: str
-    voice_mode: bool = False
-    upload_id: UUID | None = None
     resource_types: list[str] | None = None
     user_instructions: list[str] | None = None
 

@@ -8,4 +8,5 @@ from . import (
     mute,  # noqa: F401
     start,  # noqa: F401
     stop,  # noqa: F401
+    text_frame,  # noqa: F401
 )

@@ -22709,7 +22709,7 @@ export interface components {
         };
         /**
          * AttemptMessagePayload
-         * @description Client-to-server: send a message in an attempt chat.
+         * @description Client-to-server: send a text message in an attempt chat (modality=call).
          */
         AttemptMessagePayload: {
             /**
@@ -22724,13 +22724,6 @@ export interface components {
             chat_id: string;
             /** Message */
             message: string;
-            /**
-             * Voice Mode
-             * @default false
-             */
-            voice_mode: boolean;
-            /** Upload Id */
-            upload_id?: string | null;
             /** Resource Types */
             resource_types?: string[] | null;
             /** User Instructions */
@@ -27641,6 +27634,11 @@ export interface components {
             run_id?: string | null;
             /** Group Id */
             group_id?: string | null;
+            /**
+             * Modality
+             * @default call
+             */
+            modality: string;
             /** Extra Messages */
             extra_messages?: {
                 [key: string]: string;

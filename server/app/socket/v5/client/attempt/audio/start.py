@@ -1,48 +1,39 @@
 """Client-facing attempt_audio_start handler.
 
-Validates context, creates placeholders via prepare SQL,
-then delegates to attempt_generate for the LLM pipeline.
+Handles: attempt_audio_start — start a voice session for an attempt chat.
+
+Flow:
+1. Resolve group_id from attempt_chat_entry
+2. Create run + profile link (config created by internal/generate.py)
+3. Emit to generate pipeline with modality="audio"
 """
 
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
 from app.socket.v5.client.types import AttemptAudioStartPayload
-from app.socket.v5.internal.attempt.types import AttemptErrorData
-from app.sql.types import (
-    GetAudioStartContextSqlParams,
-    GetAudioStartContextSqlRow,
-    PrepareAttemptAudioSqlParams,
-    PrepareAttemptAudioSqlRow,
+from app.socket.v5.internal.attempt.types import (
+    AttemptErrorData,
+    GenerateRequestData,
 )
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
 
-ATTEMPT_MESSAGE_ENTRY_TYPES = ["contents", "hints"]
-
-SQL_PATH_AUDIO_START_CONTEXT = (
-    "app/sql/v4/queries/generate/attempt/get_audio_start_context_complete.sql"
-)
-SQL_PATH_PREPARE = (
-    "app/sql/v4/queries/generate/attempt/prepare_attempt_audio_complete.sql"
-)
-
 
 @sio.event  # type: ignore
 async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
-    """Handle attempt_audio_start — validate, prepare, delegate to generate."""
+    """Handle attempt_audio_start — create run, emit generate with modality=audio."""
     try:
         payload = AttemptAudioStartPayload(**data)
         profile_id_str = await find_profile_by_socket(sid)
-        chat_id = str(payload.chat_id)
+        chat_id = payload.chat_id
 
         if not profile_id_str:
             await internal_sio.emit(
@@ -57,122 +48,69 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
 
         profile_id = uuid.UUID(profile_id_str)
 
-        # 1. Context SQL — validate chat, rate limits
         async with get_db_connection() as conn:
-            context_row = cast(
-                GetAudioStartContextSqlRow,
-                await execute_sql_typed(
-                    conn,
-                    SQL_PATH_AUDIO_START_CONTEXT,
-                    params=GetAudioStartContextSqlParams(
-                        p_profile_id=profile_id,
-                        p_chat_id=payload.chat_id,
-                    ),
-                ),
+            # Step 1: Resolve group_id + attempt_id from attempt_chat_entry
+            row = await conn.fetchrow(
+                """SELECT ac.group_id, b.attempt_id
+                FROM attempt_chat_entry ac
+                JOIN attempt_chat_bridge_entry b ON b.attempt_chat_id = ac.id
+                WHERE ac.id = $1
+                LIMIT 1""",
+                chat_id,
             )
 
-        if not context_row or not context_row.chat_exists:
-            await internal_sio.emit(
-                "attempt_error",
-                AttemptErrorData(
-                    sid=sid,
-                    error_type="audio",
-                    message="Chat not found",
-                    chat_id=chat_id,
-                ).model_dump(mode="json"),
-            )
-            return
+            if not row or not row["group_id"]:
+                await internal_sio.emit(
+                    "attempt_error",
+                    AttemptErrorData(
+                        sid=sid,
+                        error_type="audio",
+                        message="No group found for chat",
+                        chat_id=str(chat_id),
+                    ).model_dump(mode="json"),
+                )
+                return
 
-        if context_row.chat_is_completed:
-            await internal_sio.emit(
-                "attempt_error",
-                AttemptErrorData(
-                    sid=sid,
-                    error_type="audio",
-                    message="Chat is already completed",
-                    chat_id=chat_id,
-                ).model_dump(mode="json"),
-            )
-            return
+            group_id = row["group_id"]
+            attempt_id = row["attempt_id"]
 
-        # Rate limit validation
-        requests_per_day = context_row.requests_per_day
-        runs_today = context_row.runs_today or 0
-        if requests_per_day is not None and runs_today >= requests_per_day:
-            error_msg = (
-                f"Rate limit exceeded ({runs_today}/{requests_per_day} requests today)"
-            )
-            logger.error(
-                f"Audio start rate limit exceeded - "
-                f"profile_id={profile_id}, chat_id={chat_id}"
-            )
-            await internal_sio.emit(
-                "attempt_error",
-                AttemptErrorData(
-                    sid=sid,
-                    error_type="audio",
-                    message=error_msg,
-                    chat_id=chat_id,
-                ).model_dump(mode="json"),
-            )
-            return
-
-        attempt_id = context_row.attempt_id
-        if not attempt_id:
-            await internal_sio.emit(
-                "attempt_error",
-                AttemptErrorData(
-                    sid=sid,
-                    error_type="audio",
-                    message="Attempt not found for this chat",
-                    chat_id=chat_id,
-                ).model_dump(mode="json"),
-            )
-            return
-
-        # 2. Prepare SQL — create empty user + assistant placeholders
-        async with get_db_connection() as conn:
-            prepare_row = cast(
-                PrepareAttemptAudioSqlRow,
-                await execute_sql_typed(
-                    conn,
-                    SQL_PATH_PREPARE,
-                    params=PrepareAttemptAudioSqlParams(
-                        p_profile_id=profile_id,
-                        p_chat_id=payload.chat_id,
-                    ),
-                ),
+            # Step 2: Create run + profile link
+            run_id = await conn.fetchval(
+                """INSERT INTO runs_entry (group_id)
+                VALUES ($1) RETURNING id""",
+                group_id,
             )
 
-        if not prepare_row or not prepare_row.run_id:
-            await internal_sio.emit(
-                "attempt_error",
-                AttemptErrorData(
-                    sid=sid,
-                    error_type="audio",
-                    message="Failed to prepare audio session",
-                    chat_id=chat_id,
-                ).model_dump(mode="json"),
+            await conn.execute(
+                """INSERT INTO profiles_runs_connection (profiles_id, run_id)
+                SELECT ppj.profiles_id, $2
+                FROM profile_profiles_junction ppj
+                WHERE ppj.profile_id = $1
+                LIMIT 1""",
+                profile_id,
+                run_id,
             )
-            return
 
-        # 3. Delegate to attempt_generate
+        # Step 3: Emit to generate pipeline with modality=audio
+        resource_types = ["contents", "hints"]
+
         await internal_sio.emit(
-            "attempt_generate",
-            {
-                "sid": sid,
-                "attempt_id": str(attempt_id),
-                "entry_types": ATTEMPT_MESSAGE_ENTRY_TYPES,
-                "run_id": str(prepare_row.run_id),
-                "group_id": str(prepare_row.group_id),
-                "chat_id": chat_id,
-            },
-        )
-
-        logger.info(
-            f"Audio start delegated to attempt_generate - "
-            f"chat_id={chat_id}, run_id={prepare_row.run_id}, "
-            f"group_id={prepare_row.group_id}"
+            "generate",
+            GenerateRequestData(
+                sid=sid,
+                profile_id=profile_id_str,
+                artifact_type="attempt",
+                artifact_id=str(attempt_id),
+                resource_types=resource_types,
+                save=True,
+                run_id=str(run_id),
+                group_id=str(group_id),
+                modality="audio",
+                metadata={
+                    "attempt_id": str(attempt_id),
+                    "chat_id": str(chat_id),
+                },
+            ).model_dump(mode="json"),
         )
 
         # Log activity
@@ -181,10 +119,7 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
                 sid=sid,
                 event_key="attempt.audio.started",
                 template="{{ actor.name }} started voice session",
-                context={
-                    "chat_id": chat_id,
-                    "group_id": str(prepare_row.group_id),
-                },
+                context={"chat_id": str(chat_id)},
                 endpoint="/socket/v5/attempt/audio_start",
                 error=False,
             )

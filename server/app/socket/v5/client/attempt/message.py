@@ -110,11 +110,10 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
             created_at = await conn.fetchval("SELECT NOW()")
 
             user_message_id = await conn.fetchval(
-                """INSERT INTO messages_entry (run_id, role, audio, created_at, updated_at)
-                VALUES ($1, 'user'::message_type, $2, $3, $3)
+                """INSERT INTO messages_entry (run_id, role, created_at, updated_at)
+                VALUES ($1, 'user'::message_type, $2, $2)
                 RETURNING id""",
                 run_id,
-                payload.voice_mode,
                 created_at,
             )
 
@@ -141,11 +140,10 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
 
             # Step 4: Create assistant placeholder (messages_entry + attempt_message_entry only)
             assistant_message_id = await conn.fetchval(
-                """INSERT INTO messages_entry (run_id, role, audio, created_at, updated_at)
-                VALUES ($1, 'assistant'::message_type, $2, $3 + interval '1 millisecond', $3 + interval '1 millisecond')
+                """INSERT INTO messages_entry (run_id, role, created_at, updated_at)
+                VALUES ($1, 'assistant'::message_type, $2 + interval '1 millisecond', $2 + interval '1 millisecond')
                 RETURNING id""",
                 run_id,
-                payload.voice_mode,
                 created_at,
             )
 
@@ -196,6 +194,7 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
                 save=True,
                 run_id=str(run_id),
                 group_id=str(group_id),
+                modality="call",
                 metadata={
                     "attempt_id": str(attempt_id),
                     "chat_id": str(chat_id),

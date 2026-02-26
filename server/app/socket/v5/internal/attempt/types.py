@@ -42,6 +42,7 @@ class GenerateRequestData(BaseModel):
     user_instructions: list[str] | None = None
     run_id: str | None = None
     group_id: str | None = None
+    modality: str = "call"
     extra_messages: list[dict[str, str]] | None = None
     metadata: dict[str, Any] | None = None
 
