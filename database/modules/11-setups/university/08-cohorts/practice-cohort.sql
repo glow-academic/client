@@ -18,7 +18,7 @@ INSERT INTO public.cohort_artifact (created_at, updated_at, id, generated, mcp) 
 -- Junctions
 -- cohort_cohorts_junction
 -- cohort_flags_junction
-INSERT INTO public.cohort_flags_junction (cohort_id, flag_id, value, created_at, generated, mcp, active) VALUES ('019b3be4-3243-7690-8000-000000000001', '019be334-bfc4-71d1-90f5-23e5037bca21', true, '2026-02-15T20:20:32.255370+00:00', false, false, true) ON CONFLICT (cohort_id, flag_id) DO NOTHING;
+INSERT INTO public.cohort_flags_junction (cohort_id, flag_id, value, created_at, generated, mcp, active) VALUES ('019b3be4-3243-7690-8000-000000000001', '019be334-bfc4-71d1-90f5-23e5037bca21', false, '2026-02-15T20:20:32.255370+00:00', false, false, true) ON CONFLICT (cohort_id, flag_id) DO NOTHING;
 -- cohort_names_junction
 INSERT INTO public.cohort_names_junction (cohort_id, name_id, created_at, generated, mcp, active) VALUES ('019b3be4-3243-7690-8000-000000000001', '019c524c-1bb3-79a6-bb44-8bf1f52a7ac8', '2026-02-12T14:40:45.489534+00:00', false, false, true) ON CONFLICT (cohort_id, name_id) DO NOTHING;
 -- cohort_simulation_positions_junction
