@@ -57,6 +57,5 @@ INSERT INTO public.simulation_flags_junction (simulation_id, flag_id, value, cre
 INSERT INTO public.simulation_flags_junction (simulation_id, flag_id, value, created_at, generated, mcp, active) VALUES ('019b3be4-3cb8-7ad7-ae1a-c8cb23791135', '019b995a-86ef-71e9-ad2c-6c2040afdffe', true, '2026-01-22T01:20:11.353715+00:00', false, false, true) ON CONFLICT (simulation_id, flag_id) DO NOTHING;
 -- simulation_names_junction
 INSERT INTO public.simulation_names_junction (simulation_id, name_id, created_at, generated, mcp, active) VALUES ('019b3be4-3cb8-7ad7-ae1a-c8cb23791135', '019b995c-8e93-7fff-9b2a-c4e3b0544563', '2025-08-12T12:52:09.984906+00:00', false, false, true) ON CONFLICT (simulation_id, name_id) DO NOTHING;
--- simulation_scenario_positions_junction
 -- simulation_simulations_junction
 INSERT INTO public.simulation_simulations_junction (simulation_id, simulations_id, active, created_at, generated, mcp) VALUES ('019b3be4-3cb8-7ad7-ae1a-c8cb23791135', '019bb25e-e62c-78b0-9cc1-39f25f8db3ef', true, '2025-08-12T12:52:09.984906+00:00', false, false) ON CONFLICT (simulation_id, simulations_id) DO NOTHING;

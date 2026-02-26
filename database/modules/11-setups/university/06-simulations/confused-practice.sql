@@ -41,6 +41,9 @@ INSERT INTO public.scenario_names_junction (scenario_id, name_id, created_at, ge
 INSERT INTO public.scenario_personas_junction (active, created_at, persona_id, scenario_id, generated, mcp) VALUES (true, '2025-10-12T20:52:39.724884+00:00', '019bb25e-e60c-7345-ac6d-50d29df6deb3', '019b3be4-3c3a-7a3d-963c-a55073c3c21c', false, false) ON CONFLICT (scenario_id, persona_id) DO NOTHING;
 -- scenario_scenarios_junction
 
+-- Simulation resource rows
+INSERT INTO public.simulations_resource (created_at, active, generated, mcp, id, name, description, department_ids, scenario_ids, scenario_rubric_ids, scenario_time_limit_ids, scenario_position_ids, scenario_flag_ids, practice) VALUES ('2025-08-12T12:52:09.984906+00:00', true, false, false, '019bb25e-e62c-78ae-9b5d-fa21cbd364d4', 'Confused Practice', 'Seeks to understand by asking questions and exploring ideas.', '{}', '{019bb25e-e61d-7f0d-8cb0-426ba262f584}', '{}', '{}', '{}', '{}', true) ON CONFLICT (id) DO NOTHING;
+
 -- Simulation artifact
 -- simulation_artifact
 INSERT INTO public.simulation_artifact (created_at, updated_at, id, generated, mcp) VALUES ('2025-08-12T12:52:09.984906+00:00', '2025-08-12T12:52:09.984906+00:00', '019b3be4-3cb8-7aca-868e-a69b5c794769', false, false) ON CONFLICT (id) DO NOTHING;
@@ -54,5 +57,5 @@ INSERT INTO public.simulation_flags_junction (simulation_id, flag_id, value, cre
 INSERT INTO public.simulation_flags_junction (simulation_id, flag_id, value, created_at, generated, mcp, active) VALUES ('019b3be4-3cb8-7aca-868e-a69b5c794769', '019b995a-86ef-71e9-ad2c-6c2040afdffe', true, '2026-01-22T01:20:11.353715+00:00', false, false, true) ON CONFLICT (simulation_id, flag_id) DO NOTHING;
 -- simulation_names_junction
 INSERT INTO public.simulation_names_junction (simulation_id, name_id, created_at, generated, mcp, active) VALUES ('019b3be4-3cb8-7aca-868e-a69b5c794769', '019b995c-8e93-7ff1-a1fb-65270d579942', '2025-08-12T12:52:09.984906+00:00', false, false, true) ON CONFLICT (simulation_id, name_id) DO NOTHING;
--- simulation_scenario_positions_junction
 -- simulation_simulations_junction
+INSERT INTO public.simulation_simulations_junction (simulation_id, simulations_id, active, created_at, generated, mcp) VALUES ('019b3be4-3cb8-7aca-868e-a69b5c794769', '019bb25e-e62c-78ae-9b5d-fa21cbd364d4', true, '2025-08-12T12:52:09.984906+00:00', false, false) ON CONFLICT (simulation_id, simulations_id) DO NOTHING;
