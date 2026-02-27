@@ -395,8 +395,14 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
 
         createable_resources: set[str] = set()
         for tool in config_tools:
-            if getattr(tool, "createable", False) and getattr(tool, "resource", None):
-                createable_resources.add(tool.resource)
+            if getattr(tool, "createable", False):
+                type_name = (
+                    getattr(tool, "resource", None)
+                    or getattr(tool, "entry", None)
+                    or None
+                )
+                if type_name:
+                    createable_resources.add(type_name)
 
         # Compute artifact types from all tools (shared across agents)
         all_artifact_types = list(
@@ -643,19 +649,16 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
                             True,
                         )
 
-                # 13g: Filter tools to this agent's resource types
-                agent_rt_set = set(agent_resource_types)
+                # 13g: Filter tools to only those the agent declares via tool_ids
+                agent_tool_id_set = (
+                    set(str(tid) for tid in agent_resource.tool_ids)
+                    if agent_resource and getattr(agent_resource, "tool_ids", None)
+                    else set()
+                )
                 scoped_tool_dicts = [
                     td
                     for td in all_tool_dicts
-                    if td.get("resource") in agent_rt_set
-                    or (
-                        not td.get("resource")
-                        and (
-                            not td.get("artifact")
-                            or td.get("artifact") == artifact_type
-                        )
-                    )
+                    if str(td.get("id", "")) in agent_tool_id_set
                 ]
 
                 # 13h: Build metadata (pass-through from caller + media agent IDs)
