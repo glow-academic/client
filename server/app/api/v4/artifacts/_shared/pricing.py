@@ -52,8 +52,7 @@ async def _batch_fetch_pricing(
         pricing_ids,
     )
     result = {
-        r["id"]: PricingInfo(Decimal(str(r["price"])), r["unit_value"])
-        for r in rows
+        r["id"]: PricingInfo(Decimal(str(r["price"])), r["unit_value"]) for r in rows
     }
 
     await set_cached(
@@ -106,7 +105,9 @@ async def compute_costs_from_runs(
             if p.pricing_id and p.count:
                 info = pricing_map.get(p.pricing_id)
                 if info and info.unit_value > 0:
-                    total_cost += (Decimal(str(p.count)) / Decimal(str(info.unit_value))) * info.price
+                    total_cost += (
+                        Decimal(str(p.count)) / Decimal(str(info.unit_value))
+                    ) * info.price
         result[run.run_id] = total_cost
 
     return result

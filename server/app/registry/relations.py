@@ -118,7 +118,7 @@ ENTRY_RESOURCES: dict[str, frozenset[str]] = {
             "run_rubrics",
         }
     ),
-    "bindings": frozenset({"bindings"}),
+    "entries": frozenset({"entries"}),
     "chat": frozenset(
         {
             "departments",
@@ -144,7 +144,7 @@ ENTRY_RESOURCES: dict[str, frozenset[str]] = {
         }
     ),
     "config": frozenset({"agents", "models", "providers"}),
-    "domains": frozenset({"domains"}),
+    "resources": frozenset({"resources"}),
     "emulations": frozenset({"profiles"}),
     "grants": frozenset({"profiles"}),
     "groups": frozenset({"groups"}),
@@ -206,7 +206,7 @@ RESOURCE_ENTRIES: dict[str, frozenset[str]] = {
     "agents": frozenset({"config"}),
     "args": frozenset({"args_values"}),
     "args_outputs": frozenset({"args_outputs_values"}),
-    "bindings": frozenset({"bindings"}),
+    "entries": frozenset({"entries"}),
     "cohorts": frozenset({"home", "practice"}),
     "departments": frozenset(
         {
@@ -221,7 +221,7 @@ RESOURCE_ENTRIES: dict[str, frozenset[str]] = {
     ),
     "descriptions": frozenset({"attempt_chat", "chat", "invocation"}),
     "documents": frozenset({"attempt_chat", "chat"}),
-    "domains": frozenset({"domains"}),
+    "resources": frozenset({"resources"}),
     "evals": frozenset({"test"}),
     "flags": frozenset({"chat", "invocation"}),
     "group_positions": frozenset({"benchmark"}),
@@ -634,12 +634,12 @@ ARTIFACT_RESOURCES: dict[str, frozenset[str]] = {
             "args",
             "args_outputs",
             "artifacts",
-            "bindings",
             "departments",
             "descriptions",
-            "domains",
+            "entries",
             "flags",
             "names",
+            "resources",
         }
     ),
 }

@@ -252,7 +252,7 @@ settings_agent_ids_data AS (
 artifact_agent_ids_data AS (
     -- Check which artifacts have at least one qualifying agent via two paths:
     -- 1. Direct: artifact -> inline resource map -> tool resources
-    -- 2. Bindings: artifact -> entries -> tool_bindings_junction
+    -- 2. Bindings: artifact -> entries -> tool_entries_junction
 
     WITH artifact_resource_map AS (
         SELECT artifact, resource
@@ -438,8 +438,8 @@ artifact_agent_ids_data AS (
                 SELECT dr.resource
                 FROM agent_tools_junction at
                 JOIN tool_tools_junction ttj ON ttj.tools_id = at.tool_id
-                JOIN tool_domains_junction tdj ON tdj.tool_id = ttj.tool_id AND tdj.active = true
-                JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
+                JOIN tool_resources_junction tdj ON tdj.tool_id = ttj.tool_id AND tdj.active = true
+                JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
                 WHERE at.agent_id = ea.agent_id AND at.active = true
             )
         )
@@ -448,17 +448,17 @@ artifact_agent_ids_data AS (
         SELECT DISTINCT kv.key as artifact
         FROM jsonb_each(p_artifact_entries) AS kv(key, value)
         CROSS JOIN LATERAL jsonb_array_elements_text(kv.value) AS e(entry)
-        JOIN bindings_resource br ON br.entry = e.entry::entry_type AND br.active = true
+        JOIN entries_resource br ON br.entry = e.entry::entry_type AND br.active = true
         WHERE EXISTS (
-            SELECT 1 FROM tool_bindings_junction tbj
-            WHERE tbj.binding_id = br.id AND tbj.active = true
+            SELECT 1 FROM tool_entries_junction tbj
+            WHERE tbj.entry_id = br.id AND tbj.active = true
         )
         AND EXISTS (
             SELECT 1 FROM eligible_agents ea
             JOIN agent_tools_junction at ON at.agent_id = ea.agent_id AND at.active = true
             JOIN tool_tools_junction ttj ON ttj.tools_id = at.tool_id
-            JOIN tool_bindings_junction tbj ON tbj.tool_id = ttj.tool_id AND tbj.active = true
-            JOIN bindings_resource br2 ON br2.id = tbj.binding_id AND br2.active = true
+            JOIN tool_entries_junction tbj ON tbj.tool_id = ttj.tool_id AND tbj.active = true
+            JOIN entries_resource br2 ON br2.id = tbj.entry_id AND br2.active = true
             WHERE br2.entry = e.entry::entry_type
         )
     )

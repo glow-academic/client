@@ -252,7 +252,12 @@ class InternalBusAudioEmitter:
         )
 
     async def on_user_speech_complete(
-        self, group_id: str, item_id: str, transcript: str, *, audio: bytes | None = None
+        self,
+        group_id: str,
+        item_id: str,
+        transcript: str,
+        *,
+        audio: bytes | None = None,
     ) -> None:
         """User speech finalized — triggers DB write in domain translator."""
         payload: dict[str, Any] = {

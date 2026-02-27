@@ -587,9 +587,7 @@ async def get_model_internal(
     pricing_resources_list = [
         p for p in pricing if p.pricing_id in selected_pricing_ids
     ]
-    pricing_resources_list.sort(
-        key=lambda p: (p.pricing_type or "", p.unit_name or "")
-    )
+    pricing_resources_list.sort(key=lambda p: (p.pricing_type or "", p.unit_name or ""))
     reasoning_level_resources = [
         r
         for r in reasoning_levels

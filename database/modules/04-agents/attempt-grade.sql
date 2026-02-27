@@ -75,6 +75,20 @@ INSERT INTO public.instructions_resource (id, template, active, created_at, gene
 {% endif %}
 {% endif %}
 
+{% if resources and resources.problem_statements and resources.problem_statements|length > 0 %}
+### Problem Statement
+{% for ps in resources.problem_statements %}
+{{ ps.problem_statement }}
+{% endfor %}
+{% endif %}
+
+{% if resources and resources.objectives and resources.objectives|length > 0 %}
+### Objectives
+{% for obj in resources.objectives %}
+- {{ obj.objective }}
+{% endfor %}
+{% endif %}
+
 {% if chat and chat.persona_refs and chat.persona_refs|length > 0 %}
 ### Personas
 {% for ref in chat.persona_refs %}
@@ -96,6 +110,19 @@ INSERT INTO public.instructions_resource (id, template, active, created_at, gene
 {% for s in resources.standards %}
 - id: {{ s.standard_id }} | description: {{ s.description[:80] if s.description is defined else s.standard_id }}
 {% endfor %}
+{% endif %}
+
+### Current Assistant Message
+{% set ns = namespace(current_message=None) %}
+{% if entries and entries.attempt_message %}
+{% for m in entries.attempt_message|reverse %}
+{% if m.type == ''response'' and not ns.current_message %}
+{% set ns.current_message = m %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if ns.current_message %}
+**message_id:** `{{ ns.current_message.id }}`
 {% endif %}
 
 ## Tool Usage

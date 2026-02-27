@@ -683,8 +683,8 @@ agent_artifact_tool_counts AS (
         JOIN flags_resource f ON tf.flag_id = f.id
         WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true
     )
-    LEFT JOIN tool_domains_junction tdj_rt ON tdj_rt.tool_id = t.id AND tdj_rt.active = true
-    LEFT JOIN domains_resource dr_rt ON dr_rt.id = tdj_rt.domain_id AND dr_rt.active = true
+    LEFT JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = t.id AND tdj_rt.active = true
+    LEFT JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resource_id AND dr_rt.active = true
     GROUP BY a.id
 ),
 
@@ -702,8 +702,8 @@ name_agent_data AS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
             JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
-            JOIN tool_domains_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
-            JOIN domains_resource dr_rt ON dr_rt.id = tdj_rt.domain_id AND dr_rt.active = true
+            JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
+            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resource_id AND dr_rt.active = true
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND dr_rt.resource = ANY(ARRAY['departments','emails','flags','names','profiles','request_limits','roles','routes']::resource_type[])
@@ -724,8 +724,8 @@ name_agent_data AS (
             JOIN tools_resource tr ON tr.id = at.tool_id
             JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-            JOIN tool_domains_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-            JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
+            JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
               AND dr.resource = 'names'::resource_type
         )
@@ -779,8 +779,8 @@ emails_agent_data AS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
             JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
-            JOIN tool_domains_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
-            JOIN domains_resource dr_rt ON dr_rt.id = tdj_rt.domain_id AND dr_rt.active = true
+            JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
+            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resource_id AND dr_rt.active = true
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND dr_rt.resource = ANY(ARRAY['departments','emails','flags','names','profiles','request_limits','roles','routes']::resource_type[])
@@ -801,8 +801,8 @@ emails_agent_data AS (
             JOIN tools_resource tr ON tr.id = at.tool_id
             JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-            JOIN tool_domains_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-            JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
+            JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
               AND dr.resource = 'emails'::resource_type
         )
@@ -856,8 +856,8 @@ request_limit_agent_data AS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
             JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
-            JOIN tool_domains_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
-            JOIN domains_resource dr_rt ON dr_rt.id = tdj_rt.domain_id AND dr_rt.active = true
+            JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
+            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resource_id AND dr_rt.active = true
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND dr_rt.resource = ANY(ARRAY['departments','emails','flags','names','profiles','request_limits','roles','routes']::resource_type[])
@@ -878,8 +878,8 @@ request_limit_agent_data AS (
             JOIN tools_resource tr ON tr.id = at.tool_id
             JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-            JOIN tool_domains_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-            JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
+            JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
               AND dr.resource = 'request_limits'::resource_type
         )
@@ -933,8 +933,8 @@ flag_agent_data AS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
             JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
-            JOIN tool_domains_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
-            JOIN domains_resource dr_rt ON dr_rt.id = tdj_rt.domain_id AND dr_rt.active = true
+            JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
+            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resource_id AND dr_rt.active = true
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND dr_rt.resource = ANY(ARRAY['departments','emails','flags','names','profiles','request_limits','roles','routes']::resource_type[])
@@ -955,8 +955,8 @@ flag_agent_data AS (
             JOIN tools_resource tr ON tr.id = at.tool_id
             JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-            JOIN tool_domains_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-            JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
+            JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
               AND dr.resource = 'flags'::resource_type
         )
@@ -1010,8 +1010,8 @@ departments_agent_data AS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
             JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
-            JOIN tool_domains_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
-            JOIN domains_resource dr_rt ON dr_rt.id = tdj_rt.domain_id AND dr_rt.active = true
+            JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
+            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resource_id AND dr_rt.active = true
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND dr_rt.resource = ANY(ARRAY['departments','emails','flags','names','profiles','request_limits','roles','routes']::resource_type[])
@@ -1032,8 +1032,8 @@ departments_agent_data AS (
             JOIN tools_resource tr ON tr.id = at.tool_id
             JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-            JOIN tool_domains_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-            JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
+            JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
               AND dr.resource = 'departments'::resource_type
         )
@@ -1087,8 +1087,8 @@ basic_agent_data AS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
             JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
-            JOIN tool_domains_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
-            JOIN domains_resource dr_rt ON dr_rt.id = tdj_rt.domain_id AND dr_rt.active = true
+            JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
+            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resource_id AND dr_rt.active = true
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND dr_rt.resource = ANY(ARRAY['departments','emails','flags','names','profiles','request_limits','roles','routes']::resource_type[])
@@ -1118,8 +1118,8 @@ basic_agent_data AS (
         LEFT JOIN tools_resource tr ON tr.id = at.tool_id
         LEFT JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
         LEFT JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-        LEFT JOIN tool_domains_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-        LEFT JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
+        LEFT JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
+        LEFT JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
         GROUP BY ea.agent_id, ea.updated_at
     ),
     agent_scores AS (
@@ -1188,8 +1188,8 @@ general_agent_data AS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
             JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
-            JOIN tool_domains_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
-            JOIN domains_resource dr_rt ON dr_rt.id = tdj_rt.domain_id AND dr_rt.active = true
+            JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
+            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resource_id AND dr_rt.active = true
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND dr_rt.resource = ANY(ARRAY['departments','emails','flags','names','profiles','request_limits','roles','routes']::resource_type[])
@@ -1219,8 +1219,8 @@ general_agent_data AS (
         LEFT JOIN tools_resource tr ON tr.id = at.tool_id
         LEFT JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
         LEFT JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
-        LEFT JOIN tool_domains_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-        LEFT JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
+        LEFT JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
+        LEFT JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
         GROUP BY ea.agent_id, ea.updated_at
     ),
     agent_scores AS (
@@ -1281,40 +1281,40 @@ general_agent_data AS (
 tools_existence_check AS (
     SELECT 
         EXISTS (
-            SELECT 1 FROM tool_domains_junction tdj
-            JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
+            SELECT 1 FROM tool_resources_junction tdj
+            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
             JOIN tool_artifact t ON t.id = tdj.tool_id
             WHERE tdj.active = true
               AND dr.resource = 'names'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as names_has_tools,
         EXISTS (
-            SELECT 1 FROM tool_domains_junction tdj
-            JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
+            SELECT 1 FROM tool_resources_junction tdj
+            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
             JOIN tool_artifact t ON t.id = tdj.tool_id
             WHERE tdj.active = true
               AND dr.resource = 'emails'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as emails_has_tools,
         EXISTS (
-            SELECT 1 FROM tool_domains_junction tdj
-            JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
+            SELECT 1 FROM tool_resources_junction tdj
+            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
             JOIN tool_artifact t ON t.id = tdj.tool_id
             WHERE tdj.active = true
               AND dr.resource = 'request_limits'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as request_limits_has_tools,
         EXISTS (
-            SELECT 1 FROM tool_domains_junction tdj
-            JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
+            SELECT 1 FROM tool_resources_junction tdj
+            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
             JOIN tool_artifact t ON t.id = tdj.tool_id
             WHERE tdj.active = true
               AND dr.resource = 'flags'::resource_type 
               AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as flags_has_tools,
         EXISTS (
-            SELECT 1 FROM tool_domains_junction tdj
-            JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
+            SELECT 1 FROM tool_resources_junction tdj
+            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
             JOIN tool_artifact t ON t.id = tdj.tool_id
             WHERE tdj.active = true
               AND dr.resource = 'departments'::resource_type 

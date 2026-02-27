@@ -52,7 +52,7 @@ RESOURCE_SCHEMAS: dict[str, dict[str, str]] = {
         "slug": "text",
         "protocol": "text",
     },
-    "bindings": {
+    "entries": {
         "entry": "enum",
     },
     "cohorts": {
@@ -94,7 +94,7 @@ RESOURCE_SCHEMAS: dict[str, dict[str, str]] = {
         "parameter_ids": "array",
         "parameter_field_ids": "array",
     },
-    "domains": {
+    "resources": {
         "resource": "enum",
         "creatable": "bool",
     },

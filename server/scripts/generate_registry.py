@@ -41,6 +41,7 @@ REGISTRY_DIR = SERVER_DIR / "app" / "registry"
 def gen_resources() -> str:
     """Generate resources.py content."""
     from scripts.registry_generators.resources_gen import generate_resource_schemas
+
     from app.registry.manual import RESOURCE_OUTPUT_SCHEMAS
 
     schemas = generate_resource_schemas()
@@ -51,7 +52,7 @@ def gen_resources() -> str:
         "Business columns only — excludes system columns (id, created_at, active, generated, mcp)",
         "that are present on every resource table.",
         "",
-        'Type strings: text, int, float, numeric, bool, uuid, array, enum, timestamp',
+        "Type strings: text, int, float, numeric, bool, uuid, array, enum, timestamp",
         '"""',
         "",
         format_dict_of_dicts(
@@ -104,7 +105,7 @@ def gen_entries() -> str:
         "Entry type keys match the entry_type enum values (unprefixed).",
         "For highlights/replacements, columns come from the standalone tables (not attempt_* variants).",
         "",
-        'Type strings: text, int, float, numeric, bool, uuid, array, enum, timestamp',
+        "Type strings: text, int, float, numeric, bool, uuid, array, enum, timestamp",
         '"""',
         "",
         format_dict_of_dicts(
@@ -144,23 +145,25 @@ def gen_entry_views() -> str:
         mv_name = names[entry_key]
         parts.append(f"  {entry_key:14s} → {mv_name}")
 
-    parts.extend([
-        "",
-        'Type strings: text, int, float, numeric, bool, uuid, array, enum, timestamp',
-        '"""',
-        "",
-        format_dict_of_dicts(
-            "ENTRY_VIEW_SCHEMAS",
-            "dict[str, dict[str, str]]",
-            schemas,
-        ),
-        "",
-        format_dict_of_strings(
-            "ENTRY_VIEW_NAMES",
-            "dict[str, str]",
-            names,
-        ),
-    ])
+    parts.extend(
+        [
+            "",
+            "Type strings: text, int, float, numeric, bool, uuid, array, enum, timestamp",
+            '"""',
+            "",
+            format_dict_of_dicts(
+                "ENTRY_VIEW_SCHEMAS",
+                "dict[str, dict[str, str]]",
+                schemas,
+            ),
+            "",
+            format_dict_of_strings(
+                "ENTRY_VIEW_NAMES",
+                "dict[str, str]",
+                names,
+            ),
+        ]
+    )
     return "\n".join(parts)
 
 
@@ -300,18 +303,20 @@ def gen_relations() -> str:
     parts.append("")
 
     # ARTIFACT_ENTRIES (computed)
-    parts.extend([
-        "# artifact_view_relation + view_entry_relation combined (artifact_type → entry_types)",
-        "# Computed from ARTIFACT_VIEWS × VIEW_ENTRIES",
-        "ARTIFACT_ENTRIES: dict[str, list[str]] = {}",
-        "for _art, _views in ARTIFACT_VIEWS.items():",
-        "    _ents: set[str] = set()",
-        "    for _v in _views:",
-        "        if _v in VIEW_ENTRIES:",
-        "            _ents.update(VIEW_ENTRIES[_v])",
-        "    if _ents:",
-        "        ARTIFACT_ENTRIES[_art] = sorted(_ents)",
-    ])
+    parts.extend(
+        [
+            "# artifact_view_relation + view_entry_relation combined (artifact_type → entry_types)",
+            "# Computed from ARTIFACT_VIEWS × VIEW_ENTRIES",
+            "ARTIFACT_ENTRIES: dict[str, list[str]] = {}",
+            "for _art, _views in ARTIFACT_VIEWS.items():",
+            "    _ents: set[str] = set()",
+            "    for _v in _views:",
+            "        if _v in VIEW_ENTRIES:",
+            "            _ents.update(VIEW_ENTRIES[_v])",
+            "    if _ents:",
+            "        ARTIFACT_ENTRIES[_art] = sorted(_ents)",
+        ]
+    )
 
     return "\n".join(parts)
 
@@ -347,7 +352,7 @@ def gen_artifacts() -> str:
         "from enum import Enum",
         "",
         "",
-        'class ArtifactKind(str, Enum):',
+        "class ArtifactKind(str, Enum):",
         '    crud = "crud"',
         '    view = "view"',
         "",
@@ -391,15 +396,17 @@ def gen_artifacts() -> str:
         has_socket = len(meta["socket_events"]) > 0
         parts.append(f'    "{name}": ("{meta["section"]}", {has_socket}),')
 
-    parts.extend([
-        "}",
-        "",
-        "# ---------------------------------------------------------------------------",
-        "# 18 view artifacts (endpoints derived from each __init__.py)",
-        "# ---------------------------------------------------------------------------",
-        "_VIEWS: dict[str, tuple[str, frozenset[str]]] = {",
-        "    # (section, endpoints)",
-    ])
+    parts.extend(
+        [
+            "}",
+            "",
+            "# ---------------------------------------------------------------------------",
+            "# 18 view artifacts (endpoints derived from each __init__.py)",
+            "# ---------------------------------------------------------------------------",
+            "_VIEWS: dict[str, tuple[str, frozenset[str]]] = {",
+            "    # (section, endpoints)",
+        ]
+    )
 
     for name, meta in sorted(view_items.items()):
         endpoints = meta["endpoints"]
@@ -407,7 +414,9 @@ def gen_artifacts() -> str:
             parts.append(f'    "{name}": ("{meta["section"]}", frozenset()),')
         elif len(endpoints) <= 3:
             items = ", ".join(f'"{e}"' for e in sorted(endpoints))
-            parts.append(f'    "{name}": ("{meta["section"]}", frozenset({{{items}}})),')
+            parts.append(
+                f'    "{name}": ("{meta["section"]}", frozenset({{{items}}})),'
+            )
         else:
             parts.append(f'    "{name}": (')
             parts.append(f'        "{meta["section"]}",')
@@ -417,40 +426,43 @@ def gen_artifacts() -> str:
             parts.append("        ),")
             parts.append("    ),")
 
-    parts.extend([
-        "}",
-        "",
-        "# ---------------------------------------------------------------------------",
-        "# Combined registry",
-        "# ---------------------------------------------------------------------------",
-        "ARTIFACTS: dict[str, ArtifactMeta] = {}",
-        "",
-        "for _name, (_section, _has_socket) in _CRUD.items():",
-        "    ARTIFACTS[_name] = ArtifactMeta(",
-        "        kind=ArtifactKind.crud,",
-        "        section=_section,",
-        "        endpoints=_CRUD_ENDPOINTS,",
-        "        socket_events=_SOCKET_EVENTS if _has_socket else frozenset(),",
-        "    )",
-        "",
-        "for _name, (_section, _endpoints) in _VIEWS.items():",
-        "    ARTIFACTS[_name] = ArtifactMeta(",
-        "        kind=ArtifactKind.view,",
-        "        section=_section,",
-        "        endpoints=_endpoints,",
-        "    )",
-        "",
-        "# Clean up module namespace",
-        "del _name, _section, _has_socket, _endpoints, _CRUD, _VIEWS",
-    ])
+    parts.extend(
+        [
+            "}",
+            "",
+            "# ---------------------------------------------------------------------------",
+            "# Combined registry",
+            "# ---------------------------------------------------------------------------",
+            "ARTIFACTS: dict[str, ArtifactMeta] = {}",
+            "",
+            "for _name, (_section, _has_socket) in _CRUD.items():",
+            "    ARTIFACTS[_name] = ArtifactMeta(",
+            "        kind=ArtifactKind.crud,",
+            "        section=_section,",
+            "        endpoints=_CRUD_ENDPOINTS,",
+            "        socket_events=_SOCKET_EVENTS if _has_socket else frozenset(),",
+            "    )",
+            "",
+            "for _name, (_section, _endpoints) in _VIEWS.items():",
+            "    ARTIFACTS[_name] = ArtifactMeta(",
+            "        kind=ArtifactKind.view,",
+            "        section=_section,",
+            "        endpoints=_endpoints,",
+            "    )",
+            "",
+            "# Clean up module namespace",
+            "del _name, _section, _has_socket, _endpoints, _CRUD, _VIEWS",
+        ]
+    )
 
     return "\n".join(parts)
 
 
 def gen_routes() -> str:
     """Generate routes.py content."""
-    from scripts.registry_generators.routes_gen import generate_artifact_routes, generate_role_artifacts
-    from app.registry.manual import ARTIFACT_ROLES
+    from scripts.registry_generators.routes_gen import (
+        generate_artifact_routes,
+    )
 
     # We need the full artifacts dict to map routes
     from app.registry.artifacts import ARTIFACTS
@@ -574,6 +586,7 @@ def main():
             except Exception as e:
                 print(f"  ERROR: {e}")
                 import traceback
+
                 traceback.print_exc()
     elif command in file_generators:
         filename, gen_func = file_generators[command]

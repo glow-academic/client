@@ -30,7 +30,6 @@ from app.api.v4.entries.audits import router as audits_router
 from app.api.v4.entries.auth_drafts import router as auth_drafts_router
 from app.api.v4.entries.benchmark import router as benchmark_router
 from app.api.v4.entries.benchmark_insights import router as benchmark_insights_router
-from app.api.v4.entries.bindings import router as bindings_router
 from app.api.v4.entries.calls import router as calls_router
 from app.api.v4.entries.certificates import router as certificates_router
 from app.api.v4.entries.cohort_drafts import router as cohort_drafts_router
@@ -43,7 +42,6 @@ from app.api.v4.entries.dashboard_insights import router as dashboard_insights_r
 from app.api.v4.entries.debug_info import router as debug_info_router
 from app.api.v4.entries.department_drafts import router as department_drafts_router
 from app.api.v4.entries.document_drafts import router as document_drafts_router
-from app.api.v4.entries.domains import router as domains_router
 from app.api.v4.entries.emulations import router as emulations_router
 from app.api.v4.entries.eval_drafts import router as eval_drafts_router
 from app.api.v4.entries.field_drafts import router as field_drafts_router
@@ -142,7 +140,6 @@ router.include_router(audits_router)
 router.include_router(auth_drafts_router)
 router.include_router(benchmark_router)
 router.include_router(benchmark_insights_router)
-router.include_router(bindings_router)
 router.include_router(calls_router)
 router.include_router(certificates_router)
 router.include_router(cohort_drafts_router)
@@ -153,7 +150,6 @@ router.include_router(dashboard_insights_router)
 router.include_router(debug_info_router)
 router.include_router(department_drafts_router)
 router.include_router(document_drafts_router)
-router.include_router(domains_router)
 router.include_router(emulations_router)
 router.include_router(eval_drafts_router)
 router.include_router(field_drafts_router)

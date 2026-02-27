@@ -41,10 +41,10 @@ BEGIN
             'arg_position_ids', m.arg_position_ids,
             'args_ids', m.args_ids,
             'args_output_ids', m.args_output_ids,
-            'binding_ids', m.binding_ids,
+            'entry_ids', m.entry_ids,
             'department_ids', m.department_ids,
             'description_ids', m.description_ids,
-            'domain_ids', m.domain_ids,
+            'resource_ids', m.resource_ids,
             'flag_ids', m.flag_ids,
             'name_ids', m.name_ids,
             'tool_ids', m.tool_ids

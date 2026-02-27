@@ -125,7 +125,7 @@ LEFT JOIN (
     LEFT JOIN args_resource ar ON ar.id = ta.args_id AND ar.active = true
     GROUP BY tsd_inner.id
 ) tsd ON tsd.tool_id = t.id
-LEFT JOIN tool_domains_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-LEFT JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
+LEFT JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
+LEFT JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
 WHERE atj.agent_id = p_agent_id AND atj.active = true;
 $$;

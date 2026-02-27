@@ -1,4 +1,4 @@
-"""Bindings entry GET endpoint."""
+"""Entries GET endpoint - v4 API following DHH principles."""
 
 from typing import Annotated, cast
 from uuid import UUID
@@ -9,10 +9,11 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    GetBindingsEntriesApiRequest,
-    GetBindingsEntriesApiResponse,
-    GetBindingsEntriesSqlParams,
-    GetBindingsEntriesSqlRow,
+    GetEntriesApiRequest,
+    GetEntriesApiResponse,
+    GetEntriesSqlParams,
+    GetEntriesSqlRow,
+    QGetEntriesV4Item,
     load_sql_query,
 )
 from app.utils.cache.cache_key import cache_key
@@ -20,42 +21,53 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/entries/bindings/get_bindings_entries_complete.sql"
+# Load SQL with types at module level
+SQL_PATH = "app/sql/v4/queries/resources/entries/get_entries_complete.sql"
+
 
 router = APIRouter()
 
 
-async def get_bindings_entries_internal(
+async def get_entries_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],
     bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to fetch bindings entries by IDs."""
+) -> list[QGetEntriesV4Item]:
+    """Internal function to fetch entries by IDs.
+
+    Can be called directly from other routes without HTTP overhead.
+    """
     if not ids:
         return []
 
-    tags = ["entries", "bindings"]
+    tags = ["resources", "entries"]
     cache_key_val = cache_key(
-        "/api/v4/entries/bindings/get",
+        "/api/v4/resources/entries/get",
         {"ids": [str(id) for id in ids]},
     )
 
+    # Try cache (unless bypassed)
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
-            return list(cached.get("items", []))
+            return [
+                QGetEntriesV4Item.model_validate(item)
+                for item in cached.get("items", [])
+            ]
 
-    params = GetBindingsEntriesSqlParams(ids=ids)
+    # Execute SQL
+    params = GetEntriesSqlParams(ids=ids)
     result = cast(
-        GetBindingsEntriesSqlRow,
+        GetEntriesSqlRow,
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )
 
-    items: list[dict] = result.items if result and result.items else []
+    items: list[QGetEntriesV4Item] = result.items if result and result.items else []
 
+    # Cache result
     await set_cached(
         cache_key_val,
-        {"items": items if isinstance(items, list) else []},
+        {"items": [item.model_dump(mode="json") for item in items]},
         ttl=60,
         tags=tags,
     )
@@ -64,23 +76,26 @@ async def get_bindings_entries_internal(
 
 
 @router.post(
-    "/bindings/get",
-    response_model=GetBindingsEntriesApiResponse,
+    "/entries/get",
+    response_model=GetEntriesApiResponse,
 )
-async def get_bindings_entries(
-    request: GetBindingsEntriesApiRequest,
+async def get_entries(
+    request: GetEntriesApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetBindingsEntriesApiResponse:
-    """Get bindings entries by IDs."""
-    tags = ["entries", "bindings"]
+) -> GetEntriesApiResponse:
+    """Get entries resources by IDs.
+
+    HTTP wrapper that delegates to internal function for caching and data fetching.
+    """
+    tags = ["resources", "entries"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_bindings_entries_internal(conn, request.ids, bypass_cache)
+        items = await get_entries_internal(conn, request.ids, bypass_cache)
         response.headers["X-Cache-Tags"] = ",".join(tags)
-        return GetBindingsEntriesApiResponse(items=items)
+        return GetEntriesApiResponse(items=items)
     except HTTPException:
         raise
     except ValueError as e:
@@ -89,7 +104,7 @@ async def get_bindings_entries(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="get_bindings_entries",
+            operation="get_entries",
             sql_query=load_sql_query(SQL_PATH),
             sql_params=None,
             request=http_request,

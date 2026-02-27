@@ -215,10 +215,10 @@ artifact_resources AS (
         ('tool'::artifact_type, 'arg_positions'::text),
         ('tool'::artifact_type, 'args'::text),
         ('tool'::artifact_type, 'args_outputs'::text),
-        ('tool'::artifact_type, 'bindings'::text),
+        ('tool'::artifact_type, 'entries'::text),
         ('tool'::artifact_type, 'departments'::text),
         ('tool'::artifact_type, 'descriptions'::text),
-        ('tool'::artifact_type, 'domains'::text),
+        ('tool'::artifact_type, 'resources'::text),
         ('tool'::artifact_type, 'flags'::text),
         ('tool'::artifact_type, 'names'::text),
         ('tool'::artifact_type, 'tools'::text)
@@ -238,11 +238,11 @@ artifact_entries AS (
         kv.key::artifact_type as artifact,
         ARRAY_AGG(DISTINCT e.entry::text) FILTER (
             WHERE EXISTS (
-                SELECT 1 FROM bindings_resource b
+                SELECT 1 FROM entries_resource b
                 WHERE b.entry = e.entry::entry_type
                 AND EXISTS (
-                    SELECT 1 FROM tool_bindings_junction tbj
-                    WHERE tbj.binding_id = b.id AND tbj.active = true
+                    SELECT 1 FROM tool_entries_junction tbj
+                    WHERE tbj.entry_id = b.id AND tbj.active = true
                 )
             )
         ) as required_entries
@@ -290,7 +290,7 @@ eligible_agents AS (
 -- ============================================================================
 
 -- Get tool resources for each eligible agent (for resources path)
--- Path: agent_tools_junction -> tool_tools_junction -> tool_domains_junction -> domains_resource
+-- Path: agent_tools_junction -> tool_tools_junction -> tool_resources_junction -> resources_resource
 agent_tool_resources AS (
     SELECT
         ea.agent_id,
@@ -302,13 +302,13 @@ agent_tool_resources AS (
     FROM eligible_agents ea
     LEFT JOIN agent_tools_junction at ON at.agent_id = ea.agent_id AND at.active = true
     LEFT JOIN tool_tools_junction ttj ON ttj.tools_id = at.tool_id
-    LEFT JOIN tool_domains_junction tdj ON tdj.tool_id = ttj.tool_id AND tdj.active = true
-    LEFT JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
+    LEFT JOIN tool_resources_junction tdj ON tdj.tool_id = ttj.tool_id AND tdj.active = true
+    LEFT JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
     GROUP BY ea.agent_id, ea.updated_at
 ),
 
 -- Get tool entries for each eligible agent (for bindings path)
--- Path: agent_tools_junction -> tools_resource -> tool_tools_junction -> tool_bindings_junction -> bindings_resource
+-- Path: agent_tools_junction -> tools_resource -> tool_tools_junction -> tool_entries_junction -> entries_resource
 agent_tool_entries AS (
     SELECT
         ea.agent_id,
@@ -321,8 +321,8 @@ agent_tool_entries AS (
     LEFT JOIN agent_tools_junction atj ON atj.agent_id = ea.agent_id AND atj.active = true
     LEFT JOIN tools_resource tr ON tr.id = atj.tool_id
     LEFT JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
-    LEFT JOIN tool_bindings_junction tbj ON tbj.tool_id = ttj.tool_id AND tbj.active = true
-    LEFT JOIN bindings_resource b ON b.id = tbj.binding_id
+    LEFT JOIN tool_entries_junction tbj ON tbj.tool_id = ttj.tool_id AND tbj.active = true
+    LEFT JOIN entries_resource b ON b.id = tbj.entry_id
     GROUP BY ea.agent_id, ea.updated_at
 ),
 

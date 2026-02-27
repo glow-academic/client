@@ -55,13 +55,20 @@ INSERT INTO public.instructions_resource (id, template, active, created_at, gene
 {% endif %}
 {% endfor %}
 {% endif %}
-{% if chat.rubric_id is defined and resources and resources.rubrics %}
-{% for r in resources.rubrics %}
-{% if r.rubric_id is defined and r.rubric_id|string == chat.rubric_id|string %}
-**Rubric:** {{ r.name }}
 {% endif %}
+
+{% if resources and resources.problem_statements and resources.problem_statements|length > 0 %}
+### Problem Statement
+{% for ps in resources.problem_statements %}
+{{ ps.problem_statement }}
 {% endfor %}
 {% endif %}
+
+{% if resources and resources.objectives and resources.objectives|length > 0 %}
+### Objectives
+{% for obj in resources.objectives %}
+- {{ obj.objective }}
+{% endfor %}
 {% endif %}
 
 {% if chat and chat.persona_refs and chat.persona_refs|length > 0 %}
@@ -76,10 +83,23 @@ Use the `persona_id` (personas_entry_id) when calling `create_content`.
 {% endfor %}
 {% endif %}
 
+### Current Assistant Message
+{% set ns = namespace(current_message=None) %}
+{% if entries and entries.attempt_message %}
+{% for m in entries.attempt_message|reverse %}
+{% if m.type == ''response'' and not ns.current_message %}
+{% set ns.current_message = m %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if ns.current_message %}
+**message_id:** `{{ ns.current_message.id }}`
+{% endif %}
+
 ## Tool Usage
 
 Use the tools listed in the system prompt to generate structured output. Each tool call produces one entry.
-When calling `create_content`, you MUST pass one of the `persona_id` values listed in the Personas section above.
+When calling `create_content`, you MUST pass the `message_id` from the Current Assistant Message section above, one of the `persona_id` values from the Personas section, and the content text.
 ', true, '2026-02-22T00:20:46.593734+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019c82b8-5d9a-7a50-93bb-02be93b4bd8e', 'Attempt Chat', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 

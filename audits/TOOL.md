@@ -1,6 +1,6 @@
-# Tool Audit — Args, Args Outputs, Bindings, Domains, Registry Integrity Check
+# Tool Audit — Args, Args Outputs, Entries, Resources, Registry Integrity Check
 
-You are a tool auditor for the GLOW project. Your job is to verify that all tools have consistent, complete, and correctly linked args, args_outputs, bindings, domains, and registry relations. You do NOT fix anything. You REPORT errors, inconsistencies, and orphans.
+You are a tool auditor for the GLOW project. Your job is to verify that all tools have consistent, complete, and correctly linked args, args_outputs, entries, resources, and registry relations. You do NOT fix anything. You REPORT errors, inconsistencies, and orphans.
 
 **IMPORTANT**: Run `make restore-db` first for a clean baseline, then `make sql-compile` so MVs and SPs are available for any runtime queries.
 
@@ -20,7 +20,7 @@ psql postgresql://myuser:mypassword@localhost:5432/mydb
 
 Tools are categorized by naming convention:
 
-- **`create_*` tools**: Create new resource or entry instances. Linked to `domains_resource` (for resources) or `bindings_resource` (for entries).
+- **`create_*` tools**: Create new resource or entry instances. Linked to `resources_resource` (for resources) or `entries_resource` (for entries).
 - **`use_*` tools**: Link/reference existing resources (non-creatable). These are "link tools" that wire existing data into artifacts.
 
 ### Entity Relationship
@@ -47,14 +47,14 @@ tool_artifact
     |                                        +-- args_outputs_resource.args_id FK -> args_resource.id (CASCADE)
     |                                        +-- args_outputs_resource.template (Jinja template)
     |
-    +-- tool_domains_junction ---------> domains_resource
+    +-- tool_resources_junction ---------> resources_resource
     |                                        |
-    |                                        +-- domains_resource.resource (resource_type enum)
-    |                                        +-- domains_resource.creatable (bool)
+    |                                        +-- resources_resource.resource (resource_type enum)
+    |                                        +-- resources_resource.creatable (bool)
     |
-    +-- tool_bindings_junction --------> bindings_resource
+    +-- tool_entries_junction --------> entries_resource
     |                                        |
-    |                                        +-- bindings_resource.entry (entry_type enum)
+    |                                        +-- entries_resource.entry (entry_type enum)
     |
     +-- tool_tools_junction -----------> tools_resource (meta-level tool registry)
     +-- tool_calls_junction -----------> calls_entry (call lineage)
@@ -82,13 +82,13 @@ resource_tools_relation    — maps resource_type -> tool_artifact.id
                              Non-creatable resources should also have a use_* tool.
 
 entry_tools_relation       — maps entry_type -> tool_artifact.id
-                             Every binding entry type should have a create_* tool.
+                             Every entry type should have a create_* tool.
 
-domains_resource           — declares which resources a tool operates on
+resources_resource           — declares which resources a tool operates on
                              creatable = true: tool creates new instances
                              creatable = false: tool links existing instances
 
-bindings_resource          — declares which entry types a tool creates
+entries_resource          — declares which entry types a tool creates
 ```
 
 ---
@@ -131,18 +131,18 @@ For each `args_id`, no two `args_outputs_resource` rows should have the same `na
 
 `args_resource.field_type` must be one of the known types: `string`, `number`, `boolean`, `array`, `uuid`, `object`.
 
-### Rule 10: Resource tools must map to exactly one matching domain
+### Rule 10: Resource tools must map to exactly one matching resource
 
 For every tool registered in `resource_tools_relation`:
 - it must target exactly one active `resource_tools_relation.resource`
-- it must have exactly one active `tool_domains_junction` domain
-- that domain's `domains_resource.resource` must match the tool's target resource
+- it must have exactly one active `tool_resources_junction` resource
+- that resource's `resources_resource.resource` must match the tool's target resource
 
-Entry-oriented tools are validated via bindings and `entry_tools_relation` (Rules 20/21), not via metadata domains.
+Entry-oriented tools are validated via entries and `entry_tools_relation` (Rules 20/21), not via metadata resources.
 
-### Rule 11: Bindings must reference valid entry types
+### Rule 11: Entries must reference valid entry types
 
-Every `bindings_resource.entry` value must be a valid `entry_type` enum value.
+Every `entries_resource.entry` value must be a valid `entry_type` enum value.
 
 ### Rule 12: resource_tools_relation must reference existing tools
 
@@ -160,29 +160,29 @@ If a tool has `tool_args_junction.active = false` for an arg, any `tool_args_out
 
 Every `args_resource` should have a corresponding `args_calls_connection` row. Same for `args_outputs_resource` -> `args_outputs_calls_connection`.
 
-### Rule 16: Non-creatable tool domains must have a use_ (link) tool
+### Rule 16: Non-creatable tool resources must have a use_ (link) tool
 
-For every active `domains_resource` row with `creatable = false` that is present in `resource_tools_relation`, there must be a corresponding `use_*` tool registered in `resource_tools_relation` for that resource.
+For every active `resources_resource` row with `creatable = false` that is present in `resource_tools_relation`, there must be a corresponding `use_*` tool registered in `resource_tools_relation` for that resource.
 
-### Rule 17: Creatable tool domains must have a create_ tool
+### Rule 17: Creatable tool resources must have a create_ tool
 
-For every active `domains_resource` row with `creatable = true` that is present in `resource_tools_relation`, there must be a corresponding `create_*` tool registered in `resource_tools_relation` for that resource.
+For every active `resources_resource` row with `creatable = true` that is present in `resource_tools_relation`, there must be a corresponding `create_*` tool registered in `resource_tools_relation` for that resource.
 
-### Rule 18: Every resource_type enum value must have an active domain
+### Rule 18: Every resource_type enum value must have an active resource
 
-Every value in the `resource_type` enum must be represented in `domains_resource` with an active row.
+Every value in the `resource_type` enum must be represented in `resources_resource` with an active row.
 
-### Rule 19: Every active domain must map to a valid resource_type enum value
+### Rule 19: Every active resource must map to a valid resource_type enum value
 
-No active `domains_resource.resource` should fall outside the `resource_type` enum.
+No active `resources_resource.resource` should fall outside the `resource_type` enum.
 
-### Rule 20: Every binding must have a create_ tool
+### Rule 20: Every entry must have a create_ tool
 
-For every `bindings_resource.entry` value, there must be a `create_*` tool linked via `tool_bindings_junction` to that binding. Bindings declare entry types that a tool creates — an unlinked binding is unreachable.
+For every `entries_resource.entry` value, there must be a `create_*` tool linked via `tool_entries_junction` to that entry. Entries declare entry types that a tool creates — an unlinked entry is unreachable.
 
-### Rule 21: Every binding entry type should be registered in entry_tools_relation
+### Rule 21: Every entry type should be registered in entry_tools_relation
 
-Every `bindings_resource.entry` value should have a corresponding row in `entry_tools_relation` mapping it to its create tool.
+Every `entries_resource.entry` value should have a corresponding row in `entry_tools_relation` mapping it to its create tool.
 
 ### Rule 22: Every arg must have a position entry per tool
 
@@ -323,7 +323,7 @@ ORDER BY ar.name;
 
 **Expected**: Empty. Any rows = unknown field_type (review if intentional).
 
-### Audit 10: Resource tools without a single matching domain
+### Audit 10: Resource tools without a single matching resource
 
 ```sql
 WITH resource_tools AS (
@@ -335,13 +335,13 @@ WITH resource_tools AS (
     WHERE rtr.active = true
     GROUP BY rtr.tool_id
 ),
-tool_domains AS (
+tool_resources AS (
     SELECT
         tdj.tool_id,
-        ARRAY_AGG(DISTINCT dr.resource::text ORDER BY dr.resource::text) AS domains,
-        COUNT(DISTINCT dr.resource) AS domain_count
-    FROM tool_domains_junction tdj
-    JOIN domains_resource dr ON dr.id = tdj.domain_id
+        ARRAY_AGG(DISTINCT dr.resource::text ORDER BY dr.resource::text) AS resources,
+        COUNT(DISTINCT dr.resource) AS resource_count
+    FROM tool_resources_junction tdj
+    JOIN resources_resource dr ON dr.id = tdj.resource_id
     WHERE tdj.active = true AND dr.active = true
     GROUP BY tdj.tool_id
 ),
@@ -350,13 +350,13 @@ violations AS (
         rt.tool_id,
         CASE
             WHEN rt.resource_count <> 1 THEN 'resource_relation_not_single'
-            WHEN COALESCE(td.domain_count, 0) <> 1 THEN 'domain_not_single'
-            WHEN NOT (rt.resources[1] = ANY(COALESCE(td.domains, ARRAY[]::text[]))) THEN 'domain_resource_mismatch'
+            WHEN COALESCE(td.resource_count, 0) <> 1 THEN 'resource_not_single'
+            WHEN NOT (rt.resources[1] = ANY(COALESCE(td.resources, ARRAY[]::text[]))) THEN 'resource_resource_mismatch'
         END AS issue,
         rt.resources,
-        COALESCE(td.domains, ARRAY[]::text[]) AS domains
+        COALESCE(td.resources, ARRAY[]::text[]) AS resources
     FROM resource_tools rt
-    LEFT JOIN tool_domains td ON td.tool_id = rt.tool_id
+    LEFT JOIN tool_resources td ON td.tool_id = rt.tool_id
 )
 SELECT
     v.tool_id,
@@ -367,19 +367,19 @@ SELECT
      LIMIT 1) AS tool_name,
     v.issue,
     v.resources,
-    v.domains
+    v.resources
 FROM violations v
 WHERE v.issue IS NOT NULL
 ORDER BY tool_name, v.tool_id;
 ```
 
-**Expected**: Empty. Any rows = resource tool/domain mapping drift.
+**Expected**: Empty. Any rows = resource tool/resource mapping drift.
 
-### Audit 11: Invalid binding entry types
+### Audit 11: Invalid entry types
 
 ```sql
 SELECT br.id, br.entry::text
-FROM bindings_resource br
+FROM entries_resource br
 WHERE br.entry::text NOT IN (
     SELECT e.enumlabel FROM pg_type t JOIN pg_enum e ON e.enumtypid = t.oid
     WHERE t.typname = 'entry_type'
@@ -457,11 +457,11 @@ ORDER BY ao.name;
 
 **Expected**: Empty. Any rows = resource missing call traceability.
 
-### Audit 16: Non-creatable domains missing use_ (link) tools
+### Audit 16: Non-creatable resources missing use_ (link) tools
 
 ```sql
-SELECT dr.resource::text AS domain_resource
-FROM domains_resource dr
+SELECT dr.resource::text AS resource_resource
+FROM resources_resource dr
 WHERE dr.active = true AND dr.creatable = false
     AND EXISTS (
         SELECT 1 FROM resource_tools_relation rtr
@@ -476,13 +476,13 @@ WHERE dr.active = true AND dr.creatable = false
 ORDER BY dr.resource;
 ```
 
-**Expected**: Empty. Any rows = non-creatable domain has no link tool. Users cannot wire this resource into artifacts.
+**Expected**: Empty. Any rows = non-creatable resource has no link tool. Users cannot wire this resource into artifacts.
 
-### Audit 17: Creatable domains missing create_ tools
+### Audit 17: Creatable resources missing create_ tools
 
 ```sql
-SELECT dr.resource::text AS domain_resource
-FROM domains_resource dr
+SELECT dr.resource::text AS resource_resource
+FROM resources_resource dr
 WHERE dr.active = true AND dr.creatable = true
     AND EXISTS (
         SELECT 1 FROM resource_tools_relation rtr
@@ -497,9 +497,9 @@ WHERE dr.active = true AND dr.creatable = true
 ORDER BY dr.resource;
 ```
 
-**Expected**: Empty. Any rows = creatable domain has no create tool. The resource cannot be created.
+**Expected**: Empty. Any rows = creatable resource has no create tool. The resource cannot be created.
 
-### Audit 18: resource_type enum values missing domains
+### Audit 18: resource_type enum values missing resources
 
 ```sql
 WITH enum_resources AS (
@@ -508,24 +508,24 @@ WITH enum_resources AS (
     JOIN pg_enum e ON e.enumtypid = t.oid
     WHERE t.typname = 'resource_type'
 ),
-active_domains AS (
+active_resources AS (
     SELECT dr.resource::text AS resource_name
-    FROM domains_resource dr
+    FROM resources_resource dr
     WHERE dr.active = true
 )
-SELECT er.resource_name AS missing_domain_resource
+SELECT er.resource_name AS missing_resource
 FROM enum_resources er
 WHERE NOT EXISTS (
     SELECT 1
-    FROM active_domains ad
+    FROM active_resources ad
     WHERE ad.resource_name = er.resource_name
 )
 ORDER BY er.resource_name;
 ```
 
-**Expected**: Empty. Any rows = resource enum drift not represented in domains.
+**Expected**: Empty. Any rows = resource enum drift not represented in resources.
 
-### Audit 19: Active domains not present in resource_type enum
+### Audit 19: Active resources not present in resource_type enum
 
 ```sql
 WITH enum_resources AS (
@@ -534,8 +534,8 @@ WITH enum_resources AS (
     JOIN pg_enum e ON e.enumtypid = t.oid
     WHERE t.typname = 'resource_type'
 )
-SELECT dr.resource::text AS orphan_domain_resource
-FROM domains_resource dr
+SELECT dr.resource::text AS orphan_resource
+FROM resources_resource dr
 WHERE dr.active = true
     AND NOT EXISTS (
         SELECT 1
@@ -545,30 +545,30 @@ WHERE dr.active = true
 ORDER BY dr.resource;
 ```
 
-**Expected**: Empty. Any rows = invalid domain/resource enum mismatch.
+**Expected**: Empty. Any rows = invalid resource enum mismatch.
 
-### Audit 20: Bindings without a linked create_ tool
+### Audit 20: Entries without a linked create_ tool
 
 ```sql
-SELECT br.entry::text AS binding_entry
-FROM bindings_resource br
+SELECT br.entry::text AS entry_type_name
+FROM entries_resource br
 WHERE br.active = true
     AND NOT EXISTS (
-        SELECT 1 FROM tool_bindings_junction tbj
+        SELECT 1 FROM tool_entries_junction tbj
         JOIN tool_names_junction tnj ON tnj.tool_id = tbj.tool_id AND tnj.active = true
         JOIN names_resource nr ON nr.id = tnj.name_id
-        WHERE tbj.binding_id = br.id AND tbj.active = true AND nr.name LIKE 'create_%'
+        WHERE tbj.entry_id = br.id AND tbj.active = true AND nr.name LIKE 'create_%'
     )
 ORDER BY br.entry;
 ```
 
-**Expected**: Empty. Any rows = binding declares an entry type but no create tool is linked to produce it.
+**Expected**: Empty. Any rows = entry declares an entry type but no create tool is linked to produce it.
 
-### Audit 21: Binding entry types missing from entry_tools_relation
+### Audit 21: Entry types missing from entry_tools_relation
 
 ```sql
-SELECT br.entry::text AS binding_entry
-FROM bindings_resource br
+SELECT br.entry::text AS entry_type_name
+FROM entries_resource br
 WHERE br.active = true
     AND NOT EXISTS (
         SELECT 1 FROM entry_tools_relation etr WHERE etr.entry = br.entry
@@ -576,7 +576,7 @@ WHERE br.active = true
 ORDER BY br.entry;
 ```
 
-**Expected**: Empty. Any rows = binding entry type not registered in the entry-tool mapping.
+**Expected**: Empty. Any rows = entry type not registered in the entry-tool mapping.
 
 ### Audit 22: Args missing position entries per tool
 
@@ -628,7 +628,7 @@ ORDER BY tool_count DESC, ar.name;
 ### Audit 25: Tool completeness summary (informational)
 
 ```sql
--- Per-tool summary: name, arg count, output count, binding count, domain count
+-- Per-tool summary: name, arg count, output count, entry count, resource count
 SELECT
     ta.id AS tool_id,
     (SELECT nr.name FROM tool_names_junction tnj
@@ -638,10 +638,10 @@ SELECT
      WHERE taj.tool_id = ta.id AND taj.active = true) AS arg_count,
     (SELECT COUNT(*) FROM tool_args_outputs_junction taoj
      WHERE taoj.tool_id = ta.id AND taoj.active = true) AS output_count,
-    (SELECT COUNT(*) FROM tool_bindings_junction tbj
-     WHERE tbj.tool_id = ta.id AND tbj.active = true) AS binding_count,
-    (SELECT COUNT(*) FROM tool_domains_junction tdj
-     WHERE tdj.tool_id = ta.id AND tdj.active = true) AS domain_count,
+    (SELECT COUNT(*) FROM tool_entries_junction tbj
+     WHERE tbj.tool_id = ta.id AND tbj.active = true) AS entry_count,
+    (SELECT COUNT(*) FROM tool_resources_junction tdj
+     WHERE tdj.tool_id = ta.id AND tdj.active = true) AS resource_count,
     (SELECT COUNT(*) FROM tool_descriptions_junction tdej
      WHERE tdej.tool_id = ta.id AND tdej.active = true) AS has_description,
     (SELECT COUNT(*) FROM tool_flags_junction tfj
@@ -652,7 +652,7 @@ FROM tool_artifact ta
 ORDER BY tool_name;
 ```
 
-**Expected**: Informational. Every tool should have arg_count >= 0, output_count >= 0, has_description = 1, has_flag >= 1, domain_count >= 5, position_count = arg_count.
+**Expected**: Informational. Every tool should have arg_count >= 0, output_count >= 0, has_description = 1, has_flag >= 1, resource_count >= 5, position_count = arg_count.
 
 ### Audit 26: Bidirectional junction integrity
 
@@ -678,10 +678,10 @@ ORDER BY taoj.tool_id;
 
 **Expected**: Both empty (FK CASCADE should handle this).
 
-### Audit 27: Domain/binding coverage summary (informational)
+### Audit 27: Resource/entry coverage summary (informational)
 
 ```sql
--- Full domain coverage: resource, creatable, has create tool, has use tool
+-- Full resource coverage: resource, creatable, has create tool, has use tool
 SELECT
     dr.resource::text,
     dr.creatable,
@@ -697,12 +697,12 @@ SELECT
         JOIN names_resource nr ON nr.id = tnj.name_id
         WHERE rtr.resource = dr.resource AND nr.name LIKE 'use_%'
     ) AS has_use_tool
-FROM domains_resource dr
+FROM resources_resource dr
 WHERE dr.active = true
 ORDER BY dr.resource;
 ```
 
-**Expected**: Informational. Creatable domains should have `has_create_tool = true`. Non-creatable domains should have `has_use_tool = true`. Both can also have the other.
+**Expected**: Informational. Creatable resources should have `has_create_tool = true`. Non-creatable resources should have `has_use_tool = true`. Both can also have the other.
 
 ---
 
@@ -766,5 +766,5 @@ Warnings: {N} (informational audits like 23, 24, 25, 27)
 5. **tool_calls_junction** links `tool_artifact` to `calls_entry`. This is an artifact-to-entry junction tracking call lineage.
 6. **Args can be shared across tools** — a single `args_resource` row can appear in multiple `tool_args_junction` rows. This is valid but changes to shared args affect all linked tools.
 7. **Positions are per-tool** — `arg_positions_resource` stores position per (tool, arg) pair via `tool_arg_positions_junction`, not on `args_resource` directly.
-8. **`create_*` vs `use_*` naming** — the tool name prefix determines its role. `create_*` tools produce new resources/entries. `use_*` tools link existing ones. The naming convention MUST match the domain's `creatable` flag.
+8. **`create_*` vs `use_*` naming** — the tool name prefix determines its role. `create_*` tools produce new resources/entries. `use_*` tools link existing ones. The naming convention MUST match the resource's `creatable` flag.
 9. **Run this after any tool migration** to catch regressions.

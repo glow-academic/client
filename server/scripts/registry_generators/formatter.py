@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import subprocess
-import textwrap
 from pathlib import Path
 
 
@@ -16,7 +15,17 @@ def format_frozenset_literal(values: list[str], indent: int = 8) -> str:
         return f"frozenset({{{items}}})"
     pad = " " * indent
     lines = [f'{pad}"{v}",' for v in sorted(values)]
-    return "frozenset(\n" + " " * indent + "{\n" + "\n".join(lines) + "\n" + pad + "}\n" + " " * (indent - 4) + ")"
+    return (
+        "frozenset(\n"
+        + " " * indent
+        + "{\n"
+        + "\n".join(lines)
+        + "\n"
+        + pad
+        + "}\n"
+        + " " * (indent - 4)
+        + ")"
+    )
 
 
 def format_dict_of_frozensets(

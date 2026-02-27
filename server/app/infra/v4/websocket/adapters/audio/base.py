@@ -90,7 +90,12 @@ class AudioEventEmitter(Protocol):
         ...
 
     async def on_user_speech_complete(
-        self, group_id: str, item_id: str, transcript: str, *, audio: bytes | None = None
+        self,
+        group_id: str,
+        item_id: str,
+        transcript: str,
+        *,
+        audio: bytes | None = None,
     ) -> None:
         """User speech finalized, optionally with buffered PCM16 audio."""
         ...

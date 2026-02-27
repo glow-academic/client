@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-import sys
 import os
+import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from app.registry.manual import ENTRY_TABLE_TO_KEY
 
 from .db import get_connection, query_rows
-from .type_map import pg_type_to_registry
 
 # Convention: entry_key → MV name
 # Most follow: attempt_{singular}_mv

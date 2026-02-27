@@ -57,13 +57,13 @@ from app.api.v4.resources.auths.search import router as auths_search_router
 
 router.include_router(auths_get_router)
 router.include_router(auths_search_router)
-# NOTE: bindings removed - non-creatable (migration 328)
+# NOTE: entries (was bindings) - non-creatable (migration 328)
 # GET/Search endpoints available for two-pass architecture
-from app.api.v4.resources.bindings.get import router as bindings_get_router
-from app.api.v4.resources.bindings.search import router as bindings_search_router
+from app.api.v4.resources.entries.get import router as entries_get_router
+from app.api.v4.resources.entries.search import router as entries_search_router
 
-router.include_router(bindings_get_router)
-router.include_router(bindings_search_router)
+router.include_router(entries_get_router)
+router.include_router(entries_search_router)
 # NOTE: cohorts removed - non-creatable, sync via artifact save (migration 328)
 # GET endpoint available for profile context two-pass architecture
 from app.api.v4.resources.cohorts.get import router as cohorts_get_router
@@ -113,13 +113,13 @@ router.include_router(descriptions_router)
 router.include_router(descriptions_get_router)
 router.include_router(descriptions_link_router)
 router.include_router(descriptions_search_router)
-# NOTE: domains removed - non-creatable (migration 328)
+# NOTE: resources (was domains) - non-creatable (migration 328)
 # GET/Search endpoints available for two-pass architecture
-from app.api.v4.resources.domains.get import router as domains_get_router
-from app.api.v4.resources.domains.search import router as domains_search_router
+from app.api.v4.resources.resources.get import router as resources_get_router
+from app.api.v4.resources.resources.search import router as resources_search_router
 
-router.include_router(domains_get_router)
-router.include_router(domains_search_router)
+router.include_router(resources_get_router)
+router.include_router(resources_search_router)
 # NOTE: documents removed - non-creatable, sync via artifact save (migration 328)
 # GET endpoint available for scenarios two-pass architecture
 from app.api.v4.resources.documents.get import router as documents_get_router

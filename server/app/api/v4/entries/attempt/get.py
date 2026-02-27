@@ -343,7 +343,15 @@ async def get_attempt_chats_internal(
                 created_at=chat.chat_created_at,
                 completed=chat.completed,
                 grade=grade,
-                persona_ids=config.persona_ids if config else None,
+                persona_ids=[
+                    UUID(r["personas_id"])
+                    if isinstance(r.get("personas_id"), str)
+                    else r["personas_id"]
+                    for r in chat.persona_refs
+                    if r.get("personas_id")
+                ]
+                if chat.persona_refs
+                else None,
                 persona_refs=chat.persona_refs if chat.persona_refs else None,
                 objective_ids=config.objective_ids if config else None,
                 question_ids=config.question_ids if config else None,

@@ -36,7 +36,7 @@ WITH
 -- ============================================================================
 -- Get tool entries for each provided agent
 -- Path: agent_tools_junction -> tools_resource -> tool_tools_junction
---       -> tool_bindings_junction -> bindings_resource
+--       -> tool_entries_junction -> entries_resource
 -- ============================================================================
 agent_tool_entries AS (
     SELECT
@@ -50,8 +50,8 @@ agent_tool_entries AS (
     LEFT JOIN agent_tools_junction atj ON atj.agent_id = a.id AND atj.active = true
     LEFT JOIN tools_resource tr ON tr.id = atj.tool_id
     LEFT JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
-    LEFT JOIN tool_bindings_junction tbj ON tbj.tool_id = ttj.tool_id AND tbj.active = true
-    LEFT JOIN bindings_resource b ON b.id = tbj.binding_id
+    LEFT JOIN tool_entries_junction tbj ON tbj.tool_id = ttj.tool_id AND tbj.active = true
+    LEFT JOIN entries_resource b ON b.id = tbj.entry_id
     GROUP BY a.id
 ),
 

@@ -523,15 +523,15 @@ all_fields_with_usage AS (
 tools_existence_check AS (
     SELECT 
         EXISTS (
-            SELECT 1 FROM tool_domains_junction tdj
-            JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
+            SELECT 1 FROM tool_resources_junction tdj
+            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
             JOIN tool_artifact t ON t.id = tdj.tool_id
             WHERE dr.resource = 'departments'::resource_type
               AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
         ) as departments_has_tools,
         EXISTS (
-            SELECT 1 FROM tool_domains_junction tdj
-            JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
+            SELECT 1 FROM tool_resources_junction tdj
+            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
             JOIN tool_artifact t ON t.id = tdj.tool_id
             WHERE dr.resource = 'fields'::resource_type
               AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)

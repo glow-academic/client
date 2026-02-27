@@ -3692,7 +3692,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/bindings/get": {
+    "/api/v4/resources/entries/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3702,19 +3702,19 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Bindings
-         * @description Get bindings resources by IDs.
+         * Get Entries
+         * @description Get entries resources by IDs.
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_bindings_api_v4_resources_bindings_get_post"];
+        post: operations["get_entries_api_v4_resources_entries_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/bindings/search": {
+    "/api/v4/resources/entries/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -3724,10 +3724,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Search Bindings
-         * @description Search bindings resources.
+         * Search Entries
+         * @description Search entries resources.
          */
-        post: operations["search_bindings_api_v4_resources_bindings_search_post"];
+        post: operations["search_entries_api_v4_resources_entries_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4035,7 +4035,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/domains/get": {
+    "/api/v4/resources/resources/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4045,19 +4045,19 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Domains
-         * @description Get domains resources by IDs.
+         * Get Resources
+         * @description Get resources resources by IDs.
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_domains_api_v4_resources_domains_get_post"];
+        post: operations["get_resources_api_v4_resources_resources_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/domains/search": {
+    "/api/v4/resources/resources/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4066,8 +4066,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Search Domains */
-        post: operations["search_domains_api_v4_resources_domains_search_post"];
+        /** Search Resources */
+        post: operations["search_resources_api_v4_resources_resources_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9356,66 +9356,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/bindings/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Bindings Entries
-         * @description Get bindings entries by IDs.
-         */
-        post: operations["get_bindings_entries_api_v4_entries_bindings_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/bindings/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Bindings Entries
-         * @description Search bindings entries.
-         */
-        post: operations["search_bindings_entries_api_v4_entries_bindings_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/bindings/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Bindings
-         * @description Refresh the bindings_mv materialized view.
-         */
-        post: operations["refresh_bindings_api_v4_entries_bindings_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/entries/calls/get": {
         parameters: {
             query?: never;
@@ -10010,66 +9950,6 @@ export interface paths {
          * @description Refresh the document_drafts_mv materialized view.
          */
         post: operations["refresh_document_drafts_api_v4_entries_document_drafts_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/domains/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Domains Entries
-         * @description Get domains entries by IDs.
-         */
-        post: operations["get_domains_entries_api_v4_entries_domains_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/domains/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Domains Entries
-         * @description Search domains entries.
-         */
-        post: operations["search_domains_entries_api_v4_entries_domains_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/domains/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Domains
-         * @description Refresh the domains_mv materialized view.
-         */
-        post: operations["refresh_domains_api_v4_entries_domains_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -15974,7 +15854,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v5/server/bindings_generation_started": {
+    "/socket/v5/server/entries_generation_started": {
         parameters: {
             query?: never;
             header?: never;
@@ -15983,15 +15863,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** bindings generation started */
-        post: operations["bindings_generation_started_socket_v5_server_bindings_generation_started_post"];
+        /** entries generation started */
+        post: operations["entries_generation_started_socket_v5_server_entries_generation_started_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v5/server/bindings_generation_progress": {
+    "/socket/v5/server/entries_generation_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -16000,15 +15880,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** bindings generation progress */
-        post: operations["bindings_generation_progress_socket_v5_server_bindings_generation_progress_post"];
+        /** entries generation progress */
+        post: operations["entries_generation_progress_socket_v5_server_entries_generation_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v5/server/bindings_generation_complete": {
+    "/socket/v5/server/entries_generation_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -16017,15 +15897,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** bindings generation complete */
-        post: operations["bindings_generation_complete_socket_v5_server_bindings_generation_complete_post"];
+        /** entries generation complete */
+        post: operations["entries_generation_complete_socket_v5_server_entries_generation_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v5/server/bindings_generation_error": {
+    "/socket/v5/server/entries_generation_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -16034,8 +15914,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** bindings generation error */
-        post: operations["bindings_generation_error_socket_v5_server_bindings_generation_error_post"];
+        /** entries generation error */
+        post: operations["entries_generation_error_socket_v5_server_entries_generation_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -16450,7 +16330,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v5/server/domains_generation_started": {
+    "/socket/v5/server/resources_generation_started": {
         parameters: {
             query?: never;
             header?: never;
@@ -16459,15 +16339,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** domains generation started */
-        post: operations["domains_generation_started_socket_v5_server_domains_generation_started_post"];
+        /** resources generation started */
+        post: operations["resources_generation_started_socket_v5_server_resources_generation_started_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v5/server/domains_generation_progress": {
+    "/socket/v5/server/resources_generation_progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -16476,15 +16356,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** domains generation progress */
-        post: operations["domains_generation_progress_socket_v5_server_domains_generation_progress_post"];
+        /** resources generation progress */
+        post: operations["resources_generation_progress_socket_v5_server_resources_generation_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v5/server/domains_generation_complete": {
+    "/socket/v5/server/resources_generation_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -16493,15 +16373,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** domains generation complete */
-        post: operations["domains_generation_complete_socket_v5_server_domains_generation_complete_post"];
+        /** resources generation complete */
+        post: operations["resources_generation_complete_socket_v5_server_resources_generation_complete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v5/server/domains_generation_error": {
+    "/socket/v5/server/resources_generation_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -16510,8 +16390,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** domains generation error */
-        post: operations["domains_generation_error_socket_v5_server_domains_generation_error_post"];
+        /** resources generation error */
+        post: operations["resources_generation_error_socket_v5_server_resources_generation_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -23402,43 +23282,6 @@ export interface components {
             date_range_latest?: string | null;
             history?: components["schemas"]["TestHistoryResponse"] | null;
         };
-        /** BindingsGenerationEvent */
-        BindingsGenerationEvent: {
-            /**
-             * Artifact Type
-             * @default
-             */
-            artifact_type: string;
-            /**
-             * Resource Type
-             * @default bindings
-             */
-            resource_type: string;
-            /** Resource Id */
-            resource_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Run Id */
-            run_id?: string | null;
-            /** Success */
-            success?: boolean | null;
-            /** Message */
-            message?: string | null;
-            /** Error Stage */
-            error_stage?: string | null;
-            /** Tool Call Id */
-            tool_call_id?: string | null;
-            /** Tool Name */
-            tool_name?: string | null;
-            /** Arguments Delta */
-            arguments_delta?: string | null;
-            /** Id */
-            id?: string | null;
-            /** Generated */
-            generated?: boolean | null;
-            /** Entry */
-            entry?: string | null;
-        };
         /** Body_token_default_idp_token_post */
         Body_token_default_idp_token_post: {
             /** Grant Type */
@@ -26087,45 +25930,6 @@ export interface components {
             /** Parameter Field Ids */
             parameter_field_ids?: unknown[] | null;
         };
-        /** DomainsGenerationEvent */
-        DomainsGenerationEvent: {
-            /**
-             * Artifact Type
-             * @default
-             */
-            artifact_type: string;
-            /**
-             * Resource Type
-             * @default domains
-             */
-            resource_type: string;
-            /** Resource Id */
-            resource_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Run Id */
-            run_id?: string | null;
-            /** Success */
-            success?: boolean | null;
-            /** Message */
-            message?: string | null;
-            /** Error Stage */
-            error_stage?: string | null;
-            /** Tool Call Id */
-            tool_call_id?: string | null;
-            /** Tool Name */
-            tool_name?: string | null;
-            /** Arguments Delta */
-            arguments_delta?: string | null;
-            /** Id */
-            id?: string | null;
-            /** Generated */
-            generated?: boolean | null;
-            /** Resource */
-            resource?: string | null;
-            /** Creatable */
-            creatable?: boolean | null;
-        };
         /** DuplicateAgentApiRequest */
         DuplicateAgentApiRequest: {
             /**
@@ -26637,6 +26441,43 @@ export interface components {
             generated?: boolean | null;
             /** Base Url */
             base_url?: string | null;
+        };
+        /** EntriesGenerationEvent */
+        EntriesGenerationEvent: {
+            /**
+             * Artifact Type
+             * @default
+             */
+            artifact_type: string;
+            /**
+             * Resource Type
+             * @default entries
+             */
+            resource_type: string;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
+            /** Success */
+            success?: boolean | null;
+            /** Message */
+            message?: string | null;
+            /** Error Stage */
+            error_stage?: string | null;
+            /** Tool Call Id */
+            tool_call_id?: string | null;
+            /** Tool Name */
+            tool_name?: string | null;
+            /** Arguments Delta */
+            arguments_delta?: string | null;
+            /** Id */
+            id?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+            /** Entry */
+            entry?: string | null;
         };
         /**
          * EvalAgentItem
@@ -28404,26 +28245,6 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
-        /** GetBindingsApiRequest */
-        GetBindingsApiRequest: {
-            /** Ids */
-            ids?: string[] | null;
-        };
-        /** GetBindingsApiResponse */
-        GetBindingsApiResponse: {
-            /** Items */
-            items?: components["schemas"]["QGetBindingsV4Item"][] | null;
-        };
-        /** GetBindingsEntriesApiRequest */
-        GetBindingsEntriesApiRequest: {
-            /** Ids */
-            ids: string[];
-        };
-        /** GetBindingsEntriesApiResponse */
-        GetBindingsEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
         /** GetCallsEntriesApiRequest */
         GetCallsEntriesApiRequest: {
             /** Ids */
@@ -28864,26 +28685,6 @@ export interface components {
             /** Total Count */
             total_count?: number | null;
         };
-        /** GetDomainsApiRequest */
-        GetDomainsApiRequest: {
-            /** Ids */
-            ids?: string[] | null;
-        };
-        /** GetDomainsApiResponse */
-        GetDomainsApiResponse: {
-            /** Items */
-            items?: components["schemas"]["QGetDomainsV4Item"][] | null;
-        };
-        /** GetDomainsEntriesApiRequest */
-        GetDomainsEntriesApiRequest: {
-            /** Ids */
-            ids: string[];
-        };
-        /** GetDomainsEntriesApiResponse */
-        GetDomainsEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
         /**
          * GetDraftsApiResponse
          * @description Response model for /auth/drafts endpoint.
@@ -28921,6 +28722,16 @@ export interface components {
         GetEndpointsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetEndpointsV4Item"][] | null;
+        };
+        /** GetEntriesApiRequest */
+        GetEntriesApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetEntriesApiResponse */
+        GetEntriesApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetEntriesV4Item"][] | null;
         };
         /**
          * GetEvalApiRequest
@@ -30398,6 +30209,16 @@ export interface components {
         GetResolvesEntriesApiResponse: {
             /** Items */
             items?: unknown | null;
+        };
+        /** GetResourcesApiRequest */
+        GetResourcesApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetResourcesApiResponse */
+        GetResourcesApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetResourcesV4Item"][] | null;
         };
         /** GetResponsesEntriesApiRequest */
         GetResponsesEntriesApiRequest: {
@@ -38395,15 +38216,6 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
-        /** QGetBindingsV4Item */
-        QGetBindingsV4Item: {
-            /** Id */
-            id: string | null;
-            /** Entry */
-            entry: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
         /** QGetCohortDraftsEntriesV4Item */
         QGetCohortDraftsEntriesV4Item: {
             /** Draft Id */
@@ -38622,17 +38434,6 @@ export interface components {
             /** Parameter Ids */
             parameter_ids: string[] | null;
         };
-        /** QGetDomainsV4Item */
-        QGetDomainsV4Item: {
-            /** Id */
-            id: string | null;
-            /** Resource */
-            resource: string | null;
-            /** Creatable */
-            creatable: boolean | null;
-            /** Generated */
-            generated: boolean | null;
-        };
         /** QGetEmailsV4Item */
         QGetEmailsV4Item: {
             /** Id */
@@ -38648,6 +38449,15 @@ export interface components {
             id: string | null;
             /** Base Url */
             base_url: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetEntriesV4Item */
+        QGetEntriesV4Item: {
+            /** Id */
+            id: string | null;
+            /** Entry */
+            entry: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -39594,6 +39404,17 @@ export interface components {
             id: string | null;
             /** Requests Per Day */
             requests_per_day: number | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetResourcesV4Item */
+        QGetResourcesV4Item: {
+            /** Id */
+            id: string | null;
+            /** Resource */
+            resource: string | null;
+            /** Creatable */
+            creatable: boolean | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -41125,6 +40946,45 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** ResourcesGenerationEvent */
+        ResourcesGenerationEvent: {
+            /**
+             * Artifact Type
+             * @default
+             */
+            artifact_type: string;
+            /**
+             * Resource Type
+             * @default resources
+             */
+            resource_type: string;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
+            /** Success */
+            success?: boolean | null;
+            /** Message */
+            message?: string | null;
+            /** Error Stage */
+            error_stage?: string | null;
+            /** Tool Call Id */
+            tool_call_id?: string | null;
+            /** Tool Name */
+            tool_name?: string | null;
+            /** Arguments Delta */
+            arguments_delta?: string | null;
+            /** Id */
+            id?: string | null;
+            /** Generated */
+            generated?: boolean | null;
+            /** Resource */
+            resource?: string | null;
+            /** Creatable */
+            creatable?: boolean | null;
         };
         /** ResponsesGenerationEvent */
         ResponsesGenerationEvent: {
@@ -44422,53 +44282,6 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
-        /** SearchBindingsApiRequest */
-        SearchBindingsApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Exclude Ids */
-            exclude_ids?: string[] | null;
-            /**
-             * Tool
-             * @default false
-             */
-            tool: boolean | null;
-        };
-        /** SearchBindingsApiResponse */
-        SearchBindingsApiResponse: {
-            /** Items */
-            items?: components["schemas"]["QGetBindingsV4Item"][] | null;
-        };
-        /** SearchBindingsEntriesApiRequest */
-        SearchBindingsEntriesApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-        };
-        /** SearchBindingsEntriesApiResponse */
-        SearchBindingsEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
         /** SearchCallsEntriesApiRequest */
         SearchCallsEntriesApiRequest: {
             /** Search */
@@ -45042,57 +44855,6 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetDocumentsV4Item"][] | null;
         };
-        /** SearchDomainsApiRequest */
-        SearchDomainsApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Exclude Ids */
-            exclude_ids?: string[] | null;
-            /** Resource */
-            resource?: string | null;
-            /** Creatable */
-            creatable?: boolean | null;
-            /**
-             * Tool
-             * @default false
-             */
-            tool: boolean | null;
-        };
-        /** SearchDomainsApiResponse */
-        SearchDomainsApiResponse: {
-            /** Items */
-            items?: components["schemas"]["QGetDomainsV4Item"][] | null;
-        };
-        /** SearchDomainsEntriesApiRequest */
-        SearchDomainsEntriesApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-        };
-        /** SearchDomainsEntriesApiResponse */
-        SearchDomainsEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
         /** SearchEmailsApiRequest */
         SearchEmailsApiRequest: {
             /** Search */
@@ -45170,6 +44932,33 @@ export interface components {
         SearchEndpointsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetEndpointsV4Item"][] | null;
+        };
+        /** SearchEntriesApiRequest */
+        SearchEntriesApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+            /**
+             * Tool
+             * @default false
+             */
+            tool: boolean | null;
+        };
+        /** SearchEntriesApiResponse */
+        SearchEntriesApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetEntriesV4Item"][] | null;
         };
         /** SearchEvalDraftsEntriesApiRequest */
         SearchEvalDraftsEntriesApiRequest: {
@@ -47025,6 +46814,37 @@ export interface components {
         SearchResolvesEntriesApiResponse: {
             /** Items */
             items?: unknown | null;
+        };
+        /** SearchResourcesApiRequest */
+        SearchResourcesApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+            /** Resource */
+            resource?: string | null;
+            /** Creatable */
+            creatable?: boolean | null;
+            /**
+             * Tool
+             * @default false
+             */
+            tool: boolean | null;
+        };
+        /** SearchResourcesApiResponse */
+        SearchResourcesApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetResourcesV4Item"][] | null;
         };
         /** SearchResponsesEntriesApiRequest */
         SearchResponsesEntriesApiRequest: {
@@ -58165,7 +57985,7 @@ export interface operations {
             };
         };
     };
-    get_bindings_api_v4_resources_bindings_get_post: {
+    get_entries_api_v4_resources_entries_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58178,7 +57998,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetBindingsApiRequest"];
+                "application/json": components["schemas"]["GetEntriesApiRequest"];
             };
         };
         responses: {
@@ -58188,7 +58008,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetBindingsApiResponse"];
+                    "application/json": components["schemas"]["GetEntriesApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58202,7 +58022,7 @@ export interface operations {
             };
         };
     };
-    search_bindings_api_v4_resources_bindings_search_post: {
+    search_entries_api_v4_resources_entries_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58215,7 +58035,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SearchBindingsApiRequest"];
+                "application/json": components["schemas"]["SearchEntriesApiRequest"];
             };
         };
         responses: {
@@ -58225,7 +58045,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SearchBindingsApiResponse"];
+                    "application/json": components["schemas"]["SearchEntriesApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58794,7 +58614,7 @@ export interface operations {
             };
         };
     };
-    get_domains_api_v4_resources_domains_get_post: {
+    get_resources_api_v4_resources_resources_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58807,7 +58627,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetDomainsApiRequest"];
+                "application/json": components["schemas"]["GetResourcesApiRequest"];
             };
         };
         responses: {
@@ -58817,7 +58637,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetDomainsApiResponse"];
+                    "application/json": components["schemas"]["GetResourcesApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58831,7 +58651,7 @@ export interface operations {
             };
         };
     };
-    search_domains_api_v4_resources_domains_search_post: {
+    search_resources_api_v4_resources_resources_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58844,7 +58664,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SearchDomainsApiRequest"];
+                "application/json": components["schemas"]["SearchResourcesApiRequest"];
             };
         };
         responses: {
@@ -58854,7 +58674,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SearchDomainsApiResponse"];
+                    "application/json": components["schemas"]["SearchResourcesApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68680,115 +68500,6 @@ export interface operations {
             };
         };
     };
-    get_bindings_entries_api_v4_entries_bindings_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetBindingsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetBindingsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_bindings_entries_api_v4_entries_bindings_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchBindingsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SearchBindingsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_bindings_api_v4_entries_bindings_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_calls_entries_api_v4_entries_calls_get_post: {
         parameters: {
             query?: never;
@@ -69845,115 +69556,6 @@ export interface operations {
         };
     };
     refresh_document_drafts_api_v4_entries_document_drafts_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_domains_entries_api_v4_entries_domains_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetDomainsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetDomainsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_domains_entries_api_v4_entries_domains_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchDomainsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SearchDomainsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_domains_api_v4_entries_domains_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -80776,7 +80378,7 @@ export interface operations {
             };
         };
     };
-    bindings_generation_started_socket_v5_server_bindings_generation_started_post: {
+    entries_generation_started_socket_v5_server_entries_generation_started_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -80785,7 +80387,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BindingsGenerationEvent"];
+                "application/json": components["schemas"]["EntriesGenerationEvent"];
             };
         };
         responses: {
@@ -80811,7 +80413,7 @@ export interface operations {
             };
         };
     };
-    bindings_generation_progress_socket_v5_server_bindings_generation_progress_post: {
+    entries_generation_progress_socket_v5_server_entries_generation_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -80820,7 +80422,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BindingsGenerationEvent"];
+                "application/json": components["schemas"]["EntriesGenerationEvent"];
             };
         };
         responses: {
@@ -80846,7 +80448,7 @@ export interface operations {
             };
         };
     };
-    bindings_generation_complete_socket_v5_server_bindings_generation_complete_post: {
+    entries_generation_complete_socket_v5_server_entries_generation_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -80855,7 +80457,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BindingsGenerationEvent"];
+                "application/json": components["schemas"]["EntriesGenerationEvent"];
             };
         };
         responses: {
@@ -80881,7 +80483,7 @@ export interface operations {
             };
         };
     };
-    bindings_generation_error_socket_v5_server_bindings_generation_error_post: {
+    entries_generation_error_socket_v5_server_entries_generation_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -80890,7 +80492,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BindingsGenerationEvent"];
+                "application/json": components["schemas"]["EntriesGenerationEvent"];
             };
         };
         responses: {
@@ -81756,7 +81358,7 @@ export interface operations {
             };
         };
     };
-    domains_generation_started_socket_v5_server_domains_generation_started_post: {
+    resources_generation_started_socket_v5_server_resources_generation_started_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -81765,7 +81367,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DomainsGenerationEvent"];
+                "application/json": components["schemas"]["ResourcesGenerationEvent"];
             };
         };
         responses: {
@@ -81791,7 +81393,7 @@ export interface operations {
             };
         };
     };
-    domains_generation_progress_socket_v5_server_domains_generation_progress_post: {
+    resources_generation_progress_socket_v5_server_resources_generation_progress_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -81800,7 +81402,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DomainsGenerationEvent"];
+                "application/json": components["schemas"]["ResourcesGenerationEvent"];
             };
         };
         responses: {
@@ -81826,7 +81428,7 @@ export interface operations {
             };
         };
     };
-    domains_generation_complete_socket_v5_server_domains_generation_complete_post: {
+    resources_generation_complete_socket_v5_server_resources_generation_complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -81835,7 +81437,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DomainsGenerationEvent"];
+                "application/json": components["schemas"]["ResourcesGenerationEvent"];
             };
         };
         responses: {
@@ -81861,7 +81463,7 @@ export interface operations {
             };
         };
     };
-    domains_generation_error_socket_v5_server_domains_generation_error_post: {
+    resources_generation_error_socket_v5_server_resources_generation_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -81870,7 +81472,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DomainsGenerationEvent"];
+                "application/json": components["schemas"]["ResourcesGenerationEvent"];
             };
         };
         responses: {

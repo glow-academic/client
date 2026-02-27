@@ -78,7 +78,7 @@ async def resolve_agent_for_entry_types(
             success=False,
             error_message=(
                 f"None of the provided agents have tools that produce required entries. "
-                f"Ensure at least one agent has tools with bindings for: {entry_types_str}"
+                f"Ensure at least one agent has tools with entries for: {entry_types_str}"
             ),
         )
 

@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from app.registry.manual import ARTIFACT_ROLES, ROUTE_TO_ARTIFACT, SECTION_OVERRIDES
+from app.registry.manual import ARTIFACT_ROLES, ROUTE_TO_ARTIFACT
 
 
 def _scan_client_routes(client_dir: Path) -> list[str]:
@@ -56,7 +56,11 @@ def _route_to_artifact(route: str, artifacts: dict) -> str | None:
         return ROUTE_TO_ARTIFACT[last_meaningful]
 
     # Try singular form of the last meaningful segment
-    singular = last_meaningful.rstrip("s") if last_meaningful.endswith("s") else last_meaningful
+    singular = (
+        last_meaningful.rstrip("s")
+        if last_meaningful.endswith("s")
+        else last_meaningful
+    )
     if singular in artifacts:
         return singular
 
@@ -173,7 +177,9 @@ def generate_artifact_routes(
     return {k: sorted(v) for k, v in sorted(artifact_routes.items())}
 
 
-def generate_role_artifacts(artifact_roles: dict[str, frozenset[str]] | None = None) -> dict[str, list[str]]:
+def generate_role_artifacts(
+    artifact_roles: dict[str, frozenset[str]] | None = None,
+) -> dict[str, list[str]]:
     """Generate ROLE_ARTIFACTS as inverse of ARTIFACT_ROLES.
 
     Also includes view artifacts accessible by each role based on route_permissions.

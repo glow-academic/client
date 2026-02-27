@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import sys
 import os
+import sys
 
 # Add server directory to path so we can import manual.py
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))

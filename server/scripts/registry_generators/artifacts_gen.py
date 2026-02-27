@@ -17,7 +17,9 @@ from app.registry.manual import (
 from .db import get_connection, query_rows
 
 # Standard endpoint sets
-CRUD_ENDPOINTS = frozenset({"get", "list", "save", "delete", "duplicate", "draft", "docs"})
+CRUD_ENDPOINTS = frozenset(
+    {"get", "list", "save", "delete", "duplicate", "draft", "docs"}
+)
 SOCKET_EVENTS = frozenset({"generate", "complete", "progress", "error"})
 
 # SQL to find all *_artifact tables
@@ -79,9 +81,7 @@ def _scan_py_endpoints(server_dir: Path, artifact_name: str) -> frozenset[str]:
     )
 
 
-def _client_section_for_artifact(
-    client_dir: Path, artifact_name: str
-) -> str:
+def _client_section_for_artifact(client_dir: Path, artifact_name: str) -> str:
     """Determine the section for an artifact from client directory structure."""
     # Check overrides first
     if artifact_name in SECTION_OVERRIDES:
@@ -103,7 +103,11 @@ def _client_section_for_artifact(
         for sub_dir in section_dir.iterdir():
             if sub_dir.is_dir() and not sub_dir.name.startswith((".", "_", "[")):
                 # Convert plural client dir to singular artifact name
-                singular = sub_dir.name.rstrip("s") if sub_dir.name.endswith("s") else sub_dir.name
+                singular = (
+                    sub_dir.name.rstrip("s")
+                    if sub_dir.name.endswith("s")
+                    else sub_dir.name
+                )
                 section_map[singular] = section_name
                 # Also map the plural form
                 section_map[sub_dir.name] = section_name

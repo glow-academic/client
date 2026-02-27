@@ -125,10 +125,10 @@ params AS (
                   ON tr.id = at.tool_id
                 LEFT JOIN tool_tools_junction ttj
                   ON ttj.tools_id = tr.id
-                LEFT JOIN tool_domains_junction tdj
+                LEFT JOIN tool_resources_junction tdj
                   ON tdj.tool_id = ttj.tool_id AND tdj.active = true
-                LEFT JOIN domains_resource dr
-                  ON dr.id = tdj.domain_id AND dr.active = true
+                LEFT JOIN resources_resource dr
+                  ON dr.id = tdj.resource_id AND dr.active = true
                 WHERE EXISTS (
                     SELECT 1
                     FROM agent_flags_junction af
@@ -301,8 +301,8 @@ agent_tools_data AS (
     LEFT JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
     LEFT JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND tf.value = true)
     LEFT JOIN tool_schema_data tsd ON tsd.tool_id = t.id
-    LEFT JOIN tool_domains_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-    LEFT JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
+    LEFT JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
+    LEFT JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
     GROUP BY sa.agent_id
 ),
 -- Get developer instruction templates (array)

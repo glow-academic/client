@@ -84,7 +84,13 @@ class ChatItem(BaseModel):
         """Extract resource-level persona IDs from persona_refs."""
         if not self.persona_refs:
             return []
-        return [UUID(r["personas_id"]) if isinstance(r.get("personas_id"), str) else r["personas_id"] for r in self.persona_refs if r.get("personas_id")]
+        return [
+            UUID(r["personas_id"])
+            if isinstance(r.get("personas_id"), str)
+            else r["personas_id"]
+            for r in self.persona_refs
+            if r.get("personas_id")
+        ]
 
     @property
     def persona_id(self) -> UUID | None:
@@ -273,9 +279,14 @@ async def get_chats_internal(
                     simulation_id=item.simulation_id,
                     scenario_id=item.scenario_id,
                     persona_refs=[
-                        {"personas_id": ref.personas_id, "personas_entry_id": ref.personas_entry_id}
+                        {
+                            "personas_id": ref.personas_id,
+                            "personas_entry_id": ref.personas_entry_id,
+                        }
                         for ref in item.persona_refs
-                    ] if item.persona_refs else None,
+                    ]
+                    if item.persona_refs
+                    else None,
                     rubric_id=item.rubric_id,
                     grade_score=item.grade_score,
                     grade_total_points=item.grade_total_points,

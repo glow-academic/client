@@ -836,6 +836,7 @@ async def get_attempt_internal(
         config_provider_resources = None
 
         if config_agent_resource_ids:
+
             async def fetch_config_agents() -> Any:
                 async with pool.acquire() as c:
                     return await get_agents_internal(
@@ -862,9 +863,7 @@ async def get_attempt_internal(
             if config_model_resources:
                 config_provider_ids = list(
                     dict.fromkeys(
-                        m.provider_id
-                        for m in config_model_resources
-                        if m.provider_id
+                        m.provider_id for m in config_model_resources if m.provider_id
                     )
                 )
                 if config_provider_ids:
@@ -1785,9 +1784,13 @@ async def get_attempt_websocket(
         objectives=list(rp.objectives.values()) if rp.objectives else None,
         questions=list(rp.questions.values()) if rp.questions else None,
         options=list(rp.options.values()) if rp.options else None,
-        problem_statements=list(rp.problem_statements.values()) if rp.problem_statements else None,
+        problem_statements=list(rp.problem_statements.values())
+        if rp.problem_statements
+        else None,
         rubrics=list(rp.rubrics.values()) if rp.rubrics else None,
-        standard_groups=list(rp.standard_groups.values()) if rp.standard_groups else None,
+        standard_groups=list(rp.standard_groups.values())
+        if rp.standard_groups
+        else None,
         standards=list(rp.standards.values()) if rp.standards else None,
     )
 

@@ -44,8 +44,8 @@ source_agent AS (
         FROM agent_tools_junction at
         JOIN tools_resource tr ON tr.id = at.tool_id
         JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
-        JOIN tool_domains_junction tdj ON tdj.tool_id = ttj.tool_id AND tdj.active = true
-        JOIN domains_resource dr ON dr.id = tdj.domain_id AND dr.active = true
+        JOIN tool_resources_junction tdj ON tdj.tool_id = ttj.tool_id AND tdj.active = true
+        JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
         JOIN (VALUES
             ('agent'::artifact_type, 'agents'::resource_type),
             ('agent'::artifact_type, 'departments'::resource_type),

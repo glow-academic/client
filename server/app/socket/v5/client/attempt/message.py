@@ -30,6 +30,7 @@ from app.socket.v5.internal.attempt.types import (
     GenerateRequestData,
 )
 from app.socket.v5.types import MESSAGE_ENTRY_TYPES
+from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -163,6 +164,15 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
                 created_at=created_at.isoformat() if created_at else "",
             ).model_dump(mode="json"),
         )
+
+        # Step 5b: Refresh attempt_message_mv so generate_prepare sees the new message
+        async with get_db_connection() as conn:
+            await conn.execute(
+                "REFRESH MATERIALIZED VIEW CONCURRENTLY attempt_message_mv"
+            )
+
+        # Step 5c: Invalidate attempt caches so generate_prepare fetches fresh data
+        await invalidate_tags(["attempt", "messages"])
 
         # Step 6: Emit to generate pipeline
         await internal_sio.emit(

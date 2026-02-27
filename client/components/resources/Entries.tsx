@@ -1,8 +1,8 @@
 /**
- * Domains.tsx
- * Resource component for domain selection
- * Uses SelectableGrid to display domains as horizontal scrollable cards
- * Manages domain_ids array and reports to parent
+ * Entries.tsx
+ * Resource component for entry selection
+ * Uses SelectableGrid to display entries as horizontal scrollable cards
+ * Manages entry_ids array and reports to parent
  */
 
 "use client";
@@ -23,56 +23,54 @@ import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 // Derive resource item type from the GET endpoint response
-type DomainGetResponse = OutputOf<"/api/v4/resources/domains/get", "post">;
-export type DomainResourceItem = NonNullable<DomainGetResponse["items"]>[number];
+type EntriesGetResponse = OutputOf<"/api/v4/resources/entries/get", "post">;
+export type EntriesResourceItem = NonNullable<EntriesGetResponse["items"]>[number];
 
-export interface DomainItem {
+export interface EntryItem {
   id: string;
-  resource: string;
-  creatable: boolean;
+  entry: string;
 }
 
-export interface DomainsProps {
-  domain_ids?: string[];
-  domain_resources?: DomainResourceItem[];
-  show_domains?: boolean;
-  domain_suggestions?: string[];
-  domains?: DomainResourceItem[];
+export interface EntriesProps {
+  entry_ids?: string[];
+  entry_resources?: EntriesResourceItem[];
+  show_entries?: boolean;
+  entry_suggestions?: string[];
+  entries?: EntriesResourceItem[];
   disabled?: boolean;
   onChange: (ids: string[]) => void;
   label?: string;
   group_id?: string | null;
   // AI diff props (deprecated - now handled by useResourceAi hook)
-  aiDomainResources?: Pick<DomainResourceItem, "id" | "resource">[] | null;
+  aiEntryResources?: Pick<EntriesResourceItem, "id" | "entry">[] | null;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
 }
 
-export function Domains({
-  domain_ids,
-  domain_resources,
-  show_domains = false,
-  domain_suggestions,
-  domains,
+export function Entries({
+  entry_ids,
+  entry_resources,
+  show_entries = false,
+  entry_suggestions,
+  entries,
   disabled = false,
   onChange,
-  label = "Domains",
+  label = "Entries",
   group_id,
-  // AI diff props (deprecated - now handled by useResourceAi hook)
   showAiGenerate,
   onGenerate,
-}: DomainsProps) {
-  const ids = useMemo(() => domain_ids ?? [], [domain_ids]);
-  const show = show_domains ?? false;
-  const allDomains = useMemo(() => domains ?? [], [domains]);
+}: EntriesProps) {
+  const ids = useMemo(() => entry_ids ?? [], [entry_ids]);
+  const show = show_entries ?? false;
+  const allEntries = useMemo(() => entries ?? [], [entries]);
   const suggestionsList = useMemo(
-    () => domain_suggestions ?? [],
-    [domain_suggestions]
+    () => entry_suggestions ?? [],
+    [entry_suggestions]
   );
 
   // Socket-based AI suggestion handling via shared hook
   const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
-    resourceType: "domains",
+    resourceType: "entries",
     groupId: group_id,
     accumulate: true,
   });
@@ -83,25 +81,24 @@ export function Domains({
     () =>
       new Set(
         aiSuggestions
-          .map((d) => d.id)
+          .map((b) => b.id)
           .filter(Boolean) as string[]
       ),
     [aiSuggestions]
   );
 
   // Convert to items format for SelectableGrid
-  const domainItems = useMemo(() => {
-    return allDomains
-      .filter((d) => d.id)
-      .map((d) => ({
-        id: d.id!,
-        resource: d.resource ?? "",
-        creatable: d.creatable ?? false,
+  const entryItems = useMemo(() => {
+    return allEntries
+      .filter((b) => b.id)
+      .map((b) => ({
+        id: b.id!,
+        entry: b.entry ?? "",
       }));
-  }, [allDomains]);
+  }, [allEntries]);
 
   const isSuggested = useCallback(
-    (domainId: string) => suggestionsList.includes(domainId),
+    (entryId: string) => suggestionsList.includes(entryId),
     [suggestionsList]
   );
 
@@ -112,11 +109,11 @@ export function Domains({
     [onChange]
   );
 
-  // Accept AI suggestion
+  // Accept AI suggestion - add AI-suggested entries to selection
   const handleAccept = useCallback(() => {
     if (aiSuggestions.length === 0) return;
     const newIds = aiSuggestions
-      .map((d) => d.id)
+      .map((b) => b.id)
       .filter((id): id is string => !!id && !ids.includes(id));
     if (newIds.length > 0) {
       onChange([...ids, ...newIds]);
@@ -124,16 +121,17 @@ export function Domains({
     clearAi();
   }, [aiSuggestions, ids, onChange, clearAi]);
 
+  // Reject AI suggestion - just clear the pending state
   const handleReject = useCallback(() => {
     clearAi();
   }, [clearAi]);
 
-  // Check if any domain resource is generated (must be before early return)
+  // Check if any entry resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {
-    return domain_resources?.some((d) => d.generated) ?? false;
-  }, [domain_resources]);
+    return entry_resources?.some((b) => b.generated) ?? false;
+  }, [entry_resources]);
 
-  // Don't render if show is false (AFTER all hooks)
+  // Don't render if show_entries is false (AFTER all hooks)
   if (!show) {
     return null;
   }
@@ -207,14 +205,14 @@ export function Domains({
         </div>
       )}
 
-      <SelectableGrid<DomainItem>
-        items={domainItems}
+      <SelectableGrid<EntryItem>
+        items={entryItems}
         selectedId={null}
         selectedIds={ids}
-        onSelect={(domainId) => {
-          const newIds = ids.includes(domainId)
-            ? ids.filter((id) => id !== domainId)
-            : [...ids, domainId];
+        onSelect={(entryId) => {
+          const newIds = ids.includes(entryId)
+            ? ids.filter((id) => id !== entryId)
+            : [...ids, entryId];
           handleSelect(newIds);
         }}
         getId={(item) => item.id}
@@ -250,16 +248,13 @@ export function Domains({
               )}
               <div className="flex flex-col justify-center gap-1 flex-1 overflow-hidden">
                 <span className="text-sm font-medium truncate">
-                  {item.resource || "Unknown"}
+                  {item.entry || "Unnamed"}
                 </span>
-                {item.creatable && (
-                  <span className="text-xs text-success">Creatable</span>
-                )}
               </div>
             </div>
           );
         }}
-        emptyMessage="No domains available."
+        emptyMessage="No entries available."
         disabled={disabled}
         horizontal
       />

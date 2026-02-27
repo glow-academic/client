@@ -80,7 +80,7 @@ AS $$
                     mv.content_id,
                     mv.message_id,
                     mv.content,
-                    mv.persona_id,
+                    mv.persona_entry_id,
                     mv.idx,
                     mv.created_at
                 )::types.q_get_simulation_contents_view_v4_item
