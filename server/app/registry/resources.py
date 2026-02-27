@@ -24,17 +24,20 @@ RESOURCE_SCHEMAS: dict[str, dict[str, str]] = {
         "args_id": "uuid",
         "value": "int",
     },
-    "args_outputs": {
-        "args_id": "uuid",
-        "name": "text",
-        "template": "text",
-    },
     "args": {
         "name": "text",
         "description": "text",
         "field_type": "text",
         "required": "bool",
         "default_value": "text",
+    },
+    "args_outputs": {
+        "args_id": "uuid",
+        "name": "text",
+        "template": "text",
+    },
+    "artifacts": {
+        "artifact": "text",
     },
     "auth_item_keys": {
         "auth_id": "uuid",
@@ -57,6 +60,10 @@ RESOURCE_SCHEMAS: dict[str, dict[str, str]] = {
         "description": "text",
         "department_ids": "array",
         "simulation_ids": "array",
+        "profile_ids": "array",
+        "profile_persona_ids": "array",
+        "simulation_position_ids": "array",
+        "simulation_availability_ids": "array",
     },
     "colors": {
         "name": "text",
@@ -123,7 +130,6 @@ RESOURCE_SCHEMAS: dict[str, dict[str, str]] = {
         "value": "int",
         "eval_id": "uuid",
     },
-    "groups": {},
     "group_rubrics": {
         "groups_id": "uuid",
         "rubric_id": "uuid",
@@ -214,11 +220,17 @@ RESOURCE_SCHEMAS: dict[str, dict[str, str]] = {
     "pricing": {
         "pricing_type": "enum",
         "price": "float",
-        "unit_id": "uuid",
+        "unit_name": "text",
+        "unit_category": "enum",
+        "unit_value": "int",
     },
     "problem_statements": {
         "name": "text",
         "problem_statement": "text",
+    },
+    "profile_personas": {
+        "profile_id": "uuid",
+        "persona_id": "uuid",
     },
     "profiles": {
         "last_login": "timestamp",
@@ -226,7 +238,6 @@ RESOURCE_SCHEMAS: dict[str, dict[str, str]] = {
         "name": "text",
         "description": "text",
         "department_ids": "array",
-        "cohort_ids": "array",
         "role_id": "uuid",
         "emails": "array",
         "primary_email": "text",
@@ -297,7 +308,6 @@ RESOURCE_SCHEMAS: dict[str, dict[str, str]] = {
         "runs_id": "uuid",
         "rubric_id": "uuid",
     },
-    "runs": {},
     "scenario_flags": {
         "flag_id": "uuid",
         "scenario_id": "uuid",
@@ -325,8 +335,14 @@ RESOURCE_SCHEMAS: dict[str, dict[str, str]] = {
         "questions_enabled": "bool",
         "department_ids": "array",
         "persona_ids": "array",
-        "parameter_ids": "array",
         "parameter_field_ids": "array",
+        "document_ids": "array",
+        "objective_ids": "array",
+        "image_ids": "array",
+        "video_ids": "array",
+        "question_ids": "array",
+        "option_ids": "array",
+        "problem_statement_ids": "array",
     },
     "settings": {
         "name": "text",
@@ -351,6 +367,11 @@ RESOURCE_SCHEMAS: dict[str, dict[str, str]] = {
         "description": "text",
         "department_ids": "array",
         "scenario_ids": "array",
+        "scenario_rubric_ids": "array",
+        "scenario_time_limit_ids": "array",
+        "scenario_position_ids": "array",
+        "scenario_flag_ids": "array",
+        "practice": "bool",
     },
     "slugs": {
         "value": "text",
@@ -384,6 +405,9 @@ RESOURCE_SCHEMAS: dict[str, dict[str, str]] = {
         "createable": "bool",
         "args_ids": "array",
         "args_output_ids": "array",
+        "resource": "text",
+        "entry": "text",
+        "artifact": "text",
     },
     "uploads": {
         "upload_id": "uuid",
@@ -489,7 +513,9 @@ RESOURCE_OUTPUT_SCHEMAS: dict[str, list[dict[str, str]]] = {
         {"field_type": "boolean", "name": "active"},
         {"field_type": "number", "name": "price"},
         {"field_type": "string", "name": "pricing_type"},
-        {"field_type": "string", "name": "unit_id"},
+        {"field_type": "string", "name": "unit_name"},
+        {"field_type": "string", "name": "unit_category"},
+        {"field_type": "number", "name": "unit_value"},
     ],
     "problem_statements": [
         {"field_type": "string", "name": "name"},
@@ -589,24 +615,4 @@ RESOURCE_OUTPUT_SCHEMAS: dict[str, list[dict[str, str]]] = {
         {"field_type": "string", "name": "voice"},
         {"field_type": "string", "name": "voice_id"},
     ],
-}
-
-# artifact_units_relation (unit_id → unit_name)
-UNIT_NAMES: dict[str, str] = {
-    "019b3be4-3ced-7b19-a313-ffdaa73b65fe": "200k",
-    "019b3be4-3ced-7b2b-8fd2-54556abd3391": "image",
-    "019b3be4-3ced-7b0d-b978-c5a8f6729c49": "million_audio",
-    "019b3be4-3ced-7b1c-84f7-4e13f220fdb4": "million_image",
-    "019b3be4-3ced-7acb-afab-19ceef6b410b": "million_text",
-    "019b3be4-3ced-7b23-a804-0ab3f0dff208": "second",
-}
-
-# artifact_units_relation (unit_id → unit_value divisor)
-UNIT_VALUES: dict[str, int] = {
-    "019b3be4-3ced-7b19-a313-ffdaa73b65fe": 200000,
-    "019b3be4-3ced-7b2b-8fd2-54556abd3391": 1,
-    "019b3be4-3ced-7b0d-b978-c5a8f6729c49": 1000000,
-    "019b3be4-3ced-7b1c-84f7-4e13f220fdb4": 1000000,
-    "019b3be4-3ced-7acb-afab-19ceef6b410b": 1000000,
-    "019b3be4-3ced-7b23-a804-0ab3f0dff208": 1,
 }

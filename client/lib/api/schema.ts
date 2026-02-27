@@ -23520,6 +23520,10 @@ export interface components {
             objective_ids?: string[] | null;
             /** Persona Ids */
             persona_ids?: string[] | null;
+            /** Persona Refs */
+            persona_refs?: {
+                [key: string]: unknown;
+            }[] | null;
             /** Image Ids */
             image_ids?: string[] | null;
             /** Video Ids */
@@ -37146,8 +37150,12 @@ export interface components {
             pricing_type?: string | null;
             /** Price */
             price?: number | null;
-            /** Unit Id */
-            unit_id?: string | null;
+            /** Unit Name */
+            unit_name?: string | null;
+            /** Unit Category */
+            unit_category?: string | null;
+            /** Unit Value */
+            unit_value?: number | null;
         };
         /**
          * PricingRequest
@@ -39219,8 +39227,12 @@ export interface components {
             pricing_type: string | null;
             /** Price */
             price: number | null;
-            /** Unit Id */
-            unit_id: string | null;
+            /** Unit Name */
+            unit_name: string | null;
+            /** Unit Category */
+            unit_category: string | null;
+            /** Unit Value */
+            unit_value: number | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -46521,8 +46533,8 @@ export interface components {
             exclude_ids?: string[] | null;
             /** Pricing Type */
             pricing_type?: string | null;
-            /** Unit Ids */
-            unit_ids?: string[] | null;
+            /** Unit Names */
+            unit_names?: string[] | null;
             /**
              * Model
              * @default false

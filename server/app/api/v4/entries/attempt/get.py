@@ -95,6 +95,7 @@ class ChatViewItem(BaseModel):
     completed: bool = False
     grade: GradeItem | None = None
     persona_ids: list[UUID] | None = None
+    persona_refs: list[dict] | None = None  # [{personas_id, personas_entry_id}]
     objective_ids: list[UUID] | None = None
     question_ids: list[UUID] | None = None
     option_ids: list[UUID] | None = None
@@ -343,6 +344,7 @@ async def get_attempt_chats_internal(
                 completed=chat.completed,
                 grade=grade,
                 persona_ids=config.persona_ids if config else None,
+                persona_refs=chat.persona_refs if chat.persona_refs else None,
                 objective_ids=config.objective_ids if config else None,
                 question_ids=config.question_ids if config else None,
                 option_ids=config.option_ids if config else None,

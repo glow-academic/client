@@ -27499,7 +27499,9 @@ class QGetPricingV4Item(BaseModel):
     id: UUID | None
     pricing_type: str | None
     price: float | None
-    unit_id: UUID | None
+    unit_name: str | None
+    unit_category: str | None
+    unit_value: int | None
     generated: bool | None
 
 class GetPricingSqlRow(BaseModel):
@@ -27525,7 +27527,7 @@ class SearchPricingSqlParams(BaseModel):
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     pricing_type: str | None = None
-    unit_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    unit_names: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
     model: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -27535,7 +27537,7 @@ class SearchPricingSqlParams(BaseModel):
             self.offset_count,
             self.exclude_ids,
             self.pricing_type,
-            self.unit_ids,
+            self.unit_names,
             self.model,
         )
 
@@ -27550,7 +27552,7 @@ class SearchPricingApiRequest(BaseModel):
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     pricing_type: str | None = None
-    unit_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    unit_names: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
     model: bool | None = False
 
 class SearchPricingApiResponse(BaseModel):

@@ -390,6 +390,28 @@ sql-compile: check-venv
 	 $(VENV_PYTHON) -c "import asyncio; from app.infra.v4.sql.compile_types import compile_sql_types; exit(0 if asyncio.run(compile_sql_types())[0] else 1)"
 	@echo "✅ SQL compilation complete"
 
+# Generate registry files from DB introspection + filesystem scanning
+registry: check-venv
+	@echo "Generating registry files..."
+	@PYTHONPATH=server DB_USER="$${DB_USER:-myuser}" \
+	 DB_PASSWORD="$${DB_PASSWORD:-mypassword}" \
+	 DB_NAME="$${DB_NAME:-mydb}" \
+	 DB_HOST="$${DB_HOST:-localhost}" \
+	 DB_PORT="$${DB_PORT:-5432}" \
+	 $(VENV_PYTHON) server/scripts/generate_registry.py all
+	@echo "✅ Registry generation complete"
+
+# Validate registry files match DB state
+registry-validate: check-venv
+	@echo "Validating registry files..."
+	@PYTHONPATH=server DB_USER="$${DB_USER:-myuser}" \
+	 DB_PASSWORD="$${DB_PASSWORD:-mypassword}" \
+	 DB_NAME="$${DB_NAME:-mydb}" \
+	 DB_HOST="$${DB_HOST:-localhost}" \
+	 DB_PORT="$${DB_PORT:-5432}" \
+	 $(VENV_PYTHON) server/scripts/generate_registry.py validate
+	@echo "✅ Registry validation complete"
+
 # Compile specific SQL files incrementally (for watch mode)
 sql-compile-incremental: check-venv
 	@if [ -z "$(FILE)" ]; then \

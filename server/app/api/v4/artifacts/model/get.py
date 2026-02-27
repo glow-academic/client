@@ -584,13 +584,11 @@ async def get_model_internal(
         for t in temperature_levels
         if t.temperature_level_id in selected_temperature_level_ids
     ]
-    from app.registry.resources import UNIT_NAMES
-
     pricing_resources_list = [
         p for p in pricing if p.pricing_id in selected_pricing_ids
     ]
     pricing_resources_list.sort(
-        key=lambda p: (p.pricing_type or "", UNIT_NAMES.get(str(p.unit_id), ""))
+        key=lambda p: (p.pricing_type or "", p.unit_name or "")
     )
     reasoning_level_resources = [
         r

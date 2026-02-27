@@ -34,7 +34,7 @@ async def search_pricing_internal(
     offset_count: int | None = 0,
     exclude_ids: list[UUID] | None = None,
     pricing_type: str | None = None,
-    unit_ids: list[UUID] | None = None,
+    unit_names: list[str] | None = None,
     bypass_cache: bool = False,
     *,
     model: bool = False,
@@ -52,7 +52,7 @@ async def search_pricing_internal(
             "offset_count": offset_count,
             "exclude_ids": [str(id) for id in (exclude_ids or [])],
             "pricing_type": pricing_type,
-            "unit_ids": sorted(str(i) for i in (unit_ids or [])),
+            "unit_names": sorted(unit_names or []),
             "model": model,
         },
     )
@@ -71,7 +71,7 @@ async def search_pricing_internal(
         offset_count=offset_count,
         exclude_ids=exclude_ids or [],
         pricing_type=pricing_type,
-        unit_ids=unit_ids or [],
+        unit_names=unit_names or [],
         model=model,
     )
     result = cast(

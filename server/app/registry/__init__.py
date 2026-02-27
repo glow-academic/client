@@ -25,8 +25,6 @@ from app.registry.relations import (
 from app.registry.resources import (
     RESOURCE_OUTPUT_SCHEMAS,
     RESOURCE_SCHEMAS,
-    UNIT_NAMES,
-    UNIT_VALUES,
 )
 from app.registry.routes import ARTIFACT_ROUTES, ROLE_ARTIFACTS
 
@@ -54,8 +52,6 @@ __all__ = [
     "ResourceGenerationBase",
     "ROLE_ARTIFACTS",
     "TOOL_ENTRY_TYPES",
-    "UNIT_NAMES",
-    "UNIT_VALUES",
     "VIEW_ENTRIES",
     "VIEW_RESOURCES",
 ]

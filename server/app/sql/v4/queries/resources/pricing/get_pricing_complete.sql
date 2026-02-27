@@ -53,7 +53,9 @@ CREATE TYPE types.q_get_pricing_v4_item AS (
     id uuid,
     pricing_type text,
     price real,
-    unit_id uuid,
+    unit_name text,
+    unit_category text,
+    unit_value int,
     generated boolean
 );
 
@@ -69,7 +71,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (p.id, p.pricing_type::text, p.price, p.unit_id, COALESCE(p.generated, false))::types.q_get_pricing_v4_item
+        (p.id, p.pricing_type::text, p.price, p.unit_name, p.unit_category::text, p.unit_value, COALESCE(p.generated, false))::types.q_get_pricing_v4_item
         ORDER BY array_position(ids, p.id)
     ),
     ARRAY[]::types.q_get_pricing_v4_item[]

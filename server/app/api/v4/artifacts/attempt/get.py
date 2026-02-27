@@ -1336,6 +1336,7 @@ async def get_attempt_internal(
                     problem_statement_id=chat_item.problem_statement_id,
                     objective_ids=chat_item.objective_ids,
                     persona_ids=chat_item.persona_ids,
+                    persona_refs=chat_item.persona_refs,
                     image_ids=chat_item.image_ids,
                     video_ids=chat_item.video_ids,
                     question_ids=chat_item.question_ids,
