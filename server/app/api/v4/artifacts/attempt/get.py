@@ -782,7 +782,7 @@ async def get_attempt_internal(
         first_chat_item = chats_result[0] if chats_result else None
         group_id = first_chat_item.group_id if first_chat_item else None
 
-        ATTEMPT_RESOURCES: set[str] = {
+        ATTEMPT_RESOURCE_TYPES: set[str] = {
             "scenarios",
             "personas",
             "documents",
@@ -796,6 +796,22 @@ async def get_attempt_internal(
             "standard_groups",
             "standards",
         }
+        ATTEMPT_ENTRY_TYPES: set[str] = {
+            "contents",
+            "hints",
+            "feedbacks",
+            "strengths",
+            "improvements",
+            "analyses",
+            "highlights",
+            "replacements",
+        }
+        ATTEMPT_ARTIFACT_TYPES: set[str] = {
+            "attempt",
+        }
+        ATTEMPT_ALL_TYPES = (
+            ATTEMPT_RESOURCE_TYPES | ATTEMPT_ENTRY_TYPES | ATTEMPT_ARTIFACT_TYPES
+        )
 
         async with pool.acquire() as settings_conn:
             settings_data = await get_auth_settings_internal(
@@ -803,7 +819,7 @@ async def get_attempt_internal(
             )
 
         agent_ids, _tool_ids_map, _link_tool_ids_map = resolve_agents_for_artifact(
-            settings_data.agent_tool_entries, ATTEMPT_RESOURCES
+            settings_data.agent_tool_entries, ATTEMPT_ALL_TYPES
         )
 
         # Config chain resource IDs (only resolved agents)

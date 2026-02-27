@@ -127,9 +127,10 @@ async def get_auth_settings_internal(
                         SettingsAgentToolEntry(
                             agent_id=agent.id,
                             tool_id=tool.id,
-                            resource=tool.resource or tool.entry or "",
                             is_creatable=tool.createable or False,
-                            artifact=tool.artifact,
+                            resource=tool.resource or None,
+                            entry=tool.entry or None,
+                            artifact=tool.artifact or None,
                         )
                     )
 

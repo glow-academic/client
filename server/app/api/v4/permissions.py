@@ -23,18 +23,24 @@ if TYPE_CHECKING:
 
 def resolve_agents_for_artifact(
     entries: list[SettingsAgentToolEntry],
-    artifact_resources: set[str],
+    artifact_types: set[str],
 ) -> tuple[dict[str, UUID | None], dict[str, UUID | None], dict[str, UUID | None]]:
-    """Resolve best agent and tool IDs for each resource using settings entries.
+    """Resolve best agent and tool IDs for each type using settings entries.
 
-    Groups entries by agent_id to compute coverage (how many artifact resources
-    each agent covers). For each resource, picks the agent with highest coverage.
+    Each SettingsAgentToolEntry has exactly one of resource/entry/artifact set.
+    The `type_name` property returns whichever is set. Coverage is computed
+    across all three categories uniformly.
+
+    Args:
+        entries: Flat agent→tool entries from settings chain.
+        artifact_types: Union of resource types, entry types, and artifact types
+            needed for this artifact (e.g. {"personas", "contents", "attempt"}).
 
     Returns:
-        (agent_ids, create_tool_ids, link_tool_ids) — all resource→UUID|None dicts
+        (agent_ids, create_tool_ids, link_tool_ids) — all type→UUID|None dicts
     """
     if not entries:
-        empty: dict[str, UUID | None] = dict.fromkeys(artifact_resources)
+        empty: dict[str, UUID | None] = dict.fromkeys(artifact_types)
         return empty, dict(empty), dict(empty)
 
     # Group entries by agent: agent_id -> list of entries
@@ -42,41 +48,41 @@ def resolve_agents_for_artifact(
     for e in entries:
         agent_entries[e.agent_id].append(e)
 
-    # Compute coverage per agent (how many artifact resources it covers)
+    # Compute coverage per agent (how many artifact types it covers)
     agent_coverage: dict[UUID, int] = {}
     for agent_id, elist in agent_entries.items():
-        agent_resources = {e.resource for e in elist}
-        agent_coverage[agent_id] = len(agent_resources & artifact_resources)
+        agent_type_names = {e.type_name for e in elist}
+        agent_coverage[agent_id] = len(agent_type_names & artifact_types)
 
     agent_ids: dict[str, UUID | None] = {}
     create_tool_ids: dict[str, UUID | None] = {}
     link_tool_ids: dict[str, UUID | None] = {}
 
-    for resource in artifact_resources:
-        # Find all entries for this resource
-        resource_entries = [e for e in entries if e.resource == resource]
-        if not resource_entries:
-            agent_ids[resource] = None
-            create_tool_ids[resource] = None
-            link_tool_ids[resource] = None
+    for type_name in artifact_types:
+        # Find all entries matching this type (across resource/entry/artifact)
+        type_entries = [e for e in entries if e.type_name == type_name]
+        if not type_entries:
+            agent_ids[type_name] = None
+            create_tool_ids[type_name] = None
+            link_tool_ids[type_name] = None
             continue
 
         # Pick agent with highest coverage, then by agent_id for determinism
         best_entry = max(
-            resource_entries,
+            type_entries,
             key=lambda e: (agent_coverage.get(e.agent_id, 0), e.agent_id),
         )
-        agent_ids[resource] = best_entry.agent_id
+        agent_ids[type_name] = best_entry.agent_id
 
-        # Find create/link tool IDs for this agent+resource
-        agent_resource_entries = [
-            e for e in resource_entries if e.agent_id == best_entry.agent_id
+        # Find create/link tool IDs for this agent+type
+        agent_type_entries = [
+            e for e in type_entries if e.agent_id == best_entry.agent_id
         ]
-        create_tool_ids[resource] = next(
-            (e.tool_id for e in agent_resource_entries if e.is_creatable), None
+        create_tool_ids[type_name] = next(
+            (e.tool_id for e in agent_type_entries if e.is_creatable), None
         )
-        link_tool_ids[resource] = next(
-            (e.tool_id for e in agent_resource_entries if not e.is_creatable), None
+        link_tool_ids[type_name] = next(
+            (e.tool_id for e in agent_type_entries if not e.is_creatable), None
         )
 
     return agent_ids, create_tool_ids, link_tool_ids
@@ -85,8 +91,8 @@ def resolve_agents_for_artifact(
 def has_tools_for_resource(
     entries: list[SettingsAgentToolEntry], resource: str
 ) -> bool:
-    """Check if any agent has tools for the given resource."""
-    return any(e.resource == resource for e in entries)
+    """Check if any agent has tools for the given type (resource, entry, or artifact)."""
+    return any(e.type_name == resource for e in entries)
 
 
 def score_agent_for_artifact(

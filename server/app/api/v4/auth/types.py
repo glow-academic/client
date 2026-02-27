@@ -49,13 +49,25 @@ class AuthProfileInternalData:
 
 @dataclass
 class SettingsAgentToolEntry:
-    """Flat agent→tool→resource entry resolved from settings chain."""
+    """Flat agent→tool entry resolved from settings chain.
+
+    Exactly one of resource/entry/artifact is set per tool:
+    - resource: tool creates/uses a *_resource row (e.g. "names", "personas")
+    - entry: tool creates a *_entry row (e.g. "contents", "feedbacks")
+    - artifact: tool reads an artifact (e.g. "attempt", "persona")
+    """
 
     agent_id: UUID
     tool_id: UUID
-    resource: str  # e.g. "names", "colors", "instructions"
     is_creatable: bool  # from tool_creatable flag
-    artifact: str | None = None  # e.g. "persona", "scenario" for recall tools
+    resource: str | None = None  # e.g. "names", "personas", "objectives"
+    entry: str | None = None  # e.g. "contents", "hints", "feedbacks"
+    artifact: str | None = None  # e.g. "attempt", "persona", "scenario"
+
+    @property
+    def type_name(self) -> str:
+        """The effective type name — exactly one of resource/entry/artifact."""
+        return self.resource or self.entry or self.artifact or ""
 
 
 @dataclass
