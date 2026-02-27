@@ -2,10 +2,10 @@
 
 from fastapi import APIRouter
 
+from app.api.v4.entries.attempt_analysis.create import router as create_router
 from app.api.v4.entries.attempt_analysis.get import router as get_router
 from app.api.v4.entries.attempt_analysis.refresh import router as refresh_router
 from app.api.v4.entries.attempt_analysis.search import router as search_router
-from app.api.v4.entries.attempt_analysis.create import router as create_router
 
 router = APIRouter()
 router.include_router(get_router)

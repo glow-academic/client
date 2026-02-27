@@ -1,4 +1,4 @@
-"""AttemptImprovement entry CREATE endpoint."""
+"""Test Invocation entry CREATE endpoint."""
 
 from typing import Annotated, cast
 
@@ -9,65 +9,63 @@ from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    CreateAttemptImprovementEntriesApiRequest,
-    CreateAttemptImprovementEntriesApiResponse,
-    CreateAttemptImprovementEntriesSqlParams,
-    CreateAttemptImprovementEntriesSqlRow,
+    CreateTestInvocationEntriesApiRequest,
+    CreateTestInvocationEntriesApiResponse,
+    CreateTestInvocationEntriesSqlParams,
+    CreateTestInvocationEntriesSqlRow,
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/entries/attempt_improvement/create_attempt_improvement_entries_complete.sql"
+SQL_PATH = "app/sql/v4/queries/entries/test_invocation/create_test_invocation_entries_complete.sql"
 
 router = APIRouter()
 
 
-async def create_attempt_improvement_entry_internal(
+async def create_test_invocation_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateAttemptImprovementEntriesApiResponse:
-    """Internal function to create attempt_improvement entry."""
-    tags = ["entries", "attempt_improvement"]
+) -> CreateTestInvocationEntriesApiResponse:
+    """Internal function to create test_invocation entry."""
+    tags = ["entries", "test_invocation"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateAttemptImprovementEntriesSqlParams(**request_dict)
+        params = CreateTestInvocationEntriesSqlParams(**request_dict)
 
         result = cast(
-            CreateAttemptImprovementEntriesSqlRow,
+            CreateTestInvocationEntriesSqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
         if not result or not result.id:
-            raise ValueError("Failed to create attempt_improvement entry")
+            raise ValueError("Failed to create test_invocation entry")
 
     await invalidate_tags(tags)
 
-    return CreateAttemptImprovementEntriesApiResponse.model_validate(
-        result.model_dump()
-    )
+    return CreateTestInvocationEntriesApiResponse.model_validate(result.model_dump())
 
 
 @router.post(
-    "/attempt_improvement/create",
-    response_model=CreateAttemptImprovementEntriesApiResponse,
+    "/test_invocation/create",
+    response_model=CreateTestInvocationEntriesApiResponse,
     dependencies=[
         audit_activity(
-            "attempt_improvement.created",
-            "{{ actor.name }} created attempt_improvement entry",
+            "test_invocation.created",
+            "{{ actor.name }} created test_invocation entry",
         )
     ],
 )
-async def create_attempt_improvement_entry(
-    request: CreateAttemptImprovementEntriesApiRequest,
+async def create_test_invocation_entry(
+    request: CreateTestInvocationEntriesApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateAttemptImprovementEntriesApiResponse:
-    """Create attempt_improvement entry."""
-    tags = ["entries", "attempt_improvement"]
+) -> CreateTestInvocationEntriesApiResponse:
+    """Create test_invocation entry."""
+    tags = ["entries", "test_invocation"]
     sql_query = load_sql_query(SQL_PATH)
 
     try:
@@ -81,14 +79,14 @@ async def create_attempt_improvement_entry(
         mcp = getattr(http_request.state, "mcp", False) or False
         request_dict = request.model_dump()
 
-        api_response = await create_attempt_improvement_entry_internal(
+        api_response = await create_test_invocation_entry_internal(
             conn, request_dict, mcp
         )
 
         audit_set(
             http_request,
             actor={"id": profile_id},
-            attempt_improvement={"id": str(api_response.id)},
+            test_invocation={"id": str(api_response.id)},
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
@@ -102,7 +100,7 @@ async def create_attempt_improvement_entry(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="create_attempt_improvement_entry",
+            operation="create_test_invocation_entry",
             sql_query=sql_query,
             sql_params=None,
             request=http_request,

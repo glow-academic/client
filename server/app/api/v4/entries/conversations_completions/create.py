@@ -45,7 +45,9 @@ async def create_conversations_completions_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateConversationsCompletionsEntriesApiResponse.model_validate(result.model_dump())
+    return CreateConversationsCompletionsEntriesApiResponse.model_validate(
+        result.model_dump()
+    )
 
 
 @router.post(

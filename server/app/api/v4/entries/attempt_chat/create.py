@@ -18,7 +18,9 @@ from app.sql.types import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/entries/attempt_chat/create_attempt_chat_entries_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/queries/entries/attempt_chat/create_attempt_chat_entries_complete.sql"
+)
 
 router = APIRouter()
 
@@ -79,9 +81,7 @@ async def create_attempt_chat_entry(
         mcp = getattr(http_request.state, "mcp", False) or False
         request_dict = request.model_dump()
 
-        api_response = await create_attempt_chat_entry_internal(
-            conn, request_dict, mcp
-        )
+        api_response = await create_attempt_chat_entry_internal(conn, request_dict, mcp)
 
         audit_set(
             http_request,

@@ -60,11 +60,6 @@ from app.api.v4.artifacts.tool import router as tools_router
 from app.api.v4.auth import router as auth_router
 
 # ============================================================================
-# Uploads (TUS protocol, download, preview, template)
-# ============================================================================
-from app.api.v4.uploads import router as uploads_router
-
-# ============================================================================
 # Docs
 # ============================================================================
 from app.api.v4.docs import router as docs_router
@@ -78,6 +73,11 @@ from app.api.v4.entries import router as entries_router
 # Resources
 # ============================================================================
 from app.api.v4.resources import router as resources_router
+
+# ============================================================================
+# Uploads (TUS protocol, download, preview, template)
+# ============================================================================
+from app.api.v4.uploads import router as uploads_router
 from app.utils.mcp.get_mcp import get_mcp
 from app.utils.profile.get_profile_id import get_profile_id
 from app.utils.session.get_session_id import get_session_id

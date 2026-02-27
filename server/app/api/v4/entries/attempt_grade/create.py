@@ -18,7 +18,9 @@ from app.sql.types import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/entries/attempt_grade/create_attempt_grade_entries_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/queries/entries/attempt_grade/create_attempt_grade_entries_complete.sql"
+)
 
 router = APIRouter()
 

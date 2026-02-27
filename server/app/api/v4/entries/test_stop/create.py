@@ -79,9 +79,7 @@ async def create_test_stop_entry(
         mcp = getattr(http_request.state, "mcp", False) or False
         request_dict = request.model_dump()
 
-        api_response = await create_test_stop_entry_internal(
-            conn, request_dict, mcp
-        )
+        api_response = await create_test_stop_entry_internal(conn, request_dict, mcp)
 
         audit_set(
             http_request,

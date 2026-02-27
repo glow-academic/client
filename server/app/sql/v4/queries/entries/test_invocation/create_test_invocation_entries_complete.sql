@@ -1,4 +1,4 @@
--- Create invocation_resolved entry via generic api_create_entry_record_v4
+-- Create test_invocation entry via generic api_create_entry_record_v4
 
 DO $$
 DECLARE
@@ -7,14 +7,14 @@ BEGIN
     FOR r IN
         SELECT oidvectortypes(proargtypes) AS sig
         FROM pg_proc
-        WHERE proname = 'api_create_invocation_resolved_entry_v4'
+        WHERE proname = 'api_create_test_invocation_entry_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS api_create_invocation_resolved_entry_v4(%s)', r.sig);
+        EXECUTE format('DROP FUNCTION IF EXISTS api_create_test_invocation_entry_v4(%s)', r.sig);
     END LOOP;
 END $$;
 
-CREATE OR REPLACE FUNCTION public.api_create_invocation_resolved_entry_v4(
+CREATE OR REPLACE FUNCTION public.api_create_test_invocation_entry_v4(
     call_id uuid DEFAULT NULL,
     mcp boolean DEFAULT false,
     entry_data jsonb DEFAULT '{}'::jsonb
@@ -27,7 +27,7 @@ AS $$
 BEGIN
     RETURN QUERY
     SELECT * FROM api_create_entry_record_v4(
-        entry_type := 'invocation_resolved',
+        entry_type := 'test_invocation',
         call_id := call_id,
         mcp := mcp,
         entry_data := entry_data

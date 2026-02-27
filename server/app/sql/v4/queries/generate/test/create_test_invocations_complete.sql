@@ -54,7 +54,7 @@ BEGIN
             ORDER BY egj.created_at
         LOOP
             -- Create invocation
-            INSERT INTO invocation_resolved_entry (test_id, title, generated, mcp, created_at, updated_at)
+            INSERT INTO test_invocation_entry (test_id, title, generated, mcp, created_at, updated_at)
             VALUES (p_test_id, '', false, false, NOW(), NOW())
             RETURNING id INTO v_chat_id;
 
@@ -64,16 +64,16 @@ BEGIN
             WHERE ggc.groups_id = v_group.groups_resource_id AND ggc.active = true
             LIMIT 1;
 
-            UPDATE invocation_resolved_entry SET group_id = v_first_group_id WHERE id = v_chat_id;
+            UPDATE test_invocation_entry SET group_id = v_first_group_id WHERE id = v_chat_id;
 
             -- Link invocation to source groups_resource
-            INSERT INTO invocation_resolved_groups_connection (invocation_id, groups_id, active)
+            INSERT INTO test_invocation_groups_connection (test_invocation_id, groups_id, active)
             VALUES (v_chat_id, v_group.groups_resource_id, true)
-            ON CONFLICT (invocation_id, groups_id) DO NOTHING;
+            ON CONFLICT (test_invocation_id, groups_id) DO NOTHING;
 
             IF v_first_group_id IS NOT NULL THEN
                 -- Link all runs_resource from runs_entry belonging to this group
-                INSERT INTO invocation_resolved_runs_connection (invocation_id, runs_id, active)
+                INSERT INTO test_invocation_runs_connection (test_invocation_id, runs_id, active)
                 SELECT DISTINCT v_chat_id, rrc.runs_id, true
                 FROM runs_entry re
                 JOIN runs_runs_connection rrc ON rrc.run_id = re.id AND rrc.active = true
@@ -107,12 +107,12 @@ BEGIN
             ORDER BY erj.created_at
         LOOP
             -- Create invocation
-            INSERT INTO invocation_resolved_entry (test_id, title, generated, mcp, created_at, updated_at)
+            INSERT INTO test_invocation_entry (test_id, title, generated, mcp, created_at, updated_at)
             VALUES (p_test_id, '', false, false, NOW(), NOW())
             RETURNING id INTO v_chat_id;
 
             -- Link invocation to runs_resource
-            INSERT INTO invocation_resolved_runs_connection (invocation_id, runs_id, active)
+            INSERT INTO test_invocation_runs_connection (test_invocation_id, runs_id, active)
             VALUES (v_chat_id, v_run.runs_resource_id, true);
 
             -- Set group_id on chat from runs_resource's linked runs_entry
@@ -123,10 +123,10 @@ BEGIN
             LIMIT 1;
 
             IF v_first_group_id IS NOT NULL THEN
-                UPDATE invocation_resolved_entry SET group_id = v_first_group_id WHERE id = v_chat_id;
+                UPDATE test_invocation_entry SET group_id = v_first_group_id WHERE id = v_chat_id;
 
                 -- Link invocation to source groups_resource if resolvable
-                INSERT INTO invocation_resolved_groups_connection (invocation_id, groups_id, active)
+                INSERT INTO test_invocation_groups_connection (test_invocation_id, groups_id, active)
                 SELECT v_chat_id, ggc.groups_id, true
                 FROM groups_groups_connection ggc
                 WHERE ggc.group_id = v_first_group_id

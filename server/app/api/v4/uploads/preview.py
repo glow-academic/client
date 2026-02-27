@@ -77,7 +77,9 @@ async def preview_upload(
         content_type = get_content_type(result.file_path or "", result.mime_type or "")
 
         if content_type != "application/pdf":
-            raise HTTPException(status_code=400, detail="Preview only supported for PDF files")
+            raise HTTPException(
+                status_code=400, detail="Preview only supported for PDF files"
+            )
 
         preview_bytes = pdf_first_page_to_image_bytes(file_path)
         if not preview_bytes:

@@ -75,9 +75,14 @@ async def render_upload_template(
 
         content_type = get_content_type(result.file_path or "", result.mime_type or "")
 
-        is_html = content_type == "text/html" or (result.file_path or "").lower().endswith(".html")
+        is_html = content_type == "text/html" or (
+            result.file_path or ""
+        ).lower().endswith(".html")
         if not is_html:
-            raise HTTPException(status_code=400, detail="Template rendering only supported for HTML files")
+            raise HTTPException(
+                status_code=400,
+                detail="Template rendering only supported for HTML files",
+            )
 
         template_args_raw: dict[str, Any] = {}
         if hasattr(result, "template_args") and result.template_args:

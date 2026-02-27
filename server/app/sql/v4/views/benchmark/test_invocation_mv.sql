@@ -1,7 +1,7 @@
--- Materialized View: invocation_resolved_mv
+-- Materialized View: test_invocation_mv
 -- Invocation-level data for benchmark detail views.
 --
--- Grain: One row per benchmark invocation (invocation_resolved_entry.id)
+-- Grain: One row per benchmark invocation (test_invocation_entry.id)
 -- Filter: active = TRUE only
 --
 -- Purpose: Provides invocation-level resource IDs and grade data for
@@ -10,12 +10,12 @@
 -- via test_feedback_mv using grade_id.
 --
 -- Two sources of run IDs:
---   invocation_run_ids: actual execution runs (invocation_resolved_runs_connection)
---   run_ids: configured template runs (invocation_resolved_runs_connection on resolved entry)
+--   invocation_run_ids: actual execution runs (test_invocation_runs_connection)
+--   run_ids: configured template runs (test_invocation_runs_connection on resolved entry)
 --
 -- Dependencies: Only uses _entry and _connection tables
 -- ============================================================================
--- Step 1: Drop all indexes on invocation_resolved_mv materialized view (if it exists)
+-- Step 1: Drop all indexes on test_invocation_mv materialized view (if it exists)
 -- ============================================================================
 
 DO $$
@@ -26,32 +26,32 @@ BEGIN
         SELECT indexname
         FROM pg_indexes
         WHERE schemaname = 'public'
-          AND tablename = 'invocation_resolved_mv'
+          AND tablename = 'test_invocation_mv'
     LOOP
         EXECUTE format('DROP INDEX IF EXISTS %I', r.indexname);
     END LOOP;
 END $$;
 
 -- ============================================================================
--- Step 2: Drop invocation_resolved_mv materialized view if it exists
+-- Step 2: Drop test_invocation_mv materialized view if it exists
 -- ============================================================================
 
-DROP MATERIALIZED VIEW IF EXISTS invocation_resolved_mv CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS test_invocation_mv CASCADE;
 
 -- ============================================================================
--- Step 3: Create invocation_resolved_mv Materialized View
+-- Step 3: Create test_invocation_mv Materialized View
 -- ============================================================================
 
-CREATE MATERIALIZED VIEW invocation_resolved_mv AS
+CREATE MATERIALIZED VIEW test_invocation_mv AS
 WITH
 -- Actual execution runs (from invocation-level connection)
 invocation_run_links AS (
     SELECT
-        c.invocation_resolved_id,
+        c.test_invocation_id,
         ARRAY_AGG(c.runs_id ORDER BY c.created_at) FILTER (WHERE c.runs_id IS NOT NULL) AS invocation_run_ids
-    FROM invocation_resolved_runs_connection c
+    FROM test_invocation_runs_connection c
     WHERE c.active = true
-    GROUP BY c.invocation_resolved_id
+    GROUP BY c.test_invocation_id
 ),
 -- Grade data (latest grade per invocation)
 latest_grade AS (
@@ -66,12 +66,12 @@ latest_grade AS (
     ORDER BY g.invocation_id, g.created_at DESC
 ),
 -- ============================================================================
--- Bundle snapshot: configured resource IDs from invocation_resolved_*
+-- Bundle snapshot: configured resource IDs from test_invocation_*
 -- Analogous to subbundle_snapshot in attempt_chat_mv
 -- ============================================================================
 bundle_snapshot AS (
     SELECT
-        ir.id AS invocation_resolved_id,
+        ir.id AS test_invocation_id,
         -- Configured runs (template runs from bundle) — array, multiple per resolved entry
         COALESCE(ARRAY_AGG(DISTINCT irr.runs_id ORDER BY irr.runs_id) FILTER (WHERE irr.runs_id IS NOT NULL), ARRAY[]::uuid[]) AS run_ids,
         -- Configured groups — array, multiple per resolved entry
@@ -89,17 +89,17 @@ bundle_snapshot AS (
         COALESCE(ARRAY_AGG(DISTINCT irtl.tools_id ORDER BY irtl.tools_id) FILTER (WHERE irtl.tools_id IS NOT NULL), ARRAY[]::uuid[]) AS tool_ids,
         -- Key — singular (one per resolved entry)
         (ARRAY_AGG(irk.keys_id) FILTER (WHERE irk.keys_id IS NOT NULL))[1] AS key_id
-    FROM invocation_resolved_entry ir
-    LEFT JOIN invocation_resolved_runs_connection irr ON irr.invocation_resolved_id = ir.id AND irr.active = true
-    LEFT JOIN invocation_resolved_groups_connection irg ON irg.invocation_resolved_id = ir.id AND irg.active = true
-    LEFT JOIN invocation_resolved_models_connection irm ON irm.invocation_resolved_id = ir.id AND irm.active = true
-    LEFT JOIN invocation_resolved_prompts_connection irp ON irp.invocation_resolved_id = ir.id AND irp.active = true
-    LEFT JOIN invocation_resolved_instructions_connection iri ON iri.invocation_resolved_id = ir.id AND iri.active = true
-    LEFT JOIN invocation_resolved_voices_connection irv ON irv.invocation_resolved_id = ir.id AND irv.active = true
-    LEFT JOIN invocation_resolved_temperature_levels_connection irt ON irt.invocation_resolved_id = ir.id AND irt.active = true
-    LEFT JOIN invocation_resolved_reasoning_levels_connection irrl ON irrl.invocation_resolved_id = ir.id AND irrl.active = true
-    LEFT JOIN invocation_resolved_tools_connection irtl ON irtl.invocation_resolved_id = ir.id AND irtl.active = true
-    LEFT JOIN invocation_resolved_keys_connection irk ON irk.invocation_resolved_id = ir.id AND irk.active = true
+    FROM test_invocation_entry ir
+    LEFT JOIN test_invocation_runs_connection irr ON irr.test_invocation_id = ir.id AND irr.active = true
+    LEFT JOIN test_invocation_groups_connection irg ON irg.test_invocation_id = ir.id AND irg.active = true
+    LEFT JOIN test_invocation_models_connection irm ON irm.test_invocation_id = ir.id AND irm.active = true
+    LEFT JOIN test_invocation_prompts_connection irp ON irp.test_invocation_id = ir.id AND irp.active = true
+    LEFT JOIN test_invocation_instructions_connection iri ON iri.test_invocation_id = ir.id AND iri.active = true
+    LEFT JOIN test_invocation_voices_connection irv ON irv.test_invocation_id = ir.id AND irv.active = true
+    LEFT JOIN test_invocation_temperature_levels_connection irt ON irt.test_invocation_id = ir.id AND irt.active = true
+    LEFT JOIN test_invocation_reasoning_levels_connection irrl ON irrl.test_invocation_id = ir.id AND irrl.active = true
+    LEFT JOIN test_invocation_tools_connection irtl ON irtl.test_invocation_id = ir.id AND irtl.active = true
+    LEFT JOIN test_invocation_keys_connection irk ON irk.test_invocation_id = ir.id AND irk.active = true
     WHERE ir.active = true
     GROUP BY ir.id
 ),
@@ -109,7 +109,7 @@ historical_runs AS (
         i.id AS invocation_id,
         ARRAY_AGG(rrc.runs_id ORDER BY re.created_at)
             FILTER (WHERE rrc.runs_id IS NOT NULL) AS historical_run_ids
-    FROM invocation_resolved_entry i
+    FROM test_invocation_entry i
     JOIN runs_entry re ON re.group_id = i.group_id
     JOIN runs_runs_connection rrc ON rrc.run_id = re.id AND rrc.active = true
     WHERE i.active = true AND i.group_id IS NOT NULL
@@ -120,7 +120,7 @@ SELECT
     i.id AS invocation_id,
 
     -- Foreign keys
-    ti.test_id,
+    i.test_id,
     i.group_id,
 
     -- Invocation data
@@ -155,11 +155,10 @@ SELECT
     -- Historical runs (all runs in invocation's group)
     COALESCE(hr.historical_run_ids, ARRAY[]::uuid[]) AS historical_run_ids
 
-FROM invocation_resolved_entry i
-JOIN test_invocation_entry ti ON ti.invocation_resolved_id = i.id
-LEFT JOIN invocation_run_links irl ON irl.invocation_resolved_id = i.id
+FROM test_invocation_entry i
+LEFT JOIN invocation_run_links irl ON irl.test_invocation_id = i.id
 LEFT JOIN latest_grade lg ON lg.invocation_id = i.id
-LEFT JOIN bundle_snapshot bs ON bs.invocation_resolved_id = i.id
+LEFT JOIN bundle_snapshot bs ON bs.test_invocation_id = i.id
 LEFT JOIN historical_runs hr ON hr.invocation_id = i.id
 WHERE i.active = true
 WITH NO DATA;
@@ -168,40 +167,40 @@ WITH NO DATA;
 -- Step 4: Create Unique Index (Required for CONCURRENT refresh)
 -- ============================================================================
 
-CREATE UNIQUE INDEX invocation_resolved_mv_pk
-    ON invocation_resolved_mv (invocation_id);
+CREATE UNIQUE INDEX test_invocation_mv_pk
+    ON test_invocation_mv (invocation_id);
 
 -- ============================================================================
 -- Step 5: Create Filter/Slicing Indexes
 -- ============================================================================
 
 -- Test ID for grouping invocations by test
-CREATE INDEX invocation_resolved_mv_test_id_idx
-    ON invocation_resolved_mv (test_id);
+CREATE INDEX test_invocation_mv_test_id_idx
+    ON test_invocation_mv (test_id);
 
 -- Completion status for filtering
-CREATE INDEX invocation_resolved_mv_completed_idx
-    ON invocation_resolved_mv (invocation_completed);
+CREATE INDEX test_invocation_mv_completed_idx
+    ON test_invocation_mv (invocation_completed);
 
 -- Timestamp for sorting
-CREATE INDEX invocation_resolved_mv_created_at_idx
-    ON invocation_resolved_mv (invocation_created_at DESC);
+CREATE INDEX test_invocation_mv_created_at_idx
+    ON test_invocation_mv (invocation_created_at DESC);
 
 -- Group ID for filtering
-CREATE INDEX invocation_resolved_mv_group_id_idx
-    ON invocation_resolved_mv (group_id)
+CREATE INDEX test_invocation_mv_group_id_idx
+    ON test_invocation_mv (group_id)
     WHERE group_id IS NOT NULL;
 
 -- Invocation run IDs for filtering by execution run
-CREATE INDEX invocation_resolved_mv_invocation_run_ids_gin
-    ON invocation_resolved_mv USING GIN (invocation_run_ids);
+CREATE INDEX test_invocation_mv_invocation_run_ids_gin
+    ON test_invocation_mv USING GIN (invocation_run_ids);
 
 -- Configured run IDs for filtering by template run
-CREATE INDEX invocation_resolved_mv_run_ids_gin
-    ON invocation_resolved_mv USING GIN (run_ids);
+CREATE INDEX test_invocation_mv_run_ids_gin
+    ON test_invocation_mv USING GIN (run_ids);
 
 -- ============================================================================
 -- Step 6: Refresh Materialized View with Data
 -- ============================================================================
 
-REFRESH MATERIALIZED VIEW invocation_resolved_mv;
+REFRESH MATERIALIZED VIEW test_invocation_mv;

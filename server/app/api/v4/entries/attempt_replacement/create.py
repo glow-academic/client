@@ -45,7 +45,9 @@ async def create_attempt_replacement_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateAttemptReplacementEntriesApiResponse.model_validate(result.model_dump())
+    return CreateAttemptReplacementEntriesApiResponse.model_validate(
+        result.model_dump()
+    )
 
 
 @router.post(

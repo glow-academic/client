@@ -45,7 +45,9 @@ async def create_leaderboard_insights_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateLeaderboardInsightsEntriesApiResponse.model_validate(result.model_dump())
+    return CreateLeaderboardInsightsEntriesApiResponse.model_validate(
+        result.model_dump()
+    )
 
 
 @router.post(

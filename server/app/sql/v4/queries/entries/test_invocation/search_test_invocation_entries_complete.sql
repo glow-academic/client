@@ -1,4 +1,4 @@
--- Search invocation_resolved entries from invocation_resolved_mv
+-- Search test_invocation entries from test_invocation_mv
 
 DO $$
 DECLARE
@@ -7,20 +7,19 @@ BEGIN
     FOR r IN
         SELECT oidvectortypes(proargtypes) AS sig
         FROM pg_proc
-        WHERE proname = 'api_search_invocation_resolved_entries_v4'
+        WHERE proname = 'api_search_test_invocation_entries_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS api_search_invocation_resolved_entries_v4(%s)', r.sig);
+        EXECUTE format('DROP FUNCTION IF EXISTS api_search_test_invocation_entries_v4(%s)', r.sig);
     END LOOP;
 END $$;
 
-CREATE OR REPLACE FUNCTION public.api_search_invocation_resolved_entries_v4(
+CREATE OR REPLACE FUNCTION public.api_search_test_invocation_entries_v4(
     search text DEFAULT NULL,
     limit_count integer DEFAULT 20,
     offset_count integer DEFAULT 0,
     test_id uuid DEFAULT NULL,
     group_id uuid DEFAULT NULL,
-    invocation_resolved_id uuid DEFAULT NULL,
     grade_id uuid DEFAULT NULL,
     rubric_id uuid DEFAULT NULL,
     model_id uuid DEFAULT NULL,
@@ -43,7 +42,6 @@ BEGIN
             'invocation_id', m.invocation_id,
             'test_id', m.test_id,
             'group_id', m.group_id,
-            'invocation_resolved_id', m.invocation_resolved_id,
             'invocation_created_at', m.invocation_created_at,
             'invocation_title', m.invocation_title,
             'invocation_completed', m.invocation_completed,
@@ -65,11 +63,10 @@ BEGIN
             'key_id', m.key_id,
             'historical_run_ids', m.historical_run_ids
         ) AS row_data
-        FROM invocation_resolved_mv m
+        FROM test_invocation_mv m
         WHERE true
           AND (test_id IS NULL OR m.test_id = test_id)
           AND (group_id IS NULL OR m.group_id = group_id)
-          AND (invocation_resolved_id IS NULL OR m.invocation_resolved_id = invocation_resolved_id)
           AND (grade_id IS NULL OR m.grade_id = grade_id)
           AND (rubric_id IS NULL OR m.rubric_id = rubric_id)
           AND (model_id IS NULL OR m.model_id = model_id)
