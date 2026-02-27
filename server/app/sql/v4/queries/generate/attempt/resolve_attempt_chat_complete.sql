@@ -126,11 +126,39 @@ BEGIN
     -- Step 3: Conditional copies (only when generate_*=false)
 
     IF NOT p_generate_personas THEN
+        -- Copy resource-level persona connections
         INSERT INTO attempt_chat_personas_connection (attempt_chat_id, personas_id)
         SELECT v_attempt_chat_id, c.personas_id
         FROM chat_personas_connection c
         WHERE c.chat_id = p_chat_entry_id AND c.active = true
         ON CONFLICT DO NOTHING;
+
+        -- Create personas_entry for each persona resource, link via connection,
+        -- and populate assistant_persona_ids on attempt_chat_entry
+        WITH persona_resources AS (
+            SELECT c.personas_id
+            FROM chat_personas_connection c
+            WHERE c.chat_id = p_chat_entry_id AND c.active = true
+        ),
+        new_entries AS (
+            INSERT INTO personas_entry (active, generated, mcp)
+            SELECT true, false, false
+            FROM persona_resources
+            RETURNING id
+        ),
+        paired AS (
+            SELECT ne.id AS entry_id, pr.personas_id
+            FROM (SELECT id, ROW_NUMBER() OVER () AS rn FROM new_entries) ne
+            JOIN (SELECT personas_id, ROW_NUMBER() OVER () AS rn FROM persona_resources) pr
+                ON ne.rn = pr.rn
+        ),
+        link_entries AS (
+            INSERT INTO personas_personas_connection (personas_entry_id, personas_id)
+            SELECT entry_id, personas_id FROM paired
+        )
+        UPDATE attempt_chat_entry
+        SET assistant_persona_ids = (SELECT ARRAY_AGG(entry_id) FROM paired)
+        WHERE id = v_attempt_chat_id;
     END IF;
 
     IF NOT p_generate_problem_statements THEN

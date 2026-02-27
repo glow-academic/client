@@ -64,6 +64,7 @@ SELECT
     -- Resource IDs (derived from parent home/practice connections)
     COALESCE(home_sim.simulations_id, prac_sim.simulations_id) AS simulation_id,
     apc.profiles_id AS profile_id,
+    a.user_persona_id,
     apper.personas_id AS personas_id,
     COALESCE(home_coh.cohorts_id, prac_coh.cohorts_id) AS cohort_id,
     COALESCE(home_dep.departments_id, prac_dep.departments_id) AS department_id,
@@ -86,10 +87,10 @@ SELECT
     training_ctx.attempt_chat_id
 
 FROM attempt_entry a
--- Profile (via profile_personas_entry → profiles connection)
-JOIN profile_personas_profiles_connection apc ON apc.profile_personas_entry_id = a.profile_personas_entry_id
--- Persona (via profile_personas_entry → personas connection)
-LEFT JOIN profile_personas_personas_connection apper ON apper.profile_personas_entry_id = a.profile_personas_entry_id AND apper.active = true
+-- Profile (via attempt_profiles_connection)
+JOIN attempt_profiles_connection apc ON apc.attempt_id = a.id AND apc.active = true
+-- Persona (via personas_entry → personas_personas_connection)
+LEFT JOIN personas_personas_connection apper ON apper.personas_entry_id = a.user_persona_id AND apper.active = true
 -- Parent bridges
 LEFT JOIN attempt_home_entry ahe ON ahe.attempt_id = a.id AND ahe.active = true
 LEFT JOIN attempt_practice_entry ape ON ape.attempt_id = a.id AND ape.active = true

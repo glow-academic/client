@@ -48,8 +48,9 @@ class TestAllCompleteEvent(BaseModel):
     success: bool = True
 
 
-# Test entry type constants (predefined per handler, not in payload)
+# Entry type constants (predefined per handler, not in payload)
 TEST_GRADE_ENTRY_TYPES = ["grades", "feedbacks"]
+MESSAGE_ENTRY_TYPES = ["contents", "hints"]
 
 
 # =============================================================================

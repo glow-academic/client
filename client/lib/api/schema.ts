@@ -22724,10 +22724,6 @@ export interface components {
             chat_id: string;
             /** Message */
             message: string;
-            /** Resource Types */
-            resource_types?: string[] | null;
-            /** User Instructions */
-            user_instructions?: string[] | null;
         };
         /**
          * AttemptNextPayload

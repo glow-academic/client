@@ -31,6 +31,7 @@ BEGIN
             'cohort_id', m.cohort_id,
             'department_id', m.department_id,
             'practice', m.practice,
+            'user_persona_id', m.user_persona_id,
             'attempt_created_at', m.attempt_created_at,
             'infinite_mode', m.infinite_mode,
             'is_archived', m.is_archived,

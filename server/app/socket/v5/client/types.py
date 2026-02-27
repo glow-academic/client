@@ -330,8 +330,6 @@ class AttemptMessagePayload(BaseModel):
     attempt_id: UUID
     chat_id: UUID
     message: str
-    resource_types: list[str] | None = None
-    user_instructions: list[str] | None = None
 
 
 class AttemptUserCompleteEvent(BaseModel):

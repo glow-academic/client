@@ -26,7 +26,7 @@ from app.sql.types import GetProfileContextApiRequest
 
 router = APIRouter()
 
-_ATTEMPT_PATH_RE = re.compile(r"/(?:home|practice|benchmark)/([0-9a-f-]{36})")
+_ATTEMPT_PATH_RE = re.compile(r"/attempt/([0-9a-f-]{36})")
 
 
 @router.post(

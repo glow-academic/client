@@ -36,6 +36,16 @@ END $$;
 DROP MATERIALIZED VIEW IF EXISTS attempt_chat_mv CASCADE;
 
 -- ============================================================================
+-- Step 2.5: Create/replace persona_ref composite type
+-- ============================================================================
+
+DROP TYPE IF EXISTS types.persona_ref CASCADE;
+CREATE TYPE types.persona_ref AS (
+    personas_id uuid,
+    personas_entry_id uuid
+);
+
+-- ============================================================================
 -- Step 3: Create attempt_chat_mv Materialized View
 -- ============================================================================
 
@@ -77,10 +87,13 @@ chat_scope AS (
 chat_personas AS (
     SELECT
         c.id AS chat_id,
-        ARRAY_AGG(cpc.personas_id) FILTER (WHERE cpc.personas_id IS NOT NULL) AS persona_ids
+        ARRAY_AGG(
+            ROW(ppc.personas_id, pe_id)::types.persona_ref
+        ) FILTER (WHERE pe_id IS NOT NULL) AS persona_refs
     FROM attempt_chat_entry c
-    LEFT JOIN attempt_chat_personas_connection cpc
-        ON cpc.attempt_chat_id = c.id AND cpc.active = TRUE
+    LEFT JOIN LATERAL UNNEST(c.assistant_persona_ids) AS pe_id ON true
+    LEFT JOIN personas_personas_connection ppc
+        ON ppc.personas_entry_id = pe_id AND ppc.active = true
     WHERE c.active = TRUE
     GROUP BY c.id
 )
@@ -102,8 +115,8 @@ SELECT
     -- Resource IDs (from training department scope)
     cs.scenario_id,
 
-    -- Persona IDs (from chat personas connection)
-    cp.persona_ids,
+    -- Persona refs (entry + resource IDs from assistant_persona_ids)
+    cp.persona_refs,
 
     -- Rubric ID (from chat's rubric connection)
     cr.rubric_id,
@@ -136,7 +149,7 @@ SELECT
 FROM attempt_chat_entry c
 JOIN attempt_chat_bridge_entry ac ON ac.attempt_chat_id = c.id
 JOIN attempt_entry a ON a.id = ac.attempt_id
-JOIN profile_personas_profiles_connection apc ON apc.profile_personas_entry_id = a.profile_personas_entry_id
+JOIN attempt_profiles_connection apc ON apc.attempt_id = a.id AND apc.active = true
 -- Parent bridges
 LEFT JOIN attempt_home_entry ahe ON ahe.attempt_id = a.id AND ahe.active = true
 LEFT JOIN attempt_practice_entry ape ON ape.attempt_id = a.id AND ape.active = true
@@ -245,10 +258,10 @@ CREATE INDEX attempt_chat_mv_scenario_date_idx
     ON attempt_chat_mv (scenario_id, attempt_date DESC)
     WHERE scenario_id IS NOT NULL;
 
--- Persona IDs GIN index
-CREATE INDEX attempt_chat_mv_persona_ids_idx
-    ON attempt_chat_mv USING GIN (persona_ids)
-    WHERE persona_ids IS NOT NULL;
+-- Persona refs GIN index
+CREATE INDEX attempt_chat_mv_persona_refs_idx
+    ON attempt_chat_mv USING GIN (persona_refs)
+    WHERE persona_refs IS NOT NULL;
 
 -- Rubric indexes (primary section)
 CREATE INDEX attempt_chat_mv_rubric_chat_idx

@@ -73,6 +73,7 @@ from app.api.v4.artifacts.attempt.types import (
     VideoEntry,
 )
 from app.api.v4.artifacts.types import WebsocketArtifacts
+from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.attempt.get import (
     get_attempt_chats_internal,
     get_attempt_messages_internal,
@@ -99,6 +100,7 @@ from app.api.v4.entries.responses.get import (
     get_simulation_responses_internal,
 )
 from app.api.v4.entries.uploads.get import get_upload_list_view_internal
+from app.api.v4.permissions import resolve_agents_for_artifact
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.args.get import get_args_internal
 from app.api.v4.resources.args_outputs.get import get_args_outputs_internal
@@ -776,71 +778,84 @@ async def get_attempt_internal(
             chat_entry_id = training_row["chat_entry_id"]
             training_id = chat_entry_id
 
-        # === RESOLVE CONFIG CHAIN (group_id -> agent/model/provider) ===
+        # === RESOLVE CONFIG CHAIN FROM SETTINGS (department agent resolution) ===
         first_chat_item = chats_result[0] if chats_result else None
         group_id = first_chat_item.group_id if first_chat_item else None
 
-        agent_ids: dict[str, UUID | None] = {}
+        ATTEMPT_RESOURCES: set[str] = {
+            "scenarios",
+            "personas",
+            "documents",
+            "images",
+            "videos",
+            "objectives",
+            "questions",
+            "options",
+            "problem_statements",
+            "rubrics",
+            "standard_groups",
+            "standards",
+        }
+
+        async with pool.acquire() as settings_conn:
+            settings_data = await get_auth_settings_internal(
+                settings_conn, profile_id, bypass_cache
+            )
+
+        agent_ids, _tool_ids_map, _link_tool_ids_map = resolve_agents_for_artifact(
+            settings_data.agent_tool_entries, ATTEMPT_RESOURCES
+        )
+
+        # Config chain resource IDs (only resolved agents)
+        selected_agent_ids = [aid for aid in agent_ids.values() if aid]
+        config_agent_resource_ids = list(dict.fromkeys(selected_agent_ids))
+        config_model_resource_ids = [
+            a.model_id
+            for a in settings_data.settings_agents
+            if a.model_id and a.id in set(config_agent_resource_ids)
+        ]
+
         config_agent_resources = None
         config_model_resources = None
         config_provider_resources = None
 
-        if group_id:
-            config_row = await conn.fetchrow(
-                """
-                SELECT aaj.agent_id, ar.model_id, mr.provider_id
-                FROM runs_entry r
-                JOIN config_entry ce ON ce.run_id = r.id
-                JOIN config_agents_connection cac ON cac.config_id = ce.id AND cac.active = true
-                JOIN agent_agents_junction aaj ON aaj.agents_id = cac.agents_id AND aaj.active = true
-                JOIN agents_resource ar ON ar.id = aaj.agents_id
-                LEFT JOIN models_resource mr ON mr.id = ar.model_id
-                WHERE r.group_id = $1
-                ORDER BY r.created_at DESC
-                LIMIT 1
-                """,
-                group_id,
+        if config_agent_resource_ids:
+            async def fetch_config_agents() -> Any:
+                async with pool.acquire() as c:
+                    return await get_agents_internal(
+                        c, config_agent_resource_ids, bypass_cache=bypass_cache
+                    )
+
+            async def fetch_config_models() -> Any:
+                if not config_model_resource_ids:
+                    return None
+                async with pool.acquire() as c:
+                    return await get_models_internal(
+                        c, config_model_resource_ids, bypass_cache=bypass_cache
+                    )
+
+            (
+                config_agent_resources,
+                config_model_resources,
+            ) = await asyncio.gather(
+                fetch_config_agents(),
+                fetch_config_models(),
             )
-            if config_row:
-                agent_id = config_row["agent_id"]
-                model_id = config_row["model_id"]
-                provider_id = config_row["provider_id"]
-                agent_ids["primary"] = agent_id
 
-                # Fetch config resources in parallel
-                async def fetch_config_agents() -> Any:
-                    if not agent_id:
-                        return None
-                    async with pool.acquire() as c:
-                        return await get_agents_internal(
-                            c, [agent_id], bypass_cache=bypass_cache
-                        )
-
-                async def fetch_config_models() -> Any:
-                    if not model_id:
-                        return None
-                    async with pool.acquire() as c:
-                        return await get_models_internal(
-                            c, [model_id], bypass_cache=bypass_cache
-                        )
-
-                async def fetch_config_providers() -> Any:
-                    if not provider_id:
-                        return None
-                    async with pool.acquire() as c:
-                        return await get_providers_internal(
-                            c, [provider_id], bypass_cache=bypass_cache
-                        )
-
-                (
-                    config_agent_resources,
-                    config_model_resources,
-                    config_provider_resources,
-                ) = await asyncio.gather(
-                    fetch_config_agents(),
-                    fetch_config_models(),
-                    fetch_config_providers(),
+            # Derive provider IDs from fetched models (sequential)
+            if config_model_resources:
+                config_provider_ids = list(
+                    dict.fromkeys(
+                        m.provider_id
+                        for m in config_model_resources
+                        if m.provider_id
+                    )
                 )
+                if config_provider_ids:
+                    async with pool.acquire() as c:
+                        config_provider_resources = await get_providers_internal(
+                            c, config_provider_ids, bypass_cache=bypass_cache
+                        )
 
         # === COMPUTE TIME LIMIT FROM CHATS ===
         time_limit_seconds = sum(
@@ -1743,20 +1758,20 @@ async def get_attempt_websocket(
             )
 
     # Build websocket resources (content + config)
+    rp = data.resources_payload
     ws_resources = AttemptWebsocketResources(
-        # Content resources from resources_payload
-        scenarios=data.resources_payload.scenarios,
-        personas=data.resources_payload.personas,
-        documents=data.resources_payload.documents,
-        images=data.resources_payload.images,
-        videos=data.resources_payload.videos,
-        objectives=data.resources_payload.objectives,
-        questions=data.resources_payload.questions,
-        options=data.resources_payload.options,
-        problem_statements=data.resources_payload.problem_statements,
-        rubrics=data.resources_payload.rubrics,
-        standard_groups=data.resources_payload.standard_groups,
-        standards=data.resources_payload.standards,
+        scenarios=list(rp.scenarios.values()) if rp.scenarios else None,
+        personas=list(rp.personas.values()) if rp.personas else None,
+        documents=list(rp.documents.values()) if rp.documents else None,
+        images=list(rp.images.values()) if rp.images else None,
+        videos=list(rp.videos.values()) if rp.videos else None,
+        objectives=list(rp.objectives.values()) if rp.objectives else None,
+        questions=list(rp.questions.values()) if rp.questions else None,
+        options=list(rp.options.values()) if rp.options else None,
+        problem_statements=list(rp.problem_statements.values()) if rp.problem_statements else None,
+        rubrics=list(rp.rubrics.values()) if rp.rubrics else None,
+        standard_groups=list(rp.standard_groups.values()) if rp.standard_groups else None,
+        standards=list(rp.standards.values()) if rp.standards else None,
     )
 
     # Fetch previous insights

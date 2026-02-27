@@ -41,9 +41,8 @@ interface UseAttemptMessagesResult {
   clearStreamingState: () => void;
   sendMessage: (
     chatId: string,
-    simulationId: string,
+    attemptId: string,
     message: string,
-    voiceMode?: boolean,
   ) => void;
   stopMessage: (chatId: string) => void;
   submitResponse: (
@@ -230,19 +229,13 @@ export function useAttemptMessages({
   // --- Emission methods ---
 
   const sendMessage = useCallback(
-    (
-      chatId: string,
-      simulationId: string,
-      message: string,
-      voiceMode = false,
-    ) => {
+    (chatId: string, attemptId: string, message: string) => {
       if (!socket) return;
       setIsSending(true);
       socket.emit("attempt_message", {
-        simulation_id: simulationId,
+        attempt_id: attemptId,
         chat_id: chatId,
         message,
-        voice_mode: voiceMode,
       });
     },
     [socket],

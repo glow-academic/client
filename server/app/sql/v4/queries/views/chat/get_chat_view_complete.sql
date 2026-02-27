@@ -86,7 +86,7 @@ CREATE TYPE types.q_get_chat_view_v4_item AS (
     infinite_mode boolean,
 
     -- Array fields
-    persona_ids uuid[]
+    persona_refs types.persona_ref[]
 );
 
 -- Filter option type for dropdowns
@@ -158,7 +158,7 @@ AS $$
             ch.attempt_type,
             ch.is_archived,
             ch.infinite_mode,
-            ch.persona_ids
+            ch.persona_refs
         FROM attempt_chat_mv ch
         WHERE
             (profile_id_filter IS NULL OR ch.profile_id = profile_id_filter)
@@ -221,7 +221,7 @@ AS $$
                     attempt_type,
                     is_archived,
                     infinite_mode,
-                    persona_ids
+                    persona_refs
                 )::types.q_get_chat_view_v4_item
             ),
             ARRAY[]::types.q_get_chat_view_v4_item[]
@@ -303,11 +303,11 @@ AS $$
     -- Persona filter options
     persona_options_cte AS (
         SELECT
-            p.persona_id::text AS value,
-            p.persona_id::text AS label,
+            (p).personas_id::text AS value,
+            (p).personas_id::text AS label,
             COUNT(DISTINCT f.chat_id)::int AS count
-        FROM filtered f, UNNEST(f.persona_ids) AS p(persona_id)
-        GROUP BY p.persona_id
+        FROM filtered f, UNNEST(f.persona_refs) AS p
+        GROUP BY (p).personas_id
         ORDER BY count DESC, value
     ),
     persona_options_agg AS (

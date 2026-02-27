@@ -1,10 +1,10 @@
 -- ============================================================================
 -- Query: start_attempt
--- Purpose: Create a new attempt with parent bridge + profile_personas_entry
+-- Purpose: Create a new attempt with parent bridge + personas_entry + profiles connection
 -- Section: GENERATE/ATTEMPT
 --
--- Minimal attempt creation: just the attempt_entry, parent bridge, and
--- profile_personas_entry (with profiles + personas connections).
+-- Minimal attempt creation: just the attempt_entry, parent bridge,
+-- personas_entry (with personas connection), and attempt_profiles_connection.
 -- Everything else (chat_entry_id, department, etc.) is resolved by
 -- attempt_proceed.
 -- ============================================================================
@@ -57,7 +57,7 @@ DECLARE
     v_is_practice boolean;
     v_profiles_resource_id uuid;
     v_profile_personas_resource_id uuid;
-    v_profile_personas_entry_id uuid;
+    v_personas_entry_id uuid;
     v_persona_id uuid;
     v_num_chats int;
 BEGIN
@@ -118,24 +118,24 @@ BEGIN
         WHERE home_id = p_home_id AND active = true;
     END IF;
 
-    -- 1. Create profile_personas_entry
-    INSERT INTO profile_personas_entry DEFAULT VALUES
-    RETURNING id INTO v_profile_personas_entry_id;
-
-    -- Link entry → profiles_resource
-    INSERT INTO profile_personas_profiles_connection (profile_personas_entry_id, profiles_id)
-    VALUES (v_profile_personas_entry_id, v_profiles_resource_id);
+    -- 1. Create personas_entry
+    INSERT INTO personas_entry DEFAULT VALUES
+    RETURNING id INTO v_personas_entry_id;
 
     -- Link entry → personas_resource
-    INSERT INTO profile_personas_personas_connection (profile_personas_entry_id, personas_id)
-    VALUES (v_profile_personas_entry_id, v_persona_id);
+    INSERT INTO personas_personas_connection (personas_entry_id, personas_id)
+    VALUES (v_personas_entry_id, v_persona_id);
 
-    -- 2. Create attempt_entry with profile_personas_entry link
-    INSERT INTO attempt_entry (infinite_mode, num_chats, profile_personas_entry_id)
-    VALUES (p_infinite_mode, GREATEST(v_num_chats, 1), v_profile_personas_entry_id)
+    -- 2. Create attempt_entry with user_persona_id link
+    INSERT INTO attempt_entry (infinite_mode, num_chats, user_persona_id)
+    VALUES (p_infinite_mode, GREATEST(v_num_chats, 1), v_personas_entry_id)
     RETURNING id INTO v_attempt_id;
 
-    -- 3. Create parent bridge
+    -- 3. Link attempt → profiles_resource
+    INSERT INTO attempt_profiles_connection (attempt_id, profiles_id)
+    VALUES (v_attempt_id, v_profiles_resource_id);
+
+    -- 4. Create parent bridge
     IF v_is_practice THEN
         INSERT INTO attempt_practice_entry (attempt_id, practice_id)
         VALUES (v_attempt_id, p_practice_id);

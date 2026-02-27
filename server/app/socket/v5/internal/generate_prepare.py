@@ -314,39 +314,7 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
             profile_id, artifact_id, payload.draft_id, pool
         )
 
-        # Step 6: Build agent_groups from resource_agent_ids
-        resource_agent_ids: dict[str, uuid.UUID] = result.resource_agent_ids or {}
-
-        agent_groups: dict[uuid.UUID, list[str]] = {}
-        for rt in resource_types:
-            aid = resource_agent_ids.get(rt)
-            if aid is not None:
-                agent_groups.setdefault(aid, []).append(rt)
-
-        if not agent_groups:
-            for _rt, aid in resource_agent_ids.items():
-                if aid is not None:
-                    agent_groups[aid] = resource_types
-                    break
-
-        agent_id: uuid.UUID | None = next(iter(agent_groups)) if agent_groups else None
-
-        if not agent_id:
-            await _emit_error(
-                sid,
-                "No agent found for the requested resource types",
-                artifact_type,
-                group_id=str(result.group_id)
-                if hasattr(result, "group_id") and result.group_id
-                else None,
-            )
-            return
-
-        # ===================================================================
-        # Run-level setup (shared across all agents)
-        # ===================================================================
-
-        # Step 7: Extract artifacts lookup tables
+        # Step 6a: Extract artifacts lookup tables (needed for agent fallback)
         result_artifacts = getattr(result, "artifacts", None)
         config_agents = (
             getattr(result_artifacts, config.config_agents_attr, None) or []
@@ -374,6 +342,40 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
                 sid,
                 "No agent configuration found. Check department settings.",
                 artifact_type,
+            )
+            return
+
+        # Step 6b: Build agent_groups from resource_agent_ids
+        resource_agent_ids: dict[str, uuid.UUID] = result.resource_agent_ids or {}
+
+        agent_groups: dict[uuid.UUID, list[str]] = {}
+        for rt in resource_types:
+            aid = resource_agent_ids.get(rt)
+            if aid is not None:
+                agent_groups.setdefault(aid, []).append(rt)
+
+        if not agent_groups:
+            for _rt, aid in resource_agent_ids.items():
+                if aid is not None:
+                    agent_groups[aid] = resource_types
+                    break
+
+        # Fallback: use first config_agent when no prior run config exists
+        if not agent_groups:
+            first_agent = config_agents[0]
+            if first_agent.id:
+                agent_groups[first_agent.id] = resource_types
+
+        agent_id: uuid.UUID | None = next(iter(agent_groups)) if agent_groups else None
+
+        if not agent_id:
+            await _emit_error(
+                sid,
+                "No agent found for the requested resource types",
+                artifact_type,
+                group_id=str(result.group_id)
+                if hasattr(result, "group_id") and result.group_id
+                else None,
             )
             return
 

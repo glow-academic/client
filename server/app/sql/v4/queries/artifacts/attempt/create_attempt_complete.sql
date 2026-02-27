@@ -62,8 +62,10 @@ BEGIN
     VALUES (p_simulations_resource_id, v_attempt_id, true)
     ON CONFLICT (attempt_id, simulations_id) DO NOTHING;
 
-    -- NOTE: attempt_profiles_connection removed in migration 540
-    -- Profile is now linked via profile_personas_entry on attempt_entry
+    -- Profile is linked via attempt_profiles_connection (restored in migration 02)
+    INSERT INTO attempt_profiles_connection (attempt_id, profiles_id, active)
+    VALUES (v_attempt_id, p_profiles_resource_id, true)
+    ON CONFLICT (attempt_id, profiles_id) DO NOTHING;
 
     IF p_cohorts_resource_id IS NOT NULL THEN
         INSERT INTO attempt_cohorts_connection (cohorts_id, attempt_id, active)

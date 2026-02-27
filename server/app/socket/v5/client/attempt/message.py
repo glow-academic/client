@@ -29,6 +29,7 @@ from app.socket.v5.internal.attempt.types import (
     AttemptUserReceivedStartData,
     GenerateRequestData,
 )
+from app.socket.v5.types import MESSAGE_ENTRY_TYPES
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -164,8 +165,6 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
         )
 
         # Step 6: Emit to generate pipeline
-        resource_types = payload.resource_types or ["contents", "hints"]
-
         await internal_sio.emit(
             "generate",
             GenerateRequestData(
@@ -173,8 +172,7 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
                 profile_id=str(profile_id),
                 artifact_type="attempt",
                 artifact_id=str(attempt_id),
-                resource_types=resource_types,
-                user_instructions=payload.user_instructions,
+                resource_types=MESSAGE_ENTRY_TYPES,
                 save=True,
                 run_id=str(run_id),
                 group_id=str(group_id),

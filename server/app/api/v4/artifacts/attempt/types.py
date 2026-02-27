@@ -687,21 +687,20 @@ class AttemptInternalData:
 
 
 class AttemptWebsocketResources(BaseModel):
-    """Content resources + config resources for websocket."""
+    """Content resources for websocket — lists for Jinja template iteration."""
 
-    # Content resources (same shape as AttemptResources)
-    scenarios: dict[str, ScenarioEntry] | None = None
-    personas: dict[str, PersonaEntry] | None = None
-    documents: dict[str, DocumentEntry] | None = None
-    images: dict[str, ImageEntry] | None = None
-    videos: dict[str, VideoEntry] | None = None
-    objectives: dict[str, ObjectiveEntry] | None = None
-    questions: dict[str, QuestionEntry] | None = None
-    options: dict[str, OptionEntry] | None = None
-    problem_statements: dict[str, ProblemStatementEntry] | None = None
-    rubrics: dict[str, RubricEntry] | None = None
-    standard_groups: dict[str, StandardGroupEntry] | None = None
-    standards: dict[str, StandardEntry] | None = None
+    scenarios: list[ScenarioEntry] | None = None
+    personas: list[PersonaEntry] | None = None
+    documents: list[DocumentEntry] | None = None
+    images: list[ImageEntry] | None = None
+    videos: list[VideoEntry] | None = None
+    objectives: list[ObjectiveEntry] | None = None
+    questions: list[QuestionEntry] | None = None
+    options: list[OptionEntry] | None = None
+    problem_statements: list[ProblemStatementEntry] | None = None
+    rubrics: list[RubricEntry] | None = None
+    standard_groups: list[StandardGroupEntry] | None = None
+    standards: list[StandardEntry] | None = None
 
 
 class GetAttemptWebsocketResponse(BaseModel):

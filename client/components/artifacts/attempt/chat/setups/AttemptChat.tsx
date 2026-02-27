@@ -691,17 +691,16 @@ export function AttemptChat({
 
   const handleSendMessage = useCallback(
     async (message: string, _isRetry?: boolean) => {
-      const simulationId = attemptData?.simulation?.id;
-      if (!message.trim() || !currentChat || isSendingMessage || !simulationId) return;
+      if (!message.trim() || !currentChat || isSendingMessage) return;
 
       try {
-        sendMessage(currentChat.id, simulationId, message, false);
+        sendMessage(currentChat.id, attempt_id, message);
       } catch (err) {
         toast.error(`Failed to send message: ${err}`);
         setIsSendingMessage(false);
       }
     },
-    [currentChat, isSendingMessage, attemptData?.simulation?.id, sendMessage, setIsSendingMessage]
+    [currentChat, isSendingMessage, attempt_id, sendMessage, setIsSendingMessage]
   );
 
   const handleStopMessage = useCallback(async () => {
