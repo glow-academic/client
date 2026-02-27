@@ -66,7 +66,7 @@ new_group AS (
     RETURNING id
 ),
 placeholder_call_id AS (
-    SELECT id FROM view_calls_entry LIMIT 1
+    SELECT id FROM calls_entry LIMIT 1
 ),
 -- Insert name in names table (only if creating)
 name_resource AS (

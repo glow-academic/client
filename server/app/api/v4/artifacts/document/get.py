@@ -844,7 +844,14 @@ async def get_document_websocket(
         entries=entries if draft_view or runs_result else None,
         resource_agent_ids=data.agent_ids,
         resources=websocket_resources,
-        artifacts=websocket_config,
+        agents=data.config_agent_resources,
+        models=data.config_model_resources,
+        providers=data.config_provider_resources,
+        tools=tools_result or None,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=config_profile_result or None,
+        params=GetDocumentApiRequest(document_id=document_id, draft_id=draft_id),
     )
 
 

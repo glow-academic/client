@@ -786,7 +786,23 @@ async def get_eval_websocket(
         group_id=data.group_id,
         resource_agent_ids=data.resource_agent_ids,
         resources=websocket_resources,
-        artifacts=websocket_config,
+        agents=data.config_agents,
+        models=data.config_models,
+        providers=data.config_providers,
+        tools=tools_result or None,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=config_profile_result or None,
+        params=GetEvalApiRequest(
+            eval_id=eval_id,
+            draft_id=draft_id,
+            agent_search=agent_search,
+            group_search=group_search,
+            available_model_runs_search=available_model_runs_search,
+            available_model_runs_agent_ids=available_model_runs_agent_ids,
+            available_model_runs_page=available_model_runs_page,
+            available_model_runs_page_size=available_model_runs_page_size,
+        ),
     )
 
 

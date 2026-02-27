@@ -1,5 +1,5 @@
 -- Mark call as completed
--- Updates view_calls_entry table to set completed = true for a given external_call_id
+-- Updates calls_entry table to set completed = true for a given external_call_id
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -28,7 +28,7 @@ AS $$
 BEGIN
     UPDATE calls_entry
     SET completed = true, updated_at = NOW()
-    WHERE view_calls_entry.external_call_id = mark_call_completed_v4.external_call_id;
+    WHERE calls_entry.external_call_id = mark_call_completed_v4.external_call_id;
     
     RETURN QUERY SELECT true as updated;
 END;

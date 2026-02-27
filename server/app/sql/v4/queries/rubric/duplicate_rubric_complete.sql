@@ -261,21 +261,21 @@ groups_mapping AS (
 ),
 standard_call_context AS (
     SELECT tcj.tools_id, 1 as priority
-    FROM view_calls_entry c
+    FROM calls_entry c
     JOIN tools_calls_connection tcj ON tcj.call_id = c.id
     JOIN tool_names_junction tn ON tn.tool_id = tcj.tools_id
     JOIN names_resource n ON tn.name_id = n.id
     WHERE n.name = 'create_standard_group'
     UNION ALL
     SELECT tcj.tools_id, 2 as priority
-    FROM view_calls_entry c
+    FROM calls_entry c
     JOIN tools_calls_connection tcj ON tcj.call_id = c.id
     JOIN tool_names_junction tn ON tn.tool_id = tcj.tools_id
     JOIN names_resource n ON tn.name_id = n.id
     WHERE n.name = 'create_rubrics'
     UNION ALL
     SELECT tcj.tools_id, 3 as priority
-    FROM view_calls_entry c
+    FROM calls_entry c
     JOIN tools_calls_connection tcj ON tcj.call_id = c.id
 ),
 standard_call_params AS (

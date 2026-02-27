@@ -48,7 +48,7 @@ BEGIN
     -- Resolve default call_id when not provided
     v_call_id := call_id;
     IF v_call_id IS NULL THEN
-        SELECT vc.id INTO v_call_id FROM view_calls_entry vc LIMIT 1;
+        SELECT vc.id INTO v_call_id FROM calls_entry vc LIMIT 1;
         IF v_call_id IS NULL THEN
             RAISE EXCEPTION 'No call_id found for entry inserts';
         END IF;

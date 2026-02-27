@@ -142,7 +142,7 @@ profile_upsert_with_idx AS (
     WHERE EXISTS (SELECT 1 FROM role_validation rv WHERE rv.profile_idx = pe.profile_idx AND rv.can_assign = true)
 ),
 placeholder_call_id AS (
-    SELECT id FROM view_calls_entry LIMIT 1
+    SELECT id FROM calls_entry LIMIT 1
 ),
 -- Insert all unique names INTO names_resource table
 names_resources AS (

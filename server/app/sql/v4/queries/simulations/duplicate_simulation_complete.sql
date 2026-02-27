@@ -52,7 +52,7 @@ source_simulation AS (
 ),
 default_call AS (
     SELECT id as call_id
-    FROM view_calls_entry
+    FROM calls_entry
     LIMIT 1
 ),
 get_or_create_description AS (

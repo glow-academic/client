@@ -911,7 +911,19 @@ async def get_simulation_websocket(
             else None,
             rubrics=all_resources.rubrics if all_resources else None,
         ),
-        artifacts=websocket_config,
+        agents=data.config_agent_resources,
+        models=data.config_model_resources,
+        providers=data.config_provider_resources,
+        tools=tools_result or None,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=config_profile_result or None,
+        params=GetSimulationApiRequest(
+            simulation_id=simulation_id,
+            draft_id=draft_id,
+            scenario_search=scenario_search,
+            filter_scenario_ids=filter_scenario_ids,
+        ),
     )
 
 

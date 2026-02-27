@@ -999,7 +999,22 @@ async def get_cohort_websocket(
             profile_personas=all_resources.profile_personas if all_resources else None,
             personas=all_resources.personas if all_resources else None,
         ),
-        artifacts=websocket_config,
+        agents=data.config_agent_resources,
+        models=data.config_model_resources,
+        providers=data.config_provider_resources,
+        tools=tools_result or None,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=config_profile_result or None,
+        params=GetCohortApiRequest(
+            cohort_id=cohort_id,
+            draft_id=draft_id,
+            descriptions_search=descriptions_search,
+            simulation_search=simulation_search,
+            simulation_show_selected=simulation_show_selected,
+            profile_search=profile_search,
+            profile_show_selected=profile_show_selected,
+        ),
     )
 
 

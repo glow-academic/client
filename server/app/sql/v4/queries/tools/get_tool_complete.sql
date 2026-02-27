@@ -462,7 +462,7 @@ args_mapping_data AS (
     CROSS JOIN draft_group_data dgd
     JOIN args_resource a ON a.active = true
     LEFT JOIN tool_args_junction ta ON ta.args_id = a.id AND ta.tool_id = x.tool_id
-    LEFT JOIN args_calls_connection acc ON acc.args_id = a.id LEFT JOIN view_calls_entry c ON c.id = acc.call_id
+    LEFT JOIN args_calls_connection acc ON acc.args_id = a.id LEFT JOIN calls_entry c ON c.id = acc.call_id
     LEFT JOIN runs_entry r ON r.id = c.run_id
     WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all args for new tools
 ),
@@ -533,7 +533,7 @@ args_outputs_mapping_data AS (
     CROSS JOIN draft_group_data dgd
     JOIN args_outputs_resource ao ON ao.active = true
     LEFT JOIN tool_args_outputs_junction tao ON tao.args_outputs_id = ao.id AND tao.tool_id = x.tool_id
-    LEFT JOIN args_outputs_calls_connection aocc ON aocc.args_outputs_id = ao.id LEFT JOIN view_calls_entry c ON c.id = aocc.call_id
+    LEFT JOIN args_outputs_calls_connection aocc ON aocc.args_outputs_id = ao.id LEFT JOIN calls_entry c ON c.id = aocc.call_id
     LEFT JOIN runs_entry r ON r.id = c.run_id
     WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all args_outputs for new tools
 ),

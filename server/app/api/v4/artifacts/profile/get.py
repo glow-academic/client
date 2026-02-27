@@ -736,7 +736,16 @@ async def get_profile_websocket(
             flags=[data.selected_flag_resource] if data.selected_flag_resource else [],
             departments=data.selected_department_resources,
         ),
-        artifacts=websocket_config,
+        agents=data.config_agent_resources,
+        models=data.config_model_resources,
+        providers=data.config_provider_resources,
+        tools=data.config_tool_resources,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=config_profile_result or None,
+        params=GetProfileApiRequest(
+            target_profile_id=target_profile_id, draft_id=draft_id
+        ),
         resource_agent_ids=data.agent_ids,
     )
 

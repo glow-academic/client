@@ -54,7 +54,7 @@ original_cohort AS (
 ),
 default_call AS (
     SELECT id as call_id
-    FROM view_calls_entry
+    FROM calls_entry
     LIMIT 1
 ),
 -- Insert description INTO descriptions_resource table

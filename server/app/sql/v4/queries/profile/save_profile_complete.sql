@@ -453,7 +453,7 @@ BEGIN
           AND array_length((SELECT email_texts FROM params), 1) > 0
     ),
     placeholder_call_id AS (
-        SELECT id FROM view_calls_entry LIMIT 1
+        SELECT id FROM calls_entry LIMIT 1
     ),
     email_resources AS (
         INSERT INTO emails_resource (email, created_at)

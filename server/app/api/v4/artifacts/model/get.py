@@ -905,7 +905,14 @@ async def get_model_websocket(
             qualities=data.quality_resources or None,
             voices=data.voice_resources or None,
         ),
-        artifacts=websocket_config,
+        agents=data.config_agent_resources,
+        models=data.config_model_resources,
+        providers=data.config_provider_resources,
+        tools=tools_result or None,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=config_profile_result or None,
+        params=GetModelApiRequest(model_id=model_id, draft_id=draft_id),
     )
 
 
