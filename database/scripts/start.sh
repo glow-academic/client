@@ -186,6 +186,16 @@ create_backup() {
   fi
 }
 
+# Function to create backup in fresh/ subfolder (for clean/clean-modules modes)
+# Keeps these backups separate from migration backups so they don't interfere
+create_fresh_backup() {
+  local saved_history_dir="$HISTORY_DIR"
+  HISTORY_DIR="$HISTORY_DIR/fresh"
+  mkdir -p "$HISTORY_DIR"
+  create_backup
+  HISTORY_DIR="$saved_history_dir"
+}
+
 # Function to get latest backup
 # Handles both old format (restore_TIMESTAMP.sql.gz) and new format (restore_MIGRATIONNUM_TIMESTAMP.sql.gz)
 # Prioritizes backups by migration number (highest first), then by timestamp
@@ -577,8 +587,8 @@ fi
 if [[ "$CLEAN_MODULES" == true ]]; then
   echo "🧹 Clean modules mode: Building database from schema + modules..."
 
-  # Create backup first
-  create_backup
+  # Create backup in fresh/ subfolder (separate from migration backups)
+  create_fresh_backup
 
   # Setup fresh database
   setup_database
@@ -611,10 +621,10 @@ fi
 # Handle clean mode
 if [[ "$CLEAN_DB" == true ]]; then
   echo "🧹 Clean mode: Starting fresh database..."
-  
-  # Create backup first (only in clean mode)
-  create_backup
-  
+
+  # Create backup in fresh/ subfolder (separate from migration backups)
+  create_fresh_backup
+
   # Setup fresh database
   setup_database
   start_fresh_from_seed
