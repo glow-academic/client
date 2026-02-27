@@ -47,6 +47,10 @@ class AudioSession:
         self.outbound_queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
         self.last_activity: float = time.monotonic()
         self.muted = False
+        # User speech audio buffering — accumulates PCM16 frames between
+        # VAD speech_started and speech_stopped for saving to disk.
+        self.speech_buffering = False
+        self.speech_audio_buffer = bytearray()
         self.oa_ws_connection: Any | None = None  # OpenAI WebSocket connection
         self.item_id_to_upload_id: dict[str, str] = {}
         self.response_id_to_upload_id: dict[str, str] = {}

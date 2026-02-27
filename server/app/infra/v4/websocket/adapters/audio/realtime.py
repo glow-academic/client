@@ -218,6 +218,15 @@ class RealtimeAudioAdapter(BaseAudioAdapter):
                     # Send audio to OpenAI
                     audio_data = msg.get("pcm16_bytes")
                     if audio_data and not session.muted:
+                        # Buffer raw PCM16 bytes for saving user speech
+                        if session.speech_buffering:
+                            raw_bytes = (
+                                audio_data
+                                if isinstance(audio_data, bytes)
+                                else base64.b64decode(audio_data)
+                            )
+                            session.speech_audio_buffer.extend(raw_bytes)
+
                         # Convert to base64 if bytes
                         if isinstance(audio_data, bytes):
                             audio_b64 = base64.b64encode(audio_data).decode("utf-8")
@@ -294,10 +303,14 @@ class RealtimeAudioAdapter(BaseAudioAdapter):
                 elif event_type == "input_audio_buffer.speech_started":
                     item_id = event.get("item_id", f"user-{group_id}")
                     current_user_item_id = item_id
+                    # Start buffering user audio frames
+                    session.speech_audio_buffer = bytearray()
+                    session.speech_buffering = True
                     await self._emitter.on_user_speech_start(group_id, item_id)
 
                 elif event_type == "input_audio_buffer.speech_stopped":
-                    pass  # Transcription will come separately
+                    # Stop buffering — audio bytes are now in session.speech_audio_buffer
+                    session.speech_buffering = False
 
                 elif (
                     event_type
@@ -307,11 +320,14 @@ class RealtimeAudioAdapter(BaseAudioAdapter):
                     item_id = event.get(
                         "item_id", current_user_item_id or f"user-{group_id}"
                     )
+                    # Capture buffered audio and reset
+                    speech_audio = bytes(session.speech_audio_buffer)
+                    session.speech_audio_buffer = bytearray()
                     await self._emitter.on_user_speech_delta(
                         group_id, item_id, transcript
                     )
                     await self._emitter.on_user_speech_complete(
-                        group_id, item_id, transcript
+                        group_id, item_id, transcript, audio=speech_audio
                     )
 
                 # -- Assistant output items --

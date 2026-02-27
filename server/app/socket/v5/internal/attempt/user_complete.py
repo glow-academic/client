@@ -70,6 +70,27 @@ async def handle_user_received_complete(data: dict[str, Any]) -> None:
                 STUDENT_PERSONA_ID,
             )
 
+            # Link audio upload if present (audios → audio_uploads → message_audios)
+            audio_upload_id = data.get("audio_upload_id")
+            if audio_upload_id:
+                audio_id = await conn.fetchval(
+                    """INSERT INTO audios (created_at, updated_at, active, generated, call_id)
+                    VALUES (NOW(), NOW(), true, false, NULL)
+                    RETURNING id""",
+                )
+                await conn.execute(
+                    """INSERT INTO audio_uploads (audio_id, upload_id, active, created_at, updated_at)
+                    VALUES ($1, $2, true, NOW(), NOW())""",
+                    audio_id,
+                    uuid.UUID(audio_upload_id),
+                )
+                await conn.execute(
+                    """INSERT INTO message_audios (message_id, audio_id, created_at, updated_at)
+                    VALUES ($1, $2, NOW(), NOW())""",
+                    message_id,
+                    audio_id,
+                )
+
             # Mark message as complete
             await conn.execute(
                 """INSERT INTO messages_completions_entry (message_id)

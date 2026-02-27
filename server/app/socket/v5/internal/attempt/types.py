@@ -135,6 +135,7 @@ class AttemptUserReceivedCompleteData(BaseModel):
     content: str
     item_id: str | None = None
     rooms: list[str] | None = None
+    audio_upload_id: str | None = None  # Upload ID for saved user speech audio
 
 
 # --- User (confirmed — post-DB, emitted to server/ layer) ---
