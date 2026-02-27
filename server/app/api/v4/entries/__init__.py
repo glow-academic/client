@@ -50,7 +50,6 @@ from app.api.v4.entries.group_insights import router as group_insights_router
 from app.api.v4.entries.groups import router as groups_router
 from app.api.v4.entries.health import router as health_router
 from app.api.v4.entries.health_insights import router as health_insights_router
-from app.api.v4.entries.highlights import router as highlights_router
 from app.api.v4.entries.home import router as home_router
 from app.api.v4.entries.home_insights import router as home_insights_router
 from app.api.v4.entries.home_training import router as home_training_router
@@ -77,7 +76,6 @@ from app.api.v4.entries.problems import router as problems_router
 from app.api.v4.entries.profile_drafts import router as profile_drafts_router
 from app.api.v4.entries.provider_drafts import router as provider_drafts_router
 from app.api.v4.entries.record_insights import router as record_insights_router
-from app.api.v4.entries.replacements import router as replacements_router
 from app.api.v4.entries.reports import router as reports_router
 from app.api.v4.entries.reports_insights import router as reports_insights_router
 from app.api.v4.entries.resolves import router as resolves_router
@@ -101,7 +99,6 @@ from app.api.v4.entries.test_grade import router as test_grade_router
 from app.api.v4.entries.test_insights import router as test_insights_router
 from app.api.v4.entries.test_invocation import router as test_invocation_router
 from app.api.v4.entries.test_stop import router as test_stop_router
-from app.api.v4.entries.tests import router as tests_router
 from app.api.v4.entries.texts import router as texts_router
 from app.api.v4.entries.tokens import router as tokens_router
 from app.api.v4.entries.tool_drafts import router as tool_drafts_router
@@ -158,7 +155,6 @@ router.include_router(group_insights_router)
 router.include_router(groups_router)
 router.include_router(health_router)
 router.include_router(health_insights_router)
-router.include_router(highlights_router)
 router.include_router(home_router)
 router.include_router(home_insights_router)
 router.include_router(home_training_router)
@@ -181,7 +177,6 @@ router.include_router(problems_router)
 router.include_router(profile_drafts_router)
 router.include_router(provider_drafts_router)
 router.include_router(record_insights_router)
-router.include_router(replacements_router)
 router.include_router(reports_router)
 router.include_router(reports_insights_router)
 router.include_router(resolves_router)
@@ -205,7 +200,6 @@ router.include_router(test_grade_router)
 router.include_router(test_insights_router)
 router.include_router(test_invocation_router)
 router.include_router(test_stop_router)
-router.include_router(tests_router)
 router.include_router(texts_router)
 router.include_router(tokens_router)
 router.include_router(tool_drafts_router)

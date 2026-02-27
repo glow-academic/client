@@ -60,6 +60,11 @@ from app.api.v4.artifacts.tool import router as tools_router
 from app.api.v4.auth import router as auth_router
 
 # ============================================================================
+# Uploads (TUS protocol, download, preview, template)
+# ============================================================================
+from app.api.v4.uploads import router as uploads_router
+
+# ============================================================================
 # Docs
 # ============================================================================
 from app.api.v4.docs import router as docs_router
@@ -149,6 +154,11 @@ router.include_router(entries_router)
 # Auth (not available to MCP)
 # ============================================================================
 router.include_router(auth_router)
+
+# ============================================================================
+# Uploads (TUS protocol, download, preview, template)
+# ============================================================================
+router.include_router(uploads_router)
 
 # ============================================================================
 # Docs
