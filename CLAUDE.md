@@ -112,7 +112,7 @@ make run-test           # Start test services (for E2E)
 make test-e2e           # E2E Playwright tests
 ```
 
-- **API test profile**: `019b3be4-36f0-7ebd-ac27-52e3dba461f1` (superadmin)
+- **API test profile**: `019b3be4-36f0-788c-9df2-481eb5917940` (Default Superadmin)
 - **E2E test profile**: `965bd24f-dfae-4063-b370-e1373df46322`
 
 ## Database Credentials

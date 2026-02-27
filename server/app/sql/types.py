@@ -36917,40 +36917,6 @@ class GetSimulationBenchmarkFeedbacksViewApiResponse(BaseModel):
 
 
 
-# Generated from: get_simulation_contents_view
-
-class GetSimulationContentsViewSqlParams(BaseModel):
-
-    message_ids_filter: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.message_ids_filter,
-        )
-
-class QGetSimulationContentsViewV4Item(BaseModel):
-
-    content_id: UUID | None
-    message_id: UUID | None
-    content: str | None
-    persona_id: UUID | None
-    idx: int | None
-    created_at: datetime | None
-
-class GetSimulationContentsViewSqlRow(BaseModel):
-
-    items: list[QGetSimulationContentsViewV4Item] | None = None
-
-class GetSimulationContentsViewApiRequest(BaseModel):
-
-    message_ids_filter: list[UUID]
-
-class GetSimulationContentsViewApiResponse(BaseModel):
-
-    items: list[QGetSimulationContentsViewV4Item] | None = None
-
-
-
 # Generated from: get_simulation_feedbacks_view
 
 class GetSimulationFeedbacksViewSqlParams(BaseModel):
@@ -43069,12 +43035,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSimulationBenchmarkFeedbacksViewApiRequest",
         "GetSimulationBenchmarkFeedbacksViewApiResponse",
     ),
-    "app/sql/v4/queries/views/simulation/contents/get_simulation_contents_view_complete.sql": (
-        "GetSimulationContentsViewSqlParams",
-        "GetSimulationContentsViewSqlRow",
-        "GetSimulationContentsViewApiRequest",
-        "GetSimulationContentsViewApiResponse",
-    ),
     "app/sql/v4/queries/views/simulation/feedbacks/get_simulation_feedbacks_view_complete.sql": (
         "GetSimulationFeedbacksViewSqlParams",
         "GetSimulationFeedbacksViewSqlRow",
@@ -47928,11 +47888,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/views/simulation/benchmark_feedbacks/get_simulation_benchmark_feedbacks_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/views/simulation/contents/get_simulation_contents_view_complete.sql"]
     ) -> SqlString: ...
 
     @overload

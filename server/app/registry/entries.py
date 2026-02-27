@@ -21,7 +21,7 @@ ENTRY_SCHEMAS: dict[str, dict[str, str]] = {
         "updated_at": "timestamp",
         "content": "text",
         "call_id": "uuid",
-        "persona_entry_id": "uuid",
+        "persona_id": "uuid",
     },
     "debug_info": {
         "content": "text",
@@ -38,14 +38,10 @@ ENTRY_SCHEMAS: dict[str, dict[str, str]] = {
     "grades": {
         "chat_id": "uuid",
         "run_id": "uuid",
-        "rubric_grade_agent_id": "uuid",
-        "rubric_id": "uuid",
         "updated_at": "timestamp",
         "passed": "bool",
         "score": "int",
         "time_taken": "int",
-        "total_points": "int",
-        "pass_points": "int",
     },
     "highlights": {
         "idx": "int",

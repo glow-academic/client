@@ -12,7 +12,7 @@ Call the API at `localhost:8000` to test endpoints and verify they return expect
 For v4 API endpoints, use this header:
 
 ```
-X-Profile-Id: 019b3be4-36f0-7ebd-ac27-52e3dba461f1
+X-Profile-Id: 019b3be4-36f0-788c-9df2-481eb5917940
 ```
 
 ## Cache Bypass Header

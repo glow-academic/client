@@ -402,7 +402,7 @@ After creating or modifying test SQL files: `make sql-compile` to regenerate `te
 
 | Profile | ID | Role | Used In |
 |---------|-----|------|---------|
-| API test | `019b3be4-36f0-7ebd-ac27-52e3dba461f1` | superadmin | Integration tests |
+| API test | `019b3be4-36f0-788c-9df2-481eb5917940` | superadmin | Integration tests |
 | E2E admin | `6a2518eb-eba7-4650-aee0-d387c3fb8265` | admin | E2E tests |
 | E2E guest | `965bd24f-dfae-4063-b370-e1373df46322` | guest | E2E tests |
 

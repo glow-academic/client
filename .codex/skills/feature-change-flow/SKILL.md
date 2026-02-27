@@ -46,7 +46,7 @@ Start at the lowest required layer and proceed forward from there:
 ## 6. Testing
 - Prefer API testing at `localhost:8000`.
 - Use headers:
-  - `X-Profile-Id: 019b3be4-36f0-7ebd-ac27-52e3dba461f1`
+  - `X-Profile-Id: 019b3be4-36f0-788c-9df2-481eb5917940`
   - `X-Bypass-Cache: 1` (optional)
 - Integration tests: `server/tests/integration/api/v4/[resource]/`
 - E2E tests: `server/tests/e2e/` (Playwright, requires `make run-test` first)
