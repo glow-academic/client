@@ -1,10 +1,14 @@
-"""Handle run_complete events — the main completion handler.
+"""Handle generate_run_complete — canonical run completion handler.
 
-Replaces ALL 33 v4 complete.py files. Steps:
-1. Save assistant message (deduplicated) + update token counts on runs_entry
-2. record_agent_complete → (is_complete, all_tool_results)
-3. If NOT is_complete → return (more agents pending)
-4. If is_complete: build resource_actions, auto-save, emit saved/complete, cleanup
+Emitted by generate_artifact.py (text path) and audio events.py (audio path)
+when a generation run finishes.
+
+Steps:
+1. Save assistant message (deduplicated) + record token counts
+2. Multi-agent coordination (record_agent_complete)
+3. If more agents pending → return
+4. All agents finished: build resource_actions, auto-save, emit saved/complete, cleanup
+5. Audio modality: re-emit "generate" for rate limit gate (next turn continuation)
 """
 
 import uuid
@@ -23,6 +27,7 @@ from app.socket.v5.internal.generation_types import (
     GenerationCompleteData,
     GenerationSavedData,
 )
+from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 
@@ -35,24 +40,42 @@ SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
 )
 
 
-@internal_sio.on("generate_call_complete")  # type: ignore
-@internal_sio.on("generate_text_complete")  # type: ignore
+@internal_sio.on("generate_run_complete")  # type: ignore
 async def handle_run_complete(data: dict[str, Any]) -> None:
-    """Handle run_complete for all artifact types."""
-    event_type = data.get("event_type")
-    if event_type != "run_complete":
-        return
-
+    """Handle run_complete for all artifact types and modalities."""
     sid = data.get("sid", "")
     if not sid:
         return
 
     run_id = data.get("run_id")
+    group_id_str = data.get("group_id", "")
+    modality = data.get("modality", "text")
+    artifact_type = data.get("artifact_type", "unknown")
+
+    logger.info(
+        f"generate_run_complete - modality={modality}, group_id={group_id_str}, "
+        f"input_tokens={data.get('input_text_tokens', 0)}, "
+        f"output_tokens={data.get('output_text_tokens', 0)}"
+    )
+
+    # --- Audio continuation: re-enter rate limit gate for next turn ---
+    if modality == "audio":
+        if group_id_str:
+            await internal_sio.emit(
+                "generate",
+                {
+                    "sid": sid,
+                    "artifact_type": artifact_type,
+                    "group_id": group_id_str,
+                    "metadata": data.get("metadata", {}),
+                },
+            )
+        return
+
+    # --- Text/call path: full run completion ---
     if not run_id:
         return
 
-    artifact_type = data.get("artifact_type", "unknown")
-    group_id_str = data.get("group_id")
     assistant_output = data.get("assistant_output") or ""
     input_tokens = data.get("input_text_tokens", 0)
     output_tokens = data.get("output_text_tokens", 0)
@@ -99,30 +122,29 @@ async def handle_run_complete(data: dict[str, Any]) -> None:
     if not is_complete:
         return  # More agents pending
 
-    # Step 4: All agents finished
+    # Step 3: All agents finished
     artifact_id: str | None = None
     should_save = data.get("save", True)
     profile_id_str = await find_profile_by_socket(sid)
 
-    # 4a: Build resource_actions from all_tool_results
+    # 3a: Build resource_actions from all_tool_results
     resource_actions: dict[str, Any] = {}
     for tr in all_tool_results:
         if isinstance(tr, dict):
-            # resource_type/resource_id may be at top level or nested in "result"
             result = tr.get("result") if isinstance(tr.get("result"), dict) else tr
             rt = tr.get("resource_type") or result.get("resource_type")
             rid = tr.get("resource_id") or result.get("resource_id")
             if rt and rid:
                 resource_actions[rt] = {"resource_id": rid}
 
-    # 4a-chat: Inject _attempt_chat_id into resource_actions for chat saves
+    # 3a-chat: Inject _attempt_chat_id into resource_actions for chat saves
     metadata = data.get("metadata") or {}
     if artifact_type == "chat":
         attempt_chat_id_meta = metadata.get("attempt_chat_id")
         if attempt_chat_id_meta:
             resource_actions["_attempt_chat_id"] = attempt_chat_id_meta
 
-    # 4b: Auto-save if applicable
+    # 3b: Auto-save if applicable
     if should_save and profile_id_str and group_id_str:
         try:
             profile_id = uuid.UUID(profile_id_str)
@@ -141,7 +163,7 @@ async def handle_run_complete(data: dict[str, Any]) -> None:
         except Exception as e:
             logger.exception(f"Failed to auto-save {artifact_type}: {e}")
 
-    # 4c: Emit saved event (only if save happened)
+    # 3c: Emit saved event (only if save happened)
     if artifact_id:
         await internal_sio.emit(
             "generation_channel",
@@ -154,7 +176,7 @@ async def handle_run_complete(data: dict[str, Any]) -> None:
             ).model_dump(mode="json"),
         )
 
-    # 4d: Emit complete event
+    # 3d: Emit complete event
     await internal_sio.emit(
         "generation_channel",
         GenerationCompleteData(
@@ -169,8 +191,7 @@ async def handle_run_complete(data: dict[str, Any]) -> None:
         ).model_dump(mode="json"),
     )
 
-    # 4e: Special case — chat: emit attempt_chat_started
-    # Bridge + connections already created by resolve_attempt_chat in proceed.py
+    # 3e: Special case — chat: emit attempt_chat_started
     if artifact_type == "chat":
         attempt_id_data = metadata.get("attempt_id")
         attempt_chat_id_data = metadata.get("attempt_chat_id")
@@ -189,5 +210,5 @@ async def handle_run_complete(data: dict[str, Any]) -> None:
                 ).model_dump(mode="json"),
             )
 
-    # 4f: Cleanup
+    # 3f: Cleanup
     await cleanup_generation(run_id)

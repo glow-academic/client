@@ -8,7 +8,6 @@ import asyncio
 import time
 from typing import Any
 
-
 _session_store: dict[str, "AudioSession"] = {}
 
 
@@ -65,7 +64,11 @@ def create_session(
 ) -> AudioSession:
     """Create a new audio session, keyed by chat_id, run_id, and group_id."""
     session = AudioSession(
-        sid, chat_id, run_id, group_id, conversation_id,
+        sid,
+        chat_id,
+        run_id,
+        group_id,
+        conversation_id,
         artifact_type=artifact_type,
         resource_type=resource_type,
         metadata=metadata,
@@ -98,6 +101,17 @@ def get_session_by_run_id(run_id: str) -> AudioSession | None:
 def get_session_by_group_id(group_id: str) -> AudioSession | None:
     """Get session by group ID (internal lookup)."""
     return _session_store.get(group_id)
+
+
+def rotate_run_id(session: AudioSession, new_run_id: str) -> None:
+    """Rotate the run_id on an existing session (audio continuation).
+
+    Removes the old run_id key and adds the new one, keeping chat_id
+    and group_id keys intact.
+    """
+    _session_store.pop(session.run_id, None)
+    session.run_id = new_run_id
+    _session_store[new_run_id] = session
 
 
 def get_session_by_sid(sid: str) -> AudioSession | None:

@@ -64,7 +64,6 @@ class ArtifactGenerateConfig:
     # Async entry types for this artifact
     entry_types: list[str] = field(default_factory=lambda: ["debug_info"])
 
-
     # Async fetcher adapter — uniform signature:
     #   (profile_id, artifact_id, draft_id, pool) -> response
     fetcher: (

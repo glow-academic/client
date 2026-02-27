@@ -321,6 +321,7 @@ class RealtimeAudioAdapter(BaseAudioAdapter):
                     item_id = item.get("id", "")
                     item_type = item.get("type", "")
                     if item_type == "message":
+                        await self._emitter.on_audio_start(group_id)
                         await self._emitter.on_transcript_start(group_id, item_id)
                     elif item_type == "function_call":
                         call_id = item.get("call_id", "")
@@ -357,9 +358,7 @@ class RealtimeAudioAdapter(BaseAudioAdapter):
                     call_id = event.get("call_id", "")
                     delta = event.get("delta", "")
                     if delta:
-                        await self._emitter.on_tool_call_delta(
-                            group_id, call_id, delta
-                        )
+                        await self._emitter.on_tool_call_delta(group_id, call_id, delta)
 
                 elif event_type == "response.function_call_arguments.done":
                     call_id = event.get("call_id", "")
@@ -368,6 +367,11 @@ class RealtimeAudioAdapter(BaseAudioAdapter):
                     await self._emitter.on_tool_call_complete(
                         group_id, call_id, name, arguments
                     )
+
+                # -- Audio complete --
+
+                elif event_type == "response.audio.done":
+                    await self._emitter.on_audio_complete(group_id)
 
                 # -- Response lifecycle --
 

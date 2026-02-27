@@ -1,4 +1,4 @@
-"""Internal handler: generate_audio_delta → attempt_progress(type=assistant_audio).
+"""Internal handler: generate_audio_progress → attempt_assistant_progress(content_type=audio).
 
 Resolves chat_id from session and passes raw audio bytes through.
 """
@@ -12,9 +12,9 @@ from app.socket.v5.internal.attempt.types import AttemptAssistantProgressData
 internal_sio = get_internal_sio()
 
 
-@internal_sio.on("generate_audio_delta")  # type: ignore
-async def handle_audio_delta(data: dict[str, Any]) -> None:
-    """Translate generate_audio_delta → attempt_progress(type=assistant_audio)."""
+@internal_sio.on("generate_audio_progress")  # type: ignore
+async def handle_audio_progress(data: dict[str, Any]) -> None:
+    """Translate generate_audio_progress → attempt_assistant_progress(content_type=audio)."""
     group_id = data.get("group_id")
     if not group_id:
         return

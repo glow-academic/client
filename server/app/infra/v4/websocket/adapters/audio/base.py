@@ -29,8 +29,16 @@ class AudioEventEmitter(Protocol):
 
     # -- Assistant audio --
 
+    async def on_audio_start(self, group_id: str) -> None:
+        """Assistant started speaking (per-response audio begin)."""
+        ...
+
     async def on_audio_delta(self, group_id: str, audio: bytes) -> None:
         """Assistant audio chunk (PCM16 bytes)."""
+        ...
+
+    async def on_audio_complete(self, group_id: str) -> None:
+        """Assistant finished speaking (per-response audio done)."""
         ...
 
     # -- Assistant transcript (text alongside audio) --

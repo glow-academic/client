@@ -13,9 +13,10 @@ through the same downstream handlers. The session store provides the generation
 context (sid, artifact_type, tool_output_schemas, etc.).
 
 Events emitted:
-  - generate_audio_delta                    — assistant audio chunk (audio-only)
+  - generate_audio_start/progress/complete  — assistant audio (canonical audio events)
   - generate_text_start/progress/complete   — assistant transcript (canonical text events)
   - generate_call_start/progress/complete   — tool calls (canonical call events)
+  - generate_run_complete                   — run finished (triggers rate limit + run_id rotation)
   - generate_audio_user_speech_start        — VAD detected user speaking
   - generate_audio_user_speech_delta        — user speech transcript chunk
   - generate_audio_user_speech_complete     — user speech finalized
@@ -27,7 +28,10 @@ import json
 from typing import Any
 
 from app.infra.v4.websocket.session_store import get_session_by_group_id
-from app.infra.v4.websocket.tool_call_utils import parse_partial_json, resolve_output_fields
+from app.infra.v4.websocket.tool_call_utils import (
+    parse_partial_json,
+    resolve_output_fields,
+)
 from app.main import get_internal_sio
 
 
@@ -64,13 +68,37 @@ class InternalBusAudioEmitter:
             "metadata": session.metadata,
         }
 
-    # -- Assistant audio --
+    # -- Assistant audio (emits canonical generate_audio_* events) --
+
+    async def on_audio_start(self, group_id: str) -> None:
+        """Assistant started speaking — emits generate_audio_start."""
+        ctx = self._session_context(group_id)
+        await self._bus.emit(
+            "generate_audio_start",
+            {
+                **ctx,
+                "type": "start",
+                "event_type": "audio_start",
+            },
+        )
 
     async def on_audio_delta(self, group_id: str, audio: bytes) -> None:
-        """Assistant audio chunk (PCM16 bytes)."""
+        """Assistant audio chunk — emits generate_audio_progress."""
         await self._bus.emit(
-            "generate_audio_delta",
+            "generate_audio_progress",
             {"group_id": group_id, "audio": audio},
+        )
+
+    async def on_audio_complete(self, group_id: str) -> None:
+        """Assistant finished speaking — emits generate_audio_complete."""
+        ctx = self._session_context(group_id)
+        await self._bus.emit(
+            "generate_audio_complete",
+            {
+                **ctx,
+                "type": "complete",
+                "event_type": "audio_complete",
+            },
         )
 
     # -- Assistant transcript (emits canonical generate_text_* events) --
@@ -244,10 +272,33 @@ class InternalBusAudioEmitter:
     async def on_response_done(
         self, group_id: str, usage: dict[str, Any] | None = None
     ) -> None:
-        """Provider response completed (for logging/metrics)."""
+        """Provider response completed — emits generate_run_complete.
+
+        This triggers generate_complete.py which re-emits "generate" to
+        check rate limits and rotate the run_id for the next turn.
+        """
+        usage = usage or {}
+        ctx = self._session_context(group_id)
+
+        # Emit canonical run complete (picked up by generate_complete.py)
+        await self._bus.emit(
+            "generate_run_complete",
+            {
+                **ctx,
+                "type": "complete",
+                "event_type": "run_complete",
+                "input_text_tokens": usage.get("input_tokens", 0),
+                "output_text_tokens": usage.get("output_tokens", 0),
+                "assistant_output": "",
+                "tool_results": [],
+                "save": False,
+            },
+        )
+
+        # Also keep the audio-specific event for any listeners
         await self._bus.emit(
             "generate_audio_response_done",
-            {"group_id": group_id, "usage": usage or {}},
+            {"group_id": group_id, "usage": usage},
         )
 
 

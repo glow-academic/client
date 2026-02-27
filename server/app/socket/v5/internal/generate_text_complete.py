@@ -1,7 +1,7 @@
-"""Handle text_complete events — save assistant messages to DB.
+"""Handle generate_text_complete — text generation finalized.
 
-Replaces the duplicated _handle_{artifact}_text_complete across all 33 v4 handlers.
-Listens on generate_text_complete for all artifact types.
+Saves assistant message to DB on text_complete. Run-level completion
+(tokens, auto-save, multi-agent) is handled by generate_run_complete.
 """
 
 import uuid
@@ -23,7 +23,7 @@ SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
 
 @internal_sio.on("generate_text_complete")  # type: ignore
 async def handle_text_complete(data: dict[str, Any]) -> None:
-    """Save assistant message on text_complete (not run_complete — that's handled by generation_complete)."""
+    """Save assistant message on text_complete."""
     event_type = data.get("event_type")
     if event_type != "text_complete":
         return

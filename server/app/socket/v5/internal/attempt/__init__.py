@@ -4,20 +4,15 @@ Importing this module registers:
 - attempt_start (create attempt, delegate to proceed)
 - attempt_next (resolve context, delegate to proceed)
 - attempt_proceed (shared core: completion marking, prepare → check → link/generate)
-- assistant_progress (text delta streaming for attempt artifacts)
-- assistant_complete (run complete for assistant messages)
-- assistant_hints (hints extraction from tool results)
-- grade_progress (per-criterion grade results)
-- grade_complete (aggregate grade result)
+- user_start/progress/complete (user message received events)
+
+Note: attempt-specific generation handlers (assistant_progress, assistant_complete,
+assistant_hints, grade_progress, grade_complete) have been absorbed into the
+canonical generate_[text/call]_[start/progress/complete] handlers in the parent module.
 """
 
 from . import (
-    assistant_complete,  # noqa: F401 — registers generate_*_complete internal events
-    assistant_hints,  # noqa: F401 — registers generate_call_complete internal event
-    assistant_progress,  # noqa: F401 — registers generate_text_progress internal event
     audio,  # noqa: F401 — registers generate_audio_* internal events
-    grade_complete,  # noqa: F401 — registers generate_*_complete internal events
-    grade_progress,  # noqa: F401 — registers generate_call_complete internal event
     next,  # noqa: F401 — registers attempt_next internal event
     proceed,  # noqa: F401 — registers attempt_proceed internal event
     start,  # noqa: F401 — registers attempt_start internal event

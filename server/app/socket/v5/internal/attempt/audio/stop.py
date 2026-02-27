@@ -1,11 +1,14 @@
-"""Internal handler: generate_audio_complete → attempt_progress(type=audio_ended).
+"""Internal handler: generate_audio_session_complete — canonical audio session teardown.
 
-Resolves chat_id from session and signals the client that the voice session has ended.
+Cleans up the audio session, emits attempt_audio_ended to notify client,
+and logs activity. All paths that stop an audio session (client stop,
+rate limit exceeded, etc.) emit generate_audio_session_complete to reach this handler.
 """
 
 from typing import Any
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
+from app.infra.v4.websocket.audio_lifecycle import cleanup_audio_session
 from app.infra.v4.websocket.session_store import get_session_by_group_id
 from app.main import get_internal_sio
 from app.socket.v5.internal.attempt.types import AttemptAudioEndedData
@@ -13,15 +16,20 @@ from app.socket.v5.internal.attempt.types import AttemptAudioEndedData
 internal_sio = get_internal_sio()
 
 
-@internal_sio.on("generate_audio_complete")  # type: ignore
-async def handle_audio_complete(data: dict[str, Any]) -> None:
-    """Translate generate_audio_complete → attempt_progress(type=audio_ended)."""
+@internal_sio.on("generate_audio_session_complete")  # type: ignore
+async def handle_audio_session_complete(data: dict[str, Any]) -> None:
+    """Clean up audio session and emit attempt_audio_ended."""
     sid = data.get("sid")
     group_id = data.get("group_id")
     if not sid:
         return
+
+    # Clean up session (stop adapter + remove from store)
     session = get_session_by_group_id(group_id) if group_id else None
     chat_id = session.chat_id if session else (group_id or "")
+    if session:
+        await cleanup_audio_session(session)
+
     await internal_sio.emit(
         "attempt_audio_ended",
         AttemptAudioEndedData(

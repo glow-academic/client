@@ -559,3 +559,31 @@ class GenerationErrorEvent(BaseModel):
     run_id: str | None = None
     success: bool = False
     message: str
+
+
+class GenerationMediaProgressEvent(BaseModel):
+    """Server-to-client: media generation progress (image/video)."""
+
+    modality: str  # "image" | "video"
+    artifact_type: str
+    group_id: str | None = None
+    run_id: str | None = None
+    resource_type: str | None = None
+    resource_id: str | None = None
+    status: str  # "started" | "in_progress"
+    message: str
+
+
+class GenerationMediaCompleteEvent(BaseModel):
+    """Server-to-client: media generation complete (image/video)."""
+
+    modality: str  # "image" | "video"
+    artifact_type: str
+    group_id: str | None = None
+    run_id: str | None = None
+    resource_type: str | None = None
+    resource_id: str | None = None
+    file_path: str | None = None
+    mime_type: str | None = None
+    file_size: int | None = None
+    upload_id: str | None = None

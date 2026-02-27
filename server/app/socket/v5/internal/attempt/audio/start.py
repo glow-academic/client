@@ -1,4 +1,4 @@
-"""Internal handler: generate_audio_start → attempt_progress(type=ready).
+"""Internal handler: generate_audio_session_start → attempt_audio_ready.
 
 Resolves chat_id from session and signals the client that the voice session is ready.
 """
@@ -12,9 +12,9 @@ from app.socket.v5.internal.attempt.types import AttemptAudioReadyData
 internal_sio = get_internal_sio()
 
 
-@internal_sio.on("generate_audio_start")  # type: ignore
-async def handle_audio_start(data: dict[str, Any]) -> None:
-    """Translate generate_audio_start → attempt_progress(type=ready)."""
+@internal_sio.on("generate_audio_session_start")  # type: ignore
+async def handle_audio_session_start(data: dict[str, Any]) -> None:
+    """Translate generate_audio_session_start → attempt_audio_ready."""
     group_id = data.get("group_id")
     sid = data.get("sid")
     if not sid or not group_id:
