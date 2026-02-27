@@ -54,7 +54,6 @@ from app.api.v4.artifacts.eval.types import (
     GetEvalApiResponse,
     GetEvalWebsocketResponse,
 )
-from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.eval_drafts.get import get_eval_drafts_entries_internal
@@ -780,26 +779,6 @@ async def get_eval_websocket(
         group_positions=None,
         run_rubrics=None,
         group_rubrics=None,
-    )
-
-    websocket_config = WebsocketArtifacts(
-        agents=data.config_agents,
-        models=data.config_models,
-        providers=data.config_providers,
-        tools=tools_result or None,
-        args=config_args,
-        args_outputs=config_args_outputs,
-        profile=config_profile_result or None,
-        params=GetEvalApiRequest(
-            eval_id=eval_id,
-            draft_id=draft_id,
-            agent_search=agent_search,
-            group_search=group_search,
-            available_model_runs_search=available_model_runs_search,
-            available_model_runs_agent_ids=available_model_runs_agent_ids,
-            available_model_runs_page=available_model_runs_page,
-            available_model_runs_page_size=available_model_runs_page_size,
-        ),
     )
 
     return GetEvalWebsocketResponse(

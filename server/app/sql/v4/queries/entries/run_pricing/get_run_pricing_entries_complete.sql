@@ -30,7 +30,6 @@ BEGIN
             'created_at', m.created_at,
             'updated_at', m.updated_at,
             'run_id', m.run_id,
-            'unit_id', m.unit_id,
             'generated', m.generated,
             'mcp', m.mcp,
             'active', m.active,

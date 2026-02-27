@@ -8,6 +8,7 @@ Contains data that cannot be introspected from the database or filesystem:
 - ARTIFACT_VIEWS: complex artifact → view mappings
 - VIEW_RESOURCES: view → resource mappings
 - ARTIFACTS_WITHOUT_SOCKET: artifacts that have save but no socket
+- MODALITY_EXCEPTIONS: resources with extra modalities beyond "call"
 - Naming exception tables for code generation
 """
 
@@ -47,6 +48,15 @@ SECTION_OVERRIDES: dict[str, str] = {
 # ---------------------------------------------------------------------------
 ROUTE_TO_ARTIFACT: dict[str, str] = {
     "staff": "profile",
+}
+
+# ---------------------------------------------------------------------------
+# Resources with extra modalities beyond "call" (plural resource → singular modality)
+# ---------------------------------------------------------------------------
+MODALITY_EXCEPTIONS: dict[str, str] = {
+    "documents": "document",
+    "images": "image",
+    "videos": "video",
 }
 
 # ---------------------------------------------------------------------------

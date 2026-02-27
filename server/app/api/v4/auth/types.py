@@ -59,7 +59,7 @@ class SettingsAgentToolEntry:
 
     agent_id: UUID
     tool_id: UUID
-    is_creatable: bool  # from tool_creatable flag
+    is_creatable: bool  # from tools_resource.operation == 'create'
     resource: str | None = None  # e.g. "names", "personas", "objectives"
     entry: str | None = None  # e.g. "contents", "hints", "feedbacks"
     artifact: str | None = None  # e.g. "attempt", "persona", "scenario"

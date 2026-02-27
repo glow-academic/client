@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
 """Generate registry files from database introspection and filesystem scanning.
 
+Each constant lives in its own file under server/app/registry/.
+
 Usage:
-    python server/scripts/generate_registry.py all          # Generate all registry files
-    python server/scripts/generate_registry.py resources     # Generate resources.py
-    python server/scripts/generate_registry.py entries       # Generate entries.py
-    python server/scripts/generate_registry.py entry_views   # Generate entry_views.py
-    python server/scripts/generate_registry.py relations     # Generate relations.py
-    python server/scripts/generate_registry.py artifacts     # Generate artifacts.py
-    python server/scripts/generate_registry.py routes        # Generate routes.py
-    python server/scripts/generate_registry.py validate      # Validate generated vs current
+    python server/scripts/generate_registry.py all              # Generate all registry files
+    python server/scripts/generate_registry.py resource_schemas  # Generate resource_schemas.py
+    python server/scripts/generate_registry.py entry_schemas     # Generate entry_schemas.py
+    python server/scripts/generate_registry.py entry_view_schemas # Generate entry_view_schemas.py + entry_view_names.py
+    python server/scripts/generate_registry.py artifact_flags    # Generate artifact_flags.py
+    python server/scripts/generate_registry.py artifact_resources # Generate artifact_resources.py
+    python server/scripts/generate_registry.py entry_resources   # Generate entry_resources.py + resource_entries.py
+    python server/scripts/generate_registry.py resource_modalities # Generate resource_modalities.py
+    python server/scripts/generate_registry.py artifacts         # Generate artifacts.py
+    python server/scripts/generate_registry.py artifact_routes   # Generate artifact_routes.py
+    python server/scripts/generate_registry.py role_artifacts    # Generate role_artifacts.py
+    python server/scripts/generate_registry.py validate          # Validate generated vs current
 """
 
 from __future__ import annotations
@@ -34,95 +40,88 @@ REGISTRY_DIR = SERVER_DIR / "app" / "registry"
 
 
 # ---------------------------------------------------------------------------
-# Individual generators
+# Individual generators — each returns (filename, content) pairs
 # ---------------------------------------------------------------------------
 
 
-def gen_resources() -> str:
-    """Generate resources.py content."""
+def gen_resource_schemas() -> list[tuple[str, str]]:
+    """Generate resource_schemas.py."""
     from scripts.registry_generators.resources_gen import generate_resource_schemas
-
-    from app.registry.manual import RESOURCE_OUTPUT_SCHEMAS
 
     schemas = generate_resource_schemas()
 
-    parts = [
-        '"""Per-resource-type column schemas.',
-        "",
-        "Business columns only — excludes system columns (id, created_at, active, generated, mcp)",
-        "that are present on every resource table.",
-        "",
-        "Type strings: text, int, float, numeric, bool, uuid, array, enum, timestamp",
-        '"""',
-        "",
-        format_dict_of_dicts(
-            "RESOURCE_SCHEMAS",
-            "dict[str, dict[str, str]]",
-            schemas,
-        ),
-        "",
-        "# resource_outputs_relation (resource_type → output schema fields)",
-        "# Simplified types (string/number/boolean) for the tool-facing output contract.",
-        _format_resource_output_schemas(RESOURCE_OUTPUT_SCHEMAS),
-        "",
-    ]
-    return "\n".join(parts)
+    content = "\n".join(
+        [
+            '"""Per-resource-type column schemas.',
+            "",
+            "Business columns only — excludes system columns (id, created_at, active, generated, mcp)",
+            "that are present on every resource table.",
+            "",
+            "Type strings: text, int, float, numeric, bool, uuid, array, enum, timestamp",
+            '"""',
+            "",
+            format_dict_of_dicts(
+                "RESOURCE_SCHEMAS",
+                "dict[str, dict[str, str]]",
+                schemas,
+            ),
+        ]
+    )
+    return [("resource_schemas.py", content)]
 
 
-def _format_resource_output_schemas(data: dict[str, list[dict[str, str]]]) -> str:
-    """Format RESOURCE_OUTPUT_SCHEMAS as Python source."""
-    lines = ["RESOURCE_OUTPUT_SCHEMAS: dict[str, list[dict[str, str]]] = {"]
-    for key in sorted(data.keys()):
-        items = data[key]
-        if len(items) == 1:
-            item = items[0]
-            lines.append(
-                f'    "{key}": [{{"field_type": "{item["field_type"]}", "name": "{item["name"]}"}}],'
-            )
-        else:
-            lines.append(f'    "{key}": [')
-            for item in items:
-                lines.append(
-                    f'        {{"field_type": "{item["field_type"]}", "name": "{item["name"]}"}},'
-                )
-            lines.append("    ],")
-    lines.append("}")
-    return "\n".join(lines)
+def gen_resource_output_schemas() -> list[tuple[str, str]]:
+    """Generate resource_output_schemas.py (re-export from manual.py)."""
+    content = "\n".join(
+        [
+            '"""Resource output schemas — curated tool output contracts.',
+            "",
+            "Simplified types (string/number/boolean) for the tool-facing output contract.",
+            "Not derivable from DB schema — hand-maintained in manual.py.",
+            '"""',
+            "",
+            "from app.registry.manual import RESOURCE_OUTPUT_SCHEMAS as RESOURCE_OUTPUT_SCHEMAS",
+        ]
+    )
+    return [("resource_output_schemas.py", content)]
 
 
-def gen_entries() -> str:
-    """Generate entries.py content."""
+def gen_entry_schemas() -> list[tuple[str, str]]:
+    """Generate entry_schemas.py."""
     from scripts.registry_generators.entries_gen import generate_entry_schemas
 
     schemas = generate_entry_schemas()
 
-    parts = [
-        '"""Per-entry-type column schemas for tool-targetable entries.',
-        "",
-        "Only includes entry types reachable via entry_tools_relation or tool_bindings_junction.",
-        "Business columns only — excludes system columns (id, created_at, active, generated, mcp).",
-        "",
-        "Entry type keys match the entry_type enum values (unprefixed).",
-        "For highlights/replacements, columns come from the standalone tables (not attempt_* variants).",
-        "",
-        "Type strings: text, int, float, numeric, bool, uuid, array, enum, timestamp",
-        '"""',
-        "",
-        format_dict_of_dicts(
-            "ENTRY_SCHEMAS",
-            "dict[str, dict[str, str]]",
-            schemas,
-        ),
-    ]
-    return "\n".join(parts)
+    content = "\n".join(
+        [
+            '"""Per-entry-type column schemas for tool-targetable entries.',
+            "",
+            "Only includes entry types reachable via entry_tools_relation or tool_bindings_junction.",
+            "Business columns only — excludes system columns (id, created_at, active, generated, mcp).",
+            "",
+            "Entry type keys match the entry_type enum values (unprefixed).",
+            "For highlights/replacements, columns come from the standalone tables (not attempt_* variants).",
+            "",
+            "Type strings: text, int, float, numeric, bool, uuid, array, enum, timestamp",
+            '"""',
+            "",
+            format_dict_of_dicts(
+                "ENTRY_SCHEMAS",
+                "dict[str, dict[str, str]]",
+                schemas,
+            ),
+        ]
+    )
+    return [("entry_schemas.py", content)]
 
 
-def gen_entry_views() -> str:
-    """Generate entry_views.py content."""
+def gen_entry_view_schemas() -> list[tuple[str, str]]:
+    """Generate entry_view_schemas.py and entry_view_names.py."""
     from scripts.registry_generators.entry_views_gen import generate_entry_view_schemas
 
     schemas, names = generate_entry_view_schemas()
 
+    # entry_view_schemas.py
     parts = [
         '"""Per-entry-type materialized view schemas.',
         "",
@@ -139,12 +138,9 @@ def gen_entry_views() -> str:
         "",
         "MV name mapping:",
     ]
-
-    # Add MV name mapping comments
     for entry_key in sorted(names.keys()):
         mv_name = names[entry_key]
         parts.append(f"  {entry_key:14s} → {mv_name}")
-
     parts.extend(
         [
             "",
@@ -156,6 +152,14 @@ def gen_entry_views() -> str:
                 "dict[str, dict[str, str]]",
                 schemas,
             ),
+        ]
+    )
+    schemas_content = "\n".join(parts)
+
+    # entry_view_names.py
+    names_content = "\n".join(
+        [
+            '"""Entry type → materialized view name mapping."""',
             "",
             format_dict_of_strings(
                 "ENTRY_VIEW_NAMES",
@@ -164,149 +168,237 @@ def gen_entry_views() -> str:
             ),
         ]
     )
-    return "\n".join(parts)
 
-
-def gen_relations() -> str:
-    """Generate relations.py content."""
-    from scripts.registry_generators.relations_gen import generate_all_relations
-
-    # Get resource keys that should have modalities
-    # Read current file to determine which resources have modalities
-    from app.registry.relations import RESOURCE_MODALITIES as current_modalities
-
-    relations = generate_all_relations(
-        modality_resource_keys=sorted(current_modalities.keys()),
-    )
-
-    parts = [
-        '"""',
-        "Domain registry — static enum-to-enum mappings.",
-        "Mirrors seed-only _relation tables from the database.",
-        '"""',
-        "",
-        "from __future__ import annotations",
-        "",
+    return [
+        ("entry_view_schemas.py", schemas_content),
+        ("entry_view_names.py", names_content),
     ]
 
-    # ARTIFACT_FLAGS
-    parts.append(
-        format_dict_of_frozensets(
-            "ARTIFACT_FLAGS",
-            "dict[str, frozenset[str]]",
-            relations["ARTIFACT_FLAGS"],
-            comment="artifact_flags_relation (artifact_type → flag_type)",
-        )
-    )
-    parts.append("")
 
-    # ARTIFACT_ROLES
-    parts.append(
-        format_dict_of_frozensets(
-            "ARTIFACT_ROLES",
-            "dict[str, frozenset[str]]",
-            relations["ARTIFACT_ROLES"],
-            comment="artifact_roles_relation (artifact_type → profile_type)",
-        )
-    )
-    parts.append("")
+def gen_artifact_flags() -> list[tuple[str, str]]:
+    """Generate artifact_flags.py from DB."""
+    from scripts.registry_generators.artifact_flags_gen import generate_artifact_flags
 
-    # ENTRY_RESOURCES
-    parts.append("# entry_resource_relation (entry_type → resource_type)")
-    parts.append("# Generated by: python server/scripts/generate_registry.py")
-    parts.append(
-        format_dict_of_frozensets(
-            "ENTRY_RESOURCES",
-            "dict[str, frozenset[str]]",
-            relations["ENTRY_RESOURCES"],
-        )
-    )
-    parts.append("")
+    flags = generate_artifact_flags()
 
-    # RESOURCE_ENTRIES
-    parts.append("# resource_entry_relation (resource_type → entry_type)")
-    parts.append("# Generated by: python server/scripts/generate_registry.py")
-    parts.append(
-        format_dict_of_frozensets(
-            "RESOURCE_ENTRIES",
-            "dict[str, frozenset[str]]",
-            relations["RESOURCE_ENTRIES"],
-        )
-    )
-    parts.append("")
-
-    # RESOURCE_MODALITIES
-    parts.append(
-        format_dict_of_frozensets(
-            "RESOURCE_MODALITIES",
-            "dict[str, frozenset[str]]",
-            relations["RESOURCE_MODALITIES"],
-            comment="resource_modalities_relation (resource_type → modality_type)",
-        )
-    )
-    parts.append("")
-
-    # VIEW_RESOURCES
-    parts.append(
-        format_dict_of_frozensets(
-            "VIEW_RESOURCES",
-            "dict[str, frozenset[str]]",
-            relations["VIEW_RESOURCES"],
-            comment="view_resource_relation (view_type → resource_type)",
-        )
-    )
-    parts.append("")
-
-    # ARTIFACT_RESOURCES
-    parts.append("# artifact_resources_relation (artifact_type → resource_type)")
-    parts.append("# Generated by: python server/scripts/generate_registry.py")
-    parts.append(
-        format_dict_of_frozensets(
-            "ARTIFACT_RESOURCES",
-            "dict[str, frozenset[str]]",
-            relations["ARTIFACT_RESOURCES"],
-        )
-    )
-    parts.append("")
-
-    # ARTIFACT_VIEWS
-    parts.append(
-        format_dict_of_frozensets(
-            "ARTIFACT_VIEWS",
-            "dict[str, frozenset[str]]",
-            relations["ARTIFACT_VIEWS"],
-            comment="artifact_view_relation (artifact_type → view_type)",
-        )
-    )
-    parts.append("")
-
-    # VIEW_ENTRIES
-    parts.append(
-        format_dict_of_frozensets(
-            "VIEW_ENTRIES",
-            "dict[str, frozenset[str]]",
-            relations["VIEW_ENTRIES"],
-            comment="view_entry_relation (view_type → entry_type)",
-        )
-    )
-    parts.append("")
-
-    # TOOL_ENTRY_TYPES
-    parts.append("# entry_tools_relation (tool_id → entry_type)")
-    parts.append(
-        format_dict_of_strings(
-            "TOOL_ENTRY_TYPES",
-            "dict[str, str]",
-            relations["TOOL_ENTRY_TYPES"],
-        )
-    )
-    parts.append("")
-
-    # ARTIFACT_ENTRIES (computed)
-    parts.extend(
+    content = "\n".join(
         [
-            "# artifact_view_relation + view_entry_relation combined (artifact_type → entry_types)",
-            "# Computed from ARTIFACT_VIEWS × VIEW_ENTRIES",
+            '"""artifact_flags_relation (artifact_type → flag_type)."""',
+            "",
+            "from __future__ import annotations",
+            "",
+            format_dict_of_frozensets(
+                "ARTIFACT_FLAGS",
+                "dict[str, frozenset[str]]",
+                flags,
+                comment="artifact_flags_relation (artifact_type → flag_type)",
+            ),
+        ]
+    )
+    return [("artifact_flags.py", content)]
+
+
+def gen_artifact_resources() -> list[tuple[str, str]]:
+    """Generate artifact_resources.py from DB FK introspection."""
+    from scripts.registry_generators.db import get_connection, group_by_key, query_rows
+    from scripts.registry_generators.relations_gen import ARTIFACT_RESOURCES_SQL
+
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        rows = query_rows(cur, ARTIFACT_RESOURCES_SQL)
+        grouped = group_by_key(rows)
+        cur.close()
+    finally:
+        conn.close()
+
+    content = "\n".join(
+        [
+            '"""artifact_resources_relation (artifact_type → resource_type)."""',
+            "",
+            "from __future__ import annotations",
+            "",
+            format_dict_of_frozensets(
+                "ARTIFACT_RESOURCES",
+                "dict[str, frozenset[str]]",
+                grouped,
+            ),
+        ]
+    )
+    return [("artifact_resources.py", content)]
+
+
+def gen_entry_resources() -> list[tuple[str, str]]:
+    """Generate entry_resources.py and resource_entries.py from DB FK introspection."""
+    from scripts.registry_generators.db import (
+        get_connection,
+        group_by_key,
+        invert_map,
+        query_rows,
+    )
+    from scripts.registry_generators.relations_gen import ENTRY_RESOURCES_SQL
+
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        rows = query_rows(cur, ENTRY_RESOURCES_SQL)
+        er_grouped = group_by_key(rows)
+        re_grouped = invert_map(er_grouped)
+        cur.close()
+    finally:
+        conn.close()
+
+    er_content = "\n".join(
+        [
+            '"""entry_resource_relation (entry_type → resource_type)."""',
+            "",
+            "from __future__ import annotations",
+            "",
+            format_dict_of_frozensets(
+                "ENTRY_RESOURCES",
+                "dict[str, frozenset[str]]",
+                er_grouped,
+            ),
+        ]
+    )
+
+    re_content = "\n".join(
+        [
+            '"""resource_entry_relation (resource_type → entry_type)."""',
+            "",
+            "from __future__ import annotations",
+            "",
+            format_dict_of_frozensets(
+                "RESOURCE_ENTRIES",
+                "dict[str, frozenset[str]]",
+                re_grouped,
+            ),
+        ]
+    )
+
+    return [
+        ("entry_resources.py", er_content),
+        ("resource_entries.py", re_content),
+    ]
+
+
+def gen_resource_modalities() -> list[tuple[str, str]]:
+    """Generate resource_modalities.py from convention + exceptions."""
+    from scripts.registry_generators.resource_modalities_gen import (
+        generate_resource_modalities,
+    )
+
+    # Read current file to determine which resources have modalities
+    from app.registry.resource_modalities import RESOURCE_MODALITIES as current
+
+    modalities = generate_resource_modalities(sorted(current.keys()))
+
+    content = "\n".join(
+        [
+            '"""resource_modalities_relation (resource_type → modality_type)."""',
+            "",
+            "from __future__ import annotations",
+            "",
+            format_dict_of_frozensets(
+                "RESOURCE_MODALITIES",
+                "dict[str, frozenset[str]]",
+                modalities,
+            ),
+        ]
+    )
+    return [("resource_modalities.py", content)]
+
+
+def gen_artifact_roles() -> list[tuple[str, str]]:
+    """Generate artifact_roles.py (re-export from manual.py)."""
+    content = "\n".join(
+        [
+            '"""artifact_roles_relation (artifact_type → profile_type).',
+            "",
+            "Not derivable from DB — pure business logic, maintained in manual.py.",
+            '"""',
+            "",
+            "from app.registry.manual import ARTIFACT_ROLES as ARTIFACT_ROLES",
+        ]
+    )
+    return [("artifact_roles.py", content)]
+
+
+def gen_artifact_views() -> list[tuple[str, str]]:
+    """Generate artifact_views.py (re-export from manual.py)."""
+    content = "\n".join(
+        [
+            '"""artifact_view_relation (artifact_type → view_type).',
+            "",
+            "Not derivable — maintained in manual.py.",
+            '"""',
+            "",
+            "from app.registry.manual import ARTIFACT_VIEWS as ARTIFACT_VIEWS",
+        ]
+    )
+    return [("artifact_views.py", content)]
+
+
+def gen_view_entries() -> list[tuple[str, str]]:
+    """Generate view_entries.py (re-export from manual.py)."""
+    content = "\n".join(
+        [
+            '"""view_entry_relation (view_type → entry_type).',
+            "",
+            "Not derivable — maintained in manual.py.",
+            '"""',
+            "",
+            "from app.registry.manual import VIEW_ENTRIES as VIEW_ENTRIES",
+        ]
+    )
+    return [("view_entries.py", content)]
+
+
+def gen_view_resources() -> list[tuple[str, str]]:
+    """Generate view_resources.py (re-export from manual.py)."""
+    content = "\n".join(
+        [
+            '"""view_resource_relation (view_type → resource_type).',
+            "",
+            "Not derivable — maintained in manual.py.",
+            '"""',
+            "",
+            "from app.registry.manual import VIEW_RESOURCES as VIEW_RESOURCES",
+        ]
+    )
+    return [("view_resources.py", content)]
+
+
+def gen_tool_entry_types() -> list[tuple[str, str]]:
+    """Generate tool_entry_types.py (re-export from manual.py)."""
+    content = "\n".join(
+        [
+            '"""entry_tools_relation (tool_id → entry_type).',
+            "",
+            "Hardcoded UUIDs — not derivable.",
+            "Maintained in manual.py.",
+            '"""',
+            "",
+            "from app.registry.manual import TOOL_ENTRY_TYPES as TOOL_ENTRY_TYPES",
+        ]
+    )
+    return [("tool_entry_types.py", content)]
+
+
+def gen_artifact_entries() -> list[tuple[str, str]]:
+    """Generate artifact_entries.py (computed from ARTIFACT_VIEWS × VIEW_ENTRIES)."""
+    content = "\n".join(
+        [
+            '"""artifact_entry_relation (artifact_type → entry_types).',
+            "",
+            "Computed from ARTIFACT_VIEWS × VIEW_ENTRIES.",
+            '"""',
+            "",
+            "from __future__ import annotations",
+            "",
+            "from app.registry.artifact_views import ARTIFACT_VIEWS",
+            "from app.registry.view_entries import VIEW_ENTRIES",
+            "",
             "ARTIFACT_ENTRIES: dict[str, list[str]] = {}",
             "for _art, _views in ARTIFACT_VIEWS.items():",
             "    _ents: set[str] = set()",
@@ -317,12 +409,11 @@ def gen_relations() -> str:
             "        ARTIFACT_ENTRIES[_art] = sorted(_ents)",
         ]
     )
+    return [("artifact_entries.py", content)]
 
-    return "\n".join(parts)
 
-
-def gen_artifacts() -> str:
-    """Generate artifacts.py content."""
+def gen_artifacts() -> list[tuple[str, str]]:
+    """Generate artifacts.py."""
     from scripts.registry_generators.artifacts_gen import generate_artifacts
 
     artifacts = generate_artifacts(PROJECT_ROOT)
@@ -386,7 +477,7 @@ def gen_artifacts() -> str:
         '_SOCKET_EVENTS = frozenset({"generate", "complete", "progress", "error"})',
         "",
         "# ---------------------------------------------------------------------------",
-        "# 17 CRUD artifacts",
+        f"# {len(crud_items)} CRUD artifacts",
         "# ---------------------------------------------------------------------------",
         "_CRUD: dict[str, tuple[str, bool]] = {",
         "    # (section, has_socket)",
@@ -401,7 +492,7 @@ def gen_artifacts() -> str:
             "}",
             "",
             "# ---------------------------------------------------------------------------",
-            "# 18 view artifacts (endpoints derived from each __init__.py)",
+            f"# {len(view_items)} view artifacts (endpoints derived from each __init__.py)",
             "# ---------------------------------------------------------------------------",
             "_VIEWS: dict[str, tuple[str, frozenset[str]]] = {",
             "    # (section, endpoints)",
@@ -455,47 +546,80 @@ def gen_artifacts() -> str:
         ]
     )
 
-    return "\n".join(parts)
+    return [("artifacts.py", "\n".join(parts))]
 
 
-def gen_routes() -> str:
-    """Generate routes.py content."""
-    from scripts.registry_generators.routes_gen import (
-        generate_artifact_routes,
-    )
+def gen_artifact_routes() -> list[tuple[str, str]]:
+    """Generate artifact_routes.py from filesystem scanning."""
+    from scripts.registry_generators.routes_gen import generate_artifact_routes
 
-    # We need the full artifacts dict to map routes
     from app.registry.artifacts import ARTIFACTS
 
     artifact_routes = generate_artifact_routes(PROJECT_ROOT, ARTIFACTS)
 
-    # ROLE_ARTIFACTS comes from route_permissions.py (has view artifacts too)
-    # Import the current one since it includes view artifacts
-    from app.registry.routes import ROLE_ARTIFACTS as current_role_artifacts
+    content = "\n".join(
+        [
+            '"""artifact → route paths it unlocks."""',
+            "",
+            "from __future__ import annotations",
+            "",
+            format_dict_of_frozensets(
+                "ARTIFACT_ROUTES",
+                "dict[str, frozenset[str]]",
+                artifact_routes,
+            ),
+        ]
+    )
+    return [("artifact_routes.py", content)]
 
-    parts = [
-        '"""',
-        "Route-derived registry constants.",
-        "Derived from ROUTE_PERMISSIONS in route_permissions.py.",
-        '"""',
-        "",
-        "from __future__ import annotations",
-        "",
-        "# role → artifacts accessible to that role",
-        format_dict_of_frozensets(
-            "ROLE_ARTIFACTS",
-            "dict[str, frozenset[str]]",
-            {k: sorted(v) for k, v in current_role_artifacts.items()},
-        ),
-        "",
-        "# artifact → route paths it unlocks",
-        format_dict_of_frozensets(
-            "ARTIFACT_ROUTES",
-            "dict[str, frozenset[str]]",
-            artifact_routes,
-        ),
-    ]
-    return "\n".join(parts)
+
+def gen_role_artifacts() -> list[tuple[str, str]]:
+    """Generate role_artifacts.py from ROUTE_PERMISSIONS."""
+    from scripts.registry_generators.role_artifacts_gen import generate_role_artifacts
+
+    role_artifacts = generate_role_artifacts()
+
+    content = "\n".join(
+        [
+            '"""role → artifacts accessible to that role."""',
+            "",
+            "from __future__ import annotations",
+            "",
+            format_dict_of_frozensets(
+                "ROLE_ARTIFACTS",
+                "dict[str, frozenset[str]]",
+                role_artifacts,
+            ),
+        ]
+    )
+    return [("role_artifacts.py", content)]
+
+
+# ---------------------------------------------------------------------------
+# All generators registry
+# ---------------------------------------------------------------------------
+
+# Each generator returns a list of (filename, content) pairs.
+# Some generators produce multiple files (e.g. entry_view_schemas → 2 files).
+FILE_GENERATORS: dict[str, callable] = {
+    "resource_schemas": gen_resource_schemas,
+    "resource_output_schemas": gen_resource_output_schemas,
+    "entry_schemas": gen_entry_schemas,
+    "entry_view_schemas": gen_entry_view_schemas,
+    "artifact_flags": gen_artifact_flags,
+    "artifact_resources": gen_artifact_resources,
+    "entry_resources": gen_entry_resources,
+    "resource_modalities": gen_resource_modalities,
+    "artifact_roles": gen_artifact_roles,
+    "artifact_views": gen_artifact_views,
+    "view_entries": gen_view_entries,
+    "view_resources": gen_view_resources,
+    "tool_entry_types": gen_tool_entry_types,
+    "artifact_entries": gen_artifact_entries,
+    "artifacts": gen_artifacts,
+    "artifact_routes": gen_artifact_routes,
+    "role_artifacts": gen_role_artifacts,
+}
 
 
 # ---------------------------------------------------------------------------
@@ -505,49 +629,42 @@ def gen_routes() -> str:
 
 def validate() -> bool:
     """Compare generated output against current files. Returns True if all match."""
-    generators = {
-        "resources.py": gen_resources,
-        "entries.py": gen_entries,
-        "entry_views.py": gen_entry_views,
-        "relations.py": gen_relations,
-        "artifacts.py": gen_artifacts,
-        "routes.py": gen_routes,
-    }
-
     all_match = True
-    for filename, gen_func in generators.items():
-        filepath = REGISTRY_DIR / filename
-        if not filepath.exists():
-            print(f"MISSING: {filename}")
-            all_match = False
-            continue
-
-        current = filepath.read_text()
+    for name, gen_func in FILE_GENERATORS.items():
         try:
-            generated = gen_func()
+            file_pairs = gen_func()
         except Exception as e:
-            print(f"ERROR generating {filename}: {e}")
+            print(f"ERROR generating {name}: {e}")
             all_match = False
             continue
 
-        # Normalize whitespace for comparison (ruff may format differently)
-        current_lines = current.strip().splitlines()
-        generated_lines = generated.strip().splitlines()
+        for filename, generated in file_pairs:
+            filepath = REGISTRY_DIR / filename
+            if not filepath.exists():
+                print(f"MISSING: {filename}")
+                all_match = False
+                continue
 
-        if current_lines != generated_lines:
-            print(f"DIFF: {filename}")
-            diff = difflib.unified_diff(
-                current_lines,
-                generated_lines,
-                fromfile=f"current/{filename}",
-                tofile=f"generated/{filename}",
-                lineterm="",
-            )
-            for line in list(diff)[:50]:  # Limit diff output
-                print(f"  {line}")
-            all_match = False
-        else:
-            print(f"OK: {filename}")
+            current = filepath.read_text()
+
+            # Normalize whitespace for comparison (ruff may format differently)
+            current_lines = current.strip().splitlines()
+            generated_lines = generated.strip().splitlines()
+
+            if current_lines != generated_lines:
+                print(f"DIFF: {filename}")
+                diff = difflib.unified_diff(
+                    current_lines,
+                    generated_lines,
+                    fromfile=f"current/{filename}",
+                    tofile=f"generated/{filename}",
+                    lineterm="",
+                )
+                for line in list(diff)[:50]:
+                    print(f"  {line}")
+                all_match = False
+            else:
+                print(f"OK: {filename}")
 
     return all_match
 
@@ -564,36 +681,29 @@ def main():
 
     command = sys.argv[1]
 
-    file_generators = {
-        "resources": ("resources.py", gen_resources),
-        "entries": ("entries.py", gen_entries),
-        "entry_views": ("entry_views.py", gen_entry_views),
-        "relations": ("relations.py", gen_relations),
-        "artifacts": ("artifacts.py", gen_artifacts),
-        "routes": ("routes.py", gen_routes),
-    }
-
     if command == "validate":
         ok = validate()
         sys.exit(0 if ok else 1)
     elif command == "all":
-        for name, (filename, gen_func) in file_generators.items():
-            print(f"Generating {filename}...")
+        for name, gen_func in FILE_GENERATORS.items():
+            print(f"Generating {name}...")
             try:
-                content = gen_func()
-                write_registry_file(REGISTRY_DIR / filename, content)
-                print(f"  → {filename} written")
+                file_pairs = gen_func()
+                for filename, content in file_pairs:
+                    write_registry_file(REGISTRY_DIR / filename, content)
+                    print(f"  → {filename} written")
             except Exception as e:
                 print(f"  ERROR: {e}")
                 import traceback
 
                 traceback.print_exc()
-    elif command in file_generators:
-        filename, gen_func = file_generators[command]
-        print(f"Generating {filename}...")
-        content = gen_func()
-        write_registry_file(REGISTRY_DIR / filename, content)
-        print(f"  → {filename} written")
+    elif command in FILE_GENERATORS:
+        gen_func = FILE_GENERATORS[command]
+        print(f"Generating {command}...")
+        file_pairs = gen_func()
+        for filename, content in file_pairs:
+            write_registry_file(REGISTRY_DIR / filename, content)
+            print(f"  → {filename} written")
     else:
         print(f"Unknown command: {command}")
         print(__doc__)

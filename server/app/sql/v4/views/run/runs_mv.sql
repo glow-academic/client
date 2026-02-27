@@ -61,21 +61,21 @@ configs_agg AS (
     WHERE ce.run_id IS NOT NULL
     GROUP BY ce.run_id
 ),
--- Per pricing type, get (count, unit_id, pricing_id) as separate CTEs
+-- Per pricing type, get (count, pricing_id) as separate CTEs
 pricing_input AS (
-    SELECT rpe.run_id, rpe.count::int AS pricing_count, rpe.unit_id, rppc.pricing_id
+    SELECT rpe.run_id, rpe.count::int AS pricing_count, rppc.pricing_id
     FROM run_pricing_entry rpe
     JOIN run_pricing_pricing_connection rppc ON rppc.run_pricing_id = rpe.id AND rppc.active = TRUE
     WHERE rpe.active = TRUE AND rpe.pricing_type = 'input'
 ),
 pricing_output AS (
-    SELECT rpe.run_id, rpe.count::int AS pricing_count, rpe.unit_id, rppc.pricing_id
+    SELECT rpe.run_id, rpe.count::int AS pricing_count, rppc.pricing_id
     FROM run_pricing_entry rpe
     JOIN run_pricing_pricing_connection rppc ON rppc.run_pricing_id = rpe.id AND rppc.active = TRUE
     WHERE rpe.active = TRUE AND rpe.pricing_type = 'output'
 ),
 pricing_cached AS (
-    SELECT rpe.run_id, rpe.count::int AS pricing_count, rpe.unit_id, rppc.pricing_id
+    SELECT rpe.run_id, rpe.count::int AS pricing_count, rppc.pricing_id
     FROM run_pricing_entry rpe
     JOIN run_pricing_pricing_connection rppc ON rppc.run_pricing_id = rpe.id AND rppc.active = TRUE
     WHERE rpe.active = TRUE AND rpe.pricing_type = 'cached'
@@ -109,13 +109,10 @@ SELECT
 
     -- Pricing flat columns (cost computed at runtime in Python)
     pi.pricing_count AS input_pricing_count,
-    pi.unit_id AS input_pricing_unit_id,
     pi.pricing_id AS input_pricing_pricing_id,
     po.pricing_count AS output_pricing_count,
-    po.unit_id AS output_pricing_unit_id,
     po.pricing_id AS output_pricing_pricing_id,
     pc.pricing_count AS cached_pricing_count,
-    pc.unit_id AS cached_pricing_unit_id,
     pc.pricing_id AS cached_pricing_pricing_id,
 
     -- Debug info

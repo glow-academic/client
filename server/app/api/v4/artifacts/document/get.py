@@ -53,7 +53,6 @@ from app.api.v4.artifacts.document.types import (
     GetDocumentApiResponse,
     GetDocumentWebsocketResponse,
 )
-from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.document_drafts.get import get_document_drafts_entries_internal
@@ -838,17 +837,6 @@ async def get_document_websocket(
         uploads=current.uploads if current else None,
         images=current.images if current else None,
         texts=current.texts if current else None,
-    )
-
-    websocket_config = WebsocketArtifacts(
-        agents=data.config_agent_resources,
-        models=data.config_model_resources,
-        providers=data.config_provider_resources,
-        tools=tools_result or None,
-        args=config_args,
-        args_outputs=config_args_outputs,
-        profile=config_profile_result or None,
-        params=GetDocumentApiRequest(document_id=document_id, draft_id=draft_id),
     )
 
     return GetDocumentWebsocketResponse(

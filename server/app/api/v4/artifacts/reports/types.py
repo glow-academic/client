@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.artifacts.types import FilterOption, WebsocketArtifacts
+from app.api.v4.artifacts.types import FilterOption, InternalResponseBase
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 
 
@@ -308,11 +308,8 @@ class ReportsWebsocketResources(BaseModel):
     pass
 
 
-class GetReportsWebsocketResponse(BaseModel):
+class GetReportsWebsocketResponse(InternalResponseBase):
     """Websocket-facing reports response with hydrated resources."""
 
     entries: ReportsWebsocketEntries | None = None
     resources: ReportsWebsocketResources
-    artifacts: WebsocketArtifacts | None = None
-    resource_agent_ids: dict[str, UUID | None] | None = None
-    group_id: UUID | None = None

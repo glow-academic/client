@@ -69,7 +69,6 @@ from app.api.v4.artifacts.agent.types import (
     GetAgentApiResponse,
     GetAgentWebsocketResponse,
 )
-from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.agent_drafts.get import get_agent_drafts_entries_internal
@@ -882,17 +881,6 @@ async def get_agent_websocket(
         voices=current.voices if current else [],
     )
 
-    websocket_config = WebsocketArtifacts(
-        agents=data.config_agents,
-        models=current.models if current else [],
-        providers=data.config_providers,
-        tools=config_tools,
-        args=config_args,
-        args_outputs=config_args_outputs,
-        profile=config_profile_result or None,
-        params=GetAgentApiRequest(agent_id=agent_id, draft_id=draft_id),
-    )
-
     entries = AgentWebsocketEntries(
         draft_agent=data.draft_view,
         runs=runs_result,
@@ -901,7 +889,14 @@ async def get_agent_websocket(
     return GetAgentWebsocketResponse(
         entries=entries if data.draft_view or runs_result else None,
         resources=websocket_resources,
-        artifacts=websocket_config,
+        agents=data.config_agents,
+        models=current.models if current else [],
+        providers=data.config_providers,
+        tools=config_tools,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=config_profile_result or None,
+        params=GetAgentApiRequest(agent_id=agent_id, draft_id=draft_id),
         resource_agent_ids=data.agent_ids,
         group_id=data.group_id,
     )

@@ -7,7 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.api.v4.artifacts.types import WebsocketArtifacts
+from app.api.v4.artifacts.types import InternalResponseBase
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.api.v4.types import BaseResourceSection
 from app.sql.types import (
@@ -84,12 +84,9 @@ class DepartmentWebsocketResources(BaseModel):
     settings: list[QGetSettingsV4Item] | None = None
 
 
-class GetDepartmentWebsocketResponse(BaseModel):
+class GetDepartmentWebsocketResponse(InternalResponseBase):
     entries: DepartmentWebsocketEntries | None = None
     resources: DepartmentWebsocketResources
-    artifacts: WebsocketArtifacts | None = None
-    resource_agent_ids: dict[str, UUID | None] | None = None
-    group_id: UUID | None = None
 
 
 class DepartmentResourceAction(BaseModel):

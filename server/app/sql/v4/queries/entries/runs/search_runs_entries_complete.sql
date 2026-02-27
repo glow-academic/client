@@ -19,11 +19,8 @@ CREATE OR REPLACE FUNCTION public.api_search_runs_entries_v4(
     limit_count integer DEFAULT 20,
     offset_count integer DEFAULT 0,
     group_id uuid DEFAULT NULL,
-    input_pricing_unit_id uuid DEFAULT NULL,
     input_pricing_pricing_id uuid DEFAULT NULL,
-    output_pricing_unit_id uuid DEFAULT NULL,
     output_pricing_pricing_id uuid DEFAULT NULL,
-    cached_pricing_unit_id uuid DEFAULT NULL,
     cached_pricing_pricing_id uuid DEFAULT NULL
 ) RETURNS TABLE(
     items jsonb
@@ -46,24 +43,18 @@ BEGIN
             'model_ids', m.model_ids,
             'provider_ids', m.provider_ids,
             'input_pricing_count', m.input_pricing_count,
-            'input_pricing_unit_id', m.input_pricing_unit_id,
             'input_pricing_pricing_id', m.input_pricing_pricing_id,
             'output_pricing_count', m.output_pricing_count,
-            'output_pricing_unit_id', m.output_pricing_unit_id,
             'output_pricing_pricing_id', m.output_pricing_pricing_id,
             'cached_pricing_count', m.cached_pricing_count,
-            'cached_pricing_unit_id', m.cached_pricing_unit_id,
             'cached_pricing_pricing_id', m.cached_pricing_pricing_id,
             'debug_info', m.debug_info
         ) AS row_data
         FROM runs_mv m
         WHERE true
           AND (group_id IS NULL OR m.group_id = group_id)
-          AND (input_pricing_unit_id IS NULL OR m.input_pricing_unit_id = input_pricing_unit_id)
           AND (input_pricing_pricing_id IS NULL OR m.input_pricing_pricing_id = input_pricing_pricing_id)
-          AND (output_pricing_unit_id IS NULL OR m.output_pricing_unit_id = output_pricing_unit_id)
           AND (output_pricing_pricing_id IS NULL OR m.output_pricing_pricing_id = output_pricing_pricing_id)
-          AND (cached_pricing_unit_id IS NULL OR m.cached_pricing_unit_id = cached_pricing_unit_id)
           AND (cached_pricing_pricing_id IS NULL OR m.cached_pricing_pricing_id = cached_pricing_pricing_id)
         ORDER BY m.run_created_at DESC
         LIMIT limit_count

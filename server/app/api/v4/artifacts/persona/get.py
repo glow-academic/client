@@ -68,7 +68,6 @@ from app.api.v4.artifacts.persona.types import (
     PersonaWebsocketEntries,
     PersonaWebsocketResources,
 )
-from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.persona_drafts.get import get_persona_drafts_entries_internal
@@ -1044,7 +1043,22 @@ async def get_persona_websocket(
         runs=runs_result,
     )
 
-    websocket_config = WebsocketArtifacts(
+    return GetPersonaWebsocketResponse(
+        entries=entries if draft_persona or runs_result else None,
+        resources=PersonaWebsocketResources(
+            names=all_resources.names if all_resources else None,
+            descriptions=all_resources.descriptions if all_resources else None,
+            colors=all_resources.colors if all_resources else None,
+            icons=all_resources.icons if all_resources else None,
+            instructions=all_resources.instructions if all_resources else None,
+            flags=all_resources.flags if all_resources else None,
+            departments=all_resources.departments if all_resources else None,
+            parameter_fields=all_resources.parameter_fields if all_resources else None,
+            examples=all_resources.examples if all_resources else None,
+            parameters=all_resources.parameters if all_resources else None,
+            voices=all_resources.voices if all_resources else None,
+            fields=all_resources.fields if all_resources else None,
+        ),
         agents=data.config_agent_resources,
         models=data.config_model_resources,
         providers=data.config_provider_resources,
@@ -1067,25 +1081,6 @@ async def get_persona_websocket(
             icon_show_selected=icon_show_selected,
             parameter_field_show_selected=parameter_field_show_selected,
         ),
-    )
-
-    return GetPersonaWebsocketResponse(
-        entries=entries if draft_persona or runs_result else None,
-        resources=PersonaWebsocketResources(
-            names=all_resources.names if all_resources else None,
-            descriptions=all_resources.descriptions if all_resources else None,
-            colors=all_resources.colors if all_resources else None,
-            icons=all_resources.icons if all_resources else None,
-            instructions=all_resources.instructions if all_resources else None,
-            flags=all_resources.flags if all_resources else None,
-            departments=all_resources.departments if all_resources else None,
-            parameter_fields=all_resources.parameter_fields if all_resources else None,
-            examples=all_resources.examples if all_resources else None,
-            parameters=all_resources.parameters if all_resources else None,
-            voices=all_resources.voices if all_resources else None,
-            fields=all_resources.fields if all_resources else None,
-        ),
-        artifacts=websocket_config,
         resource_agent_ids=data.agent_ids,
         group_id=data.group_id,
     )

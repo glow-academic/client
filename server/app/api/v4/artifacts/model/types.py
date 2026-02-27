@@ -13,7 +13,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.artifacts.types import WebsocketArtifacts
+from app.api.v4.artifacts.types import InternalResponseBase
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.sql.types import (
@@ -289,14 +289,11 @@ class ModelWebsocketResources(BaseModel):
     voices: list[QGetVoicesV4Item] | None = None
 
 
-class GetModelWebsocketResponse(BaseModel):
+class GetModelWebsocketResponse(InternalResponseBase):
     """Minimal response for model websocket generation handlers."""
 
-    group_id: UUID | None = None
     entries: ModelWebsocketEntries | None = None
-    resource_agent_ids: dict[str, UUID | None] | None = None
     resources: ModelWebsocketResources
-    artifacts: WebsocketArtifacts | None = None
 
 
 # =============================================================================

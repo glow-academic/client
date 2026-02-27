@@ -10,7 +10,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.api.v4.artifacts.types import WebsocketArtifacts
+from app.api.v4.artifacts.types import InternalResponseBase
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.sql.types import (
@@ -227,7 +227,7 @@ class GetCohortApiResponse(BaseModel):
     personas: list[QGetPersonasV4Item] | None = None
 
 
-class GetCohortWebsocketResponse(BaseModel):
+class GetCohortWebsocketResponse(InternalResponseBase):
     """Minimal response for WebSocket handlers (get_cohort_websocket).
 
     Contains only what's needed for AI generation:
@@ -237,11 +237,8 @@ class GetCohortWebsocketResponse(BaseModel):
     - selected resources plus config resources for Jinja context
     """
 
-    group_id: UUID | None = None
     entries: "CohortWebsocketEntries | None" = None
-    resource_agent_ids: dict[str, UUID | None] | None = None
     resources: "CohortWebsocketResources"
-    artifacts: WebsocketArtifacts | None = None
 
 
 class CohortWebsocketEntries(BaseModel):

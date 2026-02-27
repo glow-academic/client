@@ -27,7 +27,7 @@ from app.api.v4.artifacts.pricing.types import (
     PricingWebsocketEntries,
     PricingWebsocketResources,
 )
-from app.api.v4.artifacts.types import FilterOption, WebsocketArtifacts
+from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.groups.get import get_group_list_view_internal
 from app.api.v4.entries.runs.search import (
@@ -223,7 +223,12 @@ async def get_pricing_websocket(
 
     insights_result = await fetch_insights()
 
-    websocket_config = WebsocketArtifacts(
+    return GetPricingWebsocketResponse(
+        entries=PricingWebsocketEntries(
+            runs=data.runs_today,
+            pricing_insights=insights_result or None,
+        ),
+        resources=PricingWebsocketResources(),
         params=GetPricingApiRequest(pricing_id=pricing_id, draft_id=draft_id),
         agents=data.config_agents or None,
         models=data.config_models or None,
@@ -232,15 +237,6 @@ async def get_pricing_websocket(
         args=config_args,
         args_outputs=config_args_outputs,
         profile=data.config_profile or None,
-    )
-
-    return GetPricingWebsocketResponse(
-        entries=PricingWebsocketEntries(
-            runs=data.runs_today,
-            pricing_insights=insights_result or None,
-        ),
-        resources=PricingWebsocketResources(),
-        artifacts=websocket_config,
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
     )

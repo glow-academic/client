@@ -315,6 +315,7 @@ _ALL_RESOURCES = [
     "models",
     "names",
     "objectives",
+    "operations",
     "options",
     "parameter_fields",
     "parameters",

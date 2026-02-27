@@ -38,7 +38,6 @@ class RunPricingItem(BaseModel):
 
     pricing_type: str | None = None
     count: int = 0
-    unit_id: UUID | None = None
     pricing_id: UUID | None = None
 
 
@@ -75,11 +74,8 @@ async def search_runs_entries_internal(
     limit_count: int | None = 20,
     offset_count: int | None = 0,
     group_id: UUID | None = None,
-    input_pricing_unit_id: UUID | None = None,
     input_pricing_pricing_id: UUID | None = None,
-    output_pricing_unit_id: UUID | None = None,
     output_pricing_pricing_id: UUID | None = None,
-    cached_pricing_unit_id: UUID | None = None,
     cached_pricing_pricing_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> list[dict]:
@@ -95,20 +91,11 @@ async def search_runs_entries_internal(
             "limit_count": limit_count,
             "offset_count": offset_count,
             "group_id": str(group_id) if group_id else None,
-            "input_pricing_unit_id": str(input_pricing_unit_id)
-            if input_pricing_unit_id
-            else None,
             "input_pricing_pricing_id": str(input_pricing_pricing_id)
             if input_pricing_pricing_id
             else None,
-            "output_pricing_unit_id": str(output_pricing_unit_id)
-            if output_pricing_unit_id
-            else None,
             "output_pricing_pricing_id": str(output_pricing_pricing_id)
             if output_pricing_pricing_id
-            else None,
-            "cached_pricing_unit_id": str(cached_pricing_unit_id)
-            if cached_pricing_unit_id
             else None,
             "cached_pricing_pricing_id": str(cached_pricing_pricing_id)
             if cached_pricing_pricing_id
@@ -126,11 +113,8 @@ async def search_runs_entries_internal(
         limit_count=limit_count,
         offset_count=offset_count,
         group_id=group_id,
-        input_pricing_unit_id=input_pricing_unit_id,
         input_pricing_pricing_id=input_pricing_pricing_id,
-        output_pricing_unit_id=output_pricing_unit_id,
         output_pricing_pricing_id=output_pricing_pricing_id,
-        cached_pricing_unit_id=cached_pricing_unit_id,
         cached_pricing_pricing_id=cached_pricing_pricing_id,
     )
     result = cast(
@@ -202,7 +186,6 @@ def _build_pricing_list(item: object) -> list[RunPricingItem]:
             RunPricingItem(
                 pricing_type="input",
                 count=item.input_pricing_count or 0,
-                unit_id=item.input_pricing_unit_id,
                 pricing_id=item.input_pricing_pricing_id,
             )
         )
@@ -211,7 +194,6 @@ def _build_pricing_list(item: object) -> list[RunPricingItem]:
             RunPricingItem(
                 pricing_type="output",
                 count=item.output_pricing_count or 0,
-                unit_id=item.output_pricing_unit_id,
                 pricing_id=item.output_pricing_pricing_id,
             )
         )
@@ -220,7 +202,6 @@ def _build_pricing_list(item: object) -> list[RunPricingItem]:
             RunPricingItem(
                 pricing_type="cached",
                 count=item.cached_pricing_count or 0,
-                unit_id=item.cached_pricing_unit_id,
                 pricing_id=item.cached_pricing_pricing_id,
             )
         )

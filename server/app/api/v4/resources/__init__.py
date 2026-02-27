@@ -734,13 +734,9 @@ router.include_router(texts_router)
 router.include_router(texts_get_router)
 router.include_router(texts_search_router)
 from app.api.v4.resources.uploads.create import router as uploads_router
-from app.api.v4.resources.uploads.download import router as uploads_download_router
 from app.api.v4.resources.uploads.get import router as uploads_get_router
 from app.api.v4.resources.uploads.search import router as uploads_search_router
-from app.api.v4.resources.uploads.upload import router as uploads_upload_router
 
 router.include_router(uploads_router)
-router.include_router(uploads_download_router)
 router.include_router(uploads_get_router)
 router.include_router(uploads_search_router)
-router.include_router(uploads_upload_router)

@@ -10,5 +10,4 @@ class RunPricingEntryData(BaseModel):
     count: int | None = None
     created_at: str | None = None
     run_id: str | None = None
-    unit_id: str | None = None
     id: str | None = None

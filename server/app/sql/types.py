@@ -10968,7 +10968,6 @@ class SearchRunPricingEntriesSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     run_id: UUID | None = None
-    unit_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -10976,7 +10975,6 @@ class SearchRunPricingEntriesSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.run_id,
-            self.unit_id,
         )
 
 
@@ -10989,7 +10987,6 @@ class SearchRunPricingEntriesApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     run_id: UUID | None = None
-    unit_id: UUID | None = None
 
 
 class SearchRunPricingEntriesApiResponse(BaseModel):
@@ -11058,11 +11055,8 @@ class SearchRunsEntriesSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     group_id: UUID | None = None
-    input_pricing_unit_id: UUID | None = None
     input_pricing_pricing_id: UUID | None = None
-    output_pricing_unit_id: UUID | None = None
     output_pricing_pricing_id: UUID | None = None
-    cached_pricing_unit_id: UUID | None = None
     cached_pricing_pricing_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -11071,11 +11065,8 @@ class SearchRunsEntriesSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.group_id,
-            self.input_pricing_unit_id,
             self.input_pricing_pricing_id,
-            self.output_pricing_unit_id,
             self.output_pricing_pricing_id,
-            self.cached_pricing_unit_id,
             self.cached_pricing_pricing_id,
         )
 
@@ -11089,11 +11080,8 @@ class SearchRunsEntriesApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     group_id: UUID | None = None
-    input_pricing_unit_id: UUID | None = None
     input_pricing_pricing_id: UUID | None = None
-    output_pricing_unit_id: UUID | None = None
     output_pricing_pricing_id: UUID | None = None
-    cached_pricing_unit_id: UUID | None = None
     cached_pricing_pricing_id: UUID | None = None
 
 
@@ -17126,28 +17114,6 @@ class InfraToolsGetToolIdByNameApiRequest(BaseModel):
 
 class InfraToolsGetToolIdByNameApiResponse(BaseModel):
     tool_id: UUID | None = None
-
-
-# Generated from: infra_tools_is_tool_creatable
-
-
-class InfraToolsIsToolCreatableSqlParams(BaseModel):
-    p_tool_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (self.p_tool_id,)
-
-
-class InfraToolsIsToolCreatableSqlRow(BaseModel):
-    is_creatable: bool | None = None
-
-
-class InfraToolsIsToolCreatableApiRequest(BaseModel):
-    p_tool_id: UUID
-
-
-class InfraToolsIsToolCreatableApiResponse(BaseModel):
-    is_creatable: bool | None = None
 
 
 # Generated from: infra_tools_link_tool_call
@@ -28807,10 +28773,10 @@ class QGetToolsV4Item(BaseModel):
     generated: bool | None
     args_ids: list[UUID] | None
     args_output_ids: list[UUID] | None
-    resource: str | None
-    entry: str | None
-    artifact: str | None
-    createable: bool | None
+    operation: str | None
+    resources: list[str] | None
+    entries: list[str] | None
+    artifacts: list[str] | None
 
 
 class GetToolsSqlRow(BaseModel):
@@ -28834,7 +28800,7 @@ class SearchToolsSqlParams(BaseModel):
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    createable: bool | None = None
+    operation: str | None = None
     agent: bool | None = False
     tool: bool | None = False
 
@@ -28845,7 +28811,7 @@ class SearchToolsSqlParams(BaseModel):
             self.offset_count,
             self.exclude_ids,
             self.department_ids,
-            self.createable,
+            self.operation,
             self.agent,
             self.tool,
         )
@@ -28861,7 +28827,7 @@ class SearchToolsApiRequest(BaseModel):
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    createable: bool | None = None
+    operation: str | None = None
     agent: bool | None = False
     tool: bool | None = False
 
@@ -34112,13 +34078,10 @@ class QGetRunListViewV4Item(BaseModel):
     model_ids: list[UUID] | None
     provider_ids: list[UUID] | None
     input_pricing_count: int | None
-    input_pricing_unit_id: UUID | None
     input_pricing_pricing_id: UUID | None
     output_pricing_count: int | None
-    output_pricing_unit_id: UUID | None
     output_pricing_pricing_id: UUID | None
     cached_pricing_count: int | None
-    cached_pricing_unit_id: UUID | None
     cached_pricing_pricing_id: UUID | None
     debug_info: list[str] | None
 
@@ -37669,12 +37632,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "InfraToolsGetToolIdByNameSqlRow",
         "InfraToolsGetToolIdByNameApiRequest",
         "InfraToolsGetToolIdByNameApiResponse",
-    ),
-    "app/sql/v4/queries/infrastructure/tools/is_tool_creatable_complete.sql": (
-        "InfraToolsIsToolCreatableSqlParams",
-        "InfraToolsIsToolCreatableSqlRow",
-        "InfraToolsIsToolCreatableApiRequest",
-        "InfraToolsIsToolCreatableApiResponse",
     ),
     "app/sql/v4/queries/infrastructure/tools/link_tool_call_complete.sql": (
         "InfraToolsLinkToolCallSqlParams",
@@ -43710,13 +43667,6 @@ if TYPE_CHECKING:
     def load_sql_query(
         file_path: Literal[
             "app/sql/v4/queries/infrastructure/tools/get_tool_id_by_name_complete.sql"
-        ],
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal[
-            "app/sql/v4/queries/infrastructure/tools/is_tool_creatable_complete.sql"
         ],
     ) -> SqlString: ...
 

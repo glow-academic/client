@@ -164,7 +164,7 @@ def get_resource_schema_fields(resource_type: str) -> list[dict[str, Any]]:
         - position: Always 0 (outputs don't have position field)
         - template: Always empty string (templates are handled by args_outputs)
     """
-    from app.registry.resources import RESOURCE_OUTPUT_SCHEMAS
+    from app.registry.resource_output_schemas import RESOURCE_OUTPUT_SCHEMAS
 
     return [
         {

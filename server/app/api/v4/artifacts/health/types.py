@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.api.v4.artifacts.types import InternalResponseBase
 from app.sql.types import QGetHealthListViewV4Item, QGetMetricListViewV4Item
 
 
@@ -57,17 +58,13 @@ class HealthWebsocketResources(BaseModel):
     pass
 
 
-class GetHealthWebsocketResponse(BaseModel):
+class GetHealthWebsocketResponse(InternalResponseBase):
     """Websocket-facing health response with hydrated resources."""
 
     entries: HealthWebsocketEntries | None = None
     resources: HealthWebsocketResources
-    artifacts: "WebsocketArtifacts | None" = None
-    resource_agent_ids: dict[str, UUID | None] | None = None
-    group_id: UUID | None = None
 
 
-from app.api.v4.artifacts.types import WebsocketArtifacts  # noqa: E402
 from app.api.v4.entries.runs.search import GetRunListViewResponse  # noqa: E402
 
 HealthWebsocketEntries.model_rebuild()

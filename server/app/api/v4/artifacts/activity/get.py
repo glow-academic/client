@@ -29,7 +29,6 @@ from app.api.v4.artifacts.session.types import (
     GetSessionListResponse,
     SessionListItem,
 )
-from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.activity.get import get_activity_list_view_internal
 from app.api.v4.entries.audits.get import get_audit_list_view_internal
@@ -712,17 +711,6 @@ async def get_activity_websocket(
 
     insights_result = await fetch_insights()
 
-    websocket_config = WebsocketArtifacts(
-        agents=data.config_agents or None,
-        models=data.config_models or None,
-        providers=data.config_providers or None,
-        tools=data.config_tools or None,
-        args=config_args,
-        args_outputs=config_args_outputs,
-        profile=data.config_profile or None,
-        params=GetActivityApiRequest(activity_id=activity_id, draft_id=draft_id),
-    )
-
     return GetActivityWebsocketResponse(
         entries=ActivityWebsocketEntries(
             runs=data.runs_today,
@@ -735,7 +723,14 @@ async def get_activity_websocket(
             activity_insights=insights_result or None,
         ),
         resources=ActivityWebsocketResources(),
-        artifacts=websocket_config,
+        agents=data.config_agents or None,
+        models=data.config_models or None,
+        providers=data.config_providers or None,
+        tools=data.config_tools or None,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=data.config_profile or None,
+        params=GetActivityApiRequest(activity_id=activity_id, draft_id=draft_id),
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
     )

@@ -38,7 +38,6 @@ from app.api.v4.artifacts.types import (
     FilterOption,
     HistoryItem,
     HistoryResponse,
-    WebsocketArtifacts,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.entries.attempt.get import ChatViewItem, get_attempt_chats_internal
@@ -963,7 +962,26 @@ async def get_practice_websocket(
 
     insights_result = await fetch_insights()
 
-    websocket_config = WebsocketArtifacts(
+    return GetPracticeWebsocketResponse(
+        entries=PracticeWebsocketEntries(
+            draft_training=data.draft_item,
+            runs=runs_result,
+            practice_insights=insights_result or None,
+        ),
+        resources=PracticeWebsocketResources(
+            departments=data.current_resources.get("departments") or None,
+            personas=data.current_resources.get("personas") or None,
+            documents=data.current_resources.get("documents") or None,
+            parameter_fields=data.current_resources.get("parameter_fields") or None,
+            scenarios=data.current_resources.get("scenarios") or None,
+            parameters=data.current_resources.get("parameters") or None,
+            questions=data.current_resources.get("questions") or None,
+            options=data.current_resources.get("options") or None,
+            videos=data.current_resources.get("videos") or None,
+            images=data.current_resources.get("images") or None,
+            problem_statements=data.current_resources.get("problem_statements") or None,
+            objectives=data.current_resources.get("objectives") or None,
+        ),
         agents=data.config_agents or None,
         models=data.config_models or None,
         providers=data.config_providers or None,
@@ -986,29 +1004,6 @@ async def get_practice_websocket(
             history_scenario_ids=history_scenario_ids,
             history_infinite_mode=history_infinite_mode,
         ),
-    )
-
-    return GetPracticeWebsocketResponse(
-        entries=PracticeWebsocketEntries(
-            draft_training=data.draft_item,
-            runs=runs_result,
-            practice_insights=insights_result or None,
-        ),
-        resources=PracticeWebsocketResources(
-            departments=data.current_resources.get("departments") or None,
-            personas=data.current_resources.get("personas") or None,
-            documents=data.current_resources.get("documents") or None,
-            parameter_fields=data.current_resources.get("parameter_fields") or None,
-            scenarios=data.current_resources.get("scenarios") or None,
-            parameters=data.current_resources.get("parameters") or None,
-            questions=data.current_resources.get("questions") or None,
-            options=data.current_resources.get("options") or None,
-            videos=data.current_resources.get("videos") or None,
-            images=data.current_resources.get("images") or None,
-            problem_statements=data.current_resources.get("problem_statements") or None,
-            objectives=data.current_resources.get("objectives") or None,
-        ),
-        artifacts=websocket_config,
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
     )

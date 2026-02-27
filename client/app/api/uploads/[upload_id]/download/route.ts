@@ -7,30 +7,24 @@ export async function GET(
 ) {
   try {
     const { upload_id } = await params;
-    // Extract preview query parameter
     const { searchParams } = new URL(request.url);
     const preview = searchParams.get("preview") === "true";
 
-    // Build URL with preview parameter if present
-    const url = new URL(
-      `${INTERNAL_HTTP_BASE}/api/v4/resources/uploads/download/${upload_id}`,
-    );
-    if (preview) {
-      url.searchParams.set("preview", "true");
-    }
+    // Route to preview or download endpoint based on query param
+    const endpoint = preview
+      ? `${INTERNAL_HTTP_BASE}/api/v4/uploads/${upload_id}/preview`
+      : `${INTERNAL_HTTP_BASE}/api/v4/uploads/${upload_id}/download`;
 
-    // Build headers - forward Range header for video seeking support
     const headers: HeadersInit = {
       Cookie: request.headers.get("cookie") || "",
     };
 
-    // Forward Range header if present (enables video seeking)
     const rangeHeader = request.headers.get("range");
     if (rangeHeader) {
       headers["Range"] = rangeHeader;
     }
 
-    const response = await fetch(url.toString(), {
+    const response = await fetch(endpoint, {
       method: "GET",
       headers,
     });
@@ -43,7 +37,6 @@ export async function GET(
       );
     }
 
-    // Get headers from backend
     const contentType =
       response.headers.get("content-type") || "application/octet-stream";
     const contentDisposition = response.headers.get("content-disposition");
@@ -51,7 +44,6 @@ export async function GET(
     const contentRange = response.headers.get("content-range");
     const contentLength = response.headers.get("content-length");
 
-    // Build response headers
     const responseHeaders = new Headers();
     responseHeaders.set("Content-Type", contentType);
     if (contentDisposition) {
@@ -67,8 +59,6 @@ export async function GET(
       responseHeaders.set("Content-Length", contentLength);
     }
 
-    // Stream the response body directly without buffering
-    // This enables seeking for large video files
     if (response.body) {
       return new NextResponse(response.body, {
         status: response.status,
@@ -76,7 +66,6 @@ export async function GET(
       });
     }
 
-    // Fallback for responses without body stream
     const fileBuffer = await response.arrayBuffer();
     return new NextResponse(fileBuffer, {
       status: response.status,

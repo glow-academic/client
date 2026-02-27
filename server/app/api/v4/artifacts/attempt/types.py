@@ -12,7 +12,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.artifacts.types import WebsocketArtifacts
+from app.api.v4.artifacts.types import InternalResponseBase
 from app.api.v4.entries.attempt.get import AttemptMessageViewItem as MessageViewItem
 from app.api.v4.entries.attempt.get import ChatViewItem
 from app.api.v4.entries.runs.search import GetRunListViewResponse
@@ -704,14 +704,11 @@ class AttemptWebsocketResources(BaseModel):
     standards: list[StandardEntry] | None = None
 
 
-class GetAttemptWebsocketResponse(BaseModel):
+class GetAttemptWebsocketResponse(InternalResponseBase):
     """Minimal response for WebSocket handlers."""
 
     entries: AttemptEntries | None = None
     resources: AttemptWebsocketResources | None = None
-    artifacts: WebsocketArtifacts | None = None
-    resource_agent_ids: dict[str, UUID | None] | None = None
-    group_id: UUID | None = None
 
 
 # =============================================================================

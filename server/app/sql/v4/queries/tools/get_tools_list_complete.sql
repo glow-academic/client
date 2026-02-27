@@ -113,14 +113,13 @@ tool_agents_data AS (
     JOIN agent_tools_junction atj ON atj.tool_id = tr.id AND atj.active = true
     GROUP BY ttj.tool_id
 ),
--- Creatable flag per tool
+-- Creatable flag per tool (derived from tools_resource.operation)
 tool_creatable_data AS (
     SELECT
-        tf.tool_id,
-        tf.value as is_creatable
-    FROM tool_flags_junction tf
-    JOIN flags_resource f ON f.id = tf.flag_id
-    WHERE f.name = 'tool_creatable'
+        ttj.tool_id,
+        (tr.operation = 'create') as is_creatable
+    FROM tool_tools_junction ttj
+    JOIN tools_resource tr ON tr.id = ttj.tools_id AND tr.active = true
 ),
 -- Core tool data
 tool_data AS (

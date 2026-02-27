@@ -5,7 +5,11 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.artifacts.types import FilterOption, HistoryResponse, WebsocketArtifacts
+from app.api.v4.artifacts.types import (
+    FilterOption,
+    HistoryResponse,
+    InternalResponseBase,
+)
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 
 # ============================================================================
@@ -561,11 +565,8 @@ class DashboardWebsocketResources(BaseModel):
     pass
 
 
-class GetDashboardWebsocketResponse(BaseModel):
+class GetDashboardWebsocketResponse(InternalResponseBase):
     """Websocket-facing dashboard response with hydrated resources."""
 
     entries: DashboardWebsocketEntries | None = None
     resources: DashboardWebsocketResources
-    artifacts: WebsocketArtifacts | None = None
-    resource_agent_ids: dict[str, UUID | None] | None = None
-    group_id: UUID | None = None

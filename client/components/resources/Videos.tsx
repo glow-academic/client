@@ -323,7 +323,7 @@ export function Videos({
       let tusUploadInstance: tus.Upload | null = null;
       try {
         tusUploadInstance = new tus.Upload(file, {
-          endpoint: `/api/resources/uploads/upload`,
+          endpoint: `/api/uploads`,
           retryDelays: [0, 3000, 5000, 10000, 20000],
           metadata: {
             filename: file.name,
@@ -376,7 +376,7 @@ export function Videos({
 
             try {
               const uploadUrl = tusUploadInstance?.url || "";
-              const tusUploadIdMatch = uploadUrl.match(/\/upload\/([^\/]+)/);
+              const tusUploadIdMatch = uploadUrl.match(/\/uploads\/([^\/]+)$/);
               if (!tusUploadIdMatch || !tusUploadIdMatch[1]) {
                 throw new Error("Failed to extract upload ID from upload URL");
               }
@@ -711,7 +711,7 @@ export function Videos({
         {selectedVideo ? (
           selectedVideo.upload_id ? (
             <video
-              src={`/api/resources/uploads/download/${selectedVideo.upload_id}`}
+              src={`/api/uploads/${selectedVideo.upload_id}/download`}
               controls
               className="w-full h-full object-contain"
             />

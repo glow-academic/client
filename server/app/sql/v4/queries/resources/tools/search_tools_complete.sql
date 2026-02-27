@@ -24,7 +24,7 @@ CREATE OR REPLACE FUNCTION api_search_tools_v4(
     offset_count int DEFAULT 0,
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    createable boolean DEFAULT NULL,
+    operation text DEFAULT NULL,
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     agent boolean DEFAULT false,
     tool boolean DEFAULT false
@@ -37,13 +37,13 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.id, q.name, q.description, q.generated, q.args_ids, q.args_output_ids, q.resource, q.entry, q.artifact, q.createable)::types.q_get_tools_v4_item
+        (q.id, q.name, q.description, q.generated, q.args_ids, q.args_output_ids, q.operation, q.resources, q.entries, q.artifacts)::types.q_get_tools_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_tools_v4_item[]
 ) as items
 FROM (
-    SELECT t.id, t.name, t.description, COALESCE(t.generated, false) AS generated, COALESCE(t.args_ids, ARRAY[]::uuid[]) AS args_ids, COALESCE(t.args_output_ids, ARRAY[]::uuid[]) AS args_output_ids, t.resource, t.entry, t.artifact, COALESCE(t.createable, false) AS createable
+    SELECT t.id, t.name, t.description, COALESCE(t.generated, false) AS generated, COALESCE(t.args_ids, ARRAY[]::uuid[]) AS args_ids, COALESCE(t.args_output_ids, ARRAY[]::uuid[]) AS args_output_ids, t.operation, COALESCE(t.resources, ARRAY[]::text[]) AS resources, COALESCE(t.entries, ARRAY[]::text[]) AS entries, COALESCE(t.artifacts, ARRAY[]::text[]) AS artifacts
     FROM tools_resource t
     WHERE t.active = true
       -- Search filter
@@ -51,7 +51,7 @@ FROM (
       -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (t.id = ANY(exclude_ids)))
       AND (COALESCE(array_length(department_ids, 1), 0) = 0 OR t.department_ids && department_ids)
-      AND (createable IS NULL OR t.createable = createable)
+      AND (operation IS NULL OR t.operation = operation)
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT agent OR EXISTS (SELECT 1 FROM agent_tools_junction j WHERE j.tool_id = t.id AND j.active = true))
       AND (NOT tool OR EXISTS (SELECT 1 FROM tool_tools_junction j WHERE j.tool_id = t.id AND j.active = true))

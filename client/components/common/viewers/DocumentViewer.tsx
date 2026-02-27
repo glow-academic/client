@@ -82,7 +82,7 @@ export default function DocumentViewer({
           setContent(data.html ?? "");
         } else if (document.upload_id) {
           // File-based documents — download via upload
-          let url = `/api/resources/uploads/download/${document.upload_id}`;
+          let url = `/api/uploads/${document.upload_id}/download`;
 
           // Add preview parameter for compact mode (backend will only generate previews for PDFs)
           if (compact) {

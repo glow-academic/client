@@ -8,7 +8,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.api.v4.artifacts.session.types import GetSessionListResponse
-from app.api.v4.artifacts.types import WebsocketArtifacts
+from app.api.v4.artifacts.types import InternalResponseBase
 from app.sql.types import (
     GetActivityListViewSqlRow,
     GetAuditListViewSqlRow,
@@ -158,11 +158,8 @@ class ActivityWebsocketResources(BaseModel):
     pass
 
 
-class GetActivityWebsocketResponse(BaseModel):
+class GetActivityWebsocketResponse(InternalResponseBase):
     """Websocket-facing activity response with hydrated resources."""
 
     entries: ActivityWebsocketEntries | None = None
     resources: ActivityWebsocketResources
-    artifacts: WebsocketArtifacts | None = None
-    resource_agent_ids: dict[str, UUID | None] | None = None
-    group_id: UUID | None = None

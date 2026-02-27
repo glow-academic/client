@@ -24,11 +24,11 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    -- $1 is a tools_resource.id — read entry directly (denormalized from bindings)
-    SELECT tr.entry as entry_type
+    -- $1 is a tools_resource.id — read first entry from entries array
+    SELECT tr.entries[1] as entry_type
     FROM tools_resource tr
     WHERE tr.id = $1
       AND tr.active = true
-      AND tr.entry IS NOT NULL
+      AND COALESCE(array_length(tr.entries, 1), 0) > 0
     LIMIT 1;
 $$;

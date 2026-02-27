@@ -11,7 +11,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.api.v4.artifacts.types import WebsocketArtifacts
+from app.api.v4.artifacts.types import InternalResponseBase
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -56,14 +56,11 @@ class InvocationWebsocketResources(BaseModel):
     pass
 
 
-class GetInvocationWebsocketResponse(BaseModel):
+class GetInvocationWebsocketResponse(InternalResponseBase):
     """Websocket-facing invocation response with hydrated resources."""
 
     entries: InvocationWebsocketEntries | None = None
     resources: InvocationWebsocketResources
-    artifacts: WebsocketArtifacts | None = None
-    resource_agent_ids: dict[str, UUID | None] | None = None
-    group_id: UUID | None = None
 
 
 # =============================================================================
@@ -195,14 +192,11 @@ class SuiteWebsocketEntries(BaseModel):
     runs: GetRunListViewResponse | None = None
 
 
-class GetSuiteWebsocketResponse(BaseModel):
+class GetSuiteWebsocketResponse(InternalResponseBase):
     """Websocket-facing bundle response with hydrated resources."""
 
     entries: SuiteWebsocketEntries | None = None
     resources: SuiteWebsocketResources
-    artifacts: WebsocketArtifacts | None = None
-    resource_agent_ids: dict[str, UUID | None] | None = None
-    group_id: UUID | None = None
 
 
 # =============================================================================

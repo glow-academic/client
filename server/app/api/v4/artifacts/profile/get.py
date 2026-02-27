@@ -47,7 +47,6 @@ from app.api.v4.artifacts.profile.types import (
     ProfileWebsocketEntries,
     ProfileWebsocketResources,
 )
-from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.profile_drafts.get import get_profile_drafts_entries_internal
@@ -723,19 +722,6 @@ async def get_profile_websocket(
     entries = ProfileWebsocketEntries(
         draft_profile=draft_profile,
         runs=runs_result,
-    )
-
-    websocket_config = WebsocketArtifacts(
-        agents=data.config_agent_resources,
-        models=data.config_model_resources,
-        providers=data.config_provider_resources,
-        tools=data.config_tool_resources,
-        args=config_args,
-        args_outputs=config_args_outputs,
-        profile=config_profile_result or None,
-        params=GetProfileApiRequest(
-            target_profile_id=target_profile_id, draft_id=draft_id
-        ),
     )
 
     return GetProfileWebsocketResponse(

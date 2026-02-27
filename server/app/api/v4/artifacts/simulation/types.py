@@ -10,7 +10,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.artifacts.types import WebsocketArtifacts
+from app.api.v4.artifacts.types import InternalResponseBase
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.sql.types import (
@@ -389,14 +389,11 @@ class SimulationWebsocketResources(BaseModel):
     rubrics: list[QGetRubricsV4Item] | None = None
 
 
-class GetSimulationWebsocketResponse(BaseModel):
+class GetSimulationWebsocketResponse(InternalResponseBase):
     """Minimal response for simulation websocket generation handlers."""
 
-    group_id: UUID | None = None
     entries: SimulationWebsocketEntries | None = None
-    resource_agent_ids: dict[str, UUID | None] | None = None
     resources: SimulationWebsocketResources
-    artifacts: WebsocketArtifacts | None = None
 
 
 # =============================================================================

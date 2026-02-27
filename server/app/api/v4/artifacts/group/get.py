@@ -30,7 +30,6 @@ from app.api.v4.artifacts.group.types import (
     GroupWebsocketEntries,
     GroupWebsocketResources,
 )
-from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.calls.get import get_call_list_view_internal
 from app.api.v4.entries.groups.get import get_group_list_view_internal
@@ -309,17 +308,6 @@ async def get_group_websocket(
 
     insights_result = await fetch_insights()
 
-    websocket_config = WebsocketArtifacts(
-        agents=data.config_agents or None,
-        models=data.config_models or None,
-        providers=data.config_providers or None,
-        tools=config_tools or None,
-        args=config_args,
-        args_outputs=config_args_outputs,
-        profile=data.config_profile or None,
-        params=GetGroupApiRequest(group_id=group_id, draft_id=draft_id),
-    )
-
     return GetGroupWebsocketResponse(
         entries=GroupWebsocketEntries(
             runs=data.runs_today,
@@ -329,7 +317,14 @@ async def get_group_websocket(
             group_insights=insights_result or None,
         ),
         resources=GroupWebsocketResources(),
-        artifacts=websocket_config,
+        agents=data.config_agents or None,
+        models=data.config_models or None,
+        providers=data.config_providers or None,
+        tools=config_tools or None,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=data.config_profile or None,
+        params=GetGroupApiRequest(group_id=group_id, draft_id=draft_id),
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
     )

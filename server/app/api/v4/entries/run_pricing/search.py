@@ -33,7 +33,6 @@ async def search_run_pricing_entries_internal(
     limit_count: int | None = 20,
     offset_count: int | None = 0,
     run_id: UUID | None = None,
-    unit_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> list[dict]:
     """Internal function to search run_pricing entries."""
@@ -48,7 +47,6 @@ async def search_run_pricing_entries_internal(
             "limit_count": limit_count,
             "offset_count": offset_count,
             "run_id": str(run_id) if run_id else None,
-            "unit_id": str(unit_id) if unit_id else None,
         },
     )
 
@@ -62,7 +60,6 @@ async def search_run_pricing_entries_internal(
         limit_count=limit_count,
         offset_count=offset_count,
         run_id=run_id,
-        unit_id=unit_id,
     )
     result = cast(
         SearchRunPricingEntriesSqlRow,

@@ -65,7 +65,6 @@ from app.api.v4.artifacts.setting.types import (
     SettingWebsocketEntries,
     SettingWebsocketResources,
 )
-from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.runs.search import get_run_list_entries_internal
@@ -806,21 +805,6 @@ async def get_setting_websocket(
         runs=runs_result,
     )
 
-    websocket_config = WebsocketArtifacts(
-        agents=data.config_agent_resources,
-        models=data.config_model_resources,
-        providers=data.config_provider_resources,
-        tools=tools_result or None,
-        args=config_args,
-        args_outputs=config_args_outputs,
-        profile=config_profile_result or None,
-        params=GetSettingApiRequest(
-            setting_id=setting_id,
-            draft_id=draft_id,
-            color_search=color_search,
-        ),
-    )
-
     return GetSettingWebsocketResponse(
         entries=entries if draft_setting or runs_result else None,
         resources=SettingWebsocketResources(
@@ -835,7 +819,18 @@ async def get_setting_websocket(
             auth_item_keys=current.auth_item_keys if current else None,
             roles=current.roles if current else None,
         ),
-        artifacts=websocket_config,
+        agents=data.config_agent_resources,
+        models=data.config_model_resources,
+        providers=data.config_provider_resources,
+        tools=tools_result or None,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=config_profile_result or None,
+        params=GetSettingApiRequest(
+            setting_id=setting_id,
+            draft_id=draft_id,
+            color_search=color_search,
+        ),
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
     )

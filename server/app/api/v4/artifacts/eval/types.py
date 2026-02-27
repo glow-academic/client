@@ -7,7 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.api.v4.artifacts.types import WebsocketArtifacts
+from app.api.v4.artifacts.types import InternalResponseBase
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.api.v4.types import ListFilterSection
 from app.sql.types import (
@@ -215,12 +215,9 @@ class EvalWebsocketResources(BaseModel):
     group_rubrics: list[QGetGroupRubricsV4Item] | None = None
 
 
-class GetEvalWebsocketResponse(BaseModel):
+class GetEvalWebsocketResponse(InternalResponseBase):
     entries: EvalWebsocketEntries | None = None
     resources: EvalWebsocketResources
-    artifacts: WebsocketArtifacts | None = None
-    resource_agent_ids: dict[str, UUID | None] | None = None
-    group_id: UUID | None = None
 
 
 # ========== List Endpoint Types ==========

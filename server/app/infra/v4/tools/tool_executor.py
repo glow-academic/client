@@ -60,7 +60,7 @@ async def execute_tool_call(
         external_call_id: Optional external call ID for tracking
         resource_type: Pre-resolved resource type (tools_resource.resource)
         entry_type: Pre-resolved entry type (tools_resource.entry)
-        is_creatable: Pre-resolved createable flag (tools_resource.createable)
+        is_creatable: Pre-resolved from tools_resource.operation == 'create'
 
     Returns:
         JSON string with result:
@@ -246,7 +246,7 @@ async def _execute_resource_tool(
         arguments: Tool arguments from the model
         run_id: Optional run ID for linking calls
         resource_type: Pre-resolved resource type (tools_resource.resource)
-        is_creatable: Pre-resolved createable flag (tools_resource.createable)
+        is_creatable: Pre-resolved from tools_resource.operation == 'create'
 
     Returns:
         JSON string with result

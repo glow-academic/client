@@ -24,11 +24,11 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    -- $1 is a tools_resource.id — read resource directly (denormalized from domains)
-    SELECT tr.resource as resource_type
+    -- $1 is a tools_resource.id — read first resource from resources array
+    SELECT tr.resources[1] as resource_type
     FROM tools_resource tr
     WHERE tr.id = $1
       AND tr.active = true
-      AND tr.resource IS NOT NULL
+      AND COALESCE(array_length(tr.resources, 1), 0) > 0
     LIMIT 1;
 $$;

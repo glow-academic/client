@@ -7,6 +7,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.api.v4.artifacts.types import InternalResponseBase
+
 
 class GroupListItem(BaseModel):
     """Single group in the list response with hydrated metadata."""
@@ -169,17 +171,13 @@ class GroupWebsocketResources(BaseModel):
     pass
 
 
-class GetGroupWebsocketResponse(BaseModel):
+class GetGroupWebsocketResponse(InternalResponseBase):
     """Websocket-facing group response with hydrated resources."""
 
     entries: GroupWebsocketEntries | None = None
     resources: GroupWebsocketResources
-    artifacts: "WebsocketArtifacts | None" = None
-    resource_agent_ids: dict[str, UUID | None] | None = None
-    group_id: UUID | None = None
 
 
-from app.api.v4.artifacts.types import WebsocketArtifacts  # noqa: E402
 from app.api.v4.entries.runs.search import (  # noqa: E402
     GetRunListViewResponse,
     RunViewItem,

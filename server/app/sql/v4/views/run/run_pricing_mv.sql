@@ -25,7 +25,6 @@ CREATE UNIQUE INDEX run_pricing_mv_pk ON run_pricing_mv (id);
 -- Step 5: Filter indexes
 CREATE INDEX run_pricing_mv_created_at_idx ON run_pricing_mv (created_at DESC);
 CREATE INDEX run_pricing_mv_run_id_idx ON run_pricing_mv (run_id);
-CREATE INDEX run_pricing_mv_unit_id_idx ON run_pricing_mv (unit_id);
 
 -- Step 6: Refresh
 REFRESH MATERIALIZED VIEW run_pricing_mv;

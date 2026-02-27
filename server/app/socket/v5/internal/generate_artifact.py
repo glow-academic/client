@@ -582,18 +582,18 @@ async def _generate_artifact_impl(
                     except (ValueError, AttributeError):
                         pass
                 if t_name:
-                    t_resource = tool_def.get("resource")
-                    t_entry = tool_def.get("entry")
-                    t_artifact = tool_def.get("artifact")
-                    t_createable = tool_def.get("createable")
-                    if t_resource:
-                        tool_resource_type_by_name[t_name] = t_resource
-                    if t_entry:
-                        tool_entry_type_by_name[t_name] = t_entry
-                    if t_artifact:
-                        tool_artifact_type_by_name[t_name] = t_artifact
-                    if t_createable is not None:
-                        tool_createable_by_name[t_name] = bool(t_createable)
+                    t_resources = tool_def.get("resources") or []
+                    t_entries = tool_def.get("entries") or []
+                    t_artifacts = tool_def.get("artifacts") or []
+                    t_operation = tool_def.get("operation")
+                    if t_resources:
+                        tool_resource_type_by_name[t_name] = t_resources[0]
+                    if t_entries:
+                        tool_entry_type_by_name[t_name] = t_entries[0]
+                    if t_artifacts:
+                        tool_artifact_type_by_name[t_name] = t_artifacts[0]
+                    if t_operation is not None:
+                        tool_createable_by_name[t_name] = t_operation == "create"
 
         tool_choice = model_config.tool_choice or "auto"
         await _emit_modality_event(

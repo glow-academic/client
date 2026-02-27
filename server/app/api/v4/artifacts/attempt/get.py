@@ -72,7 +72,6 @@ from app.api.v4.artifacts.attempt.types import (
     TimerData,
     VideoEntry,
 )
-from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.attempt.get import (
     get_attempt_chats_internal,
@@ -1810,17 +1809,6 @@ async def get_attempt_websocket(
 
         insights_result = await fetch_insights()
 
-    websocket_config = WebsocketArtifacts(
-        params=GetAttemptDetailRequest(attempt_id=attempt_id),
-        agents=data.config_agent_resources,
-        models=data.config_model_resources,
-        providers=data.config_provider_resources,
-        tools=config_tools,
-        args=config_args,
-        args_outputs=config_args_outputs,
-        profile=config_profile_result or None,
-    )
-
     return GetAttemptWebsocketResponse(
         entries=AttemptEntries(
             attempt=[data.attempt_item] if data.attempt_item else None,
@@ -1830,7 +1818,14 @@ async def get_attempt_websocket(
             attempt_insights=insights_result or None,
         ),
         resources=ws_resources,
-        artifacts=websocket_config,
+        params=GetAttemptDetailRequest(attempt_id=attempt_id),
+        agents=data.config_agent_resources,
+        models=data.config_model_resources,
+        providers=data.config_provider_resources,
+        tools=config_tools,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=config_profile_result or None,
         resource_agent_ids=data.agent_ids if data.agent_ids else None,
         group_id=data.group_id,
     )

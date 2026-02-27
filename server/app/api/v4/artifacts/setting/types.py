@@ -8,7 +8,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.api.v4.artifacts.types import WebsocketArtifacts
+from app.api.v4.artifacts.types import InternalResponseBase
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.api.v4.types import BaseResourceSection
 from app.sql.types import (
@@ -123,7 +123,6 @@ class GetSettingApiResponse(BaseModel):
     disabled_reason: str | None = None
     draft_version: int | None = None
     group_id: UUID | None = None
-    resource_agent_ids: dict[str, UUID | None] | None = None
 
     # Per-resource sections (10 total)
     names: SettingNameSection | None = None
@@ -164,7 +163,7 @@ class SettingWebsocketResources(BaseModel):
     roles: list[QGetRolesV4Item] | None = None
 
 
-class GetSettingWebsocketResponse(BaseModel):
+class GetSettingWebsocketResponse(InternalResponseBase):
     """Minimal response for WebSocket handlers (get_setting_websocket).
 
     Uses views + resources pattern:
@@ -174,9 +173,6 @@ class GetSettingWebsocketResponse(BaseModel):
 
     entries: SettingWebsocketEntries | None = None
     resources: SettingWebsocketResources
-    artifacts: WebsocketArtifacts | None = None
-    resource_agent_ids: dict[str, UUID | None] | None = None
-    group_id: UUID | None = None
 
 
 # ========== Generation Completion Event ==========

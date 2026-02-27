@@ -13,7 +13,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.artifacts.types import WebsocketArtifacts
+from app.api.v4.artifacts.types import InternalResponseBase
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -162,14 +162,11 @@ class TestWebsocketResources(BaseModel):
     names: dict[str, str] | None = None
 
 
-class GetTestWebsocketResponse(BaseModel):
+class GetTestWebsocketResponse(InternalResponseBase):
     """Minimal response for WebSocket handlers."""
 
     entries: TestEntries | None = None
     resources: TestWebsocketResources | None = None
-    artifacts: WebsocketArtifacts | None = None
-    resource_agent_ids: dict[str, UUID | None] | None = None
-    group_id: UUID | None = None
 
 
 class GetTestListRequest(BaseModel):

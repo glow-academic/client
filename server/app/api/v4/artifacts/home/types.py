@@ -10,7 +10,7 @@ from app.api.v4.artifacts.chat.types import (
     StandardGroupMapping,
     StandardMapping,
 )
-from app.api.v4.artifacts.types import HistoryResponse, WebsocketArtifacts
+from app.api.v4.artifacts.types import HistoryResponse, InternalResponseBase
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.sql.types import (
     QGetDepartmentsV4Item,
@@ -59,14 +59,11 @@ class HomeWebsocketResources(BaseModel):
     objectives: list[QGetObjectivesV4Item] | None = None
 
 
-class GetHomeWebsocketResponse(BaseModel):
+class GetHomeWebsocketResponse(InternalResponseBase):
     """Websocket-facing home bundle response with hydrated resources."""
 
     entries: HomeWebsocketEntries | None = None
     resources: HomeWebsocketResources
-    artifacts: WebsocketArtifacts | None = None
-    resource_agent_ids: dict[str, UUID | None] | None = None
-    group_id: UUID | None = None
 
 
 # =============================================================================

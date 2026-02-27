@@ -10,7 +10,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.artifacts.types import WebsocketArtifacts
+from app.api.v4.artifacts.types import InternalResponseBase
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.api.v4.types import BaseResourceSection, ListFilterSection
 from app.sql.types import (
@@ -375,7 +375,7 @@ class GetScenarioApiResponse(BaseModel):
     options: ScenarioOptionSection | None = None
 
 
-class GetScenarioWebsocketResponse(BaseModel):
+class GetScenarioWebsocketResponse(InternalResponseBase):
     """Minimal response for WebSocket handlers (get_scenario_websocket).
 
     Contains only what's needed for AI generation:
@@ -385,12 +385,9 @@ class GetScenarioWebsocketResponse(BaseModel):
     - Resources (for Jinja template context)
     """
 
-    group_id: UUID | None = None
     entries: "ScenarioWebsocketEntries | None" = None
-    resource_agent_ids: dict[str, UUID | None] | None = None
 
     resources: "ScenarioWebsocketResources"
-    artifacts: WebsocketArtifacts | None = None
 
 
 class ScenarioWebsocketEntries(BaseModel):

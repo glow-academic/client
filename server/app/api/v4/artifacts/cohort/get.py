@@ -70,7 +70,6 @@ from app.api.v4.artifacts.cohort.types import (
     GetCohortApiResponse,
     GetCohortWebsocketResponse,
 )
-from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.cohort_drafts.get import get_cohort_drafts_entries_internal
@@ -978,25 +977,6 @@ async def get_cohort_websocket(
     entries = CohortWebsocketEntries(
         draft_cohort=draft_view,
         runs=runs_result,
-    )
-
-    websocket_config = WebsocketArtifacts(
-        agents=data.config_agent_resources,
-        models=data.config_model_resources,
-        providers=data.config_provider_resources,
-        tools=tools_result or None,
-        args=config_args,
-        args_outputs=config_args_outputs,
-        profile=config_profile_result or None,
-        params=GetCohortApiRequest(
-            cohort_id=cohort_id,
-            draft_id=draft_id,
-            descriptions_search=descriptions_search,
-            simulation_search=simulation_search,
-            simulation_show_selected=simulation_show_selected,
-            profile_search=profile_search,
-            profile_show_selected=profile_show_selected,
-        ),
     )
 
     return GetCohortWebsocketResponse(

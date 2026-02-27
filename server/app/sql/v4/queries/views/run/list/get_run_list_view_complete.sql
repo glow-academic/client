@@ -62,13 +62,10 @@ CREATE TYPE types.q_get_run_list_view_v4_item AS (
     model_ids uuid[],
     provider_ids uuid[],
     input_pricing_count int,
-    input_pricing_unit_id uuid,
     input_pricing_pricing_id uuid,
     output_pricing_count int,
-    output_pricing_unit_id uuid,
     output_pricing_pricing_id uuid,
     cached_pricing_count int,
-    cached_pricing_unit_id uuid,
     cached_pricing_pricing_id uuid,
     debug_info text[]
 );
@@ -138,13 +135,10 @@ AS $$
                     model_ids,
                     provider_ids,
                     input_pricing_count,
-                    input_pricing_unit_id,
                     input_pricing_pricing_id,
                     output_pricing_count,
-                    output_pricing_unit_id,
                     output_pricing_pricing_id,
                     cached_pricing_count,
-                    cached_pricing_unit_id,
                     cached_pricing_pricing_id,
                     debug_info
                 )::types.q_get_run_list_view_v4_item

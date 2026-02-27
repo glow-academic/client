@@ -9,7 +9,7 @@ from uuid import UUID
 import asyncpg
 from fastapi import HTTPException
 
-from app.registry.relations import ARTIFACT_ENTRIES
+from app.registry.artifact_entries import ARTIFACT_ENTRIES
 from app.sql.types import (
     GetProfileContextAccessSqlParams,
     GetProfileContextAccessSqlRow,

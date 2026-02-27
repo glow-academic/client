@@ -208,7 +208,7 @@ export function Uploads({
       let tusUploadInstance: tus.Upload | null = null;
       try {
         tusUploadInstance = new tus.Upload(file, {
-          endpoint: `/api/resources/uploads/upload`,
+          endpoint: `/api/uploads`,
           retryDelays: [0, 3000, 5000, 10000, 20000],
           metadata: {
             filename: file.name,
@@ -261,7 +261,7 @@ export function Uploads({
 
             try {
               const uploadUrl = tusUploadInstance?.url || "";
-              const tusUploadIdMatch = uploadUrl.match(/\/upload\/([^\/]+)/);
+              const tusUploadIdMatch = uploadUrl.match(/\/uploads\/([^\/]+)$/);
               if (!tusUploadIdMatch || !tusUploadIdMatch[1]) {
                 throw new Error("Failed to extract upload ID from upload URL");
               }

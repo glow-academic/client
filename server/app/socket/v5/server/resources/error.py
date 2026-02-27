@@ -4,7 +4,7 @@ from typing import Any
 
 from app.infra.v4.websocket.resolve_resource_type import resolve_resource_type
 from app.main import get_internal_sio, sio
-from app.registry.generation import RESOURCE_EVENTS
+from app.registry.resource_events import RESOURCE_EVENTS
 
 internal_sio = get_internal_sio()
 

@@ -2,10 +2,9 @@ import { INTERNAL_HTTP_BASE } from "@/lib/api/config";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function OPTIONS(request: NextRequest) {
-  // Proxy TUS OPTIONS request to backend
   try {
     const response = await fetch(
-      `${INTERNAL_HTTP_BASE}/api/v4/resources/uploads/upload`,
+      `${INTERNAL_HTTP_BASE}/api/v4/uploads/discover`,
       {
         method: "OPTIONS",
         headers: {
@@ -15,7 +14,6 @@ export async function OPTIONS(request: NextRequest) {
       },
     );
 
-    // Forward all TUS headers
     const headers = new Headers();
     response.headers.forEach((value, key) => {
       headers.set(key, value);
@@ -34,9 +32,7 @@ export async function OPTIONS(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  // Proxy TUS POST request to backend
   try {
-    // Get all TUS headers
     const tusHeaders: HeadersInit = {};
     const tusHeaderNames = [
       "Tus-Resumable",
@@ -52,14 +48,13 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // Get request body if present (for creation-with-upload)
     const body =
       request.headers.get("Content-Length") !== "0"
         ? await request.arrayBuffer()
         : null;
 
     const response = await fetch(
-      `${INTERNAL_HTTP_BASE}/api/v4/resources/uploads/upload`,
+      `${INTERNAL_HTTP_BASE}/api/v4/uploads/create`,
       {
         method: "POST",
         headers: tusHeaders,
@@ -67,22 +62,17 @@ export async function POST(request: NextRequest) {
       },
     );
 
-    // Forward all TUS response headers, but rewrite Location to use BFF route
     const headers = new Headers();
     response.headers.forEach((value, key) => {
       if (key.toLowerCase() === "location") {
         // Rewrite backend location to BFF location
-        const location = value.replace(
-          /\/api\/v4\/resources\/uploads\/upload\//,
-          "/api/resources/uploads/upload/",
-        );
+        const location = value.replace(/\/api\/v4\/uploads\//, "/api/uploads/");
         headers.set(key, location);
       } else {
         headers.set(key, value);
       }
     });
 
-    // TUS responses typically don't have a body, but handle it if present
     const responseBody = response.status === 201 ? null : await response.text();
 
     return new NextResponse(responseBody, {

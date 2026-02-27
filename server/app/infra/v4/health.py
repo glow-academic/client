@@ -172,15 +172,15 @@ async def check_tus_workflow() -> ServiceCheckResult:
     """Check TUS upload workflow via HTTP canary upload.
 
     Full TUS workflow check via HTTP:
-    - POST /api/v4/resources/uploads/upload (creation-with-upload)
-    - HEAD /api/v4/resources/uploads/upload/{id} to verify
+    - POST /api/v4/uploads/create (creation-with-upload)
+    - HEAD /api/v4/uploads/{id}/status to verify
 
     Returns:
         ServiceCheckResult with ok status, latency, and error message
     """
     start = time.perf_counter()
     base_url = os.getenv("HEALTH_BASE_URL", "http://localhost:8000").rstrip("/")
-    url = f"{base_url}/api/v4/resources/uploads/upload"
+    url = f"{base_url}/api/v4/uploads/create"
 
     # tiny "file"
     body = b"healthcheck"
@@ -201,7 +201,7 @@ async def check_tus_workflow() -> ServiceCheckResult:
                 return ServiceCheckResult(
                     False,
                     latency,
-                    f"POST /api/v4/resources/uploads/upload -> {r.status_code}",
+                    f"POST /api/v4/uploads/create -> {r.status_code}",
                 )
 
             location = r.headers.get("Location")
@@ -210,18 +210,18 @@ async def check_tus_workflow() -> ServiceCheckResult:
                 return ServiceCheckResult(False, latency, "no Location header")
 
             if location.startswith("/"):
-                upload_url = f"{base_url}{location}"
+                status_url = f"{base_url}{location}/status"
             else:
-                upload_url = location
+                status_url = f"{location}/status"
 
             # HEAD to verify info is consistent
-            r_head = await client.head(upload_url, headers={"Tus-Resumable": "1.0.0"})
+            r_head = await client.head(status_url, headers={"Tus-Resumable": "1.0.0"})
             if r_head.status_code != status.HTTP_200_OK:
                 latency = (time.perf_counter() - start) * 1000
                 return ServiceCheckResult(
                     False,
                     latency,
-                    f"HEAD {upload_url} -> {r_head.status_code}",
+                    f"HEAD {status_url} -> {r_head.status_code}",
                 )
 
             offset = r_head.headers.get("Upload-Offset")

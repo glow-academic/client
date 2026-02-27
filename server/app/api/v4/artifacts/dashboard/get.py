@@ -53,7 +53,6 @@ from app.api.v4.artifacts.types import (
     FilterOption,
     HistoryItem,
     HistoryResponse,
-    WebsocketArtifacts,
 )
 from app.api.v4.entries.attempt.get import ChatViewItem, get_attempt_chats_internal
 from app.api.v4.entries.attempt.search import get_attempt_list_internal
@@ -1151,7 +1150,12 @@ async def get_dashboard_websocket(
 
     insights_result = await _fetch_insights()
 
-    websocket_config = WebsocketArtifacts(
+    return GetDashboardWebsocketResponse(
+        entries=DashboardWebsocketEntries(
+            runs=runs_result,
+            dashboard_insights=insights_result or None,
+        ),
+        resources=DashboardWebsocketResources(),
         agents=config_agents or None,
         models=config_models or None,
         providers=config_providers or None,
@@ -1160,15 +1164,6 @@ async def get_dashboard_websocket(
         args_outputs=config_args_outputs,
         profile=config_profile_result or None,
         params=GetDashboardApiRequest(dashboard_id=dashboard_id, draft_id=draft_id),
-    )
-
-    return GetDashboardWebsocketResponse(
-        entries=DashboardWebsocketEntries(
-            runs=runs_result,
-            dashboard_insights=insights_result or None,
-        ),
-        resources=DashboardWebsocketResources(),
-        artifacts=websocket_config,
         resource_agent_ids=agent_ids,
         group_id=group_id,
     )

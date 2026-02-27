@@ -5,15 +5,13 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ upload_id: string }> },
 ) {
-  // Proxy finalize upload request to backend
   try {
     const { upload_id } = await params;
 
-    // Get request body (should be empty object {} based on current usage)
     const body = await request.json().catch(() => ({}));
 
     const response = await fetch(
-      `${INTERNAL_HTTP_BASE}/api/v4/resources/uploads/upload/${upload_id}/finalize`,
+      `${INTERNAL_HTTP_BASE}/api/v4/uploads/${upload_id}/finalize`,
       {
         method: "POST",
         headers: {
@@ -23,10 +21,8 @@ export async function POST(
       },
     );
 
-    // Parse JSON response
     const responseData = await response.json();
 
-    // Forward response headers (especially cache invalidation headers)
     const headers = new Headers();
     response.headers.forEach((value, key) => {
       headers.set(key, value);

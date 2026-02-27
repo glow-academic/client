@@ -35,13 +35,10 @@ BEGIN
             'model_ids', m.model_ids,
             'provider_ids', m.provider_ids,
             'input_pricing_count', m.input_pricing_count,
-            'input_pricing_unit_id', m.input_pricing_unit_id,
             'input_pricing_pricing_id', m.input_pricing_pricing_id,
             'output_pricing_count', m.output_pricing_count,
-            'output_pricing_unit_id', m.output_pricing_unit_id,
             'output_pricing_pricing_id', m.output_pricing_pricing_id,
             'cached_pricing_count', m.cached_pricing_count,
-            'cached_pricing_unit_id', m.cached_pricing_unit_id,
             'cached_pricing_pricing_id', m.cached_pricing_pricing_id,
             'debug_info', m.debug_info
         )

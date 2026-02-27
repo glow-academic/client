@@ -523,7 +523,7 @@ if [[ "$MIGRATE_DB" == true ]]; then
       migration_file=$(ls migrate/*.sql 2>/dev/null | while read f; do
         num=$(extract_migration_number "$f")
         if [[ -n "$num" ]]; then
-          printf "%05d %s\n" "$num" "$f"
+          printf "%05d %s\n" "$((10#$num))" "$f"
         fi
       done | sort -rn | head -1 | awk '{print $2}')
       

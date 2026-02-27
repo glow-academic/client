@@ -41,7 +41,6 @@ from app.api.v4.artifacts.types import (
     FilterOption,
     HistoryItem,
     HistoryResponse,
-    WebsocketArtifacts,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.entries.attempt.get import ChatViewItem, get_attempt_chats_internal
@@ -1110,7 +1109,13 @@ async def get_home_websocket(
 
     insights_result = await fetch_insights()
 
-    websocket_config = WebsocketArtifacts(
+    return GetHomeWebsocketResponse(
+        entries=HomeWebsocketEntries(
+            draft_training=data.draft_item,
+            runs=runs_result,
+            home_insights=insights_result or None,
+        ),
+        resources=websocket_resources,
         agents=data.config_agents or None,
         models=data.config_models or None,
         providers=data.config_providers or None,
@@ -1133,16 +1138,6 @@ async def get_home_websocket(
             history_scenario_ids=history_scenario_ids,
             history_infinite_mode=history_infinite_mode,
         ),
-    )
-
-    return GetHomeWebsocketResponse(
-        entries=HomeWebsocketEntries(
-            draft_training=data.draft_item,
-            runs=runs_result,
-            home_insights=insights_result or None,
-        ),
-        resources=websocket_resources,
-        artifacts=websocket_config,
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
     )

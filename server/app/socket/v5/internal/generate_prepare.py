@@ -85,16 +85,39 @@ def _build_jinja_context(result: object) -> dict[str, Any]:
     entries = getattr(result, "entries", None)
     if entries:
         context["entries"] = entries.model_dump(mode="json")  # type: ignore[union-attr]
-    result_artifacts = getattr(result, "artifacts", None)
-    if result_artifacts:
-        context["artifacts"] = result_artifacts.model_dump(mode="json")  # type: ignore[union-attr]
+    # Build artifacts dict from flat config-chain fields on result
+    artifacts_dict: dict[str, Any] = {}
+    for key in (
+        "agents",
+        "models",
+        "providers",
+        "tools",
+        "args",
+        "args_outputs",
+        "profile",
+        "params",
+    ):
+        val = getattr(result, key, None)
+        if val is not None:
+            if hasattr(val, "model_dump"):
+                artifacts_dict[key] = val.model_dump(mode="json")  # type: ignore[union-attr]
+            elif isinstance(val, list):
+                artifacts_dict[key] = [
+                    item.model_dump(mode="json")
+                    if hasattr(item, "model_dump")
+                    else item
+                    for item in val
+                ]
+            else:
+                artifacts_dict[key] = val
+    if artifacts_dict:
+        context["artifacts"] = artifacts_dict
     return context
 
 
 def _enrich_tools_with_args(
     tool_dicts: list[dict[str, Any]],
     result: object,
-    config: ArtifactGenerateConfig,
 ) -> list[dict[str, Any]]:
     """Build arguments/argument_descriptions/argument_defaults on tool dicts.
 
@@ -102,12 +125,11 @@ def _enrich_tools_with_args(
     them against the pre-fetched QGetArgsV4Item list in config.args to produce
     the JSONB structures that convert_tools_to_openai_format expects.
     """
-    result_artifacts = getattr(result, "artifacts", None)
-    if not tool_dicts or not result_artifacts:
+    if not tool_dicts:
         return tool_dicts
 
-    resource_tools = getattr(result_artifacts, config.config_tools_attr, None) or []
-    config_args = getattr(result_artifacts, "args", None) or []
+    resource_tools = getattr(result, "tools", None) or []
+    config_args = getattr(result, "args", None) or []
 
     if not resource_tools or not config_args:
         return tool_dicts
@@ -171,17 +193,13 @@ def _enrich_tools_with_args(
 def _enrich_tools_with_args_outputs(
     tool_dicts: list[dict[str, Any]],
     result: object,
-    config: ArtifactGenerateConfig,
 ) -> list[dict[str, Any]]:
     """Attach _args_outputs to tools for output schema resolution."""
-    result_artifacts = getattr(result, "artifacts", None)
-    if not tool_dicts or not result_artifacts:
+    if not tool_dicts:
         return tool_dicts
 
-    resource_tools = getattr(result_artifacts, config.config_tools_attr, None) or []
-    config_args_outputs = (
-        getattr(result_artifacts, config.config_args_outputs_attr, None) or []
-    )
+    resource_tools = getattr(result, "tools", None) or []
+    config_args_outputs = getattr(result, "args_outputs", None) or []
 
     if not resource_tools or not config_args_outputs:
         return tool_dicts
@@ -314,23 +332,10 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
             profile_id, artifact_id, payload.draft_id, pool
         )
 
-        # Step 6a: Extract artifacts lookup tables (needed for agent fallback)
-        result_artifacts = getattr(result, "artifacts", None)
-        config_agents = (
-            getattr(result_artifacts, config.config_agents_attr, None) or []
-            if result_artifacts
-            else []
-        )
-        config_models = (
-            getattr(result_artifacts, config.config_models_attr, None) or []
-            if result_artifacts
-            else []
-        )
-        config_providers = (
-            getattr(result_artifacts, config.config_providers_attr, None) or []
-            if result_artifacts
-            else []
-        )
+        # Step 6a: Extract config-chain lookup tables (needed for agent fallback)
+        config_agents = getattr(result, "agents", None) or []
+        config_models = getattr(result, "models", None) or []
+        config_providers = getattr(result, "providers", None) or []
 
         # Build lookup dicts for multi-agent resolution
         agents_by_id = {a.id: a for a in config_agents if a.id}
@@ -384,21 +389,17 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
         jinja_context_base = _build_jinja_context(result)
 
         # Step 9: Read all tools, enrich, and build createable set (shared)
-        config_tools = (
-            getattr(result_artifacts, config.config_tools_attr, None) or []
-            if result_artifacts
-            else []
-        )
+        config_tools = getattr(result, "tools", None) or []
         all_tool_dicts = convert_tools_to_dict(config_tools)
-        all_tool_dicts = _enrich_tools_with_args(all_tool_dicts, result, config)
-        all_tool_dicts = _enrich_tools_with_args_outputs(all_tool_dicts, result, config)
+        all_tool_dicts = _enrich_tools_with_args(all_tool_dicts, result)
+        all_tool_dicts = _enrich_tools_with_args_outputs(all_tool_dicts, result)
 
         createable_resources: set[str] = set()
         for tool in config_tools:
-            if getattr(tool, "createable", False):
+            if getattr(tool, "operation", None) == "create":
                 type_name = (
-                    getattr(tool, "resource", None)
-                    or getattr(tool, "entry", None)
+                    (getattr(tool, "resources", None) or [None])[0]
+                    or (getattr(tool, "entries", None) or [None])[0]
                     or None
                 )
                 if type_name:
@@ -406,7 +407,7 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
 
         # Compute artifact types from all tools (shared across agents)
         all_artifact_types = list(
-            {td["artifact"] for td in all_tool_dicts if td.get("artifact")}
+            {a for td in all_tool_dicts for a in (td.get("artifacts") or []) if a}
         )
 
         # Step 10: Require run_id and group_id from payload

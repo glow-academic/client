@@ -13,7 +13,7 @@ INSERT INTO public.args_outputs_resource (id, args_id, name, template, created_a
 INSERT INTO public.args_outputs_resource (id, args_id, name, template, created_at, active, generated, mcp) VALUES ('019bbf87-0969-7d40-b671-1bdfae5c96af', '019bbf87-091f-77de-b8e9-1160c499a3e7', 'key_id', '{{ key_id }}', '2026-01-14T18:39:46.732086+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019bbabc-5a30-7d38-9396-1f1b957c5e8a', 'Create a new keys resource', '2026-01-08T20:52:05.827256+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019bbabc-5a30-7ca5-ae82-6cc3695c1ae0', 'create_keys', '2026-01-08T20:52:05.827256+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, createable, args_ids, args_output_ids, resource, entry, artifact) VALUES ('019bebc4-d436-7c28-b7bf-f89de16c64d0', '2026-01-17T17:57:40.647526+00:00', false, false, true, 'create_keys', 'Create a new keys resource', '{}', true, '{019bbf87-091e-7940-9825-c757e353ed6d,019bbf87-091f-77de-b8e9-1160c499a3e7}', '{019bbf87-0965-77e7-8ab0-e35555bc6b29,019bbf87-0969-7d40-b671-1bdfae5c96af}', 'keys', NULL, NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, operation, args_ids, args_output_ids, resources, entries, artifacts) VALUES ('019bebc4-d436-7c28-b7bf-f89de16c64d0', '2026-01-17T17:57:40.647526+00:00', false, false, true, 'create_keys', 'Create a new keys resource', '{}', 'create', '{019bbf87-091e-7940-9825-c757e353ed6d,019bbf87-091f-77de-b8e9-1160c499a3e7}', '{019bbf87-0965-77e7-8ab0-e35555bc6b29,019bbf87-0969-7d40-b671-1bdfae5c96af}', '{keys}'::text[], '{}'::text[], '{}'::text[]) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- tool_artifact
@@ -35,7 +35,8 @@ INSERT INTO public.tool_descriptions_junction (tool_id, description_id, created_
 INSERT INTO public.tool_resources_junction (tool_id, resource_id, active, created_at, generated, mcp) VALUES ('019b9f61-8047-78d2-a5fe-0d48dbacd10f', '019bbeb4-5111-777c-8185-c318f7219be3', true, '2026-01-08T20:52:05.827256+00:00', false, false) ON CONFLICT (tool_id, resource_id) DO NOTHING;
 -- tool_flags_junction
 INSERT INTO public.tool_flags_junction (tool_id, flag_id, value, created_at, generated, mcp, active) VALUES ('019b9f61-8047-78d2-a5fe-0d48dbacd10f', '019be334-bfc6-74fb-be11-ea6b522945bb', true, '2026-01-08T20:52:05.827256+00:00', false, false, true) ON CONFLICT (tool_id, flag_id) DO NOTHING;
-INSERT INTO public.tool_flags_junction (tool_id, flag_id, value, created_at, generated, mcp, active) VALUES ('019b9f61-8047-78d2-a5fe-0d48dbacd10f', 'df188f80-b6c5-46bc-b945-df1a40318de5', true, '2026-02-22T12:36:03.817884+00:00', false, false, true) ON CONFLICT (tool_id, flag_id) DO NOTHING;
+-- tool_operations_junction
+INSERT INTO public.tool_operations_junction (tool_id, operation_id, created_at, active, generated, mcp) VALUES ('019b9f61-8047-78d2-a5fe-0d48dbacd10f', '019d0000-0001-7000-8000-000000000002', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (tool_id, operation_id) DO NOTHING;
 -- tool_names_junction
 INSERT INTO public.tool_names_junction (tool_id, name_id, created_at, generated, mcp, active) VALUES ('019b9f61-8047-78d2-a5fe-0d48dbacd10f', '019bbabc-5a30-7ca5-ae82-6cc3695c1ae0', '2026-01-08T20:52:05.827256+00:00', false, false, true) ON CONFLICT (tool_id, name_id) DO NOTHING;
 -- tool_tools_junction

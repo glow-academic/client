@@ -45,7 +45,6 @@ from app.api.v4.artifacts.auth.types import (
     GetAuthApiResponse,
     GetAuthWebsocketResponse,
 )
-from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.auth_drafts.get import get_auth_drafts_entries_internal
@@ -629,17 +628,6 @@ async def get_auth_websocket(
         runs=runs_result,
     )
 
-    websocket_config = WebsocketArtifacts(
-        agents=data.config_agents,
-        models=data.config_models,
-        providers=data.config_providers,
-        tools=data.config_tools,
-        args=config_args,
-        args_outputs=config_args_outputs,
-        profile=config_profile_result or None,
-        params=GetAuthApiRequest(auth_id=auth_id, draft_id=draft_id),
-    )
-
     return GetAuthWebsocketResponse(
         entries=entries if data.draft_view or runs_result else None,
         resources=AuthWebsocketResources(
@@ -650,7 +638,14 @@ async def get_auth_websocket(
             slugs=data.slugs_current,
             items=data.items,
         ),
-        artifacts=websocket_config,
+        agents=data.config_agents,
+        models=data.config_models,
+        providers=data.config_providers,
+        tools=data.config_tools,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=config_profile_result or None,
+        params=GetAuthApiRequest(auth_id=auth_id, draft_id=draft_id),
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
     )

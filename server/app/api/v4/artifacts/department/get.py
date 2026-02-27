@@ -44,7 +44,6 @@ from app.api.v4.artifacts.department.types import (
     GetDepartmentApiResponse,
     GetDepartmentWebsocketResponse,
 )
-from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.department_drafts.get import (
@@ -634,17 +633,6 @@ async def get_department_websocket(
                 fetch_args_outputs(),
             )
 
-    websocket_config = WebsocketArtifacts(
-        agents=data.config_agents,
-        models=data.config_models,
-        providers=data.config_providers,
-        tools=tools_result or None,
-        args=config_args,
-        args_outputs=config_args_outputs,
-        profile=config_profile_result or None,
-        params=GetDepartmentApiRequest(department_id=department_id, draft_id=draft_id),
-    )
-
     return GetDepartmentWebsocketResponse(
         entries=entries if draft_department or runs_result else None,
         resources=DepartmentWebsocketResources(
@@ -653,7 +641,14 @@ async def get_department_websocket(
             flags=data.flags_current,
             settings=data.settings_current,
         ),
-        artifacts=websocket_config,
+        agents=data.config_agents,
+        models=data.config_models,
+        providers=data.config_providers,
+        tools=tools_result or None,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=config_profile_result or None,
+        params=GetDepartmentApiRequest(department_id=department_id, draft_id=draft_id),
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
     )

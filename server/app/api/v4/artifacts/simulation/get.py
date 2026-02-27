@@ -67,7 +67,6 @@ from app.api.v4.artifacts.simulation.types import (
     SimulationWebsocketEntries,
     SimulationWebsocketResources,
 )
-from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.entries.runs.search import get_run_list_entries_internal
 from app.api.v4.entries.simulation_drafts.get import (
     get_simulation_drafts_entries_internal,
@@ -891,22 +890,6 @@ async def get_simulation_websocket(
                 fetch_args(),
                 fetch_args_outputs(),
             )
-
-    websocket_config = WebsocketArtifacts(
-        agents=data.config_agent_resources,
-        models=data.config_model_resources,
-        providers=data.config_provider_resources,
-        tools=tools_result or None,
-        args=config_args,
-        args_outputs=config_args_outputs,
-        profile=config_profile_result or None,
-        params=GetSimulationApiRequest(
-            simulation_id=simulation_id,
-            draft_id=draft_id,
-            scenario_search=scenario_search,
-            filter_scenario_ids=filter_scenario_ids,
-        ),
-    )
 
     return GetSimulationWebsocketResponse(
         group_id=data.group_id,

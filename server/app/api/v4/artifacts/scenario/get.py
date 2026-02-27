@@ -75,7 +75,6 @@ from app.api.v4.artifacts.scenario.types import (
     ScenarioWebsocketEntries,
     ScenarioWebsocketResources,
 )
-from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.runs.search import get_run_list_entries_internal
@@ -1354,33 +1353,6 @@ async def get_scenario_websocket(
     entries = ScenarioWebsocketEntries(
         draft_scenario=draft_view,
         runs=runs_result,
-    )
-
-    websocket_config = WebsocketArtifacts(
-        agents=data.config_agent_resources,
-        models=data.config_model_resources,
-        providers=data.config_provider_resources,
-        tools=tools_result or None,
-        args=config_args,
-        args_outputs=config_args_outputs,
-        profile=config_profile_result or None,
-        params=GetScenarioApiRequest(
-            scenario_id=scenario_id,
-            draft_id=draft_id,
-            description_search=description_search,
-            persona_search=persona_search,
-            document_search=document_search,
-            parameter_search=parameter_search,
-            problem_statement_search=problem_statement_search,
-            image_search=image_search,
-            video_search=video_search,
-            question_search=question_search,
-            option_search=option_search,
-            persona_show_selected=persona_show_selected,
-            document_show_selected=document_show_selected,
-            parameter_show_selected=parameter_show_selected,
-            parameter_ids=parameter_ids,
-        ),
     )
 
     return GetScenarioWebsocketResponse(

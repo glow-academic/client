@@ -41,7 +41,6 @@ from app.api.v4.artifacts.tool.types import (
     ToolWebsocketEntries,
     ToolWebsocketResources,
 )
-from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.runs.search import get_run_list_entries_internal
@@ -619,17 +618,6 @@ async def get_tool_websocket(
         runs=runs_result,
     )
 
-    websocket_config = WebsocketArtifacts(
-        agents=data.config_agent_resources,
-        models=data.config_model_resources,
-        providers=data.config_provider_resources,
-        tools=tools_result or None,
-        args=config_args,
-        args_outputs=config_args_outputs,
-        profile=config_profile_result or None,
-        params=GetToolApiRequest(tool_id=tool_id, draft_id=draft_id),
-    )
-
     return GetToolWebsocketResponse(
         entries=entries if draft_tool or runs_result else None,
         resources=ToolWebsocketResources(
@@ -640,7 +628,14 @@ async def get_tool_websocket(
             arg_positions=current.arg_positions if current else None,
             args_outputs=current.args_outputs if current else None,
         ),
-        artifacts=websocket_config,
+        agents=data.config_agent_resources,
+        models=data.config_model_resources,
+        providers=data.config_provider_resources,
+        tools=tools_result or None,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=config_profile_result or None,
+        params=GetToolApiRequest(tool_id=tool_id, draft_id=draft_id),
         resource_agent_ids=data.agent_ids,
         group_id=data.group_id,
     )

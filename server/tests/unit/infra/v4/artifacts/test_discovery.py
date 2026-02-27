@@ -14,7 +14,7 @@ from app.infra.v4.artifacts.discovery import (
     get_resource_table_columns,
     map_template_values_to_table_columns,
 )
-from app.registry.resources import RESOURCE_OUTPUT_SCHEMAS
+from app.registry.resource_output_schemas import RESOURCE_OUTPUT_SCHEMAS
 
 
 class TestExtractTemplateVariableName:

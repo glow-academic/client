@@ -14,7 +14,6 @@ from app.api.v4.artifacts.record.types import (
     RecordWebsocketEntries,
     RecordWebsocketResources,
 )
-from app.api.v4.artifacts.types import WebsocketArtifacts
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.runs.search import (
     GetRunListViewResponse,
@@ -195,7 +194,12 @@ async def get_record_websocket(
 
     insights_result = await fetch_insights()
 
-    websocket_config = WebsocketArtifacts(
+    return GetRecordWebsocketResponse(
+        entries=RecordWebsocketEntries(
+            runs=data.runs_today,
+            record_insights=insights_result or None,
+        ),
+        resources=RecordWebsocketResources(),
         params=GetRecordApiRequest(record_id=record_id, draft_id=draft_id),
         agents=data.config_agents or None,
         models=data.config_models or None,
@@ -204,15 +208,6 @@ async def get_record_websocket(
         args=config_args,
         args_outputs=config_args_outputs,
         profile=data.config_profile or None,
-    )
-
-    return GetRecordWebsocketResponse(
-        entries=RecordWebsocketEntries(
-            runs=data.runs_today,
-            record_insights=insights_result or None,
-        ),
-        resources=RecordWebsocketResources(),
-        artifacts=websocket_config,
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
     )

@@ -35,7 +35,7 @@ SELECT
     aaj.agents_id as agent_id,
     ta.id as tool_id,
     dr.resource::text as resource,
-    COALESCE(tf_create.value, true) as is_creatable
+    COALESCE(tr.operation = 'create', false) as is_creatable
 FROM agent_agents_junction aaj
 JOIN agent_artifact a ON a.id = aaj.agent_id
 JOIN agent_tools_junction atj ON atj.agent_id = a.id AND atj.active = true
@@ -46,8 +46,6 @@ JOIN tool_resources_junction tdj ON tdj.tool_id = ta.id AND tdj.active = true
 JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
 LEFT JOIN tool_flags_junction tf_active ON tf_active.tool_id = ta.id
 LEFT JOIN flags_resource f_active ON f_active.id = tf_active.flag_id AND f_active.name = 'tool_active'
-LEFT JOIN tool_flags_junction tf_create ON tf_create.tool_id = ta.id
-LEFT JOIN flags_resource f_create ON f_create.id = tf_create.flag_id AND f_create.name = 'tool_creatable'
 LEFT JOIN agent_flags_junction af_agent ON af_agent.agent_id = a.id
 LEFT JOIN flags_resource f_agent ON f_agent.id = af_agent.flag_id AND f_agent.name = 'agent_active'
 WHERE aaj.agents_id = ANY(agent_ids)

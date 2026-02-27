@@ -15,12 +15,8 @@ from app.sql.types import (
 )
 
 
-class WebsocketArtifacts(BaseModel):
-    """Shared artifacts chain for websocket generation context.
-
-    Houses the settings-derived resources needed by the generate pipeline.
-    Identical across all artifacts — defined once here.
-    """
+class InternalResponseBase(BaseModel):
+    """Base for all internal/websocket fetcher responses. Flat config chain."""
 
     agents: list[QGetAgentsV4Item] | None = None
     models: list[QGetModelsV4Item] | None = None
@@ -30,10 +26,8 @@ class WebsocketArtifacts(BaseModel):
     args_outputs: list[QGetArgsOutputsV4Item] | None = None
     profile: list[QGetProfilesV4Item] | None = None
     params: BaseModel | None = None
-
-
-# Backwards compatibility alias
-WebsocketConfig = WebsocketArtifacts
+    resource_agent_ids: dict[str, UUID | None] | None = None
+    group_id: UUID | None = None
 
 
 class FilterOption(BaseModel):

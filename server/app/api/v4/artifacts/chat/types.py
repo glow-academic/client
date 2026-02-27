@@ -15,7 +15,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.api.v4.artifacts.types import WebsocketArtifacts
+from app.api.v4.artifacts.types import InternalResponseBase
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -430,14 +430,11 @@ class ChatWebsocketResources(BaseModel):
     objectives: list[QGetObjectivesV4Item] | None = None
 
 
-class GetChatWebsocketResponse(BaseModel):
+class GetChatWebsocketResponse(InternalResponseBase):
     """Websocket-facing chat bundle response with hydrated resources."""
 
     entries: ChatWebsocketEntries | None = None
     resources: ChatWebsocketResources
-    artifacts: WebsocketArtifacts | None = None
-    resource_agent_ids: dict[str, UUID | None] | None = None
-    group_id: UUID | None = None
 
 
 # =============================================================================
@@ -603,7 +600,7 @@ class ChatStartWebsocketResources(BaseModel):
     valid_entry_types: list[str] = Field(default_factory=list)
 
 
-class GetChatStartWebsocketResponse(BaseModel):
+class GetChatStartWebsocketResponse(InternalResponseBase):
     """Websocket-facing chat start response."""
 
     entries: ChatStartWebsocketEntries

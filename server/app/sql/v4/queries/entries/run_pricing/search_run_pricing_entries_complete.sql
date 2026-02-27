@@ -18,8 +18,7 @@ CREATE OR REPLACE FUNCTION public.api_search_run_pricing_entries_v4(
     search text DEFAULT NULL,
     limit_count integer DEFAULT 20,
     offset_count integer DEFAULT 0,
-    run_id uuid DEFAULT NULL,
-    unit_id uuid DEFAULT NULL
+    run_id uuid DEFAULT NULL
 ) RETURNS TABLE(
     items jsonb
 )
@@ -36,7 +35,6 @@ BEGIN
             'created_at', m.created_at,
             'updated_at', m.updated_at,
             'run_id', m.run_id,
-            'unit_id', m.unit_id,
             'generated', m.generated,
             'mcp', m.mcp,
             'active', m.active,
@@ -45,7 +43,6 @@ BEGIN
         FROM run_pricing_mv m
         WHERE true
           AND (run_id IS NULL OR m.run_id = run_id)
-          AND (unit_id IS NULL OR m.unit_id = unit_id)
         ORDER BY m.created_at DESC
         LIMIT limit_count
         OFFSET offset_count

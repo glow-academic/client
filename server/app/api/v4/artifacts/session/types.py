@@ -7,6 +7,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.api.v4.artifacts.types import InternalResponseBase
+
 
 class ArtifactSessionAudit(BaseModel):
     """Single audit entry for a session."""
@@ -136,17 +138,13 @@ class SessionWebsocketResources(BaseModel):
     pass
 
 
-class GetSessionWebsocketResponse(BaseModel):
+class GetSessionWebsocketResponse(InternalResponseBase):
     """Websocket-facing session response with hydrated resources."""
 
     entries: SessionWebsocketEntries | None = None
     resources: SessionWebsocketResources
-    artifacts: "WebsocketArtifacts | None" = None
-    resource_agent_ids: dict[str, UUID | None] | None = None
-    group_id: UUID | None = None
 
 
-from app.api.v4.artifacts.types import WebsocketArtifacts  # noqa: E402
 from app.api.v4.entries.runs.search import GetRunListViewResponse  # noqa: E402
 from app.sql.types import (  # noqa: E402
     GetAuditListViewSqlRow,
