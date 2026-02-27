@@ -276,6 +276,21 @@ class InternalBusAudioEmitter:
             {"group_id": group_id, "error_message": error_message},
         )
 
+    async def on_response_cancelled(
+        self, group_id: str, usage: dict[str, Any] | None = None
+    ) -> None:
+        """Provider response cancelled (barge-in) — emits generate_audio_response_cancelled."""
+        usage = usage or {}
+        ctx = self._session_context(group_id)
+        await self._bus.emit(
+            "generate_audio_response_cancelled",
+            {
+                **ctx,
+                "input_text_tokens": usage.get("input_tokens", 0),
+                "output_text_tokens": usage.get("output_tokens", 0),
+            },
+        )
+
     async def on_response_done(
         self, group_id: str, usage: dict[str, Any] | None = None
     ) -> None:

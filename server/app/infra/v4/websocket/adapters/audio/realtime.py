@@ -394,8 +394,15 @@ class RealtimeAudioAdapter(BaseAudioAdapter):
                 elif event_type == "response.done":
                     response = event.get("response", {})
                     usage = response.get("usage", {})
-                    logger.info(f"Response done - group_id={group_id}, usage={usage}")
-                    await self._emitter.on_response_done(group_id, usage)
+                    status = response.get("status", "completed")
+                    logger.info(
+                        f"Response done - group_id={group_id}, "
+                        f"status={status}, usage={usage}"
+                    )
+                    if status == "cancelled":
+                        await self._emitter.on_response_cancelled(group_id, usage)
+                    else:
+                        await self._emitter.on_response_done(group_id, usage)
 
                 elif event_type == "error":
                     error = event.get("error", {})

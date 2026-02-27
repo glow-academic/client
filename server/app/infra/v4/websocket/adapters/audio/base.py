@@ -107,6 +107,12 @@ class AudioEventEmitter(Protocol):
         """Provider response completed."""
         ...
 
+    async def on_response_cancelled(
+        self, group_id: str, usage: dict[str, Any] | None
+    ) -> None:
+        """Provider response cancelled (barge-in or explicit cancel)."""
+        ...
+
 
 class BaseAudioAdapter(ABC):
     """Base class for audio adapters.
