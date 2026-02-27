@@ -30,9 +30,9 @@ import { toast } from "sonner";
 // UI Components
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import {
-  STAFF_ROLES,
+  PROFILE_ROLES,
   generateGradientFromHex,
-} from "@/components/common/forms/staff-roles";
+} from "@/components/common/forms/profile-roles";
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
@@ -110,47 +110,47 @@ import {
 
 // Import types from page (all types are already exported from the page)
 import type {
-  BulkCreateOrUpdateStaffIn,
-  BulkCreateOrUpdateStaffOut,
-  BulkDeleteStaffIn,
-  BulkDeleteStaffOut,
+  BulkCreateOrUpdateProfileIn,
+  BulkCreateOrUpdateProfileOut,
+  BulkDeleteProfileIn,
+  BulkDeleteProfileOut,
   CSVColumnMapping,
-  DeleteStaffIn,
-  DeleteStaffOut,
+  DeleteProfileIn,
+  DeleteProfileOut,
   GetProfileOut,
   ProcessCSVIn,
   ProcessCSVOut,
   ProcessedCSVRow,
   ProfileListItem,
-  SearchStaffIn,
-  SearchStaffOut,
-  StaffListOut,
-} from "@/app/(main)/management/staff/page";
+  SearchProfileIn,
+  SearchProfileOut,
+  ProfilesListOut,
+} from "@/app/(main)/management/profiles/page";
 
 // Explicitly define server action types (matching the page exports)
-export type DeleteStaffAction = (
-  input: DeleteStaffIn
-) => Promise<DeleteStaffOut>;
-export type BulkDeleteStaffAction = (
-  input: BulkDeleteStaffIn
-) => Promise<BulkDeleteStaffOut>;
-export type SearchStaffAction = (
-  input: SearchStaffIn
-) => Promise<SearchStaffOut>;
+export type DeleteProfileAction = (
+  input: DeleteProfileIn
+) => Promise<DeleteProfileOut>;
+export type BulkDeleteProfileAction = (
+  input: BulkDeleteProfileIn
+) => Promise<BulkDeleteProfileOut>;
+export type SearchProfileAction = (
+  input: SearchProfileIn
+) => Promise<SearchProfileOut>;
 export type ProcessCSVAction = (input: ProcessCSVIn) => Promise<ProcessCSVOut>;
-export type BulkCreateOrUpdateStaffAction = (
-  input: BulkCreateOrUpdateStaffIn
-) => Promise<BulkCreateOrUpdateStaffOut>;
+export type BulkCreateOrUpdateProfileAction = (
+  input: BulkCreateOrUpdateProfileIn
+) => Promise<BulkCreateOrUpdateProfileOut>;
 
 export interface ProfilesProps {
   // Server-provided data (fetched server-side, no client fetching)
-  listData: StaffListOut;
-  initialCreateStaffData?: GetProfileOut;
+  listData: ProfilesListOut;
+  initialCreateProfileData?: GetProfileOut;
   // Server actions (pure server actions, no client-side mutations)
-  deleteStaffAction?: DeleteStaffAction;
-  bulkDeleteStaffAction?: BulkDeleteStaffAction;
+  deleteProfileAction?: DeleteProfileAction;
+  bulkDeleteProfileAction?: BulkDeleteProfileAction;
   processCSVAction?: ProcessCSVAction;
-  bulkCreateOrUpdateStaffAction?: BulkCreateOrUpdateStaffAction;
+  bulkCreateOrUpdateProfileAction?: BulkCreateOrUpdateProfileAction;
 }
 
 // Helper functions
@@ -201,7 +201,7 @@ const TARGET_FIELDS = [
   {
     value: "name", // snake_case
     label: "Name",
-    description: "The staff member's full name",
+    description: "The profile's full name",
     required: true,
   },
   {
@@ -213,7 +213,7 @@ const TARGET_FIELDS = [
   {
     value: "role",
     label: "Role",
-    description: "Staff role (instructional, ta, guest, admin, etc.)",
+    description: "Profile role (instructional, ta, guest, admin, etc.)",
     required: false,
   },
   {
@@ -361,13 +361,13 @@ function ColumnPicker({
   );
 }
 
-export default function Staff({
+export default function Profiles({
   listData: serverListData,
-  initialCreateStaffData,
-  deleteStaffAction,
-  bulkDeleteStaffAction,
+  initialCreateProfileData,
+  deleteProfileAction,
+  bulkDeleteProfileAction,
   processCSVAction,
-  bulkCreateOrUpdateStaffAction,
+  bulkCreateOrUpdateProfileAction,
 }: ProfilesProps) {
   const router = useRouter();
   const {
@@ -405,14 +405,14 @@ export default function Staff({
   });
 
   // Selection state
-  const [selectedStaffIds, setSelectedStaffIds] = useState<string[]>([]);
+  const [selectedProfileIds, setSelectedProfileIds] = useState<string[]>([]);
 
   // Bulk delete dialog
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
 
   // Single delete dialog
   const [showSingleDeleteDialog, setShowSingleDeleteDialog] = useState(false);
-  const [deleteStaffMember, setDeleteStaffMember] =
+  const [deleteProfileMember, setDeleteProfileMember] =
     useState<ProfileListItem | null>(null);
 
   // CSV Import state
@@ -446,9 +446,9 @@ export default function Staff({
   ]);
 
   // Extract data from server-provided data
-  const staff = useMemo(
-    () => serverListData?.staff || [],
-    [serverListData?.staff]
+  const profiles = useMemo(
+    () => serverListData?.profiles || [],
+    [serverListData?.profiles]
   );
   const departments = useMemo(
     () =>
@@ -463,9 +463,9 @@ export default function Staff({
     setIsRefreshing(true);
     try {
       router.refresh();
-      toast.success("Staff data refreshed");
+      toast.success("Profile data refreshed");
     } catch {
-      toast.error("Failed to refresh staff data");
+      toast.error("Failed to refresh profile data");
     } finally {
       setIsRefreshing(false);
     }
@@ -497,14 +497,14 @@ export default function Staff({
 
   // Transform mappings for CSV import
   const departmentMappingForCSV = useMemo(() => {
-    const createStaffData = initialCreateStaffData;
+    const createProfileData = initialCreateProfileData;
     const mapping: Record<string, { name: string; description: string }> = {};
     if (
-      createStaffData &&
-      "departments" in createStaffData &&
-      Array.isArray(createStaffData.departments)
+      createProfileData &&
+      "departments" in createProfileData &&
+      Array.isArray(createProfileData.departments)
     ) {
-      createStaffData.departments.forEach((dept) => {
+      createProfileData.departments.forEach((dept) => {
         if (dept && dept.department_id) {
           mapping[dept.department_id] = {
             name: dept.name ?? "",
@@ -514,20 +514,20 @@ export default function Staff({
       });
     }
     return mapping;
-  }, [initialCreateStaffData]);
+  }, [initialCreateProfileData]);
 
   const validDepartmentIdsForCSV = useMemo(
     () => Object.keys(departmentMappingForCSV),
     [departmentMappingForCSV]
   );
   const roleOptionsForCSV = useMemo(
-    () => initialCreateStaffData?.role_options || [],
-    [initialCreateStaffData]
+    () => initialCreateProfileData?.role_options || [],
+    [initialCreateProfileData]
   );
   const roleResourcesForCSV = useMemo(() => {
     const baseRoles =
-      initialCreateStaffData?.roles && initialCreateStaffData.roles.length > 0
-        ? initialCreateStaffData.roles
+      initialCreateProfileData?.roles && initialCreateProfileData.roles.length > 0
+        ? initialCreateProfileData.roles
         : roleResources || [];
     return (
       baseRoles
@@ -544,7 +544,7 @@ export default function Staff({
           };
         }) ?? []
     );
-  }, [initialCreateStaffData, roleResources]);
+  }, [initialCreateProfileData, roleResources]);
 
   // CSV Import logic
   const validRoles = useMemo(() => {
@@ -728,7 +728,7 @@ export default function Staff({
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", "staff_template.csv");
+    link.setAttribute("download", "profiles_template.csv");
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
@@ -935,12 +935,12 @@ export default function Staff({
               ? row.primary_email_index
               : 0,
           role: row.role ?? "member",
-          active: true, // Default to active for new staff
+          active: true, // Default to active for new profile
           department_ids: deptIds,
         };
       });
 
-      if (!bulkCreateOrUpdateStaffAction) {
+      if (!bulkCreateOrUpdateProfileAction) {
         toast.error("Bulk create or update action not available");
         return;
       }
@@ -950,7 +950,7 @@ export default function Staff({
         return;
       }
 
-      const response = await bulkCreateOrUpdateStaffAction({
+      const response = await bulkCreateOrUpdateProfileAction({
         body: {
           profiles,
           current_profile_id: profile.id,
@@ -959,7 +959,7 @@ export default function Staff({
 
       router.refresh();
       toast.success(
-        `Successfully processed ${response.created_count} created, ${response.updated_count} updated staff member(s)!`
+        `Successfully processed ${response.created_count} created, ${response.updated_count} updated profile(s)!`
       );
 
       setShowCSVImportModal(false);
@@ -967,7 +967,7 @@ export default function Staff({
       const errorMessage =
         error instanceof Error
           ? error.message
-          : "Failed to create or update staff members.";
+          : "Failed to create or update profiles.";
       toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -978,7 +978,7 @@ export default function Staff({
     departmentMappingForCSV,
     validDepartmentIdsForCSV,
     validRoles,
-    bulkCreateOrUpdateStaffAction,
+    bulkCreateOrUpdateProfileAction,
     router,
     profile?.id,
   ]);
@@ -993,28 +993,28 @@ export default function Staff({
       {
         accessorKey: "name",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Staff Member" />
+          <DataTableColumnHeader column={column} title="Profile" />
         ),
         cell: ({ row }) => {
-          const staff = row.original;
+          const profile = row.original;
           return (
             <div className="flex items-center gap-3">
               <div
                 className="h-8 w-8 rounded-full outline outline-muted-foreground flex items-center justify-center text-xs font-medium"
                 style={{ outlineWidth: "1px", outlineStyle: "solid" }}
               >
-                {getInitials(staff.name ?? "")}
+                {getInitials(profile.name ?? "")}
               </div>
               <div className="text-left">
                 <div className="flex items-center gap-2">
                   <p className="font-medium text-sm">
-                    {staff.name}
+                    {profile.name}
                   </p>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {staff.emails && staff.emails.length > 0
-                    ? staff.emails.join(", ")
-                    : staff.primary_email || "No email"}
+                  {profile.emails && profile.emails.length > 0
+                    ? profile.emails.join(", ")
+                    : profile.primary_email || "No email"}
                 </p>
               </div>
             </div>
@@ -1022,16 +1022,16 @@ export default function Staff({
         },
         enableSorting: true,
         filterFn: (row, _, value): boolean => {
-          const staff = row.original;
+          const profile = row.original;
           if (!value) return true;
           const valueLower = String(value).toLowerCase();
-          const emails = staff.emails || [];
+          const emails = profile.emails || [];
           const emailMatch =
             emails.some((e) => e.toLowerCase().includes(valueLower)) ||
-            (staff.primary_email !== null &&
-              staff.primary_email.toLowerCase().includes(valueLower));
+            (profile.primary_email !== null &&
+              profile.primary_email.toLowerCase().includes(valueLower));
           return Boolean(
-            (staff.name ?? "").toLowerCase().includes(valueLower) ||
+            (profile.name ?? "").toLowerCase().includes(valueLower) ||
               emailMatch
           );
         },
@@ -1056,8 +1056,8 @@ export default function Staff({
           <DataTableColumnHeader column={column} title="Role" />
         ),
         cell: ({ row }) => {
-          const staff = row.original;
-          const role = staff.role ?? "member";
+          const profile = row.original;
+          const role = profile.role ?? "member";
           const RoleIcon = getRoleIcon(role);
           return (
             <div className="flex items-center gap-2">
@@ -1071,9 +1071,9 @@ export default function Staff({
         enableSorting: true,
         enableColumnFilter: true,
         filterFn: (row, _, value) => {
-          const staff = row.original;
+          const profile = row.original;
           if (!value || value.length === 0) return true;
-          return value.includes(staff.role);
+          return value.includes(profile.role);
         },
       },
       {
@@ -1087,8 +1087,8 @@ export default function Staff({
           <DataTableColumnHeader column={column} title="Departments" />
         ),
         cell: ({ row }) => {
-          const staff = row.original;
-          const departmentIds = staff.department_ids ?? [];
+          const profile = row.original;
+          const departmentIds = profile.department_ids ?? [];
 
           if (!departmentIds.length) {
             return <span className="text-xs text-muted-foreground">None</span>;
@@ -1131,7 +1131,7 @@ export default function Staff({
                 .rows.map((row) => row.original.profile_id)
                 .filter((id): id is string => id !== null && id !== undefined);
               if (value) {
-                setSelectedStaffIds((prev) => {
+                setSelectedProfileIds((prev) => {
                   const newSelection = [...prev];
                   visibleRowIds.forEach((id) => {
                     if (!newSelection.includes(id)) {
@@ -1141,7 +1141,7 @@ export default function Staff({
                   return newSelection;
                 });
               } else {
-                setSelectedStaffIds((prev) =>
+                setSelectedProfileIds((prev) =>
                   prev.filter((id) => !visibleRowIds.includes(id))
                 );
               }
@@ -1157,12 +1157,12 @@ export default function Staff({
           <Checkbox
             checked={
               row.original.profile_id
-                ? selectedStaffIds.includes(row.original.profile_id)
+                ? selectedProfileIds.includes(row.original.profile_id)
                 : false
             }
             onCheckedChange={(value) => {
               if (!row.original.profile_id) return;
-              setSelectedStaffIds((prev) =>
+              setSelectedProfileIds((prev) =>
                 value
                   ? [...prev, row.original.profile_id!]
                   : prev.filter((x) => x !== row.original.profile_id)
@@ -1170,7 +1170,7 @@ export default function Staff({
             }}
             aria-label="Select row"
             className="translate-y-[2px]"
-            data-testid="checkbox-select-staff"
+            data-testid="checkbox-select-profile"
           />
         </div>
       ),
@@ -1182,9 +1182,9 @@ export default function Staff({
       id: "actions",
       header: "Actions",
       cell: ({ row }) => {
-        const staff = row.original;
-        const canDeleteStaff = staff.can_delete ?? false;
-        const canEditStaff = staff.can_edit ?? false;
+        const profile = row.original;
+        const canDeleteProfile = profile.can_delete ?? false;
+        const canEditProfile = profile.can_edit ?? false;
         return (
           <div className="flex items-center justify-center gap-1">
             <Tooltip>
@@ -1195,15 +1195,15 @@ export default function Staff({
                   size="sm"
                   className="h-7 w-7 p-0"
                   onClick={() => {
-                    if (!staff.profile_id) return;
+                    if (!profile.profile_id) return;
                     window.open(
-                      `/record/${staff.profile_id}`,
+                      `/record/${profile.profile_id}`,
                       "_blank",
                       "noopener,noreferrer"
                     );
                   }}
-                  disabled={!staff.profile_id}
-                  data-testid="btn-preview-staff"
+                  disabled={!profile.profile_id}
+                  data-testid="btn-preview-profile"
                 >
                   <Eye className="h-3 w-3" />
                 </Button>
@@ -1212,7 +1212,7 @@ export default function Staff({
                 <p>View Report</p>
               </TooltipContent>
             </Tooltip>
-            {canEditStaff && (
+            {canEditProfile && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -1221,19 +1221,19 @@ export default function Staff({
                     size="sm"
                     className="h-7 w-7 p-0"
                     onClick={() => {
-                      router.push(`/management/staff/${staff.profile_id}`);
+                      router.push(`/management/profiles/${profile.profile_id}`);
                     }}
-                    data-testid="btn-edit-staff"
+                    data-testid="btn-edit-profile"
                   >
                     <Edit className="h-3 w-3" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Edit Staff</p>
+                  <p>Edit Profile</p>
                 </TooltipContent>
               </Tooltip>
             )}
-            {canDeleteStaff && (
+            {canDeleteProfile && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -1242,16 +1242,16 @@ export default function Staff({
                     size="sm"
                     className="h-7 w-7 p-0 text-destructive hover:text-destructive"
                     onClick={() => {
-                      setDeleteStaffMember(staff);
+                      setDeleteProfileMember(profile);
                       setShowSingleDeleteDialog(true);
                     }}
-                    data-testid="btn-delete-staff"
+                    data-testid="btn-delete-profile"
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Delete Staff</p>
+                  <p>Delete Profile</p>
                 </TooltipContent>
               </Tooltip>
             )}
@@ -1266,10 +1266,10 @@ export default function Staff({
       (c) => c.id !== "select" && c.id !== "actions"
     );
     return [checkboxColumn, ...filtered, actionsColumn];
-  }, [columns, selectedStaffIds, router]);
+  }, [columns, selectedProfileIds, router]);
 
   const table = useReactTable({
-    data: staff,
+    data: profiles,
     columns: columnsWithActions,
     state: {
       sorting,
@@ -1302,42 +1302,42 @@ export default function Staff({
   const tableRows = useMemo(() => {
     return table.getRowModel().rows;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortingKey, columnFiltersKey, staff.length, pageIndex, pageSize]);
+  }, [sortingKey, columnFiltersKey, profiles.length, pageIndex, pageSize]);
 
   // Toolbar state
   const isFiltered = table.getState().columnFilters.length > 0;
   const nameColumn = table.getColumn("search");
   const roleColumn = table.getColumn("role");
   const departmentIdsColumn = table.getColumn("department_ids");
-  const selectedCount = selectedStaffIds.length;
+  const selectedCount = selectedProfileIds.length;
 
   const deletableCount = useMemo(() => {
-    return selectedStaffIds.filter((id) => {
-      const row = staff.find((s) => s.profile_id === id);
+    return selectedProfileIds.filter((id) => {
+      const row = profiles.find((s) => s.profile_id === id);
       return row?.can_delete ?? false;
     }).length;
-  }, [selectedStaffIds, staff]);
+  }, [selectedProfileIds, profiles]);
 
   return (
     <TooltipProvider>
-      <div className="space-y-6" data-page="staff-index">
-        {/* Staff Data Table */}
+      <div className="space-y-6" data-page="profiles-index">
+        {/* Profiles Data Table */}
         <div className="space-y-2">
           {/* Toolbar */}
           <div
             className="flex items-center justify-between"
-            data-testid="staff-toolbar"
+            data-testid="profiles-toolbar"
           >
             <div className="flex flex-1 items-center space-x-2 flex-wrap">
               <div className="mb-2 w-full md:w-auto">
                 <Input
-                  placeholder="Search staff by name or email..."
+                  placeholder="Search profiles by name or email..."
                   value={(nameColumn?.getFilterValue() as string) ?? ""}
                   onChange={(event) =>
                     nameColumn?.setFilterValue(event.target.value)
                   }
                   className="h-8 w-full md:w-[150px] lg:w-[250px]"
-                  data-testid="staff-search"
+                  data-testid="profiles-search"
                 />
               </div>
 
@@ -1381,7 +1381,7 @@ export default function Staff({
                   type="button"
                   size="sm"
                   variant="default"
-                  disabled={!initialCreateStaffData}
+                  disabled={!initialCreateProfileData}
                   onClick={() => setShowCSVImportModal(true)}
                 >
                   <Upload className="h-4 w-4 mr-2" />
@@ -1397,7 +1397,7 @@ export default function Staff({
                   size="sm"
                   onClick={() => setShowBulkDeleteDialog(true)}
                   className="h-8"
-                  data-testid="btn-bulk-delete-staff"
+                  data-testid="btn-bulk-delete-profiles"
                   disabled={deletableCount === 0}
                 >
                   Delete {deletableCount} of {selectedCount}
@@ -1426,7 +1426,7 @@ export default function Staff({
           {/* Table */}
           <div
             className="rounded-md border overflow-x-auto"
-            data-testid="staff-table"
+            data-testid="profiles-table"
           >
             <Table>
               <TableHeader>
@@ -1466,7 +1466,7 @@ export default function Staff({
                       key={row.id}
                       data-state={row.getIsSelected() && "selected"}
                       className="hover:bg-muted/30 transition-colors"
-                      data-testid="staff-row"
+                      data-testid="profiles-row"
                       data-profile-id={row.original.profile_id}
                     >
                       {row
@@ -1494,14 +1494,14 @@ export default function Staff({
                       colSpan={columnsWithActions.length}
                       className="h-24 text-center px-6"
                     >
-                      No staff members found.
+                      No profiles found.
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
           </div>
-          <DataTablePagination table={table} staff={true} />
+          <DataTablePagination table={table} largePage={true} />
         </div>
 
         {/* CSV Import Modal */}
@@ -1515,7 +1515,7 @@ export default function Staff({
               data-testid="csv-upload-modal"
             >
               <DialogHeader>
-                <DialogTitle>Import Staff from CSV</DialogTitle>
+                <DialogTitle>Import Profiles from CSV</DialogTitle>
               </DialogHeader>
 
               <div className="space-y-6 py-4">
@@ -1915,7 +1915,7 @@ export default function Staff({
                                     <GenericPicker
                                       items={(roleResourcesForCSV.length > 0
                                         ? roleResourcesForCSV
-                                        : STAFF_ROLES
+                                        : PROFILE_ROLES
                                       ).filter((r) =>
                                         validRoles.includes(r.id)
                                       )}
@@ -2006,7 +2006,7 @@ export default function Staff({
                                       multiSelect={false}
                                       hideSelectedChips={true}
                                       buttonClassName="h-8"
-                                      groupHeading="Staff Roles"
+                                      groupHeading="Profile Roles"
                                     />
                                   </TableCell>
                                   {validDepartmentIdsForCSV.length > 1 && (
@@ -2067,7 +2067,7 @@ export default function Staff({
                       >
                         {isSubmitting
                           ? "Processing..."
-                          : `Import ${validRowCount} Staff Member(s)`}
+                          : `Import Profiles`}
                       </Button>
                     </div>
                   </div>
@@ -2082,11 +2082,11 @@ export default function Staff({
           open={showBulkDeleteDialog}
           onOpenChange={setShowBulkDeleteDialog}
         >
-          <AlertDialogContent data-testid="dialog-bulk-delete-staff">
+          <AlertDialogContent data-testid="dialog-bulk-delete-profiles">
             <AlertDialogHeader>
               <AlertDialogTitle>
-                Delete {selectedStaffIds.length} staff member
-                {selectedStaffIds.length !== 1 ? "s" : ""}?
+                Delete {selectedProfileIds.length} profile
+                {selectedProfileIds.length !== 1 ? "s" : ""}?
               </AlertDialogTitle>
               <AlertDialogDescription>
                 This will permanently delete the selected accounts. Default
@@ -2094,8 +2094,8 @@ export default function Staff({
               </AlertDialogDescription>
             </AlertDialogHeader>
             {(() => {
-              const selected = staff.filter(
-                (s) => s.profile_id && selectedStaffIds.includes(s.profile_id)
+              const selected = profiles.filter(
+                (s) => s.profile_id && selectedProfileIds.includes(s.profile_id)
               );
               const nonDeletable = selected.filter((s) => !s.can_delete);
               const deletable = selected.filter((s) => s.can_delete);
@@ -2165,11 +2165,11 @@ export default function Staff({
                 data-testid="btn-confirm-delete"
                 onClick={async () => {
                   try {
-                    const deletableIds = staff
+                    const deletableIds = profiles
                       .filter(
                         (s) =>
                           s.profile_id &&
-                          selectedStaffIds.includes(s.profile_id) &&
+                          selectedProfileIds.includes(s.profile_id) &&
                           s.can_delete
                       )
                       .map((s) => s.profile_id!)
@@ -2178,16 +2178,16 @@ export default function Staff({
                       setShowBulkDeleteDialog(false);
                       return;
                     }
-                    if (!bulkDeleteStaffAction) return;
-                    await bulkDeleteStaffAction({
+                    if (!bulkDeleteProfileAction) return;
+                    await bulkDeleteProfileAction({
                       body: { profile_ids: deletableIds },
                     });
                     router.refresh();
-                    toast.success("Selected staff deleted");
-                    setSelectedStaffIds([]);
+                    toast.success("Selected profiles deleted");
+                    setSelectedProfileIds([]);
                     setShowBulkDeleteDialog(false);
                   } catch {
-                    toast.error("Failed to delete selected staff");
+                    toast.error("Failed to delete selected profiles");
                   }
                 }}
               >
@@ -2202,20 +2202,20 @@ export default function Staff({
           open={showSingleDeleteDialog}
           onOpenChange={setShowSingleDeleteDialog}
         >
-          <AlertDialogContent data-testid="dialog-delete-staff">
+          <AlertDialogContent data-testid="dialog-delete-profile">
             <AlertDialogHeader>
               <AlertDialogTitle>
-                Delete {deleteStaffMember?.name}?
+                Delete {deleteProfileMember?.name}?
               </AlertDialogTitle>
               <AlertDialogDescription>
                 This will permanently delete the account. Default profiles and
                 your own account cannot be deleted.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            {deleteStaffMember &&
+            {deleteProfileMember &&
               (() => {
-                const staffMember = deleteStaffMember;
-                const canDelete = staffMember.can_delete;
+                const profileMember = deleteProfileMember;
+                const canDelete = profileMember.can_delete;
 
                 if (!canDelete) {
                   return (
@@ -2226,14 +2226,14 @@ export default function Staff({
                         </p>
                         <div className="mt-1 ml-4 border rounded-md p-2 bg-gray-50 dark:bg-gray-900">
                           <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                            • {staffMember.name} (
-                            {staffMember.primary_email ||
-                              (staffMember.emails &&
-                              staffMember.emails.length > 0
-                                ? staffMember.emails[0]
+                            • {profileMember.name} (
+                            {profileMember.primary_email ||
+                              (profileMember.emails &&
+                              profileMember.emails.length > 0
+                                ? profileMember.emails[0]
                                 : "")}
                             )
-                            {staffMember.profile_id === profile?.id
+                            {profileMember.profile_id === profile?.id
                               ? " – your account"
                               : " – cannot delete"}
                           </p>
@@ -2252,11 +2252,11 @@ export default function Staff({
                       <div className="mt-1 ml-4 border rounded-md p-2 bg-gray-50 dark:bg-gray-900">
                         <ul className="text-sm space-y-2">
                           <li className="text-red-600 dark:text-red-300">
-                            • {staffMember.name} (
-                            {staffMember.primary_email ||
-                              (staffMember.emails &&
-                              staffMember.emails.length > 0
-                                ? staffMember.emails[0]
+                            • {profileMember.name} (
+                            {profileMember.primary_email ||
+                              (profileMember.emails &&
+                              profileMember.emails.length > 0
+                                ? profileMember.emails[0]
                                 : "")}
                             )
                           </li>
@@ -2274,38 +2274,38 @@ export default function Staff({
                 variant="destructive"
                 data-testid="btn-confirm-delete"
                 onClick={async () => {
-                  if (!deleteStaffMember) return;
+                  if (!deleteProfileMember) return;
 
-                  if (!deleteStaffMember.can_delete) {
+                  if (!deleteProfileMember.can_delete) {
                     toast.error("This user cannot be deleted");
                     setShowSingleDeleteDialog(false);
-                    setDeleteStaffMember(null);
+                    setDeleteProfileMember(null);
                     return;
                   }
 
-                  if (!deleteStaffMember.profile_id) {
+                  if (!deleteProfileMember.profile_id) {
                     toast.error("Invalid user profile ID");
                     setShowSingleDeleteDialog(false);
-                    setDeleteStaffMember(null);
+                    setDeleteProfileMember(null);
                     return;
                   }
 
                   try {
-                    if (!deleteStaffAction) return;
+                    if (!deleteProfileAction) return;
                     if (!profile?.id) {
                       toast.error("Profile ID is required");
                       return;
                     }
-                    await deleteStaffAction({
+                    await deleteProfileAction({
                       body: {
-                        target_profile_id: deleteStaffMember.profile_id,
+                        target_profile_id: deleteProfileMember.profile_id,
                         current_profile_id: profile.id,
                       },
                     });
                     router.refresh();
                     toast.success("User deleted successfully");
                     setShowSingleDeleteDialog(false);
-                    setDeleteStaffMember(null);
+                    setDeleteProfileMember(null);
                   } catch {
                     toast.error("Failed to delete user");
                   }

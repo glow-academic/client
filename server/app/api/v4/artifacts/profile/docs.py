@@ -87,12 +87,12 @@ CONFIG = ArtifactDocsConfig(
         ],
     },
     page_metadata=PageMetadataConfig(
-        list_title="Staff",
-        list_description="Manage teaching staff and role assignments for teaching assistant training programs. Organize staff members, assign roles and permissions, and coordinate learning cohort participation for effective L&D program administration.",
-        detail_title="Staff",
-        detail_description="Manage teaching staff member profile, role assignments, and access permissions for teaching assistant training programs. Configure staff participation in learning cohorts and educational resources.",
-        new_title="New Staff",
-        new_description="Add a new teaching staff member to the training platform. Create staff profiles, assign roles and permissions, and configure access to learning cohorts and educational resources for teaching assistant development programs.",
+        list_title="Profiles",
+        list_description="Manage profiles and role assignments for teaching assistant training programs. Organize members, assign roles and permissions, and coordinate learning cohort participation for effective L&D program administration.",
+        detail_title="Profile",
+        detail_description="Manage profile, role assignments, and access permissions for teaching assistant training programs. Configure participation in learning cohorts and educational resources.",
+        new_title="New Profile",
+        new_description="Add a new profile to the training platform. Create profiles, assign roles and permissions, and configure access to learning cohorts and educational resources for teaching assistant development programs.",
     ),
 )
 

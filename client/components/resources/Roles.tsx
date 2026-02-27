@@ -9,9 +9,9 @@
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import {
-  STAFF_ROLES,
+  PROFILE_ROLES,
   generateGradientFromHex,
-} from "@/components/common/forms/staff-roles";
+} from "@/components/common/forms/profile-roles";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -296,7 +296,7 @@ export function Roles({
       return roleResources;
     }
 
-    return STAFF_ROLES.map((r) => ({
+    return PROFILE_ROLES.map((r) => ({
       id: r.id,
       name: r.name,
       description: r.description ?? "",
@@ -340,7 +340,7 @@ export function Roles({
 
   const colorSwatches = useMemo(() => {
     const colors = new Set<string>();
-    STAFF_ROLES.forEach((r) => colors.add(r.color));
+    PROFILE_ROLES.forEach((r) => colors.add(r.color));
     baseRoles.forEach((r) => colors.add(r.color));
     localRoles.forEach((r) => colors.add(r.color));
     return Array.from(colors);
@@ -360,7 +360,7 @@ export function Roles({
   );
 
   const defaultCustomRole = useMemo(() => {
-    const baseCustom = STAFF_ROLES.find((r) => r.id === "custom");
+    const baseCustom = PROFILE_ROLES.find((r) => r.id === "custom");
     if (!baseCustom) {
       return {
         name: "Custom",

@@ -8,6 +8,7 @@ DO $$
 DECLARE
     r RECORD;
 BEGIN
+    -- Drop old-named function (from before rename)
     FOR r IN
         SELECT oidvectortypes(proargtypes) as sig
         FROM pg_proc
@@ -15,6 +16,15 @@ BEGIN
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
         EXECUTE format('DROP FUNCTION IF EXISTS api_list_staff_v4(%s)', r.sig);
+    END LOOP;
+    -- Drop new-named function
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
+        WHERE proname = 'api_list_profiles_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_list_profiles_v4(%s)', r.sig);
     END LOOP;
 END $$;
 
@@ -28,7 +38,7 @@ BEGIN
     FOR r IN
         SELECT typname
         FROM pg_type
-        WHERE typname LIKE 'q_list_staff_v4_%'
+        WHERE (typname LIKE 'q_list_staff_v4_%' OR typname LIKE 'q_list_profiles_v4_%')
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
         EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
@@ -38,7 +48,7 @@ END $$;
 -- 3) Recreate types
 -- Staff: NO can_edit/can_delete (moved to Python)
 -- Added target_is_self for Python permission computation
-CREATE TYPE types.q_list_staff_v4_staff AS (
+CREATE TYPE types.q_list_profiles_v4_profile AS (
     profile_id uuid,
     emails text[],
     primary_email text,
@@ -52,14 +62,14 @@ CREATE TYPE types.q_list_staff_v4_staff AS (
 );
 
 -- Filter option type: value/label/count (names resolved in SQL)
-CREATE TYPE types.q_list_staff_v4_option AS (
+CREATE TYPE types.q_list_profiles_v4_option AS (
     value text,
     label text,
     count bigint
 );
 
 -- 4) Recreate function
-CREATE OR REPLACE FUNCTION api_list_staff_v4(
+CREATE OR REPLACE FUNCTION api_list_profiles_v4(
     profile_id uuid,
     search text DEFAULT NULL,
     filter_department_ids uuid[] DEFAULT NULL,
@@ -70,9 +80,9 @@ CREATE OR REPLACE FUNCTION api_list_staff_v4(
     page_offset int DEFAULT 0
 )
 RETURNS TABLE (
-    staff types.q_list_staff_v4_staff[],
-    department_options types.q_list_staff_v4_option[],
-    role_options types.q_list_staff_v4_option[],
+    profiles types.q_list_profiles_v4_profile[],
+    department_options types.q_list_profiles_v4_option[],
+    role_options types.q_list_profiles_v4_option[],
     total_count bigint
 )
 LANGUAGE sql
@@ -222,16 +232,16 @@ SELECT
         (SELECT ARRAY_AGG(
             (sr.profile_id, sr.emails, sr.primary_email, sr.name, sr.role, sr.initials, sr.department_ids, sr.primary_department_id, sr.requests_per_day,
              sr.target_is_self
-            )::types.q_list_staff_v4_staff
+            )::types.q_list_profiles_v4_profile
             ORDER BY sr.name ASC NULLS LAST
         )
         FROM paginated_staff sr),
-        '{}'::types.q_list_staff_v4_staff[]
-    ) as staff,
+        '{}'::types.q_list_profiles_v4_profile[]
+    ) as profiles,
     -- Department filter options (value/label/count resolved in SQL)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (dr.id::text, dn_name.name, (SELECT COUNT(*) FROM staff_rows sr WHERE dr.id::text = ANY(sr.department_ids)))::types.q_list_staff_v4_option
+            (dr.id::text, dn_name.name, (SELECT COUNT(*) FROM staff_rows sr WHERE dr.id::text = ANY(sr.department_ids)))::types.q_list_profiles_v4_option
             ORDER BY dn_name.name
          )
          FROM departments_resource dr
@@ -239,17 +249,17 @@ SELECT
          JOIN (SELECT dn.department_id, n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id) dn_name ON dn_name.department_id = ddj.department_id
          WHERE dr.id IN (SELECT department_id FROM all_department_ids)
            AND (department_search IS NULL OR LOWER(dn_name.name) LIKE '%' || LOWER(department_search) || '%')),
-        '{}'::types.q_list_staff_v4_option[]
+        '{}'::types.q_list_profiles_v4_option[]
     ) as department_options,
     -- Role filter options (value/label/count resolved in SQL)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (ar.role_value, INITCAP(ar.role_value), (SELECT COUNT(*) FROM staff_rows sr WHERE sr.role::text = ar.role_value))::types.q_list_staff_v4_option
+            (ar.role_value, INITCAP(ar.role_value), (SELECT COUNT(*) FROM staff_rows sr WHERE sr.role::text = ar.role_value))::types.q_list_profiles_v4_option
             ORDER BY ar.role_value
          )
          FROM available_roles ar
          WHERE (role_search IS NULL OR LOWER(ar.role_value) LIKE '%' || LOWER(role_search) || '%')),
-        '{}'::types.q_list_staff_v4_option[]
+        '{}'::types.q_list_profiles_v4_option[]
     ) as role_options,
     -- Total count of filtered staff (before pagination)
     (SELECT total_count FROM filtered_count) as total_count

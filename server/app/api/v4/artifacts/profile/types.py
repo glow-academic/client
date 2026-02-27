@@ -302,8 +302,8 @@ class PatchProfileDraftSqlRow(BaseModel):
 # ========== List Endpoint Types ==========
 
 
-class ListStaffApiStaff(BaseModel):
-    """Staff member type for list endpoint with computed permissions."""
+class ListProfilesApiProfile(BaseModel):
+    """Profile type for list endpoint with computed permissions."""
 
     profile_id: UUID | None = None
     emails: list[str] | None = None
@@ -320,11 +320,11 @@ class ListStaffApiStaff(BaseModel):
     can_delete: bool | None = None
 
 
-class ListStaffApiResponse(BaseModel):
-    """Response model for staff list endpoint with computed permissions."""
+class ListProfilesApiResponse(BaseModel):
+    """Response model for profiles list endpoint with computed permissions."""
 
     actor_name: str | None = None
-    staff: list[ListStaffApiStaff] | None = None
+    profiles: list[ListProfilesApiProfile] | None = None
     department_filter: ListFilterSection | None = None
     role_filter: ListFilterSection | None = None
     total_count: int | None = None

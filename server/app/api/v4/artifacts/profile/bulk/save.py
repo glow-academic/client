@@ -1,4 +1,4 @@
-"""Staff bulk save endpoint - bulk create or update staff members (upsert)."""
+"""Profile bulk save endpoint - bulk create or update profiles (upsert)."""
 
 import uuid
 from typing import Annotated, Any, cast
@@ -11,38 +11,38 @@ from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool, transaction
 from app.sql.types import (
-    UpsertStaffApiRequest,
-    UpsertStaffApiResponse,
-    UpsertStaffSqlParams,
-    UpsertStaffSqlRow,
+    UpsertProfilesApiRequest,
+    UpsertProfilesApiResponse,
+    UpsertProfilesSqlParams,
+    UpsertProfilesSqlRow,
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/queries/staff/upsert_staff_complete.sql"
+SQL_PATH = "app/sql/v4/queries/profiles/upsert_profiles_complete.sql"
 
 router = APIRouter()
 
 
 @router.post(
     "/save",
-    response_model=UpsertStaffApiResponse,
+    response_model=UpsertProfilesApiResponse,
     dependencies=[
         audit_activity(
-            "staff.saved",
-            "{{ actor.name }} {{ action }} {{ count }} staff member(s)",
+            "profile.saved",
+            "{{ actor.name }} {{ action }} {{ count }} profile(s)",
         )
     ],
 )
-async def save_staff(
-    request: UpsertStaffApiRequest,
+async def save_profiles(
+    request: UpsertProfilesApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> UpsertStaffApiResponse:
-    """Bulk create or update staff members (upsert)."""
+) -> UpsertProfilesApiResponse:
+    """Bulk create or update profiles (upsert)."""
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
@@ -88,7 +88,7 @@ async def save_staff(
         # Convert API request to SQL params (add current_profile_id from header)
         # Use double-star pattern - SQL handles bulk operation
         # current_profile_id comes from header, will override if accidentally in request
-        params = UpsertStaffSqlParams(
+        params = UpsertProfilesSqlParams(
             **request.model_dump(),
             current_profile_id=uuid.UUID(current_profile_id),
             session_id=session_id,
@@ -98,7 +98,7 @@ async def save_staff(
         async with transaction(conn):
             # Execute query with typed helper - SQL handles bulk upsert
             result = cast(
-                UpsertStaffSqlRow,
+                UpsertProfilesSqlRow,
                 await execute_sql_typed(
                     conn,
                     SQL_PATH,
@@ -107,7 +107,7 @@ async def save_staff(
             )
 
             if not result:
-                raise ValueError("Failed to bulk save staff")
+                raise ValueError("Failed to bulk save profiles")
 
             # Set audit context
             audit_set(
@@ -117,10 +117,10 @@ async def save_staff(
             )
 
         # Convert SQL result to API response
-        api_response = UpsertStaffApiResponse.model_validate(result.model_dump())
+        api_response = UpsertProfilesApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
-        tags = ["staff", "profile"]
+        tags = ["profile"]
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
@@ -131,7 +131,7 @@ async def save_staff(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="save_staff",
+            operation="save_profiles",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

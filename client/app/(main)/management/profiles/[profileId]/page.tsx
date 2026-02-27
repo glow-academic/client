@@ -1,6 +1,6 @@
 /**
- * app/(main)/management/staff/[profileId]/page.tsx
- * Staff edit page for editing a staff member.
+ * app/(main)/management/profiles/[profileId]/page.tsx
+ * Profile edit page for editing a profile.
  * @AshokSaravanan222
  * 12/04/2025
  */
@@ -13,10 +13,10 @@ import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetStaffIn = InputOf<"/api/v4/artifacts/profiles/get", "post">;
-type GetStaffOut = OutputOf<"/api/v4/artifacts/profiles/get", "post">;
-type SaveStaffIn = InputOf<"/api/v4/artifacts/profiles/save", "post">;
-type SaveStaffOut = OutputOf<"/api/v4/artifacts/profiles/save", "post">;
+type GetProfileIn = InputOf<"/api/v4/artifacts/profiles/get", "post">;
+type GetProfileOut = OutputOf<"/api/v4/artifacts/profiles/get", "post">;
+type SaveProfileIn = InputOf<"/api/v4/artifacts/profiles/save", "post">;
+type SaveProfileOut = OutputOf<"/api/v4/artifacts/profiles/save", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftEmailsIn = InputOf<"/api/v4/resources/emails", "post">;
@@ -35,7 +35,7 @@ type PatchProfileDraftOut = OutputOf<"/api/v4/artifacts/profiles/draft", "patch"
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getStaff = async (input: GetStaffIn): Promise<GetStaffOut> => {
+const getProfile = async (input: GetProfileIn): Promise<GetProfileOut> => {
   return api.post("/artifacts/profiles/get", input, {
     cache: "no-store",
     headers: {
@@ -63,7 +63,7 @@ export async function generateMetadata({
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function saveStaff(input: SaveStaffIn): Promise<SaveStaffOut> {
+async function saveProfile(input: SaveProfileIn): Promise<SaveProfileOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
@@ -103,7 +103,7 @@ async function patchProfileDraft(
 }
 
 /** ---- Server renders client with typed data and actions ---- */
-export default async function StaffEditPage({
+export default async function ProfileEditPage({
   params,
   searchParams,
 }: {
@@ -126,34 +126,34 @@ export default async function StaffEditPage({
     }
   });
 
-  // Inline server-side parsers for staff search params
-  const staffSearchParams = {
+  // Inline server-side parsers for profile search params
+  const profileSearchParams = {
     draftId: parseAsString,
   };
-  const loadStaffSearchParams = createLoader(staffSearchParams);
-  const q = loadStaffSearchParams(searchParamsObj);
+  const loadProfileSearchParams = createLoader(profileSearchParams);
+  const q = loadProfileSearchParams(searchParamsObj);
 
-  // Fetch staff detail (always fresh - source of truth) with draft_id
+  // Fetch profile detail (always fresh - source of truth) with draft_id
   try {
-    const input: GetStaffIn = {
+    const input: GetProfileIn = {
       body: {
         target_profile_id: profileId,
         draft_id: q.draftId ?? null,
-      } as GetStaffIn["body"],
+      } as GetProfileIn["body"],
     };
-    const staffDetail = await getStaff(input);
+    const profileDetail = await getProfile(input);
 
     return (
       <div
         className="space-y-6"
-        data-page="staff-edit"
+        data-page="profile-edit"
         data-profile-id={profileId}
       >
         <Profile
           key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-          staffId={profileId}
-          staffData={staffDetail}
-          saveStaffAction={saveStaff}
+          profileId={profileId}
+          profileData={profileDetail}
+          saveProfileAction={saveProfile}
           patchProfileDraftAction={patchProfileDraft}
           createNamesAction={createDraftNames}
           createEmailsAction={createDraftEmails}
@@ -173,7 +173,7 @@ export default async function StaffEditPage({
         <UnifiedAccessDenied
           reason="department"
           resourceType="department"
-          redirectPath="/management/staff"
+          redirectPath="/management/profiles"
         />
       );
     }

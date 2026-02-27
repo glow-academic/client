@@ -76,7 +76,7 @@ ARTIFACT_ROUTES: dict[str, frozenset[str]] = {
     "practice": frozenset({"/practice"}),
     "pricing": frozenset({"/analytics/pricing"}),
     "profile": frozenset(
-        {"/management/staff", "/management/staff/[profileId]", "/management/staff/new"}
+        {"/management/profiles", "/management/profiles/[profileId]", "/management/profiles/new"}
     ),
     "provider": frozenset(
         {

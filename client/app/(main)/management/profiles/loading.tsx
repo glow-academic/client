@@ -1,6 +1,6 @@
 /**
- * app/(main)/management/staff/loading.tsx
- * Loading skeleton for staff page
+ * app/(main)/management/profiles/loading.tsx
+ * Loading skeleton for profiles page
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
  */
@@ -117,7 +117,7 @@ export default function Loading() {
           </Table>
         </div>
 
-        {/* Pagination skeleton (staff={true} uses w-[85px] select) */}
+        {/* Pagination skeleton (largePage={true} uses w-[85px] select) */}
         {/* Mobile */}
         <div className="flex items-center px-2 md:hidden">
           <div className="flex items-center space-x-2">

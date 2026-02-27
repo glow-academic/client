@@ -430,7 +430,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
     #     description="System management tools",
     #     icon="ClipboardList",
     #     order=5,
-    #     children=["staff", "documents", "parameters", "fields"],
+    #     children=["profiles", "documents", "parameters", "fields"],
     #     routes=[...],
     # ),
     # SectionPermission(
@@ -820,9 +820,9 @@ def compute_page_metadata(
     if not artifact_type and (is_list or is_detail or is_create):
         # e.g., /training/personas → "persona"
         # e.g., /training/personas/[id] → "persona"
-        # e.g., /management/staff/[id] → "profile"
+        # e.g., /management/profiles/[id] → "profile"
         subsection_map = {
-            "staff": "profile",
+            "profiles": "profile",
         }
         if len(segments) >= 2:
             subsection = (
@@ -924,7 +924,7 @@ ENTITY_NAME_MAP: dict[tuple[str, str], tuple[str, str]] = {
     ("intelligence", "providers"): ("provider", "provider_names_junction"),
     ("management", "documents"): ("document", "document_names_junction"),
     ("management", "parameters"): ("parameter", "parameter_names_junction"),
-    ("management", "staff"): ("profile", "profile_names_junction"),
+    ("management", "profiles"): ("profile", "profile_names_junction"),
     ("management", "fields"): ("field", "field_names_junction"),
     ("system", "rubrics"): ("rubric", "rubric_names_junction"),
     ("system", "departments"): ("department", "department_names_junction"),

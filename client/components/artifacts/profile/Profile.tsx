@@ -62,8 +62,8 @@ type PatchProfileDraftOut = {
   new_version?: number | null;
 };
 
-type SaveStaffIn = InputOf<"/api/v4/artifacts/profiles/save", "post">;
-type SaveStaffOut = OutputOf<"/api/v4/artifacts/profiles/save", "post">;
+type SaveProfileIn = InputOf<"/api/v4/artifacts/profiles/save", "post">;
+type SaveProfileOut = OutputOf<"/api/v4/artifacts/profiles/save", "post">;
 type CreateDraftNamesIn = Parameters<NonNullable<NamesProps["createNamesAction"]>>[0];
 type CreateDraftNamesOut = Awaited<
   ReturnType<NonNullable<NamesProps["createNamesAction"]>>
@@ -90,7 +90,7 @@ type EmailItem = NonNullable<EmailsProps["emails"]>[number];
 type EmailResource = NonNullable<EmailsProps["email_resources"]>[number];
 type RoleItem = NonNullable<RolesProps["roles"]>[number];
 
-type StaffData = OutputOf<"/api/v4/artifacts/profiles/get", "post"> &
+type ProfileDetailData = OutputOf<"/api/v4/artifacts/profiles/get", "post"> &
   Record<string, unknown> & {
   group_id?: string | null;
   draft_version?: number | null;
@@ -182,9 +182,9 @@ const PROFILE_RESOURCES: ResourceConfig[] = [
 ];
 
 export interface ProfileProps {
-  staffId?: string;
-  staffData?: unknown;
-  saveStaffAction?: (input: SaveStaffIn) => Promise<SaveStaffOut>;
+  profileId?: string;
+  profileData?: unknown;
+  saveProfileAction?: (input: SaveProfileIn) => Promise<SaveProfileOut>;
   patchProfileDraftAction?: (
     input: PatchProfileDraftIn
   ) => Promise<PatchProfileDraftOut>;
@@ -200,22 +200,22 @@ export interface ProfileProps {
 }
 
 function ProfileComponent({
-  staffId,
-  staffData,
-  saveStaffAction,
+  profileId,
+  profileData,
+  saveProfileAction,
   patchProfileDraftAction,
   createNamesAction,
   createEmailsAction,
   createRequestLimitsAction,
 }: ProfileProps) {
   const router = useRouter();
-  const isEditMode = !!staffId;
+  const isEditMode = !!profileId;
   const { profile } = useProfile();
   const { isAutosaveEnabled, setSelectedDraftId } = useDrafts();
   const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
     useFlushRegistry<Record<string, unknown>>(FLUSH_KEYS);
 
-  const staffSearchParamsClient = useMemo(
+  const profileSearchParamsClient = useMemo(
     () => ({
       draftId: parseAsString,
       roleSearch: parseAsString,
@@ -224,9 +224,9 @@ function ProfileComponent({
     []
   );
 
-  const stableStaffDataFields = React.useMemo(() => {
-    if (!staffData) return null;
-    const s = staffData as StaffData;
+  const stableProfileDataFields = React.useMemo(() => {
+    if (!profileData) return null;
+    const s = profileData as ProfileDetailData;
     const nameResource = s.names?.resource ?? null;
     const flagResource = s.flags?.current ?? null;
     const requestLimitResource = s.request_limits?.resource ?? null;
@@ -279,47 +279,47 @@ function ProfileComponent({
       role_options: s.role_options ?? [],
       roles: s.roles ?? [],
     };
-  }, [staffData]);
+  }, [profileData]);
 
-  const staffDataRef = React.useRef(stableStaffDataFields);
+  const profileDataRef = React.useRef(stableProfileDataFields);
   React.useEffect(() => {
-    staffDataRef.current = stableStaffDataFields;
-  }, [stableStaffDataFields]);
+    profileDataRef.current = stableProfileDataFields;
+  }, [stableProfileDataFields]);
 
-  const currentStaffData = stableStaffDataFields;
+  const currentProfileData = stableProfileDataFields;
 
   const canRegenerate = useCallback(
     (resourceType: ProfileResourceType): boolean => {
-      if (!stableStaffDataFields) return false;
+      if (!stableProfileDataFields) return false;
       switch (resourceType) {
         case "names":
-          return stableStaffDataFields.name_resource?.generated ?? false;
+          return stableProfileDataFields.name_resource?.generated ?? false;
         case "flags":
-          return stableStaffDataFields.flag_resource?.generated ?? false;
+          return stableProfileDataFields.flag_resource?.generated ?? false;
         case "request_limits":
           return (
-            stableStaffDataFields.request_limit_resource?.generated ?? false
+            stableProfileDataFields.request_limit_resource?.generated ?? false
           );
         case "departments":
           return (
-            stableStaffDataFields.department_resources?.some(
+            stableProfileDataFields.department_resources?.some(
               (d) => d.generated
             ) ?? false
           );
         case "emails":
           return (
-            stableStaffDataFields.email_resources?.some((e) => e.generated) ??
+            stableProfileDataFields.email_resources?.some((e) => e.generated) ??
             false
           );
         default:
           return false;
       }
     },
-    [stableStaffDataFields]
+    [stableProfileDataFields]
   );
 
   const getInitialFormState = useCallback((): ProfileFormState => {
-    const data = staffDataRef.current;
+    const data = profileDataRef.current;
     if (!data) {
       return {
         name_id: null as string | null,
@@ -361,12 +361,12 @@ function ProfileComponent({
   }, [formState]);
 
   const departmentIdsStr = React.useMemo(
-    () => JSON.stringify(currentStaffData?.department_ids ?? []),
-    [currentStaffData?.department_ids]
+    () => JSON.stringify(currentProfileData?.department_ids ?? []),
+    [currentProfileData?.department_ids]
   );
   const emailIdsStr = React.useMemo(
-    () => JSON.stringify(currentStaffData?.email_ids ?? []),
-    [currentStaffData?.email_ids]
+    () => JSON.stringify(currentProfileData?.email_ids ?? []),
+    [currentProfileData?.email_ids]
   );
   useEffect(() => {
     const newState = getInitialFormState();
@@ -388,12 +388,12 @@ function ProfileComponent({
       return prev;
     });
   }, [
-    currentStaffData?.name_id,
-    currentStaffData?.active_flag_id,
-    currentStaffData?.request_limit_id,
+    currentProfileData?.name_id,
+    currentProfileData?.active_flag_id,
+    currentProfileData?.request_limit_id,
     departmentIdsStr,
     emailIdsStr,
-    currentStaffData?.role,
+    currentProfileData?.role,
   ]);
 
   useEffect(() => {
@@ -533,12 +533,12 @@ function ProfileComponent({
 
       return {
         input_draft_id: draftId || null,
-        group_id: currentStaffData?.group_id ?? null,
+        group_id: currentProfileData?.group_id ?? null,
         ...draftFields,
         expected_version: expectedVersion,
       };
     },
-    [currentStaffData, orderDepartmentsByPrimary, orderEmailsByPrimary]
+    [currentProfileData, orderDepartmentsByPrimary, orderEmailsByPrimary]
   );
 
   const onPatchSuccess = useCallback(() => {
@@ -558,7 +558,7 @@ function ProfileComponent({
     isAutosaveEnabled,
     buildPatchPayload,
     setSelectedDraftId,
-    serverDraftVersion: currentStaffData?.draft_version ?? null,
+    serverDraftVersion: currentProfileData?.draft_version ?? null,
     hasResourceIds,
     flushRegistryRef,
     formStateRef,
@@ -567,7 +567,7 @@ function ProfileComponent({
 
   const { isGenerating, generate } = useArtifactAi({
     artifactType: "profile",
-    groupId: currentStaffData?.group_id,
+    groupId: currentProfileData?.group_id,
     validResourceTypes: [...VALID_RESOURCE_TYPES],
   });
 
@@ -588,12 +588,12 @@ function ProfileComponent({
 
       generate(resourceTypes, {
         draft_id: draftId,
-        artifact_id: staffId || null,
+        artifact_id: profileId || null,
         user_instructions: userInstructions ? [userInstructions] : null,
       });
     },
     [
-      staffId,
+      profileId,
       generate,
       formDataRef,
       flushAllAndSave,
@@ -626,9 +626,9 @@ function ProfileComponent({
   );
 
   const disabled = useMemo(() => {
-    if (!currentStaffData) return false;
-    return !currentStaffData.can_edit;
-  }, [currentStaffData]);
+    if (!currentProfileData) return false;
+    return !currentProfileData.can_edit;
+  }, [currentProfileData]);
 
   const resourceLabels: Partial<Record<ProfileResourceType, string>> = useMemo(
     () => ({
@@ -679,13 +679,13 @@ function ProfileComponent({
         flushResults
       ) as ProfileFormState;
 
-      if (currentStaffData?.name_required && !effectiveFormState.name_id) {
+      if (currentProfileData?.name_required && !effectiveFormState.name_id) {
         toast.error("Name is required");
         throw new Error("Name is required");
       }
 
       if (
-        currentStaffData?.departments_required &&
+        currentProfileData?.departments_required &&
         (!effectiveFormState.department_ids ||
           effectiveFormState.department_ids.length === 0)
       ) {
@@ -694,7 +694,7 @@ function ProfileComponent({
       }
 
       if (
-        currentStaffData?.departments_required &&
+        currentProfileData?.departments_required &&
         effectiveFormState.department_ids.length > 0 &&
         !effectiveFormState.primary_department_id
       ) {
@@ -703,7 +703,7 @@ function ProfileComponent({
       }
 
       if (
-        currentStaffData?.emails_required &&
+        currentProfileData?.emails_required &&
         (!effectiveFormState.email_ids ||
           effectiveFormState.email_ids.length === 0)
       ) {
@@ -716,7 +716,7 @@ function ProfileComponent({
         throw new Error("Profile not loaded");
       }
 
-      if (!saveStaffAction) {
+      if (!saveProfileAction) {
         toast.error("Save action not available");
         throw new Error("Save action not available");
       }
@@ -727,9 +727,9 @@ function ProfileComponent({
       }
 
       try {
-        await saveStaffAction({
+        await saveProfileAction({
           body: {
-            input_profile_id: isEditMode && staffId ? staffId : null,
+            input_profile_id: isEditMode && profileId ? profileId : null,
             role: effectiveFormState.role || null,
             name_id: effectiveFormState.name_id!,
             flag_id: effectiveFormState.active_flag_id ?? null,
@@ -740,36 +740,36 @@ function ProfileComponent({
             department_ids: effectiveFormState.department_ids?.length
               ? effectiveFormState.department_ids
               : null,
-            expected_version: currentStaffData?.draft_version ?? 0,
+            expected_version: currentProfileData?.draft_version ?? 0,
           },
         });
         toast.success(
-          `Staff ${isEditMode ? "updated" : "created"} successfully!`
+          `Profile ${isEditMode ? "updated" : "created"} successfully!`
         );
-        router.push("/management/staff");
+        router.push("/management/profiles");
       } catch (error) {
         toast.error(
-          `Failed to ${isEditMode ? "update" : "create"} staff: ${error instanceof Error ? error.message : "Unknown error"}`
+          `Failed to ${isEditMode ? "update" : "create"} profile: ${error instanceof Error ? error.message : "Unknown error"}`
         );
         throw error;
       }
     },
     [
       isEditMode,
-      staffId,
+      profileId,
       profile?.id,
-      saveStaffAction,
+      saveProfileAction,
       router,
       isAutosaveEnabled,
       flushAllResources,
       formDataRef,
       getInitialFormState,
-      currentStaffData?.name_required,
-      currentStaffData?.departments_required,
-      currentStaffData?.emails_required,
-      currentStaffData?.group_id,
-      currentStaffData?.draft_version,
-      currentStaffData,
+      currentProfileData?.name_required,
+      currentProfileData?.departments_required,
+      currentProfileData?.emails_required,
+      currentProfileData?.group_id,
+      currentProfileData?.draft_version,
+      currentProfileData,
     ]
   );
 
@@ -780,7 +780,7 @@ function ProfileComponent({
       const hasRole = !!formState.role;
       const hasPrimaryDepartment = !!formState.primary_department_id;
       const hasEmails = formState.email_ids.length > 0;
-      const needsDepartments = currentStaffData?.departments_required ?? false;
+      const needsDepartments = currentProfileData?.departments_required ?? false;
 
       switch (stepId) {
         case "basic":
@@ -801,7 +801,7 @@ function ProfileComponent({
           return "pending";
       }
     },
-    [formState, currentStaffData?.departments_required]
+    [formState, currentProfileData?.departments_required]
   );
 
   const steps = useMemo(
@@ -810,7 +810,7 @@ function ProfileComponent({
         id: "basic",
         title: "Basic Information",
         description:
-          "Set the staff member's name, departments, and active status.",
+          "Set the profile's name, departments, and active status.",
         resetFields: ["name", "active", "department_ids"],
       },
       {
@@ -823,7 +823,7 @@ function ProfileComponent({
       {
         id: "roles",
         title: "Roles",
-        description: "Select the staff member's role.",
+        description: "Select the profile's role.",
         resetFields: ["role", "roleSearch", "roleShowSelected"],
       },
     ],
@@ -888,10 +888,10 @@ function ProfileComponent({
 
   const submitButton = useMemo(
     () => ({
-      backUrl: "/management/staff",
+      backUrl: "/management/profiles",
       backLabel: "Back",
-      createLabel: "Create Staff",
-      updateLabel: "Update Staff",
+      createLabel: "Create Profile",
+      updateLabel: "Update Profile",
     }),
     []
   );
@@ -937,10 +937,10 @@ function ProfileComponent({
                 <div className="flex items-end gap-2">
                   <Names
                     name_id={formState.name_id ?? null}
-                    name_resource={currentStaffData?.name_resource ?? null}
-                    show_name={currentStaffData?.show_name ?? true}
-                    name_suggestions={currentStaffData?.name_suggestions ?? []}
-                    names={currentStaffData?.names ?? []}
+                    name_resource={currentProfileData?.name_resource ?? null}
+                    show_name={currentProfileData?.show_name ?? true}
+                    name_suggestions={currentProfileData?.name_suggestions ?? []}
+                    names={currentProfileData?.names ?? []}
                     disabled={disabled}
                     onNameIdChange={(nameId) =>
                       setFormState((prev) => ({
@@ -951,9 +951,9 @@ function ProfileComponent({
                     onGenerate={handleGenerateName}
                     placeholder="e.g., Jane Doe"
                     defaultName="Name"
-                    required={currentStaffData?.name_required ?? false}
+                    required={currentProfileData?.name_required ?? false}
                     hideDescription={true}
-                    group_id={currentStaffData?.group_id ?? null}
+                    group_id={currentProfileData?.group_id ?? null}
                     createNamesAction={createNamesAction}
                     registerFlush={registerFlushCallbacks["names"]}
                   />
@@ -980,12 +980,12 @@ function ProfileComponent({
               <div className="space-y-4">
                 <Departments
                   department_ids={formState.department_ids ?? []}
-                  department_resources={currentStaffData?.department_resources ?? []}
-                  show_departments={currentStaffData?.show_departments ?? false}
+                  department_resources={currentProfileData?.department_resources ?? []}
+                  show_departments={currentProfileData?.show_departments ?? false}
                   department_suggestions={
-                    currentStaffData?.department_suggestions ?? []
+                    currentProfileData?.department_suggestions ?? []
                   }
-                  departments={currentStaffData?.departments ?? []}
+                  departments={currentProfileData?.departments ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({
@@ -994,13 +994,13 @@ function ProfileComponent({
                     }))
                   }
                   onGenerate={handleGenerateDepartments}
-                  required={currentStaffData?.departments_required ?? false}
-                  group_id={currentStaffData?.group_id ?? null}
+                  required={currentProfileData?.departments_required ?? false}
+                  group_id={currentProfileData?.group_id ?? null}
                 />
                 <Flags
-                  flags={currentStaffData?.flags ?? []}
+                  flags={currentProfileData?.flags ?? []}
                   flag_id={formState.active_flag_id ?? null}
-                  show_flags={currentStaffData?.show_flag ?? false}
+                  show_flags={currentProfileData?.show_flag ?? false}
                   columns={1}
                   label="Active"
                   disabled={disabled}
@@ -1011,7 +1011,7 @@ function ProfileComponent({
                     }))
                   }
                   onGenerate={handleGenerateFlags}
-                  group_id={currentStaffData?.group_id ?? null}
+                  group_id={currentProfileData?.group_id ?? null}
                 />
               </div>
             </StepCard>
@@ -1047,10 +1047,10 @@ function ProfileComponent({
               <div className="space-y-4">
                 <Emails
                   email_ids={formState.email_ids ?? []}
-                  email_resources={currentStaffData?.email_resources ?? []}
-                  show_emails={currentStaffData?.show_emails ?? true}
-                  email_suggestions={currentStaffData?.email_suggestions ?? []}
-                  emails={currentStaffData?.emails ?? []}
+                  email_resources={currentProfileData?.email_resources ?? []}
+                  show_emails={currentProfileData?.show_emails ?? true}
+                  email_suggestions={currentProfileData?.email_suggestions ?? []}
+                  emails={currentProfileData?.emails ?? []}
                   disabled={disabled}
                   onChange={(ids, primaryIndex) =>
                     setFormState((prev) => ({
@@ -1061,8 +1061,8 @@ function ProfileComponent({
                   }
                   primary_email_index={formState.primary_email_index ?? 0}
                   onGenerate={handleGenerateEmails}
-                  required={currentStaffData?.emails_required ?? false}
-                  group_id={currentStaffData?.group_id ?? null}
+                  required={currentProfileData?.emails_required ?? false}
+                  group_id={currentProfileData?.group_id ?? null}
                   createEmailsAction={createEmailsAction}
                   registerFlush={registerFlushCallbacks["emails"]}
                 />
@@ -1070,15 +1070,15 @@ function ProfileComponent({
                 <RequestLimits
                   request_limit_id={formState.request_limit_id ?? null}
                   request_limit_resource={
-                    currentStaffData?.request_limit_resource ?? null
+                    currentProfileData?.request_limit_resource ?? null
                   }
                   show_request_limit={
-                    currentStaffData?.show_request_limit ?? true
+                    currentProfileData?.show_request_limit ?? true
                   }
                   request_limit_suggestions={
-                    currentStaffData?.request_limit_suggestions ?? []
+                    currentProfileData?.request_limit_suggestions ?? []
                   }
-                  request_limits={currentStaffData?.request_limits ?? []}
+                  request_limits={currentProfileData?.request_limits ?? []}
                   disabled={disabled}
                   onRequestLimitIdChange={(requestLimitId) =>
                     setFormState((prev) => ({
@@ -1087,16 +1087,16 @@ function ProfileComponent({
                     }))
                   }
                   onGenerate={handleGenerateRequestLimits}
-                  required={currentStaffData?.request_limit_required ?? false}
-                  group_id={currentStaffData?.group_id ?? null}
+                  required={currentProfileData?.request_limit_required ?? false}
+                  group_id={currentProfileData?.group_id ?? null}
                   createRequestLimitsAction={createRequestLimitsAction}
                   registerFlush={registerFlushCallbacks["request_limits"]}
                 />
 
-                {currentStaffData?.departments &&
-                currentStaffData.departments.length > 0
+                {currentProfileData?.departments &&
+                currentProfileData.departments.length > 0
                   ? (() => {
-                      const departmentList = (currentStaffData.departments ??
+                      const departmentList = (currentProfileData.departments ??
                         []) as Array<{
                         department_id?: string;
                         name?: string;
@@ -1274,8 +1274,8 @@ function ProfileComponent({
             >
               <Roles
                 role={formState.role ?? ""}
-                role_options={currentStaffData?.role_options ?? []}
-                roles={currentStaffData?.roles ?? []}
+                role_options={currentProfileData?.role_options ?? []}
+                roles={currentProfileData?.roles ?? []}
                 disabled={disabled}
                 editable={false}
                 onRoleChange={(roleId) =>
@@ -1293,7 +1293,7 @@ function ProfileComponent({
       }
     },
     [
-      currentStaffData,
+      currentProfileData,
       disabled,
       isEditMode,
       handleGenerateName,
@@ -1322,21 +1322,21 @@ function ProfileComponent({
     <TooltipProvider>
       <div
         className="w-full p-6 space-y-8"
-        data-page={`staff-${isEditMode ? "edit" : "new"}`}
+        data-page={`profile-${isEditMode ? "edit" : "new"}`}
       >
         <ReadOnlyBanner
           disabled={disabled}
-          disabledReason={currentStaffData?.disabled_reason ?? null}
+          disabledReason={currentProfileData?.disabled_reason ?? null}
           entityType="profile"
         />
 
         <GenericForm
           nuqsParsers={
-            staffSearchParamsClient as Record<string, Parser<unknown>>
+            profileSearchParamsClient as Record<string, Parser<unknown>>
           }
           steps={steps}
           getStepStatus={getStepStatus}
-          serverData={staffData}
+          serverData={profileData}
           formFieldKeys={formFieldKeys}
           onReset={(stepId) => handleReset(stepId)}
           resetSuccessMessage={resetSuccessMessage}
@@ -1358,16 +1358,16 @@ function ProfileComponent({
 }
 
 export default React.memo(ProfileComponent, (prevProps, nextProps) => {
-  if (prevProps.staffId !== nextProps.staffId) {
+  if (prevProps.profileId !== nextProps.profileId) {
     return false;
   }
 
-  if (JSON.stringify(prevProps.staffData) !== JSON.stringify(nextProps.staffData)) {
+  if (JSON.stringify(prevProps.profileData) !== JSON.stringify(nextProps.profileData)) {
     return false;
   }
 
   if (
-    prevProps.saveStaffAction !== nextProps.saveStaffAction ||
+    prevProps.saveProfileAction !== nextProps.saveProfileAction ||
     prevProps.patchProfileDraftAction !== nextProps.patchProfileDraftAction ||
     prevProps.createNamesAction !== nextProps.createNamesAction ||
     prevProps.createEmailsAction !== nextProps.createEmailsAction ||

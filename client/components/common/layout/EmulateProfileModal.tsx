@@ -12,9 +12,9 @@ import type {
   SwitchEffectiveProfileResult,
 } from "@/app/(main)/layout-server";
 import {
-  STAFF_ROLES,
+  PROFILE_ROLES,
   generateGradientFromHex,
-} from "@/components/common/forms/staff-roles";
+} from "@/components/common/forms/profile-roles";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -99,7 +99,7 @@ export function EmulateProfileModal({
       if (resource) {
         return resource;
       }
-      const fallback = STAFF_ROLES.find((role) => role.id === roleId);
+      const fallback = PROFILE_ROLES.find((role) => role.id === roleId);
       if (fallback) {
         return {
           name: fallback.name,

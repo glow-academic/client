@@ -1,4 +1,4 @@
-"""Staff list endpoint - resource-first pattern with Python permission computation.
+"""Profiles list endpoint - resource-first pattern with Python permission computation.
 
 Two-pass architecture:
 1. SQL returns raw data with target_is_self and active_cohort_count
@@ -19,8 +19,8 @@ from app.api.v4.artifacts.profile.permissions import (
     compute_can_edit,
 )
 from app.api.v4.artifacts.profile.types import (
-    ListStaffApiResponse,
-    ListStaffApiStaff,
+    ListProfilesApiProfile,
+    ListProfilesApiResponse,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.types import ListFilterSection
@@ -28,9 +28,9 @@ from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
-    GetStaffListApiRequest,
-    GetStaffListSqlParams,
-    GetStaffListSqlRow,
+    GetProfilesListApiRequest,
+    GetProfilesListSqlParams,
+    GetProfilesListSqlRow,
     load_sql_query,
 )
 from app.utils.cache.cache_key import cache_key
@@ -39,7 +39,7 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/queries/staff/get_staff_list_complete.sql"
+SQL_PATH = "app/sql/v4/queries/profiles/get_profiles_list_complete.sql"
 
 
 router = APIRouter()
@@ -47,16 +47,16 @@ router = APIRouter()
 
 @router.post(
     "/list",
-    response_model=ListStaffApiResponse,
-    dependencies=[audit_activity("staff.list", "{{ actor.name }} viewed staff list")],
+    response_model=ListProfilesApiResponse,
+    dependencies=[audit_activity("profile.list", "{{ actor.name }} viewed profiles list")],
 )
 async def get_profile_list(
-    request: GetStaffListApiRequest,
+    request: GetProfilesListApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> ListStaffApiResponse:
-    """Get profile/staff list with permissions and relationships."""
+) -> ListProfilesApiResponse:
+    """Get profiles list with permissions and relationships."""
     tags = ["profile"]
 
     # Check for cache bypass header (for testing)
@@ -72,7 +72,7 @@ async def get_profile_list(
         if cached:
             response.headers["X-Cache-Tags"] = ",".join(tags)
             response.headers["X-Cache-Hit"] = "1"
-            return ListStaffApiResponse.model_validate(cached["data"])
+            return ListProfilesApiResponse.model_validate(cached["data"])
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
@@ -106,7 +106,7 @@ async def get_profile_list(
             user_department_ids = []
 
         # Convert API request to SQL params
-        params = GetStaffListSqlParams(
+        params = GetProfilesListSqlParams(
             profile_id=profile_id,
             search=request.search,
             cohort_ids=request.cohort_ids,
@@ -122,7 +122,7 @@ async def get_profile_list(
 
         # Execute query with typed helper
         result = cast(
-            GetStaffListSqlRow,
+            GetProfilesListSqlRow,
             await execute_sql_typed(
                 conn,
                 SQL_PATH,
@@ -137,8 +137,8 @@ async def get_profile_list(
         # user_role already fetched from context above
 
         # Compute permissions for each staff member in Python
-        staff_with_permissions: list[ListStaffApiStaff] = []
-        for s in result.staff or []:
+        profiles_with_permissions: list[ListProfilesApiProfile] = []
+        for s in result.profiles or []:
             target_is_self = getattr(s, "target_is_self", False) or False
             target_role = getattr(s, "role", None)
             can_edit_val = compute_can_edit(
@@ -155,8 +155,8 @@ async def get_profile_list(
             )
             can_duplicate_val = compute_can_duplicate(user_role)
 
-            staff_with_permissions.append(
-                ListStaffApiStaff(
+            profiles_with_permissions.append(
+                ListProfilesApiProfile(
                     profile_id=s.profile_id,
                     emails=s.emails,
                     primary_email=s.primary_email,
@@ -173,9 +173,9 @@ async def get_profile_list(
             )
 
         # Build API response with filter sections (names resolved in SQL)
-        api_response = ListStaffApiResponse(
+        api_response = ListProfilesApiResponse(
             actor_name=actor_name,
-            staff=staff_with_permissions,
+            profiles=profiles_with_permissions,
             department_filter=ListFilterSection.from_sql_options(
                 result.department_options,
                 request.filter_department_ids,
@@ -206,7 +206,7 @@ async def get_profile_list(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="get_staff_list",
+            operation="get_profile_list",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

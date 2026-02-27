@@ -118,12 +118,12 @@ def test_login_flows(page: Page, base_url: str) -> None:
         assert emulation_result.get("allowed") is True
 
         # Step 6: Role-based access → admin sees management pages
-        page.goto(f"{base_url}/management/staff")
+        page.goto(f"{base_url}/management/profiles")
         page.wait_for_load_state("networkidle")
-        expect(page).to_have_url(re.compile(r".*/management/staff.*"))
-        staff_table = page.get_by_test_id("staff-table")
-        staff_table.wait_for(state="visible", timeout=15000)
-        expect(staff_table).to_be_visible()
+        expect(page).to_have_url(re.compile(r".*/management/profiles.*"))
+        profiles_table = page.get_by_test_id("profiles-table")
+        profiles_table.wait_for(state="visible", timeout=15000)
+        expect(profiles_table).to_be_visible()
 
     finally:
         pass

@@ -1865,7 +1865,7 @@ export default function Reports({
           </div>
         </div>
       ) : (
-        <DataTablePagination table={table} staff={true} />
+        <DataTablePagination table={table} largePage={true} />
       )}
     </div>
   );

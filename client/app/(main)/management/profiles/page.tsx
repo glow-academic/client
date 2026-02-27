@@ -1,6 +1,6 @@
 /**
- * app/(main)/management/staff/page.tsx
- * Staff page for the user.
+ * app/(main)/management/profiles/page.tsx
+ * Profiles page for the user.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
@@ -12,29 +12,29 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type StaffListIn = InputOf<"/api/v4/artifacts/profiles/list", "post">;
-type StaffListOut = OutputOf<"/api/v4/artifacts/profiles/list", "post">;
-type DeleteStaffIn = InputOf<"/api/v4/artifacts/profiles/delete", "post">;
-type DeleteStaffOut = OutputOf<"/api/v4/artifacts/profiles/delete", "post">;
-type BulkDeleteStaffIn = InputOf<"/api/v4/artifacts/profiles/bulk/delete", "post">;
-type BulkDeleteStaffOut = OutputOf<"/api/v4/artifacts/profiles/bulk/delete", "post">;
+type ProfilesListIn = InputOf<"/api/v4/artifacts/profiles/list", "post">;
+type ProfilesListOut = OutputOf<"/api/v4/artifacts/profiles/list", "post">;
+type DeleteProfileIn = InputOf<"/api/v4/artifacts/profiles/delete", "post">;
+type DeleteProfileOut = OutputOf<"/api/v4/artifacts/profiles/delete", "post">;
+type BulkDeleteProfileIn = InputOf<"/api/v4/artifacts/profiles/bulk/delete", "post">;
+type BulkDeleteProfileOut = OutputOf<"/api/v4/artifacts/profiles/bulk/delete", "post">;
 // profile/update doesn't exist - use profiles/save instead
 // type UpdateStaffIn = InputOf<"/api/v4/profile/update", "post">;
 // type UpdateStaffOut = OutputOf<"/api/v4/profile/update", "post">;
-type BulkUpdateStaffIn = InputOf<"/api/v4/artifacts/profiles/bulk/save", "post">;
-type BulkUpdateStaffOut = OutputOf<"/api/v4/artifacts/profiles/bulk/save", "post">;
-type SearchStaffIn = InputOf<"/api/v4/artifacts/profiles/bulk/search", "post">;
-type SearchStaffOut = OutputOf<"/api/v4/artifacts/profiles/bulk/search", "post">;
-// Use profiles/get with null target_profile_id to get create staff data
+type BulkUpdateProfileIn = InputOf<"/api/v4/artifacts/profiles/bulk/save", "post">;
+type BulkUpdateProfileOut = OutputOf<"/api/v4/artifacts/profiles/bulk/save", "post">;
+type SearchProfileIn = InputOf<"/api/v4/artifacts/profiles/bulk/search", "post">;
+type SearchProfileOut = OutputOf<"/api/v4/artifacts/profiles/bulk/search", "post">;
+// Use profiles/get with null target_profile_id to get create profile data
 type GetProfileIn = InputOf<"/api/v4/artifacts/profiles/get", "post">;
 type GetProfileOut = OutputOf<"/api/v4/artifacts/profiles/get", "post">;
 type ProcessCSVIn = InputOf<"/api/v4/artifacts/profiles/bulk/process", "post">;
 type ProcessCSVOut = OutputOf<"/api/v4/artifacts/profiles/bulk/process", "post">;
-type BulkCreateOrUpdateStaffIn = InputOf<"/api/v4/artifacts/profiles/bulk/save", "post">;
-type BulkCreateOrUpdateStaffOut = OutputOf<"/api/v4/artifacts/profiles/bulk/save", "post">;
+type BulkCreateOrUpdateProfileIn = InputOf<"/api/v4/artifacts/profiles/bulk/save", "post">;
+type BulkCreateOrUpdateProfileOut = OutputOf<"/api/v4/artifacts/profiles/bulk/save", "post">;
 /** ---- Derived types from server responses ---- */
-type ProfileListItem = NonNullable<StaffListOut["staff"]>[number];
-type SearchStaffItem = NonNullable<SearchStaffOut["staff"]>[number];
+type ProfileListItem = NonNullable<ProfilesListOut["profiles"]>[number];
+type SearchProfileItem = NonNullable<SearchProfileOut["profiles"]>[number];
 // Extract nested types from ProcessCSV
 type ProcessedCSVRow = NonNullable<ProcessCSVOut["rows"]>[number];
 type CSVColumnMapping = ProcessCSVIn["body"]["column_mappings"][number];
@@ -43,7 +43,7 @@ type CSVColumnMapping = ProcessCSVIn["body"]["column_mappings"][number];
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getStaffList = async (input: StaffListIn): Promise<StaffListOut> => {
+const getProfilesList = async (input: ProfilesListIn): Promise<ProfilesListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post("/artifacts/profiles/list", input, {
     cache: "no-store",
@@ -56,22 +56,22 @@ const getStaffList = async (input: StaffListIn): Promise<StaffListOut> => {
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function deleteStaff(input: DeleteStaffIn): Promise<DeleteStaffOut> {
+async function deleteProfile(input: DeleteProfileIn): Promise<DeleteProfileOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/artifacts/profiles/delete", input);
 }
 
-async function bulkDeleteStaff(
-  input: BulkDeleteStaffIn
-): Promise<BulkDeleteStaffOut> {
+async function bulkDeleteProfile(
+  input: BulkDeleteProfileIn
+): Promise<BulkDeleteProfileOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/artifacts/profiles/bulk/delete", input);
 }
 
-// Use profiles/get with null target_profile_id to get create staff data (replaces staff/data/create)
-async function getCreateStaffData(
+// Use profiles/get with null target_profile_id to get create profile data
+async function getCreateProfileData(
   _input: GetProfileIn
 ): Promise<GetProfileOut> {
   "use server";
@@ -88,9 +88,9 @@ async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {
   return api.post("/artifacts/profiles/bulk/process", input);
 }
 
-async function bulkCreateOrUpdateStaff(
-  input: BulkCreateOrUpdateStaffIn
-): Promise<BulkCreateOrUpdateStaffOut> {
+async function bulkCreateOrUpdateProfile(
+  input: BulkCreateOrUpdateProfileIn
+): Promise<BulkCreateOrUpdateProfileOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/artifacts/profiles/bulk/save", input);
@@ -109,14 +109,14 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: docs.list.title, description: docs.list.description };
 }
 
-export default async function StaffPage() {
+export default async function ProfilesPage() {
   // Fetch list data server-side
-  const listData = await getStaffList({
+  const listData = await getProfilesList({
     body: {},
   });
 
-  // Fetch initial create staff data for CreateStaffButton
-  const initialCreateStaffData = await getCreateStaffData({
+  // Fetch initial create profile data for CreateProfileButton
+  const initialCreateProfileData = await getCreateProfileData({
     body: { department_ids: [] },
   });
 
@@ -124,11 +124,11 @@ export default async function StaffPage() {
     <div className="space-y-6">
       <Profiles
         listData={listData}
-        initialCreateStaffData={initialCreateStaffData}
-        deleteStaffAction={deleteStaff}
-        bulkDeleteStaffAction={bulkDeleteStaff}
+        initialCreateProfileData={initialCreateProfileData}
+        deleteProfileAction={deleteProfile}
+        bulkDeleteProfileAction={bulkDeleteProfile}
         processCSVAction={processCSV}
-        bulkCreateOrUpdateStaffAction={bulkCreateOrUpdateStaff}
+        bulkCreateOrUpdateProfileAction={bulkCreateOrUpdateProfile}
       />
     </div>
   );
@@ -136,24 +136,24 @@ export default async function StaffPage() {
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  BulkCreateOrUpdateStaffIn,
-  BulkCreateOrUpdateStaffOut,
-  BulkDeleteStaffIn,
-  BulkDeleteStaffOut,
-  BulkUpdateStaffIn,
-  BulkUpdateStaffOut,
+  BulkCreateOrUpdateProfileIn,
+  BulkCreateOrUpdateProfileOut,
+  BulkDeleteProfileIn,
+  BulkDeleteProfileOut,
+  BulkUpdateProfileIn,
+  BulkUpdateProfileOut,
   CSVColumnMapping,
-  DeleteStaffIn,
-  DeleteStaffOut,
+  DeleteProfileIn,
+  DeleteProfileOut,
   GetProfileIn,
   GetProfileOut,
   ProcessCSVIn,
   ProcessCSVOut,
   ProcessedCSVRow,
   ProfileListItem,
-  SearchStaffIn,
-  SearchStaffItem,
-  SearchStaffOut,
-  StaffListIn,
-  StaffListOut,
+  ProfilesListIn,
+  ProfilesListOut,
+  SearchProfileIn,
+  SearchProfileItem,
+  SearchProfileOut,
 };

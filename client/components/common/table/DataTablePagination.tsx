@@ -18,22 +18,22 @@ import {
 export interface DataTablePaginationProps<TData> {
   table: Table<TData>;
   card?: boolean;
-  staff?: boolean;
+  largePage?: boolean;
 }
 
 export function DataTablePagination<TData>({
   table,
   card = false,
-  staff = false,
+  largePage = false,
 }: DataTablePaginationProps<TData>) {
-  const pageSizeOptions = staff
+  const pageSizeOptions = largePage
     ? [100, 200, 300, 500, 1000]
     : card
       ? [12, 24, 36, 48, 60]
       : [10, 20, 30, 40, 50];
   const labelText = card ? "Items per page" : "Rows per page";
-  // Adjust width of the selector for staff mode: bigger for 1000
-  const selectWidth = staff ? "w-[85px]" : "w-[70px]";
+  // Adjust width of the selector for largePage mode: bigger for 1000
+  const selectWidth = largePage ? "w-[85px]" : "w-[70px]";
 
   return (
     <div className="flex items-center px-2">

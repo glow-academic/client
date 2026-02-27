@@ -1,4 +1,4 @@
-"""Staff bulk delete endpoint - bulk delete staff members."""
+"""Profile bulk delete endpoint - bulk delete profiles."""
 
 import uuid
 from typing import Annotated, Any, cast
@@ -11,36 +11,36 @@ from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
-    BulkDeleteStaffApiRequest,
-    BulkDeleteStaffApiResponse,
-    BulkDeleteStaffSqlParams,
-    BulkDeleteStaffSqlRow,
+    BulkDeleteProfilesApiRequest,
+    BulkDeleteProfilesApiResponse,
+    BulkDeleteProfilesSqlParams,
+    BulkDeleteProfilesSqlRow,
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/queries/staff/bulk_delete_staff_complete.sql"
+SQL_PATH = "app/sql/v4/queries/profiles/bulk_delete_profiles_complete.sql"
 
 router = APIRouter()
 
 
 @router.post(
     "/delete",
-    response_model=BulkDeleteStaffApiResponse,
+    response_model=BulkDeleteProfilesApiResponse,
     dependencies=[
         audit_activity(
-            "staff.deleted", "{{ actor.name }} deleted {{ count }} staff member(s)"
+            "profile.deleted", "{{ actor.name }} deleted {{ count }} profile(s)"
         )
     ],
 )
-async def delete_staff(
-    request: BulkDeleteStaffApiRequest,
+async def delete_profiles(
+    request: BulkDeleteProfilesApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> BulkDeleteStaffApiResponse:
+) -> BulkDeleteProfilesApiResponse:
     """Bulk delete profiles."""
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
@@ -69,14 +69,14 @@ async def delete_staff(
 
         # Convert API request to SQL params (add profile_id from header)
         # Use double-star pattern
-        params = BulkDeleteStaffSqlParams(
+        params = BulkDeleteProfilesSqlParams(
             **request.model_dump(), profile_id=uuid.UUID(profile_id)
         )
         sql_params = params.to_tuple()
 
         # Execute query with typed helper - automatically detects and calls function if present
         result = cast(
-            BulkDeleteStaffSqlRow,
+            BulkDeleteProfilesSqlRow,
             await execute_sql_typed(
                 conn,
                 SQL_PATH,
@@ -96,7 +96,7 @@ async def delete_staff(
             )
 
         # Return auto-generated response type
-        result_data = BulkDeleteStaffApiResponse(
+        result_data = BulkDeleteProfilesApiResponse(
             deleted_count=deleted_count,
             actor_name=actor_name,
         )
@@ -110,7 +110,7 @@ async def delete_staff(
             )
 
         # Invalidate cache after mutation
-        tags = ["staff", "profile"]  # Staff operations also affect profile cache
+        tags = ["profile"]
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
@@ -121,7 +121,7 @@ async def delete_staff(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="delete_staff",
+            operation="delete_profiles",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

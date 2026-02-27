@@ -17,5 +17,5 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function ManagementPage() {
-  return redirect("/management/staff");
+  return redirect("/management/profiles");
 }

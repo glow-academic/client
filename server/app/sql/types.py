@@ -21577,6 +21577,277 @@ class ValidateProfileResourceProgressApiResponse(BaseModel):
 
 
 
+# Generated from: bulk_delete_profiles
+
+class BulkDeleteProfilesSqlParams(BaseModel):
+
+    profile_ids: list[UUID]
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_ids,
+            self.profile_id,
+        )
+
+class BulkDeleteProfilesSqlRow(BaseModel):
+
+    deleted_count: int | None = None
+
+class BulkDeleteProfilesApiRequest(BaseModel):
+
+    profile_ids: list[UUID]
+
+class BulkDeleteProfilesApiResponse(BaseModel):
+
+    deleted_count: int | None = None
+
+
+
+# Generated from: get_profiles_list
+
+class GetProfilesListSqlParams(BaseModel):
+
+    profile_id: UUID
+    search: str | None = None
+    filter_department_ids: list[UUID] | None = None
+    role_filter: str | None = None
+    department_search: str | None = None
+    role_search: str | None = None
+    page_size: int | None = 12
+    page_offset: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.search,
+            self.filter_department_ids,
+            self.role_filter,
+            self.department_search,
+            self.role_search,
+            self.page_size,
+            self.page_offset,
+        )
+
+class QListProfilesV4Option(BaseModel):
+
+    value: str | None
+    label: str | None
+    count: int | None
+
+
+
+
+class QListProfilesV4Profile(BaseModel):
+
+    profile_id: UUID | None
+    emails: list[str] | None
+    primary_email: str | None
+    name: str | None
+    role: str | None
+    initials: str | None
+    department_ids: list[str] | None
+    primary_department_id: str | None
+    requests_per_day: int | None
+    target_is_self: bool | None
+
+class GetProfilesListSqlRow(BaseModel):
+
+    profiles: list[QListProfilesV4Profile] | None = None
+    department_options: list[QListProfilesV4Option] | None = None
+    role_options: list[QListProfilesV4Option] | None = None
+    total_count: int | None = None
+
+class GetProfilesListApiRequest(BaseModel):
+
+    search: str | None = None
+    filter_department_ids: list[UUID] | None = None
+    role_filter: str | None = None
+    department_search: str | None = None
+    role_search: str | None = None
+    page_size: int | None = 12
+    page_offset: int | None = 0
+
+class GetProfilesListApiResponse(BaseModel):
+
+    profiles: list[QListProfilesV4Profile] | None = None
+    department_options: list[QListProfilesV4Option] | None = None
+    role_options: list[QListProfilesV4Option] | None = None
+    total_count: int | None = None
+
+
+
+# Generated from: get_profiles_search
+
+class GetProfilesSearchSqlParams(BaseModel):
+
+    query: str
+    profile_id: UUID
+    department_ids: list[UUID]
+    limit_count: int | None = 200
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.query,
+            self.profile_id,
+            self.department_ids,
+            self.limit_count,
+        )
+
+class QBulkSearchProfilesV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QBulkSearchProfilesV4Profile(BaseModel):
+
+    profile_id: UUID | None
+    emails: list[str] | None
+    primary_email: str | None
+    name: str | None
+    role: str | None
+    initials: str | None
+    active: bool | None
+    last_active: datetime | None
+    department_ids: list[str] | None
+    primary_department_id: str | None
+    requests_per_day: int | None
+    total_requests: int | None
+    requests_in_last_day: int | None
+    can_edit: bool | None
+    can_delete: bool | None
+
+class GetProfilesSearchSqlRow(BaseModel):
+
+    profiles: list[QBulkSearchProfilesV4Profile] | None = None
+    departments: list[QBulkSearchProfilesV4Department] | None = None
+
+class GetProfilesSearchApiRequest(BaseModel):
+
+    query: str
+    department_ids: list[UUID]
+    limit_count: int | None = 200
+
+class GetProfilesSearchApiResponse(BaseModel):
+
+    profiles: list[QBulkSearchProfilesV4Profile] | None = None
+    departments: list[QBulkSearchProfilesV4Department] | None = None
+
+
+
+# Generated from: process_csv
+
+class IProcessCsvV4ColumnMapping(BaseModel):
+
+    csv_column: str | None
+    target_field: str | None
+
+class ProcessCsvSqlParams(BaseModel):
+
+    csv_content: str
+    column_mappings: list[IProcessCsvV4ColumnMapping]
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert column_mappings composite array to tuples for asyncpg
+        column_mappings_tuples = [
+            (conn.csv_column, conn.target_field)
+            for conn in (self.column_mappings or [])
+        ]
+        return (
+            self.csv_content,
+            column_mappings_tuples,
+            self.profile_id,
+        )
+
+class QProcessCsvV4CsvRowError(BaseModel):
+
+    row_index: int | None
+    field: str | None
+    message: str | None
+
+class QProcessCsvV4ProcessedRow(BaseModel):
+
+    row_index: int | None
+    name: str | None
+    emails: list[str] | None
+    primary_email_index: int | None
+    role: str | None
+    department_ids: list[str] | None
+    errors: list[QProcessCsvV4CsvRowError] | None
+
+class ProcessCsvSqlRow(BaseModel):
+
+    success: bool | None = None
+    headers: list[str] | None = None
+    rows: list[QProcessCsvV4ProcessedRow] | None = None
+
+class ProcessCsvApiRequest(BaseModel):
+
+    csv_content: str
+    column_mappings: list[IProcessCsvV4ColumnMapping]
+
+class ProcessCsvApiResponse(BaseModel):
+
+    success: bool | None = None
+    headers: list[str] | None = None
+    rows: list[QProcessCsvV4ProcessedRow] | None = None
+
+
+
+# Generated from: upsert_profiles
+
+class IUpsertProfilesV4Profile(BaseModel):
+
+    name: str | None
+    emails: list[str] | None
+    primary_email_index: int | None
+    role: str | None
+    active: bool | None
+    department_ids: list[UUID] | None
+
+class UpsertProfilesSqlParams(BaseModel):
+
+    profiles: list[IUpsertProfilesV4Profile]
+    current_profile_id: UUID
+    session_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert profiles composite array to tuples for asyncpg
+        profiles_tuples = [
+            (conn.name, conn.emails, conn.primary_email_index, conn.role, conn.active, conn.department_ids)
+            for conn in (self.profiles or [])
+        ]
+        return (
+            profiles_tuples,
+            self.current_profile_id,
+            self.session_id,
+        )
+
+class UpsertProfilesSqlRow(BaseModel):
+
+    profile_ids: list[UUID] | None = None
+    created_count: int | None = None
+    updated_count: int | None = None
+
+class UpsertProfilesApiRequest(BaseModel):
+
+    profiles: list[IUpsertProfilesV4Profile]
+    current_profile_id: UUID
+    session_id: UUID | None = None
+
+class UpsertProfilesApiResponse(BaseModel):
+
+    profile_ids: list[UUID] | None = None
+    created_count: int | None = None
+    updated_count: int | None = None
+
+
+
 # Generated from: check_provider_delete_access
 
 class CheckProviderDeleteAccessSqlParams(BaseModel):
@@ -33730,277 +34001,6 @@ class ValidateSimulationResourceProgressApiResponse(BaseModel):
 
 
 
-# Generated from: bulk_delete_staff
-
-class BulkDeleteStaffSqlParams(BaseModel):
-
-    profile_ids: list[UUID]
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_ids,
-            self.profile_id,
-        )
-
-class BulkDeleteStaffSqlRow(BaseModel):
-
-    deleted_count: int | None = None
-
-class BulkDeleteStaffApiRequest(BaseModel):
-
-    profile_ids: list[UUID]
-
-class BulkDeleteStaffApiResponse(BaseModel):
-
-    deleted_count: int | None = None
-
-
-
-# Generated from: get_staff_list
-
-class GetStaffListSqlParams(BaseModel):
-
-    profile_id: UUID
-    search: str | None = None
-    filter_department_ids: list[UUID] | None = None
-    role_filter: str | None = None
-    department_search: str | None = None
-    role_search: str | None = None
-    page_size: int | None = 12
-    page_offset: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.search,
-            self.filter_department_ids,
-            self.role_filter,
-            self.department_search,
-            self.role_search,
-            self.page_size,
-            self.page_offset,
-        )
-
-class QListStaffV4Option(BaseModel):
-
-    value: str | None
-    label: str | None
-    count: int | None
-
-
-
-
-class QListStaffV4Staff(BaseModel):
-
-    profile_id: UUID | None
-    emails: list[str] | None
-    primary_email: str | None
-    name: str | None
-    role: str | None
-    initials: str | None
-    department_ids: list[str] | None
-    primary_department_id: str | None
-    requests_per_day: int | None
-    target_is_self: bool | None
-
-class GetStaffListSqlRow(BaseModel):
-
-    staff: list[QListStaffV4Staff] | None = None
-    department_options: list[QListStaffV4Option] | None = None
-    role_options: list[QListStaffV4Option] | None = None
-    total_count: int | None = None
-
-class GetStaffListApiRequest(BaseModel):
-
-    search: str | None = None
-    filter_department_ids: list[UUID] | None = None
-    role_filter: str | None = None
-    department_search: str | None = None
-    role_search: str | None = None
-    page_size: int | None = 12
-    page_offset: int | None = 0
-
-class GetStaffListApiResponse(BaseModel):
-
-    staff: list[QListStaffV4Staff] | None = None
-    department_options: list[QListStaffV4Option] | None = None
-    role_options: list[QListStaffV4Option] | None = None
-    total_count: int | None = None
-
-
-
-# Generated from: get_staff_search
-
-class GetStaffSearchSqlParams(BaseModel):
-
-    query: str
-    profile_id: UUID
-    department_ids: list[UUID]
-    limit_count: int | None = 200
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.query,
-            self.profile_id,
-            self.department_ids,
-            self.limit_count,
-        )
-
-class QSearchStaffV4Department(BaseModel):
-
-    department_id: UUID | None
-    name: str | None
-    description: str | None
-
-
-
-
-class QSearchStaffV4Staff(BaseModel):
-
-    profile_id: UUID | None
-    emails: list[str] | None
-    primary_email: str | None
-    name: str | None
-    role: str | None
-    initials: str | None
-    active: bool | None
-    last_active: datetime | None
-    department_ids: list[str] | None
-    primary_department_id: str | None
-    requests_per_day: int | None
-    total_requests: int | None
-    requests_in_last_day: int | None
-    can_edit: bool | None
-    can_delete: bool | None
-
-class GetStaffSearchSqlRow(BaseModel):
-
-    staff: list[QSearchStaffV4Staff] | None = None
-    departments: list[QSearchStaffV4Department] | None = None
-
-class GetStaffSearchApiRequest(BaseModel):
-
-    query: str
-    department_ids: list[UUID]
-    limit_count: int | None = 200
-
-class GetStaffSearchApiResponse(BaseModel):
-
-    staff: list[QSearchStaffV4Staff] | None = None
-    departments: list[QSearchStaffV4Department] | None = None
-
-
-
-# Generated from: process_csv
-
-class IProcessCsvV4ColumnMapping(BaseModel):
-
-    csv_column: str | None
-    target_field: str | None
-
-class ProcessCsvSqlParams(BaseModel):
-
-    csv_content: str
-    column_mappings: list[IProcessCsvV4ColumnMapping]
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        # Convert column_mappings composite array to tuples for asyncpg
-        column_mappings_tuples = [
-            (conn.csv_column, conn.target_field)
-            for conn in (self.column_mappings or [])
-        ]
-        return (
-            self.csv_content,
-            column_mappings_tuples,
-            self.profile_id,
-        )
-
-class QProcessCsvV4CsvRowError(BaseModel):
-
-    row_index: int | None
-    field: str | None
-    message: str | None
-
-class QProcessCsvV4ProcessedRow(BaseModel):
-
-    row_index: int | None
-    name: str | None
-    emails: list[str] | None
-    primary_email_index: int | None
-    role: str | None
-    department_ids: list[str] | None
-    errors: list[QProcessCsvV4CsvRowError] | None
-
-class ProcessCsvSqlRow(BaseModel):
-
-    success: bool | None = None
-    headers: list[str] | None = None
-    rows: list[QProcessCsvV4ProcessedRow] | None = None
-
-class ProcessCsvApiRequest(BaseModel):
-
-    csv_content: str
-    column_mappings: list[IProcessCsvV4ColumnMapping]
-
-class ProcessCsvApiResponse(BaseModel):
-
-    success: bool | None = None
-    headers: list[str] | None = None
-    rows: list[QProcessCsvV4ProcessedRow] | None = None
-
-
-
-# Generated from: upsert_staff
-
-class IUpsertStaffV4Profile(BaseModel):
-
-    name: str | None
-    emails: list[str] | None
-    primary_email_index: int | None
-    role: str | None
-    active: bool | None
-    department_ids: list[UUID] | None
-
-class UpsertStaffSqlParams(BaseModel):
-
-    profiles: list[IUpsertStaffV4Profile]
-    current_profile_id: UUID
-    session_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        # Convert profiles composite array to tuples for asyncpg
-        profiles_tuples = [
-            (conn.name, conn.emails, conn.primary_email_index, conn.role, conn.active, conn.department_ids)
-            for conn in (self.profiles or [])
-        ]
-        return (
-            profiles_tuples,
-            self.current_profile_id,
-            self.session_id,
-        )
-
-class UpsertStaffSqlRow(BaseModel):
-
-    profile_ids: list[UUID] | None = None
-    created_count: int | None = None
-    updated_count: int | None = None
-
-class UpsertStaffApiRequest(BaseModel):
-
-    profiles: list[IUpsertStaffV4Profile]
-    current_profile_id: UUID
-    session_id: UUID | None = None
-
-class UpsertStaffApiResponse(BaseModel):
-
-    profile_ids: list[UUID] | None = None
-    created_count: int | None = None
-    updated_count: int | None = None
-
-
-
 # Generated from: check_tool_delete_access
 
 class CheckToolDeleteAccessSqlParams(BaseModel):
@@ -40326,6 +40326,36 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ValidateProfileResourceProgressApiRequest",
         "ValidateProfileResourceProgressApiResponse",
     ),
+    "app/sql/v4/queries/profiles/bulk_delete_profiles_complete.sql": (
+        "BulkDeleteProfilesSqlParams",
+        "BulkDeleteProfilesSqlRow",
+        "BulkDeleteProfilesApiRequest",
+        "BulkDeleteProfilesApiResponse",
+    ),
+    "app/sql/v4/queries/profiles/get_profiles_list_complete.sql": (
+        "GetProfilesListSqlParams",
+        "GetProfilesListSqlRow",
+        "GetProfilesListApiRequest",
+        "GetProfilesListApiResponse",
+    ),
+    "app/sql/v4/queries/profiles/get_profiles_search_complete.sql": (
+        "GetProfilesSearchSqlParams",
+        "GetProfilesSearchSqlRow",
+        "GetProfilesSearchApiRequest",
+        "GetProfilesSearchApiResponse",
+    ),
+    "app/sql/v4/queries/profiles/process_csv_complete.sql": (
+        "ProcessCsvSqlParams",
+        "ProcessCsvSqlRow",
+        "ProcessCsvApiRequest",
+        "ProcessCsvApiResponse",
+    ),
+    "app/sql/v4/queries/profiles/upsert_profiles_complete.sql": (
+        "UpsertProfilesSqlParams",
+        "UpsertProfilesSqlRow",
+        "UpsertProfilesApiRequest",
+        "UpsertProfilesApiResponse",
+    ),
     "app/sql/v4/queries/providers/check_provider_delete_access_complete.sql": (
         "CheckProviderDeleteAccessSqlParams",
         "CheckProviderDeleteAccessSqlRow",
@@ -42131,36 +42161,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ValidateSimulationResourceProgressSqlRow",
         "ValidateSimulationResourceProgressApiRequest",
         "ValidateSimulationResourceProgressApiResponse",
-    ),
-    "app/sql/v4/queries/staff/bulk_delete_staff_complete.sql": (
-        "BulkDeleteStaffSqlParams",
-        "BulkDeleteStaffSqlRow",
-        "BulkDeleteStaffApiRequest",
-        "BulkDeleteStaffApiResponse",
-    ),
-    "app/sql/v4/queries/staff/get_staff_list_complete.sql": (
-        "GetStaffListSqlParams",
-        "GetStaffListSqlRow",
-        "GetStaffListApiRequest",
-        "GetStaffListApiResponse",
-    ),
-    "app/sql/v4/queries/staff/get_staff_search_complete.sql": (
-        "GetStaffSearchSqlParams",
-        "GetStaffSearchSqlRow",
-        "GetStaffSearchApiRequest",
-        "GetStaffSearchApiResponse",
-    ),
-    "app/sql/v4/queries/staff/process_csv_complete.sql": (
-        "ProcessCsvSqlParams",
-        "ProcessCsvSqlRow",
-        "ProcessCsvApiRequest",
-        "ProcessCsvApiResponse",
-    ),
-    "app/sql/v4/queries/staff/upsert_staff_complete.sql": (
-        "UpsertStaffSqlParams",
-        "UpsertStaffSqlRow",
-        "UpsertStaffApiRequest",
-        "UpsertStaffApiResponse",
     ),
     "app/sql/v4/queries/tools/check_tool_delete_access_complete.sql": (
         "CheckToolDeleteAccessSqlParams",
@@ -45459,6 +45459,31 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/profiles/bulk_delete_profiles_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/profiles/get_profiles_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/profiles/get_profiles_search_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/profiles/process_csv_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/profiles/upsert_profiles_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/providers/check_provider_delete_access_complete.sql"]
     ) -> SqlString: ...
 
@@ -46960,31 +46985,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/simulations/validate_simulation_resource_progress_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/staff/bulk_delete_staff_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/staff/get_staff_list_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/staff/get_staff_search_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/staff/process_csv_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/staff/upsert_staff_complete.sql"]
     ) -> SqlString: ...
 
     @overload

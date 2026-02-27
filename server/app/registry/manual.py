@@ -46,9 +46,7 @@ SECTION_OVERRIDES: dict[str, str] = {
 # ---------------------------------------------------------------------------
 # Route → artifact overrides (when client route name doesn't match artifact)
 # ---------------------------------------------------------------------------
-ROUTE_TO_ARTIFACT: dict[str, str] = {
-    "staff": "profile",
-}
+ROUTE_TO_ARTIFACT: dict[str, str] = {}
 
 # ---------------------------------------------------------------------------
 # Resources with extra modalities beyond "call" (plural resource → singular modality)

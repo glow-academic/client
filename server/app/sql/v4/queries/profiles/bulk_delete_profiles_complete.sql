@@ -8,13 +8,23 @@ DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    -- Drop old-named function (from before rename)
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_bulk_delete_staff_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
         EXECUTE format('DROP FUNCTION IF EXISTS api_bulk_delete_staff_v4(%s)', r.sig);
+    END LOOP;
+    -- Drop new-named function
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
+        WHERE proname = 'api_bulk_delete_profiles_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_bulk_delete_profiles_v4(%s)', r.sig);
     END LOOP;
 END $$;
 
@@ -22,7 +32,7 @@ END $$;
 -- No composite types needed for this function (returns simple types)
 
 -- 3) Recreate function
-CREATE OR REPLACE FUNCTION api_bulk_delete_staff_v4(
+CREATE OR REPLACE FUNCTION api_bulk_delete_profiles_v4(
     profile_ids uuid[],
     profile_id uuid  -- current user's profile_id for audit
 )

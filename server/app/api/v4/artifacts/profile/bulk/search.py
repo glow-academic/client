@@ -1,4 +1,4 @@
-"""Staff search endpoint - search staff with query and filters."""
+"""Profile search endpoint - search profiles with query and filters."""
 
 import uuid
 from typing import Annotated, Any, cast
@@ -11,10 +11,10 @@ from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
-    GetStaffSearchApiRequest,
-    GetStaffSearchApiResponse,
-    GetStaffSearchSqlParams,
-    GetStaffSearchSqlRow,
+    GetProfilesSearchApiRequest,
+    GetProfilesSearchApiResponse,
+    GetProfilesSearchSqlParams,
+    GetProfilesSearchSqlRow,
     load_sql_query,
 )
 from app.utils.cache.cache_key import cache_key
@@ -23,7 +23,7 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/queries/staff/get_staff_search_complete.sql"
+SQL_PATH = "app/sql/v4/queries/profiles/get_profiles_search_complete.sql"
 
 
 router = APIRouter()
@@ -31,17 +31,17 @@ router = APIRouter()
 
 @router.post(
     "/search",
-    response_model=GetStaffSearchApiResponse,
-    dependencies=[audit_activity("staff.searched", "{{ actor.name }} searched staff")],
+    response_model=GetProfilesSearchApiResponse,
+    dependencies=[audit_activity("profile.searched", "{{ actor.name }} searched profiles")],
 )
-async def search_staff(
-    request: GetStaffSearchApiRequest,
+async def search_profiles(
+    request: GetProfilesSearchApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetStaffSearchApiResponse:
-    """Search staff with query and filters."""
-    tags = ["staff"]  # From router tags
+) -> GetProfilesSearchApiResponse:
+    """Search profiles with query and filters."""
+    tags = ["profile"]
 
     # Generate cache key from path and parsed body
     body_dict = request.model_dump()
@@ -52,7 +52,7 @@ async def search_staff(
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
-        return GetStaffSearchApiResponse.model_validate(cached["data"])
+        return GetProfilesSearchApiResponse.model_validate(cached["data"])
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
@@ -81,14 +81,14 @@ async def search_staff(
 
         # Convert API request to SQL params (add profile_id from header)
         # Use double-star pattern - SQL handles UUID arrays and defaults via COALESCE
-        params = GetStaffSearchSqlParams(
+        params = GetProfilesSearchSqlParams(
             **request.model_dump(), profile_id=uuid.UUID(profile_id)
         )
         sql_params = params.to_tuple()
 
         # Execute query with typed helper - automatically detects and calls function if present
         result = cast(
-            GetStaffSearchSqlRow,
+            GetProfilesSearchSqlRow,
             await execute_sql_typed(
                 conn,
                 SQL_PATH,
@@ -101,7 +101,7 @@ async def search_staff(
             audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         # Convert SQL result to API response (no manual filtering needed - SQL handles it)
-        api_response = GetStaffSearchApiResponse.model_validate(result.model_dump())
+        api_response = GetProfilesSearchApiResponse.model_validate(result.model_dump())
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(
@@ -120,7 +120,7 @@ async def search_staff(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="search_staff",
+            operation="search_profiles",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

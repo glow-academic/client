@@ -8,13 +8,23 @@ DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    -- Drop old-named function (from before rename)
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_upsert_staff_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
         EXECUTE format('DROP FUNCTION IF EXISTS api_upsert_staff_v4(%s)', r.sig);
+    END LOOP;
+    -- Drop new-named function
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
+        WHERE proname = 'api_upsert_profiles_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_upsert_profiles_v4(%s)', r.sig);
     END LOOP;
 END $$;
 
@@ -27,7 +37,7 @@ BEGIN
     FOR r IN 
         SELECT typname 
         FROM pg_type 
-        WHERE typname LIKE 'i_upsert_staff_v4_%'
+        WHERE (typname LIKE 'i_upsert_staff_v4_%' OR typname LIKE 'i_upsert_profiles_v4_%')
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
         EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
@@ -35,7 +45,7 @@ BEGIN
 END $$;
 
 -- 3) Recreate types
-CREATE TYPE types.i_upsert_staff_v4_profile AS (
+CREATE TYPE types.i_upsert_profiles_v4_profile AS (
     name text,
     emails text[],  -- Array of all emails
     primary_email_index integer,  -- Index in emails array for primary (defaults to 0)
@@ -46,8 +56,8 @@ CREATE TYPE types.i_upsert_staff_v4_profile AS (
 
 -- 4) Recreate function
 -- Bulk upsert function - accepts array of profiles and processes them all
-CREATE OR REPLACE FUNCTION api_upsert_staff_v4(
-    profiles types.i_upsert_staff_v4_profile[],  -- Array of profiles to upsert
+CREATE OR REPLACE FUNCTION api_upsert_profiles_v4(
+    profiles types.i_upsert_profiles_v4_profile[],  -- Array of profiles to upsert
     current_profile_id uuid,  -- current user's profile_id for role validation
     session_id uuid DEFAULT NULL  -- current user's session_id (resolved in Python)
 )
@@ -62,7 +72,7 @@ AS $$
 -- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
 WITH params AS (
     SELECT 
-        COALESCE(profiles, ARRAY[]::types.i_upsert_staff_v4_profile[]) AS profiles,
+        COALESCE(profiles, ARRAY[]::types.i_upsert_profiles_v4_profile[]) AS profiles,
         current_profile_id AS current_profile_id
 ),
 profiles_expanded AS (

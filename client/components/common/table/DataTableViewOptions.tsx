@@ -52,7 +52,7 @@ const columnMap = {
   sessionEfficiency: "Efficiency",
   stagnationRate: "Stagnation",
   timeSpent: "Time Spent",
-  // Staff page columns
+  // Profile page columns
   active: "Status",
   lastActive: "Last Active",
   cohortNames: "Cohorts",
@@ -74,7 +74,7 @@ const columnMap = {
   simulationName: "Simulation",
   numScenariosCompleted: "Scenarios",
   personaNames: "Personas",
-  name: "Staff Member",
+  name: "Profile",
   department_ids: "Departments",
   cohort_ids: "Cohorts",
   parameter_item_ids: "Parameter Items",

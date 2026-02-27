@@ -1,6 +1,6 @@
 /**
- * app/(main)/management/staff/new/page.tsx
- * Staff new page for creating a new staff member.
+ * app/(main)/management/profiles/new/page.tsx
+ * Profiles new page for creating a new profile.
  * @AshokSaravanan222
  * 12/04/2025
  */
@@ -13,10 +13,10 @@ import { createLoader, parseAsString } from "nuqs/server";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetStaffIn = InputOf<"/api/v4/artifacts/profiles/get", "post">;
-type GetStaffOut = OutputOf<"/api/v4/artifacts/profiles/get", "post">;
-type SaveStaffIn = InputOf<"/api/v4/artifacts/profiles/save", "post">;
-type SaveStaffOut = OutputOf<"/api/v4/artifacts/profiles/save", "post">;
+type GetProfileIn = InputOf<"/api/v4/artifacts/profiles/get", "post">;
+type GetProfileOut = OutputOf<"/api/v4/artifacts/profiles/get", "post">;
+type SaveProfileIn = InputOf<"/api/v4/artifacts/profiles/save", "post">;
+type SaveProfileOut = OutputOf<"/api/v4/artifacts/profiles/save", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 type CreateDraftEmailsIn = InputOf<"/api/v4/resources/emails", "post">;
@@ -33,8 +33,8 @@ type PatchProfileDraftIn = InputOf<"/api/v4/artifacts/profiles/draft", "patch">;
 type PatchProfileDraftOut = OutputOf<"/api/v4/artifacts/profiles/draft", "patch">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
-const getStaffDefault = cache(
-  async (input: GetStaffIn): Promise<GetStaffOut> => {
+const getProfileDefault = cache(
+  async (input: GetProfileIn): Promise<GetProfileOut> => {
     return api.post("/artifacts/profiles/get", input, {
       cache: "no-store",
       headers: {
@@ -45,7 +45,7 @@ const getStaffDefault = cache(
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function saveStaff(input: SaveStaffIn): Promise<SaveStaffOut> {
+async function saveProfile(input: SaveProfileIn): Promise<SaveProfileOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
@@ -99,7 +99,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /** ---- Server renders client with typed data and actions ---- */
-export default async function NewStaffPage({
+export default async function NewProfilePage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -119,32 +119,32 @@ export default async function NewStaffPage({
     }
   });
 
-  // Inline server-side parsers for staff search params
-  const staffSearchParams = {
+  // Inline server-side parsers for profile search params
+  const profileSearchParams = {
     draftId: parseAsString,
   };
-  const loadStaffSearchParams = createLoader(staffSearchParams);
-  const q = loadStaffSearchParams(searchParamsObj);
+  const loadProfileSearchParams = createLoader(profileSearchParams);
+  const q = loadProfileSearchParams(searchParamsObj);
 
-  // Fetch default staff detail server-side with draft_id
-  const input: GetStaffIn = {
+  // Fetch default profile detail server-side with draft_id
+  const input: GetProfileIn = {
     body: {
       target_profile_id: null, // NULL for new mode
       draft_id: q.draftId ?? null,
-    } as GetStaffIn["body"],
+    } as GetProfileIn["body"],
   };
-  const staffDetailDefault = await getStaffDefault(input);
+  const profileDetailDefault = await getProfileDefault(input);
 
   return (
     <div
       className="space-y-6"
-      data-page="staff-new"
-      aria-label="Create new staff page"
+      data-page="profile-new"
+      aria-label="Create new profile page"
     >
       <Profile
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-        staffData={staffDetailDefault}
-        saveStaffAction={saveStaff}
+        profileData={profileDetailDefault}
+        saveProfileAction={saveProfile}
         patchProfileDraftAction={patchProfileDraft}
         createNamesAction={createDraftNames}
         createEmailsAction={createDraftEmails}

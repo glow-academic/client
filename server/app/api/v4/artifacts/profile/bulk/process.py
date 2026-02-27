@@ -1,4 +1,4 @@
-"""Staff process CSV endpoint - process CSV file and map columns to target fields."""
+"""Profile process CSV endpoint - process CSV file and map columns to target fields."""
 
 import csv
 import uuid
@@ -27,7 +27,7 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/queries/staff/process_csv_complete.sql"
+SQL_PATH = "app/sql/v4/queries/profiles/process_csv_complete.sql"
 
 router = APIRouter()
 
@@ -36,7 +36,7 @@ router = APIRouter()
     "/process",
     response_model=ProcessCsvApiResponse,
     dependencies=[
-        audit_activity("staff.process", "{{ actor.name }} processed staff CSV")
+        audit_activity("profile.process", "{{ actor.name }} processed profile CSV")
     ],
 )
 async def process_staff(
@@ -46,7 +46,7 @@ async def process_staff(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ProcessCsvApiResponse:
     """Process CSV file and map columns to target fields."""
-    tags = ["staff"]  # From router tags
+    tags = ["profile"]
 
     # Generate cache key from path and parsed body
     body_dict = request.model_dump()
@@ -211,7 +211,7 @@ async def process_staff(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="process_staff",
+            operation="process_profile",
             sql_query=None,  # No SQL query - CSV processing only
             sql_params=None,
             request=http_request,

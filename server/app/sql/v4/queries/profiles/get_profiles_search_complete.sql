@@ -7,13 +7,23 @@ DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    -- Drop old-named function (from before rename)
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_search_staff_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
         EXECUTE format('DROP FUNCTION IF EXISTS api_search_staff_v4(%s)', r.sig);
+    END LOOP;
+    -- Drop new-named function
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
+        WHERE proname = 'api_bulk_search_profiles_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_bulk_search_profiles_v4(%s)', r.sig);
     END LOOP;
 END $$;
 
@@ -24,10 +34,10 @@ DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT typname 
-        FROM pg_type 
-        WHERE typname LIKE 'q_search_staff_v4_%'
+    FOR r IN
+        SELECT typname
+        FROM pg_type
+        WHERE (typname LIKE 'q_search_staff_v4_%' OR typname LIKE 'q_bulk_search_profiles_v4_%')
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
         EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
@@ -35,7 +45,7 @@ BEGIN
 END $$;
 
 -- 3) Recreate types
-CREATE TYPE types.q_search_staff_v4_staff AS (
+CREATE TYPE types.q_bulk_search_profiles_v4_profile AS (
     profile_id uuid,
     emails text[],
     primary_email text,
@@ -53,22 +63,22 @@ CREATE TYPE types.q_search_staff_v4_staff AS (
     can_delete boolean
 );
 
-CREATE TYPE types.q_search_staff_v4_department AS (
+CREATE TYPE types.q_bulk_search_profiles_v4_department AS (
     department_id uuid,
     name text,
     description text
 );
 
 -- 4) Recreate function
-CREATE OR REPLACE FUNCTION api_search_staff_v4(
+CREATE OR REPLACE FUNCTION api_bulk_search_profiles_v4(
     query text,
     profile_id uuid,
     department_ids uuid[],
     limit_count integer DEFAULT 200
 )
 RETURNS TABLE (
-    staff types.q_search_staff_v4_staff[],
-    departments types.q_search_staff_v4_department[]
+    profiles types.q_bulk_search_profiles_v4_profile[],
+    departments types.q_bulk_search_profiles_v4_department[]
 )
 LANGUAGE sql
 STABLE
@@ -221,19 +231,19 @@ staff_rows AS (
 SELECT 
     COALESCE(
         (SELECT ARRAY_AGG(
-            (sr.profile_id, sr.emails, sr.primary_email, sr.name, sr.role, sr.initials, sr.active, sr.last_active, sr.department_ids, sr.primary_department_id, sr.requests_per_day, sr.total_requests, sr.requests_in_last_day, false, false)::types.q_search_staff_v4_staff
+            (sr.profile_id, sr.emails, sr.primary_email, sr.name, sr.role, sr.initials, sr.active, sr.last_active, sr.department_ids, sr.primary_department_id, sr.requests_per_day, sr.total_requests, sr.requests_in_last_day, false, false)::types.q_bulk_search_profiles_v4_profile
             ORDER BY sr.name NULLS LAST
         )
         FROM staff_rows sr),
-        '{}'::types.q_search_staff_v4_staff[]
-    ) as staff,
+        '{}'::types.q_bulk_search_profiles_v4_profile[]
+    ) as profiles,
     COALESCE(
         (SELECT ARRAY_AGG(
-            (dd.department_id, dd.name, dd.description)::types.q_search_staff_v4_department
+            (dd.department_id, dd.name, dd.description)::types.q_bulk_search_profiles_v4_department
             ORDER BY dd.name
         )
         FROM departments_data dd),
-        '{}'::types.q_search_staff_v4_department[]
+        '{}'::types.q_bulk_search_profiles_v4_department[]
     ) as departments
 FROM user_profile up
 $$;
