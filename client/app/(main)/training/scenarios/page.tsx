@@ -161,17 +161,7 @@ export default async function ScenariosPage({ searchParams }: ScenariosPageProps
         saveScenarioAction={saveScenario}
         searchFlagsAction={searchFlags}
         parseCsvAction={parseCsv}
-        importFields={listData.import_fields?.map((f) => ({
-          ...f,
-          key: f.key ?? "",
-          label: f.label ?? "",
-          required: f.required ?? false,
-          multi: f.multi ?? undefined,
-          type: f.type ?? undefined,
-          example: f.example ?? undefined,
-          description: f.description ?? undefined,
-        }))}
-
+        importFields={listData.import_fields ?? undefined}
         pageIndex={pageIndex}
         pageSize={pageSize}
         totalCount={listData.total_count ?? 0}
