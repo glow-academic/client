@@ -32,37 +32,41 @@ async def create_problem_statements_internal(
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> UUID:
-    """Create a problem_statement resource and return its ID.
+    """Create a problem statement resource and return its ID.
 
-    Can be called directly from other routes (e.g. scenario save)
-    without HTTP overhead. Uses the same SQL as the HTTP endpoint.
+    When group_id is provided, creates run/call/tool tracking records.
+    Tool is auto-resolved if tool_id is not provided.
     """
+    # Resolve tool if not provided (canonical — matches entry pattern)
+    tool_info = None
+    if tool_id is None:
+        tool_info = await resolve_tool(
+            conn, "create", "problem_statements", scope="resources"
+        )
+        if tool_info:
+            tool_id = tool_info.tool_id
+
     params = ProblemStatementsSqlParams(
-        name=name or problem_statement[:100],
-        problem_statement=problem_statement,
-        mcp=mcp,
-        group_id=group_id,
-        tool_id=tool_id,
+        problem_statement=problem_statement, name=name, mcp=mcp,
+        group_id=group_id, tool_id=tool_id
     )
     result = cast(
         ProblemStatementsSqlRow,
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )
     if not result or not result.problem_statement_id:
-        raise ValueError(
-            f"Failed to create problem_statement: {problem_statement[:50]}"
-        )
+        raise ValueError(f"Failed to create problem statement: {problem_statement}")
 
-    # Record arg values if tracking is active (call_id returned by SQL)
-    if result.call_id is not None:
+    # Record arg values (canonical — matches entry pattern)
+    if tool_info is None and tool_id is not None:
         tool_info = await resolve_tool(
             conn, "create", "problem_statements", scope="resources"
         )
-        if tool_info:
-            await record_call_args(
-                conn, result.call_id, tool_info,
-                {"problem_statement": problem_statement, "name": name}, mcp
-            )
+    if tool_info and result.call_id is not None:
+        await record_call_args(
+            conn, result.call_id, tool_info,
+            {"problem_statement": problem_statement, "name": name}, mcp
+        )
 
     await invalidate_tags(["resources", "problem_statements"])
     return result.problem_statement_id

@@ -33,9 +33,16 @@ async def create_instructions_internal(
 ) -> UUID:
     """Create an instructions resource and return its ID.
 
-    When group_id and tool_id are provided, creates run/call/tool tracking
-    records in SQL and records arg values in Python.
+    When group_id is provided, creates run/call/tool tracking records.
+    Tool is auto-resolved if tool_id is not provided.
     """
+    # Resolve tool if not provided (canonical — matches entry pattern)
+    tool_info = None
+    if tool_id is None:
+        tool_info = await resolve_tool(conn, "create", "instructions", scope="resources")
+        if tool_info:
+            tool_id = tool_info.tool_id
+
     params = InstructionsSqlParams(
         template=template, mcp=mcp, group_id=group_id, tool_id=tool_id
     )
@@ -46,15 +53,13 @@ async def create_instructions_internal(
     if not result or not result.instruction_id:
         raise ValueError("Failed to create instructions")
 
-    # Record arg values if tracking is active (call_id returned by SQL)
-    if result.call_id is not None:
-        tool_info = await resolve_tool(
-            conn, "create", "instructions", scope="resources"
+    # Record arg values (canonical — matches entry pattern)
+    if tool_info is None and tool_id is not None:
+        tool_info = await resolve_tool(conn, "create", "instructions", scope="resources")
+    if tool_info and result.call_id is not None:
+        await record_call_args(
+            conn, result.call_id, tool_info, {"template": template}, mcp
         )
-        if tool_info:
-            await record_call_args(
-                conn, result.call_id, tool_info, {"template": template}, mcp
-            )
 
     await invalidate_tags(["resources", "instructions"])
     return result.instruction_id

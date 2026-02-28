@@ -34,9 +34,16 @@ async def create_names_internal(
     """Create a name resource and return its ID.
 
     Can be called directly from other routes (e.g. duplicate endpoints, save, draft)
-    without HTTP overhead. When group_id and tool_id are provided, creates
-    run/call/tool tracking records in SQL and records arg values in Python.
+    without HTTP overhead. When group_id is provided, creates run/call/tool tracking
+    records. Tool is auto-resolved if tool_id is not provided.
     """
+    # Resolve tool if not provided (canonical — matches entry pattern)
+    tool_info = None
+    if tool_id is None:
+        tool_info = await resolve_tool(conn, "create", "names", scope="resources")
+        if tool_info:
+            tool_id = tool_info.tool_id
+
     params = NamesSqlParams(name=name, mcp=mcp, group_id=group_id, tool_id=tool_id)
     result = cast(
         NamesSqlRow,
@@ -45,13 +52,11 @@ async def create_names_internal(
     if not result or not result.name_id:
         raise ValueError(f"Failed to create name: {name}")
 
-    # Record arg values if tracking is active (call_id returned by SQL)
-    if result.call_id is not None:
+    # Record arg values (canonical — matches entry pattern)
+    if tool_info is None and tool_id is not None:
         tool_info = await resolve_tool(conn, "create", "names", scope="resources")
-        if tool_info:
-            await record_call_args(
-                conn, result.call_id, tool_info, {"name": name}, mcp
-            )
+    if tool_info and result.call_id is not None:
+        await record_call_args(conn, result.call_id, tool_info, {"name": name}, mcp)
 
     await invalidate_tags(["resources", "names"])
     return result.name_id

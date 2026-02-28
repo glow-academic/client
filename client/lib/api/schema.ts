@@ -36803,6 +36803,8 @@ export interface components {
              * @default 0
              */
             expected_version: number;
+            /** Group Id */
+            group_id?: string | null;
             /** Name Id */
             name_id?: string | null;
             /** Description Id */
@@ -42886,6 +42888,8 @@ export interface components {
         SaveScenarioApiRequest: {
             /** Scenarios */
             scenarios: components["schemas"]["SaveScenarioItem"][];
+            /** Group Id */
+            group_id?: string | null;
         };
         /**
          * SaveScenarioApiResponse
@@ -43035,6 +43039,8 @@ export interface components {
         SaveSimulationApiRequest: {
             /** Simulations */
             simulations: components["schemas"]["SaveSimulationItem"][];
+            /** Group Id */
+            group_id?: string | null;
         };
         /**
          * SaveSimulationApiResponse

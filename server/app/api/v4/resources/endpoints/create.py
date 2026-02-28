@@ -33,10 +33,19 @@ async def create_endpoints_internal(
 ) -> UUID:
     """Create an endpoint resource and return its ID.
 
-    Can be called directly from other routes (e.g. duplicate endpoints)
-    without HTTP overhead. Uses the same SQL as the HTTP endpoint.
+    When group_id is provided, creates run/call/tool tracking records.
+    Tool is auto-resolved if tool_id is not provided.
     """
-    params = EndpointsSqlParams(base_url=base_url, mcp=mcp, group_id=group_id, tool_id=tool_id)
+    # Resolve tool if not provided (canonical — matches entry pattern)
+    tool_info = None
+    if tool_id is None:
+        tool_info = await resolve_tool(conn, "create", "endpoints", scope="resources")
+        if tool_info:
+            tool_id = tool_info.tool_id
+
+    params = EndpointsSqlParams(
+        base_url=base_url, mcp=mcp, group_id=group_id, tool_id=tool_id
+    )
     result = cast(
         EndpointsSqlRow,
         await execute_sql_typed(conn, SQL_PATH, params=params),
@@ -44,15 +53,13 @@ async def create_endpoints_internal(
     if not result or not result.endpoints_id:
         raise ValueError(f"Failed to create endpoint: {base_url}")
 
-    # Record arg values if tracking is active (call_id returned by SQL)
-    if result.call_id is not None:
-        tool_info = await resolve_tool(
-            conn, "create", "endpoints", scope="resources"
+    # Record arg values (canonical — matches entry pattern)
+    if tool_info is None and tool_id is not None:
+        tool_info = await resolve_tool(conn, "create", "endpoints", scope="resources")
+    if tool_info and result.call_id is not None:
+        await record_call_args(
+            conn, result.call_id, tool_info, {"base_url": base_url}, mcp
         )
-        if tool_info:
-            await record_call_args(
-                conn, result.call_id, tool_info, {"base_url": base_url}, mcp
-            )
 
     await invalidate_tags(["resources", "endpoints"])
     return result.endpoints_id

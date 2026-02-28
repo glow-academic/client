@@ -1,11 +1,15 @@
 """Scenario draft endpoint - handles autosave for all scenario resources."""
 
 from typing import Annotated, Any, cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.artifacts.scenario.permissions import compute_can_draft
+from app.api.v4.artifacts.scenario.permissions import (
+    SCENARIO_RESOURCES,
+    compute_can_draft,
+)
 from app.api.v4.artifacts.scenario.types import (
     PatchScenarioDraftApiRequest,
     PatchScenarioDraftApiResponse,
@@ -13,17 +17,133 @@ from app.api.v4.artifacts.scenario.types import (
     PatchScenarioDraftSqlRow,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
+from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.scenario_drafts.refresh import refresh_scenario_drafts_internal
+from app.api.v4.permissions import resolve_agents_for_artifact
+from app.api.v4.resources.departments.link import link_departments_internal
+from app.api.v4.resources.descriptions.link import link_descriptions_internal
+from app.api.v4.resources.documents.link import link_documents_internal
+from app.api.v4.resources.flags.link import link_flags_internal
+from app.api.v4.resources.images.link import link_images_internal
+from app.api.v4.resources.names.link import link_names_internal
+from app.api.v4.resources.objectives.link import link_objectives_internal
+from app.api.v4.resources.options.link import link_options_internal
+from app.api.v4.resources.parameter_fields.link import link_parameter_fields_internal
+from app.api.v4.resources.personas.link import link_personas_internal
+from app.api.v4.resources.problem_statements.link import (
+    link_problem_statements_internal,
+)
+from app.api.v4.resources.questions.link import link_questions_internal
+from app.api.v4.resources.videos.link import link_videos_internal
 from app.infra.v4.activity.audit import audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
+
+logger = get_logger(__name__)
 
 SQL_PATH = "app/sql/v4/queries/scenarios/patch_scenario_draft_complete.sql"
 
+# Single-select resource key → link internal function
+SINGLE_LINK_MAP: dict[str, Any] = {
+    "names": link_names_internal,
+    "descriptions": link_descriptions_internal,
+    "problem_statements": link_problem_statements_internal,
+    "flags": link_flags_internal,
+}
+
+# Multi-select resource key → link internal function
+MULTI_LINK_MAP: dict[str, Any] = {
+    "departments": link_departments_internal,
+    "personas": link_personas_internal,
+    "documents": link_documents_internal,
+    "parameter_fields": link_parameter_fields_internal,
+    "images": link_images_internal,
+    "objectives": link_objectives_internal,
+    "videos": link_videos_internal,
+    "questions": link_questions_internal,
+    "options": link_options_internal,
+}
+
+# Request field → resource key mapping (for single-select)
+SINGLE_REQUEST_FIELDS: dict[str, str] = {
+    "name_id": "names",
+    "description_id": "descriptions",
+    "problem_statement_id": "problem_statements",
+    "active_flag_id": "flags",
+    "objectives_enabled_flag_id": "flags",
+    "images_enabled_flag_id": "flags",
+    "video_enabled_flag_id": "flags",
+    "questions_enabled_flag_id": "flags",
+    "problem_statement_enabled_flag_id": "flags",
+}
+
+# Request field → resource key mapping (for multi-select)
+MULTI_REQUEST_FIELDS: dict[str, str] = {
+    "department_ids": "departments",
+    "persona_ids": "personas",
+    "document_ids": "documents",
+    "parameter_field_ids": "parameter_fields",
+    "image_ids": "images",
+    "objective_ids": "objectives",
+    "video_ids": "videos",
+    "question_ids": "questions",
+    "option_ids": "options",
+}
+
 router = APIRouter()
+
+
+async def _link_draft_resources(
+    conn: asyncpg.Connection,
+    request: PatchScenarioDraftApiRequest,
+    group_id: UUID,
+    link_tool_ids: dict[str, UUID | None],
+) -> None:
+    """Call link_*_internal for each resource that changed in the draft request.
+
+    Only links resources where both a resource_id and a link_tool_id are available.
+    Errors are logged but do not fail the draft save.
+    """
+    # Single-select resources
+    for field, resource_key in SINGLE_REQUEST_FIELDS.items():
+        resource_id = getattr(request, field, None)
+        if resource_id is None:
+            continue
+        tool_id = link_tool_ids.get(resource_key)
+        if tool_id is None:
+            continue
+        link_fn = SINGLE_LINK_MAP.get(resource_key)
+        if link_fn:
+            try:
+                await link_fn(
+                    conn, resource_id=resource_id, group_id=group_id, tool_id=tool_id
+                )
+            except Exception as e:
+                logger.warning(f"link_{resource_key}_internal failed (non-fatal): {e}")
+
+    # Multi-select resources
+    for field, resource_key in MULTI_REQUEST_FIELDS.items():
+        resource_ids = getattr(request, field, None)
+        if not resource_ids:
+            continue
+        tool_id = link_tool_ids.get(resource_key)
+        if tool_id is None:
+            continue
+        link_fn = MULTI_LINK_MAP.get(resource_key)
+        if link_fn:
+            for rid in resource_ids:
+                try:
+                    await link_fn(
+                        conn, resource_id=rid, group_id=group_id, tool_id=tool_id
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f"link_{resource_key}_internal failed for {rid} (non-fatal): {e}"
+                    )
 
 
 @router.patch(
@@ -70,9 +190,20 @@ async def patch_scenario_draft(
                 detail="You don't have permission to create or edit scenario drafts.",
             )
 
+        # Resolve link tool IDs from settings (for tool tracking)
+        link_tool_ids: dict[str, UUID | None] | None = None
+        if request.group_id and pool:
+            async with pool.acquire() as settings_conn:
+                settings_data = await get_auth_settings_internal(
+                    settings_conn, profile_id, bypass_cache=False
+                )
+            _, _, link_tool_ids = resolve_agents_for_artifact(
+                settings_data.agent_tool_entries, SCENARIO_RESOURCES
+            )
+
         async with conn.transaction():
             params = PatchScenarioDraftSqlParams.from_request(
-                request, profile_id=profile_id, group_id=None
+                request, profile_id=profile_id, group_id=request.group_id
             )
             sql_params = params.to_tuple()
 
@@ -89,6 +220,10 @@ async def patch_scenario_draft(
                 actor={"id": profile_id},
                 draft={"id": str(result.draft_id)},
             )
+
+        # Link resources for tool tracking (after successful draft save)
+        if request.group_id and link_tool_ids:
+            await _link_draft_resources(conn, request, request.group_id, link_tool_ids)
 
         is_update = request.input_draft_id is not None
         api_response = PatchScenarioDraftApiResponse.model_validate(

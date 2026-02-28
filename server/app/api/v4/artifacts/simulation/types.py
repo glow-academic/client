@@ -510,6 +510,7 @@ class SaveSimulationApiRequest(BaseModel):
     """Request model for bulk save simulation endpoint."""
 
     simulations: list[SaveSimulationItem]
+    group_id: UUID | None = None  # Tool tracking context from GET response
 
 
 class SaveSimulationResult(BaseModel):

@@ -33,9 +33,16 @@ async def create_values_internal(
 ) -> UUID:
     """Create a value resource and return its ID.
 
-    Can be called directly from other routes (e.g. duplicate endpoints)
-    without HTTP overhead. Uses the same SQL as the HTTP endpoint.
+    When group_id is provided, creates run/call/tool tracking records.
+    Tool is auto-resolved if tool_id is not provided.
     """
+    # Resolve tool if not provided (canonical — matches entry pattern)
+    tool_info = None
+    if tool_id is None:
+        tool_info = await resolve_tool(conn, "create", "values", scope="resources")
+        if tool_info:
+            tool_id = tool_info.tool_id
+
     params = ValuesSqlParams(value=value, mcp=mcp, group_id=group_id, tool_id=tool_id)
     result = cast(
         ValuesSqlRow,
@@ -44,13 +51,13 @@ async def create_values_internal(
     if not result or not result.values_id:
         raise ValueError(f"Failed to create value: {value}")
 
-    # Record arg values if tracking is active (call_id returned by SQL)
-    if result.call_id is not None:
+    # Record arg values (canonical — matches entry pattern)
+    if tool_info is None and tool_id is not None:
         tool_info = await resolve_tool(conn, "create", "values", scope="resources")
-        if tool_info:
-            await record_call_args(
-                conn, result.call_id, tool_info, {"value": value}, mcp
-            )
+    if tool_info and result.call_id is not None:
+        await record_call_args(
+            conn, result.call_id, tool_info, {"value": value}, mcp
+        )
 
     await invalidate_tags(["resources", "values"])
     return result.values_id

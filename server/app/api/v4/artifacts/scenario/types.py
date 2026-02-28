@@ -555,6 +555,7 @@ class SaveScenarioApiRequest(BaseModel):
     """Bulk save request — wraps list of items."""
 
     scenarios: list[SaveScenarioItem]
+    group_id: UUID | None = None  # Tool tracking context from GET response
 
 
 class SaveScenarioFieldError(BaseModel):
@@ -650,7 +651,7 @@ class PatchScenarioDraftApiRequest(BaseModel):
 
     input_draft_id: UUID | None = None
     expected_version: int = 0
-    # No group_id — server-resolved
+    group_id: UUID | None = None  # Tool tracking context from GET response
     name_id: UUID | None = None
     description_id: UUID | None = None
     problem_statement_id: UUID | None = None

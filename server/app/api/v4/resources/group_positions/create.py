@@ -33,11 +33,20 @@ async def create_group_positions_internal(
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> UUID:
-    """Create a group_position resource and return its ID.
+    """Create a group position resource and return its ID.
 
-    Can be called directly from other routes (e.g. duplicate endpoints)
-    without HTTP overhead. Uses the same SQL as the HTTP endpoint.
+    When group_id is provided, creates run/call/tool tracking records.
+    Tool is auto-resolved if tool_id is not provided.
     """
+    # Resolve tool if not provided (canonical — matches entry pattern)
+    tool_info = None
+    if tool_id is None:
+        tool_info = await resolve_tool(
+            conn, "create", "group_positions", scope="resources"
+        )
+        if tool_info:
+            tool_id = tool_info.tool_id
+
     params = GroupPositionsSqlParams(
         groups_id=groups_id, eval_id=eval_id, value=value, mcp=mcp,
         group_id=group_id, tool_id=tool_id
@@ -47,18 +56,18 @@ async def create_group_positions_internal(
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )
     if not result or not result.group_positions_id:
-        raise ValueError("Failed to create group_position")
+        raise ValueError("Failed to create group position")
 
-    # Record arg values if tracking is active (call_id returned by SQL)
-    if result.call_id is not None:
+    # Record arg values (canonical — matches entry pattern)
+    if tool_info is None and tool_id is not None:
         tool_info = await resolve_tool(
             conn, "create", "group_positions", scope="resources"
         )
-        if tool_info:
-            await record_call_args(
-                conn, result.call_id, tool_info,
-                {"groups_id": groups_id, "eval_id": eval_id, "value": value}, mcp
-            )
+    if tool_info and result.call_id is not None:
+        await record_call_args(
+            conn, result.call_id, tool_info,
+            {"groups_id": groups_id, "eval_id": eval_id, "value": value}, mcp
+        )
 
     await invalidate_tags(["resources", "group_positions"])
     return result.group_positions_id
