@@ -6,7 +6,7 @@
  * 06/07/2025
  */
 "use client";
-import { CheckCircle, Copy, Edit, Eye, Pencil, Search, Sparkles, Trash2, Users, X } from "lucide-react";
+import { CheckCircle, Copy, Edit, Eye, FileSpreadsheet, Pencil, Search, Sparkles, Trash2, Users, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -22,11 +22,14 @@ import type {
   DeleteSimulationOut,
   DuplicateSimulationIn,
   DuplicateSimulationOut,
+  ParseCsvIn,
+  ParseCsvOut,
   SaveSimulationIn,
   SaveSimulationOut,
   SearchFlagsOut,
   SimulationsListOut,
 } from "@/app/(main)/training/simulations/page";
+import BulkImport, { type ImportFieldDef } from "@/components/common/BulkImport";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
@@ -79,6 +82,8 @@ export interface SimulationsProps {
   ) => Promise<DeleteSimulationOut>;
   saveSimulationAction?: (input: SaveSimulationIn) => Promise<SaveSimulationOut>;
   searchFlagsAction?: () => Promise<SearchFlagsOut>;
+  parseCsvAction?: (input: ParseCsvIn) => Promise<ParseCsvOut>;
+  importFields?: ImportFieldDef[];
   // Server-side pagination/filtering state
   pageIndex: number;
   pageSize: number;
@@ -94,6 +99,8 @@ export function Simulations({
   deleteSimulationAction,
   saveSimulationAction,
   searchFlagsAction,
+  parseCsvAction,
+  importFields,
   pageIndex,
   pageSize,
   totalCount,
@@ -118,6 +125,9 @@ export function Simulations({
   // Bulk delete state
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  // Bulk import state
+  const [showBulkImportDialog, setShowBulkImportDialog] = useState(false);
 
   // Bulk edit state
   const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
@@ -1058,7 +1068,20 @@ export function Simulations({
                 )}
               </div>
             </div>
-            <DataTableViewOptions table={table} hiddenColumns={["name", "scenario_ids", "cohort_ids", "departments", "updated_at"]} />
+            <div className="flex items-center gap-2">
+              {parseCsvAction && importFields && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => setShowBulkImportDialog(true)}
+                >
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  Import CSV
+                </Button>
+              )}
+              <DataTableViewOptions table={table} hiddenColumns={["name", "scenario_ids", "cohort_ids", "departments", "updated_at"]} />
+            </div>
           </div>
           )}
 
@@ -1329,6 +1352,32 @@ export function Simulations({
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+      {/* Bulk Import Dialog */}
+      {parseCsvAction && importFields && (
+        <BulkImport
+          open={showBulkImportDialog}
+          onClose={() => {
+            setShowBulkImportDialog(false);
+            router.refresh();
+          }}
+          fields={importFields}
+          artifactName="Simulations"
+          parseCsvAction={parseCsvAction}
+          onSave={async (items) => {
+            if (!saveSimulationAction) throw new Error("Save action not available");
+            const simulations = items.map((item) => ({
+              name: item.name as string | undefined,
+              description: item.description as string | undefined,
+              is_inactive: item.is_inactive as boolean | undefined,
+              is_practice: item.is_practice as boolean | undefined,
+              departments: item.departments as string[] | undefined,
+              scenarios: item.scenarios as string[] | undefined,
+            }));
+            return saveSimulationAction({ body: { simulations } });
+          }}
+        />
+      )}
 
       </div>
     </TooltipProvider>

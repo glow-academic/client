@@ -168,6 +168,109 @@ async def _resolve_simulation_values(
             conn, item.description, **_tool_args("descriptions")
         )
 
+    # --- Match-by-name resolution for value fields (CSV import) ---
+
+    if item.is_inactive is not None and item.flag_ids is None:
+        from app.api.v4.resources.flags.search import search_flags_internal
+
+        all_flags = await search_flags_internal(
+            conn,
+            search=None,
+            limit_count=1000,
+            flag_type="simulation_inactive",
+            simulation=True,
+        )
+        match = next((f for f in all_flags if f.type == "simulation_inactive"), None)
+        if match and match.id:
+            if item.is_inactive:
+                item.flag_ids = [match.id]
+        elif item.is_inactive:
+            errors.append(
+                SaveSimulationFieldError(
+                    field="is_inactive", message="Inactive flag resource not found"
+                )
+            )
+
+    if item.is_practice is not None and item.flag_ids is None:
+        from app.api.v4.resources.flags.search import search_flags_internal
+
+        all_flags = await search_flags_internal(
+            conn,
+            search=None,
+            limit_count=1000,
+            flag_type="simulation_practice",
+            simulation=True,
+        )
+        match = next(
+            (f for f in all_flags if f.type == "simulation_practice"), None
+        )
+        if match and match.id:
+            if item.is_practice:
+                item.flag_ids = (item.flag_ids or []) + [match.id]
+        elif item.is_practice:
+            errors.append(
+                SaveSimulationFieldError(
+                    field="is_practice",
+                    message="Practice flag resource not found",
+                )
+            )
+
+    if item.departments is not None and item.department_ids is None:
+        from app.api.v4.resources.departments.search import (
+            search_departments_internal,
+        )
+
+        all_depts = await search_departments_internal(
+            conn, search=None, limit_count=1000, simulation=True
+        )
+        dept_name_map = {
+            d.name.lower(): d.department_id
+            for d in all_depts
+            if d.name and d.department_id
+        }
+        resolved_ids = []
+        for dept_name in item.departments:
+            dept_id = dept_name_map.get(dept_name.lower())
+            if dept_id:
+                resolved_ids.append(dept_id)
+            else:
+                errors.append(
+                    SaveSimulationFieldError(
+                        field="departments",
+                        message=f'Department "{dept_name}" not found',
+                    )
+                )
+        if not any(e.field == "departments" for e in errors):
+            item.department_ids = resolved_ids
+
+    if item.scenarios is not None and item.scenario_ids is None:
+        from app.api.v4.resources.scenarios.search import (
+            search_scenarios_internal,
+        )
+
+        all_scenarios = await search_scenarios_internal(
+            conn, search=None, limit_count=1000, simulation=True
+        )
+        scenario_name_map = {
+            s.name.lower(): s.scenario_id
+            for s in all_scenarios
+            if s.name and s.scenario_id
+        }
+        resolved_ids = []
+        for scenario_name in item.scenarios:
+            sid = scenario_name_map.get(scenario_name.lower())
+            if sid:
+                resolved_ids.append(sid)
+            else:
+                errors.append(
+                    SaveSimulationFieldError(
+                        field="scenarios",
+                        message=f'Scenario "{scenario_name}" not found',
+                    )
+                )
+        if not any(e.field == "scenarios" for e in errors):
+            item.scenario_ids = resolved_ids
+
     # --- Validate required fields have IDs after resolution ---
 
     if item.name_id is None:

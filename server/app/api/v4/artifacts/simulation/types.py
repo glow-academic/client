@@ -449,6 +449,7 @@ class ListSimulationApiResponse(BaseModel):
     cohort_filter: "ListFilterSection | None" = None
     department_filter: "ListFilterSection | None" = None
     total_count: int | None = None
+    import_fields: list[Any] | None = None
 
 
 # =============================================================================
@@ -504,6 +505,11 @@ class SaveSimulationItem(BaseModel):
     scenario_position_ids: list[UUID] | None = None
     scenario_rubric_ids: list[UUID] | None = None
     scenario_time_limit_ids: list[UUID] | None = None
+    # Value-based fields for CSV import (match-by-name resolution)
+    is_inactive: bool | None = None
+    is_practice: bool | None = None
+    departments: list[str] | None = None
+    scenarios: list[str] | None = None
 
 
 class SaveSimulationApiRequest(BaseModel):

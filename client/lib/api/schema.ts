@@ -2950,6 +2950,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/artifacts/dashboard/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export Dashboard
+         * @description Export dashboard as CSV — chat-grain data with hydrated names.
+         */
+        post: operations["export_dashboard_api_v4_artifacts_dashboard_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/artifacts/dashboard/docs": {
         parameters: {
             query?: never;
@@ -27751,6 +27771,48 @@ export interface components {
             row_count: number;
         };
         /**
+         * ExportDashboardApiRequest
+         * @description Request model for dashboard export (chat-grain analytical dump).
+         */
+        ExportDashboardApiRequest: {
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Simulation Filters */
+            simulation_filters?: string[] | null;
+            /** Target Profile Id */
+            target_profile_id?: string | null;
+            /** Search */
+            search?: string | null;
+            /**
+             * Sort Order
+             * @default desc
+             */
+            sort_order: string;
+        };
+        /**
+         * ExportDashboardApiResponse
+         * @description Response model for dashboard export.
+         */
+        ExportDashboardApiResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** File Name */
+            file_name: string;
+            /** Row Count */
+            row_count: number;
+        };
+        /**
          * ExportLeaderboardApiRequest
          * @description Request model for leaderboard export (analytical dump).
          */
@@ -35308,6 +35370,8 @@ export interface components {
             department_filter?: components["schemas"]["ListFilterSection"] | null;
             /** Total Count */
             total_count?: number | null;
+            /** Import Fields */
+            import_fields?: unknown[] | null;
         };
         /**
          * ListSimulationApiScenario
@@ -43479,6 +43543,14 @@ export interface components {
             scenario_rubric_ids?: string[] | null;
             /** Scenario Time Limit Ids */
             scenario_time_limit_ids?: string[] | null;
+            /** Is Inactive */
+            is_inactive?: boolean | null;
+            /** Is Practice */
+            is_practice?: boolean | null;
+            /** Departments */
+            departments?: string[] | null;
+            /** Scenarios */
+            scenarios?: string[] | null;
         };
         /**
          * SaveSimulationResult
@@ -57222,6 +57294,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshMvDashboardApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_dashboard_api_v4_artifacts_dashboard_export_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportDashboardApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportDashboardApiResponse"];
                 };
             };
             /** @description Validation Error */

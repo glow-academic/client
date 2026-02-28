@@ -10,6 +10,7 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarProvider,
+  SidebarRail,
 } from "@/components/ui/sidebar";
 import { MessageTimeline } from "@/components/common/ai/MessageTimeline";
 import { TypeSelector } from "@/components/common/ai/TypeSelector";
@@ -80,6 +81,7 @@ export function GenerationPanel({
             </div>
           </div>
         </SidebarFooter>
+        <SidebarRail />
       </Sidebar>
     </SidebarProvider>
   );

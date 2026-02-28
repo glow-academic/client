@@ -22,6 +22,8 @@ type SaveSimulationIn = InputOf<"/api/v4/artifacts/simulations/save", "post">;
 type SaveSimulationOut = OutputOf<"/api/v4/artifacts/simulations/save", "post">;
 type SearchFlagsIn = InputOf<"/api/v4/resources/flags/search", "post">;
 type SearchFlagsOut = NonNullable<OutputOf<"/api/v4/resources/flags/search", "post">["items"]>;
+type ParseCsvIn = InputOf<"/api/v4/uploads/csv", "post">;
+type ParseCsvOut = OutputOf<"/api/v4/uploads/csv", "post">;
 
 /** ---- Body type for simulations list request ---- */
 type SimulationsListBody = {
@@ -86,6 +88,11 @@ async function searchFlags(): Promise<SearchFlagsOut> {
     body: { search: null, limit_count: 100, offset_count: 0, simulation: true },
   } as SearchFlagsIn);
   return res.items ?? [];
+}
+
+async function parseCsv(input: ParseCsvIn): Promise<ParseCsvOut> {
+  "use server";
+  return api.post("/uploads/csv", input);
 }
 
 /** ---- Docs types for page metadata ---- */
@@ -153,6 +160,8 @@ export default async function SimulationsPage({ searchParams }: SimulationsPageP
         deleteSimulationAction={deleteSimulation}
         saveSimulationAction={saveSimulation}
         searchFlagsAction={searchFlags}
+        parseCsvAction={parseCsv}
+        importFields={listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[] | undefined}
         pageIndex={pageIndex}
         pageSize={pageSize}
         totalCount={listData.total_count ?? 0}
@@ -170,6 +179,8 @@ export type {
   DeleteSimulationOut,
   DuplicateSimulationIn,
   DuplicateSimulationOut,
+  ParseCsvIn,
+  ParseCsvOut,
   SaveSimulationIn,
   SaveSimulationOut,
   SearchFlagsOut,

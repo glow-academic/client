@@ -541,6 +541,33 @@ DashboardPrimaryMetrics.model_rebuild()
 
 
 # =============================================================================
+# Export Types
+# =============================================================================
+
+
+class ExportDashboardApiRequest(BaseModel):
+    """Request model for dashboard export (chat-grain analytical dump)."""
+
+    start_date: str | None = None
+    end_date: str | None = None
+    cohort_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    simulation_filters: list[str] | None = None
+    target_profile_id: UUID | None = None
+    search: str | None = None
+    sort_order: str = Field(default="desc")
+
+
+class ExportDashboardApiResponse(BaseModel):
+    """Response model for dashboard export."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int
+
+
+# =============================================================================
 # WebSocket Types
 # =============================================================================
 

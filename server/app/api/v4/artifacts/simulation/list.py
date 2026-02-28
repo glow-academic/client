@@ -37,6 +37,50 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
+SIMULATION_IMPORT_FIELDS: list[dict] = [
+    {
+        "key": "name",
+        "label": "Name",
+        "required": True,
+        "example": "Clinical Assessment",
+        "description": "The simulation's display name",
+    },
+    {
+        "key": "description",
+        "label": "Description",
+        "example": "A clinical assessment simulation...",
+        "description": "Optional description",
+    },
+    {
+        "key": "is_inactive",
+        "label": "Inactive",
+        "type": "boolean",
+        "example": "false",
+        "description": "Whether the simulation is inactive (true/false)",
+    },
+    {
+        "key": "is_practice",
+        "label": "Practice",
+        "type": "boolean",
+        "example": "false",
+        "description": "Whether the simulation is a practice simulation (true/false)",
+    },
+    {
+        "key": "departments",
+        "label": "Departments",
+        "multi": True,
+        "example": "Nursing, Medicine",
+        "description": "Comma-separated department names",
+    },
+    {
+        "key": "scenarios",
+        "label": "Scenarios",
+        "multi": True,
+        "example": "Emergency Triage, Patient Intake",
+        "description": "Comma-separated scenario names",
+    },
+]
+
 # Load SQL with types at module level
 SQL_PATH = "app/sql/v4/queries/simulations/get_simulations_list_complete.sql"
 
@@ -255,6 +299,7 @@ async def get_simulation_list(
                 filters.department_search,
             ),
             total_count=result.total_count,
+            import_fields=SIMULATION_IMPORT_FIELDS,
         )
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
