@@ -14,7 +14,7 @@ import { usePathname, useRouter } from "next/navigation";
 import React, { useEffect, useMemo } from "react";
 
 import { SimulationControls } from "@/components/common/SimulationControls";
-import { FullPageGenerateButton } from "@/components/common/drafts/FullPageGenerateButton";
+
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
@@ -186,7 +186,7 @@ function MainLayoutContent({
               />
             </div>
 
-            <FullPageGenerateButton artifactType={artifactType} />
+
             {attemptControls?.show_controls && (
               <div className="pr-4">
                 <SimulationControls

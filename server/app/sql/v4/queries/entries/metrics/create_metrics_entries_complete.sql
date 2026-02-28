@@ -1,4 +1,4 @@
--- Create metrics entry via generic api_create_entry_record_v4
+-- Create metrics entry with strongly-typed params
 
 DO $$
 DECLARE
@@ -15,22 +15,20 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION public.api_create_metrics_entry_v4(
-    call_id uuid DEFAULT NULL,
-    mcp boolean DEFAULT false,
-    entry_data jsonb DEFAULT '{}'::jsonb
-) RETURNS TABLE(
-    id uuid,
-    already_exists boolean
-)
-LANGUAGE plpgsql
-AS $$
+    session_id uuid,
+    ts timestamptz,
+    requests_total bigint,
+    errors_total bigint,
+    avg_latency_ms double precision,
+    cpu_percent double precision,
+    memory_bytes bigint,
+    mcp boolean DEFAULT false
+) RETURNS TABLE (out_ts text)
+LANGUAGE plpgsql AS $$
+DECLARE v_ts text;
 BEGIN
-    RETURN QUERY
-    SELECT * FROM api_create_entry_record_v4(
-        entry_type := 'metrics',
-        call_id := call_id,
-        mcp := mcp,
-        entry_data := entry_data
-    );
-END;
-$$;
+    INSERT INTO metrics_entry (session_id, ts, requests_total, errors_total, avg_latency_ms, cpu_percent, memory_bytes, mcp)
+    VALUES (api_create_metrics_entry_v4.session_id, api_create_metrics_entry_v4.ts, api_create_metrics_entry_v4.requests_total, api_create_metrics_entry_v4.errors_total, api_create_metrics_entry_v4.avg_latency_ms, api_create_metrics_entry_v4.cpu_percent, api_create_metrics_entry_v4.memory_bytes, api_create_metrics_entry_v4.mcp)
+    RETURNING metrics_entry.ts::text INTO v_ts;
+    RETURN QUERY SELECT v_ts;
+END; $$;

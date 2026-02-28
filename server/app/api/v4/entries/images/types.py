@@ -1,5 +1,7 @@
 """Canonical images entry type — single source of truth for entry fields."""
 
+from uuid import UUID
+
 from pydantic import BaseModel
 
 
@@ -11,3 +13,26 @@ class ImagesEntryData(BaseModel):
     call_id: str | None = None
     upload_id: str | None = None
     message_id: str | None = None
+
+
+class CreateImagesEntrySqlParams(BaseModel):
+    session_id: UUID
+    upload_id: UUID | None = None
+    message_id: UUID | None = None
+    mcp: bool = False
+
+    def to_tuple(self) -> tuple:
+        return (
+            self.session_id,
+            self.upload_id,
+            self.message_id,
+            self.mcp,
+        )
+
+
+class CreateImagesEntrySqlRow(BaseModel):
+    id: UUID
+
+
+class CreateImagesEntryResponse(BaseModel):
+    id: UUID

@@ -160,9 +160,7 @@ async def get_auth_settings_internal(
         "chart5": settings_theme.chart5 or "",
     }
 
-    has_generate = build_artifact_generation_maps(
-        access.artifact_agent_ids
-    )
+    has_generate = build_artifact_generation_maps(access.artifact_agent_ids)
 
     return AuthSettingsInternalData(
         settings_id=settings_id,
@@ -210,9 +208,15 @@ async def get_auth_settings(
 
         return GetAuthSettingsApiResponse(
             settings_id=str(data.settings_id) if data.settings_id else None,
-            success_threshold=data.settings_theme.success_threshold if data.settings_theme else None,
-            warning_threshold=data.settings_theme.warning_threshold if data.settings_theme else None,
-            danger_threshold=data.settings_theme.danger_threshold if data.settings_theme else None,
+            success_threshold=data.settings_theme.success_threshold
+            if data.settings_theme
+            else None,
+            warning_threshold=data.settings_theme.warning_threshold
+            if data.settings_theme
+            else None,
+            danger_threshold=data.settings_theme.danger_threshold
+            if data.settings_theme
+            else None,
             tokens=data.settings_tokens,
             agents=data.settings_agents,
             tools=data.settings_tools,

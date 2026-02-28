@@ -1,4 +1,4 @@
--- Create logins entry via generic api_create_entry_record_v4
+-- Create logins entry with strongly-typed params
 
 DO $$
 DECLARE
@@ -15,22 +15,14 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION public.api_create_logins_entry_v4(
-    call_id uuid DEFAULT NULL,
-    mcp boolean DEFAULT false,
-    entry_data jsonb DEFAULT '{}'::jsonb
-) RETURNS TABLE(
-    id uuid,
-    already_exists boolean
-)
-LANGUAGE plpgsql
-AS $$
+    session_id uuid,
+    mcp boolean DEFAULT false
+) RETURNS TABLE (id uuid)
+LANGUAGE plpgsql AS $$
+DECLARE v_id uuid;
 BEGIN
-    RETURN QUERY
-    SELECT * FROM api_create_entry_record_v4(
-        entry_type := 'logins',
-        call_id := call_id,
-        mcp := mcp,
-        entry_data := entry_data
-    );
-END;
-$$;
+    INSERT INTO logins_entry (session_id, mcp, generated)
+    VALUES (api_create_logins_entry_v4.session_id, api_create_logins_entry_v4.mcp, true)
+    RETURNING logins_entry.id INTO v_id;
+    RETURN QUERY SELECT v_id;
+END; $$;

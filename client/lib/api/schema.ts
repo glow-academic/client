@@ -26183,6 +26183,8 @@ export interface components {
         DescriptionsApiResponse: {
             /** Description Id */
             description_id?: string | null;
+            /** Call Id */
+            call_id?: string | null;
         };
         /** DescriptionsGenerationEvent */
         DescriptionsGenerationEvent: {
@@ -27557,6 +27559,8 @@ export interface components {
         ExamplesApiResponse: {
             /** Example Id */
             example_id?: string | null;
+            /** Call Id */
+            call_id?: string | null;
         };
         /** ExamplesGenerationEvent */
         ExamplesGenerationEvent: {
@@ -32794,6 +32798,8 @@ export interface components {
         InstructionsApiResponse: {
             /** Instruction Id */
             instruction_id?: string | null;
+            /** Call Id */
+            call_id?: string | null;
         };
         /** InstructionsGenerationEvent */
         InstructionsGenerationEvent: {
@@ -35563,6 +35569,8 @@ export interface components {
         NamesApiResponse: {
             /** Name Id */
             name_id?: string | null;
+            /** Call Id */
+            call_id?: string | null;
         };
         /** NamesGenerationEvent */
         NamesGenerationEvent: {

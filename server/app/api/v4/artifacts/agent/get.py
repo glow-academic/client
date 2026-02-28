@@ -227,7 +227,8 @@ async def get_agent_internal(
             profile_id=profile_id,
             agent_id=agent_id,
             draft_id=draft_id,
-            draft_group_id=group_id or (draft_item.group_id if draft_item is not None else None),
+            draft_group_id=group_id
+            or (draft_item.group_id if draft_item is not None else None),
             draft_version=draft_item.version if draft_item is not None else None,
         )
 

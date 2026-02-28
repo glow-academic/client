@@ -4190,32 +4190,27 @@ class SaveDocumentApiResponse(BaseModel):
 
 class CreateActivityEntriesSqlParams(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
     mcp: bool | None = False
-    entry_data: Any | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.call_id,
+            self.session_id,
             self.mcp,
-            self.entry_data,
         )
 
 class CreateActivityEntriesSqlRow(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 class CreateActivityEntriesApiRequest(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
     mcp: bool | None = False
-    entry_data: Any | None = None
 
 class CreateActivityEntriesApiResponse(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 
 
@@ -6050,32 +6045,36 @@ class SearchAttemptStrengthEntriesApiResponse(BaseModel):
 
 class CreateAudiosEntriesSqlParams(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    upload_id: UUID | None = None
+    message_id: UUID | None = None
+    length_seconds: int | None = 0
     mcp: bool | None = False
-    entry_data: Any | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.call_id,
+            self.session_id,
+            self.upload_id,
+            self.message_id,
+            self.length_seconds,
             self.mcp,
-            self.entry_data,
         )
 
 class CreateAudiosEntriesSqlRow(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 class CreateAudiosEntriesApiRequest(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    upload_id: UUID | None = None
+    message_id: UUID | None = None
+    length_seconds: int | None = 0
     mcp: bool | None = False
-    entry_data: Any | None = None
 
 class CreateAudiosEntriesApiResponse(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 
 
@@ -6145,32 +6144,36 @@ class SearchAudiosEntriesApiResponse(BaseModel):
 
 class CreateAuditsEntriesSqlParams(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    message: str
+    endpoint: str
+    error: bool | None = False
     mcp: bool | None = False
-    entry_data: Any | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.call_id,
+            self.session_id,
+            self.message,
+            self.endpoint,
+            self.error,
             self.mcp,
-            self.entry_data,
         )
 
 class CreateAuditsEntriesSqlRow(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 class CreateAuditsEntriesApiRequest(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    message: str
+    endpoint: str
+    error: bool | None = False
     mcp: bool | None = False
-    entry_data: Any | None = None
 
 class CreateAuditsEntriesApiResponse(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 
 
@@ -6434,32 +6437,33 @@ class SearchBenchmarkEntriesApiResponse(BaseModel):
 
 class CreateCallsEntriesSqlParams(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    external_call_id: str
+    run_id: UUID | None = None
     mcp: bool | None = False
-    entry_data: Any | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.call_id,
+            self.session_id,
+            self.external_call_id,
+            self.run_id,
             self.mcp,
-            self.entry_data,
         )
 
 class CreateCallsEntriesSqlRow(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 class CreateCallsEntriesApiRequest(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    external_call_id: str
+    run_id: UUID | None = None
     mcp: bool | None = False
-    entry_data: Any | None = None
 
 class CreateCallsEntriesApiResponse(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 
 
@@ -7723,32 +7727,30 @@ class SearchDocumentDraftsEntriesApiResponse(BaseModel):
 
 class CreateEmulationsEntriesSqlParams(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    grant_id: UUID
     mcp: bool | None = False
-    entry_data: Any | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.call_id,
+            self.session_id,
+            self.grant_id,
             self.mcp,
-            self.entry_data,
         )
 
 class CreateEmulationsEntriesSqlRow(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 class CreateEmulationsEntriesApiRequest(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    grant_id: UUID
     mcp: bool | None = False
-    entry_data: Any | None = None
 
 class CreateEmulationsEntriesApiResponse(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 
 
@@ -8034,32 +8036,30 @@ class SearchFieldDraftsEntriesApiResponse(BaseModel):
 
 class CreateGrantsEntriesSqlParams(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    expires_at: datetime
     mcp: bool | None = False
-    entry_data: Any | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.call_id,
+            self.session_id,
+            self.expires_at,
             self.mcp,
-            self.entry_data,
         )
 
 class CreateGrantsEntriesSqlRow(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 class CreateGrantsEntriesApiRequest(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    expires_at: datetime
     mcp: bool | None = False
-    entry_data: Any | None = None
 
 class CreateGrantsEntriesApiResponse(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 
 
@@ -8138,32 +8138,33 @@ class SearchGrantsEntriesApiResponse(BaseModel):
 
 class CreateGroupsEntriesSqlParams(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    name: str | None = None
+    custom_model: bool | None = False
     mcp: bool | None = False
-    entry_data: Any | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.call_id,
+            self.session_id,
+            self.name,
+            self.custom_model,
             self.mcp,
-            self.entry_data,
         )
 
 class CreateGroupsEntriesSqlRow(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 class CreateGroupsEntriesApiRequest(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    name: str | None = None
+    custom_model: bool | None = False
     mcp: bool | None = False
-    entry_data: Any | None = None
 
 class CreateGroupsEntriesApiResponse(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 
 
@@ -8503,32 +8504,33 @@ class SearchHomeChatEntriesApiResponse(BaseModel):
 
 class CreateImagesEntriesSqlParams(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    upload_id: UUID | None = None
+    message_id: UUID | None = None
     mcp: bool | None = False
-    entry_data: Any | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.call_id,
+            self.session_id,
+            self.upload_id,
+            self.message_id,
             self.mcp,
-            self.entry_data,
         )
 
 class CreateImagesEntriesSqlRow(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 class CreateImagesEntriesApiRequest(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    upload_id: UUID | None = None
+    message_id: UUID | None = None
     mcp: bool | None = False
-    entry_data: Any | None = None
 
 class CreateImagesEntriesApiResponse(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 
 
@@ -8806,32 +8808,27 @@ class SearchInvocationDraftsEntriesApiResponse(BaseModel):
 
 class CreateLoginsEntriesSqlParams(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
     mcp: bool | None = False
-    entry_data: Any | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.call_id,
+            self.session_id,
             self.mcp,
-            self.entry_data,
         )
 
 class CreateLoginsEntriesSqlRow(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 class CreateLoginsEntriesApiRequest(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
     mcp: bool | None = False
-    entry_data: Any | None = None
 
 class CreateLoginsEntriesApiResponse(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 
 
@@ -8995,32 +8992,30 @@ class SearchMessagesEntriesApiResponse(BaseModel):
 
 class CreateMessagesCompletionsEntriesSqlParams(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    message_id: UUID
     mcp: bool | None = False
-    entry_data: Any | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.call_id,
+            self.session_id,
+            self.message_id,
             self.mcp,
-            self.entry_data,
         )
 
 class CreateMessagesCompletionsEntriesSqlRow(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 class CreateMessagesCompletionsEntriesApiRequest(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    message_id: UUID
     mcp: bool | None = False
-    entry_data: Any | None = None
 
 class CreateMessagesCompletionsEntriesApiResponse(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 
 
@@ -9087,32 +9082,45 @@ class SearchMessagesCompletionsEntriesApiResponse(BaseModel):
 
 class CreateMetricsEntriesSqlParams(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    ts: datetime
+    requests_total: int
+    errors_total: int
+    avg_latency_ms: float
+    cpu_percent: float
+    memory_bytes: int
     mcp: bool | None = False
-    entry_data: Any | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.call_id,
+            self.session_id,
+            self.ts,
+            self.requests_total,
+            self.errors_total,
+            self.avg_latency_ms,
+            self.cpu_percent,
+            self.memory_bytes,
             self.mcp,
-            self.entry_data,
         )
 
 class CreateMetricsEntriesSqlRow(BaseModel):
 
-    id: UUID | None = None
-    already_exists: bool | None = None
+    out_ts: str | None = None
 
 class CreateMetricsEntriesApiRequest(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    ts: datetime
+    requests_total: int
+    errors_total: int
+    avg_latency_ms: float
+    cpu_percent: float
+    memory_bytes: int
     mcp: bool | None = False
-    entry_data: Any | None = None
 
 class CreateMetricsEntriesApiResponse(BaseModel):
 
-    id: UUID | None = None
-    already_exists: bool | None = None
+    out_ts: str | None = None
 
 
 
@@ -10613,32 +10621,36 @@ class SearchRubricDraftsEntriesApiResponse(BaseModel):
 
 class CreateRunPricingEntriesSqlParams(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    pricing_type: str
+    run_id: UUID
+    count: int | None = 0
     mcp: bool | None = False
-    entry_data: Any | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.call_id,
+            self.session_id,
+            self.pricing_type,
+            self.run_id,
+            self.count,
             self.mcp,
-            self.entry_data,
         )
 
 class CreateRunPricingEntriesSqlRow(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 class CreateRunPricingEntriesApiRequest(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    pricing_type: str
+    run_id: UUID
+    count: int | None = 0
     mcp: bool | None = False
-    entry_data: Any | None = None
 
 class CreateRunPricingEntriesApiResponse(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 
 
@@ -10705,32 +10717,30 @@ class SearchRunPricingEntriesApiResponse(BaseModel):
 
 class CreateRunsEntriesSqlParams(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    group_id: UUID | None = None
     mcp: bool | None = False
-    entry_data: Any | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.call_id,
+            self.session_id,
+            self.group_id,
             self.mcp,
-            self.entry_data,
         )
 
 class CreateRunsEntriesSqlRow(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 class CreateRunsEntriesApiRequest(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    group_id: UUID | None = None
     mcp: bool | None = False
-    entry_data: Any | None = None
 
 class CreateRunsEntriesApiResponse(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 
 
@@ -10923,32 +10933,29 @@ class SearchScenarioDraftsEntriesApiResponse(BaseModel):
 
 class CreateSessionsEntriesSqlParams(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    profile_id: UUID
     mcp: bool | None = False
-    entry_data: Any | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.call_id,
+            self.session_id,
+            self.profile_id,
             self.mcp,
-            self.entry_data,
         )
 
 class CreateSessionsEntriesSqlRow(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 class CreateSessionsEntriesApiRequest(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
     mcp: bool | None = False
-    entry_data: Any | None = None
 
 class CreateSessionsEntriesApiResponse(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 
 
@@ -12091,32 +12098,30 @@ class SearchTestsEntriesApiResponse(BaseModel):
 
 class CreateTextsEntriesSqlParams(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    content: str
     mcp: bool | None = False
-    entry_data: Any | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.call_id,
+            self.session_id,
+            self.content,
             self.mcp,
-            self.entry_data,
         )
 
 class CreateTextsEntriesSqlRow(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 class CreateTextsEntriesApiRequest(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    content: str
     mcp: bool | None = False
-    entry_data: Any | None = None
 
 class CreateTextsEntriesApiResponse(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 
 
@@ -12183,32 +12188,39 @@ class SearchTextsEntriesApiResponse(BaseModel):
 
 class CreateTokensEntriesSqlParams(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    run_id: UUID
+    input_tokens: int | None = 0
+    output_tokens: int | None = 0
+    cached_input_tokens: int | None = 0
     mcp: bool | None = False
-    entry_data: Any | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.call_id,
+            self.session_id,
+            self.run_id,
+            self.input_tokens,
+            self.output_tokens,
+            self.cached_input_tokens,
             self.mcp,
-            self.entry_data,
         )
 
 class CreateTokensEntriesSqlRow(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 class CreateTokensEntriesApiRequest(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    run_id: UUID
+    input_tokens: int | None = 0
+    output_tokens: int | None = 0
+    cached_input_tokens: int | None = 0
     mcp: bool | None = False
-    entry_data: Any | None = None
 
 class CreateTokensEntriesApiResponse(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 
 
@@ -12383,32 +12395,36 @@ class SearchToolDraftsEntriesApiResponse(BaseModel):
 
 class CreateUploadsEntriesSqlParams(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    file_path: str
+    mime_type: str
+    size: int
     mcp: bool | None = False
-    entry_data: Any | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.call_id,
+            self.session_id,
+            self.file_path,
+            self.mime_type,
+            self.size,
             self.mcp,
-            self.entry_data,
         )
 
 class CreateUploadsEntriesSqlRow(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 class CreateUploadsEntriesApiRequest(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    file_path: str
+    mime_type: str
+    size: int
     mcp: bool | None = False
-    entry_data: Any | None = None
 
 class CreateUploadsEntriesApiResponse(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 
 
@@ -12475,32 +12491,33 @@ class SearchUploadsEntriesApiResponse(BaseModel):
 
 class CreateUploadsCompletionsEntriesSqlParams(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    upload_id: UUID
+    end_reason: str | None = None
     mcp: bool | None = False
-    entry_data: Any | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.call_id,
+            self.session_id,
+            self.upload_id,
+            self.end_reason,
             self.mcp,
-            self.entry_data,
         )
 
 class CreateUploadsCompletionsEntriesSqlRow(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 class CreateUploadsCompletionsEntriesApiRequest(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    upload_id: UUID
+    end_reason: str | None = None
     mcp: bool | None = False
-    entry_data: Any | None = None
 
 class CreateUploadsCompletionsEntriesApiResponse(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 
 
@@ -12567,32 +12584,36 @@ class SearchUploadsCompletionsEntriesApiResponse(BaseModel):
 
 class CreateVideosEntriesSqlParams(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    upload_id: UUID | None = None
+    message_id: UUID | None = None
+    length_seconds: int | None = 0
     mcp: bool | None = False
-    entry_data: Any | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.call_id,
+            self.session_id,
+            self.upload_id,
+            self.message_id,
+            self.length_seconds,
             self.mcp,
-            self.entry_data,
         )
 
 class CreateVideosEntriesSqlRow(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 class CreateVideosEntriesApiRequest(BaseModel):
 
-    call_id: UUID | None = None
+    session_id: UUID
+    upload_id: UUID | None = None
+    message_id: UUID | None = None
+    length_seconds: int | None = 0
     mcp: bool | None = False
-    entry_data: Any | None = None
 
 class CreateVideosEntriesApiResponse(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
 
 
 
@@ -22608,6 +22629,7 @@ class DescriptionsSqlParams(BaseModel):
 class DescriptionsSqlRow(BaseModel):
 
     description_id: UUID | None = None
+    call_id: UUID | None = None
 
 class DescriptionsApiRequest(BaseModel):
 
@@ -22619,6 +22641,7 @@ class DescriptionsApiRequest(BaseModel):
 class DescriptionsApiResponse(BaseModel):
 
     description_id: UUID | None = None
+    call_id: UUID | None = None
 
 
 
@@ -23192,6 +23215,7 @@ class ExamplesSqlParams(BaseModel):
 class ExamplesSqlRow(BaseModel):
 
     example_id: UUID | None = None
+    call_id: UUID | None = None
 
 class ExamplesApiRequest(BaseModel):
 
@@ -23203,6 +23227,7 @@ class ExamplesApiRequest(BaseModel):
 class ExamplesApiResponse(BaseModel):
 
     example_id: UUID | None = None
+    call_id: UUID | None = None
 
 
 
@@ -24025,6 +24050,7 @@ class InstructionsSqlParams(BaseModel):
 class InstructionsSqlRow(BaseModel):
 
     instruction_id: UUID | None = None
+    call_id: UUID | None = None
 
 class InstructionsApiRequest(BaseModel):
 
@@ -24036,6 +24062,7 @@ class InstructionsApiRequest(BaseModel):
 class InstructionsApiResponse(BaseModel):
 
     instruction_id: UUID | None = None
+    call_id: UUID | None = None
 
 
 
@@ -25469,6 +25496,7 @@ class NamesSqlParams(BaseModel):
 class NamesSqlRow(BaseModel):
 
     name_id: UUID | None = None
+    call_id: UUID | None = None
 
 class NamesApiRequest(BaseModel):
 
@@ -25480,6 +25508,7 @@ class NamesApiRequest(BaseModel):
 class NamesApiResponse(BaseModel):
 
     name_id: UUID | None = None
+    call_id: UUID | None = None
 
 
 

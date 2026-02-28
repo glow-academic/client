@@ -26,7 +26,8 @@ CREATE OR REPLACE FUNCTION api_create_names_v4(
     tool_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    name_id uuid
+    name_id uuid,
+    call_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
@@ -45,7 +46,7 @@ BEGIN
         LIMIT 1;
 
         IF v_name_id IS NOT NULL THEN
-            RETURN QUERY SELECT v_name_id;
+            RETURN QUERY SELECT v_name_id, NULL::uuid;
             RETURN;
         END IF;
     END IF;
@@ -80,6 +81,6 @@ BEGIN
         VALUES (v_name_id, v_call_id);
     END IF;
 
-    RETURN QUERY SELECT v_name_id;
+    RETURN QUERY SELECT v_name_id, v_call_id;
 END;
 $$;

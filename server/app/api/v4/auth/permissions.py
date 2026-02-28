@@ -162,6 +162,7 @@ OPERATIONAL_ARTIFACTS = frozenset(
     }
 )
 
+
 def build_artifact_generation_maps(
     items: list[QGetProfileContextAccessV4ArtifactAgent] | None,
 ) -> dict[str, bool]:

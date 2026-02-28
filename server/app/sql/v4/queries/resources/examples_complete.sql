@@ -26,7 +26,8 @@ CREATE OR REPLACE FUNCTION api_create_examples_v4(
     tool_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    example_id uuid
+    example_id uuid,
+    call_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
@@ -45,7 +46,7 @@ BEGIN
         LIMIT 1;
 
         IF v_example_id IS NOT NULL THEN
-            RETURN QUERY SELECT v_example_id;
+            RETURN QUERY SELECT v_example_id, NULL::uuid;
             RETURN;
         END IF;
     END IF;
@@ -79,6 +80,6 @@ BEGIN
         VALUES (v_example_id, v_call_id);
     END IF;
 
-    RETURN QUERY SELECT v_example_id;
+    RETURN QUERY SELECT v_example_id, v_call_id;
 END;
 $$;

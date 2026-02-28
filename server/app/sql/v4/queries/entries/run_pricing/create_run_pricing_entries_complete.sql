@@ -1,4 +1,4 @@
--- Create run_pricing entry via generic api_create_entry_record_v4
+-- Create run_pricing entry with strongly-typed params
 
 DO $$
 DECLARE
@@ -15,22 +15,17 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION public.api_create_run_pricing_entry_v4(
-    call_id uuid DEFAULT NULL,
-    mcp boolean DEFAULT false,
-    entry_data jsonb DEFAULT '{}'::jsonb
-) RETURNS TABLE(
-    id uuid,
-    already_exists boolean
-)
-LANGUAGE plpgsql
-AS $$
+    session_id uuid,
+    pricing_type pricing_type,
+    run_id uuid,
+    count integer DEFAULT 0,
+    mcp boolean DEFAULT false
+) RETURNS TABLE (id uuid)
+LANGUAGE plpgsql AS $$
+DECLARE v_id uuid;
 BEGIN
-    RETURN QUERY
-    SELECT * FROM api_create_entry_record_v4(
-        entry_type := 'run_pricing',
-        call_id := call_id,
-        mcp := mcp,
-        entry_data := entry_data
-    );
-END;
-$$;
+    INSERT INTO run_pricing_entry (session_id, pricing_type, count, run_id, mcp, generated)
+    VALUES (api_create_run_pricing_entry_v4.session_id, api_create_run_pricing_entry_v4.pricing_type, api_create_run_pricing_entry_v4.count, api_create_run_pricing_entry_v4.run_id, api_create_run_pricing_entry_v4.mcp, true)
+    RETURNING run_pricing_entry.id INTO v_id;
+    RETURN QUERY SELECT v_id;
+END; $$;

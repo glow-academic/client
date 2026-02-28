@@ -1,5 +1,7 @@
 """Canonical logins entry type — single source of truth for entry fields."""
 
+from uuid import UUID
+
 from pydantic import BaseModel
 
 
@@ -11,3 +13,22 @@ class LoginsEntryData(BaseModel):
     created_at: str | None = None
     call_id: str | None = None
     session_id: str | None = None
+
+
+class CreateLoginsEntrySqlParams(BaseModel):
+    session_id: UUID
+    mcp: bool = False
+
+    def to_tuple(self) -> tuple:
+        return (
+            self.session_id,
+            self.mcp,
+        )
+
+
+class CreateLoginsEntrySqlRow(BaseModel):
+    id: UUID
+
+
+class CreateLoginsEntryResponse(BaseModel):
+    id: UUID

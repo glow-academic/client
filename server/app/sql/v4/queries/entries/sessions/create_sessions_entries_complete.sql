@@ -1,4 +1,4 @@
--- Create sessions entry via generic api_create_entry_record_v4
+-- Create sessions entry with strongly-typed params
 
 DO $$
 DECLARE
@@ -15,22 +15,15 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION public.api_create_sessions_entry_v4(
-    call_id uuid DEFAULT NULL,
-    mcp boolean DEFAULT false,
-    entry_data jsonb DEFAULT '{}'::jsonb
-) RETURNS TABLE(
-    id uuid,
-    already_exists boolean
-)
-LANGUAGE plpgsql
-AS $$
+    session_id uuid,
+    profile_id uuid,
+    mcp boolean DEFAULT false
+) RETURNS TABLE (id uuid)
+LANGUAGE plpgsql AS $$
+DECLARE v_id uuid;
 BEGIN
-    RETURN QUERY
-    SELECT * FROM api_create_entry_record_v4(
-        entry_type := 'sessions',
-        call_id := call_id,
-        mcp := mcp,
-        entry_data := entry_data
-    );
-END;
-$$;
+    INSERT INTO sessions_entry (session_id, profile_id, mcp, generated)
+    VALUES (api_create_sessions_entry_v4.session_id, api_create_sessions_entry_v4.profile_id, api_create_sessions_entry_v4.mcp, true)
+    RETURNING sessions_entry.id INTO v_id;
+    RETURN QUERY SELECT v_id;
+END; $$;

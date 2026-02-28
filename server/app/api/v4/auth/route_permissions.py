@@ -783,8 +783,7 @@ def _resolve_valid_types(
 
     valid_artifact_types = [TypeItem(name=artifact_type, operation="get")]
     valid_resource_types = [
-        TypeItem(name=rt, operation="create")
-        for rt in config.valid_resource_types
+        TypeItem(name=rt, operation="create") for rt in config.valid_resource_types
     ]
     valid_entry_types = [
         TypeItem(name=et, operation="get") for et in config.entry_types

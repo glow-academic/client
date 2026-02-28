@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.infra.v4.tools.call_args import record_call_args, resolve_tool
 from app.sql.types import (
     DescriptionsApiRequest,
     DescriptionsApiResponse,
@@ -27,15 +28,33 @@ async def create_descriptions_internal(
     conn: asyncpg.Connection,
     description: str,
     mcp: bool = False,
+    group_id: UUID | None = None,
+    tool_id: UUID | None = None,
 ) -> UUID:
-    """Create a description resource and return its ID."""
-    params = DescriptionsSqlParams(description=description, mcp=mcp)
+    """Create a description resource and return its ID.
+
+    When group_id and tool_id are provided, creates run/call/tool tracking
+    records in SQL and records arg values in Python.
+    """
+    params = DescriptionsSqlParams(
+        description=description, mcp=mcp, group_id=group_id, tool_id=tool_id
+    )
     result = cast(
         DescriptionsSqlRow,
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )
     if not result or not result.description_id:
         raise ValueError(f"Failed to create description: {description}")
+
+    # Record arg values if tracking is active (call_id returned by SQL)
+    if result.call_id is not None:
+        tool_info = await resolve_tool(
+            conn, "create", "descriptions", scope="resources"
+        )
+        if tool_info:
+            await record_call_args(
+                conn, result.call_id, tool_info, {"description": description}, mcp
+            )
 
     await invalidate_tags(["resources", "descriptions"])
     return result.description_id

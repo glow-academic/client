@@ -1,4 +1,4 @@
--- Create uploads entry via generic api_create_entry_record_v4
+-- Create uploads entry with strongly-typed params
 
 DO $$
 DECLARE
@@ -15,22 +15,17 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION public.api_create_uploads_entry_v4(
-    call_id uuid DEFAULT NULL,
-    mcp boolean DEFAULT false,
-    entry_data jsonb DEFAULT '{}'::jsonb
-) RETURNS TABLE(
-    id uuid,
-    already_exists boolean
-)
-LANGUAGE plpgsql
-AS $$
+    session_id uuid,
+    file_path text,
+    mime_type text,
+    size bigint,
+    mcp boolean DEFAULT false
+) RETURNS TABLE (id uuid)
+LANGUAGE plpgsql AS $$
+DECLARE v_id uuid;
 BEGIN
-    RETURN QUERY
-    SELECT * FROM api_create_entry_record_v4(
-        entry_type := 'uploads',
-        call_id := call_id,
-        mcp := mcp,
-        entry_data := entry_data
-    );
-END;
-$$;
+    INSERT INTO uploads_entry (session_id, file_path, mime_type, size, mcp, generated)
+    VALUES (api_create_uploads_entry_v4.session_id, api_create_uploads_entry_v4.file_path, api_create_uploads_entry_v4.mime_type, api_create_uploads_entry_v4.size, api_create_uploads_entry_v4.mcp, true)
+    RETURNING uploads_entry.id INTO v_id;
+    RETURN QUERY SELECT v_id;
+END; $$;

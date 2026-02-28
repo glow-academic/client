@@ -1,4 +1,4 @@
--- Create emulations entry via generic api_create_entry_record_v4
+-- Create emulations entry with strongly-typed params
 
 DO $$
 DECLARE
@@ -15,22 +15,15 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION public.api_create_emulations_entry_v4(
-    call_id uuid DEFAULT NULL,
-    mcp boolean DEFAULT false,
-    entry_data jsonb DEFAULT '{}'::jsonb
-) RETURNS TABLE(
-    id uuid,
-    already_exists boolean
-)
-LANGUAGE plpgsql
-AS $$
+    session_id uuid,
+    grant_id uuid,
+    mcp boolean DEFAULT false
+) RETURNS TABLE (id uuid)
+LANGUAGE plpgsql AS $$
+DECLARE v_id uuid;
 BEGIN
-    RETURN QUERY
-    SELECT * FROM api_create_entry_record_v4(
-        entry_type := 'emulations',
-        call_id := call_id,
-        mcp := mcp,
-        entry_data := entry_data
-    );
-END;
-$$;
+    INSERT INTO emulations_entry (session_id, grant_id, mcp, generated)
+    VALUES (api_create_emulations_entry_v4.session_id, api_create_emulations_entry_v4.grant_id, api_create_emulations_entry_v4.mcp, true)
+    RETURNING emulations_entry.id INTO v_id;
+    RETURN QUERY SELECT v_id;
+END; $$;

@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.infra.v4.tools.call_args import record_call_args, resolve_tool
 from app.sql.types import (
     InstructionsApiRequest,
     InstructionsApiResponse,
@@ -27,15 +28,33 @@ async def create_instructions_internal(
     conn: asyncpg.Connection,
     template: str,
     mcp: bool = False,
+    group_id: UUID | None = None,
+    tool_id: UUID | None = None,
 ) -> UUID:
-    """Create an instructions resource and return its ID."""
-    params = InstructionsSqlParams(template=template, mcp=mcp)
+    """Create an instructions resource and return its ID.
+
+    When group_id and tool_id are provided, creates run/call/tool tracking
+    records in SQL and records arg values in Python.
+    """
+    params = InstructionsSqlParams(
+        template=template, mcp=mcp, group_id=group_id, tool_id=tool_id
+    )
     result = cast(
         InstructionsSqlRow,
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )
     if not result or not result.instruction_id:
         raise ValueError("Failed to create instructions")
+
+    # Record arg values if tracking is active (call_id returned by SQL)
+    if result.call_id is not None:
+        tool_info = await resolve_tool(
+            conn, "create", "instructions", scope="resources"
+        )
+        if tool_info:
+            await record_call_args(
+                conn, result.call_id, tool_info, {"template": template}, mcp
+            )
 
     await invalidate_tags(["resources", "instructions"])
     return result.instruction_id

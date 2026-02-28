@@ -25,32 +25,42 @@ class ToolInfo:
         self.args = args
 
 
-async def resolve_tool_for_entry(
+async def resolve_tool(
     conn: asyncpg.Connection,
     operation: str,
-    entry_type: str,
+    target: str,
+    *,
+    scope: str = "entries",
 ) -> ToolInfo | None:
-    """Resolve tool_id + args for a given operation and entry type.
+    """Resolve tool_id + args by operation and target.
 
-    Looks up tools_resource by operation + entries array,
-    then fetches the arg definitions from args_ids.
+    Looks up tools_resource by operation + target across the appropriate
+    scope column (entries, resources, or artifacts).
+
+    Args:
+        operation: Tool operation (e.g. "create", "link")
+        target: Target type (e.g. "attempts", "names", "agent")
+        scope: Which column to match — "entries", "resources", or "artifacts"
     """
-    cache_key = f"tool_info:{operation}:{entry_type}"
+    cache_key = f"tool_info:{scope}:{operation}:{target}"
     cached = await get_cached(cache_key)
     if cached:
         return cached
 
+    if scope not in ("entries", "resources", "artifacts"):
+        return None
+
     row = await conn.fetchrow(
-        """
+        f"""
         SELECT id, args_ids
         FROM tools_resource
         WHERE operation = $1
-          AND $2 = ANY(entries)
+          AND $2 = ANY({scope})
           AND active = true
         LIMIT 1
         """,
         operation,
-        entry_type,
+        target,
     )
     if not row:
         return None
@@ -81,6 +91,16 @@ async def resolve_tool_for_entry(
     tool_info = ToolInfo(tool_id=tool_id, args=args)
     await set_cached(cache_key, tool_info, ttl=3600)
     return tool_info
+
+
+# Backwards-compatible alias for existing entry callers
+async def resolve_tool_for_entry(
+    conn: asyncpg.Connection,
+    operation: str,
+    entry_type: str,
+) -> ToolInfo | None:
+    """Resolve tool for an entry type. Delegates to resolve_tool."""
+    return await resolve_tool(conn, operation, entry_type, scope="entries")
 
 
 async def record_call_args(

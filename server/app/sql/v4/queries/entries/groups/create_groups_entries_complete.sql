@@ -1,4 +1,4 @@
--- Create groups entry via generic api_create_entry_record_v4
+-- Create groups entry with strongly-typed params
 
 DO $$
 DECLARE
@@ -15,22 +15,16 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION public.api_create_groups_entry_v4(
-    call_id uuid DEFAULT NULL,
-    mcp boolean DEFAULT false,
-    entry_data jsonb DEFAULT '{}'::jsonb
-) RETURNS TABLE(
-    id uuid,
-    already_exists boolean
-)
-LANGUAGE plpgsql
-AS $$
+    session_id uuid,
+    name text DEFAULT NULL,
+    custom_model boolean DEFAULT false,
+    mcp boolean DEFAULT false
+) RETURNS TABLE (id uuid)
+LANGUAGE plpgsql AS $$
+DECLARE v_id uuid;
 BEGIN
-    RETURN QUERY
-    SELECT * FROM api_create_entry_record_v4(
-        entry_type := 'groups',
-        call_id := call_id,
-        mcp := mcp,
-        entry_data := entry_data
-    );
-END;
-$$;
+    INSERT INTO groups_entry (session_id, name, custom_model, mcp, generated)
+    VALUES (api_create_groups_entry_v4.session_id, api_create_groups_entry_v4.name, api_create_groups_entry_v4.custom_model, api_create_groups_entry_v4.mcp, true)
+    RETURNING groups_entry.id INTO v_id;
+    RETURN QUERY SELECT v_id;
+END; $$;

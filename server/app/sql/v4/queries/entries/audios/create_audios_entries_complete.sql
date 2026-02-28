@@ -1,4 +1,4 @@
--- Create audios entry via generic api_create_entry_record_v4
+-- Create audios entry with strongly-typed params
 
 DO $$
 DECLARE
@@ -15,22 +15,17 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION public.api_create_audios_entry_v4(
-    call_id uuid DEFAULT NULL,
-    mcp boolean DEFAULT false,
-    entry_data jsonb DEFAULT '{}'::jsonb
-) RETURNS TABLE(
-    id uuid,
-    already_exists boolean
-)
-LANGUAGE plpgsql
-AS $$
+    session_id uuid,
+    upload_id uuid DEFAULT NULL,
+    message_id uuid DEFAULT NULL,
+    length_seconds integer DEFAULT 0,
+    mcp boolean DEFAULT false
+) RETURNS TABLE (id uuid)
+LANGUAGE plpgsql AS $$
+DECLARE v_id uuid;
 BEGIN
-    RETURN QUERY
-    SELECT * FROM api_create_entry_record_v4(
-        entry_type := 'audios',
-        call_id := call_id,
-        mcp := mcp,
-        entry_data := entry_data
-    );
-END;
-$$;
+    INSERT INTO audios_entry (session_id, upload_id, message_id, length_seconds, mcp, generated)
+    VALUES (api_create_audios_entry_v4.session_id, api_create_audios_entry_v4.upload_id, api_create_audios_entry_v4.message_id, api_create_audios_entry_v4.length_seconds, api_create_audios_entry_v4.mcp, true)
+    RETURNING audios_entry.id INTO v_id;
+    RETURN QUERY SELECT v_id;
+END; $$;
