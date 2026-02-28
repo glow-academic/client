@@ -79,7 +79,16 @@ _VIEWS: dict[str, tuple[str, frozenset[str]]] = {
     "dashboard": (
         "analytics",
         frozenset(
-            {"get", "header", "primary", "secondary", "footer", "refresh", "docs", "export"}
+            {
+                "get",
+                "header",
+                "primary",
+                "secondary",
+                "footer",
+                "refresh",
+                "docs",
+                "export",
+            }
         ),
     ),
     # Analytics views with refresh

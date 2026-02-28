@@ -391,6 +391,7 @@ class AttemptMessagePayload(BaseModel):
     attempt_id: UUID
     chat_id: UUID
     message: str
+    parent_message_id: UUID | None = None
 
 
 class AttemptUserCompleteEvent(BaseModel):

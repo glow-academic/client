@@ -22329,6 +22329,8 @@ export interface components {
             chat_id: string;
             /** Message */
             message: string;
+            /** Parent Message Id */
+            parent_message_id?: string | null;
         };
         /**
          * AttemptNextPayload
@@ -35561,6 +35563,12 @@ export interface components {
             feedbacks?: components["schemas"]["MessageFeedbackEntry"][] | null;
             /** Hints */
             hints?: components["schemas"]["HintEntry"][] | null;
+            /** Parent Message Id */
+            parent_message_id?: string | null;
+            /** Sibling Index */
+            sibling_index?: number | null;
+            /** Sibling Count */
+            sibling_count?: number | null;
         };
         /**
          * MessageFeedbackEntry

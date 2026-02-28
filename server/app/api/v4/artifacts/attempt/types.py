@@ -410,6 +410,10 @@ class MessageData(BaseModel):
     feedbacks: list[MessageFeedbackEntry] | None = None
     # Practice mode only
     hints: list[HintEntry] | None = None
+    # Tree branching metadata
+    parent_message_id: UUID | None = None
+    sibling_index: int | None = None
+    sibling_count: int | None = None
 
 
 class GradeData(BaseModel):

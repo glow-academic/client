@@ -1233,6 +1233,9 @@ async def get_attempt_internal(
                     contents=contents,
                     feedbacks=msg_feedbacks if msg_feedbacks else None,
                     hints=hints,
+                    parent_message_id=msg.parent_message_id,
+                    sibling_index=msg.sibling_index,
+                    sibling_count=msg.sibling_count,
                 )
             )
 

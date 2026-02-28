@@ -55,7 +55,10 @@ CREATE TYPE types.q_get_attempt_messages_view_v4_item AS (
     completed boolean,
     runs_id uuid,
     history_content text,
-    audio_id uuid
+    audio_id uuid,
+    parent_message_id uuid,
+    sibling_index int,
+    sibling_count int
 );
 
 -- ============================================================================
@@ -78,6 +81,22 @@ AS $$
         FROM attempt_message_mv mv
         WHERE mv.attempt_id = attempt_id_filter
     ),
+    -- Join tree edges to get parent + sibling info
+    mv_with_tree AS (
+        SELECT
+            mv.*,
+            tree.parent_id AS parent_message_id,
+            ROW_NUMBER() OVER (
+                PARTITION BY COALESCE(tree.parent_id, mv.chat_id)
+                ORDER BY mv.created_at, mv.message_id
+            )::int AS sibling_index,
+            COUNT(*) OVER (
+                PARTITION BY COALESCE(tree.parent_id, mv.chat_id)
+            )::int AS sibling_count
+        FROM mv_data mv
+        LEFT JOIN attempt_message_tree_entry tree
+            ON tree.child_id = mv.message_id AND tree.active = true
+    ),
     -- Aggregate into array
     items_agg AS (
         SELECT COALESCE(
@@ -91,13 +110,16 @@ AS $$
                     completed,
                     runs_id,
                     history_content,
-                    audio_id
+                    audio_id,
+                    parent_message_id,
+                    sibling_index,
+                    sibling_count
                 )::types.q_get_attempt_messages_view_v4_item
                 ORDER BY chat_id, created_at, message_id
             ),
             ARRAY[]::types.q_get_attempt_messages_view_v4_item[]
         ) AS items
-        FROM mv_data
+        FROM mv_with_tree
     )
     SELECT items FROM items_agg;
 $$;

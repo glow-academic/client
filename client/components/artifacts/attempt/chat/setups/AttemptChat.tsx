@@ -122,6 +122,7 @@ export function AttemptChat({
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [inputPanelHeight, setInputPanelHeight] = useState<number>(70);
   const [localElapsedOffset, setLocalElapsedOffset] = useState(0);
+  const [forkAtMessageId, setForkAtMessageId] = useState<string | null>(null);
 
   const groupMessagesByChat = useCallback(
     (messages?: MessageData[] | null) => {
@@ -675,13 +676,24 @@ export function AttemptChat({
       if (!message.trim() || !currentChat || isSendingMessage) return;
 
       try {
-        sendMessage(currentChat.id, attempt_id, message);
+        // If forking, find the parent assistant message for the forked user message
+        let parentMessageId: string | undefined;
+        if (forkAtMessageId) {
+          const allMessages = attemptData?.entries?.attempt_message || [];
+          const forkMsg = allMessages.find(m => m.id === forkAtMessageId);
+          if (forkMsg?.parent_message_id) {
+            parentMessageId = forkMsg.parent_message_id;
+          }
+          setForkAtMessageId(null);
+        }
+
+        sendMessage(currentChat.id, attempt_id, message, parentMessageId);
       } catch (err) {
         toast.error(`Failed to send message: ${err}`);
         setIsSendingMessage(false);
       }
     },
-    [currentChat, isSendingMessage, attempt_id, sendMessage, setIsSendingMessage]
+    [currentChat, isSendingMessage, attempt_id, sendMessage, setIsSendingMessage, forkAtMessageId, attemptData?.entries?.attempt_message]
   );
 
   const handleStopMessage = useCallback(async () => {
@@ -913,6 +925,9 @@ export function AttemptChat({
         disabled: !isAttemptOwner || !currentChat || currentChat.completed,
         is_attempt_owner: isAttemptOwner,
         chat_id: currentChat?.id,
+        fork_at_message_id: forkAtMessageId,
+        on_fork: setForkAtMessageId,
+        on_cancel_fork: () => setForkAtMessageId(null),
       };
       return props;
     } else if (chatAreaViewMode === "graded-messages") {
@@ -978,6 +993,7 @@ export function AttemptChat({
     isActive,
     isAttemptOwner,
     setQuestionIndex,
+    forkAtMessageId,
   ]);
 
   const documentAreaProps: DocumentAreaProps | undefined = useMemo(() => {

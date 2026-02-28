@@ -43,6 +43,7 @@ interface UseAttemptMessagesResult {
     chatId: string,
     attemptId: string,
     message: string,
+    parentMessageId?: string,
   ) => void;
   stopMessage: (chatId: string) => void;
   submitResponse: (
@@ -229,13 +230,14 @@ export function useAttemptMessages({
   // --- Emission methods ---
 
   const sendMessage = useCallback(
-    (chatId: string, attemptId: string, message: string) => {
+    (chatId: string, attemptId: string, message: string, parentMessageId?: string) => {
       if (!socket) return;
       setIsSending(true);
       socket.emit("attempt_message", {
         attempt_id: attemptId,
         chat_id: chatId,
         message,
+        ...(parentMessageId ? { parent_message_id: parentMessageId } : {}),
       });
     },
     [socket],

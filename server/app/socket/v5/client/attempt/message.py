@@ -155,6 +155,36 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
                 chat_id,
             )
 
+            # Step 5a: Insert tree edges for message branching
+            # Look up the user message_id just created in this run
+            user_message_id = await conn.fetchval(
+                """SELECT me.id FROM messages_entry me
+                JOIN attempt_message_entry ame ON ame.id = me.id
+                WHERE me.run_id = $1 AND me.role = 'user'::message_type
+                LIMIT 1""",
+                run_id,
+            )
+
+            if user_message_id:
+                # If forking from an existing message, link parent -> user
+                if payload.parent_message_id:
+                    await conn.execute(
+                        """INSERT INTO attempt_message_tree_entry (parent_id, child_id)
+                        VALUES ($1, $2)
+                        ON CONFLICT (parent_id, child_id) DO NOTHING""",
+                        payload.parent_message_id,
+                        user_message_id,
+                    )
+
+                # Always link user -> assistant
+                await conn.execute(
+                    """INSERT INTO attempt_message_tree_entry (parent_id, child_id)
+                    VALUES ($1, $2)
+                    ON CONFLICT (parent_id, child_id) DO NOTHING""",
+                    user_message_id,
+                    assistant_message_id,
+                )
+
         await internal_sio.emit(
             "attempt_assistant_start",
             AttemptAssistantStartData(
@@ -165,10 +195,13 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
             ).model_dump(mode="json"),
         )
 
-        # Step 5b: Refresh attempt_message_mv so generate_prepare sees the new message
+        # Step 5b: Refresh MVs so generate_prepare sees the new message
         async with get_db_connection() as conn:
             await conn.execute(
                 "REFRESH MATERIALIZED VIEW CONCURRENTLY attempt_message_mv"
+            )
+            await conn.execute(
+                "REFRESH MATERIALIZED VIEW CONCURRENTLY attempt_message_tree_mv"
             )
 
         # Step 5c: Invalidate attempt caches so generate_prepare fetches fresh data

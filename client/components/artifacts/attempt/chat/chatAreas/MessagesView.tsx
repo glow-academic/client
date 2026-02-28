@@ -29,6 +29,9 @@ import { getIconComponent } from "@/utils/icons";
 import {
   AlertCircle,
   ArrowDown,
+  ChevronLeft,
+  ChevronRight,
+  GitBranch,
   Lightbulb,
   MessageSquare,
   RotateCcw,
@@ -57,6 +60,10 @@ export interface MessagesViewProps {
   disabled?: boolean;
   is_attempt_owner?: boolean;
   chat_id?: string;
+  // Branching/forking
+  fork_at_message_id?: string | null;
+  on_fork?: (messageId: string) => void;
+  on_cancel_fork?: () => void;
 }
 
 // Utility function to generate gradient from hex color
@@ -123,12 +130,18 @@ export function MessagesView({
   disabled = false,
   is_attempt_owner = true,
   chat_id,
+  fork_at_message_id,
+  on_fork,
+  on_cancel_fork,
 }: MessagesViewProps) {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const prevChatIdRef = useRef<string | null>(null);
   const targetChatId = chat_id || current_chat?.id;
+
+  // Branch selection state: parentId -> selected child message id
+  const [branchSelections, setBranchSelections] = useState<Map<string, string>>(new Map());
 
   // ---- Entry-level AI subscriptions ----
   const { events: contentsEvents } = useEntryAi({ entryType: "contents", groupId: group_id });
@@ -294,6 +307,115 @@ export function MessagesView({
     );
   }, [messages]);
 
+  // --- Branching: build children-by-parent map and compute visible messages ---
+  const hasBranching = useMemo(
+    () => sortedMessages.some((m) => m.parent_message_id),
+    [sortedMessages]
+  );
+
+  const childrenByParent = useMemo(() => {
+    if (!hasBranching) return new Map<string, MessageData[]>();
+    const map = new Map<string, MessageData[]>();
+    for (const msg of sortedMessages) {
+      const parentId = msg.parent_message_id;
+      if (parentId) {
+        const siblings = map.get(parentId) || [];
+        siblings.push(msg);
+        map.set(parentId, siblings);
+      }
+    }
+    return map;
+  }, [sortedMessages, hasBranching]);
+
+  // Compute visible messages by walking the active branch path
+  const visibleMessages = useMemo(() => {
+    if (!hasBranching) {
+      // No branching - if forking, truncate at fork point
+      if (fork_at_message_id) {
+        const idx = sortedMessages.findIndex(m => m.id === fork_at_message_id);
+        if (idx !== -1) {
+          // Show up to but not including the fork point (user message)
+          // This hides the forked user message and everything after it
+          return sortedMessages.slice(0, idx);
+        }
+      }
+      return sortedMessages;
+    }
+
+    // Walk tree from roots following selected branches
+    const visible: MessageData[] = [];
+    const msgById = new Map(sortedMessages.map(m => [m.id, m]));
+
+    // Find roots: messages that have no parent_message_id
+    const roots = sortedMessages.filter(m => !m.parent_message_id);
+
+    // Start with first root and walk down
+    let current: MessageData | undefined = roots[0];
+    const visited = new Set<string>();
+
+    while (current) {
+      if (visited.has(current.id)) break;
+      visited.add(current.id);
+
+      // If forking, stop at the fork point
+      if (fork_at_message_id) {
+        const forkMsg = msgById.get(fork_at_message_id);
+        if (forkMsg?.parent_message_id && current.id === forkMsg.parent_message_id) {
+          visible.push(current);
+          break;
+        }
+        if (current.id === fork_at_message_id) {
+          break;
+        }
+      }
+
+      visible.push(current);
+
+      // Find children of this message
+      const children = childrenByParent.get(current.id);
+      if (children && children.length > 0) {
+        // Use branch selection or default to latest child
+        const selectedChildId = branchSelections.get(current.id);
+        const selectedChild = selectedChildId
+          ? children.find(c => c.id === selectedChildId) || children[children.length - 1]
+          : children[children.length - 1];
+        current = selectedChild;
+      } else {
+        current = undefined;
+      }
+    }
+
+    // For root messages without tree edges, add remaining roots
+    for (let i = 1; i < roots.length; i++) {
+      const root = roots[i];
+      if (root && !visited.has(root.id)) {
+        visible.push(root);
+      }
+    }
+
+    return visible;
+  }, [sortedMessages, hasBranching, childrenByParent, branchSelections, fork_at_message_id]);
+
+  // Helper: get sibling navigation info for a message
+  const getSiblingInfo = (message: MessageData) => {
+    if (!hasBranching || !message.parent_message_id) return null;
+    const siblings = childrenByParent.get(message.parent_message_id);
+    if (!siblings || siblings.length <= 1) return null;
+    const currentIdx = siblings.findIndex(s => s.id === message.id);
+    return { siblings, currentIdx, total: siblings.length };
+  };
+
+  const handleSiblingNav = (parentId: string, siblings: MessageData[], direction: 'prev' | 'next', currentIdx: number) => {
+    const newIdx = direction === 'prev' ? currentIdx - 1 : currentIdx + 1;
+    const target = siblings[newIdx];
+    if (!target) return;
+    setBranchSelections(prev => {
+      const next = new Map(prev);
+      next.set(parentId, target.id);
+      return next;
+    });
+  };
+
   const starterPrompts = useMemo(() => {
     return [
       "Hi, how are you?",
@@ -398,7 +520,7 @@ export function MessagesView({
                   </>
                 </div>
               ) : (
-                sortedMessages.map((message) => {
+                visibleMessages.map((message) => {
                   // Get contents array (or empty if none)
                   const contents = message.contents || [];
                   const isQuery = message.type === "query";
@@ -415,6 +537,10 @@ export function MessagesView({
                   // Feedbacks for graded messages
                   const feedbacks = message.feedbacks || [];
                   const hasFeedbacks = feedbacks.length > 0;
+
+                  // Branching info
+                  const siblingInfo = getSiblingInfo(message);
+                  const showForkButton = isQuery && on_fork && !current_chat?.completed && is_attempt_owner && !disabled;
 
                   // Handle empty/loading states at message level
                   if (contents.length === 0) {
@@ -517,7 +643,7 @@ export function MessagesView({
                                       <Markdown>{contentText}</Markdown>
                                     )}
                                 </div>
-                                <div className="flex flex-col gap-1 w-9 h-[26px] min-h-[26px] max-h-[26px] overflow-hidden">
+                                <div className={`flex flex-col gap-1 w-9 ${showForkButton ? "h-[52px] min-h-[52px] max-h-[52px]" : "h-[26px] min-h-[26px] max-h-[26px]"} overflow-hidden`}>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <Button
@@ -535,8 +661,50 @@ export function MessagesView({
                                       <p>{displayName}</p>
                                     </TooltipContent>
                                   </Tooltip>
+                                  {showForkButton && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          aria-label="Fork from here"
+                                          className="flex-1 p-0 rounded-md"
+                                          onClick={() => on_fork?.(message.id)}
+                                        >
+                                          <GitBranch className="h-4 w-4" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Fork from here</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
                                 </div>
                               </div>
+                              {/* Sibling navigation for branched user messages */}
+                              {siblingInfo && contentIndex === 0 && (
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground justify-end">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0"
+                                    disabled={siblingInfo.currentIdx <= 0}
+                                    onClick={() => handleSiblingNav(message.parent_message_id!, siblingInfo.siblings, 'prev', siblingInfo.currentIdx)}
+                                  >
+                                    <ChevronLeft className="h-3 w-3" />
+                                  </Button>
+                                  <span>{siblingInfo.currentIdx + 1}/{siblingInfo.total}</span>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0"
+                                    disabled={siblingInfo.currentIdx >= siblingInfo.total - 1}
+                                    onClick={() => handleSiblingNav(message.parent_message_id!, siblingInfo.siblings, 'next', siblingInfo.currentIdx)}
+                                  >
+                                    <ChevronRight className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           );
                         }
@@ -695,12 +863,51 @@ export function MessagesView({
                                   )}
                                 </div>
                               </div>
+                              {/* Sibling navigation for branched assistant messages */}
+                              {siblingInfo && contentIndex === 0 && (
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0"
+                                    disabled={siblingInfo.currentIdx <= 0}
+                                    onClick={() => handleSiblingNav(message.parent_message_id!, siblingInfo.siblings, 'prev', siblingInfo.currentIdx)}
+                                  >
+                                    <ChevronLeft className="h-3 w-3" />
+                                  </Button>
+                                  <span>{siblingInfo.currentIdx + 1}/{siblingInfo.total}</span>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0"
+                                    disabled={siblingInfo.currentIdx >= siblingInfo.total - 1}
+                                    onClick={() => handleSiblingNav(message.parent_message_id!, siblingInfo.siblings, 'next', siblingInfo.currentIdx)}
+                                  >
+                                    <ChevronRight className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           );
                         })}
                     </div>
                   );
                 })
+              )}
+              {/* Fork mode placeholder */}
+              {fork_at_message_id && (
+                <div className="flex items-center gap-2 py-3 px-4 bg-muted/50 rounded-lg border border-dashed border-muted-foreground/30">
+                  <GitBranch className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground flex-1">Continue from here...</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={on_cancel_fork}
+                    className="h-7 text-xs"
+                  >
+                    Cancel
+                  </Button>
+                </div>
               )}
               <div ref={messagesEndRef} />
             </div>
