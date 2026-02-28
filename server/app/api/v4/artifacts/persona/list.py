@@ -21,6 +21,7 @@ from app.api.v4.artifacts.persona.permissions import (
     compute_can_edit,
 )
 from app.api.v4.artifacts.persona.types import (
+    ImportField,
     ListPersonaApiPersona,
     ListPersonaApiResponse,
 )
@@ -45,6 +46,19 @@ from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/personas/get_personas_list_complete.sql"
+
+PERSONA_IMPORT_FIELDS: list[ImportField] = [
+    ImportField(key="name", label="Name", required=True),
+    ImportField(key="description", label="Description"),
+    ImportField(key="color", label="Color", required=True),
+    ImportField(key="icon", label="Icon", required=True),
+    ImportField(key="instructions", label="Instructions", required=True),
+    ImportField(key="active_flag", label="Active", type="boolean"),
+    ImportField(key="departments", label="Departments", multi=True),
+    ImportField(key="parameter_fields", label="Parameter Fields", multi=True),
+    ImportField(key="examples", label="Examples", multi=True),
+    ImportField(key="voices", label="Voices", multi=True),
+]
 
 
 router = APIRouter()
@@ -334,6 +348,7 @@ async def get_persona_list(
             field_filter=field_filter,
             department_filter=department_filter,
             total_count=result.total_count,
+            import_fields=PERSONA_IMPORT_FIELDS,
         )
 
         # Cache response (use mode='json' to serialize UUIDs and other types)

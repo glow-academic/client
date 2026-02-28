@@ -26,8 +26,6 @@ from app.api.v4.artifacts.session.types import (
     SessionWebsocketEntries,
     SessionWebsocketResources,
 )
-from app.api.v4.auth.profile import get_auth_profile_internal
-from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.audits.get import get_audit_list_view_internal
 from app.api.v4.entries.groups.get import get_group_list_view_internal
 from app.api.v4.entries.runs.search import (
@@ -79,6 +77,8 @@ async def get_session_internal(
     endpoint and the websocket wrapper.
     """
     # 1. Settings-based agent resolution + config chain
+    from app.api.v4.auth.settings import get_auth_settings_internal
+
     async with pool.acquire() as settings_conn:
         settings_data = await get_auth_settings_internal(
             settings_conn, profile_id, bypass_cache
@@ -111,6 +111,8 @@ async def get_session_internal(
             )
 
     # 2. Resolve actor context
+    from app.api.v4.auth.profile import get_auth_profile_internal
+
     async with pool.acquire() as context_conn:
         profile_ctx = await get_auth_profile_internal(
             conn=context_conn,

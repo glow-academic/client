@@ -953,6 +953,26 @@ export interface paths {
         patch: operations["patch_cohort_draft_api_v4_artifacts_cohorts_draft_patch"];
         trace?: never;
     };
+    "/api/v4/artifacts/cohorts/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export Cohorts
+         * @description Export cohorts as CSV — stores file via upload infrastructure, returns upload_id.
+         */
+        post: operations["export_cohorts_api_v4_artifacts_cohorts_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/artifacts/cohorts/docs": {
         parameters: {
             query?: never;
@@ -13683,6 +13703,26 @@ export interface paths {
         get: operations["render_upload_template_api_v4_uploads__upload_id__template_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/uploads/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Parse Csv
+         * @description Parse a previously uploaded CSV file and return headers + rows.
+         */
+        post: operations["parse_csv_api_v4_uploads_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -27602,6 +27642,35 @@ export interface components {
             example?: string | null;
         };
         /**
+         * ExportCohortApiRequest
+         * @description Request model for export cohort endpoint.
+         */
+        ExportCohortApiRequest: {
+            /** Search */
+            search?: string | null;
+            /** Filter Simulation Ids */
+            filter_simulation_ids?: string[] | null;
+            /** Filter Profile Ids */
+            filter_profile_ids?: string[] | null;
+            /** Filter Department Ids */
+            filter_department_ids?: string[] | null;
+        };
+        /**
+         * ExportCohortApiResponse
+         * @description Response model for export cohort endpoint.
+         */
+        ExportCohortApiResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** File Name */
+            file_name: string;
+            /** Row Count */
+            row_count: number;
+        };
+        /**
          * ExportPersonaApiRequest
          * @description Request model for export persona endpoint.
          */
@@ -32737,6 +32806,31 @@ export interface components {
             /** Description */
             description?: string | null;
         };
+        /**
+         * ImportField
+         * @description Field descriptor for CSV import column mapping.
+         */
+        ImportField: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Multi
+             * @default false
+             */
+            multi: boolean;
+            /**
+             * Type
+             * @default string
+             */
+            type: string;
+        };
         /** ImprovementsGenerationEvent */
         ImprovementsGenerationEvent: {
             /**
@@ -34578,6 +34672,8 @@ export interface components {
             department_filter?: components["schemas"]["ListFilterSection"] | null;
             /** Total Count */
             total_count?: number | null;
+            /** Import Fields */
+            import_fields?: components["schemas"]["ImportField"][] | null;
         };
         /**
          * ListProfilesApiProfile
@@ -36153,6 +36249,29 @@ export interface components {
             video_parameter?: boolean | null;
             /** Field Ids */
             field_ids?: unknown[] | null;
+        };
+        /**
+         * ParseCsvApiRequest
+         * @description Request model for CSV parse endpoint.
+         */
+        ParseCsvApiRequest: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+        };
+        /**
+         * ParseCsvApiResponse
+         * @description Response model for CSV parse endpoint.
+         */
+        ParseCsvApiResponse: {
+            /** Headers */
+            headers: string[];
+            /** Rows */
+            rows: string[][];
+            /** Row Count */
+            row_count: number;
         };
         /**
          * PatchAgentDraftApiRequest
@@ -42424,6 +42543,8 @@ export interface components {
         SaveCohortApiRequest: {
             /** Cohorts */
             cohorts: components["schemas"]["SaveCohortItem"][];
+            /** Group Id */
+            group_id?: string | null;
         };
         /**
          * SaveCohortApiResponse
@@ -53106,6 +53227,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PatchCohortDraftApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_cohorts_api_v4_artifacts_cohorts_export_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportCohortApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportCohortApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76543,6 +76701,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    parse_csv_api_v4_uploads_csv_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ParseCsvApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParseCsvApiResponse"];
                 };
             };
             /** @description Validation Error */

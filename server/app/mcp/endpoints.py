@@ -41,11 +41,11 @@ def _get_handler(module_path: str, func_name: str) -> Any:
 # Docs handlers are sync functions returning dicts (called without await).
 
 ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
-    # "activity": {
-    #     "get": ("app.api.v4.artifacts.activity.get", "get_activity"),
-    #     "docs": ("app.api.v4.artifacts.activity.docs", "get_activity_docs_static"),
-    #     "refresh": ("app.api.v4.artifacts.activity.refresh", "activity_refresh"),
-    # },
+    "activity": {
+        "get": ("app.api.v4.artifacts.activity.get", "get_activity"),
+        "docs": ("app.api.v4.artifacts.activity.docs", "get_activity_docs_static"),
+        "refresh": ("app.api.v4.artifacts.activity.refresh", "activity_refresh"),
+    },
     # "agent": {
     #     "get": ("app.api.v4.artifacts.agent.get", "get_agent"),
     #     "list": ("app.api.v4.artifacts.agent.list", "get_agent_list"),
@@ -229,10 +229,10 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
         "draft": ("app.api.v4.artifacts.scenario.draft", "patch_scenario_draft"),
         "docs": ("app.api.v4.artifacts.scenario.docs", "get_scenarios_docs"),
     },
-    # "session": {
-    #     "get": ("app.api.v4.artifacts.session.get", "get_session"),
-    #     "docs": ("app.api.v4.artifacts.session.docs", "get_sessions_docs"),
-    # },
+    "session": {
+        "get": ("app.api.v4.artifacts.session.get", "get_session"),
+        "docs": ("app.api.v4.artifacts.session.docs", "get_sessions_docs"),
+    },
     # "setting": {
     #     "get": ("app.api.v4.artifacts.setting.get", "get_setting"),
     #     "list": ("app.api.v4.artifacts.setting.list", "get_setting_list"),

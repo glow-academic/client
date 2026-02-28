@@ -234,7 +234,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
         description="Analytics and reporting tools",
         icon="PieChart",
         order=3,
-        children=["dashboard", "reports", "pricing"],  # "activity" temporarily removed
+        children=["dashboard", "reports", "activity", "pricing"],
         routes=[
             # Section parent — accessible if any child artifact is available
             RoutePermission(
@@ -265,20 +265,20 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 artifact_type="profile",
                 artifact="record",
             ),
-            # RoutePermission(
-            #     path="/analytics/activity",
-            #     roles=["instructional", "admin", "superadmin"],
-            #     title="Activity",
-            #     redirectTo="/analytics/activity",
-            #     artifact="activity",
-            # ),
-            # RoutePermission(
-            #     path="/analytics/activity/[sessionId]",
-            #     roles=["instructional", "admin", "superadmin"],
-            #     title="Session Activity",
-            #     redirectTo="/analytics/activity",
-            #     artifact="session",
-            # ),
+            RoutePermission(
+                path="/analytics/activity",
+                roles=["instructional", "admin", "superadmin"],
+                title="Activity",
+                redirectTo="/analytics/activity",
+                artifact="activity",
+            ),
+            RoutePermission(
+                path="/analytics/activity/[sessionId]",
+                roles=["instructional", "admin", "superadmin"],
+                title="Session Activity",
+                redirectTo="/analytics/activity",
+                artifact="session",
+            ),
             RoutePermission(
                 path="/analytics/pricing",
                 roles=["instructional", "admin", "superadmin"],
@@ -302,13 +302,13 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 artifact_type="profile",
                 artifact="record",
             ),
-            # RoutePermission(
-            #     path="/session/[sessionId]",
-            #     roles=["instructional", "admin", "superadmin"],
-            #     title="Session Activity",
-            #     redirectTo="/analytics/activity",
-            #     artifact="session",
-            # ),
+            RoutePermission(
+                path="/session/[sessionId]",
+                roles=["instructional", "admin", "superadmin"],
+                title="Session Activity",
+                redirectTo="/analytics/activity",
+                artifact="session",
+            ),
             RoutePermission(
                 path="/group/[groupId]",
                 roles=["instructional", "admin", "superadmin"],

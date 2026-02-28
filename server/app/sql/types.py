@@ -2359,6 +2359,62 @@ class DuplicateCohortApiResponse(BaseModel):
     actor_name: str | None = None
 
 
+# Generated from: export_cohorts
+
+
+class ExportCohortsSqlParams(BaseModel):
+    profile_id: UUID
+    search: str | None = None
+    filter_simulation_ids: list[UUID] | None = None
+    filter_profile_ids: list[UUID] | None = None
+    filter_department_ids: list[UUID] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.search,
+            self.filter_simulation_ids,
+            self.filter_profile_ids,
+            self.filter_department_ids,
+        )
+
+
+class QExportCohortsV4Row(BaseModel):
+    cohort_id: UUID | None
+    name_id: UUID | None
+    name: str | None
+    description_id: UUID | None
+    description: str | None
+    is_inactive: bool | None
+    department_ids: list[UUID] | None
+    departments: list[str] | None
+    simulation_ids: list[UUID] | None
+    simulations: list[str] | None
+    simulation_position_ids: list[UUID] | None
+    simulation_positions: list[str] | None
+    simulation_availability_ids: list[UUID] | None
+    simulation_availability: list[str] | None
+    profile_ids: list[UUID] | None
+    profiles: list[str] | None
+    profile_persona_ids: list[UUID] | None
+    profile_personas: list[str] | None
+
+
+class ExportCohortsSqlRow(BaseModel):
+    rows: list[QExportCohortsV4Row] | None = None
+
+
+class ExportCohortsApiRequest(BaseModel):
+    search: str | None = None
+    filter_simulation_ids: list[UUID] | None = None
+    filter_profile_ids: list[UUID] | None = None
+    filter_department_ids: list[UUID] | None = None
+
+
+class ExportCohortsApiResponse(BaseModel):
+    rows: list[QExportCohortsV4Row] | None = None
+
+
 # Generated from: get_cohort_access
 
 
@@ -34795,6 +34851,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateCohortApiRequest",
         "DuplicateCohortApiResponse",
     ),
+    "app/sql/v4/queries/cohorts/export_cohorts_complete.sql": (
+        "ExportCohortsSqlParams",
+        "ExportCohortsSqlRow",
+        "ExportCohortsApiRequest",
+        "ExportCohortsApiResponse",
+    ),
     "app/sql/v4/queries/cohorts/get_cohort_access_complete.sql": (
         "GetCohortAccessSqlParams",
         "GetCohortAccessSqlRow",
@@ -40261,6 +40323,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/cohorts/duplicate_cohort_complete.sql"],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/cohorts/export_cohorts_complete.sql"],
     ) -> SqlString: ...
 
     @overload

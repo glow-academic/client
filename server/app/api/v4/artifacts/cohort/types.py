@@ -624,6 +624,28 @@ class PatchCohortDraftSqlRow(BaseModel):
 
 
 # =============================================================================
+# EXPORT Endpoint Types
+# =============================================================================
+
+
+class ExportCohortApiRequest(BaseModel):
+    """Request model for export cohort endpoint."""
+
+    search: str | None = None
+    filter_simulation_ids: list[str] | None = None
+    filter_profile_ids: list[str] | None = None
+    filter_department_ids: list[str] | None = None
+
+
+class ExportCohortApiResponse(BaseModel):
+    """Response model for export cohort endpoint."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int
+
+
+# =============================================================================
 # SQL Row Types (for internal use)
 # =============================================================================
 # Note: GetCohortAccessSqlParams, GetCohortAccessSqlRow, GetCohortIdsSqlParams,

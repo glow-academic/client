@@ -273,6 +273,19 @@ class PersonaInternalData:
     config_provider_resources: list[QGetProvidersV4Item] | None
 
 
+# ========== Import Field Types ==========
+
+
+class ImportField(BaseModel):
+    """Field descriptor for CSV import column mapping."""
+
+    key: str
+    label: str
+    required: bool = False
+    multi: bool = False
+    type: str = "string"
+
+
 # ========== List Endpoint Types ==========
 
 
@@ -308,6 +321,7 @@ class ListPersonaApiResponse(BaseModel):
     field_filter: ListFilterSection | None = None
     department_filter: ListFilterSection | None = None
     total_count: int | None = None
+    import_fields: list[ImportField] | None = None
 
 
 # ========== Resource Action Types (for tool call tracking) ==========
