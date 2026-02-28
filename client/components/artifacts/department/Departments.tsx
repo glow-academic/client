@@ -23,9 +23,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
-import { useGenerationModal } from "@/hooks/use-generation-modal";
 
 import type {
   DeleteDepartmentIn,
@@ -67,31 +65,10 @@ export default function Departments({
 }: DepartmentsProps) {
   const router = useRouter();
 
-  // Generation modal via shared hook
-  type DepartmentResourceType = "names" | "descriptions" | "flags" | "settings";
-  const { generate } = useArtifactAi({
+  useArtifactAi({
     artifactType: "department",
-    groupId: null,
     validResourceTypes: ["names", "descriptions", "flags", "settings"],
-  });
-  const { handleOpenStepCardModal, modalProps } = useGenerationModal<DepartmentResourceType>({
-    stepResources: {
-      all: ["names", "descriptions", "flags", "settings"],
-    },
-    resourceLabels: {
-      names: "Name",
-      descriptions: "Description",
-      flags: "Configuration",
-      settings: "Settings",
-    },
-    canRegenerate: () => true,
-    onGenerate: (selectedResources, instructions) => {
-      generate(selectedResources, {
-        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-        save: true,
-      });
-    },
-    isGenerating: () => false,
+    onComplete: () => router.refresh(),
   });
 
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
@@ -463,8 +440,6 @@ export default function Departments({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <GenerateRegenerateModal {...modalProps} />
     </div>
   );
 }

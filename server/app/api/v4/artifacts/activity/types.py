@@ -149,7 +149,6 @@ class ActivityWebsocketEntries(BaseModel):
     audits: list[QGetAuditListViewV4Item] | None = None
     problems: list[QGetProblemListViewV4Item] | None = None
     grants: list[QGetGrantListViewV4Item] | None = None
-    activity_insights: list[dict] | None = None
 
 
 class ActivityWebsocketResources(BaseModel):

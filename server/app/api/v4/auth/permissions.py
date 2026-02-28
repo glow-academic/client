@@ -162,33 +162,12 @@ OPERATIONAL_ARTIFACTS = frozenset(
     }
 )
 
-ANALYTICAL_ARTIFACTS = frozenset(
-    {
-        "activity",
-        "attempt",
-        "benchmark",
-        "dashboard",
-        "health",
-        "home",
-        "leaderboard",
-        "practice",
-        "pricing",
-        "record",
-        "reports",
-        "test",
-    }
-)
-
-
 def build_artifact_generation_maps(
     items: list[QGetProfileContextAccessV4ArtifactAgent] | None,
-) -> tuple[dict[str, bool], dict[str, bool]]:
+) -> dict[str, bool]:
     has_generate: dict[str, bool] = {}
-    has_insights: dict[str, bool] = {}
     for item in items or []:
         if item.artifact and item.has_generation:
             if item.artifact in OPERATIONAL_ARTIFACTS:
                 has_generate[item.artifact] = True
-            elif item.artifact in ANALYTICAL_ARTIFACTS:
-                has_insights[item.artifact] = True
-    return has_generate, has_insights
+    return has_generate

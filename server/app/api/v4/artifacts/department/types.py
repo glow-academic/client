@@ -54,6 +54,7 @@ class DepartmentSettingSection(BaseResourceSection):
 class GetDepartmentApiRequest(BaseModel):
     department_id: UUID | None = None
     draft_id: UUID | None = None
+    group_id: UUID | None = None
 
 
 class GetDepartmentApiResponse(BaseModel):

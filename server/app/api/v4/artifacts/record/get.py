@@ -34,7 +34,7 @@ from app.sql.types import (
 )
 
 # Record entry types for agent resolution
-RECORD_BUNDLE_ENTRIES: set[str] = {"record_insights", "debug_info"}
+RECORD_BUNDLE_ENTRIES: set[str] = {"debug_info"}
 
 
 @dataclass
@@ -181,23 +181,9 @@ async def get_record_websocket(
                 fetch_args_outputs(),
             )
 
-    # Fetch previous insights
-    from app.api.v4.entries.record_insights.search import (
-        search_record_insights_entries_internal,
-    )
-
-    async def fetch_insights():
-        async with pool.acquire() as c:
-            return await search_record_insights_entries_internal(
-                c, limit_count=20, bypass_cache=bypass_cache
-            )
-
-    insights_result = await fetch_insights()
-
     return GetRecordWebsocketResponse(
         entries=RecordWebsocketEntries(
             runs=data.runs_today,
-            record_insights=insights_result or None,
         ),
         resources=RecordWebsocketResources(),
         params=GetRecordApiRequest(record_id=record_id, draft_id=draft_id),

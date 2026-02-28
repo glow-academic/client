@@ -1096,24 +1096,10 @@ async def get_home_websocket(
         objectives=data.current_resources.get("objectives") or None,
     )
 
-    # Fetch previous insights
-    from app.api.v4.entries.home_insights.search import (
-        search_home_insights_entries_internal,
-    )
-
-    async def fetch_insights():
-        async with pool.acquire() as c:
-            return await search_home_insights_entries_internal(
-                c, limit_count=20, bypass_cache=bypass_cache
-            )
-
-    insights_result = await fetch_insights()
-
     return GetHomeWebsocketResponse(
         entries=HomeWebsocketEntries(
             draft_training=data.draft_item,
             runs=runs_result,
-            home_insights=insights_result or None,
         ),
         resources=websocket_resources,
         agents=data.config_agents or None,

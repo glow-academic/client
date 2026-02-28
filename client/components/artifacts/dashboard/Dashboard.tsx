@@ -11,10 +11,6 @@ import DashboardPrimary from "./DashboardPrimary";
 import DashboardSecondary from "./DashboardSecondary";
 import DashboardFooter from "./DashboardFooter";
 import SimulationHistory from "@/components/common/SimulationHistory";
-import { InsightsModal } from "@/components/common/insights/InsightsModal";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
-import { useInsightsModal } from "@/hooks/use-insights-modal";
-
 type DashboardOut = OutputOf<"/api/v4/artifacts/dashboard/get", "post">;
 type DashboardHistoryOut = NonNullable<DashboardOut["history"]>;
 
@@ -73,23 +69,6 @@ export default function Dashboard({
   historySimulationSearch,
   historyScenarioSearch,
 }: DashboardProps) {
-  // --- Insights modal wiring ---
-  const { generate, isAnyGenerating } = useArtifactAi({
-    artifactType: "dashboard",
-    groupId: null,
-    validResourceTypes: [],
-  });
-  const insightsModalProps = useInsightsModal({
-    onGenerate: (instructions) => {
-      generate(["dashboard_insights"], {
-        user_instructions: instructions?.trim()
-          ? [instructions.trim()]
-          : null,
-      });
-    },
-    isGenerating: isAnyGenerating,
-  });
-
   // --- History extraction ---
   const historyData: DashboardHistoryOut = data.history || {
     data: [],
@@ -208,7 +187,6 @@ export default function Dashboard({
         />
       </div>
 
-      <InsightsModal {...insightsModalProps} />
     </div>
   );
 }

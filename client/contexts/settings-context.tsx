@@ -12,7 +12,6 @@ interface SettingsContextType {
   agents: AuthSettingsResponse["agents"];
   tools: AuthSettingsResponse["tools"];
   artifactHasGenerate: Record<string, boolean>;
-  artifactHasInsights: Record<string, boolean>;
 }
 
 const SettingsContext = createContext<SettingsContextType | null>(null);
@@ -44,7 +43,6 @@ export function SettingsProviderClient({
       agents: settings?.agents ?? null,
       tools: settings?.tools ?? null,
       artifactHasGenerate: settings?.artifact_has_generate ?? {},
-      artifactHasInsights: settings?.artifact_has_insights ?? {},
     }),
     [settings]
   );

@@ -32,10 +32,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { useSocket } from "@/contexts/socket-context";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
-import { useGenerationModal } from "@/hooks/use-generation-modal";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -70,38 +68,10 @@ export default function Evals({
   const searchParams = useSearchParams();
   const { socket } = useSocket();
 
-  // Generation via useArtifactAi hook
-  type EvalResourceType = "names" | "descriptions" | "flags" | "departments" | "agents" | "run_positions" | "group_positions" | "run_rubrics" | "group_rubrics";
-
-  const { generate } = useArtifactAi({
+  useArtifactAi({
     artifactType: "eval",
-    groupId: null,
     validResourceTypes: ["names", "descriptions", "flags", "departments", "agents", "run_positions", "group_positions", "run_rubrics", "group_rubrics"],
-  });
-
-  const { handleOpenStepCardModal, modalProps } = useGenerationModal<EvalResourceType>({
-    stepResources: {
-      all: ["names", "descriptions", "flags", "departments", "agents", "run_positions", "group_positions", "run_rubrics", "group_rubrics"],
-    },
-    resourceLabels: {
-      names: "Name",
-      descriptions: "Description",
-      flags: "Configuration",
-      departments: "Departments",
-      agents: "Agents",
-      run_positions: "Run Positions",
-      group_positions: "Group Positions",
-      run_rubrics: "Run Rubrics",
-      group_rubrics: "Group Rubrics",
-    },
-    canRegenerate: () => true,
-    onGenerate: (selectedResources, instructions) => {
-      generate(selectedResources, {
-        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-        save: true,
-      });
-    },
-    isGenerating: () => false,
+    onComplete: () => router.refresh(),
   });
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -580,7 +550,6 @@ export default function Evals({
         </AlertDialogContent>
       </AlertDialog>
 
-      <GenerateRegenerateModal {...modalProps} />
     </div>
   );
 }

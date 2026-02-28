@@ -6,6 +6,7 @@
  */
 
 import Eval from "@/components/artifacts/eval/Eval";
+import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -100,11 +101,15 @@ export default async function EvalDetailPage({
   const loadEvalSearchParams = createLoader(evalSearchParams);
   const q = loadEvalSearchParams(searchParamsObj);
 
+  // Resolve group_id from layout context (cached per request)
+  const groupId = await resolveGroupId(q.draftId ?? null, "eval");
+
   // Fetch eval detail with draft_id and search params
   const input: GetEvalIn = {
     body: {
       eval_id: evalId, // Provided for detail mode
       draft_id: q.draftId ?? null,
+      group_id: groupId,
       agent_search: q.agentSearch ?? null,
       group_search: q.groupSearch ?? null,
       // Note: available_model_runs_search uses modelRunSearch from URL

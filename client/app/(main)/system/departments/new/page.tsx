@@ -6,6 +6,7 @@
  */
 
 import Department from "@/components/artifacts/department/Department";
+import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -118,11 +119,15 @@ export default async function NewDepartmentPage({
   const loadDepartmentSearchParams = createLoader(departmentSearchParams);
   const q = loadDepartmentSearchParams(searchParamsObj);
 
+  // Resolve group_id from layout context (cached per request)
+  const groupId = await resolveGroupId(q.draftId ?? null, "department");
+
   // Fetch default department detail server-side with draft_id (unified get endpoint with department_id = null)
   const input: GetDepartmentIn = {
     body: {
       department_id: null, // NULL for new mode
       draft_id: q.draftId ?? null,
+      group_id: groupId,
     } as GetDepartmentIn["body"],
   };
   const departmentDetailDefault = await getDepartmentDefault(input);

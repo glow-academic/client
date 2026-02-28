@@ -70,9 +70,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
-import { useGenerationModal } from "@/hooks/use-generation-modal";
 import { useRouter } from "next/navigation";
 
 // Helper function to truncate text
@@ -127,35 +125,10 @@ export default function Documents({
 }: DocumentsProps) {
   const router = useRouter();
 
-  // Generation modal via shared hook
-  type DocumentResourceType = "names" | "descriptions" | "flags" | "departments" | "fields" | "uploads" | "images" | "texts";
-  const { generate } = useArtifactAi({
+  useArtifactAi({
     artifactType: "document",
-    groupId: null,
     validResourceTypes: ["names", "descriptions", "flags", "departments", "fields", "uploads", "images", "texts"],
-  });
-  const { handleOpenStepCardModal, modalProps } = useGenerationModal<DocumentResourceType>({
-    stepResources: {
-      all: ["names", "descriptions", "flags", "departments", "fields", "uploads", "images", "texts"],
-    },
-    resourceLabels: {
-      names: "Name",
-      descriptions: "Description",
-      flags: "Configuration",
-      departments: "Departments",
-      fields: "Fields",
-      uploads: "Files",
-      images: "Images",
-      texts: "Texts",
-    },
-    canRegenerate: () => true,
-    onGenerate: (selectedResources, instructions) => {
-      generate(selectedResources, {
-        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-        save: true,
-      });
-    },
-    isGenerating: () => false,
+    onComplete: () => router.refresh(),
   });
 
   // Table state for filtering
@@ -857,7 +830,6 @@ export default function Documents({
             </DialogFooter>
           </DialogContent>
         </Dialog>
-        <GenerateRegenerateModal {...modalProps} />
       </div>
     </TooltipProvider>
   );

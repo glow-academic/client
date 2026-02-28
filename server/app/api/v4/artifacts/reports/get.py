@@ -57,7 +57,7 @@ from app.utils.sql_helper import execute_sql_typed
 router = APIRouter()
 
 # Reports entry types for agent resolution
-REPORTS_BUNDLE_ENTRIES: set[str] = {"reports_insights", "debug_info"}
+REPORTS_BUNDLE_ENTRIES: set[str] = {"debug_info"}
 
 
 @dataclass
@@ -204,23 +204,9 @@ async def get_reports_websocket(
                 fetch_args_outputs(),
             )
 
-    # Fetch previous insights
-    from app.api.v4.entries.reports_insights.search import (
-        search_reports_insights_entries_internal,
-    )
-
-    async def fetch_insights():
-        async with pool.acquire() as c:
-            return await search_reports_insights_entries_internal(
-                c, limit_count=20, bypass_cache=bypass_cache
-            )
-
-    insights_result = await fetch_insights()
-
     return GetReportsWebsocketResponse(
         entries=ReportsWebsocketEntries(
             runs=data.runs_today,
-            reports_insights=insights_result or None,
         ),
         resources=ReportsWebsocketResources(),
         agents=data.config_agents or None,

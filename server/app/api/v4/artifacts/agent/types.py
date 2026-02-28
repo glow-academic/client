@@ -98,6 +98,8 @@ class GetAgentApiRequest(BaseModel):
 
     agent_id: UUID | None = None
     draft_id: UUID | None = None
+    # Optional group_id from layout context (avoids server-side creation)
+    group_id: UUID | None = None
 
 
 class GetAgentApiResponse(BaseModel):

@@ -6,6 +6,7 @@
  */
 
 import Agent from "@/components/artifacts/agent/Agent";
+import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -93,11 +94,15 @@ export default async function NewAgentPage({
   const loadAgentSearchParams = createLoader(agentSearchParams);
   const q = loadAgentSearchParams(searchParamsObj);
 
+  // Resolve group_id from layout context (cached per request)
+  const groupId = await resolveGroupId(q.draftId ?? null, "agent");
+
   // Fetch default agent detail server-side with draft_id (agent_id = null for new mode)
   const input: GetAgentIn = {
     body: {
       agent_id: null,
       draft_id: q.draftId ?? null,
+      group_id: groupId,
     } as GetAgentIn["body"],
   };
   const agentDetailDefault = await getAgent(input);

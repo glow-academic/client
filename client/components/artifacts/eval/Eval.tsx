@@ -20,8 +20,6 @@ import {
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
 import { StepCard } from "@/components/common/forms/StepCard";
-import type { GenerateRegenerateModalResource } from "@/components/common/forms/GenerateRegenerateModal";
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Agents } from "@/components/resources/Agents";
 import { Departments } from "@/components/resources/Departments";
@@ -225,19 +223,8 @@ function EvalComponent({
   const { isGenerating, makeOnGenerationComplete, generate } =
     useArtifactAi({
       artifactType: "eval",
-      groupId: s?.group_id,
       validResourceTypes: VALID_EVAL_RESOURCE_TYPES,
     });
-
-  // Modal state for generate/regenerate
-  const [showGenerateModal, setShowGenerateModal] = useState(false);
-  const [modalMode, setModalMode] = useState<"generate" | "regenerate" | null>(
-    null
-  );
-  const [modalResources, setModalResources] = useState<
-    GenerateRegenerateModalResource[]
-  >([]);
-  const [modalInstructions, setModalInstructions] = useState("");
 
   // nuqs parsers for URL-backed state (will be passed to GenericForm)
   const evalSearchParamsClient = useMemo(
@@ -697,22 +684,6 @@ function EvalComponent({
     []
   );
 
-  const resourceLabels: Partial<Record<EvalResourceType, string>> = useMemo(
-    () => ({
-      names: "Names",
-      descriptions: "Descriptions",
-      flags: "Flags",
-      departments: "Departments",
-      agents: "Agents",
-      rubrics: "Rubrics (Legacy)",
-      run_positions: "Run Positions",
-      group_positions: "Group Positions",
-      run_rubrics: "Run Rubrics",
-      group_rubrics: "Group Rubrics",
-    }),
-    []
-  );
-
   const handleGenerateResources = useCallback(
     async (
       resourceTypes: EvalResourceType[],
@@ -756,50 +727,15 @@ function EvalComponent({
     [handleGenerateResources]
   );
 
-  const handleOpenStepCardModal = useCallback(
-    (stepId: string, mode: "generate" | "regenerate") => {
-      const resourceTypes = stepResources[stepId] || [];
-      const resources: GenerateRegenerateModalResource[] = resourceTypes.map(
-        (rt) => ({
-          id: rt,
-          label: resourceLabels[rt] ?? "",
-          active: mode === "regenerate" ? canRegenerate(rt) : true,
-        })
-      );
-
-      setModalResources(resources);
-      setModalMode(mode);
-      setModalInstructions("");
-      setShowGenerateModal(true);
-    },
-    [stepResources, resourceLabels, canRegenerate]
-  );
-
-  const handleModalGenerate = useCallback(
-    async (selectedResources: string[], instructions: string) => {
-      const resourceTypes = selectedResources as EvalResourceType[];
-      await handleGenerateResources(
-        resourceTypes,
-        null,
-        instructions.trim() || undefined
-      );
-      setShowGenerateModal(false);
-      setModalInstructions("");
-    },
-    [handleGenerateResources]
-  );
-
-  // Listen for full-page-generate event from layout
-  useEffect(() => {
-    const handleFullPageGenerate = () => {
-      if (hasAnyAiGenerate) {
-        handleOpenStepCardModal("all", "generate");
+  const handleDirectStepGenerate = useCallback(
+    (stepId: string, _mode: "generate" | "regenerate") => {
+      const resources = stepResources[stepId];
+      if (resources) {
+        handleGenerateResources(resources);
       }
-    };
-    window.addEventListener("full-page-generate", handleFullPageGenerate);
-    return () =>
-      window.removeEventListener("full-page-generate", handleFullPageGenerate);
-  }, [handleOpenStepCardModal, hasAnyAiGenerate]);
+    },
+    [stepResources, handleGenerateResources],
+  );
 
   // Submit handler
   const handleSubmit = useCallback(
@@ -1128,7 +1064,7 @@ function EvalComponent({
                             const hasRegeneratable = stepResources[
                               "basic"
                             ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
+                            handleDirectStepGenerate(
                               "basic",
                               hasRegeneratable ? "regenerate" : "generate"
                             );
@@ -1172,7 +1108,7 @@ function EvalComponent({
                     setFormState((prev) => ({ ...prev, name_id: nameId }))
                   }
                   onGenerate={handleGenerateNames}
-                  group_id={s?.group_id ?? null}
+
                   agent_id={null}
                   createNamesAction={createNamesAction}
                   required={s?.names?.required ?? false}
@@ -1197,7 +1133,7 @@ function EvalComponent({
                   }
                   onGenerate={handleGenerateDescriptions}
                   required={s?.descriptions?.required ?? false}
-                  group_id={s?.group_id ?? null}
+
                   agent_id={null}
                   createDescriptionsAction={createDescriptionsAction}
                 />
@@ -1216,7 +1152,7 @@ function EvalComponent({
                     }))
                   }
                   onGenerate={handleGenerateFlags}
-                  group_id={s?.group_id ?? null}
+
                 />
 
                 <Flags
@@ -1233,7 +1169,7 @@ function EvalComponent({
                     }))
                   }
                   onGenerate={handleGenerateFlags}
-                  group_id={s?.group_id ?? null}
+
                 />
 
                 <Flags
@@ -1250,7 +1186,7 @@ function EvalComponent({
                     }))
                   }
                   onGenerate={handleGenerateFlags}
-                  group_id={s?.group_id ?? null}
+
                 />
 
                 <Departments
@@ -1267,7 +1203,7 @@ function EvalComponent({
                   }
                   onGenerate={handleGenerateDepartments}
                   required={s?.departments?.required ?? false}
-                  group_id={s?.group_id ?? null}
+
                   agent_id={null}
 
                 />
@@ -1300,7 +1236,7 @@ function EvalComponent({
                             const hasRegeneratable = stepResources[
                               "agents"
                             ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
+                            handleDirectStepGenerate(
                               "agents",
                               hasRegeneratable ? "regenerate" : "generate"
                             );
@@ -1353,7 +1289,7 @@ function EvalComponent({
                 }
                 onGenerate={handleGenerateAgents}
                 required={s?.agents?.required ?? false}
-                group_id={s?.group_id ?? null}
+
                 agent_id={null}
                 createAgentsAction={createAgentsAction}
               />
@@ -1397,7 +1333,7 @@ function EvalComponent({
                             const hasRegeneratable = stepResources[
                               "runs"
                             ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
+                            handleDirectStepGenerate(
                               "runs",
                               hasRegeneratable ? "regenerate" : "generate"
                             );
@@ -1436,7 +1372,7 @@ function EvalComponent({
                   runs={availableRuns}
                   disabled={disabled}
                   onChange={handleModelRunIdsChange}
-                  group_id={s?.group_id ?? null}
+
                   createRunsAction={createRunsAction}
                 />
                 {formState.model_run_ids.length > 0 && (
@@ -1500,7 +1436,7 @@ function EvalComponent({
                             const hasRegeneratable = stepResources[
                               "groups"
                             ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
+                            handleDirectStepGenerate(
                               "groups",
                               hasRegeneratable ? "regenerate" : "generate"
                             );
@@ -1541,7 +1477,7 @@ function EvalComponent({
                   groups={availableGroups}
                   disabled={disabled}
                   onChange={handleGroupIdsChange}
-                  group_id={s?.group_id ?? null}
+
                   createGroupsAction={createGroupsAction}
                 />
                 {formState.group_ids.length > 0 && (
@@ -1581,7 +1517,7 @@ function EvalComponent({
       disabled,
       isEditMode,
       stepResources,
-      handleOpenStepCardModal,
+      handleDirectStepGenerate,
       canRegenerate,
       isGenerating,
       handleGenerateNames,
@@ -1643,21 +1579,6 @@ function EvalComponent({
           }}
         />
 
-        {modalMode && (
-          <GenerateRegenerateModal
-            open={showGenerateModal}
-            onOpenChange={setShowGenerateModal}
-            resources={modalResources}
-            onResourcesChange={setModalResources}
-            instructions={modalInstructions}
-            onInstructionsChange={setModalInstructions}
-            onGenerate={handleModalGenerate}
-            isGenerating={modalResources.some((r) =>
-              isGenerating(r.id as EvalResourceType)
-            )}
-            mode={modalMode}
-          />
-        )}
       </div>
     </TooltipProvider>
   );

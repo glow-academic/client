@@ -19,31 +19,12 @@ import SimulationProgress, {
   SimulationProgressSkeleton,
   ViewMode,
 } from "./SimulationProgress";
-import { InsightsModal } from "@/components/common/insights/InsightsModal";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
-import { useInsightsModal } from "@/hooks/use-insights-modal";
-
 export interface HomeProps {
   homeData: HomeOut;
 }
 
 export default function Home({ homeData }: HomeProps) {
   const { profile } = useProfile();
-
-  // --- Insights modal wiring ---
-  const { generate, isAnyGenerating } = useArtifactAi({
-    artifactType: "home",
-    groupId: null,
-    validResourceTypes: [],
-  });
-  const insightsModalProps = useInsightsModal({
-    onGenerate: (instructions) => {
-      generate(["home_insights"], {
-        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-      });
-    },
-    isGenerating: isAnyGenerating,
-  });
 
   // Use data directly from props (fetched server-side)
   const homeOverview = homeData;
@@ -404,7 +385,6 @@ export default function Home({ homeData }: HomeProps) {
         </>
       )}
 
-      <InsightsModal {...insightsModalProps} />
     </div>
   );
 }

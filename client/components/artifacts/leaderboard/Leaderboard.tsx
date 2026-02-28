@@ -24,10 +24,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import AccoladeCard, { AccoladeCardSkeleton } from "./AccoladeCard";
 import LeaderboardTable, { LeaderboardTableSkeleton } from "./LeaderboardTable";
-import { InsightsModal } from "@/components/common/insights/InsightsModal";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
-import { useInsightsModal } from "@/hooks/use-insights-modal";
-
 type ProfileRole =
   | "superadmin"
   | "admin"
@@ -87,21 +83,6 @@ export default function Leaderboard({
   const { profile } = useProfile();
   const router = useRouter();
   const pathname = usePathname();
-
-  // --- Insights modal wiring ---
-  const { generate, isAnyGenerating } = useArtifactAi({
-    artifactType: "leaderboard",
-    groupId: null,
-    validResourceTypes: [],
-  });
-  const insightsModalProps = useInsightsModal({
-    onGenerate: (instructions) => {
-      generate(["leaderboard_insights"], {
-        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-      });
-    },
-    isGenerating: isAnyGenerating,
-  });
 
   // Use the data directly from props (fetched server-side)
   const hydratedRows = useMemo(() => {
@@ -861,7 +842,6 @@ export default function Leaderboard({
         </div>
       </div>
 
-      <InsightsModal {...insightsModalProps} />
     </div>
   );
 }

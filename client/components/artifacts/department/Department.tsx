@@ -14,7 +14,6 @@ import {
 } from "@/components/common/forms/GenericForm";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
@@ -26,7 +25,6 @@ import { useDrafts } from "@/contexts/draft-context";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
-import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   buildDraftPayload,
@@ -140,7 +138,6 @@ function DepartmentComponent({
 
   const { isGenerating, generate } = useArtifactAi({
     artifactType: "department",
-    groupId: s?.group_id,
     validResourceTypes: VALID_RESOURCE_TYPES as string[],
   });
 
@@ -291,24 +288,15 @@ function DepartmentComponent({
     }),
     [],
   );
-  const resourceLabels: Partial<Record<ResourceType, string>> = useMemo(
-    () => ({
-      names: "Names",
-      descriptions: "Descriptions",
-      flags: "Flags",
-      settings: "Settings",
-    }),
-    [],
+  const handleDirectStepGenerate = useCallback(
+    (stepId: string, _mode: "generate" | "regenerate") => {
+      const resources = stepResources[stepId];
+      if (resources) {
+        handleGenerateResources(resources);
+      }
+    },
+    [stepResources, handleGenerateResources],
   );
-  const { handleOpenStepCardModal, modalProps } =
-    useGenerationModal<ResourceType>({
-      stepResources,
-      resourceLabels,
-      canRegenerate,
-      onGenerate: (selected, instructions) =>
-        handleGenerateResources(selected, instructions),
-      isGenerating,
-    });
 
   const disabled = useMemo(() => !s?.can_edit, [s?.can_edit]);
 
@@ -430,7 +418,7 @@ function DepartmentComponent({
             onGenerate={() => handleGenerateResources(["names"])}
             required={s?.names?.required ?? false}
             hideDescription={true}
-            group_id={s?.group_id ?? null}
+
             showAiGenerate={s?.names?.show_ai_generate ?? false}
             create_tool_id={s?.names?.create_tool_id ?? null}
             createNamesAction={createNamesAction}
@@ -446,7 +434,7 @@ function DepartmentComponent({
               resourceTypes={(stepResources["basic"] ?? []) as string[]}
               canRegenerate={canRegenerateForStepCard}
               isGenerating={isGeneratingForStepCard}
-              onOpenModal={handleOpenStepCardModal}
+              onOpenModal={handleDirectStepGenerate}
               disabled={disabled}
             />
           ) : undefined
@@ -466,7 +454,7 @@ function DepartmentComponent({
             }
             onGenerate={() => handleGenerateResources(["descriptions"])}
             required={s?.descriptions?.required ?? false}
-            group_id={s?.group_id ?? null}
+
             showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
             create_tool_id={s?.descriptions?.create_tool_id ?? null}
             createDescriptionsAction={createDescriptionsAction}
@@ -484,7 +472,7 @@ function DepartmentComponent({
               setFormState((prev) => ({ ...prev, active_flag_id: flagId }))
             }
             onGenerate={() => handleGenerateResources(["flags"])}
-            group_id={s?.group_id ?? null}
+
             showAiGenerate={s?.flags?.show_ai_generate ?? false}
           />
 
@@ -500,7 +488,7 @@ function DepartmentComponent({
             }
             onGenerate={() => handleGenerateResources(["settings"])}
             required={s?.settings?.required ?? false}
-            group_id={s?.group_id ?? null}
+
             showAiGenerate={s?.settings?.show_ai_generate ?? false}
           />
         </div>
@@ -520,7 +508,7 @@ function DepartmentComponent({
       stepResources,
       canRegenerateForStepCard,
       isGeneratingForStepCard,
-      handleOpenStepCardModal,
+      handleDirectStepGenerate,
     ],
   );
 
@@ -571,7 +559,6 @@ function DepartmentComponent({
             setUrlFormDataRef.current = setter;
           }}
         />
-        <GenerateRegenerateModal {...modalProps} />
       </div>
     </TooltipProvider>
   );

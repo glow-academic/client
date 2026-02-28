@@ -13349,26 +13349,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/auth/insights": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Insights
-         * @description Return historical insights — currently returns empty (tables removed).
-         */
-        post: operations["get_insights_api_v4_auth_insights_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/auth/email": {
         parameters: {
             query?: never;
@@ -22084,10 +22064,6 @@ export interface components {
             /** Attempt Message */
             attempt_message?: components["schemas"]["MessageData"][] | null;
             runs?: components["schemas"]["GetRunListViewResponse"] | null;
-            /** Attempt Insights */
-            attempt_insights?: {
-                [key: string]: unknown;
-            }[] | null;
         };
         /**
          * AttemptErrorEvent
@@ -28319,6 +28295,8 @@ export interface components {
             agent_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
         };
         /**
          * GetAgentApiResponse
@@ -28849,10 +28827,6 @@ export interface components {
             artifact_has_generate?: {
                 [key: string]: boolean;
             } | null;
-            /** Artifact Has Insights */
-            artifact_has_insights?: {
-                [key: string]: boolean;
-            } | null;
         };
         /** GetAuthsApiRequest */
         GetAuthsApiRequest: {
@@ -29132,6 +29106,8 @@ export interface components {
             department_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
         };
         /** GetDepartmentApiResponse */
         GetDepartmentApiResponse: {
@@ -29210,6 +29186,8 @@ export interface components {
             document_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
         };
         /**
          * GetDocumentApiResponse
@@ -29361,6 +29339,8 @@ export interface components {
             eval_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
             /** Agent Search */
             agent_search?: string | null;
             /** Group Search */
@@ -29843,14 +29823,6 @@ export interface components {
         GetImagesEntriesApiResponse: {
             /** Items */
             items?: unknown | null;
-        };
-        /**
-         * GetInsightsApiResponse
-         * @description Response model for /auth/insights endpoint.
-         */
-        GetInsightsApiResponse: {
-            /** Insights */
-            insights?: components["schemas"]["InsightItem"][] | null;
         };
         /** GetInstructionsApiRequest */
         GetInstructionsApiRequest: {
@@ -32779,20 +32751,6 @@ export interface components {
             updated_at?: string | null;
             /** Call Id */
             call_id?: string | null;
-        };
-        /**
-         * InsightItem
-         * @description A single historical insight entry.
-         */
-        InsightItem: {
-            /** Id */
-            id?: string | null;
-            /** Created At */
-            created_at?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Content */
-            content?: string | null;
         };
         /** InstructionsApiRequest */
         InstructionsApiRequest: {
@@ -49917,10 +49875,6 @@ export interface components {
             /** Test Invocation */
             test_invocation?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__18"][] | null;
             runs?: components["schemas"]["GetRunListViewResponse"] | null;
-            /** Test Insights */
-            test_insights?: {
-                [key: string]: unknown;
-            }[] | null;
         };
         /**
          * TestErrorEvent
@@ -75928,39 +75882,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetDraftsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_insights_api_v4_auth_insights_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetInsightsApiResponse"];
                 };
             };
             /** @description Validation Error */

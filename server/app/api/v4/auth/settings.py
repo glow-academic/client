@@ -106,7 +106,6 @@ async def get_auth_settings_internal(
             settings_theme=settings_theme,  # type: ignore[arg-type]
             settings_tokens=QGetProfileContextV4ThemeTokens(),
             artifact_has_generate={},
-            artifact_has_insights={},
             agent_tool_entries=[],
         )
 
@@ -161,7 +160,7 @@ async def get_auth_settings_internal(
         "chart5": settings_theme.chart5 or "",
     }
 
-    has_generate, has_insights = build_artifact_generation_maps(
+    has_generate = build_artifact_generation_maps(
         access.artifact_agent_ids
     )
 
@@ -173,7 +172,6 @@ async def get_auth_settings_internal(
         settings_theme=settings_theme,
         settings_tokens=derive_theme_tokens(theme_primitives),
         artifact_has_generate=has_generate,
-        artifact_has_insights=has_insights,
         agent_tool_entries=agent_tool_entries,
     )
 
@@ -219,7 +217,6 @@ async def get_auth_settings(
             agents=data.settings_agents,
             tools=data.settings_tools,
             artifact_has_generate=data.artifact_has_generate,
-            artifact_has_insights=data.artifact_has_insights,
         )
 
     except HTTPException:

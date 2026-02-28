@@ -22,7 +22,6 @@ import {
 } from "@/components/common/forms/GenericForm";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
@@ -40,7 +39,6 @@ import { useDrafts } from "@/contexts/draft-context";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
-import { useGenerationModal } from "@/hooks/use-generation-modal";
 import {
   buildDraftPayload,
   checkHasResourceIds,
@@ -890,7 +888,6 @@ export default function Agent({
   // AI generation hook
   const { isGenerating, generate } = useArtifactAi({
     artifactType: "agent",
-    groupId: sectionData?.group_id,
     validResourceTypes: AGENT_VALID_RESOURCE_TYPES,
   });
   const isGeneratingForStepCard = useCallback(
@@ -985,41 +982,15 @@ export default function Agent({
     [],
   );
 
-  // Resource labels for display (only for resources used in this component)
-  const resourceLabels: Partial<Record<ResourceType, string>> = useMemo(
-    () => ({
-      names: "Names",
-      descriptions: "Descriptions",
-      models: "Models",
-      prompts: "Prompts",
-      instructions: "Instructions",
-      flags: "Flags",
-      departments: "Departments",
-      reasoning_levels: "Reasoning Levels",
-      temperature_levels: "Temperature Levels",
-      voices: "Voices",
-      tools: "Tools",
-    }),
-    [],
-  );
-
-  // Modal generate handler
-  const onModalGenerate = useCallback(
-    (selectedResources: ResourceType[], instructions?: string) => {
-      handleGenerateResources(selectedResources, instructions);
+  const handleDirectStepGenerate = useCallback(
+    (stepId: string, _mode: "generate" | "regenerate") => {
+      const resources = stepResources[stepId];
+      if (resources) {
+        handleGenerateResources(resources);
+      }
     },
-    [handleGenerateResources],
+    [stepResources, handleGenerateResources],
   );
-
-  // Generation modal hook (replaces modal state + handleOpenStepCardModal + full-page-generate listener)
-  const { handleOpenStepCardModal, modalProps } =
-    useGenerationModal<ResourceType>({
-      stepResources,
-      resourceLabels,
-      canRegenerate,
-      onGenerate: onModalGenerate,
-      isGenerating,
-    });
 
   const mergedNames = namesSection?.resources ?? [];
   const mergedDescriptions = descriptionsSection?.resources ?? [];
@@ -1132,7 +1103,7 @@ export default function Agent({
                           defaultName="New Agent"
                           required={namesSection?.required ?? false}
                           hideDescription={true}
-                          group_id={sectionData?.group_id ?? null}
+
                           showAiGenerate={!!sectionData?.names?.show_ai_generate}
                         />
                       }
@@ -1154,7 +1125,7 @@ export default function Agent({
                             resourceTypes={stepResources["basic"] ?? []}
                             canRegenerate={canRegenerateForStepCard}
                             isGenerating={isGeneratingForStepCard}
-                            onOpenModal={handleOpenStepCardModal}
+                            onOpenModal={handleDirectStepGenerate}
                             disabled={isReadonly}
                           />
                         ) : undefined
@@ -1192,7 +1163,7 @@ export default function Agent({
                           required={descriptionsSection?.required ?? false}
                           rows={4}
                           data-testid="input-agent-description"
-                          group_id={sectionData?.group_id ?? null}
+
                           showAiGenerate={
                             !!sectionData?.descriptions?.show_ai_generate
                           }
@@ -1221,7 +1192,7 @@ export default function Agent({
                           }}
                           onGenerate={handleGenerateDepartments}
                           required={departmentsSection?.required ?? false}
-                          group_id={sectionData?.group_id ?? null}
+
                           showAiGenerate={
                             !!sectionData?.departments?.show_ai_generate
                           }
@@ -1241,7 +1212,7 @@ export default function Agent({
                             }));
                           }}
                           onGenerate={handleGenerateFlags}
-                          group_id={sectionData?.group_id ?? null}
+
                           showAiGenerate={!!sectionData?.flags?.show_ai_generate}
                         />
                       </div>
@@ -1290,7 +1261,7 @@ export default function Agent({
                             resourceTypes={stepResources["tools"] ?? []}
                             canRegenerate={canRegenerateForStepCard}
                             isGenerating={isGeneratingForStepCard}
-                            onOpenModal={handleOpenStepCardModal}
+                            onOpenModal={handleDirectStepGenerate}
                             disabled={isReadonly}
                           />
                         ) : undefined
@@ -1311,7 +1282,7 @@ export default function Agent({
                         label="Tools"
                         description="Select the tools this agent can use. Tools define what operations the agent can perform."
                         required={toolsSection?.required ?? false}
-                        group_id={sectionData?.group_id ?? null}
+
                         showAiGenerate={!!sectionData?.tools?.show_ai_generate}
                         searchTerm={toolSearch}
                         onSearchChange={(term) =>
@@ -1365,7 +1336,7 @@ export default function Agent({
                             resourceTypes={stepResources["model"] ?? []}
                             canRegenerate={canRegenerateForStepCard}
                             isGenerating={isGeneratingForStepCard}
-                            onOpenModal={handleOpenStepCardModal}
+                            onOpenModal={handleDirectStepGenerate}
                             disabled={isReadonly}
                           />
                         ) : undefined
@@ -1430,7 +1401,7 @@ export default function Agent({
                             resourceTypes={stepResources["temperature"] ?? []}
                             canRegenerate={canRegenerateForStepCard}
                             isGenerating={isGeneratingForStepCard}
-                            onOpenModal={handleOpenStepCardModal}
+                            onOpenModal={handleDirectStepGenerate}
                             disabled={isReadonly}
                           />
                         ) : undefined
@@ -1464,7 +1435,7 @@ export default function Agent({
                         }
                         onGenerate={handleGenerateTemperatureLevels}
                         showSlider={true}
-                        group_id={sectionData?.group_id ?? null}
+
                         showAiGenerate={
                           !!sectionData?.temperature_levels?.show_ai_generate
                         }
@@ -1494,7 +1465,7 @@ export default function Agent({
                             resourceTypes={stepResources["reasoning"] ?? []}
                             canRegenerate={canRegenerateForStepCard}
                             isGenerating={isGeneratingForStepCard}
-                            onOpenModal={handleOpenStepCardModal}
+                            onOpenModal={handleDirectStepGenerate}
                             disabled={isReadonly}
                           />
                         ) : undefined
@@ -1520,7 +1491,7 @@ export default function Agent({
                           }))
                         }
                         onGenerate={handleGenerateReasoningLevels}
-                        group_id={sectionData?.group_id ?? null}
+
                         showAiGenerate={
                           !!sectionData?.reasoning_levels?.show_ai_generate
                         }
@@ -1550,7 +1521,7 @@ export default function Agent({
                             resourceTypes={stepResources["voice"] ?? []}
                             canRegenerate={canRegenerateForStepCard}
                             isGenerating={isGeneratingForStepCard}
-                            onOpenModal={handleOpenStepCardModal}
+                            onOpenModal={handleDirectStepGenerate}
                             disabled={isReadonly}
                           />
                         ) : undefined
@@ -1568,7 +1539,7 @@ export default function Agent({
                         onVoiceIdsChange={(ids) =>
                           setDraftState((prev) => ({ ...prev, voice_ids: ids }))
                         }
-                        group_id={sectionData?.group_id ?? null}
+
                         create_tool_id={voicesSection?.create_tool_id ?? null}
                         createVoicesAction={createVoicesAction}
                         registerFlush={registerFlushCallbacks["voices"]}
@@ -1601,7 +1572,7 @@ export default function Agent({
                             resourceTypes={stepResources["prompt"] ?? []}
                             canRegenerate={canRegenerateForStepCard}
                             isGenerating={isGeneratingForStepCard}
-                            onOpenModal={handleOpenStepCardModal}
+                            onOpenModal={handleDirectStepGenerate}
                             disabled={isReadonly}
                           />
                         ) : undefined
@@ -1623,7 +1594,7 @@ export default function Agent({
                         onSearchChange={(term: string) =>
                           setStepFormData({ promptSearch: term || null })
                         }
-                        group_id={sectionData?.group_id ?? null}
+
                         create_tool_id={promptsSection?.create_tool_id ?? null}
                         createPromptsAction={createPromptsAction}
                         registerFlush={registerFlushCallbacks["prompts"]}
@@ -1656,7 +1627,7 @@ export default function Agent({
                             resourceTypes={stepResources["instructions"] ?? []}
                             canRegenerate={canRegenerateForStepCard}
                             isGenerating={isGeneratingForStepCard}
-                            onOpenModal={handleOpenStepCardModal}
+                            onOpenModal={handleDirectStepGenerate}
                             disabled={isReadonly}
                           />
                         ) : undefined
@@ -1684,7 +1655,7 @@ export default function Agent({
                         onSearchChange={(term: string) =>
                           setStepFormData({ instructionsSearch: term || null })
                         }
-                        group_id={sectionData?.group_id ?? null}
+
                         showAiGenerate={
                           !!sectionData?.instructions?.show_ai_generate
                         }
@@ -1699,8 +1670,6 @@ export default function Agent({
           />
         </div>
 
-        {/* Generate/Regenerate Modal */}
-        {modalProps.mode && <GenerateRegenerateModal {...modalProps} />}
     </div>
   );
 }

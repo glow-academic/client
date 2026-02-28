@@ -9,9 +9,6 @@
 import type { PricingOut } from "@/app/(main)/analytics/pricing/page";
 import { format } from "date-fns";
 import { useMemo } from "react";
-import { InsightsModal } from "@/components/common/insights/InsightsModal";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
-import { useInsightsModal } from "@/hooks/use-insights-modal";
 import type { TooltipProps } from "recharts";
 
 import { useChartColors, getStatusColor } from "@/lib/utils/chartColors";
@@ -126,21 +123,6 @@ interface PricingSummaryProps {
 }
 
 export function PricingSummary({ pricingData }: PricingSummaryProps) {
-  // --- Insights modal wiring ---
-  const { generate, isAnyGenerating } = useArtifactAi({
-    artifactType: "pricing",
-    groupId: null,
-    validResourceTypes: [],
-  });
-  const insightsModalProps = useInsightsModal({
-    onGenerate: (instructions) => {
-      generate(["pricing_insights"], {
-        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-      });
-    },
-    isGenerating: isAnyGenerating,
-  });
-
   // Extract data from artifacts/pricing response
   const dailyItems = useMemo(
     () => pricingData?.views?.daily || [],
@@ -371,7 +353,6 @@ export function PricingSummary({ pricingData }: PricingSummaryProps) {
         </CardContent>
       </Card>
 
-      <InsightsModal {...insightsModalProps} />
     </div>
   );
 }

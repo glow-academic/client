@@ -1793,29 +1793,12 @@ async def get_attempt_websocket(
         standards=list(rp.standards.values()) if rp.standards else None,
     )
 
-    # Fetch previous insights
-    from app.api.v4.entries.attempt_insights.search import (
-        search_attempt_insights_entries_internal,
-    )
-
-    insights_result: list[dict] | None = None
-    if pool:
-
-        async def fetch_insights():
-            async with pool.acquire() as c:
-                return await search_attempt_insights_entries_internal(
-                    c, limit_count=20, bypass_cache=bypass_cache
-                )
-
-        insights_result = await fetch_insights()
-
     return GetAttemptWebsocketResponse(
         entries=AttemptEntries(
             attempt=[data.attempt_item] if data.attempt_item else None,
             attempt_chat=data.chats,
             attempt_message=data.messages,
             runs=runs_result,
-            attempt_insights=insights_result or None,
         ),
         resources=ws_resources,
         params=GetAttemptDetailRequest(attempt_id=attempt_id),

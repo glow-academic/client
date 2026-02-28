@@ -15,8 +15,6 @@ import {
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
 import { StepCard } from "@/components/common/forms/StepCard";
-import type { GenerateRegenerateModalResource } from "@/components/common/forms/GenerateRegenerateModal";
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { AuthItemKeys } from "@/components/resources/AuthItemKeys";
 import { Auths } from "@/components/resources/Auths";
@@ -140,19 +138,8 @@ function SettingComponent({
   const { isGenerating, makeOnGenerationComplete, generate } =
     useArtifactAi({
       artifactType: "setting",
-      groupId: settingData?.group_id,
       validResourceTypes: VALID_SETTING_RESOURCE_TYPES,
     });
-
-  // Modal state for generate/regenerate
-  const [showGenerateModal, setShowGenerateModal] = useState(false);
-  const [modalMode, setModalMode] = useState<"generate" | "regenerate" | null>(
-    null
-  );
-  const [modalResources, setModalResources] = useState<
-    GenerateRegenerateModalResource[]
-  >([]);
-  const [modalInstructions, setModalInstructions] = useState("");
 
   // nuqs parsers for URL-backed state (will be passed to GenericForm)
   // Memoize to prevent new object reference on every render
@@ -807,22 +794,6 @@ function SettingComponent({
     []
   );
 
-  // Resource labels for display
-  const resourceLabels: Partial<Record<ResourceType, string>> = useMemo(
-    () => ({
-      names: "Names",
-      descriptions: "Descriptions",
-      colors: "Colors",
-      icons: "Icons",
-      instructions: "Instructions",
-      flags: "Flags",
-      examples: "Examples",
-      fields: "Fields",
-      departments: "Departments",
-    }),
-    []
-  );
-
   const handleGenerateResources = useCallback(
     async (
       resourceTypes: ResourceType[],
@@ -840,49 +811,15 @@ function SettingComponent({
     [settingId, generate]
   );
 
-  // Handler to open modal for step card generation
-  const handleOpenStepCardModal = useCallback(
-    (stepId: string, mode: "generate" | "regenerate") => {
-      const resourceTypes = stepResources[stepId] || [];
-      const resources: GenerateRegenerateModalResource[] = resourceTypes.map(
-        (rt) => ({
-          id: rt,
-          label: resourceLabels[rt] ?? rt,
-          active: mode === "regenerate" ? canRegenerate(rt) : true,
-        })
-      );
-
-      setModalResources(resources);
-      setModalMode(mode);
-      setModalInstructions("");
-      setShowGenerateModal(true);
+  const handleDirectStepGenerate = useCallback(
+    (stepId: string, _mode: "generate" | "regenerate") => {
+      const resources = stepResources[stepId];
+      if (resources) {
+        handleGenerateResources(resources);
+      }
     },
-    [stepResources, resourceLabels, canRegenerate]
+    [stepResources, handleGenerateResources],
   );
-
-  // Handler for modal generate/regenerate action
-  const handleModalGenerate = useCallback(
-    async (selectedResources: string[], instructions: string) => {
-      const resourceTypes = selectedResources as ResourceType[];
-      await handleGenerateResources(
-        resourceTypes,
-        instructions.trim() || undefined
-      );
-      setShowGenerateModal(false);
-      setModalInstructions("");
-    },
-    [handleGenerateResources]
-  );
-
-  // Listen for full-page-generate event from layout
-  useEffect(() => {
-    const handleFullPageGenerate = () => {
-      handleOpenStepCardModal("all", "generate");
-    };
-    window.addEventListener("full-page-generate", handleFullPageGenerate);
-    return () =>
-      window.removeEventListener("full-page-generate", handleFullPageGenerate);
-  }, [handleOpenStepCardModal]);
 
   // Steps configuration for GenericForm
   const steps = useMemo(
@@ -1081,7 +1018,7 @@ function SettingComponent({
                             const hasRegeneratable = stepResources[
                               "basic"
                             ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
+                            handleDirectStepGenerate(
                               "basic",
                               hasRegeneratable ? "regenerate" : "generate"
                             );
@@ -1241,7 +1178,7 @@ function SettingComponent({
                             const hasRegeneratable = stepResources[
                               "colors"
                             ]!.some((rt) => canRegenerate(rt));
-                            handleOpenStepCardModal(
+                            handleDirectStepGenerate(
                               "colors",
                               hasRegeneratable ? "regenerate" : "generate"
                             );
@@ -1467,7 +1404,7 @@ function SettingComponent({
       createAuthItemKeysAction,
       getAuthItemKeysAction,
       canRegenerate,
-      handleOpenStepCardModal,
+      handleDirectStepGenerate,
     ]
   );
 

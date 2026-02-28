@@ -194,7 +194,6 @@ class LeaderboardWebsocketEntries(BaseModel):
     """Views data for leaderboard websocket response."""
 
     runs: GetRunListViewResponse | None = None
-    leaderboard_insights: list[dict] | None = None
 
 
 class LeaderboardWebsocketResources(BaseModel):

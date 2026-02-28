@@ -58,7 +58,7 @@ from app.utils.cache.set_cached import set_cached
 router = APIRouter()
 
 # Group entry types for agent resolution
-GROUP_BUNDLE_ENTRIES: set[str] = {"group_insights", "debug_info"}
+GROUP_BUNDLE_ENTRIES: set[str] = {"debug_info"}
 
 
 # =============================================================================
@@ -295,26 +295,12 @@ async def get_group_websocket(
                 fetch_args_outputs(),
             )
 
-    # Fetch previous insights
-    from app.api.v4.entries.group_insights.search import (
-        search_group_insights_entries_internal,
-    )
-
-    async def fetch_insights():
-        async with pool.acquire() as c:
-            return await search_group_insights_entries_internal(
-                c, limit_count=20, bypass_cache=bypass_cache
-            )
-
-    insights_result = await fetch_insights()
-
     return GetGroupWebsocketResponse(
         entries=GroupWebsocketEntries(
             runs=data.runs_today,
             group_runs=data.runs_result.items if data.runs_result.items else None,
             messages=data.messages_result.items if data.messages_result.items else None,
             calls=data.calls_result.items if data.calls_result.items else None,
-            group_insights=insights_result or None,
         ),
         resources=GroupWebsocketResources(),
         agents=data.config_agents or None,

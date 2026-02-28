@@ -57,7 +57,7 @@ from app.utils.cache.set_cached import set_cached
 router = APIRouter()
 
 # Session entry types for agent resolution
-SESSION_BUNDLE_ENTRIES: set[str] = {"session_insights", "debug_info"}
+SESSION_BUNDLE_ENTRIES: set[str] = {"debug_info"}
 
 
 # =============================================================================
@@ -448,25 +448,11 @@ async def get_session_websocket(
                 fetch_args_outputs(),
             )
 
-    # Fetch previous insights
-    from app.api.v4.entries.session_insights.search import (
-        search_session_insights_entries_internal,
-    )
-
-    async def fetch_insights():
-        async with pool.acquire() as c:
-            return await search_session_insights_entries_internal(
-                c, limit_count=20, bypass_cache=bypass_cache
-            )
-
-    insights_result = await fetch_insights()
-
     return GetSessionWebsocketResponse(
         entries=SessionWebsocketEntries(
             runs=data.runs_today,
             groups=data.groups_result.items if data.groups_result.items else None,
             audits=data.audits_result.items if data.audits_result.items else None,
-            session_insights=insights_result or None,
         ),
         resources=SessionWebsocketResources(),
         params=GetSessionApiRequest(session_id=session_id, draft_id=draft_id),

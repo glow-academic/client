@@ -167,6 +167,7 @@ async def get_eval_internal(
     eval_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    group_id: UUID | None = None,
     # Search/filter kwargs (threaded from websocket artifact tool)
     agent_search: str | None = None,
     group_search: str | None = None,
@@ -215,7 +216,7 @@ async def get_eval_internal(
             profile_id=profile_id,
             eval_id=eval_id,
             draft_id=draft_id,
-            draft_group_id=draft_item.group_id if draft_item is not None else None,
+            draft_group_id=group_id or (draft_item.group_id if draft_item is not None else None),
             draft_version=draft_item.version if draft_item is not None else None,
         )
 
@@ -243,8 +244,8 @@ async def get_eval_internal(
                     detail="You don't have access to this eval. It may be restricted to other departments.",
                 )
 
-        # group_id is guaranteed by SQL (created inline if no draft)
-        effective_group_id = access_result.group_id
+        # Use provided group_id, or fall back to SQL-created one
+        effective_group_id = group_id or access_result.group_id
         effective_draft_version = access_result.effective_draft_version
 
         # === QUERY 2: ID Fetching (using user_department_ids from Query 1) ===
@@ -811,6 +812,7 @@ async def get_eval_client(
     eval_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    group_id: UUID | None = None,
 ) -> GetEvalApiResponse:
     """BFF response for HTTP endpoint/frontend.
 
@@ -822,6 +824,7 @@ async def get_eval_client(
         eval_id=eval_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
+        group_id=group_id,
     )
 
     active_flag = next(
@@ -1060,6 +1063,7 @@ async def get_eval(
             eval_id=request.eval_id,
             draft_id=request.draft_id,
             bypass_cache=bypass_cache,
+            group_id=request.group_id,
         )
 
         # Set audit context

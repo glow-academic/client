@@ -45,7 +45,7 @@ from app.sql.types import (
 router = APIRouter()
 
 # Health entry types for agent resolution
-HEALTH_BUNDLE_ENTRIES: set[str] = {"health_insights", "debug_info"}
+HEALTH_BUNDLE_ENTRIES: set[str] = {"debug_info"}
 
 
 @router.post(
@@ -267,23 +267,9 @@ async def get_health_websocket(
                 fetch_args_outputs(),
             )
 
-    # Fetch previous insights
-    from app.api.v4.entries.health_insights.search import (
-        search_health_insights_entries_internal,
-    )
-
-    async def fetch_insights():
-        async with pool.acquire() as c:
-            return await search_health_insights_entries_internal(
-                c, limit_count=20, bypass_cache=bypass_cache
-            )
-
-    insights_result = await fetch_insights()
-
     return GetHealthWebsocketResponse(
         entries=HealthWebsocketEntries(
             runs=data.runs_today,
-            health_insights=insights_result or None,
         ),
         resources=HealthWebsocketResources(),
         agents=data.config_agents or None,

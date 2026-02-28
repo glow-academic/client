@@ -82,7 +82,6 @@ class AuthSettingsInternalData:
     settings_theme: GetSettingsThemeDataSqlRow
     settings_tokens: QGetProfileContextV4ThemeTokens
     artifact_has_generate: dict[str, bool]
-    artifact_has_insights: dict[str, bool]
     agent_tool_entries: list[SettingsAgentToolEntry]
 
 
@@ -116,7 +115,6 @@ class GetProfileContextApiResponse(BaseModel):
     actor_name: str | None = None
     # Artifact generation capability
     artifact_has_generate: dict[str, bool] | None = None
-    artifact_has_insights: dict[str, bool] | None = None
     # Server-driven routing
     sidebar_routes: list[SidebarSection] | None = None
     breadcrumbs: list[BreadcrumbItem] | None = None
@@ -142,7 +140,6 @@ class ProfileContextInternalData:
     settings_tokens: QGetProfileContextV4ThemeTokens
     session_id: UUID | None
     artifact_has_generate: dict[str, bool]
-    artifact_has_insights: dict[str, bool]
     pass1_time_ms: float
     pass2_time_ms: float
 
@@ -175,7 +172,6 @@ class GetAuthSettingsApiResponse(BaseModel):
     agents: list[QGetAgentsV4Item] | None = None
     tools: list[QGetToolsV4Item] | None = None
     artifact_has_generate: dict[str, bool] | None = None
-    artifact_has_insights: dict[str, bool] | None = None
 
 
 class GetAuthPageApiResponse(BaseModel):
@@ -201,21 +197,6 @@ class GetDraftsApiResponse(BaseModel):
     """Response model for /auth/drafts endpoint."""
 
     drafts: list[QGetProfileContextV4Draft] | None = None
-
-
-class InsightItem(BaseModel):
-    """A single historical insight entry."""
-
-    id: str | None = None
-    created_at: str | None = None
-    group_id: str | None = None
-    content: str | None = None
-
-
-class GetInsightsApiResponse(BaseModel):
-    """Response model for /auth/insights endpoint."""
-
-    insights: list[InsightItem] | None = None
 
 
 # ---------------------------------------------------------------------------

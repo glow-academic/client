@@ -77,7 +77,6 @@ DASHBOARD_BUNDLE_RESOURCES: set[str] = {
     "descriptions",
     "flags",
     "departments",
-    "dashboard_insights",
     "debug_info",
 }
 
@@ -1089,16 +1088,8 @@ async def get_dashboard_websocket(
         _fetch_runs_today(),
     )
 
-    # 4. Resolve group_id from dashboard_insights_entry if dashboard_id provided
+    # 4. Resolve group_id
     group_id: UUID | None = None
-    if dashboard_id:
-        async with pool.acquire() as conn:
-            row = await conn.fetchrow(
-                "SELECT group_id FROM dashboard_insights_entry WHERE id = $1",
-                dashboard_id,
-            )
-            if row:
-                group_id = row["group_id"]
 
     # Pre-fetch args and args_outputs from tool IDs (both cached via *_internal)
     config_args = None
@@ -1137,23 +1128,9 @@ async def get_dashboard_websocket(
                 _fetch_args_outputs(),
             )
 
-    # Fetch previous insights
-    from app.api.v4.entries.dashboard_insights.search import (
-        search_dashboard_insights_entries_internal,
-    )
-
-    async def _fetch_insights():
-        async with pool.acquire() as c:
-            return await search_dashboard_insights_entries_internal(
-                c, limit_count=20, bypass_cache=bypass_cache
-            )
-
-    insights_result = await _fetch_insights()
-
     return GetDashboardWebsocketResponse(
         entries=DashboardWebsocketEntries(
             runs=runs_result,
-            dashboard_insights=insights_result or None,
         ),
         resources=DashboardWebsocketResources(),
         agents=config_agents or None,

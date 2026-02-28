@@ -601,28 +601,11 @@ async def get_test_websocket(
         names=data.resources_payload.names,
     )
 
-    # Fetch previous insights
-    from app.api.v4.entries.test_insights.search import (
-        search_test_insights_entries_internal,
-    )
-
-    insights_result: list[dict] | None = None
-    if pool:
-
-        async def fetch_insights():
-            async with pool.acquire() as c:
-                return await search_test_insights_entries_internal(
-                    c, limit_count=20, bypass_cache=bypass_cache
-                )
-
-        insights_result = await fetch_insights()
-
     return GetTestWebsocketResponse(
         entries=TestEntries(
             test=[data.test],
             test_invocation=data.invocations,
             runs=runs_result,
-            test_insights=insights_result or None,
         ),
         resources=ws_resources,
         params=GetTestArtifactRequest(test_id=test_id),

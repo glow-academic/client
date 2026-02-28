@@ -49,7 +49,6 @@ class HealthWebsocketEntries(BaseModel):
     """Views data for health websocket response."""
 
     runs: "GetRunListViewResponse | None" = None
-    health_insights: list[dict] | None = None
 
 
 class HealthWebsocketResources(BaseModel):

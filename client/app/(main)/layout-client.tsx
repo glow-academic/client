@@ -15,7 +15,6 @@ import React, { useEffect, useMemo } from "react";
 
 import { SimulationControls } from "@/components/common/SimulationControls";
 import { FullPageGenerateButton } from "@/components/common/drafts/FullPageGenerateButton";
-import { InsightsButton } from "@/components/common/insights/InsightsButton";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
@@ -26,10 +25,6 @@ import {
   type DraftItem,
 } from "@/contexts/draft-context";
 import { GroupProviderClient, useGroupId } from "@/contexts/group-context";
-import {
-  InsightsProviderClient,
-  type InsightItem,
-} from "@/contexts/insights-context";
 import { ProfileProviderClient } from "@/contexts/profile-context";
 import { SettingsProviderClient } from "@/contexts/settings-context";
 import { SocketProviderClient } from "@/contexts/socket-context";
@@ -191,7 +186,6 @@ function MainLayoutContent({
               />
             </div>
 
-            <InsightsButton artifactType={artifactType} />
             <FullPageGenerateButton artifactType={artifactType} />
             {attemptControls?.show_controls && (
               <div className="pr-4">
@@ -268,7 +262,6 @@ export function MainLayoutClient({
   sessionSnapshot: SafeSessionSnapshot;
   attemptControls: AuthAttemptOut | null;
   drafts: DraftItem[];
-  insights: InsightItem[];
   analyticsFilters: AnalyticsFiltersResponse | null;
   /** Initial autosave preference from SSR cookie */
   initialAutosave?: boolean;
@@ -324,7 +317,6 @@ export function MainLayoutClient({
       >
         <DraftProviderClient drafts={drafts} initialAutosave={initialAutosave}>
           <GroupProviderClient initialGroupId={groupId}>
-            <InsightsProviderClient insights={insights}>
               <ProfileProviderClient
                 initial={profileData}
                 sessionSnapshot={sessionSnapshot}
@@ -347,7 +339,6 @@ export function MainLayoutClient({
                   </MainLayoutContent>
                 </SettingsProviderClient>
               </ProfileProviderClient>
-            </InsightsProviderClient>
           </GroupProviderClient>
         </DraftProviderClient>
       </SocketProviderClient>

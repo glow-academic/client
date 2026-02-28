@@ -23,7 +23,6 @@ class RecordWebsocketEntries(BaseModel):
     """Entries data for record websocket response."""
 
     runs: GetRunListViewResponse | None = None
-    record_insights: list[dict] | None = None
 
 
 class RecordWebsocketResources(BaseModel):

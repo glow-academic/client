@@ -45,6 +45,7 @@ class GetDocumentApiRequest(BaseModel):
 
     document_id: UUID | None = None
     draft_id: UUID | None = None
+    group_id: UUID | None = None
 
 
 class DocumentNameSection(BaseResourceSection):

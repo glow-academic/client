@@ -17,7 +17,6 @@ import {
 } from "@/components/common/forms/GenericForm";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
@@ -33,7 +32,6 @@ import { useDrafts } from "@/contexts/draft-context";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
-import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   buildDraftPayload,
@@ -375,7 +373,6 @@ function DocumentComponent({
   // AI generation via shared hook
   const { isGenerating, generate } = useArtifactAi({
     artifactType: "document",
-    groupId: documentDetail?.group_id,
     validResourceTypes: [...VALID_RESOURCE_TYPES],
   });
 
@@ -631,32 +628,15 @@ function DocumentComponent({
     [],
   );
 
-  // Resource labels for display
-  const resourceLabels: Partial<Record<ResourceType, string>> = useMemo(
-    () => ({
-      names: "Names",
-      descriptions: "Descriptions",
-      flags: "Flags",
-      departments: "Departments",
-      fields: "Fields",
-      uploads: "Uploads",
-      images: "Images",
-      texts: "Texts",
-    }),
-    [],
+  const handleDirectStepGenerate = useCallback(
+    (stepId: string, _mode: "generate" | "regenerate") => {
+      const resources = stepResources[stepId];
+      if (resources) {
+        handleGenerateResources(resources);
+      }
+    },
+    [stepResources, handleGenerateResources],
   );
-
-  // Generation modal via shared hook
-  const { handleOpenStepCardModal, modalProps } =
-    useGenerationModal<ResourceType>({
-      stepResources,
-      resourceLabels,
-      canRegenerate,
-      onGenerate: (selectedResources, instructions) => {
-        handleGenerateResources(selectedResources as ResourceType[], instructions);
-      },
-      isGenerating,
-    });
 
   // Steps configuration for GenericForm
   const steps = useMemo(
@@ -836,7 +816,7 @@ function DocumentComponent({
                   defaultName="New Document"
                   required={documentDetail?.names?.required ?? false}
                   hideDescription={true}
-                  group_id={documentDetail?.group_id ?? null}
+      
                   showAiGenerate={
                     documentDetail?.names?.show_ai_generate ?? false
                   }
@@ -862,7 +842,7 @@ function DocumentComponent({
                     resourceTypes={stepResources["basic"]}
                     canRegenerate={canRegenerateForStepCard}
                     isGenerating={isGenerating}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -901,7 +881,7 @@ function DocumentComponent({
                   required={documentDetail?.descriptions?.required ?? false}
                   rows={4}
                   data-testid="input-document-description"
-                  group_id={documentDetail?.group_id ?? null}
+      
                   showAiGenerate={
                     documentDetail?.descriptions?.show_ai_generate ?? false
                   }
@@ -932,7 +912,7 @@ function DocumentComponent({
                   }
                   onGenerate={handleGenerateDepartments}
                   required={documentDetail?.departments?.required ?? false}
-                  group_id={documentDetail?.group_id ?? null}
+      
                   showAiGenerate={
                     documentDetail?.departments?.show_ai_generate ?? false
                   }
@@ -953,7 +933,7 @@ function DocumentComponent({
                     }))
                   }
                   onGenerate={handleGenerateFlags}
-                  group_id={documentDetail?.group_id ?? null}
+      
                   showAiGenerate={
                     documentDetail?.flags?.show_ai_generate ?? false
                   }
@@ -1003,7 +983,7 @@ function DocumentComponent({
                     resourceTypes={stepResources["fields"]}
                     canRegenerate={canRegenerateForStepCard}
                     isGenerating={isGenerating}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -1023,7 +1003,7 @@ function DocumentComponent({
                 }
                 label="Fields"
                 required={documentDetail?.fields?.required ?? false}
-                group_id={documentDetail?.group_id ?? null}
+    
                 showAiGenerate={
                   documentDetail?.fields?.show_ai_generate ?? false
                 }
@@ -1056,7 +1036,7 @@ function DocumentComponent({
                     resourceTypes={stepResources["uploads"]}
                     canRegenerate={canRegenerateForStepCard}
                     isGenerating={isGenerating}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -1076,7 +1056,7 @@ function DocumentComponent({
                 }
                 label="Files"
                 required={documentDetail?.uploads?.required ?? false}
-                group_id={documentDetail?.group_id ?? null}
+    
                 showAiGenerate={
                   documentDetail?.uploads?.show_ai_generate ?? false
                 }
@@ -1110,7 +1090,7 @@ function DocumentComponent({
                     resourceTypes={stepResources["images"]}
                     canRegenerate={canRegenerateForStepCard}
                     isGenerating={isGenerating}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -1130,7 +1110,7 @@ function DocumentComponent({
                 }
                 label="Images"
                 required={documentDetail?.images?.required ?? false}
-                group_id={documentDetail?.group_id ?? null}
+    
                 showAiGenerate={
                   documentDetail?.images?.show_ai_generate ?? false
                 }
@@ -1163,7 +1143,7 @@ function DocumentComponent({
                     resourceTypes={stepResources["texts"]}
                     canRegenerate={canRegenerateForStepCard}
                     isGenerating={isGenerating}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -1183,7 +1163,7 @@ function DocumentComponent({
                 }
                 label="Texts"
                 required={documentDetail?.texts?.required ?? false}
-                group_id={documentDetail?.group_id ?? null}
+    
                 showAiGenerate={
                   documentDetail?.texts?.show_ai_generate ?? false
                 }
@@ -1224,7 +1204,7 @@ function DocumentComponent({
       createTextsAction,
       canRegenerate,
       canRegenerateForStepCard,
-      handleOpenStepCardModal,
+      handleDirectStepGenerate,
       isAutosaveEnabled,
       registerFlushCallbacks,
     ],
@@ -1263,8 +1243,6 @@ function DocumentComponent({
           }}
         />
 
-        {/* Generate/Regenerate Modal */}
-        <GenerateRegenerateModal {...modalProps} />
       </div>
     </TooltipProvider>
   );

@@ -8,10 +8,6 @@ import DashboardSecondary from "@/components/artifacts/dashboard/DashboardSecond
 import DashboardFooter from "@/components/artifacts/dashboard/DashboardFooter";
 import SimulationHistory from "@/components/common/SimulationHistory";
 import ProfileHeader from "@/components/artifacts/reports/ProfileHeader";
-import { InsightsModal } from "@/components/common/insights/InsightsModal";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
-import { useInsightsModal } from "@/hooks/use-insights-modal";
-
 type DashboardOut = OutputOf<"/api/v4/artifacts/dashboard/get", "post">;
 type ReportHistoryOut = NonNullable<DashboardOut["history"]>;
 
@@ -70,23 +66,6 @@ export default function Record({
   historyPageSize = 10,
   defaultFilters,
 }: RecordProps) {
-  // --- Insights modal wiring ---
-  const { generate, isAnyGenerating } = useArtifactAi({
-    artifactType: "record",
-    groupId: null,
-    validResourceTypes: [],
-  });
-  const insightsModalProps = useInsightsModal({
-    onGenerate: (instructions) => {
-      generate(["record_insights"], {
-        user_instructions: instructions?.trim()
-          ? [instructions.trim()]
-          : null,
-      });
-    },
-    isGenerating: isAnyGenerating,
-  });
-
   // --- History extraction ---
   const historyData: ReportHistoryOut = data.history || {
     data: [],
@@ -201,7 +180,6 @@ export default function Record({
         />
       </div>
 
-      <InsightsModal {...insightsModalProps} />
     </div>
   );
 }

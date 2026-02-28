@@ -154,6 +154,8 @@ class GetEvalApiRequest(BaseModel):
 
     eval_id: UUID | None = None
     draft_id: UUID | None = None
+    # Optional group_id from layout context (avoids server-side creation)
+    group_id: UUID | None = None
     agent_search: str | None = None
     group_search: str | None = None
     available_model_runs_search: str | None = None

@@ -299,7 +299,6 @@ class ReportsWebsocketEntries(BaseModel):
     """Views data for reports websocket response."""
 
     runs: GetRunListViewResponse | None = None
-    reports_insights: list[dict] | None = None
 
 
 class ReportsWebsocketResources(BaseModel):

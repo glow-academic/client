@@ -142,6 +142,7 @@ async def get_department_internal(
     department_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    group_id: UUID | None = None,
 ) -> DepartmentInternalData:
     """Core data fetching layer (cacheable).
 
@@ -210,8 +211,11 @@ async def get_department_internal(
                     detail="You don't have access to this department.",
                 )
 
-        # group_id is guaranteed by SQL (created inline if no draft)
-        effective_group_id = access_result.group_id
+        # === GROUP ID: Use provided group_id, or fall back to SQL-created one ===
+        if group_id:
+            effective_group_id = group_id
+        else:
+            effective_group_id = access_result.group_id
         effective_draft_version = access_result.effective_draft_version
 
         # === QUERY 2: ID Fetching (using user_department_ids from Query 1) ===
@@ -659,6 +663,7 @@ async def get_department_client(
     department_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    group_id: UUID | None = None,
 ) -> GetDepartmentApiResponse:
     """BFF response for HTTP endpoint/frontend.
 
@@ -670,6 +675,7 @@ async def get_department_client(
         department_id=department_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
+        group_id=group_id,
     )
 
     return GetDepartmentApiResponse(
@@ -778,6 +784,7 @@ async def get_department(
             department_id=request.department_id,
             draft_id=request.draft_id,
             bypass_cache=bypass_cache,
+            group_id=request.group_id,
         )
 
         # Set audit context
