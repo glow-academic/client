@@ -262,7 +262,6 @@ class PersonaInternalData:
 
     # Per-resource tool IDs (from selected agents)
     tool_ids_map: dict[str, UUID | None]
-    link_tool_ids_map: dict[str, UUID | None]
 
     # Resolved parameter IDs (derived from saved parameter_fields)
     resolved_parameter_ids: list[str]

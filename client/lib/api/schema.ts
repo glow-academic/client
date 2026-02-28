@@ -3089,6 +3089,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/artifacts/leaderboard/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export Leaderboard
+         * @description Export leaderboard as CSV — profile-level aggregated metrics.
+         */
+        post: operations["export_leaderboard_api_v4_artifacts_leaderboard_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/artifacts/leaderboard/docs": {
         parameters: {
             query?: never;
@@ -3140,6 +3160,26 @@ export interface paths {
          * @description Refresh all pricing section materialized views.
          */
         post: operations["pricing_refresh_api_v4_artifacts_pricing_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/artifacts/pricing/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export Pricing
+         * @description Export pricing as CSV — group-level aggregated data.
+         */
+        post: operations["export_pricing_api_v4_artifacts_pricing_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -27711,6 +27751,63 @@ export interface components {
             row_count: number;
         };
         /**
+         * ExportLeaderboardApiRequest
+         * @description Request model for leaderboard export (analytical dump).
+         */
+        ExportLeaderboardApiRequest: {
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Roles */
+            roles?: string[] | null;
+            /** Simulation Filters */
+            simulation_filters?: string[] | null;
+            /** Target Profile Id */
+            target_profile_id?: string | null;
+            /** Profile Ids */
+            profile_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Search */
+            search?: string | null;
+            /**
+             * Sort By
+             * @default highest_score
+             */
+            sort_by: string;
+            /**
+             * Sort Order
+             * @default desc
+             */
+            sort_order: string;
+            /** Cohort Id */
+            cohort_id?: string | null;
+            /** Simulation Id */
+            simulation_id?: string | null;
+        };
+        /**
+         * ExportLeaderboardApiResponse
+         * @description Response model for leaderboard export.
+         */
+        ExportLeaderboardApiResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** File Name */
+            file_name: string;
+            /** Row Count */
+            row_count: number;
+        };
+        /**
          * ExportPersonaApiRequest
          * @description Request model for export persona endpoint.
          */
@@ -27729,6 +27826,51 @@ export interface components {
          * @description Response model for export persona endpoint.
          */
         ExportPersonaApiResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** File Name */
+            file_name: string;
+            /** Row Count */
+            row_count: number;
+        };
+        /**
+         * ExportPricingApiRequest
+         * @description Request model for pricing export (group-level analytical dump).
+         */
+        ExportPricingApiRequest: {
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+            /** Session Id */
+            session_id?: string | null;
+            /** Model Id */
+            model_id?: string | null;
+            /** Agent Id */
+            agent_id?: string | null;
+            /**
+             * Sort By
+             * @default date
+             */
+            sort_by: string;
+            /**
+             * Sort Order
+             * @default desc
+             */
+            sort_order: string;
+        };
+        /**
+         * ExportPricingApiResponse
+         * @description Response model for pricing export.
+         */
+        ExportPricingApiResponse: {
             /**
              * Upload Id
              * Format: uuid
@@ -35025,6 +35167,8 @@ export interface components {
             department_filter?: components["schemas"]["ListFilterSection"] | null;
             /** Total Count */
             total_count?: number | null;
+            /** Import Fields */
+            import_fields?: components["schemas"]["ImportField"][] | null;
         };
         /**
          * ListScenarioApiScenario
@@ -43183,6 +43327,26 @@ export interface components {
             question_ids?: string[] | null;
             /** Option Ids */
             option_ids?: string[] | null;
+            /** Active Flag */
+            active_flag?: boolean | null;
+            /** Departments */
+            departments?: string[] | null;
+            /** Personas */
+            personas?: string[] | null;
+            /** Documents */
+            documents?: string[] | null;
+            /** Parameter Fields */
+            parameter_fields?: string[] | null;
+            /** Objectives */
+            objectives?: string[] | null;
+            /** Images */
+            images?: string[] | null;
+            /** Videos */
+            videos?: string[] | null;
+            /** Questions */
+            questions?: string[] | null;
+            /** Options */
+            options?: string[] | null;
         };
         /**
          * SaveScenarioResult
@@ -57330,6 +57494,43 @@ export interface operations {
             };
         };
     };
+    export_leaderboard_api_v4_artifacts_leaderboard_export_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportLeaderboardApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportLeaderboardApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_leaderboard_docs_endpoint_api_v4_artifacts_leaderboard_docs_post: {
         parameters: {
             query?: never;
@@ -57428,6 +57629,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshMvPricingApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_pricing_api_v4_artifacts_pricing_export_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportPricingApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportPricingApiResponse"];
                 };
             };
             /** @description Validation Error */

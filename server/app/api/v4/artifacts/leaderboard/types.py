@@ -179,6 +179,41 @@ class LeaderboardResponse(BaseModel):
 
 
 # =============================================================================
+# Export Types
+# =============================================================================
+
+
+class ExportLeaderboardApiRequest(BaseModel):
+    """Request model for leaderboard export (analytical dump)."""
+
+    start_date: str | None = None
+    end_date: str | None = None
+    cohort_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    roles: list[str] | None = None
+    simulation_filters: list[str] | None = None
+    target_profile_id: UUID | None = None
+    profile_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    search: str | None = None
+    sort_by: str = Field(default="highest_score")
+    sort_order: str = Field(default="desc")
+
+    # Backward-compatible singular filters.
+    cohort_id: UUID | None = None
+    simulation_id: UUID | None = None
+
+
+class ExportLeaderboardApiResponse(BaseModel):
+    """Response model for leaderboard export."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int
+
+
+# =============================================================================
 # WebSocket Types
 # =============================================================================
 

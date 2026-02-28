@@ -13,6 +13,7 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.artifacts.persona.types import ImportField
 from app.api.v4.artifacts.scenario.permissions import (
     compute_can_delete,
     compute_can_duplicate,
@@ -51,6 +52,97 @@ from app.utils.sql_helper import execute_sql_typed
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/scenario/get_scenarios_list_complete.sql"
 
+SCENARIO_IMPORT_FIELDS: list[ImportField] = [
+    ImportField(
+        key="name",
+        label="Name",
+        required=True,
+        example="Emergency Triage",
+        description="The scenario's display name",
+    ),
+    ImportField(
+        key="description",
+        label="Description",
+        example="A triage scenario...",
+        description="Optional description",
+    ),
+    ImportField(
+        key="problem_statement",
+        label="Problem Statement",
+        example="A patient arrives...",
+        description="The scenario problem statement",
+    ),
+    ImportField(
+        key="active_flag",
+        label="Active",
+        type="boolean",
+        example="true",
+        description="Whether the scenario is active (true/false)",
+    ),
+    ImportField(
+        key="departments",
+        label="Departments",
+        multi=True,
+        example="Nursing, Medicine",
+        description="Comma-separated department names",
+    ),
+    ImportField(
+        key="personas",
+        label="Personas",
+        multi=True,
+        example="Sarah the Nurse",
+        description="Comma-separated persona names",
+    ),
+    ImportField(
+        key="documents",
+        label="Documents",
+        multi=True,
+        example="Protocol Guide",
+        description="Comma-separated document names",
+    ),
+    ImportField(
+        key="parameter_fields",
+        label="Parameter Fields",
+        multi=True,
+        example="Patient Age, Condition",
+        description="Comma-separated parameter field names",
+    ),
+    ImportField(
+        key="objectives",
+        label="Objectives",
+        multi=True,
+        example="Assess patient",
+        description="Comma-separated objective texts",
+    ),
+    ImportField(
+        key="images",
+        label="Images",
+        multi=True,
+        example="X-Ray Image",
+        description="Comma-separated image names",
+    ),
+    ImportField(
+        key="videos",
+        label="Videos",
+        multi=True,
+        example="Training Video",
+        description="Comma-separated video names",
+    ),
+    ImportField(
+        key="questions",
+        label="Questions",
+        multi=True,
+        example="What is the diagnosis?",
+        description="Comma-separated question texts",
+    ),
+    ImportField(
+        key="options",
+        label="Options",
+        multi=True,
+        example="Option A, Option B",
+        description="Comma-separated option texts",
+    ),
+]
 
 router = APIRouter()
 
@@ -387,6 +479,7 @@ async def get_scenario_list(
                 request.department_search,
             ),
             total_count=result.total_count,
+            import_fields=SCENARIO_IMPORT_FIELDS,
         )
 
         # Cache response (use mode='json' to serialize UUIDs and other types)

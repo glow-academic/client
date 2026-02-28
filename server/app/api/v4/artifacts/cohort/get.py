@@ -173,7 +173,6 @@ class CohortInternalData:
 
     # Per-resource tool IDs (from selected agents)
     tool_ids_map: dict[str, UUID | None]
-    link_tool_ids_map: dict[str, UUID | None]
 
     # Raw data for backward-compat fields in API response
     name_id: UUID | None
@@ -823,7 +822,6 @@ async def get_cohort_internal(
         resource_group_ids=resource_group_ids,
         # Per-resource tool IDs
         tool_ids_map=tool_ids_map,
-        link_tool_ids_map=link_tool_ids_map,
         # Raw IDs
         name_id=ids_result.name_id,
         description_id=ids_result.description_id,
@@ -1051,7 +1049,6 @@ async def get_cohort_client(
             "suggestions": data.suggestions_map.get(resource_key, []),
             "show_ai_generate": data.show_ai_generate_map.get(resource_key, False),
             "tool_id": data.tool_ids_map.get(resource_key),
-            "link_tool_id": data.link_tool_ids_map.get(resource_key),
         }
 
     return GetCohortApiResponse(

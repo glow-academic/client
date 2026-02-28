@@ -159,7 +159,6 @@ class SimulationInternalData:
 
     # Per-resource tool IDs (from selected agents)
     tool_ids_map: dict[str, UUID | None]
-    link_tool_ids_map: dict[str, UUID | None]
 
     # Config resources for websocket generation
     config_agent_resources: list[Any] | None
@@ -762,7 +761,6 @@ async def get_simulation_internal(
         basic_show_ai_generate=basic_show_ai_generate,
         resources_payload=resources_payload,
         tool_ids_map=tool_ids_map,
-        link_tool_ids_map=link_tool_ids_map,
         config_agent_resources=config_agents_result or None,
         config_model_resources=config_models_result or None,
         config_provider_resources=config_providers_result or None,
@@ -960,7 +958,6 @@ async def get_simulation_client(
             "suggestions": data.suggestions_map.get(resource_key, []),
             "show_ai_generate": data.show_ai_generate_map.get(resource_key, False),
             "tool_id": data.tool_ids_map.get(resource_key),
-            "link_tool_id": data.link_tool_ids_map.get(resource_key),
         }
 
     return GetSimulationApiResponse(

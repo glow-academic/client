@@ -293,7 +293,7 @@ async def get_persona_internal(
             settings_conn, profile_id, bypass_cache
         )
 
-    agent_ids, tool_ids_map, link_tool_ids_map = resolve_agents_for_artifact(
+    agent_ids, tool_ids_map, _link_tool_ids_map = resolve_agents_for_artifact(
         settings_data.agent_tool_entries, PERSONA_RESOURCES
     )
 
@@ -894,7 +894,6 @@ async def get_persona_internal(
         resources_payload=resources_payload,
         # Per-resource tool IDs
         tool_ids_map=tool_ids_map,
-        link_tool_ids_map=link_tool_ids_map,
         # Config resources
         config_agent_resources=config_agents_result or None,
         config_model_resources=config_models_result or None,
@@ -1122,7 +1121,6 @@ async def get_persona_client(
             "suggestions": data.suggestions_map.get(resource_key),
             "show_ai_generate": data.show_ai_generate_map.get(resource_key, False),
             "tool_id": data.tool_ids_map.get(resource_key),
-            "link_tool_id": data.link_tool_ids_map.get(resource_key),
         }
 
     return GetPersonaApiResponse(

@@ -188,6 +188,255 @@ async def _resolve_scenario_values(
             conn, item.problem_statement, **_tool_args("problem_statements")
         )
 
+    # --- Match-by-name resolution for multi-select fields (CSV import) ---
+
+    if item.active_flag is not None and item.active_flag_id is None:
+        from app.api.v4.resources.flags.search import search_flags_internal
+
+        all_flags = await search_flags_internal(
+            conn,
+            search=None,
+            limit_count=1000,
+            flag_type="scenario_active",
+            scenario=True,
+        )
+        match = next((f for f in all_flags if f.type == "scenario_active"), None)
+        if match and match.id:
+            if item.active_flag:
+                item.active_flag_id = match.id
+        elif item.active_flag:
+            errors.append(
+                SaveScenarioFieldError(
+                    field="active_flag", message="Active flag resource not found"
+                )
+            )
+
+    if item.departments is not None and item.department_ids is None:
+        from app.api.v4.resources.departments.search import search_departments_internal
+
+        all_depts = await search_departments_internal(
+            conn, search=None, limit_count=1000, scenario=True
+        )
+        dept_name_map = {
+            d.name.lower(): d.department_id
+            for d in all_depts
+            if d.name and d.department_id
+        }
+        resolved_ids = []
+        for dept_name in item.departments:
+            dept_id = dept_name_map.get(dept_name.lower())
+            if dept_id:
+                resolved_ids.append(dept_id)
+            else:
+                errors.append(
+                    SaveScenarioFieldError(
+                        field="departments",
+                        message=f'Department "{dept_name}" not found',
+                    )
+                )
+        if not any(e.field == "departments" for e in errors):
+            item.department_ids = resolved_ids
+
+    if item.personas is not None and item.persona_ids is None:
+        from app.api.v4.resources.personas.search import search_personas_internal
+
+        all_personas = await search_personas_internal(
+            conn, search=None, limit_count=1000, scenario=True
+        )
+        persona_name_map = {
+            p.name.lower(): p.persona_id
+            for p in all_personas
+            if p.name and p.persona_id
+        }
+        resolved_ids = []
+        for persona_name in item.personas:
+            pid = persona_name_map.get(persona_name.lower())
+            if pid:
+                resolved_ids.append(pid)
+            else:
+                errors.append(
+                    SaveScenarioFieldError(
+                        field="personas",
+                        message=f'Persona "{persona_name}" not found',
+                    )
+                )
+        if not any(e.field == "personas" for e in errors):
+            item.persona_ids = resolved_ids
+
+    if item.documents is not None and item.document_ids is None:
+        from app.api.v4.resources.documents.search import search_documents_internal
+
+        all_docs = await search_documents_internal(
+            conn, search=None, limit_count=1000, scenario=True
+        )
+        doc_name_map = {
+            d.name.lower(): d.document_id for d in all_docs if d.name and d.document_id
+        }
+        resolved_ids = []
+        for doc_name in item.documents:
+            did = doc_name_map.get(doc_name.lower())
+            if did:
+                resolved_ids.append(did)
+            else:
+                errors.append(
+                    SaveScenarioFieldError(
+                        field="documents",
+                        message=f'Document "{doc_name}" not found',
+                    )
+                )
+        if not any(e.field == "documents" for e in errors):
+            item.document_ids = resolved_ids
+
+    if item.parameter_fields is not None and item.parameter_field_ids is None:
+        from app.api.v4.resources.parameter_fields.search import (
+            search_parameter_fields_internal,
+        )
+
+        all_pf = await search_parameter_fields_internal(
+            conn, parameter_ids=[], scenario=True
+        )
+        pf_name_map = {pf.name.lower(): pf.id for pf in all_pf if pf.name and pf.id}
+        resolved_ids = []
+        for pf_name in item.parameter_fields:
+            pf_id = pf_name_map.get(pf_name.lower())
+            if pf_id:
+                resolved_ids.append(pf_id)
+            else:
+                errors.append(
+                    SaveScenarioFieldError(
+                        field="parameter_fields",
+                        message=f'Parameter field "{pf_name}" not found',
+                    )
+                )
+        if not any(e.field == "parameter_fields" for e in errors):
+            item.parameter_field_ids = resolved_ids
+
+    if item.objectives is not None and item.objective_ids is None:
+        from app.api.v4.resources.objectives.search import search_objectives_internal
+
+        all_objectives = await search_objectives_internal(
+            conn, search=None, limit_count=1000, scenario=True
+        )
+        obj_name_map = {
+            o.objective.lower(): o.objective_id
+            for o in all_objectives
+            if o.objective and o.objective_id
+        }
+        resolved_ids = []
+        for obj_name in item.objectives:
+            oid = obj_name_map.get(obj_name.lower())
+            if oid:
+                resolved_ids.append(oid)
+            else:
+                errors.append(
+                    SaveScenarioFieldError(
+                        field="objectives",
+                        message=f'Objective "{obj_name}" not found',
+                    )
+                )
+        if not any(e.field == "objectives" for e in errors):
+            item.objective_ids = resolved_ids
+
+    if item.images is not None and item.image_ids is None:
+        from app.api.v4.resources.images.search import search_images_internal
+
+        all_images = await search_images_internal(
+            conn, search=None, limit_count=1000, scenario=True
+        )
+        img_name_map = {
+            i.name.lower(): i.image_id for i in all_images if i.name and i.image_id
+        }
+        resolved_ids = []
+        for img_name in item.images:
+            iid = img_name_map.get(img_name.lower())
+            if iid:
+                resolved_ids.append(iid)
+            else:
+                errors.append(
+                    SaveScenarioFieldError(
+                        field="images",
+                        message=f'Image "{img_name}" not found',
+                    )
+                )
+        if not any(e.field == "images" for e in errors):
+            item.image_ids = resolved_ids
+
+    if item.videos is not None and item.video_ids is None:
+        from app.api.v4.resources.videos.search import search_videos_internal
+
+        all_videos = await search_videos_internal(
+            conn, search=None, limit_count=1000, scenario=True
+        )
+        vid_name_map = {
+            v.name.lower(): v.video_id for v in all_videos if v.name and v.video_id
+        }
+        resolved_ids = []
+        for vid_name in item.videos:
+            vid = vid_name_map.get(vid_name.lower())
+            if vid:
+                resolved_ids.append(vid)
+            else:
+                errors.append(
+                    SaveScenarioFieldError(
+                        field="videos",
+                        message=f'Video "{vid_name}" not found',
+                    )
+                )
+        if not any(e.field == "videos" for e in errors):
+            item.video_ids = resolved_ids
+
+    if item.questions is not None and item.question_ids is None:
+        from app.api.v4.resources.questions.search import search_questions_internal
+
+        all_questions = await search_questions_internal(
+            conn, search=None, limit_count=1000, scenario=True
+        )
+        q_name_map = {
+            q.question_text.lower(): q.question_id
+            for q in all_questions
+            if q.question_text and q.question_id
+        }
+        resolved_ids = []
+        for q_name in item.questions:
+            qid = q_name_map.get(q_name.lower())
+            if qid:
+                resolved_ids.append(qid)
+            else:
+                errors.append(
+                    SaveScenarioFieldError(
+                        field="questions",
+                        message=f'Question "{q_name}" not found',
+                    )
+                )
+        if not any(e.field == "questions" for e in errors):
+            item.question_ids = resolved_ids
+
+    if item.options is not None and item.option_ids is None:
+        from app.api.v4.resources.options.search import search_options_internal
+
+        all_options = await search_options_internal(
+            conn, search=None, limit_count=1000, scenario=True
+        )
+        opt_name_map = {
+            o.option_text.lower(): o.option_id
+            for o in all_options
+            if o.option_text and o.option_id
+        }
+        resolved_ids = []
+        for opt_name in item.options:
+            oid = opt_name_map.get(opt_name.lower())
+            if oid:
+                resolved_ids.append(oid)
+            else:
+                errors.append(
+                    SaveScenarioFieldError(
+                        field="options",
+                        message=f'Option "{opt_name}" not found',
+                    )
+                )
+        if not any(e.field == "options" for e in errors):
+            item.option_ids = resolved_ids
+
     # --- Validate required fields have IDs after resolution ---
 
     if item.name_id is None and item.input_scenario_id is None:

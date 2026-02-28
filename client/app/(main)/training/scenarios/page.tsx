@@ -22,6 +22,8 @@ type SaveScenarioIn = InputOf<"/api/v4/artifacts/scenarios/save", "post">;
 type SaveScenarioOut = OutputOf<"/api/v4/artifacts/scenarios/save", "post">;
 type SearchFlagsIn = InputOf<"/api/v4/resources/flags/search", "post">;
 type SearchFlagsOut = NonNullable<OutputOf<"/api/v4/resources/flags/search", "post">["items"]>;
+type ParseCsvIn = InputOf<"/api/v4/uploads/csv", "post">;
+type ParseCsvOut = OutputOf<"/api/v4/uploads/csv", "post">;
 
 /** ---- Body type for scenarios list request ---- */
 type ScenariosListBody = {
@@ -86,6 +88,11 @@ async function searchFlags(): Promise<SearchFlagsOut> {
     body: { search: null, limit_count: 100, offset_count: 0, scenario: true },
   } as SearchFlagsIn);
   return res.items ?? [];
+}
+
+async function parseCsv(input: ParseCsvIn): Promise<ParseCsvOut> {
+  "use server";
+  return api.post("/uploads/csv", input);
 }
 
 /** ---- Docs types for page metadata ---- */
@@ -153,6 +160,18 @@ export default async function ScenariosPage({ searchParams }: ScenariosPageProps
         deleteScenarioAction={deleteScenario}
         saveScenarioAction={saveScenario}
         searchFlagsAction={searchFlags}
+        parseCsvAction={parseCsv}
+        importFields={listData.import_fields?.map((f) => ({
+          ...f,
+          key: f.key ?? "",
+          label: f.label ?? "",
+          required: f.required ?? false,
+          multi: f.multi ?? undefined,
+          type: f.type ?? undefined,
+          example: f.example ?? undefined,
+          description: f.description ?? undefined,
+        }))}
+
         pageIndex={pageIndex}
         pageSize={pageSize}
         totalCount={listData.total_count ?? 0}
@@ -170,6 +189,8 @@ export type {
   DeleteScenarioOut,
   DuplicateScenarioIn,
   DuplicateScenarioOut,
+  ParseCsvIn,
+  ParseCsvOut,
   SaveScenarioIn,
   SaveScenarioOut,
   SearchFlagsOut,

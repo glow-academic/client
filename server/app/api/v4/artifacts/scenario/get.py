@@ -197,7 +197,6 @@ class ScenarioInternalData:
 
     # Per-resource tool IDs (from selected agents)
     tool_ids_map: dict[str, UUID | None]
-    link_tool_ids_map: dict[str, UUID | None]
 
     # Config resources (for websocket generation context)
     config_agent_resources: list[Any] | None
@@ -352,7 +351,7 @@ async def get_scenario_internal(
             settings_conn, profile_id, bypass_cache
         )
 
-    agent_ids, tool_ids_map_create, link_tool_ids_map = resolve_agents_for_artifact(
+    agent_ids, tool_ids_map_create, _link_tool_ids_map = resolve_agents_for_artifact(
         settings_data.agent_tool_entries, SCENARIO_RESOURCES
     )
     tool_ids_map = tool_ids_map_create
@@ -1174,7 +1173,6 @@ async def get_scenario_internal(
         resource_group_ids=resource_group_ids,
         # Per-resource tool IDs
         tool_ids_map=tool_ids_map,
-        link_tool_ids_map=link_tool_ids_map,
         # Config resources
         config_agent_resources=config_agents_result or None,
         config_model_resources=config_models_result or None,
@@ -1470,7 +1468,6 @@ async def get_scenario_client(
             "suggestions": data.suggestions_map.get(resource_key, []),
             "show_ai_generate": data.show_ai_generate_map.get(resource_key, False),
             "tool_id": data.tool_ids_map.get(resource_key),
-            "link_tool_id": data.link_tool_ids_map.get(resource_key),
         }
 
     return GetScenarioApiResponse(

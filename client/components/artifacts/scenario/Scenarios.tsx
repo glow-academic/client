@@ -13,6 +13,7 @@ import {
   Copy,
   Edit,
   Eye,
+  FileSpreadsheet,
   Pencil,
   Sparkles,
   Trash2,
@@ -30,11 +31,14 @@ import type {
   DeleteScenarioOut,
   DuplicateScenarioIn,
   DuplicateScenarioOut,
+  ParseCsvIn,
+  ParseCsvOut,
   SaveScenarioIn,
   SaveScenarioOut,
   ScenariosListOut,
   SearchFlagsOut,
 } from "@/app/(main)/training/scenarios/page";
+import BulkImport, { type ImportFieldDef } from "@/components/common/BulkImport";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
@@ -92,6 +96,8 @@ export interface ScenariosProps {
   ) => Promise<DeleteScenarioOut>;
   saveScenarioAction?: (input: SaveScenarioIn) => Promise<SaveScenarioOut>;
   searchFlagsAction?: () => Promise<SearchFlagsOut>;
+  parseCsvAction?: (input: ParseCsvIn) => Promise<ParseCsvOut>;
+  importFields?: ImportFieldDef[];
   // Server-side pagination/filtering state
   pageIndex: number;
   pageSize: number;
@@ -107,6 +113,8 @@ export function Scenarios({
   deleteScenarioAction,
   saveScenarioAction,
   searchFlagsAction,
+  parseCsvAction,
+  importFields,
   pageIndex,
   pageSize,
   totalCount,
@@ -137,6 +145,7 @@ export function Scenarios({
 
   // Bulk edit state
   const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
+  const [showBulkImportDialog, setShowBulkImportDialog] = useState(false);
   const [isBulkEditing, setIsBulkEditing] = useState(false);
   const [bulkEditActiveStatus, setBulkEditActiveStatus] = useState<boolean | null>(null);
   const [bulkEditDepartmentIds, setBulkEditDepartmentIds] = useState<string[] | null>(null);
@@ -1297,7 +1306,20 @@ export function Scenarios({
                 )}
               </div>
             </div>
-            <DataTableViewOptions table={table} hiddenColumns={["name", "problem_statement", "persona_id", "simulation_ids", "departments", "persona_display", "updated_at"]} />
+            <div className="flex items-center gap-2">
+              {parseCsvAction && importFields && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => setShowBulkImportDialog(true)}
+                >
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  Import CSV
+                </Button>
+              )}
+              <DataTableViewOptions table={table} hiddenColumns={["name", "problem_statement", "persona_id", "simulation_ids", "departments", "persona_display", "updated_at"]} />
+            </div>
           </div>
           )}
 
@@ -1520,6 +1542,39 @@ export function Scenarios({
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+      {/* Bulk Import Dialog */}
+      {parseCsvAction && importFields && (
+        <BulkImport
+          open={showBulkImportDialog}
+          onClose={() => {
+            setShowBulkImportDialog(false);
+            router.refresh();
+          }}
+          fields={importFields}
+          artifactName="Scenarios"
+          parseCsvAction={parseCsvAction}
+          onSave={async (items) => {
+            if (!saveScenarioAction) throw new Error("Save action not available");
+            const scenarios = items.map((item) => ({
+              name: item.name as string | undefined,
+              description: item.description as string | undefined,
+              problem_statement: item.problem_statement as string | undefined,
+              active_flag: item.active_flag as boolean | undefined,
+              departments: item.departments as string[] | undefined,
+              personas: item.personas as string[] | undefined,
+              documents: item.documents as string[] | undefined,
+              parameter_fields: item.parameter_fields as string[] | undefined,
+              objectives: item.objectives as string[] | undefined,
+              images: item.images as string[] | undefined,
+              videos: item.videos as string[] | undefined,
+              questions: item.questions as string[] | undefined,
+              options: item.options as string[] | undefined,
+            }));
+            return saveScenarioAction({ body: { scenarios } });
+          }}
+        />
+      )}
 
       </div>
     </TooltipProvider>

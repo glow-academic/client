@@ -10,6 +10,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.api.v4.artifacts.persona.types import ImportField
 from app.api.v4.artifacts.types import InternalResponseBase
 from app.api.v4.entries.runs.search import GetRunListViewResponse
 from app.api.v4.types import BaseResourceSection, ListFilterSection
@@ -513,6 +514,7 @@ class ListScenarioApiResponse(BaseModel):
     simulation_filter: "ListFilterSection | None" = None
     department_filter: "ListFilterSection | None" = None
     total_count: int | None = None
+    import_fields: list[ImportField] | None = None
 
 
 # =============================================================================
@@ -549,6 +551,17 @@ class SaveScenarioItem(BaseModel):
     video_ids: list[UUID] | None = None
     question_ids: list[UUID] | None = None
     option_ids: list[UUID] | None = None
+    # Value-based fields for CSV import (resolved to IDs server-side)
+    active_flag: bool | None = None
+    departments: list[str] | None = None
+    personas: list[str] | None = None
+    documents: list[str] | None = None
+    parameter_fields: list[str] | None = None
+    objectives: list[str] | None = None
+    images: list[str] | None = None
+    videos: list[str] | None = None
+    questions: list[str] | None = None
+    options: list[str] | None = None
 
 
 class SaveScenarioApiRequest(BaseModel):

@@ -86,6 +86,43 @@ class PricingResponse(BaseModel):
 
 
 # =============================================================================
+# Export Types
+# =============================================================================
+
+
+class ExportPricingApiRequest(BaseModel):
+    """Request model for pricing export (group-level analytical dump)."""
+
+    start_date: datetime | None = Field(default=None)
+    end_date: datetime | None = Field(default=None)
+    date_from: datetime | None = Field(default=None)
+    date_to: datetime | None = Field(default=None)
+
+    session_id: UUID | None = Field(default=None)
+    model_id: UUID | None = Field(default=None)
+    agent_id: UUID | None = Field(default=None)
+
+    sort_by: str = Field(default="date")
+    sort_order: str = Field(default="desc")
+
+    @property
+    def effective_date_from(self) -> datetime | None:
+        return self.start_date or self.date_from
+
+    @property
+    def effective_date_to(self) -> datetime | None:
+        return self.end_date or self.date_to
+
+
+class ExportPricingApiResponse(BaseModel):
+    """Response model for pricing export."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int
+
+
+# =============================================================================
 # WebSocket Types
 # =============================================================================
 
