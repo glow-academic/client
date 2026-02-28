@@ -48,16 +48,75 @@ from app.utils.sql_helper import execute_sql_typed
 SQL_PATH = "app/sql/v4/queries/personas/get_personas_list_complete.sql"
 
 PERSONA_IMPORT_FIELDS: list[ImportField] = [
-    ImportField(key="name", label="Name", required=True),
-    ImportField(key="description", label="Description"),
-    ImportField(key="color", label="Color", required=True),
-    ImportField(key="icon", label="Icon", required=True),
-    ImportField(key="instructions", label="Instructions", required=True),
-    ImportField(key="active_flag", label="Active", type="boolean"),
-    ImportField(key="departments", label="Departments", multi=True),
-    ImportField(key="parameter_fields", label="Parameter Fields", multi=True),
-    ImportField(key="examples", label="Examples", multi=True),
-    ImportField(key="voices", label="Voices", multi=True),
+    ImportField(
+        key="name",
+        label="Name",
+        required=True,
+        example="Sarah the Nurse",
+        description="The persona's display name",
+    ),
+    ImportField(
+        key="description",
+        label="Description",
+        example="A nurse with 5 years of experience",
+        description="Optional description",
+    ),
+    ImportField(
+        key="color",
+        label="Color",
+        required=True,
+        example="#FF5733",
+        description="Hex color code for the persona card",
+    ),
+    ImportField(
+        key="icon",
+        label="Icon",
+        required=True,
+        example="brain",
+        description="Icon name from the icon library",
+    ),
+    ImportField(
+        key="instructions",
+        label="Instructions",
+        required=True,
+        example="You are a nurse helping patients...",
+        description="System instructions for AI behavior",
+    ),
+    ImportField(
+        key="active_flag",
+        label="Active",
+        type="boolean",
+        example="true",
+        description="Whether the persona is active (true/false)",
+    ),
+    ImportField(
+        key="departments",
+        label="Departments",
+        multi=True,
+        example="Nursing, Medicine",
+        description="Comma-separated department names",
+    ),
+    ImportField(
+        key="parameter_fields",
+        label="Parameter Fields",
+        multi=True,
+        example="Patient Age, Condition",
+        description="Comma-separated parameter field names",
+    ),
+    ImportField(
+        key="examples",
+        label="Examples",
+        multi=True,
+        example="Example conversation 1",
+        description="Comma-separated example texts",
+    ),
+    ImportField(
+        key="voices",
+        label="Voices",
+        multi=True,
+        example="Alloy",
+        description="Comma-separated voice names",
+    ),
 ]
 
 

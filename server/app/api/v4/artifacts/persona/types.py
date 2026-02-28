@@ -284,6 +284,8 @@ class ImportField(BaseModel):
     required: bool = False
     multi: bool = False
     type: str = "string"
+    example: str | None = None
+    description: str | None = None
 
 
 # ========== List Endpoint Types ==========

@@ -1595,6 +1595,7 @@ export default function Personas({
             router.refresh();
           }}
           fields={importFields}
+          artifactName="Personas"
           parseCsvAction={parseCsvAction}
           onSave={async (items) => {
             if (!savePersonaAction) throw new Error("Save action not available");

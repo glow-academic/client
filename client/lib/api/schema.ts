@@ -32928,6 +32928,10 @@ export interface components {
              * @default string
              */
             type: string;
+            /** Example */
+            example?: string | null;
+            /** Description */
+            description?: string | null;
         };
         /** ImprovementsGenerationEvent */
         ImprovementsGenerationEvent: {
