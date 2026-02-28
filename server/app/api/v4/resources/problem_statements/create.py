@@ -7,8 +7,8 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.tools.call_args import record_call_args, resolve_tool
 from app.infra.v4.error.handle_route_error import handle_route_error
+from app.infra.v4.tools.call_args import record_call_args, resolve_tool
 from app.main import get_db
 from app.sql.types import (
     ProblemStatementsApiRequest,
@@ -47,8 +47,11 @@ async def create_problem_statements_internal(
             tool_id = tool_info.tool_id
 
     params = ProblemStatementsSqlParams(
-        problem_statement=problem_statement, name=name, mcp=mcp,
-        group_id=group_id, tool_id=tool_id
+        problem_statement=problem_statement,
+        name=name,
+        mcp=mcp,
+        group_id=group_id,
+        tool_id=tool_id,
     )
     result = cast(
         ProblemStatementsSqlRow,
@@ -64,8 +67,11 @@ async def create_problem_statements_internal(
         )
     if tool_info and result.call_id is not None:
         await record_call_args(
-            conn, result.call_id, tool_info,
-            {"problem_statement": problem_statement, "name": name}, mcp
+            conn,
+            result.call_id,
+            tool_info,
+            {"problem_statement": problem_statement, "name": name},
+            mcp,
         )
 
     await invalidate_tags(["resources", "problem_statements"])

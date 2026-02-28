@@ -388,6 +388,7 @@ class SaveCohortApiRequest(BaseModel):
     """Request model for bulk save cohort endpoint."""
 
     cohorts: list[SaveCohortItem]
+    group_id: UUID | None = None  # Tool tracking context from GET response
 
 
 class SaveCohortResult(BaseModel):

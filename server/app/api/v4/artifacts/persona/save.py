@@ -34,6 +34,9 @@ from app.api.v4.resources.flags.search import search_flags_internal
 from app.api.v4.resources.icons.search import search_icons_internal
 from app.api.v4.resources.instructions.create import create_instructions_internal
 from app.api.v4.resources.names.create import create_names_internal
+from app.api.v4.resources.parameter_fields.search import (
+    search_parameter_fields_internal,
+)
 from app.api.v4.resources.personas.create import create_personas_internal
 from app.api.v4.resources.voices.search import search_voices_internal
 from app.infra.v4.activity.audit import audit_activity, audit_set
@@ -297,15 +300,25 @@ async def _resolve_persona_values(
         if not any(e.field == "voices" for e in errors):
             item.voice_ids = resolved_ids
 
-    # Note: parameter_fields resolution by name is not supported via search_parameter_fields_internal
-    # (it takes parameter_ids, not search text). Use parameter_field_ids directly.
     if item.parameter_fields is not None and item.parameter_field_ids is None:
-        errors.append(
-            SavePersonaFieldError(
-                field="parameter_fields",
-                message="Parameter fields must be provided as IDs (parameter_field_ids), not names",
-            )
+        all_pf = await search_parameter_fields_internal(
+            conn, parameter_ids=[], persona=True
         )
+        pf_name_map = {pf.name.lower(): pf.id for pf in all_pf if pf.name and pf.id}
+        resolved_ids = []
+        for pf_name in item.parameter_fields:
+            pf_id = pf_name_map.get(pf_name.lower())
+            if pf_id:
+                resolved_ids.append(pf_id)
+            else:
+                errors.append(
+                    SavePersonaFieldError(
+                        field="parameter_fields",
+                        message=f'Parameter field "{pf_name}" not found',
+                    )
+                )
+        if not any(e.field == "parameter_fields" for e in errors):
+            item.parameter_field_ids = resolved_ids
 
     # --- Validate required fields have IDs after resolution (create only) ---
 

@@ -7,8 +7,8 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.tools.call_args import record_call_args, resolve_tool
 from app.infra.v4.error.handle_route_error import handle_route_error
+from app.infra.v4.tools.call_args import record_call_args, resolve_tool
 from app.main import get_db
 from app.sql.types import (
     GroupPositionsApiRequest,
@@ -48,8 +48,12 @@ async def create_group_positions_internal(
             tool_id = tool_info.tool_id
 
     params = GroupPositionsSqlParams(
-        groups_id=groups_id, eval_id=eval_id, value=value, mcp=mcp,
-        group_id=group_id, tool_id=tool_id
+        groups_id=groups_id,
+        eval_id=eval_id,
+        value=value,
+        mcp=mcp,
+        group_id=group_id,
+        tool_id=tool_id,
     )
     result = cast(
         GroupPositionsSqlRow,
@@ -65,8 +69,11 @@ async def create_group_positions_internal(
         )
     if tool_info and result.call_id is not None:
         await record_call_args(
-            conn, result.call_id, tool_info,
-            {"groups_id": groups_id, "eval_id": eval_id, "value": value}, mcp
+            conn,
+            result.call_id,
+            tool_info,
+            {"groups_id": groups_id, "eval_id": eval_id, "value": value},
+            mcp,
         )
 
     await invalidate_tags(["resources", "group_positions"])

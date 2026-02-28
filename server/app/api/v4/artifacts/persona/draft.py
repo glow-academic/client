@@ -1,12 +1,15 @@
 """Persona draft endpoint - handles autosave for all persona resources."""
 
-from uuid import UUID
 from typing import Annotated, Any, cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.api.v4.artifacts.persona.permissions import PERSONA_RESOURCES, compute_can_draft
+from app.api.v4.artifacts.persona.permissions import (
+    PERSONA_RESOURCES,
+    compute_can_draft,
+)
 from app.api.v4.artifacts.persona.types import (
     PatchPersonaDraftApiRequest,
     PatchPersonaDraftApiResponse,
@@ -101,7 +104,9 @@ async def _link_draft_resources(
         link_fn = SINGLE_LINK_MAP.get(resource_key)
         if link_fn:
             try:
-                await link_fn(conn, resource_id=resource_id, group_id=group_id, tool_id=tool_id)
+                await link_fn(
+                    conn, resource_id=resource_id, group_id=group_id, tool_id=tool_id
+                )
             except Exception as e:
                 logger.warning(f"link_{resource_key}_internal failed (non-fatal): {e}")
 
@@ -117,9 +122,13 @@ async def _link_draft_resources(
         if link_fn:
             for rid in resource_ids:
                 try:
-                    await link_fn(conn, resource_id=rid, group_id=group_id, tool_id=tool_id)
+                    await link_fn(
+                        conn, resource_id=rid, group_id=group_id, tool_id=tool_id
+                    )
                 except Exception as e:
-                    logger.warning(f"link_{resource_key}_internal failed for {rid} (non-fatal): {e}")
+                    logger.warning(
+                        f"link_{resource_key}_internal failed for {rid} (non-fatal): {e}"
+                    )
 
 
 @router.patch(

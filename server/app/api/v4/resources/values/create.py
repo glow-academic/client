@@ -7,8 +7,8 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.tools.call_args import record_call_args, resolve_tool
 from app.infra.v4.error.handle_route_error import handle_route_error
+from app.infra.v4.tools.call_args import record_call_args, resolve_tool
 from app.main import get_db
 from app.sql.types import (
     ValuesApiRequest,
@@ -55,9 +55,7 @@ async def create_values_internal(
     if tool_info is None and tool_id is not None:
         tool_info = await resolve_tool(conn, "create", "values", scope="resources")
     if tool_info and result.call_id is not None:
-        await record_call_args(
-            conn, result.call_id, tool_info, {"value": value}, mcp
-        )
+        await record_call_args(conn, result.call_id, tool_info, {"value": value}, mcp)
 
     await invalidate_tags(["resources", "values"])
     return result.values_id

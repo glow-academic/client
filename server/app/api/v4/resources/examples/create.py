@@ -8,8 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
 from app.infra.v4.tools.call_args import record_call_args, resolve_tool
+from app.main import get_db
 from app.sql.types import (
     ExamplesApiRequest,
     ExamplesApiResponse,

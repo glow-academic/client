@@ -8,8 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
 from app.infra.v4.tools.call_args import record_call_args, resolve_tool
+from app.main import get_db
 from app.sql.types import (
     DescriptionsApiRequest,
     DescriptionsApiResponse,
@@ -39,7 +39,9 @@ async def create_descriptions_internal(
     # Resolve tool if not provided (canonical — matches entry pattern)
     tool_info = None
     if tool_id is None:
-        tool_info = await resolve_tool(conn, "create", "descriptions", scope="resources")
+        tool_info = await resolve_tool(
+            conn, "create", "descriptions", scope="resources"
+        )
         if tool_info:
             tool_id = tool_info.tool_id
 
@@ -55,7 +57,9 @@ async def create_descriptions_internal(
 
     # Record arg values (canonical — matches entry pattern)
     if tool_info is None and tool_id is not None:
-        tool_info = await resolve_tool(conn, "create", "descriptions", scope="resources")
+        tool_info = await resolve_tool(
+            conn, "create", "descriptions", scope="resources"
+        )
     if tool_info and result.call_id is not None:
         await record_call_args(
             conn, result.call_id, tool_info, {"description": description}, mcp
