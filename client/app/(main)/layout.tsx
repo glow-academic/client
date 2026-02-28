@@ -15,13 +15,13 @@ import {
   getGroupMessages,
   getLayoutContextData,
   refreshPage,
-  searchGroups,
   searchSimulatableProfiles,
   switchEffectiveProfile,
 } from "./layout-server";
 import { LogoutGuard } from "./logout-guard";
 
 const AUTOSAVE_COOKIE = "glow_autosave";
+const AI_PANEL_COOKIE = "glow_ai_panel";
 
 // Force dynamic rendering to ensure layout re-renders on route changes
 // This fixes the issue where children don't update on client-side navigation
@@ -41,6 +41,12 @@ export default async function MainLayout({
   const autosaveCookie = cookieStore.get(AUTOSAVE_COOKIE);
   const initialAutosave = autosaveCookie
     ? autosaveCookie.value === "true"
+    : undefined;
+
+  // Read AI panel open state from cookie for SSR
+  const aiPanelCookie = cookieStore.get(AI_PANEL_COOKIE);
+  const initialPanelOpen = aiPanelCookie
+    ? aiPanelCookie.value === "true"
     : undefined;
 
   // No session → full-width access denied (no sidebar)
@@ -93,12 +99,12 @@ export default async function MainLayout({
         insights={insights}
         analyticsFilters={analyticsFilters}
         initialAutosave={initialAutosave}
+        initialPanelOpen={initialPanelOpen}
         switchEffectiveProfileAction={switchEffectiveProfile}
         createFeedbackAction={createFeedback}
         refreshPageAction={refreshPage}
         searchSimulatableProfilesAction={searchSimulatableProfiles}
         getGroupMessagesAction={getGroupMessages}
-        searchGroupsAction={searchGroups}
       >
         {pageAccessDenied ? (
           <UnifiedAccessDenied

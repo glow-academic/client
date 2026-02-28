@@ -71,7 +71,7 @@ export function TypeSelector({
         : onToggleEntryType;
 
   return (
-    <div className="border-t p-3 space-y-3">
+    <div className="p-3 space-y-3">
       {/* Tab bar */}
       <div className="flex gap-1 rounded-md bg-muted p-1">
         {TABS.map((tab) => (

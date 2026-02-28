@@ -138,16 +138,6 @@ export async function getGroupMessages(
   return api.post("/auth/group", input);
 }
 
-/** ---- Groups search server action ---- */
-type SearchGroupsIn = InputOf<"/api/v4/entries/groups/search", "post">;
-type SearchGroupsOut = OutputOf<"/api/v4/entries/groups/search", "post">;
-
-export async function searchGroups(
-  input: SearchGroupsIn
-): Promise<SearchGroupsOut> {
-  return api.post("/entries/groups/search", input);
-}
-
 /** ---- Export type for client (type-only imports) ---- */
 export type DraftsResponse = DraftsOut;
 export type InsightsResponse = InsightsOut;

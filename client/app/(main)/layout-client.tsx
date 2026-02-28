@@ -9,7 +9,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Plus } from "lucide-react";
+import { PanelRight, Plus } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useEffect, useMemo } from "react";
 
@@ -32,11 +32,8 @@ import {
 import { ProfileProviderClient } from "@/contexts/profile-context";
 import { SettingsProviderClient } from "@/contexts/settings-context";
 import { SocketProviderClient } from "@/contexts/socket-context";
-import {
-  RightPanelProvider,
-  RightPanelTrigger,
-} from "@/components/ui/right-panel";
 import { GenerationPanel } from "@/components/common/ai/GenerationPanel";
+import { useGenerationPanel } from "@/hooks/use-generation-panel";
 import type {
   AnalyticsFiltersResponse,
   AuthAttemptOut,
@@ -49,29 +46,29 @@ import type {
   GroupMessagesOut,
   RefreshPageFn,
   SafeSessionSnapshot,
-  SearchGroupsIn,
-  SearchGroupsOut,
   SearchSimulatableProfilesIn,
   SearchSimulatableProfilesOut,
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
 } from "./layout-server";
 
+
 // Inner component that uses the role context
 function MainLayoutContent({
   children,
   pageData,
   attemptControls,
+  initialPanelOpen,
   switchEffectiveProfileAction,
   createFeedbackAction,
   refreshPageAction,
   searchSimulatableProfilesAction,
   getGroupMessagesAction,
-  searchGroupsAction,
 }: {
   children: React.ReactNode;
   pageData: AuthPageResponse | null;
   attemptControls: AuthAttemptOut | null;
+  initialPanelOpen?: boolean;
   switchEffectiveProfileAction: (
     input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
@@ -81,7 +78,6 @@ function MainLayoutContent({
     input: SearchSimulatableProfilesIn
   ) => Promise<SearchSimulatableProfilesOut>;
   getGroupMessagesAction: (input: GroupMessagesIn) => Promise<GroupMessagesOut>;
-  searchGroupsAction: (input: SearchGroupsIn) => Promise<SearchGroupsOut>;
 }) {
   const pathname = usePathname() || "/";
 
@@ -159,8 +155,15 @@ function MainLayoutContent({
     );
   }, [pageMetadata, router]);
 
+  // AI generation panel state — group_id injected by page context (null for now)
+  const panel = useGenerationPanel({
+    groupId: null,
+    getGroupMessagesAction,
+    initialPanelOpen,
+  });
+
   return (
-    <RightPanelProvider defaultOpen={false}>
+    <div className="flex min-h-svh w-full">
       <SidebarProvider>
         <UnifiedSidebar
           sidebarRoutes={pageData?.sidebar_routes ?? null}
@@ -204,7 +207,15 @@ function MainLayoutContent({
               )
             )}
             <div className="pr-4">
-              <RightPanelTrigger />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                onClick={panel.togglePanel}
+              >
+                <PanelRight className="h-4 w-4" />
+                <span className="sr-only">Toggle right panel</span>
+              </Button>
             </div>
           </header>
 
@@ -213,12 +224,8 @@ function MainLayoutContent({
           </div>
         </SidebarInset>
       </SidebarProvider>
-      <GenerationPanel
-        artifactType={artifactType}
-        getGroupMessagesAction={getGroupMessagesAction}
-        searchGroupsAction={searchGroupsAction}
-      />
-    </RightPanelProvider>
+      <GenerationPanel panel={panel} artifactType={artifactType} />
+    </div>
   );
 }
 
@@ -233,12 +240,12 @@ export function MainLayoutClient({
   insights,
   analyticsFilters,
   initialAutosave,
+  initialPanelOpen,
   switchEffectiveProfileAction,
   createFeedbackAction,
   refreshPageAction,
   searchSimulatableProfilesAction,
   getGroupMessagesAction,
-  searchGroupsAction,
 }: {
   children: React.ReactNode;
   profileData: AuthProfileResponse | null;
@@ -251,6 +258,8 @@ export function MainLayoutClient({
   analyticsFilters: AnalyticsFiltersResponse | null;
   /** Initial autosave preference from SSR cookie */
   initialAutosave?: boolean;
+  /** Initial AI panel open state from SSR cookie */
+  initialPanelOpen?: boolean;
   switchEffectiveProfileAction: (
     input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
@@ -260,7 +269,6 @@ export function MainLayoutClient({
     input: SearchSimulatableProfilesIn
   ) => Promise<SearchSimulatableProfilesOut>;
   getGroupMessagesAction: (input: GroupMessagesIn) => Promise<GroupMessagesOut>;
-  searchGroupsAction: (input: SearchGroupsIn) => Promise<SearchGroupsOut>;
 }) {
   const pathname = usePathname();
 
@@ -309,6 +317,7 @@ export function MainLayoutClient({
                 <MainLayoutContent
                   pageData={pageData}
                   attemptControls={attemptControls}
+                  initialPanelOpen={initialPanelOpen}
                   switchEffectiveProfileAction={switchEffectiveProfileAction}
                   createFeedbackAction={createFeedbackAction}
                   refreshPageAction={refreshPageAction}
@@ -316,7 +325,6 @@ export function MainLayoutClient({
                     searchSimulatableProfilesAction
                   }
                   getGroupMessagesAction={getGroupMessagesAction}
-                  searchGroupsAction={searchGroupsAction}
                 >
                   {children}
                 </MainLayoutContent>

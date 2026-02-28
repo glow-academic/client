@@ -1,25 +1,20 @@
 /**
  * useGenerationPanel
  *
- * Manages all AI generation panel state:
- * - Panel mode (panel vs fullscreen)
- * - Group selection (synced to URL via nuqs)
+ * Manages AI generation panel state:
  * - Messages fetching and pagination (via server action)
  * - Type selection (artifacts, resources, entries)
  * - Instructions text
- * - Generate action delegation
+ *
+ * The group_id is injected by page context, not selected by the user.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { parseAsString, useQueryStates } from "nuqs";
 import type {
   GroupMessagesIn,
   GroupMessagesOut,
-  SearchGroupsIn,
-  SearchGroupsOut,
 } from "@/app/(main)/layout-server";
 
-export type PanelMode = "panel" | "fullscreen";
 export type PanelTab = "artifacts" | "resources" | "entries";
 
 export interface GroupMessage {
@@ -30,19 +25,21 @@ export interface GroupMessage {
   contents: string[] | null;
 }
 
+const PANEL_COOKIE = "glow_ai_panel";
+
 export interface UseGenerationPanelConfig {
+  /** Group ID injected by the page context */
+  groupId: string | null;
   getGroupMessagesAction: (input: GroupMessagesIn) => Promise<GroupMessagesOut>;
-  searchGroupsAction: (input: SearchGroupsIn) => Promise<SearchGroupsOut>;
+  /** Initial panel open state from SSR cookie */
+  initialPanelOpen?: boolean;
 }
 
 export interface UseGenerationPanelReturn {
-  // Mode
-  mode: PanelMode;
-  setMode: (mode: PanelMode) => void;
-
-  // Group selection (URL-synced)
-  selectedGroupId: string | null;
-  setSelectedGroupId: (id: string | null) => void;
+  // Panel visibility
+  panelOpen: boolean;
+  setPanelOpen: (open: boolean) => void;
+  togglePanel: () => void;
 
   // Messages
   messages: GroupMessage[];
@@ -64,32 +61,27 @@ export interface UseGenerationPanelReturn {
   // Instructions
   instructions: string;
   setInstructions: (val: string) => void;
-
-  // Server actions (pass-through for components)
-  searchGroupsAction: (input: SearchGroupsIn) => Promise<SearchGroupsOut>;
 }
 
 const PAGE_SIZE = 50;
 
 export function useGenerationPanel({
+  groupId,
   getGroupMessagesAction,
-  searchGroupsAction,
+  initialPanelOpen,
 }: UseGenerationPanelConfig): UseGenerationPanelReturn {
-  // Mode
-  const [mode, setMode] = useState<PanelMode>("panel");
+  // Panel visibility — initialised from SSR cookie
+  const [panelOpen, setPanelOpenRaw] = useState(initialPanelOpen ?? false);
 
-  // Group ID synced to URL
-  const [urlParams, setUrlParams] = useQueryStates(
-    { groupId: parseAsString },
-    { history: "replace", shallow: true },
-  );
-  const selectedGroupId = urlParams.groupId;
+  // Persist open/close to cookie so it survives route changes
+  const setPanelOpen = useCallback((open: boolean) => {
+    setPanelOpenRaw(open);
+    document.cookie = `${PANEL_COOKIE}=${open}; path=/; max-age=31536000; SameSite=Lax`;
+  }, []);
 
-  const setSelectedGroupId = useCallback(
-    (id: string | null) => {
-      setUrlParams({ groupId: id });
-    },
-    [setUrlParams],
+  const togglePanel = useCallback(
+    () => setPanelOpen(!panelOpen),
+    [panelOpen, setPanelOpen],
   );
 
   // Messages state
@@ -101,7 +93,7 @@ export function useGenerationPanel({
 
   // Fetch messages when group changes
   useEffect(() => {
-    if (!selectedGroupId) {
+    if (!groupId) {
       setMessages([]);
       setTotalMessageCount(0);
       setGroupName(null);
@@ -115,7 +107,7 @@ export function useGenerationPanel({
 
     getGroupMessagesAction({
       body: {
-        group_id: selectedGroupId,
+        group_id: groupId,
         page_limit: PAGE_SIZE,
         page_offset: 0,
       },
@@ -140,17 +132,17 @@ export function useGenerationPanel({
     return () => {
       cancelled = true;
     };
-  }, [selectedGroupId, getGroupMessagesAction]);
+  }, [groupId, getGroupMessagesAction]);
 
   // Load more (pagination)
   const loadMoreMessages = useCallback(() => {
-    if (!selectedGroupId || isLoadingMessages) return;
+    if (!groupId || isLoadingMessages) return;
     if (messages.length >= totalMessageCount) return;
 
     setIsLoadingMessages(true);
     getGroupMessagesAction({
       body: {
-        group_id: selectedGroupId,
+        group_id: groupId,
         page_limit: PAGE_SIZE,
         page_offset: offsetRef.current,
       },
@@ -163,7 +155,7 @@ export function useGenerationPanel({
       .catch(() => {})
       .finally(() => setIsLoadingMessages(false));
   }, [
-    selectedGroupId,
+    groupId,
     isLoadingMessages,
     messages.length,
     totalMessageCount,
@@ -202,10 +194,9 @@ export function useGenerationPanel({
   const [instructions, setInstructions] = useState("");
 
   return {
-    mode,
-    setMode,
-    selectedGroupId,
-    setSelectedGroupId,
+    panelOpen,
+    setPanelOpen,
+    togglePanel,
     messages,
     totalMessageCount,
     isLoadingMessages,
@@ -221,6 +212,5 @@ export function useGenerationPanel({
     toggleEntryType,
     instructions,
     setInstructions,
-    searchGroupsAction,
   };
 }
