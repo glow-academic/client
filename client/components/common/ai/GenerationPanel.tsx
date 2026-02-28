@@ -14,18 +14,23 @@ import {
 import { MessageTimeline } from "@/components/common/ai/MessageTimeline";
 import { TypeSelector } from "@/components/common/ai/TypeSelector";
 import type { UseGenerationPanelReturn } from "@/hooks/use-generation-panel";
+import type { TypeItem } from "@/components/common/ai/types";
 
 interface GenerationPanelProps {
   panel: UseGenerationPanelReturn;
   artifactType: string | null;
+  validArtifactTypes: TypeItem[];
+  validResourceTypes: TypeItem[];
+  validEntryTypes: TypeItem[];
 }
 
-// Placeholder type lists — will be driven by registry per artifact type
-const DEFAULT_ARTIFACT_TYPES: string[] = [];
-const DEFAULT_RESOURCE_TYPES: string[] = [];
-const DEFAULT_ENTRY_TYPES: string[] = [];
-
-export function GenerationPanel({ panel, artifactType }: GenerationPanelProps) {
+export function GenerationPanel({
+  panel,
+  artifactType,
+  validArtifactTypes,
+  validResourceTypes,
+  validEntryTypes,
+}: GenerationPanelProps) {
   return (
     <SidebarProvider
       open={panel.panelOpen}
@@ -38,9 +43,9 @@ export function GenerationPanel({ panel, artifactType }: GenerationPanelProps) {
           <TypeSelector
             activeTab={panel.activeTab}
             onTabChange={panel.setActiveTab}
-            artifactTypes={DEFAULT_ARTIFACT_TYPES}
-            resourceTypes={DEFAULT_RESOURCE_TYPES}
-            entryTypes={DEFAULT_ENTRY_TYPES}
+            artifactTypes={validArtifactTypes}
+            resourceTypes={validResourceTypes}
+            entryTypes={validEntryTypes}
             selectedArtifactTypes={panel.selectedArtifactTypes}
             selectedResourceTypes={panel.selectedResourceTypes}
             selectedEntryTypes={panel.selectedEntryTypes}

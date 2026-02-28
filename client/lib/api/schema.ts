@@ -37462,6 +37462,12 @@ export interface components {
             create_url?: string | null;
             /** Create Label */
             create_label?: string | null;
+            /** Valid Artifact Types */
+            valid_artifact_types?: components["schemas"]["TypeItem"][];
+            /** Valid Resource Types */
+            valid_resource_types?: components["schemas"]["TypeItem"][];
+            /** Valid Entry Types */
+            valid_entry_types?: components["schemas"]["TypeItem"][];
         };
         /** ParameterDepartmentSection */
         ParameterDepartmentSection: {
@@ -52502,6 +52508,16 @@ export interface components {
             entries?: unknown[] | null;
             /** Artifacts */
             artifacts?: unknown[] | null;
+        };
+        /**
+         * TypeItem
+         * @description Generic typed operation reference for artifact/resource/entry types.
+         */
+        TypeItem: {
+            /** Name */
+            name: string;
+            /** Operation */
+            operation: string;
         };
         /** UploadsApiRequest */
         UploadsApiRequest: {

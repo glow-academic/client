@@ -100,6 +100,13 @@ class PageAccess(BaseModel):
     reason: str | None = None
 
 
+class TypeItem(BaseModel):
+    """Generic typed operation reference for artifact/resource/entry types."""
+
+    name: str
+    operation: str
+
+
 class PageMetadata(BaseModel):
     is_list_page: bool = False
     is_detail_page: bool = False
@@ -111,6 +118,9 @@ class PageMetadata(BaseModel):
     artifact_type: str | None = None
     create_url: str | None = None
     create_label: str | None = None
+    valid_artifact_types: list[TypeItem] = Field(default_factory=list)
+    valid_resource_types: list[TypeItem] = Field(default_factory=list)
+    valid_entry_types: list[TypeItem] = Field(default_factory=list)
 
 
 # Rebuild Pydantic models to resolve forward references
@@ -753,6 +763,35 @@ _CORE_ARTIFACT_SECTIONS = {
 _BUNDLE_SECTIONS = {"home", "practice", "benchmark"}
 
 
+def _resolve_valid_types(
+    artifact_type: str | None,
+) -> tuple[list[TypeItem], list[TypeItem], list[TypeItem]]:
+    """Look up the generation registry for the given artifact_type and return
+    (valid_artifact_types, valid_resource_types, valid_entry_types) with default
+    operations: artifacts→get, resources→create, entries→get."""
+    if not artifact_type:
+        return [], [], []
+
+    try:
+        from app.socket.v5.client.registry import REGISTRY
+    except ImportError:
+        return [], [], []
+
+    config = REGISTRY.get(artifact_type)
+    if not config:
+        return [], [], []
+
+    valid_artifact_types = [TypeItem(name=artifact_type, operation="get")]
+    valid_resource_types = [
+        TypeItem(name=rt, operation="create")
+        for rt in config.valid_resource_types
+    ]
+    valid_entry_types = [
+        TypeItem(name=et, operation="get") for et in config.entry_types
+    ]
+    return valid_artifact_types, valid_resource_types, valid_entry_types
+
+
 def compute_page_metadata(
     pathname: str,
     available_routes: list[str],
@@ -853,6 +892,11 @@ def compute_page_metadata(
     show_drafts = is_core_artifact_page or is_bundle
     show_save_toolbar = show_drafts
 
+    # Resolve valid generation types from the server registry
+    valid_artifact_types, valid_resource_types, valid_entry_types = (
+        _resolve_valid_types(artifact_type)
+    )
+
     return PageMetadata(
         is_list_page=is_list,
         is_detail_page=is_detail,
@@ -864,6 +908,9 @@ def compute_page_metadata(
         artifact_type=artifact_type,
         create_url=create_url,
         create_label=create_label,
+        valid_artifact_types=valid_artifact_types,
+        valid_resource_types=valid_resource_types,
+        valid_entry_types=valid_entry_types,
     )
 
 

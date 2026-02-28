@@ -144,6 +144,11 @@ function MainLayoutContent({
   const showDrafts = pageMetadata?.show_drafts ?? false;
   const artifactType = pageMetadata?.artifact_type ?? null;
 
+  // Server-driven valid types for AI generation panel
+  const validArtifactTypes = pageMetadata?.valid_artifact_types ?? [];
+  const validResourceTypes = pageMetadata?.valid_resource_types ?? [];
+  const validEntryTypes = pageMetadata?.valid_entry_types ?? [];
+
   // Server-driven action button from pageMetadata
   const actionButton = useMemo(() => {
     if (!pageMetadata?.create_url || !pageMetadata?.create_label) return null;
@@ -224,7 +229,13 @@ function MainLayoutContent({
           </div>
         </SidebarInset>
       </SidebarProvider>
-      <GenerationPanel panel={panel} artifactType={artifactType} />
+      <GenerationPanel
+        panel={panel}
+        artifactType={artifactType}
+        validArtifactTypes={validArtifactTypes}
+        validResourceTypes={validResourceTypes}
+        validEntryTypes={validEntryTypes}
+      />
     </div>
   );
 }

@@ -3,13 +3,14 @@
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PanelTab } from "@/hooks/use-generation-panel";
+import type { TypeItem } from "@/components/common/ai/types";
 
 interface TypeSelectorProps {
   activeTab: PanelTab;
   onTabChange: (tab: PanelTab) => void;
-  artifactTypes: string[];
-  resourceTypes: string[];
-  entryTypes: string[];
+  artifactTypes: TypeItem[];
+  resourceTypes: TypeItem[];
+  entryTypes: TypeItem[];
   selectedArtifactTypes: string[];
   selectedResourceTypes: string[];
   selectedEntryTypes: string[];
@@ -18,8 +19,8 @@ interface TypeSelectorProps {
   onToggleEntryType: (type: string) => void;
 }
 
-function formatLabel(type: string): string {
-  return type
+function formatLabel(name: string): string {
+  return name
     .replace(/_/g, " ")
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
@@ -94,13 +95,13 @@ export function TypeSelector({
       {/* Chip grid */}
       {currentTypes.length > 0 ? (
         <div className={cn("grid gap-1.5", getGridColumns(currentTypes.length))}>
-          {currentTypes.map((type) => {
-            const isSelected = selectedTypes.includes(type);
+          {currentTypes.map((item) => {
+            const isSelected = selectedTypes.includes(item.name);
             return (
               <button
-                key={type}
+                key={item.name}
                 type="button"
-                onClick={() => onToggle(type)}
+                onClick={() => onToggle(item.name)}
                 className={cn(
                   "relative flex items-center justify-center rounded-md border px-2 py-1.5 text-xs font-medium transition-all",
                   "hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -112,7 +113,7 @@ export function TypeSelector({
                 {isSelected && (
                   <Check className="absolute right-1 top-1 h-3 w-3 text-primary" />
                 )}
-                {formatLabel(type)}
+                {formatLabel(item.name)}
               </button>
             );
           })}
