@@ -44,6 +44,7 @@ export interface RecordProps {
     roles: string[];
     simulationFilters: string[];
   };
+  initialColumnVisibility?: Record<string, boolean>;
 }
 
 export default function Record({
@@ -65,6 +66,7 @@ export default function Record({
   historyPage = 0,
   historyPageSize = 10,
   defaultFilters,
+  initialColumnVisibility,
 }: RecordProps) {
   // --- History extraction ---
   const historyData: ReportHistoryOut = data.history || {
@@ -160,7 +162,6 @@ export default function Record({
           unarchivedCount={unarchivedCount}
           pageIndex={historyPage}
           pageSize={historyPageSize}
-          showExport={false}
           showArchive={false}
           singleProfile={true}
           initialFilters={
@@ -177,6 +178,7 @@ export default function Record({
           profileOptions={[]}
           simulationOptions={simulationOptions}
           scenarioOptions={scenarioOptions}
+          initialColumnVisibility={initialColumnVisibility}
         />
       </div>
 

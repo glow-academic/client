@@ -45,6 +45,7 @@ export interface DashboardProps {
   historyProfileSearch?: string;
   historySimulationSearch?: string;
   historyScenarioSearch?: string;
+  initialColumnVisibility?: Record<string, boolean>;
 }
 
 export default function Dashboard({
@@ -68,6 +69,7 @@ export default function Dashboard({
   historyProfileSearch,
   historySimulationSearch,
   historyScenarioSearch,
+  initialColumnVisibility,
 }: DashboardProps) {
   // --- History extraction ---
   const historyData: DashboardHistoryOut = data.history || {
@@ -173,7 +175,6 @@ export default function Dashboard({
           unarchivedCount={unarchivedCount}
           pageIndex={historyPage}
           pageSize={historyPageSize}
-          showExport={false}
           showArchive={!!bulkArchiveAttemptsAction}
           singleProfile={false}
           initialFilters={defaultFilters}
@@ -184,6 +185,7 @@ export default function Dashboard({
           simulationSearch={historySimulationSearch || ""}
           scenarioSearch={historyScenarioSearch || ""}
           {...(bulkArchiveAttemptsAction && { bulkArchiveAttemptsAction })}
+          initialColumnVisibility={initialColumnVisibility}
         />
       </div>
 

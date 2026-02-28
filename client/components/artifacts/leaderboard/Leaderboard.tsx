@@ -74,11 +74,13 @@ const getInitials = (name: string | null): string => {
 export interface LeaderboardProps {
   cohortId?: string;
   leaderboardData: LeaderboardOut;
+  initialColumnVisibility?: Record<string, boolean>;
 }
 
 export default function Leaderboard({
   cohortId,
   leaderboardData,
+  initialColumnVisibility,
 }: LeaderboardProps) {
   const { profile } = useProfile();
   const router = useRouter();
@@ -787,6 +789,7 @@ export default function Leaderboard({
           <LeaderboardTable
             data={processedLeaderboardData}
             currentUserId={profile?.id || ""}
+            initialColumnVisibility={initialColumnVisibility}
             {...(leaderboardData?.simulations && {
               simulations: leaderboardData.simulations
                 .filter(

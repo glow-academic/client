@@ -32,6 +32,7 @@ import type {
 import BulkImport, { type ImportFieldDef } from "@/components/common/BulkImport";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useColumnVisibility } from "@/hooks/use-column-visibility";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
@@ -73,6 +74,8 @@ import {
 export interface SimulationsProps {
   // Server-provided data (for server-side rendering)
   listData: SimulationsListOut;
+  // SSR column visibility from cookie
+  initialColumnVisibility?: VisibilityState;
   // Server actions (replaces useMutation)
   duplicateSimulationAction?: (
     input: DuplicateSimulationIn,
@@ -95,6 +98,7 @@ export interface SimulationsProps {
 
 export function Simulations({
   listData: serverListData,
+  initialColumnVisibility,
   duplicateSimulationAction,
   deleteSimulationAction,
   saveSimulationAction,
@@ -181,7 +185,7 @@ export function Simulations({
 
   // Table state
   const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = useColumnVisibility("simulations", initialColumnVisibility);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => {
     // Initialize from URL params
     const filters: ColumnFiltersState = [];

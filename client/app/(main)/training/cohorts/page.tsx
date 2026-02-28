@@ -8,6 +8,7 @@ import Cohorts from "@/components/artifacts/cohort/Cohorts";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
+import { readViewCookie } from "@/lib/view-cookie";
 import type { Metadata } from "next";
 
 import { loadCohortsListSearchParams } from "@/lib/search-params/cohorts";
@@ -145,13 +146,17 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
     page_offset: offset,
   };
 
-  // Fetch list data server-side with filters
-  const listData = await getCohortsList(body);
+  // Fetch list data and view cookie in parallel
+  const [listData, initialColumnVisibility] = await Promise.all([
+    getCohortsList(body),
+    readViewCookie("cohorts"),
+  ]);
 
   return (
     <div className="space-y-6" data-page="cohorts-index">
       <Cohorts
         listData={listData}
+        initialColumnVisibility={initialColumnVisibility}
         duplicateCohortAction={duplicateCohort}
         deleteCohortAction={deleteCohort}
         saveCohortAction={saveCohort}

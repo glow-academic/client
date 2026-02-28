@@ -15,20 +15,18 @@ import React, { useEffect, useMemo } from "react";
 
 import { SimulationControls } from "@/components/common/SimulationControls";
 
+import { GenerationPanel } from "@/components/common/ai/GenerationPanel";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
+import { ExportButton } from "@/components/common/layout/ExportButton";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
 import { ThemeHydrator } from "@/components/theme/ThemeHydrator";
-import {
-  DraftProviderClient,
-  type DraftItem,
-} from "@/contexts/draft-context";
+import { DraftProviderClient, type DraftItem } from "@/contexts/draft-context";
 import { GroupProviderClient, useGroupId } from "@/contexts/group-context";
 import { ProfileProviderClient } from "@/contexts/profile-context";
 import { SettingsProviderClient } from "@/contexts/settings-context";
 import { SocketProviderClient } from "@/contexts/socket-context";
-import { GenerationPanel } from "@/components/common/ai/GenerationPanel";
 import { useGenerationPanel } from "@/hooks/use-generation-panel";
 import type {
   AnalyticsFiltersResponse,
@@ -38,6 +36,7 @@ import type {
   AuthSettingsResponse,
   CreateFeedbackIn,
   CreateFeedbackOut,
+  ExportPageFn,
   GenerateMessagesIn,
   GenerateMessagesOut,
   RefreshPageFn,
@@ -47,7 +46,6 @@ import type {
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
 } from "./layout-server";
-
 
 // Inner component that uses the role context
 function MainLayoutContent({
@@ -59,6 +57,7 @@ function MainLayoutContent({
   switchEffectiveProfileAction,
   createFeedbackAction,
   refreshPageAction,
+  exportPageAction,
   searchSimulatableProfilesAction,
   getGenerateMessagesAction,
 }: {
@@ -72,10 +71,13 @@ function MainLayoutContent({
   ) => Promise<SwitchEffectiveProfileResult>;
   createFeedbackAction: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
   refreshPageAction: RefreshPageFn;
+  exportPageAction: ExportPageFn;
   searchSimulatableProfilesAction: (
     input: SearchSimulatableProfilesIn
   ) => Promise<SearchSimulatableProfilesOut>;
-  getGenerateMessagesAction: (input: GenerateMessagesIn) => Promise<GenerateMessagesOut>;
+  getGenerateMessagesAction: (
+    input: GenerateMessagesIn
+  ) => Promise<GenerateMessagesOut>;
 }) {
   const pathname = usePathname() || "/";
 
@@ -188,9 +190,8 @@ function MainLayoutContent({
               />
             </div>
 
-
             {attemptControls?.show_controls && (
-              <div className="pr-4">
+              <div className="pr-0">
                 <SimulationControls
                   attemptId={attemptControls.attempt_id!}
                   currentChatId={attemptControls.current_chat_id!}
@@ -202,13 +203,13 @@ function MainLayoutContent({
             {canShowAnalyticsFilters && (
               <AnalyticsFilters refreshPage={refreshPageAction} />
             )}
-            {!attemptControls?.show_controls && (
-              showDrafts && artifactType ? (
+            {!attemptControls?.show_controls &&
+              (showDrafts && artifactType ? (
                 <SaveToolbar artifactType={artifactType} />
               ) : (
-                actionButton && <div className="pr-4">{actionButton}</div>
-              )
-            )}
+                actionButton && <div className="pr-0">{actionButton}</div>
+              ))}
+            <ExportButton exportPage={exportPageAction} />
             <div className="pr-4">
               <Button
                 variant="ghost"
@@ -222,9 +223,7 @@ function MainLayoutContent({
             </div>
           </header>
 
-          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-            {children}
-          </div>
+          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
         </SidebarInset>
       </SidebarProvider>
       <GenerationPanel
@@ -254,6 +253,7 @@ export function MainLayoutClient({
   switchEffectiveProfileAction,
   createFeedbackAction,
   refreshPageAction,
+  exportPageAction,
   searchSimulatableProfilesAction,
   getGenerateMessagesAction,
   groupId,
@@ -277,10 +277,13 @@ export function MainLayoutClient({
   ) => Promise<SwitchEffectiveProfileResult>;
   createFeedbackAction: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
   refreshPageAction: RefreshPageFn;
+  exportPageAction: ExportPageFn;
   searchSimulatableProfilesAction: (
     input: SearchSimulatableProfilesIn
   ) => Promise<SearchSimulatableProfilesOut>;
-  getGenerateMessagesAction: (input: GenerateMessagesIn) => Promise<GenerateMessagesOut>;
+  getGenerateMessagesAction: (
+    input: GenerateMessagesIn
+  ) => Promise<GenerateMessagesOut>;
   /** Resolved group_id from layout (null for non-artifact pages) */
   groupId: string | null;
 }) {
@@ -322,29 +325,30 @@ export function MainLayoutClient({
       >
         <DraftProviderClient drafts={drafts} initialAutosave={initialAutosave}>
           <GroupProviderClient initialGroupId={groupId}>
-              <ProfileProviderClient
-                initial={profileData}
-                sessionSnapshot={sessionSnapshot}
-                analyticsFilters={analyticsFilters}
-              >
-                <SettingsProviderClient settings={settingsData}>
-                  <MainLayoutContent
-                    pageData={pageData}
-                    attemptControls={attemptControls}
-                    initialSidebarOpen={initialSidebarOpen}
-                    initialPanelOpen={initialPanelOpen}
-                    switchEffectiveProfileAction={switchEffectiveProfileAction}
-                    createFeedbackAction={createFeedbackAction}
-                    refreshPageAction={refreshPageAction}
-                    searchSimulatableProfilesAction={
-                      searchSimulatableProfilesAction
-                    }
-                    getGenerateMessagesAction={getGenerateMessagesAction}
-                  >
-                    {children}
-                  </MainLayoutContent>
-                </SettingsProviderClient>
-              </ProfileProviderClient>
+            <ProfileProviderClient
+              initial={profileData}
+              sessionSnapshot={sessionSnapshot}
+              analyticsFilters={analyticsFilters}
+            >
+              <SettingsProviderClient settings={settingsData}>
+                <MainLayoutContent
+                  pageData={pageData}
+                  attemptControls={attemptControls}
+                  initialSidebarOpen={initialSidebarOpen}
+                  initialPanelOpen={initialPanelOpen}
+                  switchEffectiveProfileAction={switchEffectiveProfileAction}
+                  createFeedbackAction={createFeedbackAction}
+                  refreshPageAction={refreshPageAction}
+                  exportPageAction={exportPageAction}
+                  searchSimulatableProfilesAction={
+                    searchSimulatableProfilesAction
+                  }
+                  getGenerateMessagesAction={getGenerateMessagesAction}
+                >
+                  {children}
+                </MainLayoutContent>
+              </SettingsProviderClient>
+            </ProfileProviderClient>
           </GroupProviderClient>
         </DraftProviderClient>
       </SocketProviderClient>

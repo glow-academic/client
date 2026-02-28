@@ -10,6 +10,7 @@ import Home from "@/components/artifacts/home/Home";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
+import { readViewCookie } from "@/lib/view-cookie";
 import {
   computeAnalyticsDefaults,
   resolveAnalyticsFilters,
@@ -132,13 +133,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           unarchivedCount={unarchivedCount}
           pageIndex={historyPage}
           pageSize={historyPageSize}
-          showExport={true}
           showArchive={false}
           singleProfile={true}
           initialFilters={defaultFilters}
           profileOptions={profileOptions}
           simulationOptions={simulationOptions}
           scenarioOptions={scenarioOptions}
+          initialColumnVisibility={await readViewCookie("history")}
         />
       </div>
     </div>

@@ -53,9 +53,7 @@ export interface AnalyticsFiltersProps {
   refreshPage: RefreshPageFn;
 }
 
-export function AnalyticsFilters({
-  refreshPage,
-}: AnalyticsFiltersProps) {
+export function AnalyticsFilters({ refreshPage }: AnalyticsFiltersProps) {
   const isMobile = useIsMobile();
   const pathname = usePathname();
   const router = useRouter();
@@ -165,7 +163,7 @@ export function AnalyticsFilters({
       if (simulationFilters.includes("archived")) vals.push("archived");
       // When all three are enabled functionally, start with empty to indicate "All attempts"
       return vals.length === 3 ? [] : vals;
-    },
+    }
   );
 
   // Keep local selection in sync when context flags change externally
@@ -206,7 +204,7 @@ export function AnalyticsFilters({
 
   // Get selected cohorts for the picker
   const selectedCohorts = cohortOptions.filter((cohort) =>
-    selectedCohortIds.includes(cohort.id),
+    selectedCohortIds.includes(cohort.id)
   );
 
   // Automatically filter available roles and remove invalid selections when cohorts are selected
@@ -215,7 +213,7 @@ export function AnalyticsFilters({
       // When cohorts are selected, only allow "member" and "instructional" roles
       // Remove any existing selections that aren't "member" or "instructional"
       const validRoles = selectedRoles.filter(
-        (role) => role === "member" || role === "instructional",
+        (role) => role === "member" || role === "instructional"
       );
       if (validRoles.length !== selectedRoles.length) {
         setSelectedRoles(validRoles);
@@ -229,14 +227,16 @@ export function AnalyticsFilters({
   };
 
   // Use analytics filters for department options (MV-backed)
-  const departmentOptions = (analyticsFilters?.department_options ?? []).map((o) => ({
-    id: o.value,
-    title: o.label || o.value,
-  }));
+  const departmentOptions = (analyticsFilters?.department_options ?? []).map(
+    (o) => ({
+      id: o.value,
+      title: o.label || o.value,
+    })
+  );
 
   // Get selected departments for the picker
   const selectedDepartments = departmentOptions.filter((department) =>
-    selectedDepartmentIds.includes(department.id),
+    selectedDepartmentIds.includes(department.id)
   );
 
   const handleDepartmentSelect = (selectedDepts: typeof departmentOptions) => {
@@ -257,7 +257,7 @@ export function AnalyticsFilters({
   };
 
   return (
-    <div className="pr-4">
+    <div className="pr-0">
       <div className="flex items-center gap-2">
         {/* On mobile, only show refresh button and date picker */}
         {isMobile ? (
@@ -329,14 +329,26 @@ export function AnalyticsFilters({
             {/* General/Practice/Archived Selector - server-driven visibility */}
             {showAttempts && (
               <AttemptSelector
-                options={analyticsFilters?.attempt_options as SimulationFilter[] ?? ["general", "practice", "archived"]}
+                options={
+                  (analyticsFilters?.attempt_options as SimulationFilter[]) ?? [
+                    "general",
+                    "practice",
+                    "archived",
+                  ]
+                }
                 selected={attemptSelected}
                 onChange={(vals) => {
                   // Update UI state first
                   setAttemptSelected(vals);
                   // Empty selection means all attempts (all available modes on)
                   if (vals.length === 0) {
-                    setSimulationFilters(analyticsFilters?.attempt_options as SimulationFilter[] ?? ["general", "practice", "archived"]);
+                    setSimulationFilters(
+                      (analyticsFilters?.attempt_options as SimulationFilter[]) ?? [
+                        "general",
+                        "practice",
+                        "archived",
+                      ]
+                    );
                     return;
                   }
                   setSimulationFilters(vals);
@@ -351,7 +363,7 @@ export function AnalyticsFilters({
                 roles={
                   selectedCohortIds.length > 0
                     ? PROFILE_ROLES.filter(
-                        (role) => role === "instructional" || role === "member",
+                        (role) => role === "instructional" || role === "member"
                       )
                     : PROFILE_ROLES.filter((role) => scopedRoles.includes(role))
                 }

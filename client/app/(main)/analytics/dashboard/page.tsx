@@ -10,6 +10,7 @@ import Dashboard from "@/components/artifacts/dashboard/Dashboard";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
+import { readViewCookie } from "@/lib/view-cookie";
 import {
   computeAnalyticsDefaults,
   resolveAnalyticsFilters,
@@ -128,9 +129,12 @@ export default async function DashboardPage({
     },
   });
 
+  const initialHistoryVisibility = await readViewCookie("history");
+
   return (
     <Dashboard
       data={data}
+      initialColumnVisibility={initialHistoryVisibility}
       rubricIds={rubricIds}
       rubricSearch={rubricSearch}
       rubricIndex={rubricIndex}

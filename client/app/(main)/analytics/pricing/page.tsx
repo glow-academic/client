@@ -10,6 +10,7 @@ import { PricingSummary } from "@/components/artifacts/pricing/PricingSummary";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
+import { readViewCookie } from "@/lib/view-cookie";
 import {
   computeAnalyticsDefaults,
   resolveAnalyticsFilters,
@@ -74,6 +75,9 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
   // Use first model ID if provided (endpoint accepts single model_id)
   const modelId = pricingModelIds?.[0] ?? null;
 
+  // Read view cookie for column visibility
+  const initialColumnVisibility = await readViewCookie("pricing");
+
   // Fetch summary + embedded group history in a single API call
   const pricingData = await getPricingAnalytics({
     body: {
@@ -101,7 +105,7 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
   return (
     <div className="space-y-6" data-page="pricing-index">
       <PricingSummary pricingData={pricingData} />
-      <PricingRunsClient runsData={runsData} isLoading={false} />
+      <PricingRunsClient runsData={runsData} isLoading={false} initialColumnVisibility={initialColumnVisibility} />
     </div>
   );
 }

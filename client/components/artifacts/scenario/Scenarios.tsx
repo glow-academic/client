@@ -25,6 +25,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useColumnVisibility } from "@/hooks/use-column-visibility";
 
 import type {
   DeleteScenarioIn,
@@ -87,6 +88,8 @@ import {
 export interface ScenariosProps {
   // Server-provided data (for server-side rendering)
   listData: ScenariosListOut;
+  // SSR column visibility from cookie
+  initialColumnVisibility?: VisibilityState;
   // Server actions (replaces useMutation)
   duplicateScenarioAction?: (
     input: DuplicateScenarioIn,
@@ -109,6 +112,7 @@ export interface ScenariosProps {
 
 export function Scenarios({
   listData: serverListData,
+  initialColumnVisibility,
   duplicateScenarioAction,
   deleteScenarioAction,
   saveScenarioAction,
@@ -195,7 +199,7 @@ export function Scenarios({
 
   // Table state
   const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = useColumnVisibility("scenarios", initialColumnVisibility);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => {
     // Initialize from URL params
     const filters: ColumnFiltersState = [];

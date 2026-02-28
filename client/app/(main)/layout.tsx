@@ -12,6 +12,7 @@ import { Suspense } from "react";
 import { MainLayoutClient } from "./layout-client";
 import {
   createFeedback,
+  exportPage,
   getGenerateMessages,
   getLayoutContextData,
   refreshPage,
@@ -122,6 +123,7 @@ export default async function MainLayout({
         switchEffectiveProfileAction={switchEffectiveProfile}
         createFeedbackAction={createFeedback}
         refreshPageAction={refreshPage}
+        exportPageAction={exportPage}
         searchSimulatableProfilesAction={searchSimulatableProfiles}
         getGenerateMessagesAction={getGenerateMessages}
         groupId={groupId}

@@ -10,6 +10,7 @@ import Practice from "@/components/artifacts/practice/Practice";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
+import { readViewCookie } from "@/lib/view-cookie";
 import {
   computeAnalyticsDefaults,
   resolveAnalyticsFilters,
@@ -145,7 +146,6 @@ export default async function PracticePage({
             unarchivedCount={unarchivedCount}
             pageIndex={historyPage}
             pageSize={historyPageSize}
-            showExport={false}
             showArchive={false}
             singleProfile={true}
             profileOptions={profileOptions}
@@ -153,6 +153,7 @@ export default async function PracticePage({
             scenarioOptions={scenarioOptions}
             showModeFilter={true}
             showCustomize={true}
+            initialColumnVisibility={await readViewCookie("history")}
           />
         </div>
       )}

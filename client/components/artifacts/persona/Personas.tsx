@@ -74,6 +74,7 @@ import {
 
 import { useProfile } from "@/contexts/profile-context";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useColumnVisibility } from "@/hooks/use-column-visibility";
 
 
 // Utility function to generate gradient from hex color
@@ -100,6 +101,8 @@ const generateGradientFromHex = (hexColor: string): string => {
 export interface PersonasProps {
   // Server-provided data (for server-side rendering)
   listData: PersonasListOut;
+  // SSR column visibility from cookie
+  initialColumnVisibility?: VisibilityState;
   // Server actions (replaces useMutation)
   duplicatePersonaAction?: (
     input: DuplicatePersonaIn
@@ -123,6 +126,7 @@ export interface PersonasProps {
 
 export default function Personas({
   listData: serverListData,
+  initialColumnVisibility,
   duplicatePersonaAction,
   deletePersonaAction,
   savePersonaAction,
@@ -191,7 +195,7 @@ export default function Personas({
 
   // Table state
   const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = useColumnVisibility("personas", initialColumnVisibility);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => {
     // Initialize column filters from URL params
     const filters: ColumnFiltersState = [];

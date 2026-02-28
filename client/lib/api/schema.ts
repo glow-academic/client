@@ -2805,6 +2805,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/artifacts/home/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export Home
+         * @description Export home certificate as PDF, stored via upload infrastructure.
+         */
+        post: operations["export_home_api_v4_artifacts_home_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/artifacts/practice/get": {
         parameters: {
             query?: never;
@@ -2887,26 +2907,6 @@ export interface paths {
          * @description Bulk archive or unarchive attempts (simulation or benchmark).
          */
         post: operations["archive_attempts_api_v4_artifacts_attempt_archive_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/artifacts/attempt/certificate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Export Certificate
-         * @description Generate a certificate PDF/text for a profile.
-         */
-        post: operations["export_certificate_api_v4_artifacts_attempt_certificate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -27822,6 +27822,21 @@ export interface components {
          * @description Response model for dashboard export.
          */
         ExportDashboardApiResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** File Name */
+            file_name: string;
+            /** Row Count */
+            row_count: number;
+        };
+        /**
+         * ExportHomeApiResponse
+         * @description Response model for home certificate export.
+         */
+        ExportHomeApiResponse: {
             /**
              * Upload Id
              * Format: uuid
@@ -57122,6 +57137,39 @@ export interface operations {
             };
         };
     };
+    export_home_api_v4_artifacts_home_export_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportHomeApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     practice_get_api_v4_artifacts_practice_get_post: {
         parameters: {
             query?: never;
@@ -57257,39 +57305,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BulkArchiveAttemptsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    export_certificate_api_v4_artifacts_attempt_certificate_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

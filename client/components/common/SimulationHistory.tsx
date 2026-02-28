@@ -43,6 +43,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useColumnVisibility } from "@/hooks/use-column-visibility";
 import { useProfile } from "@/contexts/profile-context";
 import { useSocket } from "@/contexts/socket-context";
 import {
@@ -70,7 +71,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
-import { SingleProfileCertificateButton } from "@/components/artifacts/attempt/history/SingleProfileCertificateButton";
+
 
 // Use strong server types directly
 import type { components } from "@/lib/api/schema";
@@ -315,9 +316,6 @@ export interface SimulationHistoryProps {
   // Required: Current page size
   pageSize: number;
 
-  // Required: Whether to show export functionality
-  showExport: boolean;
-
   // Required: Whether to show archive functionality
   showArchive: boolean;
 
@@ -359,6 +357,8 @@ export interface SimulationHistoryProps {
   profileSearch?: string;
   simulationSearch?: string;
   scenarioSearch?: string;
+  // SSR column visibility from cookie
+  initialColumnVisibility?: VisibilityState;
 }
 
 export default function SimulationHistory({
@@ -368,7 +368,6 @@ export default function SimulationHistory({
   unarchivedCount: serverUnarchivedCount,
   pageIndex,
   pageSize,
-  showExport,
   showArchive,
   singleProfile: _singleProfile = false,
   hideName = false,
@@ -383,6 +382,7 @@ export default function SimulationHistory({
   profileSearch = "",
   simulationSearch = "",
   scenarioSearch = "",
+  initialColumnVisibility,
 }: SimulationHistoryProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -579,14 +579,14 @@ export default function SimulationHistory({
 
   // Table state
   const [rowSelection, setRowSelection] = React.useState({});
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({
-      search: false,
-      profileId: false,
-      simulationId: false,
-      scenarios: false,
-      infiniteMode: false,
-    });
+  const [columnVisibility, setColumnVisibility] = useColumnVisibility("history", {
+    search: false,
+    profileId: false,
+    simulationId: false,
+    scenarios: false,
+    infiniteMode: false,
+    ...initialColumnVisibility,
+  });
 
   // State for archive dialog
   const [showArchiveDialog, setShowArchiveDialog] = React.useState(false);
@@ -1343,15 +1343,6 @@ export default function SimulationHistory({
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
     getRowId: (row, index) => getRowId(row) || String(index),
-    initialState: {
-      columnVisibility: {
-        search: false,
-        profileId: false,
-        simulationId: false,
-        scenarios: false,
-        infiniteMode: false,
-      },
-    },
   });
 
   // Handle comprehensive reset (filters, search, sorting, pagination)
@@ -1663,49 +1654,7 @@ export default function SimulationHistory({
     <div className="space-y-4">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
         <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0 min-w-0">
-          {/* Mobile: If showExport, wrap search and certificate button in 50/50 flex */}
-          {showExport ? (
-            <div className="flex gap-2 w-full md:w-auto md:flex-initial">
-              <Input
-                ref={searchInputRef}
-                placeholder="Search by name, simulation, or scenarios..."
-                value={searchTerm}
-                onChange={(event) => {
-                  handleSearchChange(event.target.value);
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    // Clear timeout and commit immediately
-                    if (searchTimeoutRef.current) {
-                      clearTimeout(searchTimeoutRef.current);
-                    }
-                    commitSearch(event.currentTarget.value);
-                  }
-                }}
-                onBlur={(event) => {
-                  // Clear timeout and commit immediately on blur
-                  if (searchTimeoutRef.current) {
-                    clearTimeout(searchTimeoutRef.current);
-                  }
-                  // Commit on blur so URL stays in sync
-                  if (
-                    event.currentTarget.value !==
-                    (searchParams?.get("historySearch") || "")
-                  ) {
-                    commitSearch(event.currentTarget.value);
-                  }
-                }}
-                className="h-8 flex-1 md:w-[150px] lg:w-[250px]"
-              />
-              <div className="flex-1 md:hidden">
-                <SingleProfileCertificateButton
-                  table={table}
-                  profileOptions={filteredProfileOptions}
-                />
-              </div>
-            </div>
-          ) : (
-            <Input
+          <Input
               ref={searchInputRef}
               placeholder="Search by name, simulation, or scenarios..."
               value={searchTerm}
@@ -1736,7 +1685,6 @@ export default function SimulationHistory({
               }}
               className="h-8 w-full md:w-[150px] lg:w-[250px]"
             />
-          )}
           {/* Filters - separate row on mobile to prevent flicker */}
           {isLoading ? (
             <div className="flex items-center space-x-2 overflow-x-auto flex-nowrap min-w-0 max-w-[600px] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -1854,15 +1802,6 @@ export default function SimulationHistory({
               </>
             )}
 
-          {/* Certificate button - only show on desktop when showExport is true (mobile is handled above in search area) */}
-          {showExport && (
-            <div className="hidden md:flex">
-              <SingleProfileCertificateButton
-                table={table}
-                profileOptions={filteredProfileOptions}
-              />
-            </div>
-          )}
           {/* Legacy practice customize button removed; customization is per simulation card */}
           <DataTableViewOptions table={table} />
         </div>

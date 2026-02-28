@@ -10,6 +10,7 @@ import Record from "@/components/artifacts/record/Record";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
+import { readViewCookie } from "@/lib/view-cookie";
 import {
   computeAnalyticsDefaults,
   resolveAnalyticsFilters,
@@ -151,6 +152,7 @@ export default async function RecordPage({
       historyPage={historyPage}
       historyPageSize={historyPageSize}
       defaultFilters={filters}
+      initialColumnVisibility={await readViewCookie("history")}
     />
   );
 }

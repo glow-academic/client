@@ -9,6 +9,7 @@ import Reports from "@/components/artifacts/reports/Reports";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
+import { readViewCookie } from "@/lib/view-cookie";
 import {
   type AnalyticsFilters,
   computeAnalyticsDefaults,
@@ -107,6 +108,9 @@ export default async function ReportsFullPage({
     (filters.simulationFilters || []).join(","),
   ].join("|");
 
+  // Read view cookie for column visibility
+  const initialColumnVisibility = await readViewCookie("reports");
+
   // Create empty reports data for loading state
   const emptyReportsData = {
     sections: {
@@ -141,6 +145,7 @@ export default async function ReportsFullPage({
             profileOptions={[]}
             simulationOptions={[]}
             scenarioOptions={[]}
+            initialColumnVisibility={initialColumnVisibility}
           />
         }
       >
@@ -154,6 +159,7 @@ export default async function ReportsFullPage({
           reportsScenarioIds={reportsScenarioIds}
           reportsSortBy={reportsSortBy}
           reportsSortOrder={reportsSortOrder}
+          initialColumnVisibility={initialColumnVisibility}
         />
       </Suspense>
     </div>
@@ -171,6 +177,7 @@ async function ReportsSection({
   reportsScenarioIds,
   reportsSortBy,
   reportsSortOrder,
+  initialColumnVisibility,
 }: {
   filters: AnalyticsFilters;
   reportsPage: number;
@@ -181,6 +188,7 @@ async function ReportsSection({
   reportsScenarioIds?: string[] | undefined;
   reportsSortBy: string;
   reportsSortOrder: string;
+  initialColumnVisibility?: Record<string, boolean>;
 }) {
   // Build reports filters with pagination/search/sorting/filtering params (snake_case for API)
   const reportsFilters = {
@@ -266,6 +274,7 @@ async function ReportsSection({
       profileOptions={profileOptions}
       simulationOptions={simulationOptions}
       scenarioOptions={scenarioOptions}
+      initialColumnVisibility={initialColumnVisibility}
     />
   );
 }

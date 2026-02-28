@@ -8,6 +8,7 @@ import { Scenarios } from "@/components/artifacts/scenario/Scenarios";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
+import { readViewCookie } from "@/lib/view-cookie";
 import type { Metadata } from "next";
 
 import { loadScenariosListSearchParams } from "@/lib/search-params/scenarios-list";
@@ -149,13 +150,17 @@ export default async function ScenariosPage({ searchParams }: ScenariosPageProps
     page_offset: offset,
   };
 
-  // Fetch list data server-side with filters
-  const listData = await getScenariosList(body);
+  // Fetch list data and view cookie in parallel
+  const [listData, initialColumnVisibility] = await Promise.all([
+    getScenariosList(body),
+    readViewCookie("scenarios"),
+  ]);
 
   return (
     <div className="space-y-6" data-page="scenarios-index">
       <Scenarios
         listData={listData}
+        initialColumnVisibility={initialColumnVisibility}
         duplicateScenarioAction={duplicateScenario}
         deleteScenarioAction={deleteScenario}
         saveScenarioAction={saveScenario}

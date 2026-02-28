@@ -70,10 +70,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useColumnVisibility } from "@/hooks/use-column-visibility";
 
 export interface CohortsProps {
   // Server-provided data (for server-side rendering)
   listData: CohortsListOut;
+  // SSR column visibility from cookie
+  initialColumnVisibility?: VisibilityState;
   // Server actions (replaces useMutation)
   duplicateCohortAction?: (
     input: DuplicateCohortIn,
@@ -94,6 +97,7 @@ export interface CohortsProps {
 
 export default function Cohorts({
   listData: serverListData,
+  initialColumnVisibility,
   duplicateCohortAction,
   deleteCohortAction,
   saveCohortAction,
@@ -178,7 +182,7 @@ export default function Cohorts({
 
   // Table state
   const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = useColumnVisibility("cohorts", initialColumnVisibility);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => {
     // Initialize from URL params
     const filters: ColumnFiltersState = [];

@@ -13,6 +13,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 
+import { useColumnVisibility } from "@/hooks/use-column-visibility";
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
@@ -107,6 +108,7 @@ export interface RunsDataTableProps {
   actorOptions: Array<{ value: string; label: string; count?: number }>;
   totalCount: number;
   totalPages: number;
+  initialColumnVisibility?: VisibilityState;
 }
 
 export function RunsDataTable({
@@ -120,6 +122,7 @@ export function RunsDataTable({
   actorOptions,
   totalCount: _totalCount,
   totalPages,
+  initialColumnVisibility,
 }: RunsDataTableProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -166,12 +169,12 @@ export function RunsDataTable({
     };
   }, []);
 
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({
-      modelIdFilter: false,
-      profileIdFilter: false,
-      actorIdFilter: false,
-    });
+  const [columnVisibility, setColumnVisibility] = useColumnVisibility("pricing", {
+    modelIdFilter: false,
+    profileIdFilter: false,
+    actorIdFilter: false,
+    ...initialColumnVisibility,
+  });
 
   // Sync URL params for sorting
   const sortBy = searchParams.get("pricingSortBy") || "createdAt";
@@ -578,13 +581,6 @@ export function RunsDataTable({
     manualSorting: true, // Server-driven sorting
     manualFiltering: true, // Server-driven filtering
     pageCount: totalPages,
-    initialState: {
-      columnVisibility: {
-        actorIdFilter: false,
-        modelIdFilter: false,
-        profileIdFilter: false,
-      },
-    },
   });
 
   // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues

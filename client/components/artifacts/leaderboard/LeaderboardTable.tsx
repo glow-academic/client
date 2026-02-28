@@ -34,6 +34,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { useColumnVisibility } from "@/hooks/use-column-visibility";
 import { X } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -61,6 +62,7 @@ export interface LeaderboardTableProps {
   simulations?: Array<{ simulation_id: string; name: string; description?: string }>;
   scenarios?: Array<{ scenario_id: string; name: string; description?: string }>;
   onViewReport?: (profileId: string) => void;
+  initialColumnVisibility?: VisibilityState;
 }
 
 const getInitials = (name: string) =>
@@ -76,14 +78,16 @@ export default function LeaderboardTable({
   simulations = [],
   scenarios = [],
   onViewReport,
+  initialColumnVisibility,
 }: LeaderboardTableProps) {
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+  const [columnVisibility, setColumnVisibility] = useColumnVisibility("leaderboard", {
     improvementRatePerDay: false,
     personaResponseSeconds: false,
     quickestPassMinutes: false,
     profileId: false,
     simulationIds: false,
     scenarioIds: false,
+    ...initialColumnVisibility,
   });
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([
@@ -318,13 +322,6 @@ export default function LeaderboardTable({
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
-    initialState: {
-      columnVisibility: {
-        profileId: false,
-        simulationIds: false,
-        scenarioIds: false,
-      },
-    },
   });
 
   // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues

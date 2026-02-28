@@ -8,6 +8,7 @@ import Personas from "@/components/artifacts/persona/Personas";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
+import { readViewCookie } from "@/lib/view-cookie";
 import type { Metadata } from "next";
 
 import { loadPersonasSearchParams } from "@/lib/search-params/personas";
@@ -167,13 +168,17 @@ export default async function PersonasPage({ searchParams }: PersonasPageProps) 
     page_offset: offset,
   };
 
-  // Fetch list data server-side with filters
-  const listData = await getPersonasList(body);
+  // Fetch list data and view cookie in parallel
+  const [listData, initialColumnVisibility] = await Promise.all([
+    getPersonasList(body),
+    readViewCookie("personas"),
+  ]);
 
   return (
     <div className="space-y-6" data-page="personas-index">
       <Personas
         listData={listData}
+        initialColumnVisibility={initialColumnVisibility}
         duplicatePersonaAction={duplicatePersona}
         deletePersonaAction={deletePersona}
         savePersonaAction={savePersona}

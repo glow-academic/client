@@ -10,15 +10,18 @@ import { useMemo } from "react";
 
 import { RunsDataTable, type GroupRunRow } from "./RunsDataTable";
 import type { PricingRunsOut } from "@/app/(main)/analytics/pricing/page";
+import type { VisibilityState } from "@tanstack/react-table";
 
 interface PricingRunsClientProps {
   runsData: PricingRunsOut;
   isLoading: boolean;
+  initialColumnVisibility?: VisibilityState;
 }
 
 export function PricingRunsClient({
   runsData,
   isLoading,
+  initialColumnVisibility,
 }: PricingRunsClientProps) {
   // Transform group list items to GroupRunRow format
   const rows = useMemo<GroupRunRow[]>(() => {
@@ -71,6 +74,7 @@ export function PricingRunsClient({
         actorOptions={[]}
         totalCount={runsData?.total_count || 0}
         totalPages={totalPages}
+        initialColumnVisibility={initialColumnVisibility}
       />
     </div>
   );

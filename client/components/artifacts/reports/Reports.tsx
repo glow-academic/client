@@ -4,14 +4,13 @@
  */
 "use client";
 import { ColumnDef, Row, Table as TableType } from "@tanstack/react-table";
-import { Clock, Download, MessageCircle, Target, Timer, X } from "lucide-react";
+import { Clock, MessageCircle, Target, Timer, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+
 
 import type { ReportsOut } from "@/app/(main)/record/page";
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { EXPORT_METRICS } from "@/components/artifacts/reports/export-metrics";
+import { useColumnVisibility } from "@/hooks/use-column-visibility";
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
@@ -24,11 +23,6 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -38,12 +32,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import type { AnalyticsFilters } from "@/lib/search-params/analytics-defaults";
 import {
   ColumnFiltersState,
@@ -63,6 +51,7 @@ interface ReportsProps {
   profileOptions?: Array<{ value: string; label: string; count?: number }>;
   simulationOptions?: Array<{ value: string; label: string; count?: number }>;
   scenarioOptions?: Array<{ value: string; label: string; count?: number }>;
+  initialColumnVisibility?: VisibilityState;
 }
 
 export default function Reports({
@@ -72,6 +61,7 @@ export default function Reports({
   profileOptions,
   simulationOptions,
   scenarioOptions,
+  initialColumnVisibility,
 }: ReportsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -163,20 +153,16 @@ export default function Reports({
   const pageSize = pageSizeFromUrl;
   const totalPages = pageSize > 0 ? Math.ceil(totalCount / pageSize) : 0;
 
-  // Export state
-  const [exportPopoverOpen, setExportPopoverOpen] = useState(false);
-  const [selectedMetrics, setSelectedMetrics] = useState<string[]>([]);
-  const [brightspaceFormat, setBrightspaceFormat] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
 
   // Table state (only UI state, not data state)
   const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+  const [columnVisibility, setColumnVisibility] = useColumnVisibility("reports", {
     personaResponseTimes: false,
     stagnationRate: false,
     profileId: false,
     scenarios: false,
     simulations: false,
+    ...initialColumnVisibility,
   });
 
   // Sync URL params for sorting
@@ -1228,144 +1214,6 @@ export default function Reports({
   // Get visible columns for skeleton rows (matches actual rendered columns)
   const visibleColumns = table.getVisibleLeafColumns();
 
-  // Export functionality
-  const selectedRows = Object.keys(rowSelection).length;
-  const allMetrics = [
-    "highestScore",
-    "averageScore",
-    "completionPercentage",
-    "firstAttemptPassRate",
-    "messagesPerSession",
-    "personaResponseTimes",
-    "sessionEfficiency",
-    "stagnationRate",
-    "timeSpent",
-    "totalAttempts",
-  ];
-
-  const getSelectedProfileIds = (): string[] => {
-    const selectedRowsData =
-      selectedRows > 0
-        ? table.getSelectedRowModel().rows
-        : table.getRowModel().rows;
-
-    return selectedRowsData.map((row) => row.original.profileId);
-  };
-
-  const getSelectedSimulationIds = (): string[] => {
-    // Get from URL params (server-side filter)
-    return reportsSimulationIds || [];
-  };
-
-  const getSelectedScenarioIds = (): string[] => {
-    // Get from URL params (server-side filter)
-    return reportsScenarioIds || [];
-  };
-
-  const handleExport = async () => {
-    if (brightspaceFormat && selectedMetrics.length === 0) {
-      toast.error("Please select at least one metric for Brightspace export");
-      return;
-    }
-
-    const metricsToExport =
-      selectedMetrics.length === 0 && !brightspaceFormat
-        ? allMetrics
-        : selectedMetrics;
-
-    if (brightspaceFormat && simulations.length === 0) {
-      toast.error("No simulations available for export");
-      return;
-    }
-
-    try {
-      setIsExporting(true);
-
-      const profileIds = getSelectedProfileIds();
-      const simulationIds = getSelectedSimulationIds();
-      const scenarioIds = getSelectedScenarioIds();
-
-      // Convert filters to snake_case for API
-      const apiFilters = {
-        start_date: filters.startDate,
-        end_date: filters.endDate,
-        cohort_ids: filters.cohortIds || [],
-        department_ids: filters.departmentIds || [],
-        roles: filters.roles || [],
-        simulation_filters: filters.simulationFilters || ["general"],
-      };
-
-      const response = await fetch("/api/artifacts/reports/export", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...apiFilters,
-          profile_ids: profileIds,
-          simulation_ids: simulationIds,
-          scenario_ids: scenarioIds,
-          metrics: metricsToExport,
-          brightspace_format: brightspaceFormat,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({
-          error: "Failed to export data",
-        }));
-        throw new Error(
-          errorData.message || errorData.error || "Failed to export data"
-        );
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-
-      const contentDisposition = response.headers.get("content-disposition");
-      const contentType = response.headers.get("content-type") || "";
-
-      let filename: string;
-      if (brightspaceFormat) {
-        const isZip = contentType.includes("application/zip");
-        filename = isZip
-          ? `reports_export_${new Date().toISOString().slice(0, 10)}.zip`
-          : `reports_export_${new Date().toISOString().slice(0, 10)}.csv`;
-      } else {
-        filename = `reports_export_${new Date().toISOString().slice(0, 10)}.csv`;
-      }
-
-      if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename="([^"]+)"/);
-        if (filenameMatch && filenameMatch[1]) {
-          filename = filenameMatch[1];
-        }
-      }
-
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-      toast.success(
-        `Exported ${profileIds.length} ${profileIds.length === 1 ? "row" : "rows"} successfully`
-      );
-      setExportPopoverOpen(false);
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to export data"
-      );
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  const isExportDisabled =
-    isExporting || (brightspaceFormat && selectedMetrics.length === 0);
-
   // Get column references for toolbar
   const profileIdColumn = table.getColumn("profileId");
   const scenariosColumn = table.getColumn("scenarios");
@@ -1380,12 +1228,9 @@ export default function Reports({
     <div className="space-y-6" data-testid="reports-table-container">
       <div className="space-y-2">
         {/* Toolbar */}
-        <Popover open={exportPopoverOpen} onOpenChange={setExportPopoverOpen}>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
             <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
-              {/* Mobile: Wrap search and export button in 50/50 flex */}
-              <div className="flex gap-2 w-full md:w-auto md:flex-initial">
-                <Input
+              <Input
                   ref={searchInputRef}
                   placeholder="Search profiles by name or email..."
                   value={searchTerm}
@@ -1414,23 +1259,8 @@ export default function Reports({
                       commitSearch(event.currentTarget.value);
                     }
                   }}
-                  className="h-8 flex-1 md:w-[150px] lg:w-[250px]"
+                  className="h-8 w-full md:w-[150px] lg:w-[250px]"
                 />
-                {/* Export Button - Mobile */}
-                <div className="flex-1 md:flex-initial md:w-auto md:hidden">
-                  <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="default"
-                      size="sm"
-                      className="group w-full"
-                    >
-                      <Download className="mr-2 h-4 w-4 text-current" />
-                      Export {selectedRows > 0 ? `(${selectedRows})` : ""}
-                    </Button>
-                  </PopoverTrigger>
-                </div>
-              </div>
 
               <div className="flex items-center space-x-2 flex-wrap">
                 {isLoading ? (
@@ -1502,193 +1332,12 @@ export default function Reports({
             </div>
 
             <div className="flex items-center space-x-2">
-              {/* Export Button - Desktop */}
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  variant="default"
-                  size="sm"
-                  className="group hidden md:inline-flex"
-                >
-                  <Download className="mr-2 h-4 w-4 text-current" />
-                  Export {selectedRows > 0 ? `(${selectedRows})` : ""}
-                </Button>
-              </PopoverTrigger>
               <DataTableViewOptions
                 table={table}
                 hiddenColumns={["simulations"]}
               />
             </div>
           </div>
-          {/* Shared Popover Content */}
-          <PopoverContent className="w-96 p-4" align="end">
-            <div className="space-y-4">
-              <div className="space-y-3">
-                <div className="grid gap-2">
-                  <GenericPicker
-                    items={EXPORT_METRICS}
-                    selectedIds={selectedMetrics}
-                    onSelect={setSelectedMetrics}
-                    getId={(item) => item.value}
-                    getLabel={(item) => item.label}
-                    getSearchText={(item) =>
-                      `${item.label} ${item.description || ""}`
-                    }
-                    renderPreview={(item) => (
-                      <div className="grid gap-2">
-                        <h4 className="font-medium leading-none">
-                          {item.label || "No metric selected"}
-                        </h4>
-                        <div className="text-sm text-muted-foreground">
-                          {item.description || "No description available"}
-                        </div>
-                      </div>
-                    )}
-                    renderItem={(item, _isSelected) => {
-                      const IconComponent = item.icon;
-                      return (
-                        <div className="flex items-center gap-3 w-full">
-                          <div className="p-2 rounded-lg shadow-sm flex-shrink-0 bg-primary/10 border border-transparent group-data-[selected=true]:bg-primary/20 group-data-[selected=true]:border-primary-foreground">
-                            <IconComponent className="h-4 w-4 text-primary group-data-[selected=true]:text-primary-foreground stroke-current" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium truncate">
-                              {item.label}
-                            </div>
-                            {item.description && (
-                              <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                {item.description}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    }}
-                    renderButton={(selectedItems) => {
-                      const firstMetric = selectedItems[0];
-                      const IconComponent = firstMetric?.icon;
-                      return (
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          {firstMetric && IconComponent && (
-                            <div className="p-1 rounded-md shadow-sm flex-shrink-0 bg-primary/10">
-                              <IconComponent className="h-3.5 w-3.5 text-primary" />
-                            </div>
-                          )}
-                          <span className="truncate">
-                            {selectedMetrics.length === 0
-                              ? brightspaceFormat
-                                ? "Choose at least one metric..."
-                                : "All metrics selected"
-                              : selectedMetrics.length === 1
-                                ? firstMetric?.label ||
-                                  "Select metrics to export..."
-                                : `${selectedMetrics.length} selected`}
-                          </span>
-                        </div>
-                      );
-                    }}
-                    renderChip={(item, onRemove) => {
-                      const IconComponent = item.icon;
-                      return (
-                        <div className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm">
-                          <IconComponent className="h-3 w-3" />
-                          <span>{item.label}</span>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onRemove();
-                            }}
-                            className="text-muted-foreground hover:text-destructive"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      );
-                    }}
-                    placeholder={
-                      brightspaceFormat
-                        ? "Choose at least one metric..."
-                        : selectedMetrics.length === 0
-                          ? "All metrics selected"
-                          : "Select metrics to export..."
-                    }
-                    multiSelect={true}
-                    hideSelectedChips={false}
-                    buttonClassName="w-full"
-                    groupHeading="Metrics"
-                    showLabel={true}
-                    label="Metrics"
-                    description="Choose one or more metrics to include in the export."
-                  />
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="brightspace-desktop"
-                    checked={brightspaceFormat}
-                    onCheckedChange={(checked) =>
-                      setBrightspaceFormat(checked === true)
-                    }
-                  />
-                  <label
-                    htmlFor="brightspace-desktop"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Brightspace Format
-                  </label>
-                </div>
-
-                {brightspaceFormat && (
-                  <p className="text-xs text-muted-foreground">
-                    Brightspace format exports one CSV file per selected metric.
-                    {selectedMetrics.length > 1
-                      ? " Multiple metrics are packaged in a ZIP file."
-                      : " Single metric exports as a CSV file."}{" "}
-                    Each CSV follows Brightspace gradebook import format.
-                  </p>
-                )}
-
-                {!brightspaceFormat && (
-                  <p className="text-xs text-muted-foreground">
-                    Regular format exports a single CSV file with the selected
-                    metrics.
-                  </p>
-                )}
-              </div>
-
-              <div className="pt-2 flex justify-end">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="w-full">
-                        <Button
-                          size="sm"
-                          className="w-full"
-                          onClick={handleExport}
-                          disabled={isExportDisabled}
-                        >
-                          {isExporting
-                            ? "Exporting..."
-                            : brightspaceFormat
-                              ? selectedMetrics.length === 1
-                                ? "Export to CSV"
-                                : "Export to ZIP"
-                              : "Export to CSV"}
-                        </Button>
-                      </span>
-                    </TooltipTrigger>
-                    {brightspaceFormat && selectedMetrics.length === 0 && (
-                      <TooltipContent>
-                        <p>Brightspace export requires at least one metric</p>
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
       </div>
 
       {/* Table */}
@@ -1872,8 +1521,6 @@ export function ReportsSkeleton() {
           </div>
 
           <div className="flex items-center space-x-2 mb-2">
-            {/* Export button */}
-            <Skeleton className="h-8 w-24" />
             {/* Column visibility */}
             <Skeleton className="h-8 w-8" />
           </div>

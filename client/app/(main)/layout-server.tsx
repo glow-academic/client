@@ -358,6 +358,31 @@ export async function refreshPage(page: string): Promise<void> {
   await api.post(endpoint as Parameters<typeof api.post>[0], { body: {} });
 }
 
+/** Page-specific export endpoint mapping */
+const EXPORT_ENDPOINT_MAP: Record<string, string> = {
+  home: "/artifacts/home/export",
+  dashboard: "/artifacts/dashboard/export",
+  leaderboard: "/artifacts/leaderboard/export",
+  reports: "/artifacts/reports/export",
+  pricing: "/artifacts/pricing/export",
+  practice: "/artifacts/practice/export",
+  personas: "/artifacts/personas/export",
+  scenarios: "/artifacts/scenarios/export",
+  simulations: "/artifacts/simulations/export",
+  cohorts: "/artifacts/cohorts/export",
+};
+
+/** Page-targeted export: calls the correct /export endpoint for the given page. */
+export async function exportPage(
+  page: string,
+  filters: Record<string, unknown>,
+): Promise<{ upload_id: string; file_name: string; row_count: number }> {
+  "use server";
+  const endpoint = EXPORT_ENDPOINT_MAP[page];
+  if (!endpoint) throw new Error(`No export for page: ${page}`);
+  return api.post(endpoint as Parameters<typeof api.post>[0], { body: filters }) as Promise<{ upload_id: string; file_name: string; row_count: number }>;
+}
+
 /** ---- Strongly-typed server actions for Profile Emulation (single source of truth) ---- */
 export async function searchSimulatableProfiles(
   input: SearchSimulatableProfilesIn
@@ -367,6 +392,7 @@ export async function searchSimulatableProfiles(
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type RefreshPageFn = (page: string) => Promise<void>;
+export type ExportPageFn = typeof exportPage;
 
 export type {
   AnalyticsFiltersOut,

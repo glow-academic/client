@@ -9,6 +9,7 @@ import Leaderboard from "@/components/artifacts/leaderboard/Leaderboard";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
+import { readViewCookie } from "@/lib/view-cookie";
 import {
   computeAnalyticsDefaults,
   resolveAnalyticsFilters,
@@ -67,6 +68,9 @@ export default async function LeaderboardPage({
   const { defaults, profileContext } = await computeAnalyticsDefaults();
   const filters = resolveAnalyticsFilters(q, defaults, profileContext);
 
+  // Read view cookie for column visibility
+  const initialColumnVisibility = await readViewCookie("leaderboard");
+
   // Fetch leaderboard data server-side
   const leaderboardData = await getLeaderboard({
     body: {
@@ -85,7 +89,7 @@ export default async function LeaderboardPage({
 
   return (
     <div className="space-y-6" data-page="leaderboard-index">
-      <Leaderboard leaderboardData={leaderboardData} />
+      <Leaderboard leaderboardData={leaderboardData} initialColumnVisibility={initialColumnVisibility} />
     </div>
   );
 }
