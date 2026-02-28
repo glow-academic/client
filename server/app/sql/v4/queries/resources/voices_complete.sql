@@ -26,7 +26,8 @@ CREATE OR REPLACE FUNCTION api_create_voices_v4(
     tool_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    voices_id uuid
+    voices_id uuid,
+    call_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
@@ -67,6 +68,6 @@ BEGIN
         VALUES (v_voices_id, v_call_id);
     END IF;
 
-    RETURN QUERY SELECT v_voices_id;
+    RETURN QUERY SELECT v_voices_id, v_call_id;
 END;
 $$;

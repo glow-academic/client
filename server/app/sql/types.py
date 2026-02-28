@@ -22959,6 +22959,7 @@ class EndpointsSqlParams(BaseModel):
 class EndpointsSqlRow(BaseModel):
 
     endpoints_id: UUID | None = None
+    call_id: UUID | None = None
 
 class EndpointsApiRequest(BaseModel):
 
@@ -22970,6 +22971,7 @@ class EndpointsApiRequest(BaseModel):
 class EndpointsApiResponse(BaseModel):
 
     endpoints_id: UUID | None = None
+    call_id: UUID | None = None
 
 
 
@@ -23539,6 +23541,7 @@ class GroupPositionsSqlParams(BaseModel):
 class GroupPositionsSqlRow(BaseModel):
 
     group_positions_id: UUID | None = None
+    call_id: UUID | None = None
 
 class GroupPositionsApiRequest(BaseModel):
 
@@ -23552,6 +23555,7 @@ class GroupPositionsApiRequest(BaseModel):
 class GroupPositionsApiResponse(BaseModel):
 
     group_positions_id: UUID | None = None
+    call_id: UUID | None = None
 
 
 
@@ -26476,6 +26480,7 @@ class ProblemStatementsSqlParams(BaseModel):
 class ProblemStatementsSqlRow(BaseModel):
 
     problem_statement_id: UUID | None = None
+    call_id: UUID | None = None
 
 class ProblemStatementsApiRequest(BaseModel):
 
@@ -26488,6 +26493,7 @@ class ProblemStatementsApiRequest(BaseModel):
 class ProblemStatementsApiResponse(BaseModel):
 
     problem_statement_id: UUID | None = None
+    call_id: UUID | None = None
 
 
 
@@ -27851,6 +27857,7 @@ class RunPositionsSqlParams(BaseModel):
 class RunPositionsSqlRow(BaseModel):
 
     run_positions_id: UUID | None = None
+    call_id: UUID | None = None
 
 class RunPositionsApiRequest(BaseModel):
 
@@ -27864,6 +27871,7 @@ class RunPositionsApiRequest(BaseModel):
 class RunPositionsApiResponse(BaseModel):
 
     run_positions_id: UUID | None = None
+    call_id: UUID | None = None
 
 
 
@@ -29959,6 +29967,7 @@ class ValuesSqlParams(BaseModel):
 class ValuesSqlRow(BaseModel):
 
     values_id: UUID | None = None
+    call_id: UUID | None = None
 
 class ValuesApiRequest(BaseModel):
 
@@ -29970,6 +29979,7 @@ class ValuesApiRequest(BaseModel):
 class ValuesApiResponse(BaseModel):
 
     values_id: UUID | None = None
+    call_id: UUID | None = None
 
 
 
@@ -30210,6 +30220,7 @@ class VoicesSqlParams(BaseModel):
 class VoicesSqlRow(BaseModel):
 
     voices_id: UUID | None = None
+    call_id: UUID | None = None
 
 class VoicesApiRequest(BaseModel):
 
@@ -30221,6 +30232,7 @@ class VoicesApiRequest(BaseModel):
 class VoicesApiResponse(BaseModel):
 
     voices_id: UUID | None = None
+    call_id: UUID | None = None
 
 
 

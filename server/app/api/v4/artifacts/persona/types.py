@@ -376,6 +376,7 @@ class SavePersonaApiRequest(BaseModel):
     """Request model for bulk save persona endpoint."""
 
     personas: list[SavePersonaItem]
+    group_id: UUID | None = None  # Tool tracking context from GET response
 
 
 class SavePersonaResult(BaseModel):
@@ -511,6 +512,7 @@ class PatchPersonaDraftApiRequest(BaseModel):
 
     input_draft_id: UUID | None = None
     expected_version: int = 0
+    group_id: UUID | None = None  # Tool tracking context from GET response
     # All optional (partial update)
     name_id: UUID | None = None
     description_id: UUID | None = None

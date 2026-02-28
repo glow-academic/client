@@ -7,6 +7,7 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.tools.call_args import record_call_args, resolve_tool
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -28,6 +29,8 @@ async def create_problem_statements_internal(
     problem_statement: str,
     name: str | None = None,
     mcp: bool = False,
+    group_id: UUID | None = None,
+    tool_id: UUID | None = None,
 ) -> UUID:
     """Create a problem_statement resource and return its ID.
 
@@ -38,6 +41,8 @@ async def create_problem_statements_internal(
         name=name or problem_statement[:100],
         problem_statement=problem_statement,
         mcp=mcp,
+        group_id=group_id,
+        tool_id=tool_id,
     )
     result = cast(
         ProblemStatementsSqlRow,
@@ -47,6 +52,17 @@ async def create_problem_statements_internal(
         raise ValueError(
             f"Failed to create problem_statement: {problem_statement[:50]}"
         )
+
+    # Record arg values if tracking is active (call_id returned by SQL)
+    if result.call_id is not None:
+        tool_info = await resolve_tool(
+            conn, "create", "problem_statements", scope="resources"
+        )
+        if tool_info:
+            await record_call_args(
+                conn, result.call_id, tool_info,
+                {"problem_statement": problem_statement, "name": name}, mcp
+            )
 
     await invalidate_tags(["resources", "problem_statements"])
     return result.problem_statement_id

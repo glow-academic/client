@@ -28,7 +28,8 @@ CREATE OR REPLACE FUNCTION api_create_group_positions_v4(
     tool_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    group_positions_id uuid
+    group_positions_id uuid,
+    call_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
@@ -71,6 +72,6 @@ BEGIN
         VALUES (v_group_positions_id, v_call_id);
     END IF;
 
-    RETURN QUERY SELECT v_group_positions_id;
+    RETURN QUERY SELECT v_group_positions_id, v_call_id;
 END;
 $$;

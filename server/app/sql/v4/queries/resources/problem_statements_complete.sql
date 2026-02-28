@@ -27,7 +27,8 @@ CREATE OR REPLACE FUNCTION api_create_problem_statements_v4(
     tool_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    problem_statement_id uuid
+    problem_statement_id uuid,
+    call_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
@@ -45,7 +46,7 @@ BEGIN
     LIMIT 1;
 
     IF v_problem_statement_id IS NOT NULL THEN
-        RETURN QUERY SELECT v_problem_statement_id;
+        RETURN QUERY SELECT v_problem_statement_id, NULL::uuid;
         RETURN;
     END IF;
 
@@ -73,6 +74,6 @@ BEGIN
         VALUES (v_problem_statement_id, v_call_id);
     END IF;
 
-    RETURN QUERY SELECT v_problem_statement_id;
+    RETURN QUERY SELECT v_problem_statement_id, v_call_id;
 END;
 $$;

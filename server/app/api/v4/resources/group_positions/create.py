@@ -7,6 +7,7 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.tools.call_args import record_call_args, resolve_tool
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -29,6 +30,8 @@ async def create_group_positions_internal(
     eval_id: UUID,
     value: int | None = None,
     mcp: bool = False,
+    group_id: UUID | None = None,
+    tool_id: UUID | None = None,
 ) -> UUID:
     """Create a group_position resource and return its ID.
 
@@ -36,7 +39,8 @@ async def create_group_positions_internal(
     without HTTP overhead. Uses the same SQL as the HTTP endpoint.
     """
     params = GroupPositionsSqlParams(
-        groups_id=groups_id, eval_id=eval_id, value=value, mcp=mcp
+        groups_id=groups_id, eval_id=eval_id, value=value, mcp=mcp,
+        group_id=group_id, tool_id=tool_id
     )
     result = cast(
         GroupPositionsSqlRow,
@@ -44,6 +48,17 @@ async def create_group_positions_internal(
     )
     if not result or not result.group_positions_id:
         raise ValueError("Failed to create group_position")
+
+    # Record arg values if tracking is active (call_id returned by SQL)
+    if result.call_id is not None:
+        tool_info = await resolve_tool(
+            conn, "create", "group_positions", scope="resources"
+        )
+        if tool_info:
+            await record_call_args(
+                conn, result.call_id, tool_info,
+                {"groups_id": groups_id, "eval_id": eval_id, "value": value}, mcp
+            )
 
     await invalidate_tags(["resources", "group_positions"])
     return result.group_positions_id

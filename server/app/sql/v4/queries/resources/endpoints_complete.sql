@@ -26,7 +26,8 @@ CREATE OR REPLACE FUNCTION api_create_endpoints_v4(
     tool_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    endpoints_id uuid
+    endpoints_id uuid,
+    call_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
@@ -46,7 +47,7 @@ BEGIN
         LIMIT 1;
 
         IF v_endpoints_id IS NOT NULL THEN
-            RETURN QUERY SELECT v_endpoints_id;
+            RETURN QUERY SELECT v_endpoints_id, NULL::uuid;
             RETURN;
         END IF;
     END IF;
@@ -81,6 +82,6 @@ BEGIN
         VALUES (v_endpoints_id, v_call_id);
     END IF;
 
-    RETURN QUERY SELECT v_endpoints_id;
+    RETURN QUERY SELECT v_endpoints_id, v_call_id;
 END;
 $$;

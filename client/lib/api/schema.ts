@@ -27043,6 +27043,8 @@ export interface components {
         EndpointsApiResponse: {
             /** Endpoints Id */
             endpoints_id?: string | null;
+            /** Call Id */
+            call_id?: string | null;
         };
         /** EndpointsGenerationEvent */
         EndpointsGenerationEvent: {
@@ -32237,6 +32239,8 @@ export interface components {
         GroupPositionsApiResponse: {
             /** Group Positions Id */
             group_positions_id?: string | null;
+            /** Call Id */
+            call_id?: string | null;
         };
         /** GroupPositionsGenerationEvent */
         GroupPositionsGenerationEvent: {
@@ -36619,6 +36623,8 @@ export interface components {
              * @default 0
              */
             expected_version: number;
+            /** Group Id */
+            group_id?: string | null;
             /** Name Id */
             name_id?: string | null;
             /** Description Id */
@@ -37767,6 +37773,8 @@ export interface components {
         ProblemStatementsApiResponse: {
             /** Problem Statement Id */
             problem_statement_id?: string | null;
+            /** Call Id */
+            call_id?: string | null;
         };
         /** ProblemStatementsGenerationEvent */
         ProblemStatementsGenerationEvent: {
@@ -42133,6 +42141,8 @@ export interface components {
         RunPositionsApiResponse: {
             /** Run Positions Id */
             run_positions_id?: string | null;
+            /** Call Id */
+            call_id?: string | null;
         };
         /** RunPositionsGenerationEvent */
         RunPositionsGenerationEvent: {
@@ -42672,6 +42682,8 @@ export interface components {
         SavePersonaApiRequest: {
             /** Personas */
             personas: components["schemas"]["SavePersonaItem"][];
+            /** Group Id */
+            group_id?: string | null;
         };
         /**
          * SavePersonaApiResponse
@@ -50724,6 +50736,8 @@ export interface components {
         ValuesApiResponse: {
             /** Values Id */
             values_id?: string | null;
+            /** Call Id */
+            call_id?: string | null;
         };
         /** ValuesGenerationEvent */
         ValuesGenerationEvent: {
@@ -50854,6 +50868,8 @@ export interface components {
         VoicesApiResponse: {
             /** Voices Id */
             voices_id?: string | null;
+            /** Call Id */
+            call_id?: string | null;
         };
         /** VoicesGenerationEvent */
         VoicesGenerationEvent: {

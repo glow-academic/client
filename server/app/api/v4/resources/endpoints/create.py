@@ -7,6 +7,7 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.tools.call_args import record_call_args, resolve_tool
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -27,19 +28,31 @@ async def create_endpoints_internal(
     conn: asyncpg.Connection,
     base_url: str,
     mcp: bool = False,
+    group_id: UUID | None = None,
+    tool_id: UUID | None = None,
 ) -> UUID:
     """Create an endpoint resource and return its ID.
 
     Can be called directly from other routes (e.g. duplicate endpoints)
     without HTTP overhead. Uses the same SQL as the HTTP endpoint.
     """
-    params = EndpointsSqlParams(base_url=base_url, mcp=mcp)
+    params = EndpointsSqlParams(base_url=base_url, mcp=mcp, group_id=group_id, tool_id=tool_id)
     result = cast(
         EndpointsSqlRow,
         await execute_sql_typed(conn, SQL_PATH, params=params),
     )
     if not result or not result.endpoints_id:
         raise ValueError(f"Failed to create endpoint: {base_url}")
+
+    # Record arg values if tracking is active (call_id returned by SQL)
+    if result.call_id is not None:
+        tool_info = await resolve_tool(
+            conn, "create", "endpoints", scope="resources"
+        )
+        if tool_info:
+            await record_call_args(
+                conn, result.call_id, tool_info, {"base_url": base_url}, mcp
+            )
 
     await invalidate_tags(["resources", "endpoints"])
     return result.endpoints_id

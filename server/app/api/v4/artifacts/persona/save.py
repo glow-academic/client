@@ -10,6 +10,7 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.persona.permissions import (
+    PERSONA_RESOURCES,
     compute_can_create,
     compute_can_edit,
 )
@@ -23,6 +24,8 @@ from app.api.v4.artifacts.persona.types import (
     SavePersonaSqlRow,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
+from app.api.v4.auth.settings import get_auth_settings_internal
+from app.api.v4.permissions import resolve_agents_for_artifact
 from app.api.v4.resources.colors.search import search_colors_internal
 from app.api.v4.resources.departments.search import search_departments_internal
 from app.api.v4.resources.descriptions.create import create_descriptions_internal
@@ -146,11 +149,14 @@ async def _resolve_persona_values(
     conn: asyncpg.Connection,
     item: SavePersonaItem,
     is_update: bool = False,
+    group_id: uuid.UUID | None = None,
+    create_tool_ids: dict[str, uuid.UUID | None] | None = None,
 ) -> list[SavePersonaFieldError]:
     """Resolve value fields to IDs on the item (mutates in place).
 
     For 'create' resources (name, description, instructions, examples):
       Creates a new resource and sets the *_id field.
+      When group_id and create_tool_ids are provided, tool tracking is recorded.
     For 'match' resources (color, icon, departments, voices, etc.):
       Searches by name and sets the *_id field, or returns an error.
 
@@ -158,23 +164,36 @@ async def _resolve_persona_values(
     """
     errors: list[SavePersonaFieldError] = []
 
+    # Tool tracking args (only active when both group_id and tool_id are present)
+    def _tool_args(resource_key: str) -> dict:
+        if group_id and create_tool_ids:
+            tool_id = create_tool_ids.get(resource_key)
+            if tool_id:
+                return {"group_id": group_id, "tool_id": tool_id}
+        return {}
+
     # --- Create resources (always create new) ---
 
     if item.name is not None and item.name_id is None:
-        item.name_id = await create_names_internal(conn, item.name)
+        item.name_id = await create_names_internal(
+            conn, item.name, **_tool_args("names")
+        )
 
     if item.description is not None and item.description_id is None:
-        item.description_id = await create_descriptions_internal(conn, item.description)
+        item.description_id = await create_descriptions_internal(
+            conn, item.description, **_tool_args("descriptions")
+        )
 
     if item.instructions is not None and item.instructions_id is None:
         item.instructions_id = await create_instructions_internal(
-            conn, item.instructions
+            conn, item.instructions, **_tool_args("instructions")
         )
 
     if item.examples is not None and item.example_ids is None:
+        example_tool_args = _tool_args("examples")
         resolved_ids = []
         for ex in item.examples:
-            eid = await create_examples_internal(conn, ex)
+            eid = await create_examples_internal(conn, ex, **example_tool_args)
             resolved_ids.append(eid)
         item.example_ids = resolved_ids
 
@@ -367,6 +386,17 @@ async def save_persona(
             user_role = None
             user_department_ids = []
 
+        # Resolve create tool IDs from settings (for tool tracking on freeform creates)
+        create_tool_ids: dict[str, uuid.UUID | None] | None = None
+        if request.group_id and pool:
+            async with pool.acquire() as settings_conn:
+                settings_data = await get_auth_settings_internal(
+                    settings_conn, profile_id, bypass_cache=False
+                )
+            _, create_tool_ids, _ = resolve_agents_for_artifact(
+                settings_data.agent_tool_entries, PERSONA_RESOURCES
+            )
+
         # Phase 1: Per-item access + permission checks (outside transaction, fail fast)
         for idx, item in enumerate(request.personas):
             access_params = CheckPersonaSaveAccessSqlParams(
@@ -414,7 +444,11 @@ async def save_persona(
 
         for idx, item in enumerate(request.personas):
             item_errors = await _resolve_persona_values(
-                conn, item, is_update=item.input_persona_id is not None
+                conn,
+                item,
+                is_update=item.input_persona_id is not None,
+                group_id=request.group_id,
+                create_tool_ids=create_tool_ids,
             )
             if item_errors:
                 has_errors = True

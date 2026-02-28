@@ -7,6 +7,7 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.tools.call_args import record_call_args, resolve_tool
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -29,6 +30,8 @@ async def create_run_positions_internal(
     eval_id: UUID,
     value: int | None = None,
     mcp: bool = False,
+    group_id: UUID | None = None,
+    tool_id: UUID | None = None,
 ) -> UUID:
     """Create a run_position resource and return its ID.
 
@@ -36,7 +39,8 @@ async def create_run_positions_internal(
     without HTTP overhead. Uses the same SQL as the HTTP endpoint.
     """
     params = RunPositionsSqlParams(
-        runs_id=runs_id, eval_id=eval_id, value=value, mcp=mcp
+        runs_id=runs_id, eval_id=eval_id, value=value, mcp=mcp,
+        group_id=group_id, tool_id=tool_id
     )
     result = cast(
         RunPositionsSqlRow,
@@ -44,6 +48,17 @@ async def create_run_positions_internal(
     )
     if not result or not result.run_positions_id:
         raise ValueError("Failed to create run_position")
+
+    # Record arg values if tracking is active (call_id returned by SQL)
+    if result.call_id is not None:
+        tool_info = await resolve_tool(
+            conn, "create", "run_positions", scope="resources"
+        )
+        if tool_info:
+            await record_call_args(
+                conn, result.call_id, tool_info,
+                {"runs_id": runs_id, "eval_id": eval_id, "value": value}, mcp
+            )
 
     await invalidate_tags(["resources", "run_positions"])
     return result.run_positions_id
