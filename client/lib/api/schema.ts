@@ -14429,7 +14429,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/auth/group": {
+    "/api/v4/auth/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -14442,7 +14442,27 @@ export interface paths {
          * Get Group Messages
          * @description Return paginated messages for a specific group.
          */
-        post: operations["get_group_messages_api_v4_auth_group_post"];
+        post: operations["get_group_messages_api_v4_auth_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/auth/group": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve Group
+         * @description Resolve a group_id: look up from draft if available, otherwise create new.
+         */
+        post: operations["resolve_group_api_v4_auth_group_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -31154,7 +31174,7 @@ export interface components {
         };
         /**
          * GetGroupMessagesApiRequest
-         * @description Request body for /auth/group endpoint.
+         * @description Request body for /auth/generate endpoint.
          */
         GetGroupMessagesApiRequest: {
             /**
@@ -31803,6 +31823,8 @@ export interface components {
             icon_show_selected?: boolean | null;
             /** Parameter Field Show Selected */
             parameter_field_show_selected?: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
         };
         /**
          * GetPersonaApiResponse
@@ -41390,6 +41412,8 @@ export interface components {
             version?: number | null;
             /** Updated At */
             updated_at?: string | null;
+            /** Group Id */
+            group_id?: string | null;
         };
         /** QGetProfileContextV4RoleResource */
         QGetProfileContextV4RoleResource: {
@@ -43134,6 +43158,24 @@ export interface components {
             generated?: boolean | null;
             /** Requests Per Day */
             requests_per_day?: number | null;
+        };
+        /**
+         * ResolveGroupApiRequest
+         * @description Request body for POST /auth/group — resolve or create a group_id.
+         */
+        ResolveGroupApiRequest: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** Artifact Type */
+            artifact_type?: string | null;
+        };
+        /**
+         * ResolveGroupApiResponse
+         * @description Response for POST /auth/group — resolved group_id.
+         */
+        ResolveGroupApiResponse: {
+            /** Group Id */
+            group_id: string;
         };
         /** ResolveProblemRequest */
         ResolveProblemRequest: {
@@ -79799,7 +79841,7 @@ export interface operations {
             };
         };
     };
-    get_group_messages_api_v4_auth_group_post: {
+    get_group_messages_api_v4_auth_generate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -79823,6 +79865,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetGroupMessagesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_group_api_v4_auth_group_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveGroupApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResolveGroupApiResponse"];
                 };
             };
             /** @description Validation Error */

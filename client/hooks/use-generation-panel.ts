@@ -10,9 +10,10 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useGroupIdOptional } from "@/contexts/group-context";
 import type {
-  GroupMessagesIn,
-  GroupMessagesOut,
+  GenerateMessagesIn,
+  GenerateMessagesOut,
 } from "@/app/(main)/layout-server";
 
 export type PanelTab = "artifacts" | "resources" | "entries";
@@ -28,9 +29,9 @@ export interface GroupMessage {
 const PANEL_COOKIE = "glow_ai_panel";
 
 export interface UseGenerationPanelConfig {
-  /** Group ID injected by the page context */
+  /** Group ID injected by the page context. Falls back to GroupContext if not provided. */
   groupId: string | null;
-  getGroupMessagesAction: (input: GroupMessagesIn) => Promise<GroupMessagesOut>;
+  getGenerateMessagesAction: (input: GenerateMessagesIn) => Promise<GenerateMessagesOut>;
   /** Initial panel open state from SSR cookie */
   initialPanelOpen?: boolean;
 }
@@ -66,10 +67,12 @@ export interface UseGenerationPanelReturn {
 const PAGE_SIZE = 50;
 
 export function useGenerationPanel({
-  groupId,
-  getGroupMessagesAction,
+  groupId: groupIdProp,
+  getGenerateMessagesAction,
   initialPanelOpen,
 }: UseGenerationPanelConfig): UseGenerationPanelReturn {
+  const groupContext = useGroupIdOptional();
+  const groupId = groupIdProp ?? groupContext?.groupId ?? null;
   // Panel visibility — initialised from SSR cookie
   const [panelOpen, setPanelOpenRaw] = useState(initialPanelOpen ?? false);
 
@@ -105,7 +108,7 @@ export function useGenerationPanel({
     setIsLoadingMessages(true);
     offsetRef.current = 0;
 
-    getGroupMessagesAction({
+    getGenerateMessagesAction({
       body: {
         group_id: groupId,
         page_limit: PAGE_SIZE,
@@ -132,7 +135,7 @@ export function useGenerationPanel({
     return () => {
       cancelled = true;
     };
-  }, [groupId, getGroupMessagesAction]);
+  }, [groupId, getGenerateMessagesAction]);
 
   // Load more (pagination)
   const loadMoreMessages = useCallback(() => {
@@ -140,7 +143,7 @@ export function useGenerationPanel({
     if (messages.length >= totalMessageCount) return;
 
     setIsLoadingMessages(true);
-    getGroupMessagesAction({
+    getGenerateMessagesAction({
       body: {
         group_id: groupId,
         page_limit: PAGE_SIZE,
@@ -159,7 +162,7 @@ export function useGenerationPanel({
     isLoadingMessages,
     messages.length,
     totalMessageCount,
-    getGroupMessagesAction,
+    getGenerateMessagesAction,
   ]);
 
   // Type selection

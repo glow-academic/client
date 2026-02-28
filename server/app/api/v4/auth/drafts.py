@@ -64,11 +64,13 @@ _ARTIFACT_INTERNAL_FN = {
 
 def _convert_draft(item: Any, artifact_type: str) -> QGetProfileContextV4Draft:
     """Convert a draft entries item to the API response format."""
+    group_id = getattr(item, "group_id", None)
     return QGetProfileContextV4Draft(
         id=item.draft_id,
         artifact_type=artifact_type,
         version=item.version,
         updated_at=item.updated_at.isoformat() if item.updated_at else None,
+        group_id=str(group_id) if group_id else None,
     )
 
 

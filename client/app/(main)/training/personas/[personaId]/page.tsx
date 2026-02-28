@@ -7,6 +7,7 @@
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import Persona from "@/components/artifacts/persona/Persona";
+import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -273,6 +274,9 @@ export default async function PersonaEditPage({
   const loadPersonaSearchParams = createLoader(personaSearchParams);
   const q = loadPersonaSearchParams(searchParamsObj);
 
+  // Resolve group_id from layout context (cached per request)
+  const groupId = await resolveGroupId(q.draftId ?? null, "persona");
+
   // Fetch persona detail (always fresh - source of truth) with filter params
   // Note: OpenAPI schema may need regeneration to include new filter params
   try {
@@ -280,6 +284,7 @@ export default async function PersonaEditPage({
       body: {
         persona_id: personaId,
         draft_id: q.draftId ?? null,
+        group_id: groupId,
         color_search: q.colorSearch ?? null,
         icon_search: q.iconSearch ?? null,
         descriptions_search: q.descriptionSearch ?? null,

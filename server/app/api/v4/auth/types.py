@@ -34,6 +34,7 @@ class QGetProfileContextV4Draft(BaseModel):
     payload: dict | None = None
     version: int | None = None
     updated_at: str | None = None
+    group_id: str | None = None
 
 
 @dataclass
@@ -215,6 +216,24 @@ class GetInsightsApiResponse(BaseModel):
     """Response model for /auth/insights endpoint."""
 
     insights: list[InsightItem] | None = None
+
+
+# ---------------------------------------------------------------------------
+# Resolve group_id types
+# ---------------------------------------------------------------------------
+
+
+class ResolveGroupApiRequest(BaseModel):
+    """Request body for POST /auth/group — resolve or create a group_id."""
+
+    draft_id: UUID | None = None
+    artifact_type: str | None = None
+
+
+class ResolveGroupApiResponse(BaseModel):
+    """Response for POST /auth/group — resolved group_id."""
+
+    group_id: str
 
 
 # ---------------------------------------------------------------------------

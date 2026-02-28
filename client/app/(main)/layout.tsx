@@ -12,9 +12,10 @@ import { Suspense } from "react";
 import { MainLayoutClient } from "./layout-client";
 import {
   createFeedback,
-  getGroupMessages,
+  getGenerateMessages,
   getLayoutContextData,
   refreshPage,
+  resolveGroupId,
   searchSimulatableProfiles,
   switchEffectiveProfile,
 } from "./layout-server";
@@ -79,6 +80,18 @@ export default async function MainLayout({
     );
   }
 
+  // Resolve group_id: find the current draft's group_id or create a fresh one
+  const artifactType = pageData?.page_metadata?.artifact_type ?? null;
+  const currentDraft = drafts.find((d) => d.artifact_type === artifactType);
+  const draftGroupId = currentDraft?.group_id ?? null;
+  const draftId = currentDraft?.id ? String(currentDraft.id) : null;
+
+  // Only resolve group_id for artifact pages (not list pages)
+  let groupId: string | null = null;
+  if (artifactType && pageData?.page_metadata?.show_drafts) {
+    groupId = draftGroupId ?? await resolveGroupId(draftId, artifactType);
+  }
+
   // Determine page content: access denied (inside sidebar) or normal page
   const pageAccessDenied = pageData?.page_access && !pageData.page_access.authorized;
 
@@ -104,7 +117,8 @@ export default async function MainLayout({
         createFeedbackAction={createFeedback}
         refreshPageAction={refreshPage}
         searchSimulatableProfilesAction={searchSimulatableProfiles}
-        getGroupMessagesAction={getGroupMessages}
+        getGenerateMessagesAction={getGenerateMessages}
+        groupId={groupId}
       >
         {pageAccessDenied ? (
           <UnifiedAccessDenied

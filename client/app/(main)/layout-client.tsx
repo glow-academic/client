@@ -25,6 +25,7 @@ import {
   DraftProviderClient,
   type DraftItem,
 } from "@/contexts/draft-context";
+import { GroupProviderClient, useGroupId } from "@/contexts/group-context";
 import {
   InsightsProviderClient,
   type InsightItem,
@@ -42,8 +43,8 @@ import type {
   AuthSettingsResponse,
   CreateFeedbackIn,
   CreateFeedbackOut,
-  GroupMessagesIn,
-  GroupMessagesOut,
+  GenerateMessagesIn,
+  GenerateMessagesOut,
   RefreshPageFn,
   SafeSessionSnapshot,
   SearchSimulatableProfilesIn,
@@ -63,7 +64,7 @@ function MainLayoutContent({
   createFeedbackAction,
   refreshPageAction,
   searchSimulatableProfilesAction,
-  getGroupMessagesAction,
+  getGenerateMessagesAction,
 }: {
   children: React.ReactNode;
   pageData: AuthPageResponse | null;
@@ -77,7 +78,7 @@ function MainLayoutContent({
   searchSimulatableProfilesAction: (
     input: SearchSimulatableProfilesIn
   ) => Promise<SearchSimulatableProfilesOut>;
-  getGroupMessagesAction: (input: GroupMessagesIn) => Promise<GroupMessagesOut>;
+  getGenerateMessagesAction: (input: GenerateMessagesIn) => Promise<GenerateMessagesOut>;
 }) {
   const pathname = usePathname() || "/";
 
@@ -160,10 +161,11 @@ function MainLayoutContent({
     );
   }, [pageMetadata, router]);
 
-  // AI generation panel state — group_id injected by page context (null for now)
+  // AI generation panel state — group_id from context (resolved at layout level)
+  const groupContext = useGroupId();
   const panel = useGenerationPanel({
-    groupId: null,
-    getGroupMessagesAction,
+    groupId: groupContext.groupId,
+    getGenerateMessagesAction,
     initialPanelOpen,
   });
 
@@ -256,7 +258,8 @@ export function MainLayoutClient({
   createFeedbackAction,
   refreshPageAction,
   searchSimulatableProfilesAction,
-  getGroupMessagesAction,
+  getGenerateMessagesAction,
+  groupId,
 }: {
   children: React.ReactNode;
   profileData: AuthProfileResponse | null;
@@ -279,7 +282,9 @@ export function MainLayoutClient({
   searchSimulatableProfilesAction: (
     input: SearchSimulatableProfilesIn
   ) => Promise<SearchSimulatableProfilesOut>;
-  getGroupMessagesAction: (input: GroupMessagesIn) => Promise<GroupMessagesOut>;
+  getGenerateMessagesAction: (input: GenerateMessagesIn) => Promise<GenerateMessagesOut>;
+  /** Resolved group_id from layout (null for non-artifact pages) */
+  groupId: string | null;
 }) {
   const pathname = usePathname();
 
@@ -318,30 +323,32 @@ export function MainLayoutClient({
         sessionId={profileData?.session_id ?? null}
       >
         <DraftProviderClient drafts={drafts} initialAutosave={initialAutosave}>
-          <InsightsProviderClient insights={insights}>
-            <ProfileProviderClient
-              initial={profileData}
-              sessionSnapshot={sessionSnapshot}
-              analyticsFilters={analyticsFilters}
-            >
-              <SettingsProviderClient settings={settingsData}>
-                <MainLayoutContent
-                  pageData={pageData}
-                  attemptControls={attemptControls}
-                  initialPanelOpen={initialPanelOpen}
-                  switchEffectiveProfileAction={switchEffectiveProfileAction}
-                  createFeedbackAction={createFeedbackAction}
-                  refreshPageAction={refreshPageAction}
-                  searchSimulatableProfilesAction={
-                    searchSimulatableProfilesAction
-                  }
-                  getGroupMessagesAction={getGroupMessagesAction}
-                >
-                  {children}
-                </MainLayoutContent>
-              </SettingsProviderClient>
-            </ProfileProviderClient>
-          </InsightsProviderClient>
+          <GroupProviderClient initialGroupId={groupId}>
+            <InsightsProviderClient insights={insights}>
+              <ProfileProviderClient
+                initial={profileData}
+                sessionSnapshot={sessionSnapshot}
+                analyticsFilters={analyticsFilters}
+              >
+                <SettingsProviderClient settings={settingsData}>
+                  <MainLayoutContent
+                    pageData={pageData}
+                    attemptControls={attemptControls}
+                    initialPanelOpen={initialPanelOpen}
+                    switchEffectiveProfileAction={switchEffectiveProfileAction}
+                    createFeedbackAction={createFeedbackAction}
+                    refreshPageAction={refreshPageAction}
+                    searchSimulatableProfilesAction={
+                      searchSimulatableProfilesAction
+                    }
+                    getGenerateMessagesAction={getGenerateMessagesAction}
+                  >
+                    {children}
+                  </MainLayoutContent>
+                </SettingsProviderClient>
+              </ProfileProviderClient>
+            </InsightsProviderClient>
+          </GroupProviderClient>
         </DraftProviderClient>
       </SocketProviderClient>
     </>

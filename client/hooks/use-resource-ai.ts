@@ -1,5 +1,6 @@
 "use client";
 
+import { useGroupIdOptional } from "@/contexts/group-context";
 import { useSocket } from "@/contexts/socket-context";
 import type { ServerToClientEvents } from "@/lib/ws/types";
 import { useCallback, useEffect, useState } from "react";
@@ -49,8 +50,8 @@ export type ResourceEventPayload<R extends string> =
 export function useResourceAi<R extends string>(config: {
   /** Resource type key, e.g. "names" → listens to "names_generation_*" */
   resourceType: R;
-  /** Group ID for filtering socket events */
-  groupId: string | null | undefined;
+  /** Group ID for filtering socket events. Falls back to GroupContext if not provided. */
+  groupId?: string | null | undefined;
   /** When true, accumulate suggestions into an array (for multi-value resources) */
   accumulate?: boolean;
 }): {
@@ -70,9 +71,10 @@ export function useResourceAi<R extends string>(config: {
     null,
   );
 
+  const groupContext = useGroupIdOptional();
   const accumulate = config.accumulate ?? false;
   const resourceType = config.resourceType;
-  const groupId = config.groupId;
+  const groupId = config.groupId ?? groupContext?.groupId ?? null;
 
   useEffect(() => {
     if (!socket || !isConnected) return;

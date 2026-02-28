@@ -140,6 +140,7 @@ async def get_persona_internal(
     color_show_selected: bool | None = None,
     icon_show_selected: bool | None = None,
     parameter_field_show_selected: bool | None = None,
+    group_id: UUID | None = None,
 ) -> PersonaInternalData:
     """Core data fetching layer (cacheable).
 
@@ -192,8 +193,10 @@ async def get_persona_internal(
             if draft_items:
                 draft_item = draft_items[0]
 
-    # === GROUP ID: Create in Python (moved from SQL side-effect) ===
-    if draft_item and draft_item.group_id:
+    # === GROUP ID: Use provided group_id, or fall back to draft/create ===
+    if group_id:
+        effective_group_id = group_id
+    elif draft_item and draft_item.group_id:
         effective_group_id = draft_item.group_id
     else:
         async with pool.acquire() as c:
@@ -1092,6 +1095,7 @@ async def get_persona_client(
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
     parameter_ids: list[UUID] | None = None,
+    group_id: UUID | None = None,
 ) -> GetPersonaApiResponse:
     """BFF response for HTTP endpoint/frontend.
 
@@ -1105,6 +1109,7 @@ async def get_persona_client(
         draft_id=draft_id,
         bypass_cache=bypass_cache,
         parameter_ids=parameter_ids,
+        group_id=group_id,
     )
 
     all_resources = data.resources_payload.resources
@@ -1256,6 +1261,7 @@ async def get_persona(
             parameter_ids=[UUID(pid) for pid in request.parameter_ids]
             if request.parameter_ids
             else None,
+            group_id=request.group_id,
         )
 
         # Set audit context

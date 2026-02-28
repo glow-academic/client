@@ -20,6 +20,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { useGroupIdOptional } from "@/contexts/group-context";
 import { useSocket } from "@/contexts/socket-context";
 import type { ClientToServerEvents } from "@/lib/ws/types";
 
@@ -39,8 +40,8 @@ type GenerateOptions = Omit<GeneratePayload, "artifact_types" | "resource_types"
 interface UseArtifactAiConfig {
   /** Registry key, e.g. "cohort", "persona", "tool" */
   artifactType: string;
-  /** Group ID for filtering incoming socket events */
-  groupId: string | null | undefined;
+  /** Group ID for filtering incoming socket events. Falls back to GroupContext if not provided. */
+  groupId?: string | null | undefined;
   /** Allowed resource types for this artifact */
   validResourceTypes: string[];
   /** Called when generation completes (success or failure) */
@@ -87,11 +88,13 @@ function formatResourceTypes(types: string[]): string {
 
 export function useArtifactAi({
   artifactType,
-  groupId,
+  groupId: groupIdProp,
   validResourceTypes,
   onComplete,
 }: UseArtifactAiConfig): UseArtifactAiReturn {
   const { socket, isConnected } = useSocket();
+  const groupContext = useGroupIdOptional();
+  const groupId = groupIdProp ?? groupContext?.groupId ?? null;
   const [generatingResources, setGeneratingResources] = useState<Set<string>>(
     new Set(),
   );

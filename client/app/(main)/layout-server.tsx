@@ -128,14 +128,34 @@ export const getAuthAttempt = cache(
   }
 );
 
-/** ---- Group messages server action ---- */
-type GroupMessagesIn = InputOf<"/api/v4/auth/group", "post">;
-type GroupMessagesOut = OutputOf<"/api/v4/auth/group", "post">;
+/** ---- Resolve group_id (cached per request) ---- */
+type ResolveGroupIn = InputOf<"/api/v4/auth/group", "post">;
 
-export async function getGroupMessages(
-  input: GroupMessagesIn
-): Promise<GroupMessagesOut> {
-  return api.post("/auth/group", input);
+export const resolveGroupId = cache(
+  async (draftId: string | null, artifactType: string | null): Promise<string> => {
+    const extraHeaders = await buildAuthHeaders();
+    const res = await api.post(
+      "/auth/group",
+      {
+        body: {
+          draft_id: draftId ?? null,
+          artifact_type: artifactType ?? null,
+        },
+      } as ResolveGroupIn,
+      { headers: extraHeaders },
+    );
+    return res.group_id;
+  },
+);
+
+/** ---- Generate messages server action ---- */
+type GenerateMessagesIn = InputOf<"/api/v4/auth/generate", "post">;
+type GenerateMessagesOut = OutputOf<"/api/v4/auth/generate", "post">;
+
+export async function getGenerateMessages(
+  input: GenerateMessagesIn
+): Promise<GenerateMessagesOut> {
+  return api.post("/auth/generate", input);
 }
 
 /** ---- Export type for client (type-only imports) ---- */
@@ -372,10 +392,8 @@ export type {
   AttemptFullOut,
   CreateFeedbackIn,
   CreateFeedbackOut,
-  GroupMessagesIn,
-  GroupMessagesOut,
-  SearchGroupsIn,
-  SearchGroupsOut,
+  GenerateMessagesIn,
+  GenerateMessagesOut,
   SearchSimulatableProfilesIn,
   SearchSimulatableProfilesOut,
   SwitchEffectiveProfileParams,

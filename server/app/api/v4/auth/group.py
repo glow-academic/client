@@ -1,125 +1,82 @@
-"""Group messages endpoint — returns paginated messages for a group."""
+"""Resolve group_id endpoint — looks up draft group_id or creates a new one."""
 
 from __future__ import annotations
 
-from typing import Any
-from uuid import UUID
-
 from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel
 
-from app.api.v4.auth.types import GetGroupMessagesApiResponse, GroupMessageItem
+from app.api.v4.auth.types import ResolveGroupApiRequest, ResolveGroupApiResponse
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_pool
 
 router = APIRouter()
 
+# Mapping from artifact_type to its drafts_entry table name
+_DRAFT_TABLE_MAP: dict[str, str] = {
+    "agent": "agent_drafts_entry",
+    "cohort": "cohort_drafts_entry",
+    "department": "department_drafts_entry",
+    "document": "document_drafts_entry",
+    "eval": "eval_drafts_entry",
+    "field": "field_drafts_entry",
+    "model": "model_drafts_entry",
+    "parameter": "parameter_drafts_entry",
+    "persona": "persona_drafts_entry",
+    "profile": "profile_drafts_entry",
+    "provider": "provider_drafts_entry",
+    "rubric": "rubric_drafts_entry",
+    "scenario": "scenario_drafts_entry",
+    "setting": "setting_drafts_entry",
+    "simulation": "simulation_drafts_entry",
+    "tool": "tool_drafts_entry",
+    "chat": "chat_drafts_entry",
+    "auth": "auth_drafts_entry",
+}
 
-class GetGroupMessagesApiRequest(BaseModel):
-    """Request body for /auth/group endpoint."""
-
-    group_id: UUID
-    page_limit: int = 50
-    page_offset: int = 0
-
-
-def _convert_message(msg: Any) -> GroupMessageItem:
-    """Convert a SQL row/dict to the API message format."""
-    if isinstance(msg, dict):
-        created_at_raw = msg.get("message_created_at")
-        return GroupMessageItem(
-            message_id=str(msg["message_id"]) if msg.get("message_id") else None,
-            run_id=str(msg["run_id"]) if msg.get("run_id") else None,
-            role=msg.get("role"),
-            message_created_at=created_at_raw.isoformat()
-            if hasattr(created_at_raw, "isoformat")
-            else str(created_at_raw)
-            if created_at_raw
-            else None,
-            contents=msg.get("contents"),
-        )
-    # Attribute-style (Record) access
-    created_at_raw = getattr(msg, "message_created_at", None)
-    return GroupMessageItem(
-        message_id=str(msg.message_id) if getattr(msg, "message_id", None) else None,
-        run_id=str(msg.run_id) if getattr(msg, "run_id", None) else None,
-        role=getattr(msg, "role", None),
-        message_created_at=created_at_raw.isoformat()
-        if hasattr(created_at_raw, "isoformat")
-        else str(created_at_raw)
-        if created_at_raw
-        else None,
-        contents=getattr(msg, "contents", None),
-    )
+# All known draft entry tables (for UNION lookup when artifact_type unknown)
+_ALL_DRAFT_TABLES = list(_DRAFT_TABLE_MAP.values())
 
 
-@router.post("/group", response_model=GetGroupMessagesApiResponse)
-async def get_group_messages(
-    request: GetGroupMessagesApiRequest,
+@router.post("/group", response_model=ResolveGroupApiResponse)
+async def resolve_group(
+    request: ResolveGroupApiRequest,
     http_request: Request,
-) -> GetGroupMessagesApiResponse:
-    """Return paginated messages for a specific group."""
+) -> ResolveGroupApiResponse:
+    """Resolve a group_id: look up from draft if available, otherwise create new."""
     try:
         pool = get_pool()
         if not pool:
             raise HTTPException(status_code=500, detail="Database pool not available")
 
-        async with pool.acquire() as conn:
-            row = await conn.fetchrow(
-                "SELECT * FROM api_get_auth_group_messages_v4($1, $2, $3)",
-                request.group_id,
-                request.page_limit,
-                request.page_offset,
-            )
+        group_id = None
 
-        if not row or not row["items"]:
-            return GetGroupMessagesApiResponse()
+        # Try to find group_id from an existing draft
+        if request.draft_id is not None:
+            async with pool.acquire() as conn:
+                if request.artifact_type and request.artifact_type in _DRAFT_TABLE_MAP:
+                    # Narrow lookup: query the specific draft table
+                    table = _DRAFT_TABLE_MAP[request.artifact_type]
+                    group_id = await conn.fetchval(
+                        f"SELECT group_id FROM {table} WHERE id = $1",  # noqa: S608
+                        request.draft_id,
+                    )
+                else:
+                    # Broad lookup: try all draft tables via UNION
+                    parts = [
+                        f"SELECT group_id FROM {t} WHERE id = $1"
+                        for t in _ALL_DRAFT_TABLES
+                    ]
+                    union_query = " UNION ALL ".join(parts) + " LIMIT 1"
+                    group_id = await conn.fetchval(union_query, request.draft_id)
 
-        items = row["items"]
-        if not items:
-            return GetGroupMessagesApiResponse()
+        # If no group_id found (no draft, or draft has no group), create a new one
+        if not group_id:
+            async with pool.acquire() as conn:
+                group_id = await conn.fetchval(
+                    "INSERT INTO groups_entry (created_at, updated_at) "
+                    "VALUES (NOW(), NOW()) RETURNING id"
+                )
 
-        # Extract the first (only) item from the array
-        item = items[0]
-
-        messages_raw = (
-            item.get("messages", [])
-            if isinstance(item, dict)
-            else getattr(item, "messages", [])
-        )
-        messages = [_convert_message(m) for m in (messages_raw or [])]
-
-        if isinstance(item, dict):
-            group_created_at_raw = item.get("group_created_at")
-            return GetGroupMessagesApiResponse(
-                group_id=str(item["group_id"]) if item.get("group_id") else None,
-                group_name=item.get("group_name"),
-                group_created_at=group_created_at_raw.isoformat()
-                if hasattr(group_created_at_raw, "isoformat")
-                else str(group_created_at_raw)
-                if group_created_at_raw
-                else None,
-                session_id=str(item["session_id"]) if item.get("session_id") else None,
-                messages=messages,
-                total_message_count=item.get("total_message_count", 0),
-            )
-
-        # Attribute-style
-        group_created_at_raw = getattr(item, "group_created_at", None)
-        return GetGroupMessagesApiResponse(
-            group_id=str(item.group_id) if getattr(item, "group_id", None) else None,
-            group_name=getattr(item, "group_name", None),
-            group_created_at=group_created_at_raw.isoformat()
-            if hasattr(group_created_at_raw, "isoformat")
-            else str(group_created_at_raw)
-            if group_created_at_raw
-            else None,
-            session_id=str(item.session_id)
-            if getattr(item, "session_id", None)
-            else None,
-            messages=messages,
-            total_message_count=getattr(item, "total_message_count", 0),
-        )
+        return ResolveGroupApiResponse(group_id=str(group_id))
 
     except HTTPException:
         raise
@@ -127,6 +84,6 @@ async def get_group_messages(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="get_group_messages",
+            operation="resolve_group",
             request=http_request,
         )
