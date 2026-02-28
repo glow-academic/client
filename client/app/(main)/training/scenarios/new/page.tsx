@@ -14,6 +14,7 @@ import {
   extractFieldShowSelectedByParam,
   loadScenarioSearchParams,
 } from "@/lib/search-params/scenarios";
+import { resolveGroupId } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetScenarioIn = InputOf<"/api/v4/artifacts/scenarios/get", "post">;
@@ -259,10 +260,14 @@ export default async function NewScenarioPage({
   const fieldShowSelectedByParam =
     extractFieldShowSelectedByParam(searchParamsObj);
 
+  // Resolve group_id from layout context (cached per request)
+  const groupId = await resolveGroupId(q.draftId ?? null, "scenario");
+
   // Fetch default scenario detail server-side with filter params
   const scenarioDetailDefault = await getScenario({
     body: {
       draft_id: q.draftId ?? null,
+      group_id: groupId,
       filter_department_ids: csvToArray(q.departmentIds) ?? null,
       filter_persona_ids: csvToArray(q.personaIds) ?? null,
       filter_document_ids: csvToArray(q.documentIds) ?? null,

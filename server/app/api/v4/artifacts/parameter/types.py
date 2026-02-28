@@ -68,6 +68,7 @@ class GetParameterApiRequest(BaseModel):
     draft_id: UUID | None = None
     field_search: str | None = None
     field_show_selected: bool | None = None
+    group_id: UUID | None = None
 
 
 class GetParameterApiResponse(BaseModel):

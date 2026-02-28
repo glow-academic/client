@@ -236,6 +236,7 @@ async def get_scenario_internal(
     document_show_selected: bool | None = None,
     parameter_show_selected: bool | None = None,
     parameter_ids: list[UUID] | None = None,
+    group_id: UUID | None = None,
 ) -> ScenarioInternalData:
     """Core data fetching layer (cacheable).
 
@@ -288,7 +289,9 @@ async def get_scenario_internal(
     ]
 
     # === GROUP ID: Create in Python (moved from SQL side-effect) ===
-    if draft_item and draft_item.group_id:
+    if group_id:
+        effective_group_id = group_id
+    elif draft_item and draft_item.group_id:
         effective_group_id = draft_item.group_id
     else:
         async with pool.acquire() as c:
@@ -1429,6 +1432,7 @@ async def get_scenario_client(
     document_show_selected: bool | None = None,
     parameter_show_selected: bool | None = None,
     parameter_ids: list[UUID] | None = None,
+    group_id: UUID | None = None,
 ) -> GetScenarioApiResponse:
     """BFF response for HTTP endpoint/frontend.
 
@@ -1453,6 +1457,7 @@ async def get_scenario_client(
         document_show_selected=document_show_selected,
         parameter_show_selected=parameter_show_selected,
         parameter_ids=parameter_ids,
+        group_id=group_id,
     )
 
     resources_bucket = data.resources_payload.resources
@@ -1627,6 +1632,7 @@ async def get_scenario(
             parameter_ids=[UUID(str(pid)) for pid in request.parameter_ids]
             if request.parameter_ids
             else None,
+            group_id=request.group_id,
         )
 
         # Set audit context

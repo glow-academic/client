@@ -28953,6 +28953,8 @@ export interface components {
             profile_show_selected?: boolean | null;
             /** Draft Id */
             draft_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
         };
         /**
          * GetCohortApiResponse
@@ -30109,6 +30111,8 @@ export interface components {
             field_search?: string | null;
             /** Field Show Selected */
             field_show_selected?: boolean | null;
+            /** Group Id */
+            group_id?: string | null;
         };
         /**
          * GetParameterApiResponse
@@ -31043,6 +31047,8 @@ export interface components {
             field_show_selected_by_param?: components["schemas"]["ScenarioFieldParamFilter"][] | null;
             /** Draft Id */
             draft_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
             /**
              * Mcp
              * @default false

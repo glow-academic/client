@@ -1026,6 +1026,7 @@ async def get_cohort_client(
     cohort_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    group_id: UUID | None = None,
 ) -> GetCohortApiResponse:
     """BFF response for HTTP endpoint/frontend.
 
@@ -1037,6 +1038,7 @@ async def get_cohort_client(
         cohort_id=cohort_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
+        group_id=group_id,
     )
 
     resources_bucket = data.resources_payload.resources
@@ -1172,6 +1174,7 @@ async def get_cohort(
             cohort_id=request.cohort_id,
             draft_id=request.draft_id,
             bypass_cache=bypass_cache,
+            group_id=request.group_id,
         )
 
         # Set audit context

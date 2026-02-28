@@ -7,6 +7,7 @@
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import Parameter from "@/components/artifacts/parameter/Parameter";
+import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -118,12 +119,15 @@ export default async function ParameterEditPage({
   const loadParameterSearchParams = createLoader(parameterSearchParams);
   const q = loadParameterSearchParams(searchParamsObj);
 
+  const groupId = await resolveGroupId(q.draftId ?? null, "parameter");
+
   // Fetch parameter detail (always fresh - source of truth) with filter params
   try {
     const input: ParameterGetIn = {
       body: {
         parameter_id: parameterId,
         draft_id: q.draftId ?? null,
+        group_id: groupId,
       } as ParameterGetIn["body"],
     };
     const parameterDetail = await getParameter(input);

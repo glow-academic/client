@@ -6,6 +6,7 @@
  */
 
 import Cohort from "@/components/artifacts/cohort/Cohort";
+import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -217,12 +218,15 @@ export default async function NewCohortPage({
   const loadCohortSearchParams = createLoader(cohortSearchParams);
   const q = loadCohortSearchParams(searchParamsObj);
 
+  const groupId = await resolveGroupId(q.draftId ?? null, "cohort");
+
   // Fetch default cohort detail server-side with filter params and draft_id
   // Note: cohort_id is null for new mode
   const input: GetCohortIn = {
     body: {
       cohort_id: null,
       draft_id: q.draftId ?? null,
+      group_id: groupId,
       descriptions_search: q.descriptionSearch ?? null,
       simulation_search: q.simulationSearch ?? null,
       simulation_show_selected: q.simulationShowSelected ?? null,

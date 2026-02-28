@@ -152,6 +152,7 @@ class GetCohortApiRequest(BaseModel):
     profile_search: str | None = None
     profile_show_selected: bool | None = None
     draft_id: UUID | None = None
+    group_id: UUID | None = None
 
 
 class CohortNameSection(BaseResourceSection):

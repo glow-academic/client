@@ -7,6 +7,7 @@
 
 import Cohort from "@/components/artifacts/cohort/Cohort";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -225,6 +226,8 @@ export default async function CohortEditPage({
   const loadCohortSearchParams = createLoader(cohortSearchParams);
   const q = loadCohortSearchParams(searchParamsObj);
 
+  const groupId = await resolveGroupId(q.draftId ?? null, "cohort");
+
   // Check cohort access by fetching detail (will return 403 if no access)
   let cohortData: GetCohortOut;
   try {
@@ -232,6 +235,7 @@ export default async function CohortEditPage({
       body: {
         cohort_id: cohortId,
         draft_id: q.draftId ?? null,
+        group_id: groupId,
         descriptions_search: q.descriptionSearch ?? null,
         simulation_search: q.simulationSearch ?? null,
         simulation_show_selected: q.simulationShowSelected ?? null,

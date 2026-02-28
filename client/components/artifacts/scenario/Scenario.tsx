@@ -887,7 +887,6 @@ function ScenarioComponent({
   const stableScenarioDataFields = useMemo(() => {
     if (!scenarioData) return null;
     return {
-      group_id: scenarioData.group_id,
       names: scenarioData.names,
       descriptions: scenarioData.descriptions,
       problem_statements: scenarioData.problem_statements,
@@ -2250,7 +2249,6 @@ function ScenarioComponent({
           }}
         />
 
-        {modalProps.open && <GenerateRegenerateModal {...modalProps} />}
       </div>
     </TooltipProvider>
   );

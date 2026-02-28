@@ -23,9 +23,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
-import { useGenerationModal } from "@/hooks/use-generation-modal";
 
 import type {
   DeleteScenarioIn,
@@ -147,43 +145,10 @@ export function Scenarios({
   const [flagOptions, setFlagOptions] = useState<{ id: string; name: string; type: string }[]>([]);
   const [flagsLoaded, setFlagsLoaded] = useState(false);
 
-  // Generation via useArtifactAi hook
-  type ScenarioResourceType = "names" | "descriptions" | "problem_statements" | "objectives" | "scenario_flags" | "departments" | "personas" | "documents" | "parameters" | "parameter_fields" | "images" | "videos" | "questions";
-
-  const { generate } = useArtifactAi({
+  useArtifactAi({
     artifactType: "scenario",
-    groupId: null,
     validResourceTypes: ["names", "descriptions", "problem_statements", "objectives", "scenario_flags", "departments", "personas", "documents", "parameters", "parameter_fields", "images", "videos", "questions"],
     onComplete: () => router.refresh(),
-  });
-
-  const { handleOpenStepCardModal, modalProps } = useGenerationModal<ScenarioResourceType>({
-    stepResources: {
-      all: ["names", "descriptions", "problem_statements", "objectives", "scenario_flags", "departments", "personas", "documents", "parameters", "parameter_fields", "images", "videos", "questions"],
-    },
-    resourceLabels: {
-      names: "Name",
-      descriptions: "Description",
-      problem_statements: "Problem Statement",
-      objectives: "Objectives",
-      scenario_flags: "Configuration",
-      departments: "Departments",
-      personas: "Personas",
-      documents: "Documents",
-      parameters: "Parameters",
-      parameter_fields: "Fields",
-      images: "Images",
-      videos: "Videos",
-      questions: "Questions",
-    },
-    canRegenerate: () => true,
-    onGenerate: (selectedResources, instructions) => {
-      generate(selectedResources, {
-        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-        save: true,
-      });
-    },
-    isGenerating: () => false,
   });
 
   // Debounce refs
@@ -1556,7 +1521,6 @@ export function Scenarios({
           </DialogContent>
         </Dialog>
 
-        <GenerateRegenerateModal {...modalProps} />
       </div>
     </TooltipProvider>
   );

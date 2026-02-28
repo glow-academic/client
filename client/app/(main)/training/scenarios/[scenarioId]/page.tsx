@@ -16,6 +16,7 @@ import {
   extractParameterItemRanges,
   loadScenarioSearchParams,
 } from "@/lib/search-params/scenarios";
+import { resolveGroupId } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetScenarioIn = InputOf<"/api/v4/artifacts/scenarios/get", "post">;
@@ -119,6 +120,7 @@ const getScenario = async (
   scenarioId: string,
   filterParams?: {
     draftId?: string;
+    groupId?: string;
     departmentIds?: string[];
     personaIds?: string[];
     documentIds?: string[];
@@ -154,6 +156,7 @@ const getScenario = async (
 
   if (filterParams) {
     if (filterParams.draftId) body.draft_id = filterParams.draftId;
+    if (filterParams.groupId) body.group_id = filterParams.groupId;
     if (filterParams.departmentIds)
       body.filter_department_ids = filterParams.departmentIds;
     if (filterParams.personaIds)
@@ -503,6 +506,10 @@ export default async function EditScenarioPage({
     // URL render filter: which parameters are expanded
     const urlParameterIds = csvToArray(q.parameterIds);
     if (urlParameterIds) filterParams.urlParameterIds = urlParameterIds;
+
+    // Resolve group_id from layout context (cached per request)
+    const groupId = await resolveGroupId(filterParams.draftId ?? null, "scenario");
+    filterParams.groupId = groupId;
 
     const scenarioDetail = await getScenario(
       scenarioId,

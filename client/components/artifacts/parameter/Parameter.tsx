@@ -10,7 +10,6 @@ import {
 } from "@/components/common/forms/GenericForm";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
@@ -25,7 +24,6 @@ import { useDrafts } from "@/contexts/draft-context";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
-import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   buildDraftPayload,
@@ -353,7 +351,6 @@ function ParameterComponent({
 
       return {
         input_draft_id: inputDraftId || null,
-        group_id: s?.group_id ?? null,
         ...buildDraftPayload(PARAMETER_RESOURCES, {
           formState: effective as unknown as Record<string, unknown>,
           referenceState: refState,
@@ -395,7 +392,6 @@ function ParameterComponent({
 
   const { isGenerating, generate } = useArtifactAi({
     artifactType: "parameter",
-    groupId: s?.group_id,
     validResourceTypes: VALID_RESOURCE_TYPES,
   });
 
@@ -571,26 +567,15 @@ function ParameterComponent({
     []
   );
 
-  const resourceLabels: Partial<Record<ResourceType, string>> = useMemo(
-    () => ({
-      names: "Names",
-      descriptions: "Descriptions",
-      flags: "Flags",
-      departments: "Departments",
-      fields: "Fields",
-    }),
-    []
-  );
-
-  const { handleOpenStepCardModal, modalProps } = useGenerationModal<ResourceType>({
-    stepResources,
-    resourceLabels,
-    canRegenerate,
-    onGenerate: (selectedResources, instructions) => {
-      handleGenerateResources(selectedResources as ResourceType[], instructions);
+  const handleDirectStepGenerate = useCallback(
+    (stepId: string, _mode: "generate" | "regenerate") => {
+      const resources = stepResources[stepId];
+      if (resources) {
+        handleGenerateResources(resources);
+      }
     },
-    isGenerating,
-  });
+    [stepResources, handleGenerateResources],
+  );
 
   const steps = useMemo(
     () => [
@@ -742,7 +727,7 @@ function ParameterComponent({
                   defaultName="New Parameter"
                   required={s?.names?.required ?? false}
                   hideDescription={true}
-                  group_id={s?.group_id ?? null}
+
                   showAiGenerate={s?.names?.show_ai_generate ?? false}
                   create_tool_id={s?.names?.create_tool_id ?? null}
                   createNamesAction={createNamesAction}
@@ -758,7 +743,7 @@ function ParameterComponent({
                     resourceTypes={stepResources["basic"]}
                     canRegenerate={canRegenerateForStepCard}
                     isGenerating={isGeneratingForStepCard}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -782,7 +767,7 @@ function ParameterComponent({
                   placeholder="Enter a brief description (optional)"
                   required={s?.descriptions?.required ?? false}
                   rows={3}
-                  group_id={s?.group_id ?? null}
+
                   showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
                   create_tool_id={s?.descriptions?.create_tool_id ?? null}
                   createDescriptionsAction={createDescriptionsAction}
@@ -802,7 +787,7 @@ function ParameterComponent({
                   }
                   onGenerate={() => handleGenerateResources(["departments"])}
                   required={s?.departments?.required ?? false}
-                  group_id={s?.group_id ?? null}
+
                   showAiGenerate={s?.departments?.show_ai_generate ?? false}
                 />
 
@@ -827,7 +812,7 @@ function ParameterComponent({
                     })
                   }
                   onGenerate={() => handleGenerateResources(["flags"])}
-                  group_id={s?.group_id ?? null}
+
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
               </div>
@@ -965,7 +950,7 @@ function ParameterComponent({
                     resourceTypes={stepResources["fields"]}
                     canRegenerate={canRegenerateForStepCard}
                     isGenerating={isGeneratingForStepCard}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -985,7 +970,7 @@ function ParameterComponent({
                 }
                 label="Fields"
                 required={s?.fields?.required ?? false}
-                group_id={s?.group_id ?? null}
+
                 showAiGenerate={s?.fields?.show_ai_generate ?? false}
                 onGenerate={() => handleGenerateResources(["fields"])}
                 searchTerm={fieldSearchTerm}
@@ -1010,7 +995,7 @@ function ParameterComponent({
       allFieldResources,
       stepResources,
       canRegenerateForStepCard,
-      handleOpenStepCardModal,
+      handleDirectStepGenerate,
       createNamesAction,
       createDescriptionsAction,
       isAutosaveEnabled,
@@ -1051,7 +1036,6 @@ function ParameterComponent({
           }}
         />
 
-        <GenerateRegenerateModal {...modalProps} />
       </div>
     </TooltipProvider>
   );

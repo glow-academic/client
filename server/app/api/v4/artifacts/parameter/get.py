@@ -99,6 +99,7 @@ async def get_parameter_internal(
     # Search/filter kwargs (threaded from websocket artifact tool)
     field_search: str | None = None,
     field_show_selected: bool | None = None,
+    group_id: UUID | None = None,
 ) -> ParameterInternalData:
     """Core data fetching layer (cacheable)."""
 
@@ -160,7 +161,10 @@ async def get_parameter_internal(
                 )
 
         # group_id is guaranteed by SQL (created inline if no draft)
-        effective_group_id = access_result.group_id
+        if group_id:
+            effective_group_id = group_id
+        else:
+            effective_group_id = access_result.group_id
         effective_draft_version = access_result.effective_draft_version
 
         query2_params = GetParameterIdsSqlParams(
@@ -597,6 +601,7 @@ async def get_parameter_client(
     parameter_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    group_id: UUID | None = None,
 ) -> GetParameterApiResponse:
     """Section-first BFF response for HTTP endpoint/frontend."""
     data = await get_parameter_internal(
@@ -604,6 +609,7 @@ async def get_parameter_client(
         parameter_id=parameter_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
+        group_id=group_id,
     )
 
     all_resources = data.resources_payload.resources
@@ -711,6 +717,7 @@ async def get_parameter(
             parameter_id=request.parameter_id,
             draft_id=request.draft_id,
             bypass_cache=bypass_cache,
+            group_id=request.group_id,
         )
 
         if response_data.actor_name:
