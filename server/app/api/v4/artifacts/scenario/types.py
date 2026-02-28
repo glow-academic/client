@@ -597,6 +597,28 @@ class ScenarioMultiResourceAction(BaseModel):
 
 
 # =============================================================================
+# EXPORT Endpoint Types
+# =============================================================================
+
+
+class ExportScenarioApiRequest(BaseModel):
+    """Request model for export scenario endpoint."""
+
+    search: str | None = None
+    persona_ids: list[str] | None = None
+    simulation_ids: list[str] | None = None
+    filter_department_ids: list[str] | None = None
+
+
+class ExportScenarioApiResponse(BaseModel):
+    """Response model for export scenario endpoint."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int
+
+
+# =============================================================================
 # DELETE Endpoint Types
 # =============================================================================
 

@@ -30059,6 +30059,72 @@ class InsertScenarioVariantApiResponse(BaseModel):
     department_id: UUID | None = None
 
 
+# Generated from: export_scenarios
+
+
+class ExportScenariosSqlParams(BaseModel):
+    profile_id: UUID
+    search: str | None = None
+    persona_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    filter_department_ids: list[UUID] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.search,
+            self.persona_ids,
+            self.simulation_ids,
+            self.filter_department_ids,
+        )
+
+
+class QExportScenariosV4Row(BaseModel):
+    scenario_id: UUID | None
+    name_id: UUID | None
+    name: str | None
+    description_id: UUID | None
+    description: str | None
+    problem_statement_id: UUID | None
+    problem_statement: str | None
+    is_inactive: bool | None
+    flag_ids: list[UUID] | None
+    flags: list[str] | None
+    department_ids: list[UUID] | None
+    departments: list[str] | None
+    persona_ids: list[UUID] | None
+    personas: list[str] | None
+    document_ids: list[UUID] | None
+    documents: list[str] | None
+    parameter_field_ids: list[UUID] | None
+    parameter_fields: list[str] | None
+    objective_ids: list[UUID] | None
+    objectives: list[str] | None
+    image_ids: list[UUID] | None
+    images: list[str] | None
+    video_ids: list[UUID] | None
+    videos: list[str] | None
+    question_ids: list[UUID] | None
+    questions: list[str] | None
+    option_ids: list[UUID] | None
+    options: list[str] | None
+
+
+class ExportScenariosSqlRow(BaseModel):
+    rows: list[QExportScenariosV4Row] | None = None
+
+
+class ExportScenariosApiRequest(BaseModel):
+    search: str | None = None
+    persona_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    filter_department_ids: list[UUID] | None = None
+
+
+class ExportScenariosApiResponse(BaseModel):
+    rows: list[QExportScenariosV4Row] | None = None
+
+
 # Generated from: get_scenario_access
 
 
@@ -31258,6 +31324,63 @@ class DuplicateSimulationApiResponse(BaseModel):
     simulation_id: UUID | None = None
     simulation_name: str | None = None
     actor_name: str | None = None
+
+
+# Generated from: export_simulations
+
+
+class ExportSimulationsSqlParams(BaseModel):
+    profile_id: UUID
+    search: str | None = None
+    filter_scenario_ids: list[UUID] | None = None
+    filter_cohort_ids: list[UUID] | None = None
+    filter_department_ids: list[UUID] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.search,
+            self.filter_scenario_ids,
+            self.filter_cohort_ids,
+            self.filter_department_ids,
+        )
+
+
+class QExportSimulationsV4Row(BaseModel):
+    simulation_id: UUID | None
+    name_id: UUID | None
+    name: str | None
+    description_id: UUID | None
+    description: str | None
+    is_inactive: bool | None
+    is_practice: bool | None
+    department_ids: list[UUID] | None
+    departments: list[str] | None
+    scenario_ids: list[UUID] | None
+    scenarios: list[str] | None
+    scenario_flag_ids: list[UUID] | None
+    scenario_flags: list[str] | None
+    scenario_position_ids: list[UUID] | None
+    scenario_positions: list[str] | None
+    scenario_rubric_ids: list[UUID] | None
+    scenario_rubrics: list[str] | None
+    scenario_time_limit_ids: list[UUID] | None
+    scenario_time_limits: list[str] | None
+
+
+class ExportSimulationsSqlRow(BaseModel):
+    rows: list[QExportSimulationsV4Row] | None = None
+
+
+class ExportSimulationsApiRequest(BaseModel):
+    search: str | None = None
+    filter_scenario_ids: list[UUID] | None = None
+    filter_cohort_ids: list[UUID] | None = None
+    filter_department_ids: list[UUID] | None = None
+
+
+class ExportSimulationsApiResponse(BaseModel):
+    rows: list[QExportSimulationsV4Row] | None = None
 
 
 # Generated from: get_name_by_id
@@ -39297,6 +39420,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "InsertScenarioVariantApiRequest",
         "InsertScenarioVariantApiResponse",
     ),
+    "app/sql/v4/queries/scenarios/export_scenarios_complete.sql": (
+        "ExportScenariosSqlParams",
+        "ExportScenariosSqlRow",
+        "ExportScenariosApiRequest",
+        "ExportScenariosApiResponse",
+    ),
     "app/sql/v4/queries/scenarios/get_scenario_access_complete.sql": (
         "GetScenarioAccessSqlParams",
         "GetScenarioAccessSqlRow",
@@ -39452,6 +39581,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateSimulationSqlRow",
         "DuplicateSimulationApiRequest",
         "DuplicateSimulationApiResponse",
+    ),
+    "app/sql/v4/queries/simulations/export_simulations_complete.sql": (
+        "ExportSimulationsSqlParams",
+        "ExportSimulationsSqlRow",
+        "ExportSimulationsApiRequest",
+        "ExportSimulationsApiResponse",
     ),
     "app/sql/v4/queries/simulations/get_name_by_id_complete.sql": (
         "GetNameByIdSqlParams",
@@ -45261,6 +45396,13 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal[
+            "app/sql/v4/queries/scenarios/export_scenarios_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
             "app/sql/v4/queries/scenarios/get_scenario_access_complete.sql"
         ],
     ) -> SqlString: ...
@@ -45429,6 +45571,13 @@ if TYPE_CHECKING:
     def load_sql_query(
         file_path: Literal[
             "app/sql/v4/queries/simulations/duplicate_simulation_complete.sql"
+        ],
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal[
+            "app/sql/v4/queries/simulations/export_simulations_complete.sql"
         ],
     ) -> SqlString: ...
 

@@ -47,26 +47,6 @@ type CreateDraftProfilePersonasOut = OutputOf<
   "post"
 >;
 
-// Link types for tool call tracking
-type LinkNamesIn = InputOf<"/api/v4/resources/names/link", "post">;
-type LinkNamesOut = OutputOf<"/api/v4/resources/names/link", "post">;
-type LinkDescriptionsIn = InputOf<"/api/v4/resources/descriptions/link", "post">;
-type LinkDescriptionsOut = OutputOf<"/api/v4/resources/descriptions/link", "post">;
-type LinkFlagsIn = InputOf<"/api/v4/resources/flags/link", "post">;
-type LinkFlagsOut = OutputOf<"/api/v4/resources/flags/link", "post">;
-type LinkDepartmentsIn = InputOf<"/api/v4/resources/departments/link", "post">;
-type LinkDepartmentsOut = OutputOf<"/api/v4/resources/departments/link", "post">;
-type LinkSimulationsIn = InputOf<"/api/v4/resources/simulations/link", "post">;
-type LinkSimulationsOut = OutputOf<"/api/v4/resources/simulations/link", "post">;
-type LinkSimulationPositionsIn = InputOf<"/api/v4/resources/simulation_positions/link", "post">;
-type LinkSimulationPositionsOut = OutputOf<"/api/v4/resources/simulation_positions/link", "post">;
-type LinkSimulationAvailabilityIn = InputOf<"/api/v4/resources/simulation_availability/link", "post">;
-type LinkSimulationAvailabilityOut = OutputOf<"/api/v4/resources/simulation_availability/link", "post">;
-type LinkProfilesIn = InputOf<"/api/v4/resources/profiles/link", "post">;
-type LinkProfilesOut = OutputOf<"/api/v4/resources/profiles/link", "post">;
-type LinkProfilePersonasIn = InputOf<"/api/v4/resources/profile_personas/link", "post">;
-type LinkProfilePersonasOut = OutputOf<"/api/v4/resources/profile_personas/link", "post">;
-
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
@@ -142,52 +122,6 @@ async function createDraftProfilePersonas(
 ): Promise<CreateDraftProfilePersonasOut> {
   "use server";
   return api.post("/resources/profile_personas", input);
-}
-
-// Link server actions for tool call tracking
-async function linkNames(input: LinkNamesIn): Promise<LinkNamesOut> {
-  "use server";
-  return api.post("/resources/names/link", input);
-}
-
-async function linkDescriptions(input: LinkDescriptionsIn): Promise<LinkDescriptionsOut> {
-  "use server";
-  return api.post("/resources/descriptions/link", input);
-}
-
-async function linkFlags(input: LinkFlagsIn): Promise<LinkFlagsOut> {
-  "use server";
-  return api.post("/resources/flags/link", input);
-}
-
-async function linkDepartments(input: LinkDepartmentsIn): Promise<LinkDepartmentsOut> {
-  "use server";
-  return api.post("/resources/departments/link", input);
-}
-
-async function linkSimulations(input: LinkSimulationsIn): Promise<LinkSimulationsOut> {
-  "use server";
-  return api.post("/resources/simulations/link", input);
-}
-
-async function linkSimulationPositions(input: LinkSimulationPositionsIn): Promise<LinkSimulationPositionsOut> {
-  "use server";
-  return api.post("/resources/simulation_positions/link", input);
-}
-
-async function linkSimulationAvailability(input: LinkSimulationAvailabilityIn): Promise<LinkSimulationAvailabilityOut> {
-  "use server";
-  return api.post("/resources/simulation_availability/link", input);
-}
-
-async function linkProfiles(input: LinkProfilesIn): Promise<LinkProfilesOut> {
-  "use server";
-  return api.post("/resources/profiles/link", input);
-}
-
-async function linkProfilePersonas(input: LinkProfilePersonasIn): Promise<LinkProfilePersonasOut> {
-  "use server";
-  return api.post("/resources/profile_personas/link", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -281,15 +215,6 @@ export default async function CohortEditPage({
         createDescriptionsAction={createDraftDescriptions}
         createSimulationPositionsAction={createDraftSimulationPositions}
         createProfilePersonasAction={createDraftProfilePersonas}
-        linkNamesAction={linkNames}
-        linkDescriptionsAction={linkDescriptions}
-        linkFlagsAction={linkFlags}
-        linkDepartmentsAction={linkDepartments}
-        linkSimulationsAction={linkSimulations}
-        linkSimulationPositionsAction={linkSimulationPositions}
-        linkSimulationAvailabilityAction={linkSimulationAvailability}
-        linkProfilesAction={linkProfiles}
-        linkProfilePersonasAction={linkProfilePersonas}
       />
     </div>
   );

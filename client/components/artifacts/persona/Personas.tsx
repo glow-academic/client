@@ -5,7 +5,7 @@
  * 06/07/2025
  */
 "use client";
-import { Brain, Check, CheckCircle, Copy, Edit, Eye, Pencil, Sparkles, Trash2, Users, X } from "lucide-react";
+import { Brain, Check, CheckCircle, Copy, Edit, Eye, FileSpreadsheet, Pencil, Sparkles, Trash2, Users, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -26,6 +26,8 @@ import type {
   DeletePersonaOut,
   DuplicatePersonaIn,
   DuplicatePersonaOut,
+  ParseCsvIn,
+  ParseCsvOut,
   PersonasListOut,
   SavePersonaIn,
   SavePersonaOut,
@@ -33,6 +35,7 @@ import type {
   SearchIconsOut,
   SearchVoicesOut,
 } from "@/app/(main)/training/personas/page";
+import BulkImport, { type ImportFieldDef } from "@/components/common/BulkImport";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
@@ -106,6 +109,8 @@ export interface PersonasProps {
   searchColorsAction?: () => Promise<SearchColorsOut>;
   searchIconsAction?: () => Promise<SearchIconsOut>;
   searchVoicesAction?: () => Promise<SearchVoicesOut>;
+  parseCsvAction?: ((input: ParseCsvIn) => Promise<ParseCsvOut>) | undefined;
+  importFields?: ImportFieldDef[] | undefined;
   // Server-side pagination
   pageIndex: number;
   pageSize: number;
@@ -124,6 +129,8 @@ export default function Personas({
   searchColorsAction,
   searchIconsAction,
   searchVoicesAction,
+  parseCsvAction,
+  importFields,
   pageIndex,
   pageSize,
   totalCount,
@@ -158,6 +165,9 @@ export default function Personas({
   const [bulkEditIconIds, setBulkEditIconIds] = useState<string[]>([]); // empty = no change
   const [bulkEditDepartmentIds, setBulkEditDepartmentIds] = useState<string[] | null>(null); // null = no change
   const [bulkEditVoiceIds, setBulkEditVoiceIds] = useState<string[] | null>(null); // null = no change
+
+  // Bulk import state
+  const [showBulkImportDialog, setShowBulkImportDialog] = useState(false);
 
   // Lazy-loaded picker options
   const [colorOptions, setColorOptions] = useState<{ id: string; name: string; hex_code?: string | null }[]>([]);
@@ -1228,7 +1238,20 @@ export default function Personas({
                 )}
               </div>
             </div>
-            <DataTableViewOptions table={table} hiddenColumns={["name", "description", "scenarios", "fieldIds", "departments", "updated_at"]} />
+            <div className="flex items-center gap-2">
+              {parseCsvAction && importFields && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => setShowBulkImportDialog(true)}
+                >
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  Import CSV
+                </Button>
+              )}
+              <DataTableViewOptions table={table} hiddenColumns={["name", "description", "scenarios", "fieldIds", "departments", "updated_at"]} />
+            </div>
           </div>
         )}
 
@@ -1562,6 +1585,35 @@ export default function Personas({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Import Dialog */}
+      {parseCsvAction && importFields && (
+        <BulkImport
+          open={showBulkImportDialog}
+          onClose={() => {
+            setShowBulkImportDialog(false);
+            router.refresh();
+          }}
+          fields={importFields}
+          parseCsvAction={parseCsvAction}
+          onSave={async (items) => {
+            if (!savePersonaAction) throw new Error("Save action not available");
+            const personas = items.map((item) => ({
+              name: item.name as string | undefined,
+              description: item.description as string | undefined,
+              color: item.color as string | undefined,
+              icon: item.icon as string | undefined,
+              instructions: item.instructions as string | undefined,
+              active_flag: item.active_flag as boolean | undefined,
+              departments: item.departments as string[] | undefined,
+              parameter_fields: item.parameter_fields as string[] | undefined,
+              examples: item.examples as string[] | undefined,
+              voices: item.voices as string[] | undefined,
+            }));
+            return savePersonaAction({ body: { personas } });
+          }}
+        />
+      )}
 
       </div>
     </TooltipProvider>

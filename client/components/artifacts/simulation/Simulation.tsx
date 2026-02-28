@@ -89,26 +89,6 @@ type PatchSimulationDraftOut = OutputOf<
   "patch"
 >;
 
-// Link types for tool call tracking
-type LinkNamesIn = InputOf<"/api/v4/resources/names/link", "post">;
-type LinkNamesOut = OutputOf<"/api/v4/resources/names/link", "post">;
-type LinkDescriptionsIn = InputOf<"/api/v4/resources/descriptions/link", "post">;
-type LinkDescriptionsOut = OutputOf<"/api/v4/resources/descriptions/link", "post">;
-type LinkFlagsIn = InputOf<"/api/v4/resources/flags/link", "post">;
-type LinkFlagsOut = OutputOf<"/api/v4/resources/flags/link", "post">;
-type LinkDepartmentsIn = InputOf<"/api/v4/resources/departments/link", "post">;
-type LinkDepartmentsOut = OutputOf<"/api/v4/resources/departments/link", "post">;
-type LinkScenariosIn = InputOf<"/api/v4/resources/scenarios/link", "post">;
-type LinkScenariosOut = OutputOf<"/api/v4/resources/scenarios/link", "post">;
-type LinkScenarioFlagsIn = InputOf<"/api/v4/resources/scenario_flags/link", "post">;
-type LinkScenarioFlagsOut = OutputOf<"/api/v4/resources/scenario_flags/link", "post">;
-type LinkScenarioPositionsIn = InputOf<"/api/v4/resources/scenario_positions/link", "post">;
-type LinkScenarioPositionsOut = OutputOf<"/api/v4/resources/scenario_positions/link", "post">;
-type LinkScenarioRubricsIn = InputOf<"/api/v4/resources/scenario_rubrics/link", "post">;
-type LinkScenarioRubricsOut = OutputOf<"/api/v4/resources/scenario_rubrics/link", "post">;
-type LinkScenarioTimeLimitsIn = InputOf<"/api/v4/resources/scenario_time_limits/link", "post">;
-type LinkScenarioTimeLimitsOut = OutputOf<"/api/v4/resources/scenario_time_limits/link", "post">;
-
 type SimulationData = OutputOf<"/api/v4/artifacts/simulations/get", "post">;
 type SimulationResourceType =
   | ResourceType
@@ -179,16 +159,6 @@ export interface SimulationProps {
   createScenarioTimeLimitsAction?: (
     input: CreateDraftScenarioTimeLimitsIn,
   ) => Promise<CreateDraftScenarioTimeLimitsOut>;
-  // Link actions for tool call tracking
-  linkNamesAction?: (input: LinkNamesIn) => Promise<LinkNamesOut>;
-  linkDescriptionsAction?: (input: LinkDescriptionsIn) => Promise<LinkDescriptionsOut>;
-  linkFlagsAction?: (input: LinkFlagsIn) => Promise<LinkFlagsOut>;
-  linkDepartmentsAction?: (input: LinkDepartmentsIn) => Promise<LinkDepartmentsOut>;
-  linkScenariosAction?: (input: LinkScenariosIn) => Promise<LinkScenariosOut>;
-  linkScenarioFlagsAction?: (input: LinkScenarioFlagsIn) => Promise<LinkScenarioFlagsOut>;
-  linkScenarioPositionsAction?: (input: LinkScenarioPositionsIn) => Promise<LinkScenarioPositionsOut>;
-  linkScenarioRubricsAction?: (input: LinkScenarioRubricsIn) => Promise<LinkScenarioRubricsOut>;
-  linkScenarioTimeLimitsAction?: (input: LinkScenarioTimeLimitsIn) => Promise<LinkScenarioTimeLimitsOut>;
 }
 
 const FLUSH_KEYS = [
@@ -265,15 +235,6 @@ function SimulationComponent({
   createScenarioPositionsAction,
   createScenarioRubricsAction,
   createScenarioTimeLimitsAction,
-  linkNamesAction,
-  linkDescriptionsAction,
-  linkFlagsAction,
-  linkDepartmentsAction,
-  linkScenariosAction,
-  linkScenarioFlagsAction,
-  linkScenarioPositionsAction,
-  linkScenarioRubricsAction,
-  linkScenarioTimeLimitsAction,
 }: SimulationProps) {
   const router = useRouter();
   const isEditMode = !!simulationId;
@@ -1096,8 +1057,7 @@ function SimulationComponent({
                   hideDescription={true}
                   showAiGenerate={s.names?.show_ai_generate ?? false}
                   create_tool_id={s.names?.tool_id ?? null}
-                  link_tool_id={s.names?.link_tool_id ?? null}
-                  linkNamesAction={linkNamesAction}
+
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["names"]}
                 />
@@ -1140,8 +1100,7 @@ function SimulationComponent({
                   required={s.descriptions?.required ?? false}
                   showAiGenerate={s.descriptions?.show_ai_generate ?? false}
                   create_tool_id={s.descriptions?.tool_id ?? null}
-                  link_tool_id={s.descriptions?.link_tool_id ?? null}
-                  linkDescriptionsAction={linkDescriptionsAction}
+
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["descriptions"]}
                 />
@@ -1158,8 +1117,7 @@ function SimulationComponent({
                   onGenerate={handleGenerateDepartments}
                   required={s.departments?.required ?? false}
                   showAiGenerate={s.departments?.show_ai_generate ?? false}
-                  link_tool_id={s.departments?.link_tool_id ?? null}
-                  linkDepartmentsAction={linkDepartmentsAction}
+
                 />
                 <Flags
                   mode="multi"
@@ -1220,8 +1178,7 @@ function SimulationComponent({
                   }}
                   onGenerate={handleGenerateFlags}
                   showAiGenerate={s.flags?.show_ai_generate ?? false}
-                  link_tool_id={s.flags?.link_tool_id ?? null}
-                  linkFlagsAction={linkFlagsAction}
+
                 />
               </div>
             </StepCard>
@@ -1306,8 +1263,7 @@ function SimulationComponent({
                   onGenerate={handleGenerateScenarios}
                   required={s.scenarios?.required ?? false}
                   showAiGenerate={s.scenarios?.show_ai_generate ?? false}
-                  link_tool_id={s.scenarios?.link_tool_id ?? null}
-                  linkScenariosAction={linkScenariosAction}
+
                   searchTerm={scenarioSearch ?? ""}
                   showSelectedOnly={scenarioShowSelected}
                 />
@@ -1331,8 +1287,7 @@ function SimulationComponent({
                   required={s.scenario_flags?.required ?? false}
                   showAiGenerate={s.scenario_flags?.show_ai_generate ?? false}
                   create_tool_id={s.scenario_flags?.tool_id ?? null}
-                  link_tool_id={s.scenario_flags?.link_tool_id ?? null}
-                  linkScenarioFlagsAction={linkScenarioFlagsAction}
+
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["scenario_flags"]}
                 />
@@ -1363,8 +1318,7 @@ function SimulationComponent({
                   required={s.scenario_positions?.required ?? false}
                   showAiGenerate={s.scenario_positions?.show_ai_generate ?? false}
                   create_tool_id={s.scenario_positions?.tool_id ?? null}
-                  link_tool_id={s.scenario_positions?.link_tool_id ?? null}
-                  linkScenarioPositionsAction={linkScenarioPositionsAction}
+
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["scenario_positions"]}
                 />
@@ -1392,8 +1346,7 @@ function SimulationComponent({
                   required={s.scenario_rubrics?.required ?? false}
                   showAiGenerate={s.scenario_rubrics?.show_ai_generate ?? false}
                   create_tool_id={s.scenario_rubrics?.tool_id ?? null}
-                  link_tool_id={s.scenario_rubrics?.link_tool_id ?? null}
-                  linkScenarioRubricsAction={linkScenarioRubricsAction}
+
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["scenario_rubrics"]}
                 />
@@ -1422,8 +1375,6 @@ function SimulationComponent({
                   required={s.scenario_time_limits?.required ?? false}
                   showAiGenerate={s.scenario_time_limits?.show_ai_generate ?? false}
                   create_tool_id={s.scenario_time_limits?.tool_id ?? null}
-                  link_tool_id={s.scenario_time_limits?.link_tool_id ?? null}
-                  linkScenarioTimeLimitsAction={linkScenarioTimeLimitsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["scenario_time_limits"]}
                 />
@@ -1460,15 +1411,6 @@ function SimulationComponent({
       createScenarioPositionsAction,
       createScenarioRubricsAction,
       createScenarioTimeLimitsAction,
-      linkNamesAction,
-      linkDescriptionsAction,
-      linkFlagsAction,
-      linkDepartmentsAction,
-      linkScenariosAction,
-      linkScenarioFlagsAction,
-      linkScenarioPositionsAction,
-      linkScenarioRubricsAction,
-      linkScenarioTimeLimitsAction,
       scenarioResourcesWithShowHints,
       isAutosaveEnabled,
       registerFlushCallbacks,

@@ -26,6 +26,8 @@ type SearchIconsIn = InputOf<"/api/v4/resources/icons/search", "post">;
 type SearchIconsOut = NonNullable<OutputOf<"/api/v4/resources/icons/search", "post">["items"]>;
 type SearchVoicesIn = InputOf<"/api/v4/resources/voices/search", "post">;
 type SearchVoicesOut = NonNullable<OutputOf<"/api/v4/resources/voices/search", "post">["items"]>;
+type ParseCsvIn = InputOf<"/api/v4/uploads/csv", "post">;
+type ParseCsvOut = OutputOf<"/api/v4/uploads/csv", "post">;
 
 /** ---- Body type for personas list request ---- */
 type PersonasListBody = {
@@ -106,6 +108,11 @@ async function searchVoices(): Promise<SearchVoicesOut> {
   return res.items ?? [];
 }
 
+async function parseCsv(input: ParseCsvIn): Promise<ParseCsvOut> {
+  "use server";
+  return api.post("/uploads/csv", input);
+}
+
 /** ---- Docs types for page metadata ---- */
 type DocsIn = InputOf<"/api/v4/artifacts/personas/docs", "post">;
 type DocsOut = OutputOf<"/api/v4/artifacts/personas/docs", "post">;
@@ -173,6 +180,8 @@ export default async function PersonasPage({ searchParams }: PersonasPageProps) 
         searchColorsAction={searchColors}
         searchIconsAction={searchIcons}
         searchVoicesAction={searchVoices}
+        parseCsvAction={parseCsv}
+        importFields={listData.import_fields ?? undefined}
         pageIndex={pageIndex}
         pageSize={pageSize}
         totalCount={listData.total_count ?? 0}
@@ -190,6 +199,8 @@ export type {
   DeletePersonaOut,
   DuplicatePersonaIn,
   DuplicatePersonaOut,
+  ParseCsvIn,
+  ParseCsvOut,
   PersonasListOut,
   SavePersonaIn,
   SavePersonaOut,

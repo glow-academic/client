@@ -1,12 +1,11 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, Check, FileSpreadsheet, Loader2, Upload, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, FileSpreadsheet, Loader2, Upload as UploadIcon, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import * as tus from "tus-js-client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -45,7 +44,8 @@ export interface ImportFieldDef {
 interface SaveResult {
   success: boolean;
   message: string;
-  errors?: Array<{ field: string; message: string }>;
+  errors?: Array<{ field: string; message: string }> | null;
+  [key: string]: unknown;
 }
 
 export interface BulkImportProps {
@@ -302,7 +302,7 @@ export default function BulkImport({
               </div>
             ) : (
               <div className="space-y-3">
-                <Upload className="h-10 w-10 mx-auto text-muted-foreground" />
+                <UploadIcon className="h-10 w-10 mx-auto text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">
                   Drop a .csv file here, or click to browse
                 </p>
@@ -425,7 +425,7 @@ export default function BulkImport({
                 )}
                 <div className="min-w-0">
                   <span className="font-medium">Row {idx + 1}:</span> {r.message}
-                  {r.errors && r.errors.length > 0 && (
+                  {r.errors && Array.isArray(r.errors) && r.errors.length > 0 && (
                     <div className="mt-1 space-y-0.5">
                       {r.errors.map((e, eIdx) => (
                         <div key={eIdx} className="text-xs text-muted-foreground">

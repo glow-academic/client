@@ -301,6 +301,26 @@ export interface paths {
         patch: operations["patch_scenario_draft_api_v4_artifacts_scenarios_draft_patch"];
         trace?: never;
     };
+    "/api/v4/artifacts/scenarios/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export Scenarios
+         * @description Export scenarios as CSV — stores file via upload infrastructure, returns upload_id.
+         */
+        post: operations["export_scenarios_api_v4_artifacts_scenarios_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/artifacts/scenarios/docs": {
         parameters: {
             query?: never;
@@ -448,6 +468,26 @@ export interface paths {
          *     Uses Python permission checks before executing draft operation.
          */
         patch: operations["patch_simulation_draft_api_v4_artifacts_simulations_draft_patch"];
+        trace?: never;
+    };
+    "/api/v4/artifacts/simulations/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export Simulations
+         * @description Export simulations as CSV — stores file via upload infrastructure, returns upload_id.
+         */
+        post: operations["export_simulations_api_v4_artifacts_simulations_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v4/artifacts/simulations/docs": {
@@ -27715,6 +27755,64 @@ export interface components {
             [key: string]: unknown;
         };
         /**
+         * ExportScenarioApiRequest
+         * @description Request model for export scenario endpoint.
+         */
+        ExportScenarioApiRequest: {
+            /** Search */
+            search?: string | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Filter Department Ids */
+            filter_department_ids?: string[] | null;
+        };
+        /**
+         * ExportScenarioApiResponse
+         * @description Response model for export scenario endpoint.
+         */
+        ExportScenarioApiResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** File Name */
+            file_name: string;
+            /** Row Count */
+            row_count: number;
+        };
+        /**
+         * ExportSimulationApiRequest
+         * @description Request model for export simulation endpoint.
+         */
+        ExportSimulationApiRequest: {
+            /** Search */
+            search?: string | null;
+            /** Filter Scenario Ids */
+            filter_scenario_ids?: string[] | null;
+            /** Filter Cohort Ids */
+            filter_cohort_ids?: string[] | null;
+            /** Filter Department Ids */
+            filter_department_ids?: string[] | null;
+        };
+        /**
+         * ExportSimulationApiResponse
+         * @description Response model for export simulation endpoint.
+         */
+        ExportSimulationApiResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** File Name */
+            file_name: string;
+            /** Row Count */
+            row_count: number;
+        };
+        /**
          * FeedbackEntry
          * @description Feedback by standard for grading state.
          *
@@ -52056,6 +52154,43 @@ export interface operations {
             };
         };
     };
+    export_scenarios_api_v4_artifacts_scenarios_export_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportScenarioApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportScenarioApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_scenario_docs_endpoint_api_v4_artifacts_scenarios_docs_post: {
         parameters: {
             query?: never;
@@ -52302,6 +52437,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PatchSimulationDraftApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_simulations_api_v4_artifacts_simulations_export_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportSimulationApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportSimulationApiResponse"];
                 };
             };
             /** @description Validation Error */

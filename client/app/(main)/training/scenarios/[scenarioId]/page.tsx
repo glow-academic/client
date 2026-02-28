@@ -59,33 +59,6 @@ type CreateDraftParameterFieldsIn = InputOf<"/api/v4/resources/parameter_fields"
 type CreateDraftParameterFieldsOut = OutputOf<"/api/v4/resources/parameter_fields", "post">;
 type CreateDraftOptionsIn = InputOf<"/api/v4/resources/options", "post">;
 type CreateDraftOptionsOut = OutputOf<"/api/v4/resources/options", "post">;
-// Link types for tool call tracking
-type LinkNamesIn = InputOf<"/api/v4/resources/names/link", "post">;
-type LinkNamesOut = OutputOf<"/api/v4/resources/names/link", "post">;
-type LinkDescriptionsIn = InputOf<"/api/v4/resources/descriptions/link", "post">;
-type LinkDescriptionsOut = OutputOf<"/api/v4/resources/descriptions/link", "post">;
-type LinkProblemStatementsIn = InputOf<"/api/v4/resources/problem_statements/link", "post">;
-type LinkProblemStatementsOut = OutputOf<"/api/v4/resources/problem_statements/link", "post">;
-type LinkObjectivesIn = InputOf<"/api/v4/resources/objectives/link", "post">;
-type LinkObjectivesOut = OutputOf<"/api/v4/resources/objectives/link", "post">;
-type LinkScenarioFlagsIn = InputOf<"/api/v4/resources/scenario_flags/link", "post">;
-type LinkScenarioFlagsOut = OutputOf<"/api/v4/resources/scenario_flags/link", "post">;
-type LinkDepartmentsIn = InputOf<"/api/v4/resources/departments/link", "post">;
-type LinkDepartmentsOut = OutputOf<"/api/v4/resources/departments/link", "post">;
-type LinkPersonasIn = InputOf<"/api/v4/resources/personas/link", "post">;
-type LinkPersonasOut = OutputOf<"/api/v4/resources/personas/link", "post">;
-type LinkDocumentsIn = InputOf<"/api/v4/resources/documents/link", "post">;
-type LinkDocumentsOut = OutputOf<"/api/v4/resources/documents/link", "post">;
-type LinkParameterFieldsIn = InputOf<"/api/v4/resources/parameter_fields/link", "post">;
-type LinkParameterFieldsOut = OutputOf<"/api/v4/resources/parameter_fields/link", "post">;
-type LinkImagesIn = InputOf<"/api/v4/resources/images/link", "post">;
-type LinkImagesOut = OutputOf<"/api/v4/resources/images/link", "post">;
-type LinkVideosIn = InputOf<"/api/v4/resources/videos/link", "post">;
-type LinkVideosOut = OutputOf<"/api/v4/resources/videos/link", "post">;
-type LinkQuestionsIn = InputOf<"/api/v4/resources/questions/link", "post">;
-type LinkQuestionsOut = OutputOf<"/api/v4/resources/questions/link", "post">;
-type LinkOptionsIn = InputOf<"/api/v4/resources/options/link", "post">;
-type LinkOptionsOut = OutputOf<"/api/v4/resources/options/link", "post">;
 // GenerateAIScenario types - using WebSocket event types
 type GenerateAIScenarioIn = {
   departmentId: string;
@@ -321,60 +294,6 @@ async function createDraftOptions(
   return api.post("/resources/options", input);
 }
 
-// Link server actions for tool call tracking
-async function linkNames(input: LinkNamesIn): Promise<LinkNamesOut> {
-  "use server";
-  return api.post("/resources/names/link", input);
-}
-async function linkDescriptions(input: LinkDescriptionsIn): Promise<LinkDescriptionsOut> {
-  "use server";
-  return api.post("/resources/descriptions/link", input);
-}
-async function linkProblemStatements(input: LinkProblemStatementsIn): Promise<LinkProblemStatementsOut> {
-  "use server";
-  return api.post("/resources/problem_statements/link", input);
-}
-async function linkObjectives(input: LinkObjectivesIn): Promise<LinkObjectivesOut> {
-  "use server";
-  return api.post("/resources/objectives/link", input);
-}
-async function linkScenarioFlags(input: LinkScenarioFlagsIn): Promise<LinkScenarioFlagsOut> {
-  "use server";
-  return api.post("/resources/scenario_flags/link", input);
-}
-async function linkDepartments(input: LinkDepartmentsIn): Promise<LinkDepartmentsOut> {
-  "use server";
-  return api.post("/resources/departments/link", input);
-}
-async function linkPersonas(input: LinkPersonasIn): Promise<LinkPersonasOut> {
-  "use server";
-  return api.post("/resources/personas/link", input);
-}
-async function linkDocuments(input: LinkDocumentsIn): Promise<LinkDocumentsOut> {
-  "use server";
-  return api.post("/resources/documents/link", input);
-}
-async function linkParameterFields(input: LinkParameterFieldsIn): Promise<LinkParameterFieldsOut> {
-  "use server";
-  return api.post("/resources/parameter_fields/link", input);
-}
-async function linkImages(input: LinkImagesIn): Promise<LinkImagesOut> {
-  "use server";
-  return api.post("/resources/images/link", input);
-}
-async function linkVideos(input: LinkVideosIn): Promise<LinkVideosOut> {
-  "use server";
-  return api.post("/resources/videos/link", input);
-}
-async function linkQuestions(input: LinkQuestionsIn): Promise<LinkQuestionsOut> {
-  "use server";
-  return api.post("/resources/questions/link", input);
-}
-async function linkOptions(input: LinkOptionsIn): Promise<LinkOptionsOut> {
-  "use server";
-  return api.post("/resources/options/link", input);
-}
-
 /** ---- Server renders client with typed data and actions ---- */
 export default async function EditScenarioPage({
   params,
@@ -539,19 +458,6 @@ export default async function EditScenarioPage({
           createVideosAction={createDraftVideos}
           createParameterFieldsAction={createDraftParameterFields}
           createOptionsAction={createDraftOptions}
-          linkNamesAction={linkNames}
-          linkDescriptionsAction={linkDescriptions}
-          linkProblemStatementsAction={linkProblemStatements}
-          linkObjectivesAction={linkObjectives}
-          linkScenarioFlagsAction={linkScenarioFlags}
-          linkDepartmentsAction={linkDepartments}
-          linkPersonasAction={linkPersonas}
-          linkDocumentsAction={linkDocuments}
-          linkParameterFieldsAction={linkParameterFields}
-          linkImagesAction={linkImages}
-          linkVideosAction={linkVideos}
-          linkQuestionsAction={linkQuestions}
-          linkOptionsAction={linkOptions}
         />
       </div>
     );

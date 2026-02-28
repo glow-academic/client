@@ -595,6 +595,28 @@ class SaveSimulationSqlRow(BaseModel):
 
 
 # =============================================================================
+# EXPORT Endpoint Types
+# =============================================================================
+
+
+class ExportSimulationApiRequest(BaseModel):
+    """Request model for export simulation endpoint."""
+
+    search: str | None = None
+    filter_scenario_ids: list[str] | None = None
+    filter_cohort_ids: list[str] | None = None
+    filter_department_ids: list[str] | None = None
+
+
+class ExportSimulationApiResponse(BaseModel):
+    """Response model for export simulation endpoint."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int
+
+
+# =============================================================================
 # DELETE Endpoint Types
 # =============================================================================
 

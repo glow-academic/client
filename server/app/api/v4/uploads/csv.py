@@ -3,6 +3,7 @@
 import csv
 import io
 import os
+from typing import Any, cast
 from uuid import UUID
 
 import asyncpg
@@ -14,7 +15,6 @@ from app.main import UPLOAD_FOLDER, get_db
 from app.sql.types import (
     GetUploadFileInfoSqlParams,
     GetUploadFileInfoSqlRow,
-    load_sql_query,
 )
 from app.utils.sql_helper import execute_sql_typed
 
@@ -44,20 +44,20 @@ async def parse_csv(
     db: asyncpg.Pool = Depends(get_db),
 ) -> ParseCsvApiResponse:
     """Parse a previously uploaded CSV file and return headers + rows."""
-    sql_query = ""
-    sql_params: tuple = ()
+    sql_params: tuple[Any, ...] | None = None
     try:
         profile_id = http_request.state.profile_id
-        sql_query = load_sql_query(SQL_PATH)
-        sql_params_obj = GetUploadFileInfoSqlParams(
+        params = GetUploadFileInfoSqlParams(
             upload_id=body.upload_id, profile_id=profile_id
         )
-        sql_params = sql_params_obj.to_tuple()
+        sql_params = params.to_tuple()
 
-        result = await execute_sql_typed(
-            db, sql_query, sql_params, GetUploadFileInfoSqlRow
+        result = cast(
+            GetUploadFileInfoSqlRow,
+            await execute_sql_typed(db, SQL_PATH, params=params),
         )
-        if not result or not result.upload_exists:
+
+        if not result.upload_exists:
             raise HTTPException(status_code=404, detail="Upload not found")
 
         stored_path = result.file_path or ""
@@ -91,7 +91,7 @@ async def parse_csv(
             error=e,
             route_path=http_request.url.path,
             operation="parse_csv",
-            sql_query=sql_query,
+            sql_query=SQL_PATH,
             sql_params=sql_params,
             request=http_request,
         )
