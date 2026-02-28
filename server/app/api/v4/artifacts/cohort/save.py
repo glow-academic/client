@@ -186,6 +186,115 @@ async def _resolve_cohort_values(
             conn, item.description, **_tool_args("descriptions")
         )
 
+    # --- Match-by-name resolution for value fields (CSV import) ---
+
+    if item.is_inactive is not None and item.flag_id is None:
+        from app.api.v4.resources.flags.search import search_flags_internal
+
+        all_flags = await search_flags_internal(
+            conn,
+            search=None,
+            limit_count=1000,
+            flag_type="cohort_active",
+            cohort=True,
+        )
+        match = next((f for f in all_flags if f.type == "cohort_active"), None)
+        if match and match.id:
+            if not item.is_inactive:
+                # Active → set the cohort_active flag
+                item.flag_id = match.id
+            # Inactive → leave flag_id as None (no flag)
+        elif not item.is_inactive:
+            errors.append(
+                SaveCohortFieldError(
+                    field="is_inactive", message="Active flag resource not found"
+                )
+            )
+
+    if item.departments is not None and item.department_ids is None:
+        from app.api.v4.resources.departments.search import (
+            search_departments_internal,
+        )
+
+        all_depts = await search_departments_internal(
+            conn, search=None, limit_count=1000, cohort=True
+        )
+        dept_name_map = {
+            d.name.lower(): d.department_id
+            for d in all_depts
+            if d.name and d.department_id
+        }
+        resolved_ids = []
+        for dept_name in item.departments:
+            dept_id = dept_name_map.get(dept_name.lower())
+            if dept_id:
+                resolved_ids.append(dept_id)
+            else:
+                errors.append(
+                    SaveCohortFieldError(
+                        field="departments",
+                        message=f'Department "{dept_name}" not found',
+                    )
+                )
+        if not any(e.field == "departments" for e in errors):
+            item.department_ids = resolved_ids
+
+    if item.simulations is not None and item.simulation_ids is None:
+        from app.api.v4.resources.simulations.search import (
+            search_simulations_internal,
+        )
+
+        all_simulations = await search_simulations_internal(
+            conn, search=None, limit_count=1000, cohort=True
+        )
+        sim_name_map = {
+            s.name.lower(): s.simulation_id
+            for s in all_simulations
+            if s.name and s.simulation_id
+        }
+        resolved_ids = []
+        for sim_name in item.simulations:
+            sid = sim_name_map.get(sim_name.lower())
+            if sid:
+                resolved_ids.append(sid)
+            else:
+                errors.append(
+                    SaveCohortFieldError(
+                        field="simulations",
+                        message=f'Simulation "{sim_name}" not found',
+                    )
+                )
+        if not any(e.field == "simulations" for e in errors):
+            item.simulation_ids = resolved_ids
+
+    if item.profiles is not None and item.profile_ids is None:
+        from app.api.v4.resources.profiles.search import (
+            search_profiles_internal,
+        )
+
+        all_profiles = await search_profiles_internal(
+            conn, search=None, limit_count=1000
+        )
+        profile_name_map = {
+            p.name.lower(): p.profile_id
+            for p in all_profiles
+            if p.name and p.profile_id
+        }
+        resolved_ids = []
+        for profile_name in item.profiles:
+            pid = profile_name_map.get(profile_name.lower())
+            if pid:
+                resolved_ids.append(pid)
+            else:
+                errors.append(
+                    SaveCohortFieldError(
+                        field="profiles",
+                        message=f'Profile "{profile_name}" not found',
+                    )
+                )
+        if not any(e.field == "profiles" for e in errors):
+            item.profile_ids = resolved_ids
+
     # --- Validate required fields have IDs after resolution ---
 
     if item.name_id is None:

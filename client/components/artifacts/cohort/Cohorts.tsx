@@ -6,7 +6,7 @@
  * 06/18/2025
  */
 "use client";
-import { CheckCircle, Copy, Edit, Eye, Pencil, Play, Search, Sparkles, Trash2, Users, X } from "lucide-react";
+import { CheckCircle, Copy, Edit, Eye, FileSpreadsheet, Pencil, Play, Search, Sparkles, Trash2, Users, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -17,10 +17,13 @@ import type {
   DeleteCohortOut,
   DuplicateCohortIn,
   DuplicateCohortOut,
+  ParseCsvIn,
+  ParseCsvOut,
   SaveCohortIn,
   SaveCohortOut,
   SearchFlagsOut,
 } from "@/app/(main)/training/cohorts/page";
+import BulkImport, { type ImportFieldDef } from "@/components/common/BulkImport";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
@@ -78,6 +81,8 @@ export interface CohortsProps {
   deleteCohortAction?: (input: DeleteCohortIn) => Promise<DeleteCohortOut>;
   saveCohortAction?: (input: SaveCohortIn) => Promise<SaveCohortOut>;
   searchFlagsAction?: () => Promise<SearchFlagsOut>;
+  parseCsvAction?: (input: ParseCsvIn) => Promise<ParseCsvOut>;
+  importFields?: ImportFieldDef[];
   // Server-side pagination/filtering state
   pageIndex: number;
   pageSize: number;
@@ -93,6 +98,8 @@ export default function Cohorts({
   deleteCohortAction,
   saveCohortAction,
   searchFlagsAction,
+  parseCsvAction,
+  importFields,
   pageIndex,
   pageSize,
   totalCount,
@@ -122,6 +129,9 @@ export default function Cohorts({
   // Bulk delete state
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  // Bulk import state
+  const [showBulkImportDialog, setShowBulkImportDialog] = useState(false);
 
   // Bulk edit state
   const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
@@ -979,6 +989,17 @@ export default function Cohorts({
                 )}
               </div>
             </div>
+            {parseCsvAction && importFields && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8"
+                onClick={() => setShowBulkImportDialog(true)}
+              >
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                Import CSV
+              </Button>
+            )}
             <DataTableViewOptions table={table} hiddenColumns={["name", "profile_ids", "simulation_ids", "departments", "updated_at"]} />
           </div>
           )}
@@ -1204,6 +1225,32 @@ export default function Cohorts({
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Bulk Import Dialog */}
+        {parseCsvAction && importFields && (
+          <BulkImport
+            open={showBulkImportDialog}
+            onClose={() => {
+              setShowBulkImportDialog(false);
+              router.refresh();
+            }}
+            fields={importFields}
+            artifactName="Cohorts"
+            parseCsvAction={parseCsvAction}
+            onSave={async (items) => {
+              if (!saveCohortAction) throw new Error("Save action not available");
+              const cohorts = items.map((item) => ({
+                name: item.name as string | undefined,
+                description: item.description as string | undefined,
+                is_inactive: item.is_inactive as boolean | undefined,
+                departments: item.departments as string[] | undefined,
+                simulations: item.simulations as string[] | undefined,
+                profiles: item.profiles as string[] | undefined,
+              }));
+              return saveCohortAction({ body: { cohorts } });
+            }}
+          />
+        )}
 
       </div>
     </TooltipProvider>

@@ -22,6 +22,8 @@ type SaveCohortIn = InputOf<"/api/v4/artifacts/cohorts/save", "post">;
 type SaveCohortOut = OutputOf<"/api/v4/artifacts/cohorts/save", "post">;
 type SearchFlagsIn = InputOf<"/api/v4/resources/flags/search", "post">;
 type SearchFlagsOut = NonNullable<OutputOf<"/api/v4/resources/flags/search", "post">["items"]>;
+type ParseCsvIn = InputOf<"/api/v4/uploads/csv", "post">;
+type ParseCsvOut = OutputOf<"/api/v4/uploads/csv", "post">;
 
 /** ---- Body type for cohorts list request ---- */
 type CohortsListBody = {
@@ -82,6 +84,11 @@ async function searchFlags(): Promise<SearchFlagsOut> {
     body: { search: null, limit_count: 100, offset_count: 0, cohort: true },
   } as SearchFlagsIn);
   return res.items ?? [];
+}
+
+async function parseCsv(input: ParseCsvIn): Promise<ParseCsvOut> {
+  "use server";
+  return api.post("/uploads/csv", input);
 }
 
 /** ---- Docs types for page metadata ---- */
@@ -149,6 +156,8 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
         deleteCohortAction={deleteCohort}
         saveCohortAction={saveCohort}
         searchFlagsAction={searchFlags}
+        parseCsvAction={parseCsv}
+        importFields={listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[] | undefined}
         pageIndex={pageIndex}
         pageSize={pageSize}
         totalCount={listData.total_count ?? 0}
@@ -167,6 +176,8 @@ export type {
   DeleteCohortOut,
   DuplicateCohortIn,
   DuplicateCohortOut,
+  ParseCsvIn,
+  ParseCsvOut,
   SaveCohortIn,
   SaveCohortOut,
   SearchFlagsOut,

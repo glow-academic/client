@@ -42,6 +42,50 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
+COHORT_IMPORT_FIELDS: list[dict] = [
+    {
+        "key": "name",
+        "label": "Name",
+        "required": True,
+        "example": "Fall 2025 Cohort",
+        "description": "The cohort's display name",
+    },
+    {
+        "key": "description",
+        "label": "Description",
+        "example": "A cohort for fall 2025 students...",
+        "description": "Optional description",
+    },
+    {
+        "key": "is_inactive",
+        "label": "Inactive",
+        "type": "boolean",
+        "example": "false",
+        "description": "Whether the cohort is inactive (true/false)",
+    },
+    {
+        "key": "departments",
+        "label": "Departments",
+        "multi": True,
+        "example": "Nursing, Medicine",
+        "description": "Comma-separated department names",
+    },
+    {
+        "key": "simulations",
+        "label": "Simulations",
+        "multi": True,
+        "example": "Emergency Triage, Patient Intake",
+        "description": "Comma-separated simulation names",
+    },
+    {
+        "key": "profiles",
+        "label": "Profiles",
+        "multi": True,
+        "example": "John Doe, Jane Smith",
+        "description": "Comma-separated profile names",
+    },
+]
+
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/cohorts/get_cohorts_list_complete.sql"
 
@@ -286,6 +330,7 @@ async def get_cohort_list(
                 request.department_search,
             ),
             total_count=result.total_count,
+            import_fields=COHORT_IMPORT_FIELDS,
         )
 
         # Cache response (use mode='json' to serialize UUIDs and other types)

@@ -54,6 +54,7 @@ function MainLayoutContent({
   children,
   pageData,
   attemptControls,
+  initialSidebarOpen,
   initialPanelOpen,
   switchEffectiveProfileAction,
   createFeedbackAction,
@@ -64,6 +65,7 @@ function MainLayoutContent({
   children: React.ReactNode;
   pageData: AuthPageResponse | null;
   attemptControls: AuthAttemptOut | null;
+  initialSidebarOpen?: boolean;
   initialPanelOpen?: boolean;
   switchEffectiveProfileAction: (
     input: SwitchEffectiveProfileParams
@@ -166,7 +168,7 @@ function MainLayoutContent({
 
   return (
     <div className="flex min-h-svh w-full">
-      <SidebarProvider>
+      <SidebarProvider defaultOpen={initialSidebarOpen ?? true}>
         <UnifiedSidebar
           sidebarRoutes={pageData?.sidebar_routes ?? null}
           activeSection={activeSection}
@@ -246,6 +248,7 @@ export function MainLayoutClient({
   drafts,
   insights,
   analyticsFilters,
+  initialSidebarOpen,
   initialAutosave,
   initialPanelOpen,
   switchEffectiveProfileAction,
@@ -263,6 +266,8 @@ export function MainLayoutClient({
   attemptControls: AuthAttemptOut | null;
   drafts: DraftItem[];
   analyticsFilters: AnalyticsFiltersResponse | null;
+  /** Initial sidebar open state from SSR cookie */
+  initialSidebarOpen?: boolean;
   /** Initial autosave preference from SSR cookie */
   initialAutosave?: boolean;
   /** Initial AI panel open state from SSR cookie */
@@ -326,6 +331,7 @@ export function MainLayoutClient({
                   <MainLayoutContent
                     pageData={pageData}
                     attemptControls={attemptControls}
+                    initialSidebarOpen={initialSidebarOpen}
                     initialPanelOpen={initialPanelOpen}
                     switchEffectiveProfileAction={switchEffectiveProfileAction}
                     createFeedbackAction={createFeedbackAction}

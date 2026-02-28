@@ -201,9 +201,7 @@ async def _resolve_simulation_values(
             flag_type="simulation_practice",
             simulation=True,
         )
-        match = next(
-            (f for f in all_flags if f.type == "simulation_practice"), None
-        )
+        match = next((f for f in all_flags if f.type == "simulation_practice"), None)
         if match and match.id:
             if item.is_practice:
                 item.flag_ids = (item.flag_ids or []) + [match.id]

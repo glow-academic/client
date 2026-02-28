@@ -21,6 +21,7 @@ import {
 } from "./layout-server";
 import { LogoutGuard } from "./logout-guard";
 
+const SIDEBAR_COOKIE = "glow_sidebar";
 const AUTOSAVE_COOKIE = "glow_autosave";
 const AI_PANEL_COOKIE = "glow_ai_panel";
 
@@ -37,14 +38,19 @@ export default async function MainLayout({
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") || "/";
 
-  // Read autosave preference from cookie for SSR
+  // Read UI preferences from cookies for SSR
   const cookieStore = await cookies();
+
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie
+    ? sidebarCookie.value === "true"
+    : undefined;
+
   const autosaveCookie = cookieStore.get(AUTOSAVE_COOKIE);
   const initialAutosave = autosaveCookie
     ? autosaveCookie.value === "true"
     : undefined;
 
-  // Read AI panel open state from cookie for SSR
   const aiPanelCookie = cookieStore.get(AI_PANEL_COOKIE);
   const initialPanelOpen = aiPanelCookie
     ? aiPanelCookie.value === "true"
@@ -110,6 +116,7 @@ export default async function MainLayout({
         attemptControls={attemptControls}
         drafts={drafts}
         analyticsFilters={analyticsFilters}
+        initialSidebarOpen={initialSidebarOpen}
         initialAutosave={initialAutosave}
         initialPanelOpen={initialPanelOpen}
         switchEffectiveProfileAction={switchEffectiveProfile}

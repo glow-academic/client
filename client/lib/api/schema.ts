@@ -2825,6 +2825,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/artifacts/practice/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export Practice
+         * @description Export practice attempts as CSV — attempt-grain data with hydrated names.
+         */
+        post: operations["export_practice_api_v4_artifacts_practice_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/artifacts/attempt/get": {
         parameters: {
             query?: never;
@@ -27899,6 +27919,46 @@ export interface components {
             row_count: number;
         };
         /**
+         * ExportPracticeApiRequest
+         * @description Request model for practice export (attempt-grain analytical dump).
+         */
+        ExportPracticeApiRequest: {
+            /**
+             * History Show Archived
+             * @default false
+             */
+            history_show_archived: boolean;
+            /** History Scenario Ids */
+            history_scenario_ids?: string[] | null;
+            /** History Infinite Mode */
+            history_infinite_mode?: boolean | null;
+            /**
+             * Sort By
+             * @default date
+             */
+            sort_by: string | null;
+            /**
+             * Sort Order
+             * @default desc
+             */
+            sort_order: string | null;
+        };
+        /**
+         * ExportPracticeApiResponse
+         * @description Response model for practice export.
+         */
+        ExportPracticeApiResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** File Name */
+            file_name: string;
+            /** Row Count */
+            row_count: number;
+        };
+        /**
          * ExportPricingApiRequest
          * @description Request model for pricing export (group-level analytical dump).
          */
@@ -34605,6 +34665,8 @@ export interface components {
             department_filter?: components["schemas"]["ListFilterSection"] | null;
             /** Total Count */
             total_count?: number | null;
+            /** Import Fields */
+            import_fields?: unknown[] | null;
         };
         /**
          * ListCohortApiSimulation
@@ -42906,6 +42968,14 @@ export interface components {
             profile_ids?: string[] | null;
             /** Profile Persona Ids */
             profile_persona_ids?: string[] | null;
+            /** Is Inactive */
+            is_inactive?: boolean | null;
+            /** Departments */
+            departments?: string[] | null;
+            /** Simulations */
+            simulations?: string[] | null;
+            /** Profiles */
+            profiles?: string[] | null;
         };
         /**
          * SaveCohortResult
@@ -57076,6 +57146,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetPracticeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_practice_api_v4_artifacts_practice_export_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportPracticeApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportPracticeApiResponse"];
                 };
             };
             /** @description Validation Error */

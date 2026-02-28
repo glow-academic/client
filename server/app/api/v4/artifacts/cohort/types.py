@@ -326,6 +326,7 @@ class ListCohortApiResponse(BaseModel):
     profile_filter: "ListFilterSection | None" = None
     department_filter: "ListFilterSection | None" = None
     total_count: int | None = None
+    import_fields: list[Any] | None = None
 
 
 # =============================================================================
@@ -382,6 +383,11 @@ class SaveCohortItem(BaseModel):
     simulation_availability_ids: list[UUID] | None = None
     profile_ids: list[UUID] | None = None
     profile_persona_ids: list[UUID] | None = None
+    # Value-based fields (for CSV import — resolved to IDs by _resolve_cohort_values)
+    is_inactive: bool | None = None
+    departments: list[str] | None = None
+    simulations: list[str] | None = None
+    profiles: list[str] | None = None
 
 
 class SaveCohortApiRequest(BaseModel):

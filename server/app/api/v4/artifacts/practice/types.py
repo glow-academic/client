@@ -29,6 +29,29 @@ from app.sql.types import (
 )
 
 # =============================================================================
+# Export Types
+# =============================================================================
+
+
+class ExportPracticeApiRequest(BaseModel):
+    """Request model for practice export (attempt-grain analytical dump)."""
+
+    history_show_archived: bool = False
+    history_scenario_ids: list[UUID] | None = None
+    history_infinite_mode: bool | None = None
+    sort_by: str | None = "date"
+    sort_order: str | None = "desc"
+
+
+class ExportPracticeApiResponse(BaseModel):
+    """Response model for practice export."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int
+
+
+# =============================================================================
 # Websocket types
 # =============================================================================
 
