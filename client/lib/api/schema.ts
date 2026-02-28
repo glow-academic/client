@@ -7744,86 +7744,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/activity_insights/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Activity Insights Entries
-         * @description Get activity_insights entries by IDs.
-         */
-        post: operations["get_activity_insights_entries_api_v4_entries_activity_insights_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/activity_insights/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Activity Insights Entries
-         * @description Search activity_insights entries.
-         */
-        post: operations["search_activity_insights_entries_api_v4_entries_activity_insights_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/activity_insights/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Activity Insights
-         * @description Refresh the activity_insights_mv materialized view.
-         */
-        post: operations["refresh_activity_insights_api_v4_entries_activity_insights_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/activity-insights/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Activity Insights Entry
-         * @description Create activity_insights entry.
-         */
-        post: operations["create_activity_insights_entry_api_v4_entries_activity_insights_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/entries/agent_drafts/get": {
         parameters: {
             query?: never;
@@ -8764,86 +8684,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_insights/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Attempt Insights Entries
-         * @description Get attempt_insights entries by IDs.
-         */
-        post: operations["get_attempt_insights_entries_api_v4_entries_attempt_insights_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/attempt_insights/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Attempt Insights Entries
-         * @description Search attempt_insights entries.
-         */
-        post: operations["search_attempt_insights_entries_api_v4_entries_attempt_insights_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/attempt_insights/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Attempt Insights
-         * @description Refresh the attempt_insights_mv materialized view.
-         */
-        post: operations["refresh_attempt_insights_api_v4_entries_attempt_insights_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/attempt-insights/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Attempt Insights Entry
-         * @description Create attempt_insights entry.
-         */
-        post: operations["create_attempt_insights_entry_api_v4_entries_attempt_insights_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/entries/attempt_message/get": {
         parameters: {
             query?: never;
@@ -9384,86 +9224,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/benchmark_insights/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Benchmark Insights Entries
-         * @description Get benchmark_insights entries by IDs.
-         */
-        post: operations["get_benchmark_insights_entries_api_v4_entries_benchmark_insights_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/benchmark_insights/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Benchmark Insights Entries
-         * @description Search benchmark_insights entries.
-         */
-        post: operations["search_benchmark_insights_entries_api_v4_entries_benchmark_insights_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/benchmark_insights/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Benchmark Insights
-         * @description Refresh the benchmark_insights_mv materialized view.
-         */
-        post: operations["refresh_benchmark_insights_api_v4_entries_benchmark_insights_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/benchmark-insights/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Benchmark Insights Entry
-         * @description Create benchmark_insights entry.
-         */
-        post: operations["create_benchmark_insights_entry_api_v4_entries_benchmark_insights_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/entries/calls/get": {
         parameters: {
             query?: never;
@@ -9878,86 +9638,6 @@ export interface paths {
          * @description Create conversations_completions entry.
          */
         post: operations["create_conversations_completions_entry_api_v4_entries_conversations_completions_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/dashboard_insights/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Dashboard Insights Entries
-         * @description Get dashboard_insights entries by IDs.
-         */
-        post: operations["get_dashboard_insights_entries_api_v4_entries_dashboard_insights_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/dashboard_insights/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Dashboard Insights Entries
-         * @description Search dashboard_insights entries.
-         */
-        post: operations["search_dashboard_insights_entries_api_v4_entries_dashboard_insights_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/dashboard_insights/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Dashboard Insights
-         * @description Refresh the dashboard_insights_mv materialized view.
-         */
-        post: operations["refresh_dashboard_insights_api_v4_entries_dashboard_insights_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/dashboard-insights/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Dashboard Insights Entry
-         * @description Create dashboard_insights entry.
-         */
-        post: operations["create_dashboard_insights_entry_api_v4_entries_dashboard_insights_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10404,46 +10084,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/group_insights/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Group Insights Entries
-         * @description Search group_insights entries.
-         */
-        post: operations["search_group_insights_entries_api_v4_entries_group_insights_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/group-insights/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Group Insights Entry
-         * @description Create group_insights entry.
-         */
-        post: operations["create_group_insights_entry_api_v4_entries_group_insights_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/entries/groups/get": {
         parameters: {
             query?: never;
@@ -10564,86 +10204,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/health_insights/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Health Insights Entries
-         * @description Get health_insights entries by IDs.
-         */
-        post: operations["get_health_insights_entries_api_v4_entries_health_insights_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/health_insights/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Health Insights Entries
-         * @description Search health_insights entries.
-         */
-        post: operations["search_health_insights_entries_api_v4_entries_health_insights_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/health_insights/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Health Insights
-         * @description Refresh the health_insights_mv materialized view.
-         */
-        post: operations["refresh_health_insights_api_v4_entries_health_insights_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/health-insights/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Health Insights Entry
-         * @description Create health_insights entry.
-         */
-        post: operations["create_health_insights_entry_api_v4_entries_health_insights_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/entries/home/get": {
         parameters: {
             query?: never;
@@ -10698,86 +10258,6 @@ export interface paths {
          * @description Refresh the home_mv materialized view.
          */
         post: operations["refresh_home_api_v4_entries_home_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/home_insights/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Home Insights Entries
-         * @description Get home_insights entries by IDs.
-         */
-        post: operations["get_home_insights_entries_api_v4_entries_home_insights_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/home_insights/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Home Insights Entries
-         * @description Search home_insights entries.
-         */
-        post: operations["search_home_insights_entries_api_v4_entries_home_insights_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/home_insights/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Home Insights
-         * @description Refresh the home_insights_mv materialized view.
-         */
-        post: operations["refresh_home_insights_api_v4_entries_home_insights_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/home-insights/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Home Insights Entry
-         * @description Create home_insights entry.
-         */
-        post: operations["create_home_insights_entry_api_v4_entries_home_insights_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10898,86 +10378,6 @@ export interface paths {
          * @description Refresh the images_mv materialized view.
          */
         post: operations["refresh_images_api_v4_entries_images_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/leaderboard_insights/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Leaderboard Insights Entries
-         * @description Get leaderboard_insights entries by IDs.
-         */
-        post: operations["get_leaderboard_insights_entries_api_v4_entries_leaderboard_insights_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/leaderboard_insights/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Leaderboard Insights Entries
-         * @description Search leaderboard_insights entries.
-         */
-        post: operations["search_leaderboard_insights_entries_api_v4_entries_leaderboard_insights_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/leaderboard_insights/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Leaderboard Insights
-         * @description Refresh the leaderboard_insights_mv materialized view.
-         */
-        post: operations["refresh_leaderboard_insights_api_v4_entries_leaderboard_insights_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/leaderboard-insights/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Leaderboard Insights Entry
-         * @description Create leaderboard_insights entry.
-         */
-        post: operations["create_leaderboard_insights_entry_api_v4_entries_leaderboard_insights_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11604,86 +11004,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/practice_insights/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Practice Insights Entries
-         * @description Get practice_insights entries by IDs.
-         */
-        post: operations["get_practice_insights_entries_api_v4_entries_practice_insights_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/practice_insights/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Practice Insights Entries
-         * @description Search practice_insights entries.
-         */
-        post: operations["search_practice_insights_entries_api_v4_entries_practice_insights_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/practice_insights/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Practice Insights
-         * @description Refresh the practice_insights_mv materialized view.
-         */
-        post: operations["refresh_practice_insights_api_v4_entries_practice_insights_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/practice-insights/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Practice Insights Entry
-         * @description Create practice_insights entry.
-         */
-        post: operations["create_practice_insights_entry_api_v4_entries_practice_insights_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/entries/practice_training/get": {
         parameters: {
             query?: never;
@@ -11738,86 +11058,6 @@ export interface paths {
          * @description Refresh the practice_training_mv materialized view.
          */
         post: operations["refresh_practice_training_api_v4_entries_practice_training_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/pricing_insights/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Pricing Insights Entries
-         * @description Get pricing_insights entries by IDs.
-         */
-        post: operations["get_pricing_insights_entries_api_v4_entries_pricing_insights_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/pricing_insights/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Pricing Insights Entries
-         * @description Search pricing_insights entries.
-         */
-        post: operations["search_pricing_insights_entries_api_v4_entries_pricing_insights_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/pricing_insights/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Pricing Insights
-         * @description Refresh the pricing_insights_mv materialized view.
-         */
-        post: operations["refresh_pricing_insights_api_v4_entries_pricing_insights_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/pricing-insights/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Pricing Insights Entry
-         * @description Create pricing_insights entry.
-         */
-        post: operations["create_pricing_insights_entry_api_v4_entries_pricing_insights_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12024,86 +11264,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/record_insights/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Record Insights Entries
-         * @description Get record_insights entries by IDs.
-         */
-        post: operations["get_record_insights_entries_api_v4_entries_record_insights_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/record_insights/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Record Insights Entries
-         * @description Search record_insights entries.
-         */
-        post: operations["search_record_insights_entries_api_v4_entries_record_insights_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/record_insights/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Record Insights
-         * @description Refresh the record_insights_mv materialized view.
-         */
-        post: operations["refresh_record_insights_api_v4_entries_record_insights_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/record-insights/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Record Insights Entry
-         * @description Create record_insights entry.
-         */
-        post: operations["create_record_insights_entry_api_v4_entries_record_insights_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/entries/reports/get": {
         parameters: {
             query?: never;
@@ -12178,86 +11338,6 @@ export interface paths {
          * @description Create reports entry.
          */
         post: operations["create_reports_entry_api_v4_entries_reports_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/reports_insights/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Reports Insights Entries
-         * @description Get reports_insights entries by IDs.
-         */
-        post: operations["get_reports_insights_entries_api_v4_entries_reports_insights_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/reports_insights/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Reports Insights Entries
-         * @description Search reports_insights entries.
-         */
-        post: operations["search_reports_insights_entries_api_v4_entries_reports_insights_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/reports_insights/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Reports Insights
-         * @description Refresh the reports_insights_mv materialized view.
-         */
-        post: operations["refresh_reports_insights_api_v4_entries_reports_insights_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/reports-insights/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Reports Insights Entry
-         * @description Create reports_insights entry.
-         */
-        post: operations["create_reports_insights_entry_api_v4_entries_reports_insights_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12658,46 +11738,6 @@ export interface paths {
          * @description Refresh the scenario_drafts_mv materialized view.
          */
         post: operations["refresh_scenario_drafts_api_v4_entries_scenario_drafts_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/session_insights/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Session Insights Entries
-         * @description Search session_insights entries.
-         */
-        post: operations["search_session_insights_entries_api_v4_entries_session_insights_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/session-insights/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Session Insights Entry
-         * @description Create session_insights entry.
-         */
-        post: operations["create_session_insights_entry_api_v4_entries_session_insights_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -13458,86 +12498,6 @@ export interface paths {
          * @description Create test_grade entry.
          */
         post: operations["create_test_grade_entry_api_v4_entries_test_grade_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/test_insights/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Test Insights Entries
-         * @description Get test_insights entries by IDs.
-         */
-        post: operations["get_test_insights_entries_api_v4_entries_test_insights_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/test_insights/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Test Insights Entries
-         * @description Search test_insights entries.
-         */
-        post: operations["search_test_insights_entries_api_v4_entries_test_insights_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/test_insights/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Test Insights
-         * @description Refresh the test_insights_mv materialized view.
-         */
-        post: operations["refresh_test_insights_api_v4_entries_test_insights_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/test-insights/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Test Insights Entry
-         * @description Create test_insights entry.
-         */
-        post: operations["create_test_insights_entry_api_v4_entries_test_insights_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -14400,7 +13360,7 @@ export interface paths {
         put?: never;
         /**
          * Get Insights
-         * @description Return historical insights for the current page's artifact type.
+         * @description Return historical insights — currently returns empty (tables removed).
          */
         post: operations["get_insights_api_v4_auth_insights_post"];
         delete?: never;
@@ -25076,39 +24036,6 @@ export interface components {
             /** Total Time */
             total_time: number;
         };
-        /** CreateActivityInsightsEntryRequest */
-        CreateActivityInsightsEntryRequest: {
-            /**
-             * Run Id
-             * Format: uuid
-             */
-            run_id: string;
-            /** Group Id */
-            group_id?: string | null;
-            /**
-             * Content
-             * @default
-             */
-            content: string;
-        };
-        /** CreateActivityInsightsEntryResponse */
-        CreateActivityInsightsEntryResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Call Id
-             * Format: uuid
-             */
-            call_id: string;
-            /**
-             * Message Id
-             * Format: uuid
-             */
-            message_id: string;
-        };
         /** CreateAttemptAnalysisEntryRequest */
         CreateAttemptAnalysisEntryRequest: {
             /**
@@ -25634,39 +24561,6 @@ export interface components {
              */
             message_id: string;
         };
-        /** CreateAttemptInsightsEntryRequest */
-        CreateAttemptInsightsEntryRequest: {
-            /**
-             * Run Id
-             * Format: uuid
-             */
-            run_id: string;
-            /** Group Id */
-            group_id?: string | null;
-            /**
-             * Content
-             * @default
-             */
-            content: string;
-        };
-        /** CreateAttemptInsightsEntryResponse */
-        CreateAttemptInsightsEntryResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Call Id
-             * Format: uuid
-             */
-            call_id: string;
-            /**
-             * Message Id
-             * Format: uuid
-             */
-            message_id: string;
-        };
         /** CreateAttemptMessageEntryRequest */
         CreateAttemptMessageEntryRequest: {
             /**
@@ -25792,39 +24686,6 @@ export interface components {
              */
             message_id: string;
         };
-        /** CreateBenchmarkInsightsEntryRequest */
-        CreateBenchmarkInsightsEntryRequest: {
-            /**
-             * Run Id
-             * Format: uuid
-             */
-            run_id: string;
-            /** Group Id */
-            group_id?: string | null;
-            /**
-             * Content
-             * @default
-             */
-            content: string;
-        };
-        /** CreateBenchmarkInsightsEntryResponse */
-        CreateBenchmarkInsightsEntryResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Call Id
-             * Format: uuid
-             */
-            call_id: string;
-            /**
-             * Message Id
-             * Format: uuid
-             */
-            message_id: string;
-        };
         /** CreateCertificatesEntryRequest */
         CreateCertificatesEntryRequest: {
             /**
@@ -25907,39 +24768,6 @@ export interface components {
         };
         /** CreateConversationsEntryResponse */
         CreateConversationsEntryResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Call Id
-             * Format: uuid
-             */
-            call_id: string;
-            /**
-             * Message Id
-             * Format: uuid
-             */
-            message_id: string;
-        };
-        /** CreateDashboardInsightsEntryRequest */
-        CreateDashboardInsightsEntryRequest: {
-            /**
-             * Run Id
-             * Format: uuid
-             */
-            run_id: string;
-            /** Group Id */
-            group_id?: string | null;
-            /**
-             * Content
-             * @default
-             */
-            content: string;
-        };
-        /** CreateDashboardInsightsEntryResponse */
-        CreateDashboardInsightsEntryResponse: {
             /**
              * Id
              * Format: uuid
@@ -26042,138 +24870,6 @@ export interface components {
             /** Emulate Page Url */
             emulate_page_url?: string | null;
         };
-        /** CreateGroupInsightsEntryRequest */
-        CreateGroupInsightsEntryRequest: {
-            /**
-             * Run Id
-             * Format: uuid
-             */
-            run_id: string;
-            /** Group Id */
-            group_id?: string | null;
-            /**
-             * Content
-             * @default
-             */
-            content: string;
-        };
-        /** CreateGroupInsightsEntryResponse */
-        CreateGroupInsightsEntryResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Call Id
-             * Format: uuid
-             */
-            call_id: string;
-            /**
-             * Message Id
-             * Format: uuid
-             */
-            message_id: string;
-        };
-        /** CreateHealthInsightsEntryRequest */
-        CreateHealthInsightsEntryRequest: {
-            /**
-             * Run Id
-             * Format: uuid
-             */
-            run_id: string;
-            /** Group Id */
-            group_id?: string | null;
-            /**
-             * Content
-             * @default
-             */
-            content: string;
-        };
-        /** CreateHealthInsightsEntryResponse */
-        CreateHealthInsightsEntryResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Call Id
-             * Format: uuid
-             */
-            call_id: string;
-            /**
-             * Message Id
-             * Format: uuid
-             */
-            message_id: string;
-        };
-        /** CreateHomeInsightsEntryRequest */
-        CreateHomeInsightsEntryRequest: {
-            /**
-             * Run Id
-             * Format: uuid
-             */
-            run_id: string;
-            /** Group Id */
-            group_id?: string | null;
-            /**
-             * Content
-             * @default
-             */
-            content: string;
-        };
-        /** CreateHomeInsightsEntryResponse */
-        CreateHomeInsightsEntryResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Call Id
-             * Format: uuid
-             */
-            call_id: string;
-            /**
-             * Message Id
-             * Format: uuid
-             */
-            message_id: string;
-        };
-        /** CreateLeaderboardInsightsEntryRequest */
-        CreateLeaderboardInsightsEntryRequest: {
-            /**
-             * Run Id
-             * Format: uuid
-             */
-            run_id: string;
-            /** Group Id */
-            group_id?: string | null;
-            /**
-             * Content
-             * @default
-             */
-            content: string;
-        };
-        /** CreateLeaderboardInsightsEntryResponse */
-        CreateLeaderboardInsightsEntryResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Call Id
-             * Format: uuid
-             */
-            call_id: string;
-            /**
-             * Message Id
-             * Format: uuid
-             */
-            message_id: string;
-        };
         /** CreateMutesEntryRequest */
         CreateMutesEntryRequest: {
             /**
@@ -26244,72 +24940,6 @@ export interface components {
             /** Session Id */
             session_id?: string | null;
         };
-        /** CreatePracticeInsightsEntryRequest */
-        CreatePracticeInsightsEntryRequest: {
-            /**
-             * Run Id
-             * Format: uuid
-             */
-            run_id: string;
-            /** Group Id */
-            group_id?: string | null;
-            /**
-             * Content
-             * @default
-             */
-            content: string;
-        };
-        /** CreatePracticeInsightsEntryResponse */
-        CreatePracticeInsightsEntryResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Call Id
-             * Format: uuid
-             */
-            call_id: string;
-            /**
-             * Message Id
-             * Format: uuid
-             */
-            message_id: string;
-        };
-        /** CreatePricingInsightsEntryRequest */
-        CreatePricingInsightsEntryRequest: {
-            /**
-             * Run Id
-             * Format: uuid
-             */
-            run_id: string;
-            /** Group Id */
-            group_id?: string | null;
-            /**
-             * Content
-             * @default
-             */
-            content: string;
-        };
-        /** CreatePricingInsightsEntryResponse */
-        CreatePricingInsightsEntryResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Call Id
-             * Format: uuid
-             */
-            call_id: string;
-            /**
-             * Message Id
-             * Format: uuid
-             */
-            message_id: string;
-        };
         /** CreateProblemRequest */
         CreateProblemRequest: {
             /** Type */
@@ -26359,39 +24989,6 @@ export interface components {
              */
             message_id: string;
         };
-        /** CreateRecordInsightsEntryRequest */
-        CreateRecordInsightsEntryRequest: {
-            /**
-             * Run Id
-             * Format: uuid
-             */
-            run_id: string;
-            /** Group Id */
-            group_id?: string | null;
-            /**
-             * Content
-             * @default
-             */
-            content: string;
-        };
-        /** CreateRecordInsightsEntryResponse */
-        CreateRecordInsightsEntryResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Call Id
-             * Format: uuid
-             */
-            call_id: string;
-            /**
-             * Message Id
-             * Format: uuid
-             */
-            message_id: string;
-        };
         /** CreateReportsEntryRequest */
         CreateReportsEntryRequest: {
             /**
@@ -26407,39 +25004,6 @@ export interface components {
         };
         /** CreateReportsEntryResponse */
         CreateReportsEntryResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Call Id
-             * Format: uuid
-             */
-            call_id: string;
-            /**
-             * Message Id
-             * Format: uuid
-             */
-            message_id: string;
-        };
-        /** CreateReportsInsightsEntryRequest */
-        CreateReportsInsightsEntryRequest: {
-            /**
-             * Run Id
-             * Format: uuid
-             */
-            run_id: string;
-            /** Group Id */
-            group_id?: string | null;
-            /**
-             * Content
-             * @default
-             */
-            content: string;
-        };
-        /** CreateReportsInsightsEntryResponse */
-        CreateReportsInsightsEntryResponse: {
             /**
              * Id
              * Format: uuid
@@ -26510,39 +25074,6 @@ export interface components {
             id?: string | null;
             /** Already Exists */
             already_exists?: boolean | null;
-        };
-        /** CreateSessionInsightsEntryRequest */
-        CreateSessionInsightsEntryRequest: {
-            /**
-             * Run Id
-             * Format: uuid
-             */
-            run_id: string;
-            /** Group Id */
-            group_id?: string | null;
-            /**
-             * Content
-             * @default
-             */
-            content: string;
-        };
-        /** CreateSessionInsightsEntryResponse */
-        CreateSessionInsightsEntryResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Call Id
-             * Format: uuid
-             */
-            call_id: string;
-            /**
-             * Message Id
-             * Format: uuid
-             */
-            message_id: string;
         };
         /** CreateTestArchiveEntryRequest */
         CreateTestArchiveEntryRequest: {
@@ -26721,39 +25252,6 @@ export interface components {
         };
         /** CreateTestGradeEntryResponse */
         CreateTestGradeEntryResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Call Id
-             * Format: uuid
-             */
-            call_id: string;
-            /**
-             * Message Id
-             * Format: uuid
-             */
-            message_id: string;
-        };
-        /** CreateTestInsightsEntryRequest */
-        CreateTestInsightsEntryRequest: {
-            /**
-             * Run Id
-             * Format: uuid
-             */
-            run_id: string;
-            /** Group Id */
-            group_id?: string | null;
-            /**
-             * Content
-             * @default
-             */
-            content: string;
-        };
-        /** CreateTestInsightsEntryResponse */
-        CreateTestInsightsEntryResponse: {
             /**
              * Id
              * Format: uuid
@@ -29812,16 +28310,6 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
-        /** GetActivityInsightsEntriesApiRequest */
-        GetActivityInsightsEntriesApiRequest: {
-            /** Ids */
-            ids: string[];
-        };
-        /** GetActivityInsightsEntriesApiResponse */
-        GetActivityInsightsEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
         /**
          * GetAgentApiRequest
          * @description Request model for get agent endpoint.
@@ -30135,16 +28623,6 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
-        /** GetAttemptInsightsEntriesApiRequest */
-        GetAttemptInsightsEntriesApiRequest: {
-            /** Ids */
-            ids: string[];
-        };
-        /** GetAttemptInsightsEntriesApiResponse */
-        GetAttemptInsightsEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
         /** GetAttemptMessageEntriesApiRequest */
         GetAttemptMessageEntriesApiRequest: {
             /** Ids */
@@ -30396,16 +28874,6 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
-        /** GetBenchmarkInsightsEntriesApiRequest */
-        GetBenchmarkInsightsEntriesApiRequest: {
-            /** Ids */
-            ids: string[];
-        };
-        /** GetBenchmarkInsightsEntriesApiResponse */
-        GetBenchmarkInsightsEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
         /** GetCallsEntriesApiRequest */
         GetCallsEntriesApiRequest: {
             /** Ids */
@@ -30645,16 +29113,6 @@ export interface components {
         };
         /** GetConversationsEntriesApiResponse */
         GetConversationsEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
-        /** GetDashboardInsightsEntriesApiRequest */
-        GetDashboardInsightsEntriesApiRequest: {
-            /** Ids */
-            ids: string[];
-        };
-        /** GetDashboardInsightsEntriesApiResponse */
-        GetDashboardInsightsEntriesApiResponse: {
             /** Items */
             items?: unknown | null;
         };
@@ -31264,16 +29722,6 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
-        /** GetHealthInsightsEntriesApiRequest */
-        GetHealthInsightsEntriesApiRequest: {
-            /** Ids */
-            ids: string[];
-        };
-        /** GetHealthInsightsEntriesApiResponse */
-        GetHealthInsightsEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
         /** GetHomeEntriesApiRequest */
         GetHomeEntriesApiRequest: {
             /** Ids */
@@ -31281,16 +29729,6 @@ export interface components {
         };
         /** GetHomeEntriesApiResponse */
         GetHomeEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
-        /** GetHomeInsightsEntriesApiRequest */
-        GetHomeInsightsEntriesApiRequest: {
-            /** Ids */
-            ids: string[];
-        };
-        /** GetHomeInsightsEntriesApiResponse */
-        GetHomeInsightsEntriesApiResponse: {
             /** Items */
             items?: unknown | null;
         };
@@ -31460,16 +29898,6 @@ export interface components {
         GetKeysApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetKeysV4Item"][] | null;
-        };
-        /** GetLeaderboardInsightsEntriesApiRequest */
-        GetLeaderboardInsightsEntriesApiRequest: {
-            /** Ids */
-            ids: string[];
-        };
-        /** GetLeaderboardInsightsEntriesApiResponse */
-        GetLeaderboardInsightsEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
         };
         /** GetLoginDataApiRequest */
         GetLoginDataApiRequest: {
@@ -31945,16 +30373,6 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
-        /** GetPracticeInsightsEntriesApiRequest */
-        GetPracticeInsightsEntriesApiRequest: {
-            /** Ids */
-            ids: string[];
-        };
-        /** GetPracticeInsightsEntriesApiResponse */
-        GetPracticeInsightsEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
         /**
          * GetPracticeRequest
          * @description Request for practice get endpoint with optional history.
@@ -32022,16 +30440,6 @@ export interface components {
         GetPricingApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetPricingV4Item"][] | null;
-        };
-        /** GetPricingInsightsEntriesApiRequest */
-        GetPricingInsightsEntriesApiRequest: {
-            /** Ids */
-            ids: string[];
-        };
-        /** GetPricingInsightsEntriesApiResponse */
-        GetPricingInsightsEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
         };
         /**
          * GetProblemStatementApiRequest
@@ -32387,16 +30795,6 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetReasoningLevelsV4Item"][] | null;
         };
-        /** GetRecordInsightsEntriesApiRequest */
-        GetRecordInsightsEntriesApiRequest: {
-            /** Ids */
-            ids: string[];
-        };
-        /** GetRecordInsightsEntriesApiResponse */
-        GetRecordInsightsEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
         /** GetReportsEntriesApiRequest */
         GetReportsEntriesApiRequest: {
             /** Ids */
@@ -32404,16 +30802,6 @@ export interface components {
         };
         /** GetReportsEntriesApiResponse */
         GetReportsEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
-        /** GetReportsInsightsEntriesApiRequest */
-        GetReportsInsightsEntriesApiRequest: {
-            /** Ids */
-            ids: string[];
-        };
-        /** GetReportsInsightsEntriesApiResponse */
-        GetReportsInsightsEntriesApiResponse: {
             /** Items */
             items?: unknown | null;
         };
@@ -33312,16 +31700,6 @@ export interface components {
         };
         /** GetTestGradeEntriesApiResponse */
         GetTestGradeEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
-        /** GetTestInsightsEntriesApiRequest */
-        GetTestInsightsEntriesApiRequest: {
-            /** Ids */
-            ids: string[];
-        };
-        /** GetTestInsightsEntriesApiResponse */
-        GetTestInsightsEntriesApiResponse: {
             /** Items */
             items?: unknown | null;
         };
@@ -45763,28 +44141,6 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
-        /** SearchActivityInsightsEntriesApiRequest */
-        SearchActivityInsightsEntriesApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /** SearchActivityInsightsEntriesApiResponse */
-        SearchActivityInsightsEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
         /** SearchAgentDraftsEntriesApiRequest */
         SearchAgentDraftsEntriesApiRequest: {
             /** Search */
@@ -46212,28 +44568,6 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
-        /** SearchAttemptInsightsEntriesApiRequest */
-        SearchAttemptInsightsEntriesApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /** SearchAttemptInsightsEntriesApiResponse */
-        SearchAttemptInsightsEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
         /** SearchAttemptMessageEntriesApiRequest */
         SearchAttemptMessageEntriesApiRequest: {
             /** Search */
@@ -46485,28 +44819,6 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
-        /** SearchBenchmarkInsightsEntriesApiRequest */
-        SearchBenchmarkInsightsEntriesApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /** SearchBenchmarkInsightsEntriesApiResponse */
-        SearchBenchmarkInsightsEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
         /** SearchCallsEntriesApiRequest */
         SearchCallsEntriesApiRequest: {
             /** Search */
@@ -46720,28 +45032,6 @@ export interface components {
         };
         /** SearchConversationsEntriesApiResponse */
         SearchConversationsEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
-        /** SearchDashboardInsightsEntriesApiRequest */
-        SearchDashboardInsightsEntriesApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /** SearchDashboardInsightsEntriesApiResponse */
-        SearchDashboardInsightsEntriesApiResponse: {
             /** Items */
             items?: unknown | null;
         };
@@ -47472,28 +45762,6 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
-        /** SearchGroupInsightsEntriesApiRequest */
-        SearchGroupInsightsEntriesApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /** SearchGroupInsightsEntriesApiResponse */
-        SearchGroupInsightsEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
         /** SearchGroupPositionsApiRequest */
         SearchGroupPositionsApiRequest: {
             /** Search */
@@ -47625,28 +45893,6 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
-        /** SearchHealthInsightsEntriesApiRequest */
-        SearchHealthInsightsEntriesApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /** SearchHealthInsightsEntriesApiResponse */
-        SearchHealthInsightsEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
         /** SearchHomeEntriesApiRequest */
         SearchHomeEntriesApiRequest: {
             /** Search */
@@ -47664,28 +45910,6 @@ export interface components {
         };
         /** SearchHomeEntriesApiResponse */
         SearchHomeEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
-        /** SearchHomeInsightsEntriesApiRequest */
-        SearchHomeInsightsEntriesApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /** SearchHomeInsightsEntriesApiResponse */
-        SearchHomeInsightsEntriesApiResponse: {
             /** Items */
             items?: unknown | null;
         };
@@ -47866,28 +46090,6 @@ export interface components {
         SearchKeysApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetKeysV4Item"][] | null;
-        };
-        /** SearchLeaderboardInsightsEntriesApiRequest */
-        SearchLeaderboardInsightsEntriesApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /** SearchLeaderboardInsightsEntriesApiResponse */
-        SearchLeaderboardInsightsEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
         };
         /** SearchLoginsEntriesApiRequest */
         SearchLoginsEntriesApiRequest: {
@@ -48503,28 +46705,6 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
-        /** SearchPracticeInsightsEntriesApiRequest */
-        SearchPracticeInsightsEntriesApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /** SearchPracticeInsightsEntriesApiResponse */
-        SearchPracticeInsightsEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
         /** SearchPricingApiRequest */
         SearchPricingApiRequest: {
             /** Search */
@@ -48555,28 +46735,6 @@ export interface components {
         SearchPricingApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetPricingV4Item"][] | null;
-        };
-        /** SearchPricingInsightsEntriesApiRequest */
-        SearchPricingInsightsEntriesApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /** SearchPricingInsightsEntriesApiResponse */
-        SearchPricingInsightsEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
         };
         /** SearchProblemsEntriesApiRequest */
         SearchProblemsEntriesApiRequest: {
@@ -48885,28 +47043,6 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetReasoningLevelsV4Item"][] | null;
         };
-        /** SearchRecordInsightsEntriesApiRequest */
-        SearchRecordInsightsEntriesApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /** SearchRecordInsightsEntriesApiResponse */
-        SearchRecordInsightsEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
         /** SearchReportsEntriesApiRequest */
         SearchReportsEntriesApiRequest: {
             /** Search */
@@ -48926,28 +47062,6 @@ export interface components {
         };
         /** SearchReportsEntriesApiResponse */
         SearchReportsEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
-        /** SearchReportsInsightsEntriesApiRequest */
-        SearchReportsInsightsEntriesApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /** SearchReportsInsightsEntriesApiResponse */
-        SearchReportsInsightsEntriesApiResponse: {
             /** Items */
             items?: unknown | null;
         };
@@ -49425,28 +47539,6 @@ export interface components {
             /** Items */
             items?: components["schemas"]["app__api__v4__artifacts__simulation__types__QGetScenariosV4Item"][] | null;
         };
-        /** SearchSessionInsightsEntriesApiRequest */
-        SearchSessionInsightsEntriesApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /** SearchSessionInsightsEntriesApiResponse */
-        SearchSessionInsightsEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
         /** SearchSessionsEntriesApiRequest */
         SearchSessionsEntriesApiRequest: {
             /** Search */
@@ -49893,28 +47985,6 @@ export interface components {
         };
         /** SearchTestGradeEntriesApiResponse */
         SearchTestGradeEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
-        /** SearchTestInsightsEntriesApiRequest */
-        SearchTestInsightsEntriesApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /** SearchTestInsightsEntriesApiResponse */
-        SearchTestInsightsEntriesApiResponse: {
             /** Items */
             items?: unknown | null;
         };
@@ -67681,152 +65751,6 @@ export interface operations {
             };
         };
     };
-    get_activity_insights_entries_api_v4_entries_activity_insights_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetActivityInsightsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetActivityInsightsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_activity_insights_entries_api_v4_entries_activity_insights_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchActivityInsightsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SearchActivityInsightsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_activity_insights_api_v4_entries_activity_insights_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_activity_insights_entry_api_v4_entries_activity_insights_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateActivityInsightsEntryRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateActivityInsightsEntryResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_agent_drafts_entries_api_v4_entries_agent_drafts_get_post: {
         parameters: {
             query?: never;
@@ -69542,152 +67466,6 @@ export interface operations {
             };
         };
     };
-    get_attempt_insights_entries_api_v4_entries_attempt_insights_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetAttemptInsightsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetAttemptInsightsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_attempt_insights_entries_api_v4_entries_attempt_insights_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchAttemptInsightsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SearchAttemptInsightsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_attempt_insights_api_v4_entries_attempt_insights_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_attempt_insights_entry_api_v4_entries_attempt_insights_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateAttemptInsightsEntryRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateAttemptInsightsEntryResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_attempt_message_entries_api_v4_entries_attempt_message_get_post: {
         parameters: {
             query?: never;
@@ -70671,152 +68449,6 @@ export interface operations {
             };
         };
     };
-    get_benchmark_insights_entries_api_v4_entries_benchmark_insights_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetBenchmarkInsightsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetBenchmarkInsightsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_benchmark_insights_entries_api_v4_entries_benchmark_insights_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchBenchmarkInsightsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SearchBenchmarkInsightsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_benchmark_insights_api_v4_entries_benchmark_insights_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_benchmark_insights_entry_api_v4_entries_benchmark_insights_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateBenchmarkInsightsEntryRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateBenchmarkInsightsEntryResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_calls_entries_api_v4_entries_calls_get_post: {
         parameters: {
             query?: never;
@@ -71569,152 +69201,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreateConversationsCompletionsEntryResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_dashboard_insights_entries_api_v4_entries_dashboard_insights_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetDashboardInsightsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetDashboardInsightsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_dashboard_insights_entries_api_v4_entries_dashboard_insights_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchDashboardInsightsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SearchDashboardInsightsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_dashboard_insights_api_v4_entries_dashboard_insights_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_dashboard_insights_entry_api_v4_entries_dashboard_insights_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateDashboardInsightsEntryRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateDashboardInsightsEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -72528,80 +70014,6 @@ export interface operations {
             };
         };
     };
-    search_group_insights_entries_api_v4_entries_group_insights_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchGroupInsightsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SearchGroupInsightsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_group_insights_entry_api_v4_entries_group_insights_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateGroupInsightsEntryRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateGroupInsightsEntryResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_groups_entries_api_v4_entries_groups_get_post: {
         parameters: {
             query?: never;
@@ -72820,152 +70232,6 @@ export interface operations {
             };
         };
     };
-    get_health_insights_entries_api_v4_entries_health_insights_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetHealthInsightsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetHealthInsightsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_health_insights_entries_api_v4_entries_health_insights_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchHealthInsightsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SearchHealthInsightsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_health_insights_api_v4_entries_health_insights_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_health_insights_entry_api_v4_entries_health_insights_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateHealthInsightsEntryRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateHealthInsightsEntryResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_home_entries_api_v4_entries_home_get_post: {
         parameters: {
             query?: never;
@@ -73062,152 +70328,6 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_home_insights_entries_api_v4_entries_home_insights_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetHomeInsightsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetHomeInsightsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_home_insights_entries_api_v4_entries_home_insights_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchHomeInsightsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SearchHomeInsightsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_home_insights_api_v4_entries_home_insights_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_home_insights_entry_api_v4_entries_home_insights_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateHomeInsightsEntryRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateHomeInsightsEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73426,152 +70546,6 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_leaderboard_insights_entries_api_v4_entries_leaderboard_insights_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetLeaderboardInsightsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetLeaderboardInsightsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_leaderboard_insights_entries_api_v4_entries_leaderboard_insights_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchLeaderboardInsightsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SearchLeaderboardInsightsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_leaderboard_insights_api_v4_entries_leaderboard_insights_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_leaderboard_insights_entry_api_v4_entries_leaderboard_insights_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateLeaderboardInsightsEntryRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateLeaderboardInsightsEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74712,152 +71686,6 @@ export interface operations {
             };
         };
     };
-    get_practice_insights_entries_api_v4_entries_practice_insights_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetPracticeInsightsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetPracticeInsightsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_practice_insights_entries_api_v4_entries_practice_insights_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchPracticeInsightsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SearchPracticeInsightsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_practice_insights_api_v4_entries_practice_insights_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_practice_insights_entry_api_v4_entries_practice_insights_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreatePracticeInsightsEntryRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreatePracticeInsightsEntryResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_practice_training_entries_api_v4_entries_practice_training_get_post: {
         parameters: {
             query?: never;
@@ -74954,152 +71782,6 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_pricing_insights_entries_api_v4_entries_pricing_insights_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetPricingInsightsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetPricingInsightsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_pricing_insights_entries_api_v4_entries_pricing_insights_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchPricingInsightsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SearchPricingInsightsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_pricing_insights_api_v4_entries_pricing_insights_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_pricing_insights_entry_api_v4_entries_pricing_insights_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreatePricingInsightsEntryRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreatePricingInsightsEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75477,152 +72159,6 @@ export interface operations {
             };
         };
     };
-    get_record_insights_entries_api_v4_entries_record_insights_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetRecordInsightsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetRecordInsightsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_record_insights_entries_api_v4_entries_record_insights_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchRecordInsightsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SearchRecordInsightsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_record_insights_api_v4_entries_record_insights_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_record_insights_entry_api_v4_entries_record_insights_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateRecordInsightsEntryRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateRecordInsightsEntryResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_reports_entries_api_v4_entries_reports_get_post: {
         parameters: {
             query?: never;
@@ -75756,152 +72292,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreateReportsEntryResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_reports_insights_entries_api_v4_entries_reports_insights_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetReportsInsightsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetReportsInsightsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_reports_insights_entries_api_v4_entries_reports_insights_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchReportsInsightsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SearchReportsInsightsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_reports_insights_api_v4_entries_reports_insights_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_reports_insights_entry_api_v4_entries_reports_insights_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateReportsInsightsEntryRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateReportsInsightsEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76630,80 +73020,6 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_session_insights_entries_api_v4_entries_session_insights_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchSessionInsightsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SearchSessionInsightsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_session_insights_entry_api_v4_entries_session_insights_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateSessionInsightsEntryRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateSessionInsightsEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78088,152 +74404,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreateTestGradeEntryResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_test_insights_entries_api_v4_entries_test_insights_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetTestInsightsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetTestInsightsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_test_insights_entries_api_v4_entries_test_insights_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchTestInsightsEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SearchTestInsightsEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_test_insights_api_v4_entries_test_insights_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_test_insights_entry_api_v4_entries_test_insights_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateTestInsightsEntryRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateTestInsightsEntryResponse"];
                 };
             };
             /** @description Validation Error */

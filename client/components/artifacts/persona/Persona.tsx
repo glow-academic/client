@@ -22,7 +22,7 @@ import {
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
+
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Colors } from "@/components/resources/Colors";
 import { Departments } from "@/components/resources/Departments";
@@ -42,7 +42,7 @@ import { useArtifactAi } from "@/hooks/use-artifact-ai";
 
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
-import { useGenerationModal } from "@/hooks/use-generation-modal";
+
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   type ResourceConfig,
@@ -734,38 +734,17 @@ function PersonaComponent({
     [],
   );
 
-  const resourceLabels: Partial<Record<ResourceType, string>> = useMemo(
-    () => ({
-      names: "Names",
-      descriptions: "Descriptions",
-      colors: "Colors",
-      icons: "Icons",
-      instructions: "Instructions",
-      flags: "Flags",
-      examples: "Examples",
-      parameters: "Parameters",
-      parameter_fields: "Parameter Fields",
-      departments: "Departments",
-      voices: "Voices",
-    }),
-    [],
-  );
-
-  const onModalGenerate = useCallback(
-    (selectedResources: ResourceType[], instructions?: string) => {
-      handleGenerateResources(selectedResources, instructions);
+  // Direct step generation — bypasses modal, generates all resources for the step
+  const handleDirectStepGenerate = useCallback(
+    (stepId: string, _mode: "generate" | "regenerate") => {
+      const resources = stepResources[stepId];
+      if (resources) {
+        handleGenerateResources(resources);
+      }
     },
-    [handleGenerateResources],
+    [stepResources, handleGenerateResources],
   );
 
-  const { handleOpenStepCardModal, modalProps } =
-    useGenerationModal<ResourceType>({
-      stepResources,
-      resourceLabels,
-      canRegenerate,
-      onGenerate: onModalGenerate,
-      isGenerating,
-    });
 
   // --- Disabled / Breadcrumb ---
   const disabled = useMemo(() => {
@@ -1103,7 +1082,7 @@ function PersonaComponent({
                     resourceTypes={stepResources["basic"]!}
                     canRegenerate={canRegenerate}
                     isGenerating={isGenerating}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -1221,7 +1200,7 @@ function PersonaComponent({
                     resourceTypes={stepResources["parameters"]!}
                     canRegenerate={canRegenerate}
                     isGenerating={isGenerating}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -1310,7 +1289,7 @@ function PersonaComponent({
                     resourceTypes={stepResources["color"]!}
                     canRegenerate={canRegenerate}
                     isGenerating={isGenerating}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -1391,7 +1370,7 @@ function PersonaComponent({
                     resourceTypes={stepResources["icon"]!}
                     canRegenerate={canRegenerate}
                     isGenerating={isGenerating}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -1451,7 +1430,7 @@ function PersonaComponent({
                     resourceTypes={stepResources["content"]!}
                     canRegenerate={canRegenerate}
                     isGenerating={isGenerating}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -1609,7 +1588,7 @@ function PersonaComponent({
       linkParameterFieldAction,
       linkVoiceAction,
       canRegenerate,
-      handleOpenStepCardModal,
+      handleDirectStepGenerate,
       isAutosaveEnabled,
       registerFlushCallbacks,
       createParameterFieldsAction,
@@ -1650,7 +1629,6 @@ function PersonaComponent({
           }}
         />
 
-        {modalProps.open && <GenerateRegenerateModal {...modalProps} />}
       </div>
     </TooltipProvider>
   );

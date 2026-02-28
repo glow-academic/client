@@ -68,10 +68,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
+
 import { useProfile } from "@/contexts/profile-context";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
-import { useGenerationModal } from "@/hooks/use-generation-modal";
+
 
 // Utility function to generate gradient from hex color
 const generateGradientFromHex = (hexColor: string): string => {
@@ -165,38 +165,12 @@ export default function Personas({
   const [voiceOptions, setVoiceOptions] = useState<{ id: string; voice: string }[]>([]);
   const [optionsLoaded, setOptionsLoaded] = useState(false);
 
-  // Generation modal via shared hook
-  type PersonaResourceType = "names" | "descriptions" | "colors" | "icons" | "instructions" | "flags" | "examples" | "parameter_fields" | "departments" | "parameters" | "voices";
-
-  const { generate } = useArtifactAi({
+  // Socket listener for generation events (toasts, spinners, completion refresh)
+  // Generation is dispatched from the GenerationPanel, not from this page
+  useArtifactAi({
     artifactType: "persona",
-    groupId: null,
     validResourceTypes: ["names", "descriptions", "colors", "icons", "instructions", "flags", "examples", "parameter_fields", "departments", "parameters", "voices"],
     onComplete: () => router.refresh(),
-  });
-
-  const { handleOpenStepCardModal, modalProps } = useGenerationModal<PersonaResourceType>({
-    stepResources: {
-      all: ["names", "descriptions", "colors", "icons", "instructions", "flags", "examples", "parameter_fields", "departments", "parameters", "voices"],
-    },
-    resourceLabels: {
-      names: "Name",
-      descriptions: "Description",
-      colors: "Color",
-      icons: "Icon",
-      instructions: "Instructions",
-      flags: "Configuration",
-      examples: "Examples",
-      parameter_fields: "Fields",
-      departments: "Departments",
-      parameters: "Parameters",
-      voices: "Voices",
-    },
-    canRegenerate: () => true,
-    onGenerate: (selectedResources, instructions) => {
-      generate(selectedResources, { user_instructions: instructions?.trim() ? [instructions.trim()] : null, save: true });
-    },
-    isGenerating: () => false,
   });
 
   // Local search state for debouncing
@@ -1589,7 +1563,6 @@ export default function Personas({
         </DialogContent>
       </Dialog>
 
-      <GenerateRegenerateModal {...modalProps} />
       </div>
     </TooltipProvider>
   );

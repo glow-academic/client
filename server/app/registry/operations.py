@@ -444,8 +444,6 @@ RESOURCE_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
 #   practice       → get_practice_context_view_internal
 #   problems       → get_problem_list_view_internal
 #   responses      → get_simulation_responses_internal
-#   group_insights → no get.py
-#   session_insights → no get.py
 # ---------------------------------------------------------------------------
 
 _E = "app.api.v4.entries"
@@ -478,7 +476,6 @@ def _ent(
 
 ENTRY_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
     **_ent("activity"),
-    **_ent("activity_insights", create=True),
     **_ent("agent_drafts"),
     **_ent("attempt", create=True),
     **_ent("attempt_analysis", create=True),
@@ -491,7 +488,6 @@ ENTRY_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
     **_ent("attempt_highlight", create=True),
     **_ent("attempt_hint", create=True),
     **_ent("attempt_improvement", create=True),
-    **_ent("attempt_insights", create=True),
     **_ent("attempt_message", create=True),
     **_ent("attempt_message_tree"),
     **_ent("attempt_replacement", create=True),
@@ -500,7 +496,6 @@ ENTRY_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
     **_ent("audits"),
     **_ent("auth_drafts"),
     **_ent("benchmark"),
-    **_ent("benchmark_insights", create=True),
     **_ent("calls"),
     **_ent("certificates", create=True),
     **_ent("chat", get_fn="get_chats_internal", search=False),
@@ -508,7 +503,6 @@ ENTRY_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
     **_ent("config"),
     **_ent("conversations", create=True),
     **_ent("conversations_completions", create=True),
-    **_ent("dashboard_insights", create=True),
     **_ent("debug_info", create=True),
     **_ent("department_drafts"),
     **_ent("document_drafts"),
@@ -516,15 +510,11 @@ ENTRY_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
     **_ent("eval_drafts"),
     **_ent("field_drafts"),
     **_ent("grants"),
-    **_ent("group_insights", get=False, search=True, create=True),
     **_ent("groups"),
     **_ent("health"),
-    **_ent("health_insights", create=True),
     **_ent("home", get_fn="get_home_context_view_internal"),
-    **_ent("home_insights", create=True),
     **_ent("home_training"),
     **_ent("images"),
-    **_ent("leaderboard_insights", create=True),
     **_ent("logins", get_fn="get_login_list_view_internal"),
     **_ent("messages"),
     **_ent("messages_completions"),
@@ -535,22 +525,17 @@ ENTRY_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
     **_ent("persona"),
     **_ent("persona_drafts"),
     **_ent("practice", get_fn="get_practice_context_view_internal"),
-    **_ent("practice_insights", create=True),
     **_ent("practice_training"),
-    **_ent("pricing_insights", create=True),
     **_ent("problems", get_fn="get_problem_list_view_internal", create=True),
     **_ent("profile_drafts"),
     **_ent("provider_drafts"),
-    **_ent("record_insights", create=True),
     **_ent("reports", create=True),
-    **_ent("reports_insights", create=True),
     **_ent("resolves", create=True),
     **_ent("responses", get_fn="get_simulation_responses_internal", create=True),
     **_ent("rubric_drafts"),
     **_ent("run_pricing"),
     **_ent("runs"),
     **_ent("scenario_drafts"),
-    **_ent("session_insights", get=False, search=True, create=True),
     **_ent("sessions"),
     **_ent("setting_drafts"),
     **_ent("simulation_drafts"),
@@ -562,7 +547,6 @@ ENTRY_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
     **_ent("test_completion", create=True),
     **_ent("test_feedback", create=True),
     **_ent("test_grade", create=True),
-    **_ent("test_insights", create=True),
     **_ent("test_invocation", create=True),
     **_ent("test_stop", create=True),
     **_ent("texts"),

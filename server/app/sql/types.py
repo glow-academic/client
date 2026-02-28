@@ -4280,106 +4280,6 @@ class SearchActivityEntriesApiResponse(BaseModel):
 
 
 
-# Generated from: create_activity_insights_entries
-
-class CreateActivityInsightsEntriesSqlParams(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.run_id,
-            self.group_id,
-            self.content,
-            self.tool_id,
-            self.mcp,
-        )
-
-class CreateActivityInsightsEntriesSqlRow(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-class CreateActivityInsightsEntriesApiRequest(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-class CreateActivityInsightsEntriesApiResponse(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-
-
-# Generated from: get_activity_insights_entries
-
-class GetActivityInsightsEntriesSqlParams(BaseModel):
-
-    ids: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.ids,
-        )
-
-class GetActivityInsightsEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class GetActivityInsightsEntriesApiRequest(BaseModel):
-
-    ids: list[UUID]
-
-class GetActivityInsightsEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
-# Generated from: search_activity_insights_entries
-
-class SearchActivityInsightsEntriesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.group_id,
-        )
-
-class SearchActivityInsightsEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class SearchActivityInsightsEntriesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-class SearchActivityInsightsEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
 # Generated from: create_agent_drafts_entries
 
 class CreateAgentDraftsEntriesSqlParams(BaseModel):
@@ -5730,106 +5630,6 @@ class SearchAttemptImprovementEntriesApiResponse(BaseModel):
 
 
 
-# Generated from: create_attempt_insights_entries
-
-class CreateAttemptInsightsEntriesSqlParams(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.run_id,
-            self.group_id,
-            self.content,
-            self.tool_id,
-            self.mcp,
-        )
-
-class CreateAttemptInsightsEntriesSqlRow(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-class CreateAttemptInsightsEntriesApiRequest(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-class CreateAttemptInsightsEntriesApiResponse(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-
-
-# Generated from: get_attempt_insights_entries
-
-class GetAttemptInsightsEntriesSqlParams(BaseModel):
-
-    ids: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.ids,
-        )
-
-class GetAttemptInsightsEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class GetAttemptInsightsEntriesApiRequest(BaseModel):
-
-    ids: list[UUID]
-
-class GetAttemptInsightsEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
-# Generated from: search_attempt_insights_entries
-
-class SearchAttemptInsightsEntriesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.group_id,
-        )
-
-class SearchAttemptInsightsEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class SearchAttemptInsightsEntriesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-class SearchAttemptInsightsEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
 # Generated from: create_attempt_message_entries
 
 class CreateAttemptMessageEntriesSqlParams(BaseModel):
@@ -6625,106 +6425,6 @@ class SearchBenchmarkEntriesApiRequest(BaseModel):
     offset_count: int | None = 0
 
 class SearchBenchmarkEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
-# Generated from: create_benchmark_insights_entries
-
-class CreateBenchmarkInsightsEntriesSqlParams(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.run_id,
-            self.group_id,
-            self.content,
-            self.tool_id,
-            self.mcp,
-        )
-
-class CreateBenchmarkInsightsEntriesSqlRow(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-class CreateBenchmarkInsightsEntriesApiRequest(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-class CreateBenchmarkInsightsEntriesApiResponse(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-
-
-# Generated from: get_benchmark_insights_entries
-
-class GetBenchmarkInsightsEntriesSqlParams(BaseModel):
-
-    ids: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.ids,
-        )
-
-class GetBenchmarkInsightsEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class GetBenchmarkInsightsEntriesApiRequest(BaseModel):
-
-    ids: list[UUID]
-
-class GetBenchmarkInsightsEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
-# Generated from: search_benchmark_insights_entries
-
-class SearchBenchmarkInsightsEntriesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.group_id,
-        )
-
-class SearchBenchmarkInsightsEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class SearchBenchmarkInsightsEntriesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-class SearchBenchmarkInsightsEntriesApiResponse(BaseModel):
 
     items: Any | None = None
 
@@ -7701,106 +7401,6 @@ class CreateEntryRecordApiResponse(BaseModel):
 
 
 
-# Generated from: create_dashboard_insights_entries
-
-class CreateDashboardInsightsEntriesSqlParams(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.run_id,
-            self.group_id,
-            self.content,
-            self.tool_id,
-            self.mcp,
-        )
-
-class CreateDashboardInsightsEntriesSqlRow(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-class CreateDashboardInsightsEntriesApiRequest(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-class CreateDashboardInsightsEntriesApiResponse(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-
-
-# Generated from: get_dashboard_insights_entries
-
-class GetDashboardInsightsEntriesSqlParams(BaseModel):
-
-    ids: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.ids,
-        )
-
-class GetDashboardInsightsEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class GetDashboardInsightsEntriesApiRequest(BaseModel):
-
-    ids: list[UUID]
-
-class GetDashboardInsightsEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
-# Generated from: search_dashboard_insights_entries
-
-class SearchDashboardInsightsEntriesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.group_id,
-        )
-
-class SearchDashboardInsightsEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class SearchDashboardInsightsEntriesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-class SearchDashboardInsightsEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
 # Generated from: create_debug_info_entries
 
 class CreateDebugInfoEntriesSqlParams(BaseModel):
@@ -8534,81 +8134,6 @@ class SearchGrantsEntriesApiResponse(BaseModel):
 
 
 
-# Generated from: create_group_insights_entries
-
-class CreateGroupInsightsEntriesSqlParams(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.run_id,
-            self.group_id,
-            self.content,
-            self.tool_id,
-            self.mcp,
-        )
-
-class CreateGroupInsightsEntriesSqlRow(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-class CreateGroupInsightsEntriesApiRequest(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-class CreateGroupInsightsEntriesApiResponse(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-
-
-# Generated from: search_group_insights_entries
-
-class SearchGroupInsightsEntriesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.group_id,
-        )
-
-class SearchGroupInsightsEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class SearchGroupInsightsEntriesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-class SearchGroupInsightsEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
 # Generated from: create_groups_entries
 
 class CreateGroupsEntriesSqlParams(BaseModel):
@@ -8785,106 +8310,6 @@ class SearchHealthEntriesApiRequest(BaseModel):
     offset_count: int | None = 0
 
 class SearchHealthEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
-# Generated from: create_health_insights_entries
-
-class CreateHealthInsightsEntriesSqlParams(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.run_id,
-            self.group_id,
-            self.content,
-            self.tool_id,
-            self.mcp,
-        )
-
-class CreateHealthInsightsEntriesSqlRow(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-class CreateHealthInsightsEntriesApiRequest(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-class CreateHealthInsightsEntriesApiResponse(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-
-
-# Generated from: get_health_insights_entries
-
-class GetHealthInsightsEntriesSqlParams(BaseModel):
-
-    ids: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.ids,
-        )
-
-class GetHealthInsightsEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class GetHealthInsightsEntriesApiRequest(BaseModel):
-
-    ids: list[UUID]
-
-class GetHealthInsightsEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
-# Generated from: search_health_insights_entries
-
-class SearchHealthInsightsEntriesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.group_id,
-        )
-
-class SearchHealthInsightsEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class SearchHealthInsightsEntriesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-class SearchHealthInsightsEntriesApiResponse(BaseModel):
 
     items: Any | None = None
 
@@ -9069,106 +8494,6 @@ class SearchHomeChatEntriesApiRequest(BaseModel):
     chat_id: UUID | None = None
 
 class SearchHomeChatEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
-# Generated from: create_home_insights_entries
-
-class CreateHomeInsightsEntriesSqlParams(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.run_id,
-            self.group_id,
-            self.content,
-            self.tool_id,
-            self.mcp,
-        )
-
-class CreateHomeInsightsEntriesSqlRow(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-class CreateHomeInsightsEntriesApiRequest(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-class CreateHomeInsightsEntriesApiResponse(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-
-
-# Generated from: get_home_insights_entries
-
-class GetHomeInsightsEntriesSqlParams(BaseModel):
-
-    ids: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.ids,
-        )
-
-class GetHomeInsightsEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class GetHomeInsightsEntriesApiRequest(BaseModel):
-
-    ids: list[UUID]
-
-class GetHomeInsightsEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
-# Generated from: search_home_insights_entries
-
-class SearchHomeInsightsEntriesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.group_id,
-        )
-
-class SearchHomeInsightsEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class SearchHomeInsightsEntriesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-class SearchHomeInsightsEntriesApiResponse(BaseModel):
 
     items: Any | None = None
 
@@ -9472,106 +8797,6 @@ class SearchInvocationDraftsEntriesApiRequest(BaseModel):
     group_id: UUID | None = None
 
 class SearchInvocationDraftsEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
-# Generated from: create_leaderboard_insights_entries
-
-class CreateLeaderboardInsightsEntriesSqlParams(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.run_id,
-            self.group_id,
-            self.content,
-            self.tool_id,
-            self.mcp,
-        )
-
-class CreateLeaderboardInsightsEntriesSqlRow(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-class CreateLeaderboardInsightsEntriesApiRequest(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-class CreateLeaderboardInsightsEntriesApiResponse(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-
-
-# Generated from: get_leaderboard_insights_entries
-
-class GetLeaderboardInsightsEntriesSqlParams(BaseModel):
-
-    ids: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.ids,
-        )
-
-class GetLeaderboardInsightsEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class GetLeaderboardInsightsEntriesApiRequest(BaseModel):
-
-    ids: list[UUID]
-
-class GetLeaderboardInsightsEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
-# Generated from: search_leaderboard_insights_entries
-
-class SearchLeaderboardInsightsEntriesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.group_id,
-        )
-
-class SearchLeaderboardInsightsEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class SearchLeaderboardInsightsEntriesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-class SearchLeaderboardInsightsEntriesApiResponse(BaseModel):
 
     items: Any | None = None
 
@@ -10661,206 +9886,6 @@ class SearchPracticeChatEntriesApiResponse(BaseModel):
 
 
 
-# Generated from: create_practice_insights_entries
-
-class CreatePracticeInsightsEntriesSqlParams(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.run_id,
-            self.group_id,
-            self.content,
-            self.tool_id,
-            self.mcp,
-        )
-
-class CreatePracticeInsightsEntriesSqlRow(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-class CreatePracticeInsightsEntriesApiRequest(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-class CreatePracticeInsightsEntriesApiResponse(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-
-
-# Generated from: get_practice_insights_entries
-
-class GetPracticeInsightsEntriesSqlParams(BaseModel):
-
-    ids: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.ids,
-        )
-
-class GetPracticeInsightsEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class GetPracticeInsightsEntriesApiRequest(BaseModel):
-
-    ids: list[UUID]
-
-class GetPracticeInsightsEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
-# Generated from: search_practice_insights_entries
-
-class SearchPracticeInsightsEntriesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.group_id,
-        )
-
-class SearchPracticeInsightsEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class SearchPracticeInsightsEntriesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-class SearchPracticeInsightsEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
-# Generated from: create_pricing_insights_entries
-
-class CreatePricingInsightsEntriesSqlParams(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.run_id,
-            self.group_id,
-            self.content,
-            self.tool_id,
-            self.mcp,
-        )
-
-class CreatePricingInsightsEntriesSqlRow(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-class CreatePricingInsightsEntriesApiRequest(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-class CreatePricingInsightsEntriesApiResponse(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-
-
-# Generated from: get_pricing_insights_entries
-
-class GetPricingInsightsEntriesSqlParams(BaseModel):
-
-    ids: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.ids,
-        )
-
-class GetPricingInsightsEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class GetPricingInsightsEntriesApiRequest(BaseModel):
-
-    ids: list[UUID]
-
-class GetPricingInsightsEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
-# Generated from: search_pricing_insights_entries
-
-class SearchPricingInsightsEntriesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.group_id,
-        )
-
-class SearchPricingInsightsEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class SearchPricingInsightsEntriesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-class SearchPricingInsightsEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
 # Generated from: create_problems_entries
 
 class CreateProblemsEntriesSqlParams(BaseModel):
@@ -11179,106 +10204,6 @@ class SearchProviderDraftsEntriesApiResponse(BaseModel):
 
 
 
-# Generated from: create_record_insights_entries
-
-class CreateRecordInsightsEntriesSqlParams(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.run_id,
-            self.group_id,
-            self.content,
-            self.tool_id,
-            self.mcp,
-        )
-
-class CreateRecordInsightsEntriesSqlRow(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-class CreateRecordInsightsEntriesApiRequest(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-class CreateRecordInsightsEntriesApiResponse(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-
-
-# Generated from: get_record_insights_entries
-
-class GetRecordInsightsEntriesSqlParams(BaseModel):
-
-    ids: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.ids,
-        )
-
-class GetRecordInsightsEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class GetRecordInsightsEntriesApiRequest(BaseModel):
-
-    ids: list[UUID]
-
-class GetRecordInsightsEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
-# Generated from: search_record_insights_entries
-
-class SearchRecordInsightsEntriesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.group_id,
-        )
-
-class SearchRecordInsightsEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class SearchRecordInsightsEntriesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-class SearchRecordInsightsEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
 # Generated from: create_reports_entries
 
 class CreateReportsEntriesSqlParams(BaseModel):
@@ -11371,106 +10296,6 @@ class SearchReportsEntriesApiRequest(BaseModel):
     upload_id: UUID | None = None
 
 class SearchReportsEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
-# Generated from: create_reports_insights_entries
-
-class CreateReportsInsightsEntriesSqlParams(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.run_id,
-            self.group_id,
-            self.content,
-            self.tool_id,
-            self.mcp,
-        )
-
-class CreateReportsInsightsEntriesSqlRow(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-class CreateReportsInsightsEntriesApiRequest(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-class CreateReportsInsightsEntriesApiResponse(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-
-
-# Generated from: get_reports_insights_entries
-
-class GetReportsInsightsEntriesSqlParams(BaseModel):
-
-    ids: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.ids,
-        )
-
-class GetReportsInsightsEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class GetReportsInsightsEntriesApiRequest(BaseModel):
-
-    ids: list[UUID]
-
-class GetReportsInsightsEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
-# Generated from: search_reports_insights_entries
-
-class SearchReportsInsightsEntriesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.group_id,
-        )
-
-class SearchReportsInsightsEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class SearchReportsInsightsEntriesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-class SearchReportsInsightsEntriesApiResponse(BaseModel):
 
     items: Any | None = None
 
@@ -12089,81 +10914,6 @@ class SearchScenarioDraftsEntriesApiRequest(BaseModel):
     group_id: UUID | None = None
 
 class SearchScenarioDraftsEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
-# Generated from: create_session_insights_entries
-
-class CreateSessionInsightsEntriesSqlParams(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.run_id,
-            self.group_id,
-            self.content,
-            self.tool_id,
-            self.mcp,
-        )
-
-class CreateSessionInsightsEntriesSqlRow(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-class CreateSessionInsightsEntriesApiRequest(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-class CreateSessionInsightsEntriesApiResponse(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-
-
-# Generated from: search_session_insights_entries
-
-class SearchSessionInsightsEntriesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.group_id,
-        )
-
-class SearchSessionInsightsEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class SearchSessionInsightsEntriesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-class SearchSessionInsightsEntriesApiResponse(BaseModel):
 
     items: Any | None = None
 
@@ -12998,106 +11748,6 @@ class SearchTestGradeEntriesApiRequest(BaseModel):
     rubric_grade_agent_id: UUID | None = None
 
 class SearchTestGradeEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
-# Generated from: create_test_insights_entries
-
-class CreateTestInsightsEntriesSqlParams(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.run_id,
-            self.group_id,
-            self.content,
-            self.tool_id,
-            self.mcp,
-        )
-
-class CreateTestInsightsEntriesSqlRow(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-class CreateTestInsightsEntriesApiRequest(BaseModel):
-
-    run_id: UUID
-    group_id: UUID | None = None
-    content: str | None = None
-    tool_id: UUID | None = None
-    mcp: bool | None = False
-
-class CreateTestInsightsEntriesApiResponse(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-
-
-# Generated from: get_test_insights_entries
-
-class GetTestInsightsEntriesSqlParams(BaseModel):
-
-    ids: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.ids,
-        )
-
-class GetTestInsightsEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class GetTestInsightsEntriesApiRequest(BaseModel):
-
-    ids: list[UUID]
-
-class GetTestInsightsEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
-# Generated from: search_test_insights_entries
-
-class SearchTestInsightsEntriesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.group_id,
-        )
-
-class SearchTestInsightsEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class SearchTestInsightsEntriesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    group_id: UUID | None = None
-
-class SearchTestInsightsEntriesApiResponse(BaseModel):
 
     items: Any | None = None
 
@@ -37905,24 +36555,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchActivityEntriesApiRequest",
         "SearchActivityEntriesApiResponse",
     ),
-    "app/sql/v4/queries/entries/activity_insights/create_activity_insights_entries_complete.sql": (
-        "CreateActivityInsightsEntriesSqlParams",
-        "CreateActivityInsightsEntriesSqlRow",
-        "CreateActivityInsightsEntriesApiRequest",
-        "CreateActivityInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/activity_insights/get_activity_insights_entries_complete.sql": (
-        "GetActivityInsightsEntriesSqlParams",
-        "GetActivityInsightsEntriesSqlRow",
-        "GetActivityInsightsEntriesApiRequest",
-        "GetActivityInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/activity_insights/search_activity_insights_entries_complete.sql": (
-        "SearchActivityInsightsEntriesSqlParams",
-        "SearchActivityInsightsEntriesSqlRow",
-        "SearchActivityInsightsEntriesApiRequest",
-        "SearchActivityInsightsEntriesApiResponse",
-    ),
     "app/sql/v4/queries/entries/agent_drafts/create_agent_drafts_entries_complete.sql": (
         "CreateAgentDraftsEntriesSqlParams",
         "CreateAgentDraftsEntriesSqlRow",
@@ -38139,24 +36771,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchAttemptImprovementEntriesApiRequest",
         "SearchAttemptImprovementEntriesApiResponse",
     ),
-    "app/sql/v4/queries/entries/attempt_insights/create_attempt_insights_entries_complete.sql": (
-        "CreateAttemptInsightsEntriesSqlParams",
-        "CreateAttemptInsightsEntriesSqlRow",
-        "CreateAttemptInsightsEntriesApiRequest",
-        "CreateAttemptInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/attempt_insights/get_attempt_insights_entries_complete.sql": (
-        "GetAttemptInsightsEntriesSqlParams",
-        "GetAttemptInsightsEntriesSqlRow",
-        "GetAttemptInsightsEntriesApiRequest",
-        "GetAttemptInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/attempt_insights/search_attempt_insights_entries_complete.sql": (
-        "SearchAttemptInsightsEntriesSqlParams",
-        "SearchAttemptInsightsEntriesSqlRow",
-        "SearchAttemptInsightsEntriesApiRequest",
-        "SearchAttemptInsightsEntriesApiResponse",
-    ),
     "app/sql/v4/queries/entries/attempt_message/create_attempt_message_entries_complete.sql": (
         "CreateAttemptMessageEntriesSqlParams",
         "CreateAttemptMessageEntriesSqlRow",
@@ -38300,24 +36914,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchBenchmarkEntriesSqlRow",
         "SearchBenchmarkEntriesApiRequest",
         "SearchBenchmarkEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/benchmark_insights/create_benchmark_insights_entries_complete.sql": (
-        "CreateBenchmarkInsightsEntriesSqlParams",
-        "CreateBenchmarkInsightsEntriesSqlRow",
-        "CreateBenchmarkInsightsEntriesApiRequest",
-        "CreateBenchmarkInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/benchmark_insights/get_benchmark_insights_entries_complete.sql": (
-        "GetBenchmarkInsightsEntriesSqlParams",
-        "GetBenchmarkInsightsEntriesSqlRow",
-        "GetBenchmarkInsightsEntriesApiRequest",
-        "GetBenchmarkInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/benchmark_insights/search_benchmark_insights_entries_complete.sql": (
-        "SearchBenchmarkInsightsEntriesSqlParams",
-        "SearchBenchmarkInsightsEntriesSqlRow",
-        "SearchBenchmarkInsightsEntriesApiRequest",
-        "SearchBenchmarkInsightsEntriesApiResponse",
     ),
     "app/sql/v4/queries/entries/calls/create_calls_entries_complete.sql": (
         "CreateCallsEntriesSqlParams",
@@ -38475,24 +37071,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateEntryRecordApiRequest",
         "CreateEntryRecordApiResponse",
     ),
-    "app/sql/v4/queries/entries/dashboard_insights/create_dashboard_insights_entries_complete.sql": (
-        "CreateDashboardInsightsEntriesSqlParams",
-        "CreateDashboardInsightsEntriesSqlRow",
-        "CreateDashboardInsightsEntriesApiRequest",
-        "CreateDashboardInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/dashboard_insights/get_dashboard_insights_entries_complete.sql": (
-        "GetDashboardInsightsEntriesSqlParams",
-        "GetDashboardInsightsEntriesSqlRow",
-        "GetDashboardInsightsEntriesApiRequest",
-        "GetDashboardInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/dashboard_insights/search_dashboard_insights_entries_complete.sql": (
-        "SearchDashboardInsightsEntriesSqlParams",
-        "SearchDashboardInsightsEntriesSqlRow",
-        "SearchDashboardInsightsEntriesApiRequest",
-        "SearchDashboardInsightsEntriesApiResponse",
-    ),
     "app/sql/v4/queries/entries/debug_info/create_debug_info_entries_complete.sql": (
         "CreateDebugInfoEntriesSqlParams",
         "CreateDebugInfoEntriesSqlRow",
@@ -38619,18 +37197,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchGrantsEntriesApiRequest",
         "SearchGrantsEntriesApiResponse",
     ),
-    "app/sql/v4/queries/entries/group_insights/create_group_insights_entries_complete.sql": (
-        "CreateGroupInsightsEntriesSqlParams",
-        "CreateGroupInsightsEntriesSqlRow",
-        "CreateGroupInsightsEntriesApiRequest",
-        "CreateGroupInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/group_insights/search_group_insights_entries_complete.sql": (
-        "SearchGroupInsightsEntriesSqlParams",
-        "SearchGroupInsightsEntriesSqlRow",
-        "SearchGroupInsightsEntriesApiRequest",
-        "SearchGroupInsightsEntriesApiResponse",
-    ),
     "app/sql/v4/queries/entries/groups/create_groups_entries_complete.sql": (
         "CreateGroupsEntriesSqlParams",
         "CreateGroupsEntriesSqlRow",
@@ -38667,24 +37233,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchHealthEntriesApiRequest",
         "SearchHealthEntriesApiResponse",
     ),
-    "app/sql/v4/queries/entries/health_insights/create_health_insights_entries_complete.sql": (
-        "CreateHealthInsightsEntriesSqlParams",
-        "CreateHealthInsightsEntriesSqlRow",
-        "CreateHealthInsightsEntriesApiRequest",
-        "CreateHealthInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/health_insights/get_health_insights_entries_complete.sql": (
-        "GetHealthInsightsEntriesSqlParams",
-        "GetHealthInsightsEntriesSqlRow",
-        "GetHealthInsightsEntriesApiRequest",
-        "GetHealthInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/health_insights/search_health_insights_entries_complete.sql": (
-        "SearchHealthInsightsEntriesSqlParams",
-        "SearchHealthInsightsEntriesSqlRow",
-        "SearchHealthInsightsEntriesApiRequest",
-        "SearchHealthInsightsEntriesApiResponse",
-    ),
     "app/sql/v4/queries/entries/home/create_home_entries_complete.sql": (
         "CreateHomeEntriesSqlParams",
         "CreateHomeEntriesSqlRow",
@@ -38720,24 +37268,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchHomeChatEntriesSqlRow",
         "SearchHomeChatEntriesApiRequest",
         "SearchHomeChatEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/home_insights/create_home_insights_entries_complete.sql": (
-        "CreateHomeInsightsEntriesSqlParams",
-        "CreateHomeInsightsEntriesSqlRow",
-        "CreateHomeInsightsEntriesApiRequest",
-        "CreateHomeInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/home_insights/get_home_insights_entries_complete.sql": (
-        "GetHomeInsightsEntriesSqlParams",
-        "GetHomeInsightsEntriesSqlRow",
-        "GetHomeInsightsEntriesApiRequest",
-        "GetHomeInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/home_insights/search_home_insights_entries_complete.sql": (
-        "SearchHomeInsightsEntriesSqlParams",
-        "SearchHomeInsightsEntriesSqlRow",
-        "SearchHomeInsightsEntriesApiRequest",
-        "SearchHomeInsightsEntriesApiResponse",
     ),
     "app/sql/v4/queries/entries/images/create_images_entries_complete.sql": (
         "CreateImagesEntriesSqlParams",
@@ -38792,24 +37322,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchInvocationDraftsEntriesSqlRow",
         "SearchInvocationDraftsEntriesApiRequest",
         "SearchInvocationDraftsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/leaderboard_insights/create_leaderboard_insights_entries_complete.sql": (
-        "CreateLeaderboardInsightsEntriesSqlParams",
-        "CreateLeaderboardInsightsEntriesSqlRow",
-        "CreateLeaderboardInsightsEntriesApiRequest",
-        "CreateLeaderboardInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/leaderboard_insights/get_leaderboard_insights_entries_complete.sql": (
-        "GetLeaderboardInsightsEntriesSqlParams",
-        "GetLeaderboardInsightsEntriesSqlRow",
-        "GetLeaderboardInsightsEntriesApiRequest",
-        "GetLeaderboardInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/leaderboard_insights/search_leaderboard_insights_entries_complete.sql": (
-        "SearchLeaderboardInsightsEntriesSqlParams",
-        "SearchLeaderboardInsightsEntriesSqlRow",
-        "SearchLeaderboardInsightsEntriesApiRequest",
-        "SearchLeaderboardInsightsEntriesApiResponse",
     ),
     "app/sql/v4/queries/entries/logins/create_logins_entries_complete.sql": (
         "CreateLoginsEntriesSqlParams",
@@ -39009,42 +37521,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchPracticeChatEntriesApiRequest",
         "SearchPracticeChatEntriesApiResponse",
     ),
-    "app/sql/v4/queries/entries/practice_insights/create_practice_insights_entries_complete.sql": (
-        "CreatePracticeInsightsEntriesSqlParams",
-        "CreatePracticeInsightsEntriesSqlRow",
-        "CreatePracticeInsightsEntriesApiRequest",
-        "CreatePracticeInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/practice_insights/get_practice_insights_entries_complete.sql": (
-        "GetPracticeInsightsEntriesSqlParams",
-        "GetPracticeInsightsEntriesSqlRow",
-        "GetPracticeInsightsEntriesApiRequest",
-        "GetPracticeInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/practice_insights/search_practice_insights_entries_complete.sql": (
-        "SearchPracticeInsightsEntriesSqlParams",
-        "SearchPracticeInsightsEntriesSqlRow",
-        "SearchPracticeInsightsEntriesApiRequest",
-        "SearchPracticeInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/pricing_insights/create_pricing_insights_entries_complete.sql": (
-        "CreatePricingInsightsEntriesSqlParams",
-        "CreatePricingInsightsEntriesSqlRow",
-        "CreatePricingInsightsEntriesApiRequest",
-        "CreatePricingInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/pricing_insights/get_pricing_insights_entries_complete.sql": (
-        "GetPricingInsightsEntriesSqlParams",
-        "GetPricingInsightsEntriesSqlRow",
-        "GetPricingInsightsEntriesApiRequest",
-        "GetPricingInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/pricing_insights/search_pricing_insights_entries_complete.sql": (
-        "SearchPricingInsightsEntriesSqlParams",
-        "SearchPricingInsightsEntriesSqlRow",
-        "SearchPricingInsightsEntriesApiRequest",
-        "SearchPricingInsightsEntriesApiResponse",
-    ),
     "app/sql/v4/queries/entries/problems/create_problems_entries_complete.sql": (
         "CreateProblemsEntriesSqlParams",
         "CreateProblemsEntriesSqlRow",
@@ -39099,24 +37575,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchProviderDraftsEntriesApiRequest",
         "SearchProviderDraftsEntriesApiResponse",
     ),
-    "app/sql/v4/queries/entries/record_insights/create_record_insights_entries_complete.sql": (
-        "CreateRecordInsightsEntriesSqlParams",
-        "CreateRecordInsightsEntriesSqlRow",
-        "CreateRecordInsightsEntriesApiRequest",
-        "CreateRecordInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/record_insights/get_record_insights_entries_complete.sql": (
-        "GetRecordInsightsEntriesSqlParams",
-        "GetRecordInsightsEntriesSqlRow",
-        "GetRecordInsightsEntriesApiRequest",
-        "GetRecordInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/record_insights/search_record_insights_entries_complete.sql": (
-        "SearchRecordInsightsEntriesSqlParams",
-        "SearchRecordInsightsEntriesSqlRow",
-        "SearchRecordInsightsEntriesApiRequest",
-        "SearchRecordInsightsEntriesApiResponse",
-    ),
     "app/sql/v4/queries/entries/reports/create_reports_entries_complete.sql": (
         "CreateReportsEntriesSqlParams",
         "CreateReportsEntriesSqlRow",
@@ -39134,24 +37592,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchReportsEntriesSqlRow",
         "SearchReportsEntriesApiRequest",
         "SearchReportsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/reports_insights/create_reports_insights_entries_complete.sql": (
-        "CreateReportsInsightsEntriesSqlParams",
-        "CreateReportsInsightsEntriesSqlRow",
-        "CreateReportsInsightsEntriesApiRequest",
-        "CreateReportsInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/reports_insights/get_reports_insights_entries_complete.sql": (
-        "GetReportsInsightsEntriesSqlParams",
-        "GetReportsInsightsEntriesSqlRow",
-        "GetReportsInsightsEntriesApiRequest",
-        "GetReportsInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/reports_insights/search_reports_insights_entries_complete.sql": (
-        "SearchReportsInsightsEntriesSqlParams",
-        "SearchReportsInsightsEntriesSqlRow",
-        "SearchReportsInsightsEntriesApiRequest",
-        "SearchReportsInsightsEntriesApiResponse",
     ),
     "app/sql/v4/queries/entries/resolves/create_resolves_entries_complete.sql": (
         "CreateResolvesEntriesSqlParams",
@@ -39260,18 +37700,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchScenarioDraftsEntriesSqlRow",
         "SearchScenarioDraftsEntriesApiRequest",
         "SearchScenarioDraftsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/session_insights/create_session_insights_entries_complete.sql": (
-        "CreateSessionInsightsEntriesSqlParams",
-        "CreateSessionInsightsEntriesSqlRow",
-        "CreateSessionInsightsEntriesApiRequest",
-        "CreateSessionInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/session_insights/search_session_insights_entries_complete.sql": (
-        "SearchSessionInsightsEntriesSqlParams",
-        "SearchSessionInsightsEntriesSqlRow",
-        "SearchSessionInsightsEntriesApiRequest",
-        "SearchSessionInsightsEntriesApiResponse",
     ),
     "app/sql/v4/queries/entries/sessions/create_sessions_entries_complete.sql": (
         "CreateSessionsEntriesSqlParams",
@@ -39416,24 +37844,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchTestGradeEntriesSqlRow",
         "SearchTestGradeEntriesApiRequest",
         "SearchTestGradeEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/test_insights/create_test_insights_entries_complete.sql": (
-        "CreateTestInsightsEntriesSqlParams",
-        "CreateTestInsightsEntriesSqlRow",
-        "CreateTestInsightsEntriesApiRequest",
-        "CreateTestInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/test_insights/get_test_insights_entries_complete.sql": (
-        "GetTestInsightsEntriesSqlParams",
-        "GetTestInsightsEntriesSqlRow",
-        "GetTestInsightsEntriesApiRequest",
-        "GetTestInsightsEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/test_insights/search_test_insights_entries_complete.sql": (
-        "SearchTestInsightsEntriesSqlParams",
-        "SearchTestInsightsEntriesSqlRow",
-        "SearchTestInsightsEntriesApiRequest",
-        "SearchTestInsightsEntriesApiResponse",
     ),
     "app/sql/v4/queries/entries/test_invocation/create_test_invocation_entries_complete.sql": (
         "CreateTestInvocationEntriesSqlParams",
@@ -43489,21 +41899,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/activity_insights/create_activity_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/activity_insights/get_activity_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/activity_insights/search_activity_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/entries/agent_drafts/create_agent_drafts_entries_complete.sql"]
     ) -> SqlString: ...
 
@@ -43684,21 +42079,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/attempt_insights/create_attempt_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/attempt_insights/get_attempt_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/attempt_insights/search_attempt_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/entries/attempt_message/create_attempt_message_entries_complete.sql"]
     ) -> SqlString: ...
 
@@ -43815,21 +42195,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/entries/benchmark/search_benchmark_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/benchmark_insights/create_benchmark_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/benchmark_insights/get_benchmark_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/benchmark_insights/search_benchmark_insights_entries_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -43964,21 +42329,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/dashboard_insights/create_dashboard_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/dashboard_insights/get_dashboard_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/dashboard_insights/search_dashboard_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/entries/debug_info/create_debug_info_entries_complete.sql"]
     ) -> SqlString: ...
 
@@ -44084,16 +42434,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/group_insights/create_group_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/group_insights/search_group_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/entries/groups/create_groups_entries_complete.sql"]
     ) -> SqlString: ...
 
@@ -44124,21 +42464,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/health_insights/create_health_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/health_insights/get_health_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/health_insights/search_health_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/entries/home/create_home_entries_complete.sql"]
     ) -> SqlString: ...
 
@@ -44165,21 +42490,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/entries/home_chat/search_home_chat_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/home_insights/create_home_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/home_insights/get_home_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/home_insights/search_home_insights_entries_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -44225,21 +42535,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/entries/invocation_drafts/search_invocation_drafts_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/leaderboard_insights/create_leaderboard_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/leaderboard_insights/get_leaderboard_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/leaderboard_insights/search_leaderboard_insights_entries_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -44409,36 +42704,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/practice_insights/create_practice_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/practice_insights/get_practice_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/practice_insights/search_practice_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/pricing_insights/create_pricing_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/pricing_insights/get_pricing_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/pricing_insights/search_pricing_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/entries/problems/create_problems_entries_complete.sql"]
     ) -> SqlString: ...
 
@@ -44484,21 +42749,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/record_insights/create_record_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/record_insights/get_record_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/record_insights/search_record_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/entries/reports/create_reports_entries_complete.sql"]
     ) -> SqlString: ...
 
@@ -44510,21 +42760,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/entries/reports/search_reports_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/reports_insights/create_reports_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/reports_insights/get_reports_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/reports_insights/search_reports_insights_entries_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -44615,16 +42850,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/entries/scenario_drafts/search_scenario_drafts_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/session_insights/create_session_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/session_insights/search_session_insights_entries_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -44745,21 +42970,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/entries/test_grade/search_test_grade_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/test_insights/create_test_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/test_insights/get_test_insights_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/test_insights/search_test_insights_entries_complete.sql"]
     ) -> SqlString: ...
 
     @overload
