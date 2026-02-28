@@ -70,8 +70,23 @@ class GeneratePayload(BaseModel):
     artifact_types: list[ArtifactTypeItem]
     artifact_id: UUID | None = None
     draft_id: UUID | None = None
-    resource_types: list[str]
+    resource_types: list[ResourceTypeItem]
     entry_types: list[EntryTypeItem] | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_resource_types(cls, data: Any) -> Any:
+        """Auto-coerce plain strings to ResourceTypeItem for backward compatibility."""
+        if isinstance(data, dict):
+            raw = data.get("resource_types")
+            if isinstance(raw, list):
+                data["resource_types"] = [
+                    {"name": item, "operation": "create"}
+                    if isinstance(item, str)
+                    else item
+                    for item in raw
+                ]
+        return data
 
     @property
     def artifact_type(self) -> str:

@@ -29,6 +29,7 @@ class CreateDebugInfoEntryResponse(BaseModel):
 class CreateDebugInfoEntrySqlParams(BaseModel):
     run_id: UUID
     content: str = ""
+    tool_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:

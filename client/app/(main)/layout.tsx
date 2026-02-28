@@ -12,8 +12,10 @@ import { Suspense } from "react";
 import { MainLayoutClient } from "./layout-client";
 import {
   createFeedback,
+  getGroupMessages,
   getLayoutContextData,
   refreshPage,
+  searchGroups,
   searchSimulatableProfiles,
   switchEffectiveProfile,
 } from "./layout-server";
@@ -95,6 +97,8 @@ export default async function MainLayout({
         createFeedbackAction={createFeedback}
         refreshPageAction={refreshPage}
         searchSimulatableProfilesAction={searchSimulatableProfiles}
+        getGroupMessagesAction={getGroupMessages}
+        searchGroupsAction={searchGroups}
       >
         {pageAccessDenied ? (
           <UnifiedAccessDenied

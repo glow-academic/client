@@ -30,6 +30,7 @@ class CreateAttemptArchiveEntrySqlParams(BaseModel):
     run_id: UUID
     attempt_id: UUID
     archived: bool = False
+    tool_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
@@ -37,6 +38,7 @@ class CreateAttemptArchiveEntrySqlParams(BaseModel):
             self.run_id,
             self.attempt_id,
             self.archived,
+            self.tool_id,
             self.mcp,
         )
 

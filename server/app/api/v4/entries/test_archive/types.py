@@ -30,6 +30,7 @@ class CreateTestArchiveEntrySqlParams(BaseModel):
     run_id: UUID
     test_id: UUID
     archived: bool = False
+    tool_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:

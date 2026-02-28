@@ -30,6 +30,7 @@ class CreateTestEntrySqlParams(BaseModel):
     run_id: UUID
     infinite_mode: bool = False
     benchmark_id: UUID | None = None
+    tool_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:

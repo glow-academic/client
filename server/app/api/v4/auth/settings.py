@@ -30,6 +30,7 @@ from app.sql.types import (
     GetProfileContextApiRequest,
     GetSettingsThemeDataSqlParams,
     GetSettingsThemeDataSqlRow,
+    QGetProfileContextV4ThemeTokens,
 )
 from app.utils.sql_helper import execute_sql_typed
 
@@ -95,9 +96,18 @@ async def get_auth_settings_internal(
     )
 
     if not settings_theme or not settings_theme.primary_color:
-        raise HTTPException(
-            status_code=500,
-            detail="Settings theme not found in auth settings",
+        # No active settings or missing primary color — return empty settings.
+        # This can happen for profiles without a department/settings association.
+        return AuthSettingsInternalData(
+            settings_id=settings_id,
+            settings=None,
+            settings_agents=[],
+            settings_tools=[],
+            settings_theme=settings_theme,  # type: ignore[arg-type]
+            settings_tokens=QGetProfileContextV4ThemeTokens(),
+            artifact_has_generate={},
+            artifact_has_insights={},
+            agent_tool_entries=[],
         )
 
     # Derive tools from settings agents
@@ -202,9 +212,9 @@ async def get_auth_settings(
 
         return GetAuthSettingsApiResponse(
             settings_id=str(data.settings_id) if data.settings_id else None,
-            success_threshold=data.settings_theme.success_threshold,
-            warning_threshold=data.settings_theme.warning_threshold,
-            danger_threshold=data.settings_theme.danger_threshold,
+            success_threshold=data.settings_theme.success_threshold if data.settings_theme else None,
+            warning_threshold=data.settings_theme.warning_threshold if data.settings_theme else None,
+            danger_threshold=data.settings_theme.danger_threshold if data.settings_theme else None,
             tokens=data.settings_tokens,
             agents=data.settings_agents,
             tools=data.settings_tools,

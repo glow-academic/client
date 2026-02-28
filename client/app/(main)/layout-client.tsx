@@ -32,6 +32,11 @@ import {
 import { ProfileProviderClient } from "@/contexts/profile-context";
 import { SettingsProviderClient } from "@/contexts/settings-context";
 import { SocketProviderClient } from "@/contexts/socket-context";
+import {
+  RightPanelProvider,
+  RightPanelTrigger,
+} from "@/components/ui/right-panel";
+import { GenerationPanel } from "@/components/common/ai/GenerationPanel";
 import type {
   AnalyticsFiltersResponse,
   AuthAttemptOut,
@@ -40,8 +45,12 @@ import type {
   AuthSettingsResponse,
   CreateFeedbackIn,
   CreateFeedbackOut,
+  GroupMessagesIn,
+  GroupMessagesOut,
   RefreshPageFn,
   SafeSessionSnapshot,
+  SearchGroupsIn,
+  SearchGroupsOut,
   SearchSimulatableProfilesIn,
   SearchSimulatableProfilesOut,
   SwitchEffectiveProfileParams,
@@ -57,6 +66,8 @@ function MainLayoutContent({
   createFeedbackAction,
   refreshPageAction,
   searchSimulatableProfilesAction,
+  getGroupMessagesAction,
+  searchGroupsAction,
 }: {
   children: React.ReactNode;
   pageData: AuthPageResponse | null;
@@ -69,6 +80,8 @@ function MainLayoutContent({
   searchSimulatableProfilesAction: (
     input: SearchSimulatableProfilesIn
   ) => Promise<SearchSimulatableProfilesOut>;
+  getGroupMessagesAction: (input: GroupMessagesIn) => Promise<GroupMessagesOut>;
+  searchGroupsAction: (input: SearchGroupsIn) => Promise<SearchGroupsOut>;
 }) {
   const pathname = usePathname() || "/";
 
@@ -147,7 +160,7 @@ function MainLayoutContent({
   }, [pageMetadata, router]);
 
   return (
-    <>
+    <RightPanelProvider defaultOpen={false}>
       <SidebarProvider>
         <UnifiedSidebar
           sidebarRoutes={pageData?.sidebar_routes ?? null}
@@ -190,6 +203,9 @@ function MainLayoutContent({
                 actionButton && <div className="pr-4">{actionButton}</div>
               )
             )}
+            <div className="pr-4">
+              <RightPanelTrigger />
+            </div>
           </header>
 
           <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
@@ -197,7 +213,12 @@ function MainLayoutContent({
           </div>
         </SidebarInset>
       </SidebarProvider>
-    </>
+      <GenerationPanel
+        artifactType={artifactType}
+        getGroupMessagesAction={getGroupMessagesAction}
+        searchGroupsAction={searchGroupsAction}
+      />
+    </RightPanelProvider>
   );
 }
 
@@ -216,6 +237,8 @@ export function MainLayoutClient({
   createFeedbackAction,
   refreshPageAction,
   searchSimulatableProfilesAction,
+  getGroupMessagesAction,
+  searchGroupsAction,
 }: {
   children: React.ReactNode;
   profileData: AuthProfileResponse | null;
@@ -236,6 +259,8 @@ export function MainLayoutClient({
   searchSimulatableProfilesAction: (
     input: SearchSimulatableProfilesIn
   ) => Promise<SearchSimulatableProfilesOut>;
+  getGroupMessagesAction: (input: GroupMessagesIn) => Promise<GroupMessagesOut>;
+  searchGroupsAction: (input: SearchGroupsIn) => Promise<SearchGroupsOut>;
 }) {
   const pathname = usePathname();
 
@@ -290,6 +315,8 @@ export function MainLayoutClient({
                   searchSimulatableProfilesAction={
                     searchSimulatableProfilesAction
                   }
+                  getGroupMessagesAction={getGroupMessagesAction}
+                  searchGroupsAction={searchGroupsAction}
                 >
                   {children}
                 </MainLayoutContent>

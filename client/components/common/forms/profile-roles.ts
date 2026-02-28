@@ -81,3 +81,8 @@ export const PROFILE_ROLES = [
 ] as const;
 
 export type ProfileRole = (typeof PROFILE_ROLES)[number]["id"];
+
+// Map from role id to display name, for use in selectors/labels
+export const ROLE_LABEL: Record<ProfileRole, string> = Object.fromEntries(
+  PROFILE_ROLES.map((r) => [r.id, r.name]),
+) as Record<ProfileRole, string>;

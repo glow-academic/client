@@ -34,6 +34,7 @@ class CreateAttemptFeedbackEntrySqlParams(BaseModel):
     grade_id: UUID
     total: int = 0
     feedback: str = ""
+    tool_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
@@ -42,6 +43,7 @@ class CreateAttemptFeedbackEntrySqlParams(BaseModel):
             self.grade_id,
             self.total,
             self.feedback,
+            self.tool_id,
             self.mcp,
         )
 

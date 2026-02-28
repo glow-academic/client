@@ -30,6 +30,7 @@ class CreateConversationsCompletionsEntrySqlParams(BaseModel):
     run_id: UUID
     conversation_id: UUID
     end_reason: str = ""
+    tool_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:

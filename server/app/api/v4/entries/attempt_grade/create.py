@@ -1,6 +1,7 @@
 """AttemptGrade entry CREATE endpoint."""
 
 from typing import Annotated, cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -13,6 +14,7 @@ from app.api.v4.entries.attempt_grade.types import (
 )
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
+from app.infra.v4.tools.call_args import record_call_args, resolve_tool_for_entry
 from app.main import get_db
 from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
@@ -22,6 +24,8 @@ SQL_PATH = (
     "app/sql/v4/queries/entries/attempt_grade/create_attempt_grade_entries_complete.sql"
 )
 
+ENTRY_TYPE = "attempt_grades"
+
 router = APIRouter()
 
 
@@ -29,12 +33,29 @@ async def create_attempt_grade_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
+    run_id: UUID | None = None,
+    tool_id: UUID | None = None,
 ) -> CreateAttemptGradeEntryResponse:
-    """Internal function to create attempt_grade entry."""
+    """Internal function to create attempt_grade entry.
+
+    Internal callers can pass run_id and tool_id directly.
+    If not provided, tool is resolved from settings via operation + entry type.
+    """
     tags = ["entries", "attempt_grade"]
+
+    # Resolve tool if not provided
+    tool_info = None
+    if tool_id is None:
+        tool_info = await resolve_tool_for_entry(conn, "create", ENTRY_TYPE)
+        if tool_info:
+            tool_id = tool_info.tool_id
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
+        request_dict["tool_id"] = tool_id
+        if run_id is not None:
+            request_dict["run_id"] = run_id
+
         params = CreateAttemptGradeEntrySqlParams(**request_dict)
 
         result = cast(
@@ -44,6 +65,12 @@ async def create_attempt_grade_entry_internal(
 
         if not result or not result.id:
             raise ValueError("Failed to create attempt_grade entry")
+
+        # Record arg values via connection pattern
+        if tool_info is None and tool_id is not None:
+            tool_info = await resolve_tool_for_entry(conn, "create", ENTRY_TYPE)
+        if tool_info:
+            await record_call_args(conn, result.call_id, tool_info, request_dict, mcp)
 
     await invalidate_tags(tags)
 
@@ -80,6 +107,15 @@ async def create_attempt_grade_entry(
 
         mcp = getattr(http_request.state, "mcp", False) or False
         request_dict = request.model_dump()
+
+        # API caller does not pass run_id — resolved internally
+        # For now, run_id must come from the request or be resolved upstream
+        # TODO: resolve run_id from profile's active session
+        if "run_id" not in request_dict or request_dict.get("run_id") is None:
+            raise HTTPException(
+                status_code=400,
+                detail="run_id is required",
+            )
 
         api_response = await create_attempt_grade_entry_internal(
             conn, request_dict, mcp

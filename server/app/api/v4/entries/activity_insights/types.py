@@ -30,6 +30,7 @@ class CreateActivityInsightsEntrySqlParams(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str = ""
+    tool_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:

@@ -5,8 +5,6 @@ from fastapi import APIRouter
 from app.api.v4.entries.activity import router as activity_router
 from app.api.v4.entries.activity_insights import router as activity_insights_router
 from app.api.v4.entries.agent_drafts import router as agent_drafts_router
-from app.api.v4.entries.args_outputs_values import router as args_outputs_values_router
-from app.api.v4.entries.args_values import router as args_values_router
 from app.api.v4.entries.attempt import router as attempt_router
 from app.api.v4.entries.attempt_analysis import router as attempt_analysis_router
 from app.api.v4.entries.attempt_archive import router as attempt_archive_router
@@ -114,8 +112,6 @@ router = APIRouter(prefix="/entries", tags=["entries"])
 router.include_router(activity_router)
 router.include_router(activity_insights_router)
 router.include_router(agent_drafts_router)
-router.include_router(args_outputs_values_router)
-router.include_router(args_values_router)
 router.include_router(attempt_router)
 router.include_router(attempt_analysis_router)
 router.include_router(attempt_archive_router)

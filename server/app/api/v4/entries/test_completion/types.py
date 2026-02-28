@@ -30,6 +30,7 @@ class CreateTestCompletionEntrySqlParams(BaseModel):
     run_id: UUID
     invocation_id: UUID
     end_reason: str = ""
+    tool_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:

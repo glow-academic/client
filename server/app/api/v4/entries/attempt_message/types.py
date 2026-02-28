@@ -36,6 +36,7 @@ class CreateAttemptMessageEntrySqlParams(BaseModel):
     run_id: UUID
     chat_id: UUID
     message_id: UUID | None = None
+    tool_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
@@ -43,6 +44,7 @@ class CreateAttemptMessageEntrySqlParams(BaseModel):
             self.run_id,
             self.chat_id,
             self.message_id,
+            self.tool_id,
             self.mcp,
         )
 

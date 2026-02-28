@@ -30,6 +30,7 @@ class CreateTestStopEntrySqlParams(BaseModel):
     run_id: UUID
     invocation_id: UUID
     stopped: bool = False
+    tool_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:

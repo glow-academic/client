@@ -78,6 +78,7 @@ class CreateAttemptChatEntrySqlParams(BaseModel):
     images_enabled: bool = False
     questions_enabled: bool = False
     assistant_persona_ids: list[UUID] | None = None
+    tool_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
@@ -108,6 +109,7 @@ class CreateAttemptChatEntrySqlParams(BaseModel):
             self.images_enabled,
             self.questions_enabled,
             self.assistant_persona_ids,
+            self.tool_id,
             self.mcp,
         )
 

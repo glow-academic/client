@@ -40,6 +40,7 @@ class CreateTestFeedbackEntrySqlParams(BaseModel):
     feedback: str = ""
     total_points: int | None = None
     pass_points: int | None = None
+    tool_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
@@ -50,6 +51,7 @@ class CreateTestFeedbackEntrySqlParams(BaseModel):
             self.feedback,
             self.total_points,
             self.pass_points,
+            self.tool_id,
             self.mcp,
         )
 

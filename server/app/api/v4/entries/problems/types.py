@@ -31,6 +31,7 @@ class CreateProblemsEntrySqlParams(BaseModel):
     run_id: UUID
     type: str
     message: str = ""
+    tool_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:

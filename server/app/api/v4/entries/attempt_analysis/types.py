@@ -30,6 +30,7 @@ class CreateAttemptAnalysisEntrySqlParams(BaseModel):
     run_id: UUID
     grade_id: UUID
     content: str = ""
+    tool_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
@@ -37,6 +38,7 @@ class CreateAttemptAnalysisEntrySqlParams(BaseModel):
             self.run_id,
             self.grade_id,
             self.content,
+            self.tool_id,
             self.mcp,
         )
 

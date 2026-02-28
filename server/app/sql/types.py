@@ -2011,6 +2011,54 @@ class GetLoginDataApiResponse(BaseModel):
 
 
 
+# Generated from: get_auth_group_messages
+
+class GetAuthGroupMessagesSqlParams(BaseModel):
+
+    group_id_param: UUID
+    page_limit_val: int | None = 50
+    page_offset_val: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.group_id_param,
+            self.page_limit_val,
+            self.page_offset_val,
+        )
+
+class QGetAuthGroupMessagesV4Message(BaseModel):
+
+    message_id: UUID | None
+    run_id: UUID | None
+    role: str | None
+    message_created_at: datetime | None
+    contents: list[str] | None
+
+class QGetAuthGroupMessagesV4Item(BaseModel):
+
+    group_id: UUID | None
+    group_name: str | None
+    group_created_at: datetime | None
+    session_id: UUID | None
+    messages: list[QGetAuthGroupMessagesV4Message] | None
+    total_message_count: int | None
+
+class GetAuthGroupMessagesSqlRow(BaseModel):
+
+    items: list[QGetAuthGroupMessagesV4Item] | None = None
+
+class GetAuthGroupMessagesApiRequest(BaseModel):
+
+    group_id_param: UUID
+    page_limit_val: int | None = 50
+    page_offset_val: int | None = 0
+
+class GetAuthGroupMessagesApiResponse(BaseModel):
+
+    items: list[QGetAuthGroupMessagesV4Item] | None = None
+
+
+
 # Generated from: patch_auth_draft
 
 class AuthItemInput(BaseModel):
@@ -4239,6 +4287,7 @@ class CreateActivityInsightsEntriesSqlParams(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -4246,6 +4295,7 @@ class CreateActivityInsightsEntriesSqlParams(BaseModel):
             self.run_id,
             self.group_id,
             self.content,
+            self.tool_id,
             self.mcp,
         )
 
@@ -4260,6 +4310,7 @@ class CreateActivityInsightsEntriesApiRequest(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateActivityInsightsEntriesApiResponse(BaseModel):
@@ -4451,6 +4502,7 @@ class CreateAttemptEntriesSqlParams(BaseModel):
     infinite_mode: bool | None = False
     num_chats: int | None = 1
     user_persona_id: UUID | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -4459,6 +4511,7 @@ class CreateAttemptEntriesSqlParams(BaseModel):
             self.infinite_mode,
             self.num_chats,
             self.user_persona_id,
+            self.tool_id,
             self.mcp,
         )
 
@@ -4474,6 +4527,7 @@ class CreateAttemptEntriesApiRequest(BaseModel):
     infinite_mode: bool | None = False
     num_chats: int | None = 1
     user_persona_id: UUID | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateAttemptEntriesApiResponse(BaseModel):
@@ -4558,6 +4612,7 @@ class CreateAttemptAnalysisEntriesSqlParams(BaseModel):
     run_id: UUID
     grade_id: UUID
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -4565,6 +4620,7 @@ class CreateAttemptAnalysisEntriesSqlParams(BaseModel):
             self.run_id,
             self.grade_id,
             self.content,
+            self.tool_id,
             self.mcp,
         )
 
@@ -4579,6 +4635,7 @@ class CreateAttemptAnalysisEntriesApiRequest(BaseModel):
     run_id: UUID
     grade_id: UUID
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateAttemptAnalysisEntriesApiResponse(BaseModel):
@@ -4655,6 +4712,7 @@ class CreateAttemptArchiveEntriesSqlParams(BaseModel):
     run_id: UUID
     attempt_id: UUID
     archived: bool | None = False
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -4662,6 +4720,7 @@ class CreateAttemptArchiveEntriesSqlParams(BaseModel):
             self.run_id,
             self.attempt_id,
             self.archived,
+            self.tool_id,
             self.mcp,
         )
 
@@ -4676,6 +4735,7 @@ class CreateAttemptArchiveEntriesApiRequest(BaseModel):
     run_id: UUID
     attempt_id: UUID
     archived: bool | None = False
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateAttemptArchiveEntriesApiResponse(BaseModel):
@@ -4775,6 +4835,7 @@ class CreateAttemptChatEntriesSqlParams(BaseModel):
     images_enabled: bool | None = False
     questions_enabled: bool | None = False
     assistant_persona_ids: list[UUID] | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -4805,6 +4866,7 @@ class CreateAttemptChatEntriesSqlParams(BaseModel):
             self.images_enabled,
             self.questions_enabled,
             self.assistant_persona_ids,
+            self.tool_id,
             self.mcp,
         )
 
@@ -4842,6 +4904,7 @@ class CreateAttemptChatEntriesApiRequest(BaseModel):
     images_enabled: bool | None = False
     questions_enabled: bool | None = False
     assistant_persona_ids: list[UUID] | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateAttemptChatEntriesApiResponse(BaseModel):
@@ -4944,6 +5007,7 @@ class CreateAttemptCompletionEntriesSqlParams(BaseModel):
     run_id: UUID
     chat_id: UUID
     end_reason: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -4951,6 +5015,7 @@ class CreateAttemptCompletionEntriesSqlParams(BaseModel):
             self.run_id,
             self.chat_id,
             self.end_reason,
+            self.tool_id,
             self.mcp,
         )
 
@@ -4965,6 +5030,7 @@ class CreateAttemptCompletionEntriesApiRequest(BaseModel):
     run_id: UUID
     chat_id: UUID
     end_reason: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateAttemptCompletionEntriesApiResponse(BaseModel):
@@ -5042,6 +5108,7 @@ class CreateAttemptContentEntriesSqlParams(BaseModel):
     message_id: UUID
     content: str | None = None
     persona_id: UUID | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -5050,6 +5117,7 @@ class CreateAttemptContentEntriesSqlParams(BaseModel):
             self.message_id,
             self.content,
             self.persona_id,
+            self.tool_id,
             self.mcp,
         )
 
@@ -5065,6 +5133,7 @@ class CreateAttemptContentEntriesApiRequest(BaseModel):
     message_id: UUID
     content: str | None = None
     persona_id: UUID | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateAttemptContentEntriesApiResponse(BaseModel):
@@ -5145,6 +5214,7 @@ class CreateAttemptFeedbackEntriesSqlParams(BaseModel):
     grade_id: UUID
     total: int | None = 0
     feedback: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -5153,6 +5223,7 @@ class CreateAttemptFeedbackEntriesSqlParams(BaseModel):
             self.grade_id,
             self.total,
             self.feedback,
+            self.tool_id,
             self.mcp,
         )
 
@@ -5168,6 +5239,7 @@ class CreateAttemptFeedbackEntriesApiRequest(BaseModel):
     grade_id: UUID
     total: int | None = 0
     feedback: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateAttemptFeedbackEntriesApiResponse(BaseModel):
@@ -5249,6 +5321,7 @@ class CreateAttemptGradeEntriesSqlParams(BaseModel):
     passed: bool | None = False
     score: int | None = 0
     time_taken: int | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -5258,6 +5331,7 @@ class CreateAttemptGradeEntriesSqlParams(BaseModel):
             self.passed,
             self.score,
             self.time_taken,
+            self.tool_id,
             self.mcp,
         )
 
@@ -5274,6 +5348,7 @@ class CreateAttemptGradeEntriesApiRequest(BaseModel):
     passed: bool | None = False
     score: int | None = 0
     time_taken: int | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateAttemptGradeEntriesApiResponse(BaseModel):
@@ -5354,6 +5429,7 @@ class CreateAttemptHighlightEntriesSqlParams(BaseModel):
     strength_id: UUID
     section: str | None = None
     idx: int | None = 0
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -5362,6 +5438,7 @@ class CreateAttemptHighlightEntriesSqlParams(BaseModel):
             self.strength_id,
             self.section,
             self.idx,
+            self.tool_id,
             self.mcp,
         )
 
@@ -5377,6 +5454,7 @@ class CreateAttemptHighlightEntriesApiRequest(BaseModel):
     strength_id: UUID
     section: str | None = None
     idx: int | None = 0
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateAttemptHighlightEntriesApiResponse(BaseModel):
@@ -5453,6 +5531,7 @@ class CreateAttemptHintEntriesSqlParams(BaseModel):
     run_id: UUID
     message_id: UUID
     hint: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -5460,6 +5539,7 @@ class CreateAttemptHintEntriesSqlParams(BaseModel):
             self.run_id,
             self.message_id,
             self.hint,
+            self.tool_id,
             self.mcp,
         )
 
@@ -5474,6 +5554,7 @@ class CreateAttemptHintEntriesApiRequest(BaseModel):
     run_id: UUID
     message_id: UUID
     hint: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateAttemptHintEntriesApiResponse(BaseModel):
@@ -5552,6 +5633,7 @@ class CreateAttemptImprovementEntriesSqlParams(BaseModel):
     message_id: UUID
     name: str | None = None
     description: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -5561,6 +5643,7 @@ class CreateAttemptImprovementEntriesSqlParams(BaseModel):
             self.message_id,
             self.name,
             self.description,
+            self.tool_id,
             self.mcp,
         )
 
@@ -5577,6 +5660,7 @@ class CreateAttemptImprovementEntriesApiRequest(BaseModel):
     message_id: UUID
     name: str | None = None
     description: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateAttemptImprovementEntriesApiResponse(BaseModel):
@@ -5653,6 +5737,7 @@ class CreateAttemptInsightsEntriesSqlParams(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -5660,6 +5745,7 @@ class CreateAttemptInsightsEntriesSqlParams(BaseModel):
             self.run_id,
             self.group_id,
             self.content,
+            self.tool_id,
             self.mcp,
         )
 
@@ -5674,6 +5760,7 @@ class CreateAttemptInsightsEntriesApiRequest(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateAttemptInsightsEntriesApiResponse(BaseModel):
@@ -5750,6 +5837,7 @@ class CreateAttemptMessageEntriesSqlParams(BaseModel):
     run_id: UUID
     chat_id: UUID
     message_id: UUID | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -5757,6 +5845,7 @@ class CreateAttemptMessageEntriesSqlParams(BaseModel):
             self.run_id,
             self.chat_id,
             self.message_id,
+            self.tool_id,
             self.mcp,
         )
 
@@ -5771,6 +5860,7 @@ class CreateAttemptMessageEntriesApiRequest(BaseModel):
     run_id: UUID
     chat_id: UUID
     message_id: UUID | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateAttemptMessageEntriesApiResponse(BaseModel):
@@ -5950,6 +6040,7 @@ class CreateAttemptReplacementEntriesSqlParams(BaseModel):
     section: str | None = None
     replace: str | None = None
     idx: int | None = 0
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -5959,6 +6050,7 @@ class CreateAttemptReplacementEntriesSqlParams(BaseModel):
             self.section,
             self.replace,
             self.idx,
+            self.tool_id,
             self.mcp,
         )
 
@@ -5975,6 +6067,7 @@ class CreateAttemptReplacementEntriesApiRequest(BaseModel):
     section: str | None = None
     replace: str | None = None
     idx: int | None = 0
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateAttemptReplacementEntriesApiResponse(BaseModel):
@@ -6053,6 +6146,7 @@ class CreateAttemptStrengthEntriesSqlParams(BaseModel):
     message_id: UUID
     name: str | None = None
     description: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -6062,6 +6156,7 @@ class CreateAttemptStrengthEntriesSqlParams(BaseModel):
             self.message_id,
             self.name,
             self.description,
+            self.tool_id,
             self.mcp,
         )
 
@@ -6078,6 +6173,7 @@ class CreateAttemptStrengthEntriesApiRequest(BaseModel):
     message_id: UUID
     name: str | None = None
     description: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateAttemptStrengthEntriesApiResponse(BaseModel):
@@ -6541,6 +6637,7 @@ class CreateBenchmarkInsightsEntriesSqlParams(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -6548,6 +6645,7 @@ class CreateBenchmarkInsightsEntriesSqlParams(BaseModel):
             self.run_id,
             self.group_id,
             self.content,
+            self.tool_id,
             self.mcp,
         )
 
@@ -6562,6 +6660,7 @@ class CreateBenchmarkInsightsEntriesApiRequest(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateBenchmarkInsightsEntriesApiResponse(BaseModel):
@@ -6732,12 +6831,14 @@ class CreateCertificatesEntriesSqlParams(BaseModel):
 
     run_id: UUID
     upload_id: UUID
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.run_id,
             self.upload_id,
+            self.tool_id,
             self.mcp,
         )
 
@@ -6751,6 +6852,7 @@ class CreateCertificatesEntriesApiRequest(BaseModel):
 
     run_id: UUID
     upload_id: UUID
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateCertificatesEntriesApiResponse(BaseModel):
@@ -7372,12 +7474,14 @@ class CreateConversationsEntriesSqlParams(BaseModel):
 
     run_id: UUID
     chat_id: UUID
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.run_id,
             self.chat_id,
+            self.tool_id,
             self.mcp,
         )
 
@@ -7391,6 +7495,7 @@ class CreateConversationsEntriesApiRequest(BaseModel):
 
     run_id: UUID
     chat_id: UUID
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateConversationsEntriesApiResponse(BaseModel):
@@ -7467,6 +7572,7 @@ class CreateConversationsCompletionsEntriesSqlParams(BaseModel):
     run_id: UUID
     conversation_id: UUID
     end_reason: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -7474,6 +7580,7 @@ class CreateConversationsCompletionsEntriesSqlParams(BaseModel):
             self.run_id,
             self.conversation_id,
             self.end_reason,
+            self.tool_id,
             self.mcp,
         )
 
@@ -7488,6 +7595,7 @@ class CreateConversationsCompletionsEntriesApiRequest(BaseModel):
     run_id: UUID
     conversation_id: UUID
     end_reason: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateConversationsCompletionsEntriesApiResponse(BaseModel):
@@ -7600,6 +7708,7 @@ class CreateDashboardInsightsEntriesSqlParams(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -7607,6 +7716,7 @@ class CreateDashboardInsightsEntriesSqlParams(BaseModel):
             self.run_id,
             self.group_id,
             self.content,
+            self.tool_id,
             self.mcp,
         )
 
@@ -7621,6 +7731,7 @@ class CreateDashboardInsightsEntriesApiRequest(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateDashboardInsightsEntriesApiResponse(BaseModel):
@@ -7696,12 +7807,14 @@ class CreateDebugInfoEntriesSqlParams(BaseModel):
 
     run_id: UUID
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.run_id,
             self.content,
+            self.tool_id,
             self.mcp,
         )
 
@@ -7715,6 +7828,7 @@ class CreateDebugInfoEntriesApiRequest(BaseModel):
 
     run_id: UUID
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateDebugInfoEntriesApiResponse(BaseModel):
@@ -8427,6 +8541,7 @@ class CreateGroupInsightsEntriesSqlParams(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -8434,6 +8549,7 @@ class CreateGroupInsightsEntriesSqlParams(BaseModel):
             self.run_id,
             self.group_id,
             self.content,
+            self.tool_id,
             self.mcp,
         )
 
@@ -8448,6 +8564,7 @@ class CreateGroupInsightsEntriesApiRequest(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateGroupInsightsEntriesApiResponse(BaseModel):
@@ -8680,6 +8797,7 @@ class CreateHealthInsightsEntriesSqlParams(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -8687,6 +8805,7 @@ class CreateHealthInsightsEntriesSqlParams(BaseModel):
             self.run_id,
             self.group_id,
             self.content,
+            self.tool_id,
             self.mcp,
         )
 
@@ -8701,6 +8820,7 @@ class CreateHealthInsightsEntriesApiRequest(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateHealthInsightsEntriesApiResponse(BaseModel):
@@ -8961,6 +9081,7 @@ class CreateHomeInsightsEntriesSqlParams(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -8968,6 +9089,7 @@ class CreateHomeInsightsEntriesSqlParams(BaseModel):
             self.run_id,
             self.group_id,
             self.content,
+            self.tool_id,
             self.mcp,
         )
 
@@ -8982,6 +9104,7 @@ class CreateHomeInsightsEntriesApiRequest(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateHomeInsightsEntriesApiResponse(BaseModel):
@@ -9361,6 +9484,7 @@ class CreateLeaderboardInsightsEntriesSqlParams(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -9368,6 +9492,7 @@ class CreateLeaderboardInsightsEntriesSqlParams(BaseModel):
             self.run_id,
             self.group_id,
             self.content,
+            self.tool_id,
             self.mcp,
         )
 
@@ -9382,6 +9507,7 @@ class CreateLeaderboardInsightsEntriesApiRequest(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateLeaderboardInsightsEntriesApiResponse(BaseModel):
@@ -9943,6 +10069,7 @@ class CreateMutesEntriesSqlParams(BaseModel):
     run_id: UUID
     conversation_id: UUID
     muted: bool | None = False
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -9950,6 +10077,7 @@ class CreateMutesEntriesSqlParams(BaseModel):
             self.run_id,
             self.conversation_id,
             self.muted,
+            self.tool_id,
             self.mcp,
         )
 
@@ -9964,6 +10092,7 @@ class CreateMutesEntriesApiRequest(BaseModel):
     run_id: UUID
     conversation_id: UUID
     muted: bool | None = False
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateMutesEntriesApiResponse(BaseModel):
@@ -10539,6 +10668,7 @@ class CreatePracticeInsightsEntriesSqlParams(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -10546,6 +10676,7 @@ class CreatePracticeInsightsEntriesSqlParams(BaseModel):
             self.run_id,
             self.group_id,
             self.content,
+            self.tool_id,
             self.mcp,
         )
 
@@ -10560,6 +10691,7 @@ class CreatePracticeInsightsEntriesApiRequest(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreatePracticeInsightsEntriesApiResponse(BaseModel):
@@ -10636,6 +10768,7 @@ class CreatePricingInsightsEntriesSqlParams(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -10643,6 +10776,7 @@ class CreatePricingInsightsEntriesSqlParams(BaseModel):
             self.run_id,
             self.group_id,
             self.content,
+            self.tool_id,
             self.mcp,
         )
 
@@ -10657,6 +10791,7 @@ class CreatePricingInsightsEntriesApiRequest(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreatePricingInsightsEntriesApiResponse(BaseModel):
@@ -10733,6 +10868,7 @@ class CreateProblemsEntriesSqlParams(BaseModel):
     run_id: UUID
     type: str
     message: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -10740,6 +10876,7 @@ class CreateProblemsEntriesSqlParams(BaseModel):
             self.run_id,
             self.type,
             self.message,
+            self.tool_id,
             self.mcp,
         )
 
@@ -10754,6 +10891,7 @@ class CreateProblemsEntriesApiRequest(BaseModel):
     run_id: UUID
     type: str
     message: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateProblemsEntriesApiResponse(BaseModel):
@@ -11048,6 +11186,7 @@ class CreateRecordInsightsEntriesSqlParams(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -11055,6 +11194,7 @@ class CreateRecordInsightsEntriesSqlParams(BaseModel):
             self.run_id,
             self.group_id,
             self.content,
+            self.tool_id,
             self.mcp,
         )
 
@@ -11069,6 +11209,7 @@ class CreateRecordInsightsEntriesApiRequest(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateRecordInsightsEntriesApiResponse(BaseModel):
@@ -11144,12 +11285,14 @@ class CreateReportsEntriesSqlParams(BaseModel):
 
     run_id: UUID
     upload_id: UUID
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.run_id,
             self.upload_id,
+            self.tool_id,
             self.mcp,
         )
 
@@ -11163,6 +11306,7 @@ class CreateReportsEntriesApiRequest(BaseModel):
 
     run_id: UUID
     upload_id: UUID
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateReportsEntriesApiResponse(BaseModel):
@@ -11239,6 +11383,7 @@ class CreateReportsInsightsEntriesSqlParams(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -11246,6 +11391,7 @@ class CreateReportsInsightsEntriesSqlParams(BaseModel):
             self.run_id,
             self.group_id,
             self.content,
+            self.tool_id,
             self.mcp,
         )
 
@@ -11260,6 +11406,7 @@ class CreateReportsInsightsEntriesApiRequest(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateReportsInsightsEntriesApiResponse(BaseModel):
@@ -11336,6 +11483,7 @@ class CreateResolvesEntriesSqlParams(BaseModel):
     run_id: UUID
     problem_id: UUID
     resolved: bool | None = False
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -11343,6 +11491,7 @@ class CreateResolvesEntriesSqlParams(BaseModel):
             self.run_id,
             self.problem_id,
             self.resolved,
+            self.tool_id,
             self.mcp,
         )
 
@@ -11357,6 +11506,7 @@ class CreateResolvesEntriesApiRequest(BaseModel):
     run_id: UUID
     problem_id: UUID
     resolved: bool | None = False
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateResolvesEntriesApiResponse(BaseModel):
@@ -11951,6 +12101,7 @@ class CreateSessionInsightsEntriesSqlParams(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -11958,6 +12109,7 @@ class CreateSessionInsightsEntriesSqlParams(BaseModel):
             self.run_id,
             self.group_id,
             self.content,
+            self.tool_id,
             self.mcp,
         )
 
@@ -11972,6 +12124,7 @@ class CreateSessionInsightsEntriesApiRequest(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateSessionInsightsEntriesApiResponse(BaseModel):
@@ -12334,6 +12487,7 @@ class CreateTestEntriesSqlParams(BaseModel):
     run_id: UUID
     infinite_mode: bool | None = False
     benchmark_id: UUID | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -12341,6 +12495,7 @@ class CreateTestEntriesSqlParams(BaseModel):
             self.run_id,
             self.infinite_mode,
             self.benchmark_id,
+            self.tool_id,
             self.mcp,
         )
 
@@ -12355,6 +12510,7 @@ class CreateTestEntriesApiRequest(BaseModel):
     run_id: UUID
     infinite_mode: bool | None = False
     benchmark_id: UUID | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateTestEntriesApiResponse(BaseModel):
@@ -12433,6 +12589,7 @@ class CreateTestArchiveEntriesSqlParams(BaseModel):
     run_id: UUID
     test_id: UUID
     archived: bool | None = False
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -12440,6 +12597,7 @@ class CreateTestArchiveEntriesSqlParams(BaseModel):
             self.run_id,
             self.test_id,
             self.archived,
+            self.tool_id,
             self.mcp,
         )
 
@@ -12454,6 +12612,7 @@ class CreateTestArchiveEntriesApiRequest(BaseModel):
     run_id: UUID
     test_id: UUID
     archived: bool | None = False
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateTestArchiveEntriesApiResponse(BaseModel):
@@ -12530,6 +12689,7 @@ class CreateTestCompletionEntriesSqlParams(BaseModel):
     run_id: UUID
     invocation_id: UUID
     end_reason: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -12537,6 +12697,7 @@ class CreateTestCompletionEntriesSqlParams(BaseModel):
             self.run_id,
             self.invocation_id,
             self.end_reason,
+            self.tool_id,
             self.mcp,
         )
 
@@ -12551,6 +12712,7 @@ class CreateTestCompletionEntriesApiRequest(BaseModel):
     run_id: UUID
     invocation_id: UUID
     end_reason: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateTestCompletionEntriesApiResponse(BaseModel):
@@ -12630,6 +12792,7 @@ class CreateTestFeedbackEntriesSqlParams(BaseModel):
     feedback: str | None = None
     total_points: int | None = None
     pass_points: int | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -12640,6 +12803,7 @@ class CreateTestFeedbackEntriesSqlParams(BaseModel):
             self.feedback,
             self.total_points,
             self.pass_points,
+            self.tool_id,
             self.mcp,
         )
 
@@ -12657,6 +12821,7 @@ class CreateTestFeedbackEntriesApiRequest(BaseModel):
     feedback: str | None = None
     total_points: int | None = None
     pass_points: int | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateTestFeedbackEntriesApiResponse(BaseModel):
@@ -12735,6 +12900,7 @@ class CreateTestGradeEntriesSqlParams(BaseModel):
     passed: bool | None = False
     score: int | None = 0
     time_taken: int | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -12744,6 +12910,7 @@ class CreateTestGradeEntriesSqlParams(BaseModel):
             self.passed,
             self.score,
             self.time_taken,
+            self.tool_id,
             self.mcp,
         )
 
@@ -12760,6 +12927,7 @@ class CreateTestGradeEntriesApiRequest(BaseModel):
     passed: bool | None = False
     score: int | None = 0
     time_taken: int | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateTestGradeEntriesApiResponse(BaseModel):
@@ -12842,6 +13010,7 @@ class CreateTestInsightsEntriesSqlParams(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -12849,6 +13018,7 @@ class CreateTestInsightsEntriesSqlParams(BaseModel):
             self.run_id,
             self.group_id,
             self.content,
+            self.tool_id,
             self.mcp,
         )
 
@@ -12863,6 +13033,7 @@ class CreateTestInsightsEntriesApiRequest(BaseModel):
     run_id: UUID
     group_id: UUID | None = None
     content: str | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateTestInsightsEntriesApiResponse(BaseModel):
@@ -12943,6 +13114,7 @@ class CreateTestInvocationEntriesSqlParams(BaseModel):
     departments_id: UUID | None = None
     config_signature: str | None = None
     test_id: UUID | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -12954,6 +13126,7 @@ class CreateTestInvocationEntriesSqlParams(BaseModel):
             self.departments_id,
             self.config_signature,
             self.test_id,
+            self.tool_id,
             self.mcp,
         )
 
@@ -12972,6 +13145,7 @@ class CreateTestInvocationEntriesApiRequest(BaseModel):
     departments_id: UUID | None = None
     config_signature: str | None = None
     test_id: UUID | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateTestInvocationEntriesApiResponse(BaseModel):
@@ -13075,6 +13249,7 @@ class CreateTestStopEntriesSqlParams(BaseModel):
     run_id: UUID
     invocation_id: UUID
     stopped: bool | None = False
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -13082,6 +13257,7 @@ class CreateTestStopEntriesSqlParams(BaseModel):
             self.run_id,
             self.invocation_id,
             self.stopped,
+            self.tool_id,
             self.mcp,
         )
 
@@ -13096,6 +13272,7 @@ class CreateTestStopEntriesApiRequest(BaseModel):
     run_id: UUID
     invocation_id: UUID
     stopped: bool | None = False
+    tool_id: UUID | None = None
     mcp: bool | None = False
 
 class CreateTestStopEntriesApiResponse(BaseModel):
@@ -37398,6 +37575,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetLoginDataApiRequest",
         "GetLoginDataApiResponse",
     ),
+    "app/sql/v4/queries/auth/group/get_auth_group_messages_complete.sql": (
+        "GetAuthGroupMessagesSqlParams",
+        "GetAuthGroupMessagesSqlRow",
+        "GetAuthGroupMessagesApiRequest",
+        "GetAuthGroupMessagesApiResponse",
+    ),
     "app/sql/v4/queries/auth/patch_auth_draft_complete.sql": (
         "PatchAuthDraftSqlParams",
         "PatchAuthDraftSqlRow",
@@ -43027,6 +43210,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/auth/get_login_data_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/auth/group/get_auth_group_messages_complete.sql"]
     ) -> SqlString: ...
 
     @overload

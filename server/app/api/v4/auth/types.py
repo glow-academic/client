@@ -218,6 +218,32 @@ class GetInsightsApiResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Group messages types
+# ---------------------------------------------------------------------------
+
+
+class GroupMessageItem(BaseModel):
+    """A single message within a group."""
+
+    message_id: str | None = None
+    run_id: str | None = None
+    role: str | None = None
+    message_created_at: str | None = None
+    contents: list[str] | None = None
+
+
+class GetGroupMessagesApiResponse(BaseModel):
+    """Response model for /auth/group endpoint."""
+
+    group_id: str | None = None
+    group_name: str | None = None
+    group_created_at: str | None = None
+    session_id: str | None = None
+    messages: list[GroupMessageItem] | None = None
+    total_message_count: int = 0
+
+
+# ---------------------------------------------------------------------------
 # Analytics filters types
 # ---------------------------------------------------------------------------
 

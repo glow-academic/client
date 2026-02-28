@@ -30,6 +30,7 @@ class CreateAttemptCompletionEntrySqlParams(BaseModel):
     run_id: UUID
     chat_id: UUID
     end_reason: str = ""
+    tool_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
@@ -37,6 +38,7 @@ class CreateAttemptCompletionEntrySqlParams(BaseModel):
             self.run_id,
             self.chat_id,
             self.end_reason,
+            self.tool_id,
             self.mcp,
         )
 

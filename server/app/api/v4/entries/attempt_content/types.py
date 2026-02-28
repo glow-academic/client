@@ -34,6 +34,7 @@ class CreateAttemptContentEntrySqlParams(BaseModel):
     message_id: UUID
     content: str = ""
     persona_id: UUID | None = None
+    tool_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
@@ -42,6 +43,7 @@ class CreateAttemptContentEntrySqlParams(BaseModel):
             self.message_id,
             self.content,
             self.persona_id,
+            self.tool_id,
             self.mcp,
         )
 

@@ -36,6 +36,7 @@ class CreateAttemptReplacementEntrySqlParams(BaseModel):
     section: str = ""
     replace: str = ""
     idx: int = 0
+    tool_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
@@ -45,6 +46,7 @@ class CreateAttemptReplacementEntrySqlParams(BaseModel):
             self.section,
             self.replace,
             self.idx,
+            self.tool_id,
             self.mcp,
         )
 

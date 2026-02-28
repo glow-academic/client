@@ -33,6 +33,7 @@ class CreateAttemptHighlightEntrySqlParams(BaseModel):
     strength_id: UUID
     section: str = ""
     idx: int = 0
+    tool_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
@@ -41,6 +42,7 @@ class CreateAttemptHighlightEntrySqlParams(BaseModel):
             self.strength_id,
             self.section,
             self.idx,
+            self.tool_id,
             self.mcp,
         )
 

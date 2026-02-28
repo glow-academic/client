@@ -32,6 +32,7 @@ class CreateAttemptEntrySqlParams(BaseModel):
     infinite_mode: bool = False
     num_chats: int = 1
     user_persona_id: UUID | None = None
+    tool_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
@@ -40,6 +41,7 @@ class CreateAttemptEntrySqlParams(BaseModel):
             self.infinite_mode,
             self.num_chats,
             self.user_persona_id,
+            self.tool_id,
             self.mcp,
         )
 

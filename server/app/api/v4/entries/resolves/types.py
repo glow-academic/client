@@ -30,6 +30,7 @@ class CreateResolvesEntrySqlParams(BaseModel):
     run_id: UUID
     problem_id: UUID
     resolved: bool = False
+    tool_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:

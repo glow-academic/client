@@ -27,6 +27,7 @@ class CreateConversationsEntryResponse(BaseModel):
 class CreateConversationsEntrySqlParams(BaseModel):
     run_id: UUID
     chat_id: UUID
+    tool_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:

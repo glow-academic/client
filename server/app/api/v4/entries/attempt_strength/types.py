@@ -35,6 +35,7 @@ class CreateAttemptStrengthEntrySqlParams(BaseModel):
     message_id: UUID
     name: str = ""
     description: str = ""
+    tool_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
@@ -44,6 +45,7 @@ class CreateAttemptStrengthEntrySqlParams(BaseModel):
             self.message_id,
             self.name,
             self.description,
+            self.tool_id,
             self.mcp,
         )
 

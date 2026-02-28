@@ -7884,126 +7884,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/args_outputs_values/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Args Outputs Values Entries
-         * @description Get args_outputs_values entries by IDs.
-         */
-        post: operations["get_args_outputs_values_entries_api_v4_entries_args_outputs_values_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/args_outputs_values/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Args Outputs Values Entries
-         * @description Search args_outputs_values entries.
-         */
-        post: operations["search_args_outputs_values_entries_api_v4_entries_args_outputs_values_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/args_outputs_values/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Args Outputs Values
-         * @description Refresh the args_outputs_values_mv materialized view.
-         */
-        post: operations["refresh_args_outputs_values_api_v4_entries_args_outputs_values_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/args_values/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Args Values Entries
-         * @description Get args_values entries by IDs.
-         */
-        post: operations["get_args_values_entries_api_v4_entries_args_values_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/args_values/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Args Values Entries
-         * @description Search args_values entries.
-         */
-        post: operations["search_args_values_entries_api_v4_entries_args_values_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/args_values/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Args Values
-         * @description Refresh the args_values_mv materialized view.
-         */
-        post: operations["refresh_args_values_api_v4_entries_args_values_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/entries/attempt/get": {
         parameters: {
             query?: never;
@@ -14543,6 +14423,26 @@ export interface paths {
          * @description Get profile by email (for auth operations).
          */
         post: operations["get_profile_by_email_api_v4_auth_email_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/auth/group": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Group Messages
+         * @description Return paginated messages for a specific group.
+         */
+        post: operations["get_group_messages_api_v4_auth_group_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -25556,11 +25456,6 @@ export interface components {
         /** CreateAttemptGradeEntryRequest */
         CreateAttemptGradeEntryRequest: {
             /**
-             * Run Id
-             * Format: uuid
-             */
-            run_id: string;
-            /**
              * Chat Id
              * Format: uuid
              */
@@ -29776,7 +29671,7 @@ export interface components {
             /** Draft Id */
             draft_id?: string | null;
             /** Resource Types */
-            resource_types: string[];
+            resource_types: components["schemas"]["ResourceTypeItem"][];
             /** Entry Types */
             entry_types?: components["schemas"]["EntryTypeItem"][] | null;
             /** User Instructions */
@@ -30057,26 +29952,6 @@ export interface components {
         GetArgsOutputsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetArgsOutputsV4Item"][] | null;
-        };
-        /** GetArgsOutputsValuesEntriesApiRequest */
-        GetArgsOutputsValuesEntriesApiRequest: {
-            /** Ids */
-            ids: string[];
-        };
-        /** GetArgsOutputsValuesEntriesApiResponse */
-        GetArgsOutputsValuesEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
-        /** GetArgsValuesEntriesApiRequest */
-        GetArgsValuesEntriesApiRequest: {
-            /** Ids */
-            ids: string[];
-        };
-        /** GetArgsValuesEntriesApiResponse */
-        GetArgsValuesEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
         };
         /** GetAttemptAnalysisEntriesApiRequest */
         GetAttemptAnalysisEntriesApiRequest: {
@@ -31276,6 +31151,48 @@ export interface components {
              * @default 0
              */
             total_count: number;
+        };
+        /**
+         * GetGroupMessagesApiRequest
+         * @description Request body for /auth/group endpoint.
+         */
+        GetGroupMessagesApiRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Page Limit
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GetGroupMessagesApiResponse
+         * @description Response model for /auth/group endpoint.
+         */
+        GetGroupMessagesApiResponse: {
+            /** Group Id */
+            group_id?: string | null;
+            /** Group Name */
+            group_name?: string | null;
+            /** Group Created At */
+            group_created_at?: string | null;
+            /** Session Id */
+            session_id?: string | null;
+            /** Messages */
+            messages?: components["schemas"]["GroupMessageItem"][] | null;
+            /**
+             * Total Message Count
+             * @default 0
+             */
+            total_message_count: number;
         };
         /** GetGroupPositionsApiRequest */
         GetGroupPositionsApiRequest: {
@@ -33881,6 +33798,22 @@ export interface components {
             agent_names?: string[] | null;
             /** Model Names */
             model_names?: string[] | null;
+        };
+        /**
+         * GroupMessageItem
+         * @description A single message within a group.
+         */
+        GroupMessageItem: {
+            /** Message Id */
+            message_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
+            /** Role */
+            role?: string | null;
+            /** Message Created At */
+            message_created_at?: string | null;
+            /** Contents */
+            contents?: string[] | null;
         };
         /** GroupPositionsApiRequest */
         GroupPositionsApiRequest: {
@@ -41076,8 +41009,6 @@ export interface components {
             generated: boolean | null;
             /** Mcp */
             mcp: boolean | null;
-            /** Call Id */
-            call_id: string | null;
         };
         /** QGetMetricListViewV4Item */
         QGetMetricListViewV4Item: {
@@ -43225,6 +43156,19 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /**
+         * ResourceTypeItem
+         * @description Typed resource operation reference.
+         */
+        ResourceTypeItem: {
+            /** Name */
+            name: string;
+            /**
+             * Operation
+             * @enum {string}
+             */
+            operation: "get" | "create" | "link" | "search" | "docs";
         };
         /** ResourcesGenerationEvent */
         ResourcesGenerationEvent: {
@@ -45951,50 +45895,6 @@ export interface components {
         SearchArgsOutputsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetArgsOutputsV4Item"][] | null;
-        };
-        /** SearchArgsOutputsValuesEntriesApiRequest */
-        SearchArgsOutputsValuesEntriesApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Call Id */
-            call_id?: string | null;
-        };
-        /** SearchArgsOutputsValuesEntriesApiResponse */
-        SearchArgsOutputsValuesEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
-        /** SearchArgsValuesEntriesApiRequest */
-        SearchArgsValuesEntriesApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Call Id */
-            call_id?: string | null;
-        };
-        /** SearchArgsValuesEntriesApiResponse */
-        SearchArgsValuesEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
         };
         /** SearchAttemptAnalysisEntriesApiRequest */
         SearchAttemptAnalysisEntriesApiRequest: {
@@ -67978,224 +67878,6 @@ export interface operations {
             };
         };
     };
-    get_args_outputs_values_entries_api_v4_entries_args_outputs_values_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetArgsOutputsValuesEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetArgsOutputsValuesEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_args_outputs_values_entries_api_v4_entries_args_outputs_values_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchArgsOutputsValuesEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SearchArgsOutputsValuesEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_args_outputs_values_api_v4_entries_args_outputs_values_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_args_values_entries_api_v4_entries_args_values_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetArgsValuesEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetArgsValuesEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_args_values_entries_api_v4_entries_args_values_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchArgsValuesEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SearchArgsValuesEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_args_values_api_v4_entries_args_values_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_attempt_entries_api_v4_entries_attempt_get_post: {
         parameters: {
             query?: never;
@@ -80088,6 +79770,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetProfileByEmailApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_group_messages_api_v4_auth_group_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetGroupMessagesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetGroupMessagesApiResponse"];
                 };
             };
             /** @description Validation Error */

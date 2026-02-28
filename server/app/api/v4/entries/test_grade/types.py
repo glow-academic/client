@@ -40,6 +40,7 @@ class CreateTestGradeEntrySqlParams(BaseModel):
     passed: bool = False
     score: int = 0
     time_taken: int | None = None
+    tool_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
@@ -49,6 +50,7 @@ class CreateTestGradeEntrySqlParams(BaseModel):
             self.passed,
             self.score,
             self.time_taken,
+            self.tool_id,
             self.mcp,
         )
 

@@ -27,6 +27,7 @@ class CreateReportsEntryResponse(BaseModel):
 class CreateReportsEntrySqlParams(BaseModel):
     run_id: UUID
     upload_id: UUID
+    tool_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
