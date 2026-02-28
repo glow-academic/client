@@ -24,7 +24,7 @@ CREATE UNIQUE INDEX args_values_mv_pk ON args_values_mv (id);
 
 -- Step 5: Filter indexes
 CREATE INDEX args_values_mv_created_at_idx ON args_values_mv (created_at DESC);
-CREATE INDEX args_values_mv_call_id_idx ON args_values_mv (call_id);
+CREATE INDEX args_values_mv_session_id_idx ON args_values_mv (session_id);
 
 -- Step 6: Refresh
 REFRESH MATERIALIZED VIEW args_values_mv;

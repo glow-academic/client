@@ -118,7 +118,7 @@ db_exists()   { as_admin -c "SELECT 1 FROM pg_database WHERE datname='$DB_NAME';
 # Example: "10_cleanup_prompt_agent_names.sql" -> "10"
 extract_migration_number() {
   local filename=$(basename "$1")
-  # Extract number from start of filename (e.g., "10_" -> "10")
+  # Extract number from start of filename (e.g., "10_" -> "10", "09_" -> "09")
   if [[ "$filename" =~ ^([0-9]+)_ ]]; then
     echo "${BASH_REMATCH[1]}"
   else
@@ -206,12 +206,12 @@ get_latest_backup() {
     # For files with migration numbers: restore_MIGRATIONNUM_TIMESTAMP.sql.gz
     # For old format: restore_TIMESTAMP.sql.gz (treated as migration 0)
     local latest_backup=""
-    local highest_migration=-1
-    
+    local highest_migration_num=-1
+
     for backup_file in "$HISTORY_DIR"/restore_*.sql.gz; do
       local filename=$(basename "$backup_file")
       local migration_num=""
-      
+
       # Extract migration number from filename
       # New format: restore_115_20251218_171553.sql.gz -> 115
       # Old format: restore_20251218_171553.sql.gz -> treat as 0
@@ -220,13 +220,13 @@ get_latest_backup() {
       elif [[ "$filename" =~ ^restore_[0-9]{8}_[0-9]{6}\.sql\.gz$ ]]; then
         migration_num="0"
       fi
-      
-      # Compare by migration number first
+
+      # Compare by migration number first (use 10# to force base-10 for zero-padded numbers like 08, 09)
       if [[ -n "$migration_num" ]]; then
-        if [[ "$migration_num" -gt "$highest_migration" ]]; then
-          highest_migration="$migration_num"
+        if [[ "$((10#$migration_num))" -gt "$highest_migration_num" ]]; then
+          highest_migration_num="$((10#$migration_num))"
           latest_backup="$backup_file"
-        elif [[ "$migration_num" -eq "$highest_migration" ]] && [[ -n "$latest_backup" ]]; then
+        elif [[ "$((10#$migration_num))" -eq "$highest_migration_num" ]] && [[ -n "$latest_backup" ]]; then
           # Same migration number, compare timestamps (newer wins)
           local current_ts=$(echo "$filename" | grep -oE '[0-9]{8}_[0-9]{6}')
           local latest_ts=$(basename "$latest_backup" | grep -oE '[0-9]{8}_[0-9]{6}')
@@ -274,15 +274,16 @@ get_backup_for_migration() {
 # Falls back to get_latest_backup() if no previous migration backup found
 get_previous_migration_backup() {
   local current_migration_num="$1"
-  if [[ -z "$current_migration_num" ]] || [[ "$current_migration_num" -le 0 ]]; then
+  if [[ -z "$current_migration_num" ]] || [[ "$((10#$current_migration_num))" -le 0 ]]; then
     # If no valid migration number, fall back to latest backup
     get_latest_backup
     return
   fi
   
-  # Calculate previous migration number
-  local previous_migration_num=$((current_migration_num - 1))
-  
+  # Calculate previous migration number, preserving zero-padding width
+  local padding=${#current_migration_num}
+  local previous_migration_num=$(printf "%0${padding}d" "$((10#$current_migration_num - 1))")
+
   # Try to find backup for previous migration
   local previous_backup=$(get_backup_for_migration "$previous_migration_num")
   
@@ -540,7 +541,7 @@ if [[ "$MIGRATE_DB" == true ]]; then
         fi
         
         # Step 1: Restore from previous migration's backup (or latest if no previous found)
-        if [[ -n "$migration_num" ]] && [[ "$migration_num" -gt 0 ]]; then
+        if [[ -n "$migration_num" ]] && [[ "$((10#$migration_num))" -gt 0 ]]; then
           LATEST_BACKUP=$(get_previous_migration_backup "$migration_num")
         else
           LATEST_BACKUP=$(get_latest_backup)

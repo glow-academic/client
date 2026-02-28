@@ -45,8 +45,7 @@ SELECT
     l.created_at AS login_created_at,
     COALESCE(l.active, false) AS active,
     l.generated,
-    l.mcp,
-    l.call_id
+    l.mcp
 FROM logins_entry l
 LEFT JOIN profiles_logins_connection plc
     ON plc.login_id = l.id

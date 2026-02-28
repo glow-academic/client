@@ -51,8 +51,7 @@ messages_data AS (
     FROM params p
     JOIN messages_entry m ON m.run_id = p.run_id
     LEFT JOIN first_content fc ON fc.message_id = m.id
-    LEFT JOIN calls_entry c_audio ON c_audio.run_id = m.run_id
-    LEFT JOIN audios_entry ar ON ar.call_id = c_audio.id AND ar.active = true
+    LEFT JOIN audios_entry ar ON ar.message_id = m.id AND ar.active = true
     LEFT JOIN LATERAL (
         SELECT message_id FROM messages_completions_entry
         WHERE message_id = m.id AND active = TRUE ORDER BY created_at DESC LIMIT 1

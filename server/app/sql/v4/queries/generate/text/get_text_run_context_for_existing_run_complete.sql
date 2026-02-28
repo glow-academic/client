@@ -461,8 +461,7 @@ upload_info AS (
         u.mime_type
     FROM params p
     JOIN messages_entry m ON m.run_id = p.run_id
-    JOIN calls_entry c_audio ON c_audio.run_id = m.run_id
-    JOIN audios_entry ar ON ar.call_id = c_audio.id AND ar.active = true
+    JOIN audios_entry ar ON ar.message_id = m.id AND ar.active = true
     JOIN uploads_entry u ON u.id = ar.upload_id
     LIMIT 1
 ),

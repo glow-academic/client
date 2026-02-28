@@ -59,8 +59,7 @@ CREATE TYPE types.q_get_login_list_view_v4_item AS (
     login_created_at timestamptz,
     active boolean,
     generated boolean,
-    mcp boolean,
-    call_id uuid
+    mcp boolean
 );
 
 -- ============================================================================
@@ -116,8 +115,7 @@ AS $$
                     login_created_at,
                     active,
                     generated,
-                    mcp,
-                    call_id
+                    mcp
                 )::types.q_get_login_list_view_v4_item
                 ORDER BY
                     CASE WHEN sort_order_field = 'asc' THEN last_login END ASC,

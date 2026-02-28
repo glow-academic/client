@@ -39,15 +39,11 @@ profile_exists AS (
     WHERE id = (SELECT profile_id FROM params)
     LIMIT 1
 ),
-placeholder_call_id AS (
-    SELECT id FROM calls_entry LIMIT 1
-),
 -- Insert login entry
 login_insert AS (
-    INSERT INTO logins_entry (last_login, call_id, created_at, updated_at)
+    INSERT INTO logins_entry (last_login, created_at, updated_at)
     SELECT
         NOW(),
-        (SELECT id FROM placeholder_call_id),
         NOW(),
         NOW()
     WHERE EXISTS (SELECT 1 FROM profile_exists)
