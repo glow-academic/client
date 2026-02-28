@@ -12,16 +12,17 @@ ARTIFACT_ROUTES: dict[str, frozenset[str]] = {
         }
     ),
     "attempt": frozenset(
-        {"/attempt/[attemptId]", "/home/[attemptId]", "/practice/[attemptId]"}
+        {
+            "/attempt/[attemptId]",
+            "/attempt/[attemptId]/[chatId]",
+            "/home/[attemptId]",
+            "/practice/[attemptId]",
+        }
     ),
     "auth": frozenset({"/system/auth", "/system/auth/[authId]", "/system/auth/new"}),
     "benchmark": frozenset({"/benchmark"}),
     "chat": frozenset(
-        {
-            "/chat/[chatId]",
-            "/home/[attemptId]/[trainingId]",
-            "/practice/[attemptId]/[trainingId]",
-        }
+        {"/home/[attemptId]/[trainingId]", "/practice/[attemptId]/[trainingId]"}
     ),
     "cohort": frozenset(
         {"/training/cohorts", "/training/cohorts/[cohortId]", "/training/cohorts/new"}
@@ -76,7 +77,11 @@ ARTIFACT_ROUTES: dict[str, frozenset[str]] = {
     "practice": frozenset({"/practice"}),
     "pricing": frozenset({"/analytics/pricing"}),
     "profile": frozenset(
-        {"/management/profiles", "/management/profiles/[profileId]", "/management/profiles/new"}
+        {
+            "/management/profiles",
+            "/management/profiles/[profileId]",
+            "/management/profiles/new",
+        }
     ),
     "provider": frozenset(
         {

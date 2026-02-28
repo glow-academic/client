@@ -113,7 +113,7 @@ async def save_profiles(
             audit_set(
                 http_request,
                 actor={"id": current_profile_id},
-                staff={"count": result.count},
+                profiles={"count": result.count},
             )
 
         # Convert SQL result to API response

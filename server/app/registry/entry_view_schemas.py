@@ -12,17 +12,17 @@ Differences from ENTRY_SCHEMAS:
 - Internal columns dropped (e.g. call_id, updated_at filtered out by most MVs)
 
 MV name mapping:
-  analyses    → attempt_analysis_mv
-  contents    → attempt_content_mv
-  debug_info  → debug_info_mv
-  feedbacks   → attempt_feedback_mv
-  grades      → attempt_grade_mv
-  highlights  → attempt_highlight_mv
-  hints       → attempt_hint_mv
-  improvements → attempt_improvement_mv
-  replacements → attempt_replacement_mv
-  responses   → responses_mv
-  strengths   → attempt_strength_mv
+  analyses       → attempt_analysis_mv
+  contents       → attempt_content_mv
+  debug_info     → debug_info_mv
+  feedbacks      → attempt_feedback_mv
+  grades         → attempt_grade_mv
+  highlights     → attempt_highlight_mv
+  hints          → attempt_hint_mv
+  improvements   → attempt_improvement_mv
+  replacements   → attempt_replacement_mv
+  responses      → responses_mv
+  strengths      → attempt_strength_mv
 
 Type strings: text, int, float, numeric, bool, uuid, array, enum, timestamp
 """
@@ -43,14 +43,14 @@ ENTRY_VIEW_SCHEMAS: dict[str, dict[str, str]] = {
         "created_at": "timestamp",
     },
     "debug_info": {
-        "id": "uuid",
-        "content": "text",
-        "call_id": "uuid",
-        "run_id": "uuid",
         "created_at": "timestamp",
+        "content": "text",
+        "id": "uuid",
         "active": "bool",
         "generated": "bool",
+        "call_id": "uuid",
         "mcp": "bool",
+        "run_id": "uuid",
     },
     "feedbacks": {
         "feedback_id": "uuid",

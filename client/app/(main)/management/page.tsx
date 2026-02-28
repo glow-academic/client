@@ -12,7 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Management",
     description:
-      "Administrative management hub for teaching assistant training platform. Manage learning cohorts, staff assignments, educational resources, evaluation configurations, and system settings for comprehensive L&D program administration.",
+      "Administrative management hub for teaching assistant training platform. Manage learning cohorts, profile assignments, educational resources, evaluation configurations, and system settings for comprehensive L&D program administration.",
   };
 }
 

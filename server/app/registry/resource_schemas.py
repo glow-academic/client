@@ -52,9 +52,6 @@ RESOURCE_SCHEMAS: dict[str, dict[str, str]] = {
         "slug": "text",
         "protocol": "text",
     },
-    "entries": {
-        "entry": "enum",
-    },
     "cohorts": {
         "name": "text",
         "description": "text",
@@ -94,15 +91,14 @@ RESOURCE_SCHEMAS: dict[str, dict[str, str]] = {
         "parameter_ids": "array",
         "parameter_field_ids": "array",
     },
-    "resources": {
-        "resource": "enum",
-        "creatable": "bool",
-    },
     "emails": {
         "email": "text",
     },
     "endpoints": {
         "base_url": "text",
+    },
+    "entries": {
+        "entry": "enum",
     },
     "evals": {
         "name": "text",
@@ -284,6 +280,10 @@ RESOURCE_SCHEMAS: dict[str, dict[str, str]] = {
     "request_limits": {
         "requests_per_day": "int",
     },
+    "resources": {
+        "resource": "enum",
+        "creatable": "bool",
+    },
     "roles": {
         "role": "enum",
         "name": "text",
@@ -405,9 +405,9 @@ RESOURCE_SCHEMAS: dict[str, dict[str, str]] = {
         "name": "text",
         "description": "text",
         "department_ids": "array",
-        "operation": "text",
         "args_ids": "array",
         "args_output_ids": "array",
+        "operation": "text",
         "resources": "array",
         "entries": "array",
         "artifacts": "array",

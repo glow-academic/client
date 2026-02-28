@@ -44,9 +44,9 @@ ENTRY_SCHEMAS: dict[str, dict[str, str]] = {
         "time_taken": "int",
     },
     "highlights": {
-        "idx": "int",
+        "strength_id": "uuid",
         "section": "text",
-        "message_feedback_id": "uuid",
+        "idx": "int",
         "updated_at": "timestamp",
     },
     "hints": {
@@ -64,10 +64,10 @@ ENTRY_SCHEMAS: dict[str, dict[str, str]] = {
         "call_id": "uuid",
     },
     "replacements": {
-        "idx": "int",
+        "improvement_id": "uuid",
         "section": "text",
         "replace": "text",
-        "message_feedback_id": "uuid",
+        "idx": "int",
         "updated_at": "timestamp",
     },
     "responses": {

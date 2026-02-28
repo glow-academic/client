@@ -5,10 +5,44 @@ v5 uses a single GeneratePayload that carries the artifact_type discriminator an
 generic artifact_id field. The registry maps these to the correct fetcher kwarg.
 """
 
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, model_validator
+
+# ---------------------------------------------------------------------------
+# Operation literals per layer
+# ---------------------------------------------------------------------------
+
+ArtifactOperation = Literal["get", "list", "duplicate", "delete", "draft", "save", "docs"]
+ResourceOperation = Literal["get", "create", "link", "search", "docs"]
+EntryOperation = Literal["get", "search", "docs", "create"]
+
+
+class ArtifactTypeItem(BaseModel):
+    """Typed artifact operation reference."""
+
+    name: str
+    operation: ArtifactOperation
+
+
+class ResourceTypeItem(BaseModel):
+    """Typed resource operation reference."""
+
+    name: str
+    operation: ResourceOperation
+
+
+class EntryTypeItem(BaseModel):
+    """Typed entry operation reference."""
+
+    name: str
+    operation: EntryOperation
+
+
+# ---------------------------------------------------------------------------
+# Generate payload
+# ---------------------------------------------------------------------------
 
 
 class GeneratePayload(BaseModel):
@@ -18,7 +52,9 @@ class GeneratePayload(BaseModel):
         artifact_type: Registry key (e.g. "agent", "chat", "attempt").
         artifact_id:   Generic artifact ID — maps to agent_id, chat_entry_id, etc.
         draft_id:      Optional draft ID (required for most artifacts).
-        resource_types: Which resources to generate.
+        artifact_types: Typed artifact operations (name + operation).
+        resource_types: Which resources to generate (plain strings, kept for compat).
+        entry_types:   Typed entry operations (name + operation).
         user_instructions: Optional user instructions forwarded to LLM.
         save:          Whether to auto-save on completion.
         run_id:        Pre-created run ID (required — created by caller).
@@ -31,7 +67,9 @@ class GeneratePayload(BaseModel):
     artifact_type: str
     artifact_id: UUID | None = None
     draft_id: UUID | None = None
+    artifact_types: list[ArtifactTypeItem] | None = None
     resource_types: list[str]
+    entry_types: list[EntryTypeItem] | None = None
     user_instructions: list[str] | None = None
     save: bool = False
 

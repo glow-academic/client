@@ -39,7 +39,7 @@ router = APIRouter()
         audit_activity("profile.process", "{{ actor.name }} processed profile CSV")
     ],
 )
-async def process_staff(
+async def process_profiles(
     request: ProcessCsvApiRequest,
     http_request: Request,
     response: Response,

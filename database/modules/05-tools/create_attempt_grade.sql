@@ -1,0 +1,64 @@
+-- Module: create_attempt_grade
+-- Category: tool
+-- Description: create_attempt_grade MCP tool
+-- ============================================================
+
+
+-- Entry resource
+INSERT INTO public.entries_resource (id, entry, created_at, active, generated, mcp) VALUES ('54422ef9-a926-4c77-8da9-f2b6cb666287', 'attempt_grades', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+
+-- Resource rows
+INSERT INTO public.args_resource (id, name, description, field_type, required, default_value, created_at, active, generated, mcp) VALUES ('16c8272d-7a29-485c-beee-b6dd500a2607', 'chat_id', '', 'string', true, '', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, active, generated, mcp) VALUES ('923d5f7b-5ffe-4e7b-9725-d38666e65576', '16c8272d-7a29-485c-beee-b6dd500a2607', 0, '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.args_outputs_resource (id, args_id, name, template, created_at, active, generated, mcp) VALUES ('4c1f1210-bf93-43af-b355-5b45674d1887', '16c8272d-7a29-485c-beee-b6dd500a2607', 'chat_id', '{{ chat_id }}', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.args_resource (id, name, description, field_type, required, default_value, created_at, active, generated, mcp) VALUES ('975f046b-e31a-455d-9d78-513c99a498ec', 'run_id', '', 'string', false, '', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, active, generated, mcp) VALUES ('fb9f6dd2-3998-4909-b237-58e331384b9d', '975f046b-e31a-455d-9d78-513c99a498ec', 1, '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.args_outputs_resource (id, args_id, name, template, created_at, active, generated, mcp) VALUES ('40a09475-2ca4-4bdc-b2bc-6b3860d576f7', '975f046b-e31a-455d-9d78-513c99a498ec', 'run_id', '{{ run_id }}', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.args_resource (id, name, description, field_type, required, default_value, created_at, active, generated, mcp) VALUES ('47a7fced-b0de-4666-afb6-8f665250a5e5', 'passed', '', 'boolean', true, '', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, active, generated, mcp) VALUES ('b1bc68de-ac70-4a14-9cfc-0be00de051a4', '47a7fced-b0de-4666-afb6-8f665250a5e5', 2, '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.args_outputs_resource (id, args_id, name, template, created_at, active, generated, mcp) VALUES ('34a8d5c8-cc96-4d22-bff6-6fba08645e67', '47a7fced-b0de-4666-afb6-8f665250a5e5', 'passed', '{{ passed }}', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.args_resource (id, name, description, field_type, required, default_value, created_at, active, generated, mcp) VALUES ('d3003516-1c62-460c-a2e2-095538c48c07', 'score', '', 'number', true, '', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, active, generated, mcp) VALUES ('de460153-51e7-430f-86c9-2b036f936079', 'd3003516-1c62-460c-a2e2-095538c48c07', 3, '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.args_outputs_resource (id, args_id, name, template, created_at, active, generated, mcp) VALUES ('4bd4c998-4b5c-416f-9e18-5046429623d1', 'd3003516-1c62-460c-a2e2-095538c48c07', 'score', '{{ score }}', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.args_resource (id, name, description, field_type, required, default_value, created_at, active, generated, mcp) VALUES ('7c122a71-a69a-40bb-af8e-dad33c5796a8', 'time_taken', '', 'number', false, '', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.arg_positions_resource (id, args_id, value, created_at, active, generated, mcp) VALUES ('3fc2b20f-490c-4e70-89aa-7f2727b97fe3', '7c122a71-a69a-40bb-af8e-dad33c5796a8', 4, '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.args_outputs_resource (id, args_id, name, template, created_at, active, generated, mcp) VALUES ('e8573e3c-a8be-46d8-afff-66c5fc4610af', '7c122a71-a69a-40bb-af8e-dad33c5796a8', 'time_taken', '{{ time_taken }}', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('2632156a-7051-4b89-b828-eb5ebbdb9a12', 'Create a new attempt grade entry', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('1e5a73e2-2faf-4603-9879-8e758ec57853', 'create_attempt_grade', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tools_resource (id, created_at, generated, mcp, active, name, description, department_ids, operation, args_ids, args_output_ids, resources, entries, artifacts) VALUES ('e1eb9385-8cf1-4e45-9b4a-22966771c928', '2026-02-27T00:00:00.000000+00:00', false, false, true, 'create_attempt_grade', 'Create a new attempt grade entry', '{}', 'create', '{16c8272d-7a29-485c-beee-b6dd500a2607,975f046b-e31a-455d-9d78-513c99a498ec,47a7fced-b0de-4666-afb6-8f665250a5e5,d3003516-1c62-460c-a2e2-095538c48c07,7c122a71-a69a-40bb-af8e-dad33c5796a8}', '{4c1f1210-bf93-43af-b355-5b45674d1887,40a09475-2ca4-4bdc-b2bc-6b3860d576f7,34a8d5c8-cc96-4d22-bff6-6fba08645e67,4bd4c998-4b5c-416f-9e18-5046429623d1,e8573e3c-a8be-46d8-afff-66c5fc4610af}', '{}'::text[], '{attempt_grades}'::text[], '{}'::text[]) ON CONFLICT (id) DO NOTHING;
+
+-- Artifact
+-- tool_artifact
+INSERT INTO public.tool_artifact (id, created_at, updated_at, generated, mcp) VALUES ('a965537a-49d8-4e29-954f-421a81958d37', '2026-02-27T00:00:00.000000+00:00', '2026-02-27T00:00:00.000000+00:00', false, false) ON CONFLICT (id) DO NOTHING;
+
+-- Junctions
+-- tool_arg_positions_junction
+INSERT INTO public.tool_arg_positions_junction (tool_id, arg_positions_id, created_at, active, generated, mcp) VALUES ('a965537a-49d8-4e29-954f-421a81958d37', '923d5f7b-5ffe-4e7b-9725-d38666e65576', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (tool_id, arg_positions_id) DO NOTHING;
+INSERT INTO public.tool_arg_positions_junction (tool_id, arg_positions_id, created_at, active, generated, mcp) VALUES ('a965537a-49d8-4e29-954f-421a81958d37', 'fb9f6dd2-3998-4909-b237-58e331384b9d', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (tool_id, arg_positions_id) DO NOTHING;
+INSERT INTO public.tool_arg_positions_junction (tool_id, arg_positions_id, created_at, active, generated, mcp) VALUES ('a965537a-49d8-4e29-954f-421a81958d37', 'b1bc68de-ac70-4a14-9cfc-0be00de051a4', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (tool_id, arg_positions_id) DO NOTHING;
+INSERT INTO public.tool_arg_positions_junction (tool_id, arg_positions_id, created_at, active, generated, mcp) VALUES ('a965537a-49d8-4e29-954f-421a81958d37', 'de460153-51e7-430f-86c9-2b036f936079', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (tool_id, arg_positions_id) DO NOTHING;
+INSERT INTO public.tool_arg_positions_junction (tool_id, arg_positions_id, created_at, active, generated, mcp) VALUES ('a965537a-49d8-4e29-954f-421a81958d37', '3fc2b20f-490c-4e70-89aa-7f2727b97fe3', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (tool_id, arg_positions_id) DO NOTHING;
+-- tool_args_junction
+INSERT INTO public.tool_args_junction (tool_id, args_id, created_at, generated, mcp, active) VALUES ('a965537a-49d8-4e29-954f-421a81958d37', '16c8272d-7a29-485c-beee-b6dd500a2607', '2026-02-27T00:00:00.000000+00:00', false, false, true) ON CONFLICT (tool_id, args_id) DO NOTHING;
+INSERT INTO public.tool_args_junction (tool_id, args_id, created_at, generated, mcp, active) VALUES ('a965537a-49d8-4e29-954f-421a81958d37', '975f046b-e31a-455d-9d78-513c99a498ec', '2026-02-27T00:00:00.000000+00:00', false, false, true) ON CONFLICT (tool_id, args_id) DO NOTHING;
+INSERT INTO public.tool_args_junction (tool_id, args_id, created_at, generated, mcp, active) VALUES ('a965537a-49d8-4e29-954f-421a81958d37', '47a7fced-b0de-4666-afb6-8f665250a5e5', '2026-02-27T00:00:00.000000+00:00', false, false, true) ON CONFLICT (tool_id, args_id) DO NOTHING;
+INSERT INTO public.tool_args_junction (tool_id, args_id, created_at, generated, mcp, active) VALUES ('a965537a-49d8-4e29-954f-421a81958d37', 'd3003516-1c62-460c-a2e2-095538c48c07', '2026-02-27T00:00:00.000000+00:00', false, false, true) ON CONFLICT (tool_id, args_id) DO NOTHING;
+INSERT INTO public.tool_args_junction (tool_id, args_id, created_at, generated, mcp, active) VALUES ('a965537a-49d8-4e29-954f-421a81958d37', '7c122a71-a69a-40bb-af8e-dad33c5796a8', '2026-02-27T00:00:00.000000+00:00', false, false, true) ON CONFLICT (tool_id, args_id) DO NOTHING;
+-- tool_args_outputs_junction
+INSERT INTO public.tool_args_outputs_junction (tool_id, args_outputs_id, created_at, generated, mcp, active) VALUES ('a965537a-49d8-4e29-954f-421a81958d37', '4c1f1210-bf93-43af-b355-5b45674d1887', '2026-02-27T00:00:00.000000+00:00', false, false, true) ON CONFLICT (tool_id, args_outputs_id) DO NOTHING;
+INSERT INTO public.tool_args_outputs_junction (tool_id, args_outputs_id, created_at, generated, mcp, active) VALUES ('a965537a-49d8-4e29-954f-421a81958d37', '40a09475-2ca4-4bdc-b2bc-6b3860d576f7', '2026-02-27T00:00:00.000000+00:00', false, false, true) ON CONFLICT (tool_id, args_outputs_id) DO NOTHING;
+INSERT INTO public.tool_args_outputs_junction (tool_id, args_outputs_id, created_at, generated, mcp, active) VALUES ('a965537a-49d8-4e29-954f-421a81958d37', '34a8d5c8-cc96-4d22-bff6-6fba08645e67', '2026-02-27T00:00:00.000000+00:00', false, false, true) ON CONFLICT (tool_id, args_outputs_id) DO NOTHING;
+INSERT INTO public.tool_args_outputs_junction (tool_id, args_outputs_id, created_at, generated, mcp, active) VALUES ('a965537a-49d8-4e29-954f-421a81958d37', '4bd4c998-4b5c-416f-9e18-5046429623d1', '2026-02-27T00:00:00.000000+00:00', false, false, true) ON CONFLICT (tool_id, args_outputs_id) DO NOTHING;
+INSERT INTO public.tool_args_outputs_junction (tool_id, args_outputs_id, created_at, generated, mcp, active) VALUES ('a965537a-49d8-4e29-954f-421a81958d37', 'e8573e3c-a8be-46d8-afff-66c5fc4610af', '2026-02-27T00:00:00.000000+00:00', false, false, true) ON CONFLICT (tool_id, args_outputs_id) DO NOTHING;
+-- tool_entries_junction
+INSERT INTO public.tool_entries_junction (tool_id, entry_id, active, created_at, generated, mcp) VALUES ('a965537a-49d8-4e29-954f-421a81958d37', '54422ef9-a926-4c77-8da9-f2b6cb666287', true, '2026-02-27T00:00:00.000000+00:00', false, false) ON CONFLICT (tool_id, entry_id) DO NOTHING;
+-- tool_descriptions_junction
+INSERT INTO public.tool_descriptions_junction (tool_id, description_id, created_at, generated, mcp, active) VALUES ('a965537a-49d8-4e29-954f-421a81958d37', '2632156a-7051-4b89-b828-eb5ebbdb9a12', '2026-02-27T00:00:00.000000+00:00', false, false, true) ON CONFLICT (tool_id, description_id) DO NOTHING;
+-- tool_flags_junction
+INSERT INTO public.tool_flags_junction (tool_id, flag_id, value, created_at, generated, mcp, active) VALUES ('a965537a-49d8-4e29-954f-421a81958d37', '019be334-bfc6-74fb-be11-ea6b522945bb', true, '2026-02-27T00:00:00.000000+00:00', false, false, true) ON CONFLICT (tool_id, flag_id) DO NOTHING;
+-- tool_operations_junction
+INSERT INTO public.tool_operations_junction (tool_id, operation_id, created_at, active, generated, mcp) VALUES ('a965537a-49d8-4e29-954f-421a81958d37', '019d0000-0001-7000-8000-000000000002', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (tool_id, operation_id) DO NOTHING;
+-- tool_names_junction
+INSERT INTO public.tool_names_junction (tool_id, name_id, created_at, generated, mcp, active) VALUES ('a965537a-49d8-4e29-954f-421a81958d37', '1e5a73e2-2faf-4603-9879-8e758ec57853', '2026-02-27T00:00:00.000000+00:00', false, false, true) ON CONFLICT (tool_id, name_id) DO NOTHING;
+-- tool_tools_junction
+INSERT INTO public.tool_tools_junction (tool_id, tools_id, active, created_at, generated, mcp) VALUES ('a965537a-49d8-4e29-954f-421a81958d37', 'e1eb9385-8cf1-4e45-9b4a-22966771c928', true, '2026-02-27T00:00:00.000000+00:00', false, false) ON CONFLICT (tool_id, tools_id) DO NOTHING;

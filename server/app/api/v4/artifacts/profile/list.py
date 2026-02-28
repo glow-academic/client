@@ -136,7 +136,7 @@ async def get_profile_list(
 
         # user_role already fetched from context above
 
-        # Compute permissions for each staff member in Python
+        # Compute permissions for each profile in Python
         profiles_with_permissions: list[ListProfilesApiProfile] = []
         for s in result.profiles or []:
             target_is_self = getattr(s, "target_is_self", False) or False

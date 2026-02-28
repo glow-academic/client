@@ -36,7 +36,7 @@ export function normalizeUrlPathToArtifactType(urlPath: string): string {
     settings: "setting",
     
     // Special mappings
-    staff: "profile", // staff management maps to profile artifact
+    profiles: "profile", // profiles management maps to profile artifact
     practice: "simulation", // practice maps to simulation
     benchmark: "eval", // benchmark maps to eval
     
