@@ -42,7 +42,7 @@ class ArtifactMeta:
 
 # Standard endpoint sets
 _CRUD_ENDPOINTS = frozenset(
-    {"get", "list", "save", "delete", "duplicate", "draft", "docs"}
+    {"get", "list", "save", "delete", "duplicate", "draft", "docs", "export"}
 )
 _SOCKET_EVENTS = frozenset({"generate", "complete", "progress", "error"})
 
@@ -79,22 +79,22 @@ _VIEWS: dict[str, tuple[str, frozenset[str]]] = {
     "dashboard": (
         "analytics",
         frozenset(
-            {"get", "header", "primary", "secondary", "footer", "refresh", "docs"}
+            {"get", "header", "primary", "secondary", "footer", "refresh", "docs", "export"}
         ),
     ),
     # Analytics views with refresh
     "reports": ("analytics", frozenset({"get", "export", "refresh", "docs"})),
-    "leaderboard": ("leaderboard", frozenset({"get", "refresh", "docs"})),
+    "leaderboard": ("leaderboard", frozenset({"get", "refresh", "docs", "export"})),
     "activity": (
         "analytics",
         frozenset({"get", "problem", "refresh", "resolve", "docs"}),
     ),
-    "pricing": ("analytics", frozenset({"get", "refresh", "docs"})),
+    "pricing": ("analytics", frozenset({"get", "refresh", "docs", "export"})),
     "health": ("health", frozenset({"get", "refresh", "docs"})),
     "benchmark": ("benchmark", frozenset({"get", "refresh", "docs"})),
     # Simple views
-    "home": ("home", frozenset({"get"})),
-    "practice": ("practice", frozenset({"get"})),
+    "home": ("home", frozenset({"get", "export"})),
+    "practice": ("practice", frozenset({"get", "export"})),
     "attempt": ("home", frozenset({"get", "archive", "certifficate", "docs"})),
     "record": ("analytics", frozenset()),
     "session": ("analytics", frozenset({"get", "docs"})),

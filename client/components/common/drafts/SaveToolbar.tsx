@@ -103,7 +103,7 @@ export function SaveToolbar({ artifactType }: SaveToolbarProps) {
   // When there are unsaved changes, show a save button instead of the drafts dropdown
   if (showSaveButton) {
     return (
-      <div className="pr-4">
+      <div className="pr-0">
         <Button
           variant="default"
           size="sm"
@@ -128,7 +128,7 @@ export function SaveToolbar({ artifactType }: SaveToolbarProps) {
 
   // No unsaved changes — show the drafts dropdown
   return (
-    <div className="pr-4">
+    <div className="pr-0">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="default" size="sm">

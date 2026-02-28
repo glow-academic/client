@@ -96,14 +96,15 @@ export function TypeSelector({
       {currentTypes.length > 0 ? (
         <div className={cn("grid gap-1.5", getGridColumns(currentTypes.length))}>
           {currentTypes.map((item) => {
-            const isSelected = selectedTypes.includes(item.name);
+            const itemKey = `${item.name}:${item.operation}`;
+            const isSelected = selectedTypes.includes(itemKey);
             return (
               <button
-                key={item.name}
+                key={itemKey}
                 type="button"
-                onClick={() => onToggle(item.name)}
+                onClick={() => onToggle(itemKey)}
                 className={cn(
-                  "relative flex items-center justify-center rounded-md border px-2 py-1.5 text-xs font-medium transition-all",
+                  "relative flex flex-col items-center justify-center rounded-md border px-2 py-1.5 text-xs font-medium transition-all",
                   "hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   isSelected
                     ? "border-primary bg-primary/10 text-primary"
@@ -113,7 +114,8 @@ export function TypeSelector({
                 {isSelected && (
                   <Check className="absolute right-1 top-1 h-3 w-3 text-primary" />
                 )}
-                {formatLabel(item.name)}
+                <span>{formatLabel(item.name)}</span>
+                <span className="text-[10px] opacity-60">{item.operation}</span>
               </button>
             );
           })}

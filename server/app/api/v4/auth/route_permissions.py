@@ -763,12 +763,31 @@ _CORE_ARTIFACT_SECTIONS = {
 _BUNDLE_SECTIONS = {"home", "practice", "benchmark"}
 
 
+_LIST_OPS = frozenset(
+    {"get", "list", "save", "duplicate", "delete", "draft", "docs", "export", "refresh"}
+)
+_DETAIL_OPS = frozenset({"get", "draft", "docs", "refresh"})
+_RESOURCE_MUTATION_OPS = frozenset({"create", "link", "docs"})
+_ENTRY_OPS = frozenset({"get", "search", "create", "refresh", "docs"})
+
+
 def _resolve_valid_types(
     artifact_type: str | None,
+    *,
+    is_list: bool = False,
+    is_detail: bool = False,
 ) -> tuple[list[TypeItem], list[TypeItem], list[TypeItem]]:
     """Look up the generation registry for the given artifact_type and return
-    (valid_artifact_types, valid_resource_types, valid_entry_types) with default
-    operations: artifacts→get, resources→create, entries→get."""
+    (valid_artifact_types, valid_resource_types, valid_entry_types).
+
+    Artifact operations are context-aware:
+    - List pages: get, list, save, duplicate, delete, draft, docs, export
+    - Detail pages: get, draft, docs
+    - Fallback: all endpoints declared in ArtifactMeta
+
+    Resource operations emit create/link/docs for each implemented resource.
+    Entry operations keep the simple get-per-type pattern.
+    """
     if not artifact_type:
         return [], [], []
 
@@ -781,13 +800,40 @@ def _resolve_valid_types(
     if not config:
         return [], [], []
 
-    valid_artifact_types = [TypeItem(name=artifact_type, operation="get")]
-    valid_resource_types = [
-        TypeItem(name=rt, operation="create") for rt in config.valid_resource_types
-    ]
-    valid_entry_types = [
-        TypeItem(name=et, operation="get") for et in config.entry_types
-    ]
+    # --- Artifact operations (context-aware) ---
+    from app.registry.artifacts import ARTIFACTS
+    from app.registry.operations import ARTIFACT_OPS
+
+    if is_list:
+        allowed_ops = _LIST_OPS
+    elif is_detail:
+        allowed_ops = _DETAIL_OPS
+    else:
+        meta = ARTIFACTS.get(artifact_type)
+        allowed_ops = meta.endpoints if meta else frozenset({"get"})
+
+    valid_artifact_types: list[TypeItem] = []
+    for op in sorted(allowed_ops):
+        if ARTIFACT_OPS.get((artifact_type, op)) is not None:
+            valid_artifact_types.append(TypeItem(name=artifact_type, operation=op))
+
+    # --- Resource operations (create/link/docs where implemented) ---
+    from app.registry.operations import RESOURCE_OPS
+
+    valid_resource_types: list[TypeItem] = []
+    for rt in config.valid_resource_types:
+        for op in sorted(_RESOURCE_MUTATION_OPS):
+            if RESOURCE_OPS.get((rt, op)) is not None:
+                valid_resource_types.append(TypeItem(name=rt, operation=op))
+
+    # --- Entry operations (all implemented ops per entry type) ---
+    from app.registry.operations import ENTRY_OPS
+
+    valid_entry_types: list[TypeItem] = []
+    for et in config.entry_types:
+        for op in sorted(_ENTRY_OPS):
+            if ENTRY_OPS.get((et, op)) is not None:
+                valid_entry_types.append(TypeItem(name=et, operation=op))
     return valid_artifact_types, valid_resource_types, valid_entry_types
 
 
@@ -893,7 +939,7 @@ def compute_page_metadata(
 
     # Resolve valid generation types from the server registry
     valid_artifact_types, valid_resource_types, valid_entry_types = (
-        _resolve_valid_types(artifact_type)
+        _resolve_valid_types(artifact_type, is_list=is_list, is_detail=is_detail)
     )
 
     return PageMetadata(

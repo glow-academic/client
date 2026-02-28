@@ -15,10 +15,10 @@ from pydantic import BaseModel, model_validator
 # ---------------------------------------------------------------------------
 
 ArtifactOperation = Literal[
-    "get", "list", "duplicate", "delete", "draft", "save", "docs"
+    "get", "list", "duplicate", "delete", "draft", "save", "docs", "export", "refresh"
 ]
 ResourceOperation = Literal["get", "create", "link", "search", "docs"]
-EntryOperation = Literal["get", "search", "docs", "create"]
+EntryOperation = Literal["get", "search", "docs", "create", "refresh"]
 
 
 class ArtifactTypeItem(BaseModel):

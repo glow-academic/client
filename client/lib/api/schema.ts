@@ -21978,7 +21978,7 @@ export interface components {
              * Operation
              * @enum {string}
              */
-            operation: "get" | "list" | "duplicate" | "delete" | "draft" | "save" | "docs";
+            operation: "get" | "list" | "duplicate" | "delete" | "draft" | "save" | "docs" | "export" | "refresh";
         };
         /** ArtifactsGenerationEvent */
         ArtifactsGenerationEvent: {
@@ -27291,7 +27291,7 @@ export interface components {
              * Operation
              * @enum {string}
              */
-            operation: "get" | "search" | "docs" | "create";
+            operation: "get" | "search" | "docs" | "create" | "refresh";
         };
         /**
          * EvalAgentItem
