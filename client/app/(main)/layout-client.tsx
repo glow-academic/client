@@ -166,6 +166,9 @@ function MainLayoutContent({
     groupId: groupContext.groupId,
     getGenerateMessagesAction,
     initialPanelOpen,
+    validArtifactTypes,
+    validResourceTypes,
+    validEntryTypes,
   });
 
   return (

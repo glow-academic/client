@@ -15,6 +15,7 @@ import type {
   GenerateMessagesIn,
   GenerateMessagesOut,
 } from "@/app/(main)/layout-server";
+import type { TypeItem } from "@/components/common/ai/types";
 
 export type PanelTab = "artifacts" | "resources" | "entries";
 
@@ -34,6 +35,10 @@ export interface UseGenerationPanelConfig {
   getGenerateMessagesAction: (input: GenerateMessagesIn) => Promise<GenerateMessagesOut>;
   /** Initial panel open state from SSR cookie */
   initialPanelOpen?: boolean;
+  /** Valid type lists — selections default to all */
+  validArtifactTypes?: TypeItem[];
+  validResourceTypes?: TypeItem[];
+  validEntryTypes?: TypeItem[];
 }
 
 export interface UseGenerationPanelReturn {
@@ -66,10 +71,17 @@ export interface UseGenerationPanelReturn {
 
 const PAGE_SIZE = 50;
 
+function typeItemKeys(items: TypeItem[]): string[] {
+  return items.map((i) => `${i.name}:${i.operation}`);
+}
+
 export function useGenerationPanel({
   groupId: groupIdProp,
   getGenerateMessagesAction,
   initialPanelOpen,
+  validArtifactTypes = [],
+  validResourceTypes = [],
+  validEntryTypes = [],
 }: UseGenerationPanelConfig): UseGenerationPanelReturn {
   const groupContext = useGroupIdOptional();
   const groupId = groupIdProp ?? groupContext?.groupId ?? null;
@@ -165,15 +177,37 @@ export function useGenerationPanel({
     getGenerateMessagesAction,
   ]);
 
-  // Type selection
+  // Type selection — default to all types selected
   const [activeTab, setActiveTab] = useState<PanelTab>("resources");
   const [selectedArtifactTypes, setSelectedArtifactTypes] = useState<string[]>(
-    [],
+    () => typeItemKeys(validArtifactTypes),
   );
   const [selectedResourceTypes, setSelectedResourceTypes] = useState<string[]>(
-    [],
+    () => typeItemKeys(validResourceTypes),
   );
-  const [selectedEntryTypes, setSelectedEntryTypes] = useState<string[]>([]);
+  const [selectedEntryTypes, setSelectedEntryTypes] = useState<string[]>(
+    () => typeItemKeys(validEntryTypes),
+  );
+
+  // Sync selections when valid types change (e.g. page navigation)
+  const prevArtifactRef = useRef(validArtifactTypes);
+  const prevResourceRef = useRef(validResourceTypes);
+  const prevEntryRef = useRef(validEntryTypes);
+
+  useEffect(() => {
+    if (prevArtifactRef.current !== validArtifactTypes) {
+      prevArtifactRef.current = validArtifactTypes;
+      setSelectedArtifactTypes(typeItemKeys(validArtifactTypes));
+    }
+    if (prevResourceRef.current !== validResourceTypes) {
+      prevResourceRef.current = validResourceTypes;
+      setSelectedResourceTypes(typeItemKeys(validResourceTypes));
+    }
+    if (prevEntryRef.current !== validEntryTypes) {
+      prevEntryRef.current = validEntryTypes;
+      setSelectedEntryTypes(typeItemKeys(validEntryTypes));
+    }
+  }, [validArtifactTypes, validResourceTypes, validEntryTypes]);
 
   const toggleArtifactType = useCallback((type: string) => {
     setSelectedArtifactTypes((prev) =>

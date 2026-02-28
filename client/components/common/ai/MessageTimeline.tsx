@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import type { GroupMessage } from "@/hooks/use-generation-panel";
+import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 interface MessageTimelineProps {
   messages: GroupMessage[];
@@ -29,14 +29,6 @@ export function MessageTimeline({
     }
     prevLengthRef.current = messages.length;
   }, [messages.length]);
-
-  if (messages.length === 0 && !isLoading) {
-    return (
-      <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-        No messages yet. Select a group to view messages.
-      </div>
-    );
-  }
 
   const hasMore = messages.length < totalCount;
 
@@ -71,24 +63,19 @@ export function MessageTimeline({
         return (
           <div
             key={msg.message_id ?? i}
-            className={cn(
-              "flex",
-              isUser ? "justify-end" : "justify-start",
-            )}
+            className={cn("flex", isUser ? "justify-end" : "justify-start")}
           >
             <div
               className={cn(
                 "max-w-[85%] rounded-lg px-3 py-2 text-sm",
                 isUser
                   ? "bg-primary/10 text-foreground"
-                  : "bg-muted text-foreground",
+                  : "bg-muted text-foreground"
               )}
             >
               <p className="whitespace-pre-wrap break-words">{content}</p>
               {time && (
-                <p className="mt-1 text-[10px] text-muted-foreground">
-                  {time}
-                </p>
+                <p className="mt-1 text-[10px] text-muted-foreground">{time}</p>
               )}
             </div>
           </div>
