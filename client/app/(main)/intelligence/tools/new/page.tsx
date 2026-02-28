@@ -4,6 +4,7 @@
  */
 
 import Tool from "@/components/artifacts/tool/Tool";
+import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -127,12 +128,16 @@ export default async function NewToolPage({
   const loadToolSearchParams = createLoader(toolSearchParams);
   const q = loadToolSearchParams(searchParamsObj);
 
+  // Resolve group_id from layout context (cached per request)
+  const groupId = await resolveGroupId(q.draftId ?? null, "tool");
+
   // Fetch tool default data (for dropdowns and defaults) with draft_id
   const input: GetToolIn = {
     body: {
       tool_id: null,
       draft_id: q.draftId ?? null,
-    },
+      group_id: groupId,
+    } as GetToolIn["body"],
   };
   const toolDetailDefault = await getToolDefault(input);
 

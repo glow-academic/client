@@ -28670,6 +28670,8 @@ export interface components {
             auth_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
         };
         /**
          * GetAuthApiResponse
@@ -29464,6 +29466,8 @@ export interface components {
             field_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
             /** Description Search */
             description_search?: string | null;
             /** Conditional Parameter Search */
@@ -29950,6 +29954,8 @@ export interface components {
             model_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
         };
         /**
          * GetModelApiResponse
@@ -30630,6 +30636,8 @@ export interface components {
             provider_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
         };
         /**
          * GetProviderApiResponse
@@ -30842,6 +30850,8 @@ export interface components {
             rubric_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
             /** Description Search */
             description_search?: string | null;
             /** Standard Group Search */
@@ -31282,6 +31292,8 @@ export interface components {
             color_search?: string | null;
             /** Draft Id */
             draft_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
             /**
              * Mcp
              * @default false
@@ -31741,6 +31753,8 @@ export interface components {
             tool_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
         };
         /** GetToolApiResponse */
         GetToolApiResponse: {

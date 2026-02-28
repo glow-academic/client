@@ -6,6 +6,7 @@
  */
 
 import Document from "@/components/artifacts/document/Document";
+import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -147,11 +148,15 @@ export default async function NewDocumentPage({
   const loadDocumentSearchParams = createLoader(documentSearchParams);
   const q = loadDocumentSearchParams(searchParamsObj);
 
+  // Resolve group_id from layout context (cached per request)
+  const groupId = await resolveGroupId(q.draftId ?? null, "document");
+
   // Fetch default document detail server-side with filter params and draft_id
   const input: GetDocumentIn = {
     body: {
       document_id: null, // NULL for new mode
       draft_id: q.draftId ?? null,
+      group_id: groupId,
     } as GetDocumentIn["body"],
   };
   const documentDetailDefault = await getDocumentDefault(input);

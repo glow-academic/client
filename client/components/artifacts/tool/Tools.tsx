@@ -41,9 +41,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
-import { useGenerationModal } from "@/hooks/use-generation-modal";
 
 export interface ToolsProps {
   // Server-provided data (for server-side rendering)
@@ -74,32 +72,10 @@ export default function Tools({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Generation modal via shared hook
-  type ToolResourceType = "names" | "descriptions" | "args" | "arg_positions" | "args_outputs" | "flags";
-  const { generate } = useArtifactAi({
+  useArtifactAi({
     artifactType: "tool",
-    groupId: null,
     validResourceTypes: ["names", "descriptions", "args", "arg_positions", "args_outputs", "flags"],
-  });
-  const { handleOpenStepCardModal, modalProps } = useGenerationModal<ToolResourceType>({
-    stepResources: {
-      all: ["names", "descriptions", "args", "arg_positions", "args_outputs", "flags"],
-    },
-    resourceLabels: {
-      names: "Name",
-      descriptions: "Description",
-      args: "Arguments",
-      arg_positions: "Argument Positions",
-      args_outputs: "Argument Outputs",
-      flags: "Configuration",
-    },
-    canRegenerate: () => true,
-    onGenerate: (selectedResources, instructions) => {
-      generate(selectedResources, {
-        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-      });
-    },
-    isGenerating: () => false,
+    onComplete: () => router.refresh(),
   });
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -715,7 +691,6 @@ export default function Tools({
         </AlertDialogContent>
       </AlertDialog>
 
-      <GenerateRegenerateModal {...modalProps} />
     </div>
   );
 }

@@ -5,6 +5,7 @@
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import Tool from "@/components/artifacts/tool/Tool";
+import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -135,13 +136,17 @@ export default async function ToolDetailPage({
   const loadToolSearchParams = createLoader(toolSearchParams);
   const q = loadToolSearchParams(searchParamsObj);
 
+  // Resolve group_id from layout context (cached per request)
+  const groupId = await resolveGroupId(q.draftId ?? null, "tool");
+
   // Fetch tool detail with draft_id
   try {
     const input: GetToolIn = {
       body: {
         tool_id: toolId,
         draft_id: q.draftId ?? null,
-      },
+        group_id: groupId,
+      } as GetToolIn["body"],
     };
     const toolDetail = await getTool(input);
 

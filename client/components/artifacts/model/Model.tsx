@@ -24,7 +24,6 @@ import {
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { ProviderCardGrid } from "@/components/artifacts/model/ProviderCardGrid";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Descriptions } from "@/components/resources/Descriptions";
@@ -42,7 +41,6 @@ import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
-import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   buildDraftPayload,
@@ -312,7 +310,6 @@ function ModelComponent({
   // AI generation via shared hook
   const { isGenerating, generate } = useArtifactAi({
     artifactType: "model",
-    groupId: s?.group_id,
     validResourceTypes: MODEL_VALID_RESOURCE_TYPES as string[],
   });
 
@@ -692,31 +689,15 @@ function ModelComponent({
     [canRegenerate],
   );
 
-  const resourceLabels: Partial<Record<ResourceType, string>> = useMemo(
-    () => ({
-      names: "Names",
-      descriptions: "Descriptions",
-      flags: "Flags",
-      modalities: "Modalities",
-      temperature_levels: "Temperature",
-      pricing: "Pricing",
-      reasoning_levels: "Reasoning",
-      voices: "Voices",
-      qualities: "Qualities",
-    }),
-    [],
+  const handleDirectStepGenerate = useCallback(
+    (stepId: string, _mode: "generate" | "regenerate") => {
+      const resources = stepResources[stepId];
+      if (resources) {
+        handleGenerateResources(resources);
+      }
+    },
+    [stepResources, handleGenerateResources],
   );
-
-  const { handleOpenStepCardModal, modalProps } =
-    useGenerationModal<ResourceType>({
-      stepResources,
-      resourceLabels,
-      canRegenerate,
-      onGenerate: (selectedResources, instructions) => {
-        handleGenerateResources(selectedResources as ResourceType[], instructions);
-      },
-      isGenerating,
-    });
 
   // Submit handler - builds nested resource actions for save
   const handleSubmit = useCallback(
@@ -1150,7 +1131,6 @@ function ModelComponent({
                   defaultName="New Model"
                   required={s?.names?.required ?? true}
                   hideDescription={true}
-                  group_id={s?.group_id ?? null}
                   create_tool_id={s?.names?.create_tool_id ?? null}
                   showAiGenerate={s?.names?.show_ai_generate ?? false}
                   createNamesAction={createNamesAction}
@@ -1182,7 +1162,7 @@ function ModelComponent({
                     resourceTypes={stepResources["basic"]}
                     canRegenerate={canRegenerateForStepCard}
                     isGenerating={isGenerating}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -1206,7 +1186,6 @@ function ModelComponent({
                   onGenerate={handleGenerateDescription}
                   placeholder="Enter a brief description"
                   required={s?.descriptions?.required ?? false}
-                  group_id={s?.group_id ?? null}
                   create_tool_id={s?.descriptions?.create_tool_id ?? null}
                   showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
                   createDescriptionsAction={createDescriptionsAction}
@@ -1249,7 +1228,6 @@ function ModelComponent({
                   placeholder="Select model value identifier (e.g., gpt-4, gemini-pro)"
                   required={s?.values?.required ?? true}
                   description="Unique identifier for this model (used in API calls)"
-                  group_id={s?.group_id ?? null}
                   create_tool_id={s?.values?.create_tool_id ?? null}
                   showAiGenerate={s?.values?.show_ai_generate ?? false}
                   createValuesAction={createValuesAction}
@@ -1306,7 +1284,6 @@ function ModelComponent({
                   onChange={(id) =>
                     setFormState((prev) => ({ ...prev, active_flag_id: id }))
                   }
-                  group_id={s?.group_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
 
@@ -1324,7 +1301,6 @@ function ModelComponent({
                       modality_ids: id ? prev.modality_ids : [],
                     }));
                   }}
-                  group_id={s?.group_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
 
@@ -1344,7 +1320,6 @@ function ModelComponent({
                         : [],
                     }));
                   }}
-                  group_id={s?.group_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
 
@@ -1362,7 +1337,6 @@ function ModelComponent({
                       pricing_ids: id ? prev.pricing_ids : [],
                     }));
                   }}
-                  group_id={s?.group_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
 
@@ -1380,7 +1354,6 @@ function ModelComponent({
                       voice_ids: id ? prev.voice_ids : [],
                     }));
                   }}
-                  group_id={s?.group_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
 
@@ -1400,7 +1373,6 @@ function ModelComponent({
                       reasoning_level_ids: id ? prev.reasoning_level_ids : [],
                     }));
                   }}
-                  group_id={s?.group_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
 
@@ -1418,7 +1390,6 @@ function ModelComponent({
                       quality_ids: id ? prev.quality_ids : [],
                     }));
                   }}
-                  group_id={s?.group_id ?? null}
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
                 />
               </div>
@@ -1498,7 +1469,7 @@ function ModelComponent({
                     resourceTypes={stepResources["modalities"]}
                     canRegenerate={canRegenerateForStepCard}
                     isGenerating={isGenerating}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -1529,7 +1500,6 @@ function ModelComponent({
                 label="Modalities"
                 placeholder="Select modalities"
                 required={s?.modalities?.required ?? true}
-                group_id={s?.group_id ?? null}
                 showAiGenerate={s?.modalities?.show_ai_generate ?? false}
                 onGenerate={handleGenerateModalities}
               />
@@ -1563,7 +1533,7 @@ function ModelComponent({
                     resourceTypes={stepResources["temperature"]}
                     canRegenerate={canRegenerateForStepCard}
                     isGenerating={isGenerating}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -1614,7 +1584,6 @@ function ModelComponent({
                 label="Temperature Levels"
                 placeholder="Select temperature levels"
                 required={s?.temperature_levels?.required ?? false}
-                group_id={s?.group_id ?? null}
                 showAiGenerate={
                   s?.temperature_levels?.show_ai_generate ?? false
                 }
@@ -1650,7 +1619,7 @@ function ModelComponent({
                     resourceTypes={stepResources["pricing"]}
                     canRegenerate={canRegenerateForStepCard}
                     isGenerating={isGenerating}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -1683,7 +1652,6 @@ function ModelComponent({
                 label="Pricing"
                 placeholder="Select pricing configurations"
                 required={s?.pricing?.required ?? false}
-                group_id={s?.group_id ?? null}
                 showAiGenerate={s?.pricing?.show_ai_generate ?? false}
                 createPricingAction={createPricingAction}
                 onGenerate={handleGeneratePricing}
@@ -1720,7 +1688,7 @@ function ModelComponent({
                     resourceTypes={stepResources["reasoning"]}
                     canRegenerate={canRegenerateForStepCard}
                     isGenerating={isGenerating}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -1768,7 +1736,6 @@ function ModelComponent({
                 label="Reasoning Levels"
                 placeholder="Select reasoning levels"
                 required={s?.reasoning_levels?.required ?? false}
-                group_id={s?.group_id ?? null}
                 showAiGenerate={
                   s?.reasoning_levels?.show_ai_generate ?? false
                 }
@@ -1804,7 +1771,7 @@ function ModelComponent({
                     resourceTypes={stepResources["voices"]}
                     canRegenerate={canRegenerateForStepCard}
                     isGenerating={isGenerating}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -1822,7 +1789,6 @@ function ModelComponent({
                 }
                 label="Voices"
                 required={s?.voices?.required ?? false}
-                group_id={s?.group_id ?? null}
                 createVoicesAction={createVoicesAction}
                 onGenerate={handleGenerateVoices}
                 isAutosaveEnabled={isAutosaveEnabled}
@@ -1858,7 +1824,7 @@ function ModelComponent({
                     resourceTypes={stepResources["qualities"]}
                     canRegenerate={canRegenerateForStepCard}
                     isGenerating={isGenerating}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -1889,7 +1855,6 @@ function ModelComponent({
                 label="Qualities"
                 placeholder="Select quality levels"
                 required={s?.qualities?.required ?? false}
-                group_id={s?.group_id ?? null}
                 showAiGenerate={s?.qualities?.show_ai_generate ?? false}
                 onGenerate={handleGenerateQualities}
               />
@@ -1944,7 +1909,6 @@ function ModelComponent({
           setUrlFormDataRef.current = setter;
         }}
       />
-      <GenerateRegenerateModal {...modalProps} />
     </div>
   );
 }

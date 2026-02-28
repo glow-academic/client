@@ -70,6 +70,8 @@ class ToolArgPositionSection(BaseResourceSection):
 class GetToolApiRequest(BaseModel):
     tool_id: UUID | None = None
     draft_id: UUID | None = None
+    # Optional group_id from layout context (avoids server-side creation)
+    group_id: UUID | None = None
 
 
 class GetToolApiResponse(BaseModel):

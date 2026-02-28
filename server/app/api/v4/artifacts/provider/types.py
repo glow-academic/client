@@ -78,6 +78,7 @@ class GetProviderApiRequest(BaseModel):
 
     provider_id: UUID | None = None
     draft_id: UUID | None = None
+    group_id: UUID | None = None
 
 
 class GetProviderApiResponse(BaseModel):

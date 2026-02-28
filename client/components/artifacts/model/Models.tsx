@@ -32,9 +32,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
-import { useGenerationModal } from "@/hooks/use-generation-modal";
 import { useProfile } from "@/contexts/profile-context";
 import {
   ColumnDef,
@@ -92,36 +90,11 @@ export default function Models({
   const searchParams = useSearchParams();
   const { profile } = useProfile();
 
-  // Generation modal via shared hook
-  type ModelResourceType = "names" | "descriptions" | "values" | "providers" | "flags" | "departments" | "modalities" | "temperature_levels" | "pricing" | "reasoning_levels";
-  const { generate } = useArtifactAi({
+  // AI generation listener
+  useArtifactAi({
     artifactType: "model",
-    groupId: null,
     validResourceTypes: ["names", "descriptions", "values", "providers", "flags", "departments", "modalities", "temperature_levels", "pricing", "reasoning_levels"],
-  });
-  const { handleOpenStepCardModal, modalProps } = useGenerationModal<ModelResourceType>({
-    stepResources: {
-      all: ["names", "descriptions", "values", "providers", "flags", "departments", "modalities", "temperature_levels", "pricing", "reasoning_levels"],
-    },
-    resourceLabels: {
-      names: "Name",
-      descriptions: "Description",
-      values: "Values",
-      providers: "Providers",
-      flags: "Configuration",
-      departments: "Departments",
-      modalities: "Modalities",
-      temperature_levels: "Temperature Levels",
-      pricing: "Pricing",
-      reasoning_levels: "Reasoning Levels",
-    },
-    canRegenerate: () => true,
-    onGenerate: (selectedResources, instructions) => {
-      generate(selectedResources, {
-        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-      });
-    },
-    isGenerating: () => false,
+    onComplete: () => router.refresh(),
   });
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -853,7 +826,6 @@ export default function Models({
           </AlertDialogContent>
         </AlertDialog>
 
-        <GenerateRegenerateModal {...modalProps} />
       </div>
     </TooltipProvider>
   );

@@ -5,6 +5,7 @@
 
 import Auth from "@/components/artifacts/auth/Auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -141,12 +142,15 @@ export default async function AuthEditPage({
   const loadAuthSearchParams = createLoader(authSearchParams);
   const q = loadAuthSearchParams(searchParamsObj);
 
+  const groupId = await resolveGroupId(q.draftId ?? null, "auth");
+
   // Fetch auth detail (always fresh - source of truth) with draft_id
   try {
     const input: GetAuthIn = {
       body: {
         auth_id: authId,
         draft_id: q.draftId ?? null,
+        group_id: groupId,
       } as GetAuthIn["body"],
     };
     const authData = await getAuth(input);

@@ -14,7 +14,6 @@ import {
 } from "@/components/common/forms/GenericForm";
 import { StepCard } from "@/components/common/forms/StepCard";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
@@ -27,7 +26,6 @@ import { useDrafts } from "@/contexts/draft-context";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
-import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   type ResourceConfig,
@@ -203,11 +201,8 @@ function FieldComponent({
     });
   }, [getInitialFormState]);
 
-  const groupId = fieldData?.group_id;
-
   const { isGenerating, generate } = useArtifactAi({
     artifactType: "field",
-    groupId: groupId,
     validResourceTypes: [
       "names",
       "descriptions",
@@ -372,24 +367,15 @@ function FieldComponent({
     [],
   );
 
-  const resourceLabels = useMemo(
-    () => ({
-      names: "Names",
-      descriptions: "Descriptions",
-      flags: "Flags",
-      departments: "Departments",
-      conditional_parameters: "Conditional Parameters",
-    }),
-    [],
+  const handleDirectStepGenerate = useCallback(
+    (stepId: string, _mode: "generate" | "regenerate") => {
+      const resources = stepResources[stepId];
+      if (resources) {
+        handleGenerateResources(resources);
+      }
+    },
+    [stepResources, handleGenerateResources],
   );
-
-  const { handleOpenStepCardModal, modalProps } = useGenerationModal<FieldResourceType>({
-    stepResources,
-    resourceLabels,
-    canRegenerate,
-    onGenerate: handleGenerateResources,
-    isGenerating,
-  });
 
   const fieldSearchParamsClient = useMemo(
     () => ({
@@ -581,7 +567,7 @@ function FieldComponent({
                 onNameIdChange={(name_id) =>
                   setFormState((prev) => ({ ...prev, name_id }))
                 }
-                group_id={stableFieldData?.group_id ?? null}
+
                 required={stableFieldData?.names?.required ?? false}
                 showAiGenerate={stableFieldData?.names?.show_ai_generate ?? false}
                 create_tool_id={stableFieldData?.names?.create_tool_id ?? null}
@@ -598,7 +584,7 @@ function FieldComponent({
                   resourceTypes={stepResources.basic}
                   canRegenerate={canRegenerate}
                   isGenerating={isGenerating}
-                  onOpenModal={handleOpenStepCardModal}
+                  onOpenModal={handleDirectStepGenerate}
                   disabled={disabled}
                 />
               ) : undefined
@@ -619,7 +605,7 @@ function FieldComponent({
                   setFormState((prev) => ({ ...prev, description_id }))
                 }
                 required={stableFieldData?.descriptions?.required ?? false}
-                group_id={stableFieldData?.group_id ?? null}
+
                 showAiGenerate={
                   stableFieldData?.descriptions?.show_ai_generate ?? false
                 }
@@ -649,7 +635,7 @@ function FieldComponent({
                   setFormState((prev) => ({ ...prev, department_ids }))
                 }
                 required={stableFieldData?.departments?.required ?? false}
-                group_id={stableFieldData?.group_id ?? null}
+
                 showAiGenerate={
                   stableFieldData?.departments?.show_ai_generate ?? false
                 }
@@ -708,7 +694,7 @@ function FieldComponent({
                 resourceTypes={stepResources.conditional}
                 canRegenerate={canRegenerate}
                 isGenerating={isGenerating}
-                onOpenModal={handleOpenStepCardModal}
+                onOpenModal={handleDirectStepGenerate}
                 disabled={disabled}
               />
             ) : undefined
@@ -730,7 +716,6 @@ function FieldComponent({
               setFormState((prev) => ({ ...prev, conditional_parameter_ids }))
             }
             required={stableFieldData?.conditional_parameters?.required ?? false}
-            group_id={stableFieldData?.group_id ?? null}
             showAiGenerate={
               stableFieldData?.conditional_parameters?.show_ai_generate ?? false
             }
@@ -752,7 +737,7 @@ function FieldComponent({
       formState.description_id,
       formState.name_id,
       handleGenerateResources,
-      handleOpenStepCardModal,
+      handleDirectStepGenerate,
       isAutosaveEnabled,
       isEditMode,
       isGenerating,
@@ -812,7 +797,6 @@ function FieldComponent({
           }}
         />
 
-        <GenerateRegenerateModal {...modalProps} />
       </div>
     </TooltipProvider>
   );

@@ -140,6 +140,7 @@ async def get_auth_internal(
     auth_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    group_id: UUID | None = None,
 ) -> AuthInternalData:
     pool = get_pool()
     if not pool:
@@ -195,7 +196,10 @@ async def get_auth_internal(
             raise HTTPException(status_code=404, detail=f"Auth {auth_id} not found")
 
         # group_id is guaranteed by SQL (created inline if no draft)
-        effective_group_id = access_result.group_id
+        if group_id:
+            effective_group_id = group_id
+        else:
+            effective_group_id = access_result.group_id
         effective_draft_version = access_result.effective_draft_version
 
         ids_result = cast(
@@ -656,6 +660,7 @@ async def get_auth_client(
     auth_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    group_id: UUID | None = None,
 ) -> GetAuthApiResponse:
     """BFF response for HTTP endpoint/frontend."""
     data = await get_auth_internal(
@@ -663,6 +668,7 @@ async def get_auth_client(
         auth_id=auth_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
+        group_id=group_id,
     )
 
     return GetAuthApiResponse(
@@ -789,6 +795,7 @@ async def get_auth(
             auth_id=request.auth_id,
             draft_id=request.draft_id,
             bypass_cache=bypass_cache,
+            group_id=request.group_id,
         )
 
         if response_data.actor_name:

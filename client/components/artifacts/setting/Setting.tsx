@@ -989,7 +989,7 @@ function SettingComponent({
                   defaultName="New Setting"
                   required={currentSettingData?.name_required ?? false}
                   hideDescription={true}
-                  group_id={currentSettingData?.group_id ?? null}
+
                   createNamesAction={
                     createNamesAction as
                       | ((
@@ -1086,7 +1086,7 @@ function SettingComponent({
                   required={currentSettingData?.description_required ?? false}
                   rows={4}
                   data-testid="input-setting-description"
-                  group_id={currentSettingData?.group_id ?? null}
+
                   createDescriptionsAction={createDescriptionsAction}
                 />
 
@@ -1108,7 +1108,7 @@ function SettingComponent({
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
                   }
                   required={currentSettingData?.departments_required ?? false}
-                  group_id={currentSettingData?.group_id ?? null}
+
                 />
 
                 {/* Active Switch - using Flags resource component */}
@@ -1125,7 +1125,7 @@ function SettingComponent({
                       active_flag_id: flagId,
                     }))
                   }
-                  group_id={currentSettingData?.group_id ?? null}
+
                 />
               </div>
             </StepCard>
@@ -1235,7 +1235,7 @@ function SettingComponent({
                   setStepFormData({ colorShowSelected: value || null })
                 }
                 required={currentSettingData?.colors_required ?? false}
-                group_id={currentSettingData?.group_id ?? null}
+
                 createColorsAction={createColorsAction}
               />
             </StepCard>
@@ -1282,7 +1282,7 @@ function SettingComponent({
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, role_route_ids: ids }))
                   }
-                  group_id={currentSettingData?.group_id ?? null}
+
                   label="Role Routes"
                   description="Configure which routes each role can access"
                 />
@@ -1332,7 +1332,7 @@ function SettingComponent({
                     setFormState((prev) => ({ ...prev, auth_ids: ids }))
                   }
                   required={currentSettingData?.auths_required ?? false}
-                  group_id={currentSettingData?.group_id ?? null}
+
                 />
 
                 <ProviderKeys
@@ -1441,22 +1441,6 @@ function SettingComponent({
           }}
         />
 
-        {/* Generate/Regenerate Modal */}
-        {modalMode && (
-          <GenerateRegenerateModal
-            open={showGenerateModal}
-            onOpenChange={setShowGenerateModal}
-            resources={modalResources}
-            onResourcesChange={setModalResources}
-            instructions={modalInstructions}
-            onInstructionsChange={setModalInstructions}
-            onGenerate={handleModalGenerate}
-            isGenerating={modalResources.some((r) =>
-              isGenerating(r.id as ResourceType)
-            )}
-            mode={modalMode}
-          />
-        )}
       </div>
     </TooltipProvider>
   );

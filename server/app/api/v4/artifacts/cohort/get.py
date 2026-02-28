@@ -213,6 +213,7 @@ async def get_cohort_internal(
     simulation_show_selected: bool | None = None,
     profile_search: str | None = None,
     profile_show_selected: bool | None = None,
+    group_id: UUID | None = None,
 ) -> CohortInternalData:
     """Core data fetching layer (cacheable).
 
@@ -266,7 +267,9 @@ async def get_cohort_internal(
                 draft_item = draft_items[0]
 
     # === GROUP ID: Create in Python (moved from SQL side-effect) ===
-    if draft_item and draft_item.group_id:
+    if group_id:
+        effective_group_id = group_id
+    elif draft_item and draft_item.group_id:
         effective_group_id = draft_item.group_id
     else:
         async with pool.acquire() as c:

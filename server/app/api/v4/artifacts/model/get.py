@@ -204,6 +204,7 @@ async def get_model_internal(
     model_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    group_id: UUID | None = None,
 ) -> ModelInternalData:
     """Core data fetching layer (cacheable)."""
     pool = get_pool()
@@ -272,7 +273,10 @@ async def get_model_internal(
                 )
 
         # group_id is guaranteed by SQL (created inline if no draft)
-        effective_group_id = access_result.group_id
+        if group_id:
+            effective_group_id = group_id
+        else:
+            effective_group_id = access_result.group_id
         effective_draft_version = access_result.effective_draft_version
 
         # === QUERY 2: ID Fetching ===
@@ -921,6 +925,7 @@ async def get_model_client(
     model_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    group_id: UUID | None = None,
 ) -> GetModelApiResponse:
     """BFF response for HTTP endpoint/frontend."""
     data = await get_model_internal(
@@ -928,6 +933,7 @@ async def get_model_client(
         model_id=model_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
+        group_id=group_id,
     )
 
     def section_common(resource_key: str) -> dict[str, Any]:
@@ -1052,6 +1058,7 @@ async def get_model(
             model_id=request.model_id,
             draft_id=request.draft_id,
             bypass_cache=bypass_cache,
+            group_id=request.group_id,
         )
 
         # Set audit context

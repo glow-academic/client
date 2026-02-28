@@ -7,6 +7,7 @@
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import Document from "@/components/artifacts/document/Document";
+import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -122,10 +123,11 @@ async function createDraftTexts(
 
 const getDocument = async (
   documentId: string,
-  draftId: string | null
+  draftId: string | null,
+  groupId?: string,
 ): Promise<GetDocumentOut> => {
   return getDocumentDefault({
-    body: { document_id: documentId, draft_id: draftId },
+    body: { document_id: documentId, draft_id: draftId, group_id: groupId ?? null },
   });
 };
 
@@ -160,9 +162,12 @@ export default async function DocumentEditPage({
   const loadDocumentSearchParams = createLoader(documentSearchParams);
   const q = loadDocumentSearchParams(searchParamsObj);
 
+  // Resolve group_id from layout context (cached per request)
+  const groupId = await resolveGroupId(q.draftId ?? null, "document");
+
   // Fetch document detail (always fresh - source of truth) with draft_id
   try {
-    const documentDetail = await getDocument(documentId, q.draftId ?? null);
+    const documentDetail = await getDocument(documentId, q.draftId ?? null, groupId);
 
     return (
       <div

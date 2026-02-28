@@ -110,6 +110,8 @@ class GetSettingApiRequest(BaseModel):
     setting_id: UUID | None = Field(default=None, alias="settings_id")
     color_search: str | None = None
     draft_id: UUID | None = None
+    # Optional group_id from layout context (avoids server-side creation)
+    group_id: UUID | None = None
     mcp: bool | None = False
 
 

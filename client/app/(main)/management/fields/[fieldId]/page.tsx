@@ -7,6 +7,7 @@
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import Field from "@/components/artifacts/field/Field";
+import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -154,12 +155,16 @@ export default async function FieldEditPage({
   const loadFieldSearchParams = createLoader(fieldSearchParams);
   const q = loadFieldSearchParams(searchParamsObj);
 
+  // Resolve group_id from layout context (cached per request)
+  const groupId = await resolveGroupId(q.draftId ?? null, "field");
+
   // Fetch field data (always fresh - source of truth) with draft_id
   try {
     const input: GetFieldIn = {
       body: {
         field_id: fieldId,
         draft_id: q.draftId ?? null,
+        group_id: groupId,
         description_search: q.descriptionSearch ?? null,
         conditional_parameter_search: q.conditionalParameterSearch ?? null,
         conditional_parameter_show_selected:

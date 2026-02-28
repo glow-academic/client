@@ -66,8 +66,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
-import { useGenerationModal } from "@/hooks/use-generation-modal";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
 
 export interface CohortsProps {
@@ -103,9 +101,8 @@ export default function Cohorts({
   departmentSearch,
 }: CohortsProps) {
   const router = useRouter();
-  const { generate } = useArtifactAi({
+  useArtifactAi({
     artifactType: "cohort",
-    groupId: null,
     validResourceTypes: ["names", "descriptions", "flags", "departments", "simulations", "simulation_positions", "simulation_availability", "profiles", "profile_personas"],
     onComplete: () => router.refresh(),
   });
@@ -135,33 +132,6 @@ export default function Cohorts({
   // Lazy-loaded flag options
   const [flagOptions, setFlagOptions] = useState<{ id: string; name: string; type: string }[]>([]);
   const [flagsLoaded, setFlagsLoaded] = useState(false);
-
-  // Generation modal via shared hook
-  type CohortResourceType = "names" | "descriptions" | "flags" | "departments" | "simulations" | "simulation_positions" | "simulation_availability" | "profiles" | "profile_personas";
-  const { handleOpenStepCardModal, modalProps } = useGenerationModal<CohortResourceType>({
-    stepResources: {
-      all: ["names", "descriptions", "flags", "departments", "simulations", "simulation_positions", "simulation_availability", "profiles", "profile_personas"],
-    },
-    resourceLabels: {
-      names: "Name",
-      descriptions: "Description",
-      flags: "Configuration",
-      departments: "Departments",
-      simulations: "Simulations",
-      simulation_positions: "Simulation Positions",
-      simulation_availability: "Simulation Availability",
-      profiles: "Profiles",
-      profile_personas: "Profile Personas",
-    },
-    canRegenerate: () => true,
-    onGenerate: (selectedResources, instructions) => {
-      generate(selectedResources, {
-        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-        save: true,
-      });
-    },
-    isGenerating: () => false,
-  });
 
   // Debounce refs
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1235,7 +1205,6 @@ export default function Cohorts({
           </DialogContent>
         </Dialog>
 
-        <GenerateRegenerateModal {...modalProps} />
       </div>
     </TooltipProvider>
   );

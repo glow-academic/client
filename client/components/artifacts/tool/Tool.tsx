@@ -16,8 +16,6 @@ import {
 } from "@/components/common/forms/GenericForm";
 import { StepCard } from "@/components/common/forms/StepCard";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
-import type { GenerateRegenerateModalResource } from "@/components/common/forms/GenerateRegenerateModal";
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Args } from "@/components/resources/Args";
@@ -131,19 +129,8 @@ function ToolComponent({
   const { isGenerating, makeOnGenerationComplete, generate } =
     useArtifactAi({
       artifactType: "tool",
-      groupId: toolData?.group_id,
       validResourceTypes: VALID_TOOL_RESOURCE_TYPES,
     });
-
-  // Modal state for generate/regenerate
-  const [showGenerateModal, setShowGenerateModal] = useState(false);
-  const [modalMode, setModalMode] = useState<"generate" | "regenerate" | null>(
-    null
-  );
-  const [modalResources, setModalResources] = useState<
-    GenerateRegenerateModalResource[]
-  >([]);
-  const [modalInstructions, setModalInstructions] = useState("");
 
   // nuqs parsers for URL-backed state (will be passed to GenericForm)
   const toolSearchParamsClient = useMemo(
@@ -742,60 +729,16 @@ function ToolComponent({
     []
   );
 
-  // Resource labels for display
-  const resourceLabels: Partial<Record<ToolResourceType, string>> = useMemo(
-    () => ({
-      args: "Args",
-      arg_positions: "Arg Positions",
-      args_outputs: "Args Outputs",
-    }),
-    []
-  );
-
-  // Handler to open modal for step card generation
-  const handleOpenStepCardModal = useCallback(
-    (stepId: string, mode: "generate" | "regenerate") => {
-      const resourceTypes = stepResources[stepId] || [];
-      const resources: GenerateRegenerateModalResource[] = resourceTypes.map(
-        (rt) => ({
-          id: rt,
-          label: resourceLabels[rt] ?? "",
-          active: mode === "regenerate" ? canRegenerate(rt) : true,
-        })
-      );
-
-      setModalResources(resources);
-      setModalMode(mode);
-      setModalInstructions("");
-      setShowGenerateModal(true);
+  // Direct step generation handler (bypasses modal)
+  const handleDirectStepGenerate = useCallback(
+    (stepId: string, _mode: "generate" | "regenerate") => {
+      const resources = stepResources[stepId];
+      if (resources) {
+        handleGenerateResources(resources, null);
+      }
     },
-    [stepResources, resourceLabels, canRegenerate]
+    [stepResources, handleGenerateResources],
   );
-
-  // Handler for modal generate/regenerate action
-  const handleModalGenerate = useCallback(
-    async (selectedResources: string[], instructions: string) => {
-      const resourceTypes = selectedResources as ToolResourceType[];
-      await handleGenerateResources(
-        resourceTypes,
-        null,
-        instructions.trim() || undefined
-      );
-      setShowGenerateModal(false);
-      setModalInstructions("");
-    },
-    [handleGenerateResources]
-  );
-
-  // Listen for full-page-generate event from layout
-  useEffect(() => {
-    const handleFullPageGenerate = () => {
-      handleOpenStepCardModal("all", "generate");
-    };
-    window.addEventListener("full-page-generate", handleFullPageGenerate);
-    return () =>
-      window.removeEventListener("full-page-generate", handleFullPageGenerate);
-  }, [handleOpenStepCardModal]);
 
   // Steps configuration for GenericForm
   const steps = useMemo(
@@ -1047,7 +990,7 @@ function ToolComponent({
                     resourceTypes={stepResources["args"] ?? []}
                     canRegenerate={(rt) => canRegenerate(rt as ToolResourceType)}
                     isGenerating={(rt) => isGenerating(rt as ToolResourceType)}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -1151,7 +1094,7 @@ function ToolComponent({
                   }
                   disabled={disabled}
                   {...(createArgsAction ? { createArgsAction } : {})}
-                  group_id={currentToolData?.group_id ?? null}
+
                   create_tool_id={currentToolData?.args_create_tool_id ?? null}
                   registerFlush={registerFlushCallbacks["args"]}
                   isAutosaveEnabled={isAutosaveEnabled}
@@ -1218,7 +1161,7 @@ function ToolComponent({
                     resourceTypes={stepResources["arg_positions"] ?? []}
                     canRegenerate={(rt) => canRegenerate(rt as ToolResourceType)}
                     isGenerating={(rt) => isGenerating(rt as ToolResourceType)}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -1276,7 +1219,7 @@ function ToolComponent({
                     })
                   )}
                   disabled={disabled}
-                  group_id={currentToolData?.group_id ?? null}
+
                   tool_id={toolId ?? null}
                   create_tool_id={currentToolData?.arg_positions_create_tool_id ?? null}
                   onPositionIdsChange={(ids) =>
@@ -1356,7 +1299,7 @@ function ToolComponent({
                     resourceTypes={stepResources["args_outputs"] ?? []}
                     canRegenerate={(rt) => canRegenerate(rt as ToolResourceType)}
                     isGenerating={(rt) => isGenerating(rt as ToolResourceType)}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -1485,7 +1428,7 @@ function ToolComponent({
                   {...(createArgsOutputsAction
                     ? { createArgsOutputsAction }
                     : {})}
-                  group_id={currentToolData?.group_id ?? null}
+
                   registerFlush={registerFlushCallbacks["args_outputs"]}
                   isAutosaveEnabled={isAutosaveEnabled}
                 />
@@ -1508,7 +1451,7 @@ function ToolComponent({
       createArgsOutputsAction,
       stepResources,
       canRegenerate,
-      handleOpenStepCardModal,
+      handleDirectStepGenerate,
       isGenerating,
       argsItems,
       argPositionsItems,
@@ -1554,22 +1497,6 @@ function ToolComponent({
           }}
         />
 
-        {/* Generate/Regenerate Modal */}
-        {modalMode && (
-          <GenerateRegenerateModal
-            open={showGenerateModal}
-            onOpenChange={setShowGenerateModal}
-            resources={modalResources}
-            onResourcesChange={setModalResources}
-            instructions={modalInstructions}
-            onInstructionsChange={setModalInstructions}
-            onGenerate={handleModalGenerate}
-            isGenerating={modalResources.some((r) =>
-              isGenerating(r.id as ToolResourceType)
-            )}
-            mode={modalMode}
-          />
-        )}
       </div>
     </TooltipProvider>
   );

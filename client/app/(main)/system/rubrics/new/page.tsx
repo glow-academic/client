@@ -10,6 +10,7 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
+import { resolveGroupId } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetRubricIn = InputOf<"/api/v4/artifacts/rubrics/get", "post">;
@@ -45,7 +46,8 @@ type CreateDraftStandardGroupsOut = OutputOf<
 const getRubric = async (
   draftId: string | null,
   descriptionSearch: string | null,
-  standardGroupSearch: string | null
+  standardGroupSearch: string | null,
+  groupId: string | null = null,
 ): Promise<GetRubricOut> => {
   return api.post(
     "/artifacts/rubrics/get",
@@ -53,6 +55,7 @@ const getRubric = async (
       body: {
         rubric_id: null,
         draft_id: draftId || null,
+        group_id: groupId,
         description_search: descriptionSearch || null,
         standard_group_search: standardGroupSearch || null,
       },
@@ -154,11 +157,15 @@ export default async function NewRubricPage({
   const loadRubricSearchParams = createLoader(rubricSearchParams);
   const q = loadRubricSearchParams(searchParamsObj);
 
+  // Resolve group_id from layout context (cached per request)
+  const groupId = await resolveGroupId(q.draftId ?? null, "rubric");
+
   // Fetch rubric data using unified get endpoint (rubric_id = null for new mode)
   const rubricData = await getRubric(
     q.draftId ?? null,
     q.descriptionSearch ?? null,
-    q.standardGroupSearch ?? null
+    q.standardGroupSearch ?? null,
+    groupId,
   );
 
   return (

@@ -6,6 +6,7 @@
  */
 
 import Model from "@/components/artifacts/model/Model";
+import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -141,10 +142,14 @@ export default async function ModelEditPage({
   const loadModelSearchParams = createLoader(modelSearchParams);
   const q = loadModelSearchParams(searchParamsObj);
 
+  // Resolve group_id from layout context (cached per request)
+  const groupId = await resolveGroupId(q.draftId ?? null, "model");
+
   const input: GetModelIn = {
     body: {
       model_id: modelId,
       draft_id: q.draftId ?? null,
+      group_id: groupId,
     },
   };
   const model = await getModel(input);

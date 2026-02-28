@@ -18,7 +18,6 @@ import {
 } from "@/components/common/forms/GenericForm";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
@@ -42,7 +41,6 @@ import { useDrafts } from "@/contexts/draft-context";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
-import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   buildDraftPayload,
@@ -268,7 +266,6 @@ function CohortComponent({
   // --- AI Generation ---
   const { isGenerating, makeOnGenerationComplete, generate } = useArtifactAi({
     artifactType: "cohort",
-    groupId: cohortData?.group_id,
     validResourceTypes: VALID_RESOURCE_TYPES,
   });
 
@@ -302,7 +299,6 @@ function CohortComponent({
   const stableCohortDataFields = React.useMemo(() => {
     if (!cohortData) return null;
     return {
-      group_id: cohortData.group_id,
       names: cohortData.names,
       descriptions: cohortData.descriptions,
       flags: cohortData.flags,
@@ -323,7 +319,6 @@ function CohortComponent({
     // to prevent recreation when only object reference changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    cohortData?.group_id,
     cohortData?.names,
     cohortData?.descriptions,
     cohortData?.departments,
@@ -646,7 +641,6 @@ function CohortComponent({
         formStateRef.current as unknown as CohortFormState;
       return {
         input_draft_id: draftId || null,
-        group_id: stableCohortDataFields?.group_id ?? null,
         ...buildDraftPayload(COHORT_RESOURCES, {
           formState: currentFormState as unknown as Record<string, unknown>,
           referenceState: lastPatchedFormStateRef.current as unknown as Record<
@@ -706,11 +700,10 @@ function CohortComponent({
       generate(resourceTypes, {
         draft_id: draftIdToUse,
         artifact_id: cohortId || null,
-        group_id: cohortData?.group_id ?? null,
         user_instructions: userInstructions ? [userInstructions] : null,
       });
     },
-    [cohortId, cohortData?.group_id, flushAllAndSave, formDataRef, generate],
+    [cohortId, flushAllAndSave, formDataRef, generate],
   );
 
   // Individual generation handlers - generate directly without modals
@@ -781,37 +774,15 @@ function CohortComponent({
     [],
   );
 
-  // Resource labels for display
-  const resourceLabels: Partial<Record<ResourceType, string>> = useMemo(
-    () => ({
-      names: "Names",
-      descriptions: "Descriptions",
-      flags: "Flags",
-      departments: "Departments",
-      simulations: "Simulations",
-      simulation_positions: "Simulation Positions",
-      simulation_availability: "Simulation Availability",
-      profiles: "Profiles",
-      profile_personas: "Profile Personas",
-    }),
-    [],
-  );
-
-  const onModalGenerate = useCallback(
-    (selectedResources: ResourceType[], instructions?: string) => {
-      handleGenerateResources(selectedResources, instructions);
+  const handleDirectStepGenerate = useCallback(
+    (stepId: string, _mode: "generate" | "regenerate") => {
+      const resources = stepResources[stepId];
+      if (resources) {
+        handleGenerateResources(resources);
+      }
     },
-    [handleGenerateResources],
+    [stepResources, handleGenerateResources],
   );
-
-  const { handleOpenStepCardModal, modalProps } =
-    useGenerationModal<ResourceType>({
-      stepResources,
-      resourceLabels,
-      canRegenerate,
-      onGenerate: onModalGenerate,
-      isGenerating,
-    });
 
   // Disabled logic based on can_edit flag - standardized for all resource components
   // Check can_edit in both new and edit modes to show disabled_reason when agents are missing
@@ -861,11 +832,6 @@ function CohortComponent({
       if (!saveCohortAction) {
         toast.error("Save action not available");
         throw new Error("Save action not available");
-      }
-
-      if (!cohortData?.group_id) {
-        toast.error("Group not found. Please try again.");
-        throw new Error("Group ID is required for save");
       }
 
       // Ensure required fields are present (TypeScript guard)
@@ -1094,7 +1060,7 @@ function CohortComponent({
                   defaultName="New Cohort"
                   required={s?.names?.required ?? false}
                   hideDescription={true}
-                  group_id={s?.group_id ?? null}
+
                   showAiGenerate={s?.names?.show_ai_generate ?? false}
                   create_tool_id={s?.names?.tool_id ?? null}
                   link_tool_id={s?.names?.link_tool_id ?? null}
@@ -1121,7 +1087,7 @@ function CohortComponent({
                     canRegenerate={(rt) => canRegenerate(rt as ResourceType)}
                     isGenerating={(rt) => isGenerating(rt as ResourceType)}
                     disabled={disabled}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                   />
                 ) : undefined
               }
@@ -1158,7 +1124,7 @@ function CohortComponent({
                   required={s?.descriptions?.required ?? false}
                   rows={4}
                   data-testid="input-cohort-description"
-                  group_id={s?.group_id ?? null}
+
                   showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
                   create_tool_id={s?.descriptions?.tool_id ?? null}
                   link_tool_id={s?.descriptions?.link_tool_id ?? null}
@@ -1181,7 +1147,7 @@ function CohortComponent({
                   }
                   onGenerate={handleGenerateDepartments}
                   required={s?.departments?.required ?? false}
-                  group_id={s?.group_id ?? null}
+
                   showAiGenerate={s?.departments?.show_ai_generate ?? false}
                   link_tool_id={s?.departments?.link_tool_id ?? null}
                   linkDepartmentsAction={linkDepartmentsAction}
@@ -1202,7 +1168,7 @@ function CohortComponent({
                     }))
                   }
                   onGenerate={handleGenerateFlags}
-                  group_id={s?.group_id ?? null}
+
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
                   link_tool_id={s?.flags?.link_tool_id ?? null}
                   linkFlagsAction={linkFlagsAction}
@@ -1287,7 +1253,7 @@ function CohortComponent({
                     canRegenerate={(rt) => canRegenerate(rt as ResourceType)}
                     isGenerating={(rt) => isGenerating(rt as ResourceType)}
                     disabled={disabled}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                   />
                 ) : undefined
               }
@@ -1309,7 +1275,7 @@ function CohortComponent({
                   onGenerate={handleGenerateSimulations}
                   label="Simulations"
                   required={s?.simulations?.required ?? false}
-                  group_id={s?.group_id ?? null}
+
                   showAiGenerate={s?.simulations?.show_ai_generate ?? false}
                   searchTerm={simulationSearchTerm}
                   showSelectedFilter={simulationShowSelected}
@@ -1338,7 +1304,7 @@ function CohortComponent({
                   }}
                   label="Simulation Positions"
                   required={s?.simulation_positions?.required ?? false}
-                  group_id={s?.group_id ?? null}
+
                   showAiGenerate={
                     s?.simulation_positions?.show_ai_generate ?? false
                   }
@@ -1369,7 +1335,7 @@ function CohortComponent({
                   }
                   label="Simulation Availability"
                   required={s?.simulation_availability?.required ?? false}
-                  group_id={s?.group_id ?? null}
+
                   showAiGenerate={
                     s?.simulation_availability?.show_ai_generate ?? false
                   }
@@ -1442,7 +1408,7 @@ function CohortComponent({
                     canRegenerate={(rt) => canRegenerate(rt as ResourceType)}
                     isGenerating={(rt) => isGenerating(rt as ResourceType)}
                     disabled={disabled}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                   />
                 ) : undefined
               }
@@ -1469,7 +1435,7 @@ function CohortComponent({
                   setFormState((prev) => ({ ...prev, profile_ids: ids }))
                 }
                 required={s?.profiles?.required ?? false}
-                group_id={s?.group_id ?? null}
+
                 showAiGenerate={s?.profiles?.show_ai_generate ?? false}
                 onGenerate={handleGenerateProfiles}
                 searchTerm={profileSearchTerm}
@@ -1517,7 +1483,7 @@ function CohortComponent({
                   setFormState((prev) => ({ ...prev, profile_persona_ids: ids }))
                 }
                 cohort_id={cohortId ?? null}
-                group_id={s?.group_id ?? null}
+
                 create_tool_id={null}
                 createProfilePersonasAction={createProfilePersonasAction}
                 showAiGenerate={s?.profile_personas?.show_ai_generate ?? false}
@@ -1581,7 +1547,7 @@ function CohortComponent({
       linkProfilesAction,
       linkProfilePersonasAction,
       canRegenerate,
-      handleOpenStepCardModal,
+      handleDirectStepGenerate,
       isAutosaveEnabled,
       registerFlushCallbacks,
       makeOnGenerationComplete,
@@ -1621,7 +1587,6 @@ function CohortComponent({
           }}
         />
 
-        {modalProps.open && <GenerateRegenerateModal {...modalProps} />}
       </div>
     </TooltipProvider>
   );

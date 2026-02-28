@@ -10,7 +10,6 @@ import {
 } from "@/components/common/forms/GenericForm";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
@@ -23,7 +22,6 @@ import { useDrafts } from "@/contexts/draft-context";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
-import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   buildDraftPayload,
@@ -176,7 +174,6 @@ export default function Provider({
 
   const { isGenerating, generate } = useArtifactAi({
     artifactType: "provider",
-    groupId: groupId,
     validResourceTypes: PROVIDER_RESOURCES as string[],
   });
 
@@ -288,22 +285,15 @@ export default function Provider({
     [s]
   );
 
-  const { handleOpenStepCardModal, modalProps } =
-    useGenerationModal<ResourceType>({
-      stepResources,
-      resourceLabels: {
-        names: "Names",
-        descriptions: "Descriptions",
-        flags: "Flags",
-        departments: "Departments",
-        values: "Values",
-        endpoints: "Endpoints",
-      },
-      canRegenerate,
-      onGenerate: (selectedResources, instructions) =>
-        handleGenerateResources(selectedResources, instructions),
-      isGenerating,
-    });
+  const handleDirectStepGenerate = useCallback(
+    (stepId: string, _mode: "generate" | "regenerate") => {
+      const resources = stepResources[stepId];
+      if (resources) {
+        handleGenerateResources(resources);
+      }
+    },
+    [stepResources, handleGenerateResources],
+  );
 
   const handleSubmit = useCallback(async () => {
     if (!saveProviderAction) return;
@@ -409,7 +399,7 @@ export default function Provider({
                 resourceTypes={["names", "descriptions", "flags", "departments"]}
                 canRegenerate={canRegenerate as (rt: string) => boolean}
                 isGenerating={isGenerating as (rt: string) => boolean}
-                onOpenModal={handleOpenStepCardModal}
+                onOpenModal={handleDirectStepGenerate}
                 disabled={disabled || !s?.basic_show_ai_generate}
               />
             }
@@ -422,7 +412,6 @@ export default function Provider({
               names={s?.names?.resources ?? undefined}
               required={s?.names?.required}
               disabled={disabled}
-              group_id={groupId}
               create_tool_id={s?.names?.create_tool_id}
               showAiGenerate={s?.names?.show_ai_generate}
               createNamesAction={createNamesAction}
@@ -445,7 +434,6 @@ export default function Provider({
               descriptions={s?.descriptions?.resources ?? undefined}
               required={s?.descriptions?.required}
               disabled={disabled}
-              group_id={groupId}
               create_tool_id={s?.descriptions?.create_tool_id}
               showAiGenerate={s?.descriptions?.show_ai_generate}
               createDescriptionsAction={createDescriptionsAction}
@@ -501,7 +489,7 @@ export default function Provider({
               resourceTypes={["values", "endpoints"]}
               canRegenerate={canRegenerate as (rt: string) => boolean}
               isGenerating={isGenerating as (rt: string) => boolean}
-              onOpenModal={handleOpenStepCardModal}
+              onOpenModal={handleDirectStepGenerate}
               disabled={disabled || !s?.integrations_show_ai_generate}
             />
           }
@@ -530,7 +518,6 @@ export default function Provider({
             }
             required={s?.values?.required}
             disabled={disabled}
-            group_id={groupId}
             create_tool_id={s?.values?.create_tool_id}
             showAiGenerate={s?.values?.show_ai_generate}
             createValuesAction={createValuesAction}
@@ -569,7 +556,6 @@ export default function Provider({
             }
             required={s?.endpoints?.required}
             disabled={disabled}
-            group_id={groupId}
             create_tool_id={s?.endpoints?.create_tool_id}
             showAiGenerate={s?.endpoints?.show_ai_generate}
             createEndpointsAction={createEndpointsAction}
@@ -625,8 +611,7 @@ export default function Provider({
       disabled,
       canRegenerate,
       isGenerating,
-      handleOpenStepCardModal,
-      groupId,
+      handleDirectStepGenerate,
       createNamesAction,
       createDescriptionsAction,
       createValuesAction,
@@ -661,7 +646,6 @@ export default function Provider({
           setUrlFormDataRef.current = setter;
         }}
       />
-      <GenerateRegenerateModal {...modalProps} />
     </div>
   );
 }

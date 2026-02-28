@@ -123,6 +123,7 @@ async def get_setting_internal(
     setting_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    group_id: UUID | None = None,
     # Search/filter kwargs (threaded from websocket artifact tool)
     color_search: str | None = None,
 ) -> SettingInternalData:
@@ -170,7 +171,7 @@ async def get_setting_internal(
             profile_id=profile_id,
             setting_id=setting_id,
             draft_id=draft_id,
-            draft_group_id=draft_item.group_id if draft_item is not None else None,
+            draft_group_id=group_id or (draft_item.group_id if draft_item is not None else None),
             draft_version=draft_item.version if draft_item is not None else None,
         )
 
@@ -193,8 +194,8 @@ async def get_setting_internal(
                     detail="You don't have access to this setting. It may be restricted to other departments.",
                 )
 
-        # group_id is guaranteed by SQL (created inline if no draft)
-        effective_group_id = access_result.group_id
+        # Use provided group_id, or fall back to SQL-created one
+        effective_group_id = group_id or access_result.group_id
         effective_draft_version = access_result.effective_draft_version
 
         # === QUERY 2: ID Fetching ===
@@ -841,6 +842,7 @@ async def get_setting_client(
     setting_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    group_id: UUID | None = None,
 ) -> GetSettingApiResponse:
     """BFF response for HTTP endpoint/frontend.
 
@@ -852,6 +854,7 @@ async def get_setting_client(
         setting_id=setting_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
+        group_id=group_id,
     )
 
     all_resources = data.resources_payload.resources
@@ -984,6 +987,7 @@ async def get_setting(
             setting_id=request.setting_id,
             draft_id=request.draft_id,
             bypass_cache=bypass_cache,
+            group_id=request.group_id,
         )
 
         # Set audit context

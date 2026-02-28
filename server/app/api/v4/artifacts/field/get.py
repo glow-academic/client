@@ -105,6 +105,7 @@ async def get_field_internal(
     conditional_parameter_search: str | None = None,
     conditional_parameter_show_selected: bool | None = None,
     bypass_cache: bool = False,
+    group_id: UUID | None = None,
 ) -> FieldInternalData:
     pool = get_pool()
     if not pool:
@@ -167,8 +168,11 @@ async def get_field_internal(
                     detail="You don't have access to this field. It may be restricted to other departments.",
                 )
 
-        # group_id is guaranteed by SQL (created inline if no draft)
-        effective_group_id = access_result.group_id
+        # === GROUP ID: Use provided group_id, or fall back to SQL-created one ===
+        if group_id:
+            effective_group_id = group_id
+        else:
+            effective_group_id = access_result.group_id
         effective_draft_version = access_result.effective_draft_version
 
         ids_result = cast(
@@ -672,6 +676,7 @@ async def get_field_client(
     conditional_parameter_search: str | None = None,
     conditional_parameter_show_selected: bool | None = None,
     bypass_cache: bool = False,
+    group_id: UUID | None = None,
 ) -> GetFieldApiResponse:
     data = await get_field_internal(
         profile_id=profile_id,
@@ -681,6 +686,7 @@ async def get_field_client(
         conditional_parameter_search=conditional_parameter_search,
         conditional_parameter_show_selected=conditional_parameter_show_selected,
         bypass_cache=bypass_cache,
+        group_id=group_id,
     )
 
     return GetFieldApiResponse(
@@ -776,6 +782,7 @@ async def get_field(
             conditional_parameter_search=request.conditional_parameter_search,
             conditional_parameter_show_selected=request.conditional_parameter_show_selected,
             bypass_cache=bypass_cache,
+            group_id=request.group_id,
         )
 
         if response_data.actor_name:

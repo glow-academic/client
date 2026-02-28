@@ -76,6 +76,7 @@ class RubricStandardsSection(BaseResourceSection):
 class GetRubricApiRequest(BaseModel):
     rubric_id: UUID | None = None
     draft_id: UUID | None = None
+    group_id: UUID | None = None
     description_search: str | None = None
     standard_group_search: str | None = None
 

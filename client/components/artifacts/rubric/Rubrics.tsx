@@ -49,9 +49,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
-import { useGenerationModal } from "@/hooks/use-generation-modal";
 
 export interface RubricsProps {
   // Server-provided data (for server-side rendering)
@@ -86,35 +84,10 @@ export default function Rubrics({
   const searchParams = useSearchParams();
   const { profile } = useProfile();
 
-  // Generation modal via shared hook
-  type RubricResourceType = "names" | "descriptions" | "departments" | "flags" | "points" | "pass_points" | "standard_groups" | "standards";
-  const { generate } = useArtifactAi({
+  useArtifactAi({
     artifactType: "rubric",
-    groupId: null,
     validResourceTypes: ["names", "descriptions", "departments", "flags", "points", "pass_points", "standard_groups", "standards"],
-  });
-  const { handleOpenStepCardModal, modalProps } = useGenerationModal<RubricResourceType>({
-    stepResources: {
-      all: ["names", "descriptions", "departments", "flags", "points", "pass_points", "standard_groups", "standards"],
-    },
-    resourceLabels: {
-      names: "Name",
-      descriptions: "Description",
-      departments: "Departments",
-      flags: "Configuration",
-      points: "Points",
-      pass_points: "Pass Points",
-      standard_groups: "Standard Groups",
-      standards: "Standards",
-    },
-    canRegenerate: () => true,
-    onGenerate: (selectedResources, instructions) => {
-      generate(selectedResources, {
-        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-        save: true,
-      });
-    },
-    isGenerating: () => false,
+    onComplete: () => router.refresh(),
   });
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -824,7 +797,6 @@ export default function Rubrics({
         </AlertDialogContent>
       </AlertDialog>
 
-      <GenerateRegenerateModal {...modalProps} />
     </div>
   );
 }

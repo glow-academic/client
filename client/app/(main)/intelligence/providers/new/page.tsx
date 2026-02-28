@@ -8,6 +8,7 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
+import { resolveGroupId } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetProviderIn = InputOf<"/api/v4/artifacts/providers/get", "post">;
@@ -134,11 +135,15 @@ export default async function NewProviderPage({
   const loadProviderSearchParams = createLoader(providerSearchParams);
   const q = loadProviderSearchParams(searchParamsObj);
 
+  // Resolve group_id from layout context (cached per request)
+  const groupId = await resolveGroupId(q.draftId ?? null, "provider");
+
   // Fetch default provider detail server-side with draft_id (provider_id = NULL for new mode)
   const input: GetProviderIn = {
     body: {
       provider_id: null,
       draft_id: q.draftId ?? null,
+      group_id: groupId,
     } as GetProviderIn["body"],
   };
   const providerDetailDefault = await getProviderDefault(input);

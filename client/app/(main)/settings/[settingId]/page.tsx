@@ -5,6 +5,7 @@
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import Setting from "@/components/artifacts/setting/Setting";
+import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -190,12 +191,16 @@ export default async function SettingEditPage({
   const loadSettingSearchParams = createLoader(settingSearchParams);
   const q = loadSettingSearchParams(searchParamsObj);
 
+  // Resolve group_id from layout context (cached per request)
+  const groupId = await resolveGroupId(q.draftId ?? null, "setting");
+
   // Fetch setting detail (always fresh - source of truth) with filter params
   try {
     const input: GetSettingIn = {
       body: {
         settings_id: settingId,
         draft_id: q.draftId ?? null,
+        group_id: groupId,
         color_search: q.colorSearch ?? null,
       } as GetSettingIn["body"],
     };

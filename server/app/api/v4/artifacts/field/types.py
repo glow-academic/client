@@ -67,6 +67,7 @@ class GetFieldApiRequest(BaseModel):
 
     field_id: UUID | None = None
     draft_id: UUID | None = None
+    group_id: UUID | None = None
     description_search: str | None = None
     conditional_parameter_search: str | None = None
     conditional_parameter_show_selected: bool | None = None

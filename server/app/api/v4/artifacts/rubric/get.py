@@ -166,6 +166,7 @@ async def get_rubric_internal(
     # Search/filter kwargs (threaded from websocket artifact tool)
     description_search: str | None = None,
     standard_group_search: str | None = None,
+    group_id: UUID | None = None,
 ) -> RubricInternalData:
     """Core data fetching layer (cacheable).
 
@@ -240,7 +241,10 @@ async def get_rubric_internal(
                 )
 
         # group_id is guaranteed by SQL (created inline if no draft)
-        effective_group_id = access_result.group_id
+        if group_id:
+            effective_group_id = group_id
+        else:
+            effective_group_id = access_result.group_id
         effective_draft_version = access_result.effective_draft_version
 
         # === QUERY 2: ID Fetching (using user_department_ids from Query 1) ===
@@ -824,6 +828,7 @@ async def get_rubric_client(
     rubric_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    group_id: UUID | None = None,
 ) -> GetRubricApiResponse:
     """BFF response for HTTP endpoint/frontend.
 
@@ -835,6 +840,7 @@ async def get_rubric_client(
         rubric_id=rubric_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
+        group_id=group_id,
     )
 
     return GetRubricApiResponse(
@@ -985,6 +991,7 @@ async def get_rubric(
             rubric_id=request.rubric_id,
             draft_id=request.draft_id,
             bypass_cache=bypass_cache,
+            group_id=request.group_id,
         )
 
         # Set audit context

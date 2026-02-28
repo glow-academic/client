@@ -14,7 +14,6 @@ import {
 } from "@/components/common/forms/GenericForm";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
@@ -29,7 +28,6 @@ import { useDrafts } from "@/contexts/draft-context";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
-import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   buildDraftPayload,
@@ -199,7 +197,6 @@ function RubricComponent({
 
   const { isGenerating, generate } = useArtifactAi({
     artifactType: "rubric",
-    groupId: s?.group_id,
     validResourceTypes: VALID_RESOURCE_TYPES as string[],
   });
 
@@ -376,29 +373,15 @@ function RubricComponent({
     [],
   );
 
-  const resourceLabels: Partial<Record<RubricResourceType, string>> = useMemo(
-    () => ({
-      names: "Names",
-      descriptions: "Descriptions",
-      flags: "Flags",
-      departments: "Departments",
-      points: "Total Points",
-      pass_points: "Pass Points",
-      standard_groups: "Standard Groups",
-      standards: "Standards",
-    }),
-    [],
+  const handleDirectStepGenerate = useCallback(
+    (stepId: string, _mode: "generate" | "regenerate") => {
+      const resources = stepResources[stepId];
+      if (resources) {
+        handleGenerateResources(resources);
+      }
+    },
+    [stepResources, handleGenerateResources],
   );
-
-  const { handleOpenStepCardModal, modalProps } =
-    useGenerationModal<RubricResourceType>({
-      stepResources,
-      resourceLabels,
-      canRegenerate,
-      onGenerate: (selected, instructions) =>
-        handleGenerateResources(selected, instructions),
-      isGenerating,
-    });
 
   const disabled = useMemo(() => !s?.can_edit, [s?.can_edit]);
 
@@ -579,7 +562,6 @@ function RubricComponent({
                 onGenerate={() => handleGenerateResources(["names"])}
                 required={s?.names?.required ?? false}
                 hideDescription={true}
-                group_id={s?.group_id ?? null}
                 showAiGenerate={s?.names?.show_ai_generate ?? false}
                 create_tool_id={s?.names?.create_tool_id ?? null}
                 createNamesAction={createNamesAction}
@@ -604,7 +586,7 @@ function RubricComponent({
                   isGenerating={(rt) =>
                     isGenerating(rt as RubricResourceType)
                   }
-                  onOpenModal={handleOpenStepCardModal}
+                  onOpenModal={handleDirectStepGenerate}
                   disabled={disabled}
                 />
               ) : undefined
@@ -624,7 +606,6 @@ function RubricComponent({
                 }
                 onGenerate={() => handleGenerateResources(["descriptions"])}
                 required={s?.descriptions?.required ?? false}
-                group_id={s?.group_id ?? null}
                 showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
                 create_tool_id={s?.descriptions?.create_tool_id ?? null}
                 createDescriptionsAction={createDescriptionsAction}
@@ -644,7 +625,6 @@ function RubricComponent({
                 }
                 onGenerate={() => handleGenerateResources(["departments"])}
                 required={s?.departments?.required ?? false}
-                group_id={s?.group_id ?? null}
                 showAiGenerate={s?.departments?.show_ai_generate ?? false}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["departments"]}
@@ -660,7 +640,6 @@ function RubricComponent({
                   setFormState((prev) => ({ ...prev, active_flag_id: flagId }))
                 }
                 onGenerate={() => handleGenerateResources(["flags"])}
-                group_id={s?.group_id ?? null}
                 showAiGenerate={s?.flags?.show_ai_generate ?? false}
               />
             </div>
@@ -689,7 +668,7 @@ function RubricComponent({
                   isGenerating={(rt) =>
                     isGenerating(rt as RubricResourceType)
                   }
-                  onOpenModal={handleOpenStepCardModal}
+                  onOpenModal={handleDirectStepGenerate}
                   disabled={disabled}
                 />
               ) : undefined
@@ -722,7 +701,6 @@ function RubricComponent({
                 onGenerate={() => handleGenerateResources(["points"])}
                 label="Total Points"
                 required={s?.points?.required ?? false}
-                group_id={s?.group_id ?? null}
                 showAiGenerate={s?.points?.show_ai_generate ?? false}
                 create_tool_id={s?.points?.create_tool_id ?? null}
                 createPointsAction={createPointsAction}
@@ -755,7 +733,6 @@ function RubricComponent({
                 onGenerate={() => handleGenerateResources(["pass_points"])}
                 label="Pass Points"
                 required={s?.pass_points?.required ?? false}
-                group_id={s?.group_id ?? null}
                 showAiGenerate={s?.pass_points?.show_ai_generate ?? false}
                 create_tool_id={s?.pass_points?.create_tool_id ?? null}
                 createPointsAction={createPointsAction}
@@ -788,7 +765,7 @@ function RubricComponent({
                   isGenerating={(rt) =>
                     isGenerating(rt as RubricResourceType)
                   }
-                  onOpenModal={handleOpenStepCardModal}
+                  onOpenModal={handleDirectStepGenerate}
                   disabled={disabled}
                 />
               ) : undefined
@@ -807,7 +784,6 @@ function RubricComponent({
               }
               onGenerate={() => handleGenerateResources(["standard_groups"])}
               required={s?.standard_groups?.required ?? false}
-              group_id={s?.group_id ?? null}
               showAiGenerate={s?.standard_groups?.show_ai_generate ?? false}
               create_tool_id={s?.standard_groups?.create_tool_id ?? null}
               createStandardGroupsAction={createStandardGroupsAction}
@@ -838,7 +814,7 @@ function RubricComponent({
                 isGenerating={(rt) =>
                   isGenerating(rt as RubricResourceType)
                 }
-                onOpenModal={handleOpenStepCardModal}
+                onOpenModal={handleDirectStepGenerate}
                 disabled={disabled}
               />
             ) : undefined
@@ -857,7 +833,6 @@ function RubricComponent({
             }
             onGenerate={() => handleGenerateResources(["standards"])}
             required={s?.standards?.required ?? false}
-            group_id={s?.group_id ?? null}
             showAiGenerate={s?.standards?.show_ai_generate ?? false}
           />
         </StepCard>
@@ -878,7 +853,7 @@ function RubricComponent({
       registerFlushCallbacks,
       stepResources,
       canRegenerate,
-      handleOpenStepCardModal,
+      handleDirectStepGenerate,
     ],
   );
 
@@ -948,7 +923,6 @@ function RubricComponent({
             setUrlFormDataRef.current = setter;
           }}
         />
-        <GenerateRegenerateModal {...modalProps} />
       </div>
     </TooltipProvider>
   );

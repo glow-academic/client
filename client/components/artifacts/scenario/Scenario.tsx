@@ -22,7 +22,6 @@ import {
 } from "@/components/common/forms/GenericForm";
 import { StepCard } from "@/components/common/forms/StepCard";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
@@ -43,7 +42,6 @@ import { useDrafts } from "@/contexts/draft-context";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
-import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   buildDraftPayload,
@@ -408,7 +406,6 @@ function ScenarioComponent({
   const { isGenerating, makeOnGenerationComplete, generate } =
     useArtifactAi({
       artifactType: "scenario",
-      groupId: scenarioData?.group_id,
       validResourceTypes: VALID_RESOURCE_TYPES as string[],
     });
 
@@ -1090,40 +1087,15 @@ function ScenarioComponent({
     [],
   );
 
-  const resourceLabels: Record<ScenarioResourceType, string> = useMemo(
-    () => ({
-      names: "Names",
-      descriptions: "Descriptions",
-      problem_statements: "Problem Statements",
-      objectives: "Objectives",
-      scenario_flags: "Flags",
-      departments: "Departments",
-      personas: "Personas",
-      documents: "Documents",
-      parameters: "Parameters",
-      parameter_fields: "Parameter Fields",
-      images: "Images",
-      videos: "Videos",
-      questions: "Questions",
-    }),
-    [],
-  );
-
-  const onModalGenerate = useCallback(
-    (selectedResources: ScenarioResourceType[], instructions?: string) => {
-      handleGenerateResources(selectedResources, instructions);
+  const handleDirectStepGenerate = useCallback(
+    (stepId: string, _mode: "generate" | "regenerate") => {
+      const resources = stepResources[stepId];
+      if (resources) {
+        handleGenerateResources(resources);
+      }
     },
-    [handleGenerateResources],
+    [stepResources, handleGenerateResources],
   );
-
-  const { handleOpenStepCardModal, modalProps } =
-    useGenerationModal<ScenarioResourceType>({
-      stepResources,
-      resourceLabels,
-      canRegenerate,
-      onGenerate: onModalGenerate,
-      isGenerating,
-    });
 
   // --- Steps / Form Config ---
   const steps = useMemo(() => {
@@ -1611,7 +1583,6 @@ function ScenarioComponent({
                   defaultName="New Scenario"
                   required={s?.names?.required ?? false}
                   hideDescription={true}
-                  group_id={s?.group_id ?? null}
                   showAiGenerate={s?.names?.show_ai_generate ?? false}
                   create_tool_id={s?.names?.tool_id ?? null}
                   createNamesAction={
@@ -1636,7 +1607,7 @@ function ScenarioComponent({
                     resourceTypes={stepResources["basic"]}
                     canRegenerate={canRegenerate}
                     isGenerating={isGeneratingStepResource}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -1665,7 +1636,6 @@ function ScenarioComponent({
                   label="Description"
                   placeholder="Describe the scenario"
                   required={s?.descriptions?.required ?? false}
-                  group_id={s?.group_id ?? null}
                   showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
                   create_tool_id={s?.descriptions?.tool_id ?? null}
                   createDescriptionsAction={
@@ -1693,7 +1663,6 @@ function ScenarioComponent({
                   }
                   label="Departments"
                   required={s?.departments?.required ?? false}
-                  group_id={s?.group_id ?? null}
                   showAiGenerate={s?.departments?.show_ai_generate ?? false}
                   onGenerate={generateHandlers["departments"]}
                   link_tool_id={s?.departments?.link_tool_id ?? null}
@@ -1765,7 +1734,7 @@ function ScenarioComponent({
                     resourceTypes={stepResources["context"]}
                     canRegenerate={canRegenerate}
                     isGenerating={isGeneratingStepResource}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -1785,7 +1754,6 @@ function ScenarioComponent({
                     onChange={(ids) =>
                       setFormState((prev) => ({ ...prev, image_ids: ids }))
                     }
-                    group_id={s?.group_id ?? null}
                     createImagesAction={
                       createImagesAction as
                         | ((
@@ -1828,7 +1796,6 @@ function ScenarioComponent({
                     label="Problem Statement"
                     placeholder="Define the core problem"
                     required={s?.problem_statements?.required ?? false}
-                    group_id={s?.group_id ?? null}
                     searchTerm={problemStatementSearch ?? undefined}
                     onSearchChange={(term: string) =>
                       setFormData({ problemStatementSearch: term || null })
@@ -1862,7 +1829,6 @@ function ScenarioComponent({
                     onChange={(ids) =>
                       setFormState((prev) => ({ ...prev, objective_ids: ids }))
                     }
-                    group_id={s?.group_id ?? null}
                     showAiGenerate={s?.objectives?.show_ai_generate ?? false}
                     create_tool_id={s?.objectives?.tool_id ?? null}
                     createObjectivesAction={
@@ -1915,7 +1881,7 @@ function ScenarioComponent({
                     resourceTypes={stepResources["personas"]}
                     canRegenerate={canRegenerate}
                     isGenerating={isGeneratingStepResource}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -1933,7 +1899,6 @@ function ScenarioComponent({
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, persona_ids: ids }))
                   }
-                  group_id={s?.group_id ?? null}
                   required={s?.personas?.required ?? false}
                   onGenerate={generateHandlers["personas"]}
                   showAiGenerate={s?.personas?.show_ai_generate ?? false}
@@ -1977,7 +1942,7 @@ function ScenarioComponent({
                     resourceTypes={stepResources["documents"]}
                     canRegenerate={canRegenerate}
                     isGenerating={isGeneratingStepResource}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -1995,7 +1960,6 @@ function ScenarioComponent({
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, document_ids: ids }))
                   }
-                  group_id={s?.group_id ?? null}
                   required={s?.documents?.required ?? false}
                   onGenerate={generateHandlers["documents"]}
                   showAiGenerate={s?.documents?.show_ai_generate ?? false}
@@ -2043,7 +2007,7 @@ function ScenarioComponent({
                     resourceTypes={stepResources["parameters"]}
                     canRegenerate={canRegenerate}
                     isGenerating={isGeneratingStepResource}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -2072,7 +2036,6 @@ function ScenarioComponent({
                     }))
                   }
                   disabled={disabled}
-                  group_id={s?.group_id ?? null}
                   showAiGenerate={s?.parameter_fields?.show_ai_generate ?? false}
                   required={s?.parameter_fields?.required ?? false}
                   createParameterFieldsAction={createParameterFieldsAction}
@@ -2105,7 +2068,7 @@ function ScenarioComponent({
                     resourceTypes={stepResources["video"]}
                     canRegenerate={canRegenerate}
                     isGenerating={isGeneratingStepResource}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -2125,7 +2088,6 @@ function ScenarioComponent({
                     onChange={(ids) =>
                       setFormState((prev) => ({ ...prev, video_ids: ids }))
                     }
-                    group_id={s?.group_id ?? null}
                     createVideosAction={
                       createVideosAction as
                         | ((
@@ -2157,7 +2119,6 @@ function ScenarioComponent({
                         question_ids: ids,
                       }))
                     }
-                    group_id={s?.group_id ?? null}
                     createQuestionsAction={
                       createQuestionsAction as
                         | ((
@@ -2188,7 +2149,6 @@ function ScenarioComponent({
                     onChange={(ids) =>
                       setFormState((prev) => ({ ...prev, option_ids: ids }))
                     }
-                    group_id={s?.group_id ?? null}
                     showAiGenerate={s?.options?.show_ai_generate ?? false}
                     create_tool_id={s?.options?.tool_id ?? null}
                     createOptionsAction={
@@ -2241,7 +2201,7 @@ function ScenarioComponent({
       linkVideosAction,
       linkQuestionsAction,
       linkOptionsAction,
-      handleOpenStepCardModal,
+      handleDirectStepGenerate,
       canRegenerate,
       stepResources,
       isAutosaveEnabled,

@@ -86,6 +86,7 @@ async def get_tool_internal(
     tool_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    group_id: UUID | None = None,
 ) -> ToolInternalData:
     """Core data-fetching layer shared by websocket/client presenters."""
 
@@ -126,9 +127,8 @@ async def get_tool_internal(
                     profile_id=profile_id,
                     tool_id=tool_id,
                     draft_id=draft_id,
-                    draft_group_id=draft_item.group_id
-                    if draft_item is not None
-                    else None,
+                    draft_group_id=group_id
+                    or (draft_item.group_id if draft_item is not None else None),
                     draft_version=draft_item.version
                     if draft_item is not None
                     else None,
@@ -149,7 +149,7 @@ async def get_tool_internal(
                 )
 
         # group_id is guaranteed by SQL (created inline if no draft)
-        effective_group_id = access_result.group_id
+        effective_group_id = group_id or access_result.group_id
         effective_draft_version = access_result.effective_draft_version
 
         ids_result = cast(
@@ -646,6 +646,7 @@ async def get_tool_client(
     tool_id: UUID | None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
+    group_id: UUID | None = None,
 ) -> GetToolApiResponse:
     """BFF response for frontend with section-first resource contracts."""
 
@@ -654,6 +655,7 @@ async def get_tool_client(
         tool_id=tool_id,
         draft_id=draft_id,
         bypass_cache=bypass_cache,
+        group_id=group_id,
     )
 
     all_resources = data.resources_payload.resources
@@ -775,6 +777,7 @@ async def get_tool(
             tool_id=request.tool_id,
             draft_id=request.draft_id,
             bypass_cache=bypass_cache,
+            group_id=request.group_id,
         )
 
         if response_data.actor_name:
