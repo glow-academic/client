@@ -1,20 +1,20 @@
-"""DebugInfo entry CREATE endpoint."""
+"""Debug info entry CREATE endpoint."""
 
 from typing import Annotated, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.debug_info.types import (
+    CreateDebugInfoEntryRequest,
+    CreateDebugInfoEntryResponse,
+    CreateDebugInfoEntrySqlParams,
+    CreateDebugInfoEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateDebugInfoEntriesApiRequest,
-    CreateDebugInfoEntriesApiResponse,
-    CreateDebugInfoEntriesSqlParams,
-    CreateDebugInfoEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -29,16 +29,16 @@ async def create_debug_info_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateDebugInfoEntriesApiResponse:
+) -> CreateDebugInfoEntryResponse:
     """Internal function to create debug_info entry."""
     tags = ["entries", "debug_info"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateDebugInfoEntriesSqlParams(**request_dict)
+        params = CreateDebugInfoEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateDebugInfoEntriesSqlRow,
+            CreateDebugInfoEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -47,12 +47,12 @@ async def create_debug_info_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateDebugInfoEntriesApiResponse.model_validate(result.model_dump())
+    return CreateDebugInfoEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
-    "/debug_info/create",
-    response_model=CreateDebugInfoEntriesApiResponse,
+    "/debug-info/create",
+    response_model=CreateDebugInfoEntryResponse,
     dependencies=[
         audit_activity(
             "debug_info.created",
@@ -61,11 +61,11 @@ async def create_debug_info_entry_internal(
     ],
 )
 async def create_debug_info_entry(
-    request: CreateDebugInfoEntriesApiRequest,
+    request: CreateDebugInfoEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateDebugInfoEntriesApiResponse:
+) -> CreateDebugInfoEntryResponse:
     """Create debug_info entry."""
     tags = ["entries", "debug_info"]
     sql_query = load_sql_query(SQL_PATH)

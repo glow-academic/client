@@ -28,6 +28,7 @@ def resolve_callable(
     mod = importlib.import_module(module_path)
     return getattr(mod, func_name)  # type: ignore[no-any-return]
 
+
 # ---------------------------------------------------------------------------
 # Artifact operations: (artifact_name, op) → (module_path, function_name) | None
 #
@@ -327,13 +328,24 @@ ARTIFACT_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
 _R = "app.api.v4.resources"
 
 
-def _res(name: str, *, get: bool = True, create: bool = False, link: bool = False, search: bool = False) -> dict[tuple[str, str], tuple[str, str] | None]:
+def _res(
+    name: str,
+    *,
+    get: bool = True,
+    create: bool = False,
+    link: bool = False,
+    search: bool = False,
+) -> dict[tuple[str, str], tuple[str, str] | None]:
     """Helper to generate resource op entries."""
     d: dict[tuple[str, str], tuple[str, str] | None] = {}
     d[(name, "get")] = (f"{_R}.{name}.get", f"get_{name}_internal") if get else None
-    d[(name, "create")] = (f"{_R}.{name}.create", f"create_{name}_internal") if create else None
+    d[(name, "create")] = (
+        (f"{_R}.{name}.create", f"create_{name}_internal") if create else None
+    )
     d[(name, "link")] = (f"{_R}.{name}.link", f"link_{name}_internal") if link else None
-    d[(name, "search")] = (f"{_R}.{name}.search", f"search_{name}_internal") if search else None
+    d[(name, "search")] = (
+        (f"{_R}.{name}.search", f"search_{name}_internal") if search else None
+    )
     d[(name, "docs")] = None
     return d
 
@@ -454,8 +466,12 @@ def _ent(
         d[(name, "get")] = (f"{_E}.{name}.get", fn)
     else:
         d[(name, "get")] = None
-    d[(name, "search")] = (f"{_E}.{name}.search", f"search_{name}_entries_internal") if search else None
-    d[(name, "create")] = (f"{_E}.{name}.create", f"create_{name}_entry_internal") if create else None
+    d[(name, "search")] = (
+        (f"{_E}.{name}.search", f"search_{name}_entries_internal") if search else None
+    )
+    d[(name, "create")] = (
+        (f"{_E}.{name}.create", f"create_{name}_entry_internal") if create else None
+    )
     d[(name, "docs")] = None
     return d
 

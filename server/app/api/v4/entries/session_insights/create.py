@@ -5,16 +5,16 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.session_insights.types import (
+    CreateSessionInsightsEntryRequest,
+    CreateSessionInsightsEntryResponse,
+    CreateSessionInsightsEntrySqlParams,
+    CreateSessionInsightsEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateSessionInsightsEntriesApiRequest,
-    CreateSessionInsightsEntriesApiResponse,
-    CreateSessionInsightsEntriesSqlParams,
-    CreateSessionInsightsEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -27,16 +27,16 @@ async def create_session_insights_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateSessionInsightsEntriesApiResponse:
+) -> CreateSessionInsightsEntryResponse:
     """Internal function to create session_insights entry."""
     tags = ["entries", "session_insights"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateSessionInsightsEntriesSqlParams(**request_dict)
+        params = CreateSessionInsightsEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateSessionInsightsEntriesSqlRow,
+            CreateSessionInsightsEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -45,12 +45,12 @@ async def create_session_insights_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateSessionInsightsEntriesApiResponse.model_validate(result.model_dump())
+    return CreateSessionInsightsEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
-    "/session_insights/create",
-    response_model=CreateSessionInsightsEntriesApiResponse,
+    "/session-insights/create",
+    response_model=CreateSessionInsightsEntryResponse,
     dependencies=[
         audit_activity(
             "session_insights.created",
@@ -59,11 +59,11 @@ async def create_session_insights_entry_internal(
     ],
 )
 async def create_session_insights_entry(
-    request: CreateSessionInsightsEntriesApiRequest,
+    request: CreateSessionInsightsEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateSessionInsightsEntriesApiResponse:
+) -> CreateSessionInsightsEntryResponse:
     """Create session_insights entry."""
     tags = ["entries", "session_insights"]
     sql_query = load_sql_query(SQL_PATH)

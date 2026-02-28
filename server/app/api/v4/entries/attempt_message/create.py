@@ -5,16 +5,16 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.attempt_message.types import (
+    CreateAttemptMessageEntryRequest,
+    CreateAttemptMessageEntryResponse,
+    CreateAttemptMessageEntrySqlParams,
+    CreateAttemptMessageEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateAttemptMessageEntriesApiRequest,
-    CreateAttemptMessageEntriesApiResponse,
-    CreateAttemptMessageEntriesSqlParams,
-    CreateAttemptMessageEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -27,30 +27,34 @@ async def create_attempt_message_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateAttemptMessageEntriesApiResponse:
+) -> CreateAttemptMessageEntryResponse:
     """Internal function to create attempt_message entry."""
     tags = ["entries", "attempt_message"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateAttemptMessageEntriesSqlParams(**request_dict)
+        params = CreateAttemptMessageEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateAttemptMessageEntriesSqlRow,
+            CreateAttemptMessageEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
-        if not result or not result.id:
+        if not result or not result.entry_id:
             raise ValueError("Failed to create attempt_message entry")
 
     await invalidate_tags(tags)
 
-    return CreateAttemptMessageEntriesApiResponse.model_validate(result.model_dump())
+    return CreateAttemptMessageEntryResponse(
+        id=result.entry_id,
+        call_id=result.entry_call_id,
+        message_id=result.entry_message_id,
+    )
 
 
 @router.post(
-    "/attempt_message/create",
-    response_model=CreateAttemptMessageEntriesApiResponse,
+    "/attempt-message/create",
+    response_model=CreateAttemptMessageEntryResponse,
     dependencies=[
         audit_activity(
             "attempt_message.created",
@@ -59,11 +63,11 @@ async def create_attempt_message_entry_internal(
     ],
 )
 async def create_attempt_message_entry(
-    request: CreateAttemptMessageEntriesApiRequest,
+    request: CreateAttemptMessageEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateAttemptMessageEntriesApiResponse:
+) -> CreateAttemptMessageEntryResponse:
     """Create attempt_message entry."""
     tags = ["entries", "attempt_message"]
     sql_query = load_sql_query(SQL_PATH)

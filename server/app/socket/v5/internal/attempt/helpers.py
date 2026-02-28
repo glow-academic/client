@@ -66,7 +66,7 @@ async def emit_chat_generate(
         GenerateRequestData(
             sid=sid,
             profile_id=str(profile_id),
-            artifact_type="chat",
+            artifact_types=[{"name": "chat", "operation": "get"}],
             artifact_id=str(chat_entry_id),
             draft_id=str(draft_id) if draft_id else None,
             resource_types=resolved_resource_types,

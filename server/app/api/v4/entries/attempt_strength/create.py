@@ -5,16 +5,16 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.attempt_strength.types import (
+    CreateAttemptStrengthEntryRequest,
+    CreateAttemptStrengthEntryResponse,
+    CreateAttemptStrengthEntrySqlParams,
+    CreateAttemptStrengthEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateAttemptStrengthEntriesApiRequest,
-    CreateAttemptStrengthEntriesApiResponse,
-    CreateAttemptStrengthEntriesSqlParams,
-    CreateAttemptStrengthEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -27,30 +27,34 @@ async def create_attempt_strength_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateAttemptStrengthEntriesApiResponse:
+) -> CreateAttemptStrengthEntryResponse:
     """Internal function to create attempt_strength entry."""
     tags = ["entries", "attempt_strength"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateAttemptStrengthEntriesSqlParams(**request_dict)
+        params = CreateAttemptStrengthEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateAttemptStrengthEntriesSqlRow,
+            CreateAttemptStrengthEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
-        if not result or not result.id:
+        if not result or not result.entry_id:
             raise ValueError("Failed to create attempt_strength entry")
 
     await invalidate_tags(tags)
 
-    return CreateAttemptStrengthEntriesApiResponse.model_validate(result.model_dump())
+    return CreateAttemptStrengthEntryResponse(
+        id=result.entry_id,
+        call_id=result.entry_call_id,
+        message_id=result.entry_message_id,
+    )
 
 
 @router.post(
-    "/attempt_strength/create",
-    response_model=CreateAttemptStrengthEntriesApiResponse,
+    "/attempt-strength/create",
+    response_model=CreateAttemptStrengthEntryResponse,
     dependencies=[
         audit_activity(
             "attempt_strength.created",
@@ -59,11 +63,11 @@ async def create_attempt_strength_entry_internal(
     ],
 )
 async def create_attempt_strength_entry(
-    request: CreateAttemptStrengthEntriesApiRequest,
+    request: CreateAttemptStrengthEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateAttemptStrengthEntriesApiResponse:
+) -> CreateAttemptStrengthEntryResponse:
     """Create attempt_strength entry."""
     tags = ["entries", "attempt_strength"]
     sql_query = load_sql_query(SQL_PATH)

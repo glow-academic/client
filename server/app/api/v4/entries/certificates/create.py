@@ -5,16 +5,16 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.certificates.types import (
+    CreateCertificatesEntryRequest,
+    CreateCertificatesEntryResponse,
+    CreateCertificatesEntrySqlParams,
+    CreateCertificatesEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateCertificatesEntriesApiRequest,
-    CreateCertificatesEntriesApiResponse,
-    CreateCertificatesEntriesSqlParams,
-    CreateCertificatesEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -29,16 +29,16 @@ async def create_certificates_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateCertificatesEntriesApiResponse:
+) -> CreateCertificatesEntryResponse:
     """Internal function to create certificates entry."""
     tags = ["entries", "certificates"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateCertificatesEntriesSqlParams(**request_dict)
+        params = CreateCertificatesEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateCertificatesEntriesSqlRow,
+            CreateCertificatesEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -47,12 +47,12 @@ async def create_certificates_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateCertificatesEntriesApiResponse.model_validate(result.model_dump())
+    return CreateCertificatesEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
     "/certificates/create",
-    response_model=CreateCertificatesEntriesApiResponse,
+    response_model=CreateCertificatesEntryResponse,
     dependencies=[
         audit_activity(
             "certificates.created",
@@ -61,11 +61,11 @@ async def create_certificates_entry_internal(
     ],
 )
 async def create_certificates_entry(
-    request: CreateCertificatesEntriesApiRequest,
+    request: CreateCertificatesEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateCertificatesEntriesApiResponse:
+) -> CreateCertificatesEntryResponse:
     """Create certificates entry."""
     tags = ["entries", "certificates"]
     sql_query = load_sql_query(SQL_PATH)

@@ -34,7 +34,7 @@ class GenerateRequestData(BaseModel):
 
     sid: str
     profile_id: str
-    artifact_type: str
+    artifact_types: list[dict[str, str]]
     artifact_id: str
     resource_types: list[str]
     save: bool = True

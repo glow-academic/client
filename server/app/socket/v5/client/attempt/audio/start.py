@@ -107,7 +107,7 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
             GenerateRequestData(
                 sid=sid,
                 profile_id=profile_id_str,
-                artifact_type="attempt",
+                artifact_types=[{"name": "attempt", "operation": "get"}],
                 artifact_id=str(attempt_id),
                 resource_types=resource_types,
                 save=True,

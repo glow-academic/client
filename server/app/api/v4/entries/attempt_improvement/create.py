@@ -5,16 +5,16 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.attempt_improvement.types import (
+    CreateAttemptImprovementEntryRequest,
+    CreateAttemptImprovementEntryResponse,
+    CreateAttemptImprovementEntrySqlParams,
+    CreateAttemptImprovementEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateAttemptImprovementEntriesApiRequest,
-    CreateAttemptImprovementEntriesApiResponse,
-    CreateAttemptImprovementEntriesSqlParams,
-    CreateAttemptImprovementEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -27,32 +27,34 @@ async def create_attempt_improvement_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateAttemptImprovementEntriesApiResponse:
+) -> CreateAttemptImprovementEntryResponse:
     """Internal function to create attempt_improvement entry."""
     tags = ["entries", "attempt_improvement"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateAttemptImprovementEntriesSqlParams(**request_dict)
+        params = CreateAttemptImprovementEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateAttemptImprovementEntriesSqlRow,
+            CreateAttemptImprovementEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
-        if not result or not result.id:
+        if not result or not result.entry_id:
             raise ValueError("Failed to create attempt_improvement entry")
 
     await invalidate_tags(tags)
 
-    return CreateAttemptImprovementEntriesApiResponse.model_validate(
-        result.model_dump()
+    return CreateAttemptImprovementEntryResponse(
+        id=result.entry_id,
+        call_id=result.entry_call_id,
+        message_id=result.entry_message_id,
     )
 
 
 @router.post(
-    "/attempt_improvement/create",
-    response_model=CreateAttemptImprovementEntriesApiResponse,
+    "/attempt-improvement/create",
+    response_model=CreateAttemptImprovementEntryResponse,
     dependencies=[
         audit_activity(
             "attempt_improvement.created",
@@ -61,11 +63,11 @@ async def create_attempt_improvement_entry_internal(
     ],
 )
 async def create_attempt_improvement_entry(
-    request: CreateAttemptImprovementEntriesApiRequest,
+    request: CreateAttemptImprovementEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateAttemptImprovementEntriesApiResponse:
+) -> CreateAttemptImprovementEntryResponse:
     """Create attempt_improvement entry."""
     tags = ["entries", "attempt_improvement"]
     sql_query = load_sql_query(SQL_PATH)

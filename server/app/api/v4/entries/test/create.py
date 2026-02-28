@@ -5,16 +5,16 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.test.types import (
+    CreateTestEntryRequest,
+    CreateTestEntryResponse,
+    CreateTestEntrySqlParams,
+    CreateTestEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateTestEntriesApiRequest,
-    CreateTestEntriesApiResponse,
-    CreateTestEntriesSqlParams,
-    CreateTestEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -27,16 +27,16 @@ async def create_test_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateTestEntriesApiResponse:
+) -> CreateTestEntryResponse:
     """Internal function to create test entry."""
     tags = ["entries", "test"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateTestEntriesSqlParams(**request_dict)
+        params = CreateTestEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateTestEntriesSqlRow,
+            CreateTestEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -45,12 +45,12 @@ async def create_test_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateTestEntriesApiResponse.model_validate(result.model_dump())
+    return CreateTestEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
     "/test/create",
-    response_model=CreateTestEntriesApiResponse,
+    response_model=CreateTestEntryResponse,
     dependencies=[
         audit_activity(
             "test.created",
@@ -59,11 +59,11 @@ async def create_test_entry_internal(
     ],
 )
 async def create_test_entry(
-    request: CreateTestEntriesApiRequest,
+    request: CreateTestEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateTestEntriesApiResponse:
+) -> CreateTestEntryResponse:
     """Create test entry."""
     tags = ["entries", "test"]
     sql_query = load_sql_query(SQL_PATH)

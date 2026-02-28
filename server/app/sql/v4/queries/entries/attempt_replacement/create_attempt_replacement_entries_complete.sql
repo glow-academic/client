@@ -1,4 +1,4 @@
--- Create attempt_replacement entry via generic api_create_entry_record_v4
+-- Create attempt_replacement entry with strongly-typed params
 
 DO $$
 DECLARE
@@ -15,22 +15,40 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION public.api_create_attempt_replacement_entry_v4(
-    call_id uuid DEFAULT NULL,
-    mcp boolean DEFAULT false,
-    entry_data jsonb DEFAULT '{}'::jsonb
-) RETURNS TABLE(
-    id uuid,
-    already_exists boolean
-)
-LANGUAGE plpgsql
-AS $$
+    run_id uuid,
+    improvement_id uuid,
+    section text DEFAULT '',
+    "replace" text DEFAULT '',
+    idx integer DEFAULT 0,
+    mcp boolean DEFAULT false
+) RETURNS TABLE (id uuid, call_id uuid, message_id uuid)
+LANGUAGE plpgsql AS $$
+DECLARE
+    v_entry_id uuid;
+    v_call_id uuid;
+    v_text_id uuid;
+    v_message_id uuid;
 BEGIN
-    RETURN QUERY
-    SELECT * FROM api_create_entry_record_v4(
-        entry_type := 'attempt_replacement',
-        call_id := call_id,
-        mcp := mcp,
-        entry_data := entry_data
-    );
-END;
-$$;
+    -- 1. Create text record
+    INSERT INTO texts_entry (content, generated, mcp)
+    VALUES ('Replacement for improvement ' || api_create_attempt_replacement_entry_v4.improvement_id || ' at index ' || api_create_attempt_replacement_entry_v4.idx, true, api_create_attempt_replacement_entry_v4.mcp)
+    ON CONFLICT (content_hash) DO UPDATE SET id = texts_entry.id
+    RETURNING texts_entry.id INTO v_text_id;
+
+    -- 2. Create call record
+    v_call_id := uuidv7();
+    INSERT INTO calls_entry (id, run_id, external_call_id, completed)
+    VALUES (v_call_id, api_create_attempt_replacement_entry_v4.run_id, 'attempt_replacement_' || v_call_id::text, true);
+
+    -- 3. Create entry
+    INSERT INTO attempt_replacement_entry (call_id, improvement_id, section, "replace", idx, mcp)
+    VALUES (v_call_id, api_create_attempt_replacement_entry_v4.improvement_id, api_create_attempt_replacement_entry_v4.section, api_create_attempt_replacement_entry_v4."replace", api_create_attempt_replacement_entry_v4.idx, api_create_attempt_replacement_entry_v4.mcp)
+    RETURNING attempt_replacement_entry.id INTO v_entry_id;
+
+    -- 4. Create message
+    INSERT INTO messages_entry (run_id, call_id, role, text_id, generated, mcp)
+    VALUES (api_create_attempt_replacement_entry_v4.run_id, v_call_id, 'assistant', v_text_id, true, api_create_attempt_replacement_entry_v4.mcp)
+    RETURNING messages_entry.id INTO v_message_id;
+
+    RETURN QUERY SELECT v_entry_id, v_call_id, v_message_id;
+END; $$;

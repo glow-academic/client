@@ -1,20 +1,20 @@
-"""ConversationsCompletions entry CREATE endpoint."""
+"""Conversations completions entry CREATE endpoint."""
 
 from typing import Annotated, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.conversations_completions.types import (
+    CreateConversationsCompletionsEntryRequest,
+    CreateConversationsCompletionsEntryResponse,
+    CreateConversationsCompletionsEntrySqlParams,
+    CreateConversationsCompletionsEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateConversationsCompletionsEntriesApiRequest,
-    CreateConversationsCompletionsEntriesApiResponse,
-    CreateConversationsCompletionsEntriesSqlParams,
-    CreateConversationsCompletionsEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -27,16 +27,16 @@ async def create_conversations_completions_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateConversationsCompletionsEntriesApiResponse:
+) -> CreateConversationsCompletionsEntryResponse:
     """Internal function to create conversations_completions entry."""
     tags = ["entries", "conversations_completions"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateConversationsCompletionsEntriesSqlParams(**request_dict)
+        params = CreateConversationsCompletionsEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateConversationsCompletionsEntriesSqlRow,
+            CreateConversationsCompletionsEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -45,14 +45,14 @@ async def create_conversations_completions_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateConversationsCompletionsEntriesApiResponse.model_validate(
+    return CreateConversationsCompletionsEntryResponse.model_validate(
         result.model_dump()
     )
 
 
 @router.post(
-    "/conversations_completions/create",
-    response_model=CreateConversationsCompletionsEntriesApiResponse,
+    "/conversations-completions/create",
+    response_model=CreateConversationsCompletionsEntryResponse,
     dependencies=[
         audit_activity(
             "conversations_completions.created",
@@ -61,11 +61,11 @@ async def create_conversations_completions_entry_internal(
     ],
 )
 async def create_conversations_completions_entry(
-    request: CreateConversationsCompletionsEntriesApiRequest,
+    request: CreateConversationsCompletionsEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateConversationsCompletionsEntriesApiResponse:
+) -> CreateConversationsCompletionsEntryResponse:
     """Create conversations_completions entry."""
     tags = ["entries", "conversations_completions"]
     sql_query = load_sql_query(SQL_PATH)

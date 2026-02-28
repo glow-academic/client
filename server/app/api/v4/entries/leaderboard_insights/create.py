@@ -5,16 +5,16 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.leaderboard_insights.types import (
+    CreateLeaderboardInsightsEntryRequest,
+    CreateLeaderboardInsightsEntryResponse,
+    CreateLeaderboardInsightsEntrySqlParams,
+    CreateLeaderboardInsightsEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateLeaderboardInsightsEntriesApiRequest,
-    CreateLeaderboardInsightsEntriesApiResponse,
-    CreateLeaderboardInsightsEntriesSqlParams,
-    CreateLeaderboardInsightsEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -27,16 +27,16 @@ async def create_leaderboard_insights_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateLeaderboardInsightsEntriesApiResponse:
+) -> CreateLeaderboardInsightsEntryResponse:
     """Internal function to create leaderboard_insights entry."""
     tags = ["entries", "leaderboard_insights"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateLeaderboardInsightsEntriesSqlParams(**request_dict)
+        params = CreateLeaderboardInsightsEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateLeaderboardInsightsEntriesSqlRow,
+            CreateLeaderboardInsightsEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -45,14 +45,12 @@ async def create_leaderboard_insights_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateLeaderboardInsightsEntriesApiResponse.model_validate(
-        result.model_dump()
-    )
+    return CreateLeaderboardInsightsEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
-    "/leaderboard_insights/create",
-    response_model=CreateLeaderboardInsightsEntriesApiResponse,
+    "/leaderboard-insights/create",
+    response_model=CreateLeaderboardInsightsEntryResponse,
     dependencies=[
         audit_activity(
             "leaderboard_insights.created",
@@ -61,11 +59,11 @@ async def create_leaderboard_insights_entry_internal(
     ],
 )
 async def create_leaderboard_insights_entry(
-    request: CreateLeaderboardInsightsEntriesApiRequest,
+    request: CreateLeaderboardInsightsEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateLeaderboardInsightsEntriesApiResponse:
+) -> CreateLeaderboardInsightsEntryResponse:
     """Create leaderboard_insights entry."""
     tags = ["entries", "leaderboard_insights"]
     sql_query = load_sql_query(SQL_PATH)

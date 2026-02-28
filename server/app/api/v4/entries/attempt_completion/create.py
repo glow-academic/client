@@ -5,16 +5,16 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.attempt_completion.types import (
+    CreateAttemptCompletionEntryRequest,
+    CreateAttemptCompletionEntryResponse,
+    CreateAttemptCompletionEntrySqlParams,
+    CreateAttemptCompletionEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateAttemptCompletionEntriesApiRequest,
-    CreateAttemptCompletionEntriesApiResponse,
-    CreateAttemptCompletionEntriesSqlParams,
-    CreateAttemptCompletionEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -27,16 +27,16 @@ async def create_attempt_completion_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateAttemptCompletionEntriesApiResponse:
+) -> CreateAttemptCompletionEntryResponse:
     """Internal function to create attempt_completion entry."""
     tags = ["entries", "attempt_completion"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateAttemptCompletionEntriesSqlParams(**request_dict)
+        params = CreateAttemptCompletionEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateAttemptCompletionEntriesSqlRow,
+            CreateAttemptCompletionEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -45,12 +45,12 @@ async def create_attempt_completion_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateAttemptCompletionEntriesApiResponse.model_validate(result.model_dump())
+    return CreateAttemptCompletionEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
-    "/attempt_completion/create",
-    response_model=CreateAttemptCompletionEntriesApiResponse,
+    "/attempt-completion/create",
+    response_model=CreateAttemptCompletionEntryResponse,
     dependencies=[
         audit_activity(
             "attempt_completion.created",
@@ -59,11 +59,11 @@ async def create_attempt_completion_entry_internal(
     ],
 )
 async def create_attempt_completion_entry(
-    request: CreateAttemptCompletionEntriesApiRequest,
+    request: CreateAttemptCompletionEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateAttemptCompletionEntriesApiResponse:
+) -> CreateAttemptCompletionEntryResponse:
     """Create attempt_completion entry."""
     tags = ["entries", "attempt_completion"]
     sql_query = load_sql_query(SQL_PATH)

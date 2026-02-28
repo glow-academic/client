@@ -5,16 +5,16 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.reports.types import (
+    CreateReportsEntryRequest,
+    CreateReportsEntryResponse,
+    CreateReportsEntrySqlParams,
+    CreateReportsEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateReportsEntriesApiRequest,
-    CreateReportsEntriesApiResponse,
-    CreateReportsEntriesSqlParams,
-    CreateReportsEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -27,16 +27,16 @@ async def create_reports_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateReportsEntriesApiResponse:
+) -> CreateReportsEntryResponse:
     """Internal function to create reports entry."""
     tags = ["entries", "reports"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateReportsEntriesSqlParams(**request_dict)
+        params = CreateReportsEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateReportsEntriesSqlRow,
+            CreateReportsEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -45,12 +45,12 @@ async def create_reports_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateReportsEntriesApiResponse.model_validate(result.model_dump())
+    return CreateReportsEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
     "/reports/create",
-    response_model=CreateReportsEntriesApiResponse,
+    response_model=CreateReportsEntryResponse,
     dependencies=[
         audit_activity(
             "reports.created",
@@ -59,11 +59,11 @@ async def create_reports_entry_internal(
     ],
 )
 async def create_reports_entry(
-    request: CreateReportsEntriesApiRequest,
+    request: CreateReportsEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateReportsEntriesApiResponse:
+) -> CreateReportsEntryResponse:
     """Create reports entry."""
     tags = ["entries", "reports"]
     sql_query = load_sql_query(SQL_PATH)

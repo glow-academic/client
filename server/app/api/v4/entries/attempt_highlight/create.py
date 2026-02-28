@@ -5,16 +5,16 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.attempt_highlight.types import (
+    CreateAttemptHighlightEntryRequest,
+    CreateAttemptHighlightEntryResponse,
+    CreateAttemptHighlightEntrySqlParams,
+    CreateAttemptHighlightEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateAttemptHighlightEntriesApiRequest,
-    CreateAttemptHighlightEntriesApiResponse,
-    CreateAttemptHighlightEntriesSqlParams,
-    CreateAttemptHighlightEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -27,16 +27,16 @@ async def create_attempt_highlight_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateAttemptHighlightEntriesApiResponse:
+) -> CreateAttemptHighlightEntryResponse:
     """Internal function to create attempt_highlight entry."""
     tags = ["entries", "attempt_highlight"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateAttemptHighlightEntriesSqlParams(**request_dict)
+        params = CreateAttemptHighlightEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateAttemptHighlightEntriesSqlRow,
+            CreateAttemptHighlightEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -45,12 +45,12 @@ async def create_attempt_highlight_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateAttemptHighlightEntriesApiResponse.model_validate(result.model_dump())
+    return CreateAttemptHighlightEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
-    "/attempt_highlight/create",
-    response_model=CreateAttemptHighlightEntriesApiResponse,
+    "/attempt-highlight/create",
+    response_model=CreateAttemptHighlightEntryResponse,
     dependencies=[
         audit_activity(
             "attempt_highlight.created",
@@ -59,11 +59,11 @@ async def create_attempt_highlight_entry_internal(
     ],
 )
 async def create_attempt_highlight_entry(
-    request: CreateAttemptHighlightEntriesApiRequest,
+    request: CreateAttemptHighlightEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateAttemptHighlightEntriesApiResponse:
+) -> CreateAttemptHighlightEntryResponse:
     """Create attempt_highlight entry."""
     tags = ["entries", "attempt_highlight"]
     sql_query = load_sql_query(SQL_PATH)

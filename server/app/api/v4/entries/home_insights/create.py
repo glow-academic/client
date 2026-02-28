@@ -5,16 +5,16 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.home_insights.types import (
+    CreateHomeInsightsEntryRequest,
+    CreateHomeInsightsEntryResponse,
+    CreateHomeInsightsEntrySqlParams,
+    CreateHomeInsightsEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateHomeInsightsEntriesApiRequest,
-    CreateHomeInsightsEntriesApiResponse,
-    CreateHomeInsightsEntriesSqlParams,
-    CreateHomeInsightsEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -29,16 +29,16 @@ async def create_home_insights_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateHomeInsightsEntriesApiResponse:
+) -> CreateHomeInsightsEntryResponse:
     """Internal function to create home_insights entry."""
     tags = ["entries", "home_insights"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateHomeInsightsEntriesSqlParams(**request_dict)
+        params = CreateHomeInsightsEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateHomeInsightsEntriesSqlRow,
+            CreateHomeInsightsEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -47,12 +47,12 @@ async def create_home_insights_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateHomeInsightsEntriesApiResponse.model_validate(result.model_dump())
+    return CreateHomeInsightsEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
-    "/home_insights/create",
-    response_model=CreateHomeInsightsEntriesApiResponse,
+    "/home-insights/create",
+    response_model=CreateHomeInsightsEntryResponse,
     dependencies=[
         audit_activity(
             "home_insights.created",
@@ -61,11 +61,11 @@ async def create_home_insights_entry_internal(
     ],
 )
 async def create_home_insights_entry(
-    request: CreateHomeInsightsEntriesApiRequest,
+    request: CreateHomeInsightsEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateHomeInsightsEntriesApiResponse:
+) -> CreateHomeInsightsEntryResponse:
     """Create home_insights entry."""
     tags = ["entries", "home_insights"]
     sql_query = load_sql_query(SQL_PATH)

@@ -12,7 +12,12 @@ from app.registry.entry_resources import ENTRY_RESOURCES
 from app.registry.entry_schemas import ENTRY_SCHEMAS
 from app.registry.entry_view_names import ENTRY_VIEW_NAMES
 from app.registry.entry_view_schemas import ENTRY_VIEW_SCHEMAS
-from app.registry.operations import ARTIFACT_OPS, ENTRY_OPS, RESOURCE_OPS, resolve_callable
+from app.registry.operations import (
+    ARTIFACT_OPS,
+    ENTRY_OPS,
+    RESOURCE_OPS,
+    resolve_callable,
+)
 from app.registry.resource_entries import RESOURCE_ENTRIES
 from app.registry.resource_events import RESOURCE_EVENTS, ResourceGenerationBase
 from app.registry.resource_modalities import RESOURCE_MODALITIES

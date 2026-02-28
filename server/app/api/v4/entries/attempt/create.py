@@ -5,16 +5,16 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.attempt.types import (
+    CreateAttemptEntryRequest,
+    CreateAttemptEntryResponse,
+    CreateAttemptEntrySqlParams,
+    CreateAttemptEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateAttemptEntriesApiRequest,
-    CreateAttemptEntriesApiResponse,
-    CreateAttemptEntriesSqlParams,
-    CreateAttemptEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -27,16 +27,16 @@ async def create_attempt_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateAttemptEntriesApiResponse:
+) -> CreateAttemptEntryResponse:
     """Internal function to create attempt entry."""
     tags = ["entries", "attempt"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateAttemptEntriesSqlParams(**request_dict)
+        params = CreateAttemptEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateAttemptEntriesSqlRow,
+            CreateAttemptEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -45,12 +45,12 @@ async def create_attempt_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateAttemptEntriesApiResponse.model_validate(result.model_dump())
+    return CreateAttemptEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
     "/attempt/create",
-    response_model=CreateAttemptEntriesApiResponse,
+    response_model=CreateAttemptEntryResponse,
     dependencies=[
         audit_activity(
             "attempt.created",
@@ -59,11 +59,11 @@ async def create_attempt_entry_internal(
     ],
 )
 async def create_attempt_entry(
-    request: CreateAttemptEntriesApiRequest,
+    request: CreateAttemptEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateAttemptEntriesApiResponse:
+) -> CreateAttemptEntryResponse:
     """Create attempt entry."""
     tags = ["entries", "attempt"]
     sql_query = load_sql_query(SQL_PATH)

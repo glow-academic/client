@@ -5,16 +5,16 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.resolves.types import (
+    CreateResolvesEntryRequest,
+    CreateResolvesEntryResponse,
+    CreateResolvesEntrySqlParams,
+    CreateResolvesEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateResolvesEntriesApiRequest,
-    CreateResolvesEntriesApiResponse,
-    CreateResolvesEntriesSqlParams,
-    CreateResolvesEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -27,16 +27,16 @@ async def create_resolves_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateResolvesEntriesApiResponse:
+) -> CreateResolvesEntryResponse:
     """Internal function to create resolves entry."""
     tags = ["entries", "resolves"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateResolvesEntriesSqlParams(**request_dict)
+        params = CreateResolvesEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateResolvesEntriesSqlRow,
+            CreateResolvesEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -45,12 +45,12 @@ async def create_resolves_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateResolvesEntriesApiResponse.model_validate(result.model_dump())
+    return CreateResolvesEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
     "/resolves/create",
-    response_model=CreateResolvesEntriesApiResponse,
+    response_model=CreateResolvesEntryResponse,
     dependencies=[
         audit_activity(
             "resolves.created",
@@ -59,11 +59,11 @@ async def create_resolves_entry_internal(
     ],
 )
 async def create_resolves_entry(
-    request: CreateResolvesEntriesApiRequest,
+    request: CreateResolvesEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateResolvesEntriesApiResponse:
+) -> CreateResolvesEntryResponse:
     """Create resolves entry."""
     tags = ["entries", "resolves"]
     sql_query = load_sql_query(SQL_PATH)

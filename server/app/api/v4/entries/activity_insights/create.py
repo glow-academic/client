@@ -5,16 +5,16 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.activity_insights.types import (
+    CreateActivityInsightsEntryRequest,
+    CreateActivityInsightsEntryResponse,
+    CreateActivityInsightsEntrySqlParams,
+    CreateActivityInsightsEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateActivityInsightsEntriesApiRequest,
-    CreateActivityInsightsEntriesApiResponse,
-    CreateActivityInsightsEntriesSqlParams,
-    CreateActivityInsightsEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -27,16 +27,16 @@ async def create_activity_insights_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateActivityInsightsEntriesApiResponse:
+) -> CreateActivityInsightsEntryResponse:
     """Internal function to create activity_insights entry."""
     tags = ["entries", "activity_insights"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateActivityInsightsEntriesSqlParams(**request_dict)
+        params = CreateActivityInsightsEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateActivityInsightsEntriesSqlRow,
+            CreateActivityInsightsEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -45,12 +45,12 @@ async def create_activity_insights_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateActivityInsightsEntriesApiResponse.model_validate(result.model_dump())
+    return CreateActivityInsightsEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
-    "/activity_insights/create",
-    response_model=CreateActivityInsightsEntriesApiResponse,
+    "/activity-insights/create",
+    response_model=CreateActivityInsightsEntryResponse,
     dependencies=[
         audit_activity(
             "activity_insights.created",
@@ -59,11 +59,11 @@ async def create_activity_insights_entry_internal(
     ],
 )
 async def create_activity_insights_entry(
-    request: CreateActivityInsightsEntriesApiRequest,
+    request: CreateActivityInsightsEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateActivityInsightsEntriesApiResponse:
+) -> CreateActivityInsightsEntryResponse:
     """Create activity_insights entry."""
     tags = ["entries", "activity_insights"]
     sql_query = load_sql_query(SQL_PATH)

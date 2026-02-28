@@ -44,7 +44,13 @@ async def generate(sid: str, data: dict[str, Any]) -> None:
 
     Creates group + run, then emits to internal bus for processing.
     """
-    artifact_type = data.get("artifact_type", "unknown")
+    # Derive artifact_type from artifact_types[0].name
+    artifact_types_raw = data.get("artifact_types") or []
+    artifact_type = (
+        artifact_types_raw[0]["name"]
+        if artifact_types_raw and isinstance(artifact_types_raw[0], dict)
+        else "unknown"
+    )
     try:
         payload = GeneratePayload(**data)
         profile_id_str = await find_profile_by_socket(sid)

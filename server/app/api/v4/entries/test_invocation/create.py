@@ -1,20 +1,20 @@
-"""Test Invocation entry CREATE endpoint."""
+"""Test invocation entry CREATE endpoint."""
 
 from typing import Annotated, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.test_invocation.types import (
+    CreateTestInvocationEntryRequest,
+    CreateTestInvocationEntryResponse,
+    CreateTestInvocationEntrySqlParams,
+    CreateTestInvocationEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateTestInvocationEntriesApiRequest,
-    CreateTestInvocationEntriesApiResponse,
-    CreateTestInvocationEntriesSqlParams,
-    CreateTestInvocationEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -27,16 +27,16 @@ async def create_test_invocation_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateTestInvocationEntriesApiResponse:
+) -> CreateTestInvocationEntryResponse:
     """Internal function to create test_invocation entry."""
     tags = ["entries", "test_invocation"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateTestInvocationEntriesSqlParams(**request_dict)
+        params = CreateTestInvocationEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateTestInvocationEntriesSqlRow,
+            CreateTestInvocationEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -45,12 +45,12 @@ async def create_test_invocation_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateTestInvocationEntriesApiResponse.model_validate(result.model_dump())
+    return CreateTestInvocationEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
-    "/test_invocation/create",
-    response_model=CreateTestInvocationEntriesApiResponse,
+    "/test-invocation/create",
+    response_model=CreateTestInvocationEntryResponse,
     dependencies=[
         audit_activity(
             "test_invocation.created",
@@ -59,11 +59,11 @@ async def create_test_invocation_entry_internal(
     ],
 )
 async def create_test_invocation_entry(
-    request: CreateTestInvocationEntriesApiRequest,
+    request: CreateTestInvocationEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateTestInvocationEntriesApiResponse:
+) -> CreateTestInvocationEntryResponse:
     """Create test_invocation entry."""
     tags = ["entries", "test_invocation"]
     sql_query = load_sql_query(SQL_PATH)

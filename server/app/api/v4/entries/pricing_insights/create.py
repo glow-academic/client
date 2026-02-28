@@ -5,16 +5,16 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.pricing_insights.types import (
+    CreatePricingInsightsEntryRequest,
+    CreatePricingInsightsEntryResponse,
+    CreatePricingInsightsEntrySqlParams,
+    CreatePricingInsightsEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreatePricingInsightsEntriesApiRequest,
-    CreatePricingInsightsEntriesApiResponse,
-    CreatePricingInsightsEntriesSqlParams,
-    CreatePricingInsightsEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -27,16 +27,16 @@ async def create_pricing_insights_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreatePricingInsightsEntriesApiResponse:
+) -> CreatePricingInsightsEntryResponse:
     """Internal function to create pricing_insights entry."""
     tags = ["entries", "pricing_insights"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreatePricingInsightsEntriesSqlParams(**request_dict)
+        params = CreatePricingInsightsEntrySqlParams(**request_dict)
 
         result = cast(
-            CreatePricingInsightsEntriesSqlRow,
+            CreatePricingInsightsEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -45,12 +45,12 @@ async def create_pricing_insights_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreatePricingInsightsEntriesApiResponse.model_validate(result.model_dump())
+    return CreatePricingInsightsEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
-    "/pricing_insights/create",
-    response_model=CreatePricingInsightsEntriesApiResponse,
+    "/pricing-insights/create",
+    response_model=CreatePricingInsightsEntryResponse,
     dependencies=[
         audit_activity(
             "pricing_insights.created",
@@ -59,11 +59,11 @@ async def create_pricing_insights_entry_internal(
     ],
 )
 async def create_pricing_insights_entry(
-    request: CreatePricingInsightsEntriesApiRequest,
+    request: CreatePricingInsightsEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreatePricingInsightsEntriesApiResponse:
+) -> CreatePricingInsightsEntryResponse:
     """Create pricing_insights entry."""
     tags = ["entries", "pricing_insights"]
     sql_query = load_sql_query(SQL_PATH)

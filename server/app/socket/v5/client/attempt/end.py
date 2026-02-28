@@ -110,7 +110,7 @@ async def attempt_end(sid: str, data: dict[str, Any]) -> None:
                 GenerateRequestData(
                     sid=sid,
                     profile_id=profile_id_str,
-                    artifact_type="attempt",
+                    artifact_types=[{"name": "attempt", "operation": "get"}],
                     artifact_id=attempt_id,
                     resource_types=GRADE_RESOURCE_TYPES,
                     save=True,

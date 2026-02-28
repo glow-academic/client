@@ -5,16 +5,16 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.attempt_replacement.types import (
+    CreateAttemptReplacementEntryRequest,
+    CreateAttemptReplacementEntryResponse,
+    CreateAttemptReplacementEntrySqlParams,
+    CreateAttemptReplacementEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateAttemptReplacementEntriesApiRequest,
-    CreateAttemptReplacementEntriesApiResponse,
-    CreateAttemptReplacementEntriesSqlParams,
-    CreateAttemptReplacementEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -27,16 +27,16 @@ async def create_attempt_replacement_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateAttemptReplacementEntriesApiResponse:
+) -> CreateAttemptReplacementEntryResponse:
     """Internal function to create attempt_replacement entry."""
     tags = ["entries", "attempt_replacement"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateAttemptReplacementEntriesSqlParams(**request_dict)
+        params = CreateAttemptReplacementEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateAttemptReplacementEntriesSqlRow,
+            CreateAttemptReplacementEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -45,14 +45,12 @@ async def create_attempt_replacement_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateAttemptReplacementEntriesApiResponse.model_validate(
-        result.model_dump()
-    )
+    return CreateAttemptReplacementEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
-    "/attempt_replacement/create",
-    response_model=CreateAttemptReplacementEntriesApiResponse,
+    "/attempt-replacement/create",
+    response_model=CreateAttemptReplacementEntryResponse,
     dependencies=[
         audit_activity(
             "attempt_replacement.created",
@@ -61,11 +59,11 @@ async def create_attempt_replacement_entry_internal(
     ],
 )
 async def create_attempt_replacement_entry(
-    request: CreateAttemptReplacementEntriesApiRequest,
+    request: CreateAttemptReplacementEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateAttemptReplacementEntriesApiResponse:
+) -> CreateAttemptReplacementEntryResponse:
     """Create attempt_replacement entry."""
     tags = ["entries", "attempt_replacement"]
     sql_query = load_sql_query(SQL_PATH)

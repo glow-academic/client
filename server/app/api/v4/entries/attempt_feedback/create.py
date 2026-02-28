@@ -5,16 +5,16 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.attempt_feedback.types import (
+    CreateAttemptFeedbackEntryRequest,
+    CreateAttemptFeedbackEntryResponse,
+    CreateAttemptFeedbackEntrySqlParams,
+    CreateAttemptFeedbackEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateAttemptFeedbackEntriesApiRequest,
-    CreateAttemptFeedbackEntriesApiResponse,
-    CreateAttemptFeedbackEntriesSqlParams,
-    CreateAttemptFeedbackEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -27,16 +27,16 @@ async def create_attempt_feedback_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateAttemptFeedbackEntriesApiResponse:
+) -> CreateAttemptFeedbackEntryResponse:
     """Internal function to create attempt_feedback entry."""
     tags = ["entries", "attempt_feedback"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateAttemptFeedbackEntriesSqlParams(**request_dict)
+        params = CreateAttemptFeedbackEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateAttemptFeedbackEntriesSqlRow,
+            CreateAttemptFeedbackEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -45,12 +45,12 @@ async def create_attempt_feedback_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateAttemptFeedbackEntriesApiResponse.model_validate(result.model_dump())
+    return CreateAttemptFeedbackEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
-    "/attempt_feedback/create",
-    response_model=CreateAttemptFeedbackEntriesApiResponse,
+    "/attempt-feedback/create",
+    response_model=CreateAttemptFeedbackEntryResponse,
     dependencies=[
         audit_activity(
             "attempt_feedback.created",
@@ -59,11 +59,11 @@ async def create_attempt_feedback_entry_internal(
     ],
 )
 async def create_attempt_feedback_entry(
-    request: CreateAttemptFeedbackEntriesApiRequest,
+    request: CreateAttemptFeedbackEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateAttemptFeedbackEntriesApiResponse:
+) -> CreateAttemptFeedbackEntryResponse:
     """Create attempt_feedback entry."""
     tags = ["entries", "attempt_feedback"]
     sql_query = load_sql_query(SQL_PATH)

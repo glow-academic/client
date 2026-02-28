@@ -1,20 +1,20 @@
-"""TestStop entry CREATE endpoint."""
+"""Test stop entry CREATE endpoint."""
 
 from typing import Annotated, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.test_stop.types import (
+    CreateTestStopEntryRequest,
+    CreateTestStopEntryResponse,
+    CreateTestStopEntrySqlParams,
+    CreateTestStopEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateTestStopEntriesApiRequest,
-    CreateTestStopEntriesApiResponse,
-    CreateTestStopEntriesSqlParams,
-    CreateTestStopEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -27,16 +27,16 @@ async def create_test_stop_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateTestStopEntriesApiResponse:
+) -> CreateTestStopEntryResponse:
     """Internal function to create test_stop entry."""
     tags = ["entries", "test_stop"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateTestStopEntriesSqlParams(**request_dict)
+        params = CreateTestStopEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateTestStopEntriesSqlRow,
+            CreateTestStopEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -45,12 +45,12 @@ async def create_test_stop_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateTestStopEntriesApiResponse.model_validate(result.model_dump())
+    return CreateTestStopEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
-    "/test_stop/create",
-    response_model=CreateTestStopEntriesApiResponse,
+    "/test-stop/create",
+    response_model=CreateTestStopEntryResponse,
     dependencies=[
         audit_activity(
             "test_stop.created",
@@ -59,11 +59,11 @@ async def create_test_stop_entry_internal(
     ],
 )
 async def create_test_stop_entry(
-    request: CreateTestStopEntriesApiRequest,
+    request: CreateTestStopEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateTestStopEntriesApiResponse:
+) -> CreateTestStopEntryResponse:
     """Create test_stop entry."""
     tags = ["entries", "test_stop"]
     sql_query = load_sql_query(SQL_PATH)

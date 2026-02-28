@@ -180,7 +180,7 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
             GenerateRequestData(
                 sid=sid,
                 profile_id=str(profile_id),
-                artifact_type="attempt",
+                artifact_types=[{"name": "attempt", "operation": "get"}],
                 artifact_id=str(attempt_id),
                 resource_types=MESSAGE_ENTRY_TYPES,
                 save=True,

@@ -5,16 +5,16 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.attempt_grade.types import (
+    CreateAttemptGradeEntryRequest,
+    CreateAttemptGradeEntryResponse,
+    CreateAttemptGradeEntrySqlParams,
+    CreateAttemptGradeEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateAttemptGradeEntriesApiRequest,
-    CreateAttemptGradeEntriesApiResponse,
-    CreateAttemptGradeEntriesSqlParams,
-    CreateAttemptGradeEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -29,16 +29,16 @@ async def create_attempt_grade_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateAttemptGradeEntriesApiResponse:
+) -> CreateAttemptGradeEntryResponse:
     """Internal function to create attempt_grade entry."""
     tags = ["entries", "attempt_grade"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateAttemptGradeEntriesSqlParams(**request_dict)
+        params = CreateAttemptGradeEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateAttemptGradeEntriesSqlRow,
+            CreateAttemptGradeEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -47,12 +47,12 @@ async def create_attempt_grade_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateAttemptGradeEntriesApiResponse.model_validate(result.model_dump())
+    return CreateAttemptGradeEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
-    "/attempt_grade/create",
-    response_model=CreateAttemptGradeEntriesApiResponse,
+    "/attempt-grade/create",
+    response_model=CreateAttemptGradeEntryResponse,
     dependencies=[
         audit_activity(
             "attempt_grade.created",
@@ -61,11 +61,11 @@ async def create_attempt_grade_entry_internal(
     ],
 )
 async def create_attempt_grade_entry(
-    request: CreateAttemptGradeEntriesApiRequest,
+    request: CreateAttemptGradeEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateAttemptGradeEntriesApiResponse:
+) -> CreateAttemptGradeEntryResponse:
     """Create attempt_grade entry."""
     tags = ["entries", "attempt_grade"]
     sql_query = load_sql_query(SQL_PATH)

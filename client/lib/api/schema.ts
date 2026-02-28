@@ -7804,7 +7804,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/activity_insights/create": {
+    "/api/v4/entries/activity-insights/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -8144,7 +8144,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_analysis/create": {
+    "/api/v4/entries/attempt-analysis/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -8184,7 +8184,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_archive/create": {
+    "/api/v4/entries/attempt-archive/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -8304,7 +8304,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_chat/create": {
+    "/api/v4/entries/attempt-chat/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -8384,7 +8384,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_completion/create": {
+    "/api/v4/entries/attempt-completion/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -8464,7 +8464,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_content/create": {
+    "/api/v4/entries/attempt-content/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -8544,7 +8544,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_feedback/create": {
+    "/api/v4/entries/attempt-feedback/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -8624,7 +8624,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_grade/create": {
+    "/api/v4/entries/attempt-grade/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -8704,7 +8704,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_highlight/create": {
+    "/api/v4/entries/attempt-highlight/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -8784,7 +8784,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_hint/create": {
+    "/api/v4/entries/attempt-hint/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -8864,7 +8864,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_improvement/create": {
+    "/api/v4/entries/attempt-improvement/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -8944,7 +8944,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_insights/create": {
+    "/api/v4/entries/attempt-insights/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -9024,7 +9024,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_message/create": {
+    "/api/v4/entries/attempt-message/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -9164,7 +9164,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_replacement/create": {
+    "/api/v4/entries/attempt-replacement/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -9244,7 +9244,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_strength/create": {
+    "/api/v4/entries/attempt-strength/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -9564,7 +9564,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/benchmark_insights/create": {
+    "/api/v4/entries/benchmark-insights/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -9984,7 +9984,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/conversations_completions/create": {
+    "/api/v4/entries/conversations-completions/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -10064,7 +10064,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/dashboard_insights/create": {
+    "/api/v4/entries/dashboard-insights/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -10144,7 +10144,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/debug_info/create": {
+    "/api/v4/entries/debug-info/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -10544,7 +10544,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/group_insights/create": {
+    "/api/v4/entries/group-insights/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -10744,7 +10744,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/health_insights/create": {
+    "/api/v4/entries/health-insights/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -10884,7 +10884,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/home_insights/create": {
+    "/api/v4/entries/home-insights/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -11084,7 +11084,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/leaderboard_insights/create": {
+    "/api/v4/entries/leaderboard-insights/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -11784,7 +11784,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/practice_insights/create": {
+    "/api/v4/entries/practice-insights/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -11924,7 +11924,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/pricing_insights/create": {
+    "/api/v4/entries/pricing-insights/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -12204,7 +12204,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/record_insights/create": {
+    "/api/v4/entries/record-insights/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -12364,7 +12364,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/reports_insights/create": {
+    "/api/v4/entries/reports-insights/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -12804,7 +12804,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/session_insights/create": {
+    "/api/v4/entries/session-insights/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -13284,7 +13284,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test_archive/create": {
+    "/api/v4/entries/test-archive/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -13404,7 +13404,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test_completion/create": {
+    "/api/v4/entries/test-completion/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -13484,7 +13484,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test_feedback/create": {
+    "/api/v4/entries/test-feedback/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -13564,7 +13564,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test_grade/create": {
+    "/api/v4/entries/test-grade/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -13644,7 +13644,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test_insights/create": {
+    "/api/v4/entries/test-insights/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -13664,7 +13664,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test_invocation/create": {
+    "/api/v4/entries/test-invocation/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -13804,7 +13804,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test_stop/create": {
+    "/api/v4/entries/test-stop/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -23936,7 +23936,7 @@ export interface components {
          */
         BenchmarkResponse: {
             /** Tests */
-            tests?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__19"][];
+            tests?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__17"][];
             /**
              * Total Count
              * @default 0
@@ -25156,423 +25156,921 @@ export interface components {
             /** Total Time */
             total_time: number;
         };
-        /** CreateActivityInsightsEntriesApiRequest */
-        CreateActivityInsightsEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+        /** CreateActivityInsightsEntryRequest */
+        CreateActivityInsightsEntryRequest: {
             /**
-             * Mcp
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Content
+             * @default
+             */
+            content: string;
+        };
+        /** CreateActivityInsightsEntryResponse */
+        CreateActivityInsightsEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateAttemptAnalysisEntryRequest */
+        CreateAttemptAnalysisEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Grade Id
+             * Format: uuid
+             */
+            grade_id: string;
+            /**
+             * Content
+             * @default
+             */
+            content: string;
+        };
+        /** CreateAttemptAnalysisEntryResponse */
+        CreateAttemptAnalysisEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateAttemptArchiveEntryRequest */
+        CreateAttemptArchiveEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /**
+             * Archived
              * @default false
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
+            archived: boolean;
         };
-        /** CreateActivityInsightsEntriesApiResponse */
-        CreateActivityInsightsEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateAttemptAnalysisEntriesApiRequest */
-        CreateAttemptAnalysisEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+        /** CreateAttemptArchiveEntryResponse */
+        CreateAttemptArchiveEntryResponse: {
             /**
-             * Mcp
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateAttemptChatEntryRequest */
+        CreateAttemptChatEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Title
+             * @default
+             */
+            title: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Chat Id */
+            chat_id?: string | null;
+            /**
+             * Position
+             * @default 0
+             */
+            position: number;
+            /** Time Limit */
+            time_limit?: number | null;
+            /**
+             * Negative Time
              * @default false
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateAttemptAnalysisEntriesApiResponse */
-        CreateAttemptAnalysisEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateAttemptArchiveEntriesApiRequest */
-        CreateAttemptArchiveEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+            negative_time: boolean;
             /**
-             * Mcp
+             * Audio Enabled
+             * @default true
+             */
+            audio_enabled: boolean;
+            /**
+             * Text Enabled
+             * @default true
+             */
+            text_enabled: boolean;
+            /**
+             * Hints Enabled
              * @default false
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateAttemptArchiveEntriesApiResponse */
-        CreateAttemptArchiveEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateAttemptChatEntriesApiRequest */
-        CreateAttemptChatEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+            hints_enabled: boolean;
             /**
-             * Mcp
+             * Copy Paste Allowed
+             * @default true
+             */
+            copy_paste_allowed: boolean;
+            /**
+             * Show Images
+             * @default true
+             */
+            show_images: boolean;
+            /**
+             * Show Objectives
+             * @default true
+             */
+            show_objectives: boolean;
+            /**
+             * Show Problem Statement
+             * @default true
+             */
+            show_problem_statement: boolean;
+            /**
+             * Analyses Enabled
+             * @default true
+             */
+            analyses_enabled: boolean;
+            /**
+             * Improvements Enabled
+             * @default true
+             */
+            improvements_enabled: boolean;
+            /**
+             * Replacements Enabled
+             * @default true
+             */
+            replacements_enabled: boolean;
+            /**
+             * Strengths Enabled
+             * @default true
+             */
+            strengths_enabled: boolean;
+            /**
+             * Use Custom
              * @default false
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateAttemptChatEntriesApiResponse */
-        CreateAttemptChatEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateAttemptCompletionEntriesApiRequest */
-        CreateAttemptCompletionEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+            use_custom: boolean;
             /**
-             * Mcp
+             * Use Previous
              * @default false
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateAttemptCompletionEntriesApiResponse */
-        CreateAttemptCompletionEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateAttemptContentEntriesApiRequest */
-        CreateAttemptContentEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+            use_previous: boolean;
             /**
-             * Mcp
+             * Problem Statement Enabled
+             * @default true
+             */
+            problem_statement_enabled: boolean;
+            /**
+             * Objectives Enabled
+             * @default true
+             */
+            objectives_enabled: boolean;
+            /**
+             * Video Enabled
              * @default false
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateAttemptContentEntriesApiResponse */
-        CreateAttemptContentEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateAttemptEntriesApiRequest */
-        CreateAttemptEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+            video_enabled: boolean;
             /**
-             * Mcp
+             * Images Enabled
              * @default false
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateAttemptEntriesApiResponse */
-        CreateAttemptEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateAttemptFeedbackEntriesApiRequest */
-        CreateAttemptFeedbackEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+            images_enabled: boolean;
             /**
-             * Mcp
+             * Questions Enabled
              * @default false
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
+            questions_enabled: boolean;
+            /** Assistant Persona Ids */
+            assistant_persona_ids?: string[] | null;
         };
-        /** CreateAttemptFeedbackEntriesApiResponse */
-        CreateAttemptFeedbackEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateAttemptGradeEntriesApiRequest */
-        CreateAttemptGradeEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+        /** CreateAttemptChatEntryResponse */
+        CreateAttemptChatEntryResponse: {
             /**
-             * Mcp
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateAttemptCompletionEntryRequest */
+        CreateAttemptCompletionEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+            /**
+             * End Reason
+             * @default
+             */
+            end_reason: string;
+        };
+        /** CreateAttemptCompletionEntryResponse */
+        CreateAttemptCompletionEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateAttemptContentEntryRequest */
+        CreateAttemptContentEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+            /**
+             * Content
+             * @default
+             */
+            content: string;
+            /** Persona Id */
+            persona_id?: string | null;
+        };
+        /** CreateAttemptContentEntryResponse */
+        CreateAttemptContentEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateAttemptEntryRequest */
+        CreateAttemptEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Infinite Mode
              * @default false
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateAttemptGradeEntriesApiResponse */
-        CreateAttemptGradeEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateAttemptHighlightEntriesApiRequest */
-        CreateAttemptHighlightEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+            infinite_mode: boolean;
             /**
-             * Mcp
+             * Num Chats
+             * @default 1
+             */
+            num_chats: number;
+            /** User Persona Id */
+            user_persona_id?: string | null;
+        };
+        /** CreateAttemptEntryResponse */
+        CreateAttemptEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateAttemptFeedbackEntryRequest */
+        CreateAttemptFeedbackEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Grade Id
+             * Format: uuid
+             */
+            grade_id: string;
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /**
+             * Feedback
+             * @default
+             */
+            feedback: string;
+        };
+        /** CreateAttemptFeedbackEntryResponse */
+        CreateAttemptFeedbackEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateAttemptGradeEntryRequest */
+        CreateAttemptGradeEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+            /**
+             * Passed
              * @default false
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateAttemptHighlightEntriesApiResponse */
-        CreateAttemptHighlightEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateAttemptHintEntriesApiRequest */
-        CreateAttemptHintEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+            passed: boolean;
             /**
-             * Mcp
-             * @default false
+             * Score
+             * @default 0
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
+            score: number;
+            /** Time Taken */
+            time_taken?: number | null;
         };
-        /** CreateAttemptHintEntriesApiResponse */
-        CreateAttemptHintEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateAttemptImprovementEntriesApiRequest */
-        CreateAttemptImprovementEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+        /** CreateAttemptGradeEntryResponse */
+        CreateAttemptGradeEntryResponse: {
             /**
-             * Mcp
-             * @default false
+             * Id
+             * Format: uuid
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateAttemptImprovementEntriesApiResponse */
-        CreateAttemptImprovementEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateAttemptInsightsEntriesApiRequest */
-        CreateAttemptInsightsEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+            id: string;
             /**
-             * Mcp
-             * @default false
+             * Call Id
+             * Format: uuid
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateAttemptInsightsEntriesApiResponse */
-        CreateAttemptInsightsEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateAttemptMessageEntriesApiRequest */
-        CreateAttemptMessageEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+            call_id: string;
             /**
-             * Mcp
-             * @default false
+             * Message Id
+             * Format: uuid
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
+            message_id: string;
         };
-        /** CreateAttemptMessageEntriesApiResponse */
-        CreateAttemptMessageEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateAttemptReplacementEntriesApiRequest */
-        CreateAttemptReplacementEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+        /** CreateAttemptHighlightEntryRequest */
+        CreateAttemptHighlightEntryRequest: {
             /**
-             * Mcp
-             * @default false
+             * Run Id
+             * Format: uuid
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateAttemptReplacementEntriesApiResponse */
-        CreateAttemptReplacementEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateAttemptStrengthEntriesApiRequest */
-        CreateAttemptStrengthEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+            run_id: string;
             /**
-             * Mcp
-             * @default false
+             * Strength Id
+             * Format: uuid
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateAttemptStrengthEntriesApiResponse */
-        CreateAttemptStrengthEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateBenchmarkInsightsEntriesApiRequest */
-        CreateBenchmarkInsightsEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+            strength_id: string;
             /**
-             * Mcp
-             * @default false
+             * Section
+             * @default
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateBenchmarkInsightsEntriesApiResponse */
-        CreateBenchmarkInsightsEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateCertificatesEntriesApiRequest */
-        CreateCertificatesEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+            section: string;
             /**
-             * Mcp
-             * @default false
+             * Idx
+             * @default 0
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
+            idx: number;
         };
-        /** CreateCertificatesEntriesApiResponse */
-        CreateCertificatesEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateConversationsCompletionsEntriesApiRequest */
-        CreateConversationsCompletionsEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+        /** CreateAttemptHighlightEntryResponse */
+        CreateAttemptHighlightEntryResponse: {
             /**
-             * Mcp
-             * @default false
+             * Id
+             * Format: uuid
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateConversationsCompletionsEntriesApiResponse */
-        CreateConversationsCompletionsEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateConversationsEntriesApiRequest */
-        CreateConversationsEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+            id: string;
             /**
-             * Mcp
-             * @default false
+             * Call Id
+             * Format: uuid
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateConversationsEntriesApiResponse */
-        CreateConversationsEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateDashboardInsightsEntriesApiRequest */
-        CreateDashboardInsightsEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+            call_id: string;
             /**
-             * Mcp
-             * @default false
+             * Message Id
+             * Format: uuid
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
+            message_id: string;
         };
-        /** CreateDashboardInsightsEntriesApiResponse */
-        CreateDashboardInsightsEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateDebugInfoEntriesApiRequest */
-        CreateDebugInfoEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+        /** CreateAttemptHintEntryRequest */
+        CreateAttemptHintEntryRequest: {
             /**
-             * Mcp
-             * @default false
+             * Run Id
+             * Format: uuid
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
+            run_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+            /**
+             * Hint
+             * @default
+             */
+            hint: string;
         };
-        /** CreateDebugInfoEntriesApiResponse */
-        CreateDebugInfoEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
+        /** CreateAttemptHintEntryResponse */
+        CreateAttemptHintEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateAttemptImprovementEntryRequest */
+        CreateAttemptImprovementEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Grade Id
+             * Format: uuid
+             */
+            grade_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+            /**
+             * Name
+             * @default
+             */
+            name: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+        };
+        /** CreateAttemptImprovementEntryResponse */
+        CreateAttemptImprovementEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateAttemptInsightsEntryRequest */
+        CreateAttemptInsightsEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Content
+             * @default
+             */
+            content: string;
+        };
+        /** CreateAttemptInsightsEntryResponse */
+        CreateAttemptInsightsEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateAttemptMessageEntryRequest */
+        CreateAttemptMessageEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+            /** Message Id */
+            message_id?: string | null;
+        };
+        /** CreateAttemptMessageEntryResponse */
+        CreateAttemptMessageEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateAttemptReplacementEntryRequest */
+        CreateAttemptReplacementEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Improvement Id
+             * Format: uuid
+             */
+            improvement_id: string;
+            /**
+             * Section
+             * @default
+             */
+            section: string;
+            /**
+             * Replace
+             * @default
+             */
+            replace: string;
+            /**
+             * Idx
+             * @default 0
+             */
+            idx: number;
+        };
+        /** CreateAttemptReplacementEntryResponse */
+        CreateAttemptReplacementEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateAttemptStrengthEntryRequest */
+        CreateAttemptStrengthEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Grade Id
+             * Format: uuid
+             */
+            grade_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+            /**
+             * Name
+             * @default
+             */
+            name: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+        };
+        /** CreateAttemptStrengthEntryResponse */
+        CreateAttemptStrengthEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateBenchmarkInsightsEntryRequest */
+        CreateBenchmarkInsightsEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Content
+             * @default
+             */
+            content: string;
+        };
+        /** CreateBenchmarkInsightsEntryResponse */
+        CreateBenchmarkInsightsEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateCertificatesEntryRequest */
+        CreateCertificatesEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+        };
+        /** CreateCertificatesEntryResponse */
+        CreateCertificatesEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateConversationsCompletionsEntryRequest */
+        CreateConversationsCompletionsEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Conversation Id
+             * Format: uuid
+             */
+            conversation_id: string;
+            /**
+             * End Reason
+             * @default
+             */
+            end_reason: string;
+        };
+        /** CreateConversationsCompletionsEntryResponse */
+        CreateConversationsCompletionsEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateConversationsEntryRequest */
+        CreateConversationsEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+        };
+        /** CreateConversationsEntryResponse */
+        CreateConversationsEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateDashboardInsightsEntryRequest */
+        CreateDashboardInsightsEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Content
+             * @default
+             */
+            content: string;
+        };
+        /** CreateDashboardInsightsEntryResponse */
+        CreateDashboardInsightsEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateDebugInfoEntryRequest */
+        CreateDebugInfoEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Content
+             * @default
+             */
+            content: string;
+        };
+        /** CreateDebugInfoEntryResponse */
+        CreateDebugInfoEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
         };
         /** CreateEmulationGrantApiRequest */
         CreateEmulationGrantApiRequest: {
@@ -25629,81 +26127,173 @@ export interface components {
             /** Emulate Page Url */
             emulate_page_url?: string | null;
         };
-        /** CreateHealthInsightsEntriesApiRequest */
-        CreateHealthInsightsEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+        /** CreateGroupInsightsEntryRequest */
+        CreateGroupInsightsEntryRequest: {
             /**
-             * Mcp
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Content
+             * @default
+             */
+            content: string;
+        };
+        /** CreateGroupInsightsEntryResponse */
+        CreateGroupInsightsEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateHealthInsightsEntryRequest */
+        CreateHealthInsightsEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Content
+             * @default
+             */
+            content: string;
+        };
+        /** CreateHealthInsightsEntryResponse */
+        CreateHealthInsightsEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateHomeInsightsEntryRequest */
+        CreateHomeInsightsEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Content
+             * @default
+             */
+            content: string;
+        };
+        /** CreateHomeInsightsEntryResponse */
+        CreateHomeInsightsEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateLeaderboardInsightsEntryRequest */
+        CreateLeaderboardInsightsEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Content
+             * @default
+             */
+            content: string;
+        };
+        /** CreateLeaderboardInsightsEntryResponse */
+        CreateLeaderboardInsightsEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateMutesEntryRequest */
+        CreateMutesEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Conversation Id
+             * Format: uuid
+             */
+            conversation_id: string;
+            /**
+             * Muted
              * @default false
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
+            muted: boolean;
         };
-        /** CreateHealthInsightsEntriesApiResponse */
-        CreateHealthInsightsEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateHomeInsightsEntriesApiRequest */
-        CreateHomeInsightsEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+        /** CreateMutesEntryResponse */
+        CreateMutesEntryResponse: {
             /**
-             * Mcp
-             * @default false
+             * Id
+             * Format: uuid
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateHomeInsightsEntriesApiResponse */
-        CreateHomeInsightsEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateLeaderboardInsightsEntriesApiRequest */
-        CreateLeaderboardInsightsEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+            id: string;
             /**
-             * Mcp
-             * @default false
+             * Call Id
+             * Format: uuid
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateLeaderboardInsightsEntriesApiResponse */
-        CreateLeaderboardInsightsEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateMutesEntriesApiRequest */
-        CreateMutesEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+            call_id: string;
             /**
-             * Mcp
-             * @default false
+             * Message Id
+             * Format: uuid
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateMutesEntriesApiResponse */
-        CreateMutesEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
+            message_id: string;
         };
         /** CreateOrUpdateProfileApiRequest */
         CreateOrUpdateProfileApiRequest: {
@@ -25739,43 +26329,71 @@ export interface components {
             /** Session Id */
             session_id?: string | null;
         };
-        /** CreatePracticeInsightsEntriesApiRequest */
-        CreatePracticeInsightsEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+        /** CreatePracticeInsightsEntryRequest */
+        CreatePracticeInsightsEntryRequest: {
             /**
-             * Mcp
-             * @default false
+             * Run Id
+             * Format: uuid
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreatePracticeInsightsEntriesApiResponse */
-        CreatePracticeInsightsEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreatePricingInsightsEntriesApiRequest */
-        CreatePricingInsightsEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+            run_id: string;
+            /** Group Id */
+            group_id?: string | null;
             /**
-             * Mcp
-             * @default false
+             * Content
+             * @default
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
+            content: string;
         };
-        /** CreatePricingInsightsEntriesApiResponse */
-        CreatePricingInsightsEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
+        /** CreatePracticeInsightsEntryResponse */
+        CreatePracticeInsightsEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreatePricingInsightsEntryRequest */
+        CreatePricingInsightsEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Content
+             * @default
+             */
+            content: string;
+        };
+        /** CreatePricingInsightsEntryResponse */
+        CreatePricingInsightsEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
         };
         /** CreateProblemRequest */
         CreateProblemRequest: {
@@ -25793,100 +26411,171 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** CreateProblemsEntriesApiRequest */
-        CreateProblemsEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+        /** CreateProblemsEntryRequest */
+        CreateProblemsEntryRequest: {
             /**
-             * Mcp
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Type */
+            type: string;
+            /**
+             * Message
+             * @default
+             */
+            message: string;
+        };
+        /** CreateProblemsEntryResponse */
+        CreateProblemsEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateRecordInsightsEntryRequest */
+        CreateRecordInsightsEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Content
+             * @default
+             */
+            content: string;
+        };
+        /** CreateRecordInsightsEntryResponse */
+        CreateRecordInsightsEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateReportsEntryRequest */
+        CreateReportsEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+        };
+        /** CreateReportsEntryResponse */
+        CreateReportsEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateReportsInsightsEntryRequest */
+        CreateReportsInsightsEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Content
+             * @default
+             */
+            content: string;
+        };
+        /** CreateReportsInsightsEntryResponse */
+        CreateReportsInsightsEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateResolvesEntryRequest */
+        CreateResolvesEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Problem Id
+             * Format: uuid
+             */
+            problem_id: string;
+            /**
+             * Resolved
              * @default false
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
+            resolved: boolean;
         };
-        /** CreateProblemsEntriesApiResponse */
-        CreateProblemsEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateRecordInsightsEntriesApiRequest */
-        CreateRecordInsightsEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+        /** CreateResolvesEntryResponse */
+        CreateResolvesEntryResponse: {
             /**
-             * Mcp
-             * @default false
+             * Id
+             * Format: uuid
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateRecordInsightsEntriesApiResponse */
-        CreateRecordInsightsEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateReportsEntriesApiRequest */
-        CreateReportsEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+            id: string;
             /**
-             * Mcp
-             * @default false
+             * Call Id
+             * Format: uuid
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateReportsEntriesApiResponse */
-        CreateReportsEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateReportsInsightsEntriesApiRequest */
-        CreateReportsInsightsEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+            call_id: string;
             /**
-             * Mcp
-             * @default false
+             * Message Id
+             * Format: uuid
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateReportsInsightsEntriesApiResponse */
-        CreateReportsInsightsEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateResolvesEntriesApiRequest */
-        CreateResolvesEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateResolvesEntriesApiResponse */
-        CreateResolvesEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
+            message_id: string;
         };
         /** CreateResponsesEntriesApiRequest */
         CreateResponsesEntriesApiRequest: {
@@ -25907,157 +26596,341 @@ export interface components {
             /** Already Exists */
             already_exists?: boolean | null;
         };
-        /** CreateTestArchiveEntriesApiRequest */
-        CreateTestArchiveEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+        /** CreateSessionInsightsEntryRequest */
+        CreateSessionInsightsEntryRequest: {
             /**
-             * Mcp
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Content
+             * @default
+             */
+            content: string;
+        };
+        /** CreateSessionInsightsEntryResponse */
+        CreateSessionInsightsEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateTestArchiveEntryRequest */
+        CreateTestArchiveEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Test Id
+             * Format: uuid
+             */
+            test_id: string;
+            /**
+             * Archived
              * @default false
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
+            archived: boolean;
         };
-        /** CreateTestArchiveEntriesApiResponse */
-        CreateTestArchiveEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateTestCompletionEntriesApiRequest */
-        CreateTestCompletionEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+        /** CreateTestArchiveEntryResponse */
+        CreateTestArchiveEntryResponse: {
             /**
-             * Mcp
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateTestCompletionEntryRequest */
+        CreateTestCompletionEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Invocation Id
+             * Format: uuid
+             */
+            invocation_id: string;
+            /**
+             * End Reason
+             * @default
+             */
+            end_reason: string;
+        };
+        /** CreateTestCompletionEntryResponse */
+        CreateTestCompletionEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateTestEntryRequest */
+        CreateTestEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Infinite Mode
              * @default false
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
+            infinite_mode: boolean;
+            /** Benchmark Id */
+            benchmark_id?: string | null;
         };
-        /** CreateTestCompletionEntriesApiResponse */
-        CreateTestCompletionEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateTestEntriesApiRequest */
-        CreateTestEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+        /** CreateTestEntryResponse */
+        CreateTestEntryResponse: {
             /**
-             * Mcp
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateTestFeedbackEntryRequest */
+        CreateTestFeedbackEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Grade Id
+             * Format: uuid
+             */
+            grade_id: string;
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /**
+             * Feedback
+             * @default
+             */
+            feedback: string;
+            /** Total Points */
+            total_points?: number | null;
+            /** Pass Points */
+            pass_points?: number | null;
+        };
+        /** CreateTestFeedbackEntryResponse */
+        CreateTestFeedbackEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateTestGradeEntryRequest */
+        CreateTestGradeEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Invocation Id
+             * Format: uuid
+             */
+            invocation_id: string;
+            /**
+             * Passed
              * @default false
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateTestEntriesApiResponse */
-        CreateTestEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateTestFeedbackEntriesApiRequest */
-        CreateTestFeedbackEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+            passed: boolean;
             /**
-             * Mcp
+             * Score
+             * @default 0
+             */
+            score: number;
+            /** Time Taken */
+            time_taken?: number | null;
+        };
+        /** CreateTestGradeEntryResponse */
+        CreateTestGradeEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateTestInsightsEntryRequest */
+        CreateTestInsightsEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Content
+             * @default
+             */
+            content: string;
+        };
+        /** CreateTestInsightsEntryResponse */
+        CreateTestInsightsEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateTestInvocationEntryRequest */
+        CreateTestInvocationEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Title
+             * @default
+             */
+            title: string;
+            /** Group Id */
+            group_id?: string | null;
+            /** Invocation Id */
+            invocation_id?: string | null;
+            /** Departments Id */
+            departments_id?: string | null;
+            /** Config Signature */
+            config_signature?: string | null;
+            /** Test Id */
+            test_id?: string | null;
+        };
+        /** CreateTestInvocationEntryResponse */
+        CreateTestInvocationEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateTestStopEntryRequest */
+        CreateTestStopEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Invocation Id
+             * Format: uuid
+             */
+            invocation_id: string;
+            /**
+             * Stopped
              * @default false
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
+            stopped: boolean;
         };
-        /** CreateTestFeedbackEntriesApiResponse */
-        CreateTestFeedbackEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateTestGradeEntriesApiRequest */
-        CreateTestGradeEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+        /** CreateTestStopEntryResponse */
+        CreateTestStopEntryResponse: {
             /**
-             * Mcp
-             * @default false
+             * Id
+             * Format: uuid
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateTestGradeEntriesApiResponse */
-        CreateTestGradeEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateTestInsightsEntriesApiRequest */
-        CreateTestInsightsEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+            id: string;
             /**
-             * Mcp
-             * @default false
+             * Call Id
+             * Format: uuid
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateTestInsightsEntriesApiResponse */
-        CreateTestInsightsEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateTestInvocationEntriesApiRequest */
-        CreateTestInvocationEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
+            call_id: string;
             /**
-             * Mcp
-             * @default false
+             * Message Id
+             * Format: uuid
              */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateTestInvocationEntriesApiResponse */
-        CreateTestInvocationEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
-        };
-        /** CreateTestStopEntriesApiRequest */
-        CreateTestStopEntriesApiRequest: {
-            /** Call Id */
-            call_id?: string | null;
-            /**
-             * Mcp
-             * @default false
-             */
-            mcp: boolean | null;
-            /** Entry Data */
-            entry_data?: unknown | null;
-        };
-        /** CreateTestStopEntriesApiResponse */
-        CreateTestStopEntriesApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Already Exists */
-            already_exists?: boolean | null;
+            message_id: string;
         };
         /**
          * DashboardBundleResponse
@@ -28880,11 +29753,12 @@ export interface components {
          * @description Unified client-to-server payload for the `generate` WebSocket event.
          *
          *     Fields:
-         *         artifact_type: Registry key (e.g. "agent", "chat", "attempt").
+         *         artifact_types: Typed artifact operations — at least one required.
+         *                         The first item is the primary artifact; its ``name``
+         *                         is used as the registry key for downstream events.
          *         artifact_id:   Generic artifact ID — maps to agent_id, chat_entry_id, etc.
          *         draft_id:      Optional draft ID (required for most artifacts).
-         *         artifact_types: Typed artifact operations (name + operation).
-         *         resource_types: Which resources to generate (plain strings, kept for compat).
+         *         resource_types: Which resources to generate (plain strings).
          *         entry_types:   Typed entry operations (name + operation).
          *         user_instructions: Optional user instructions forwarded to LLM.
          *         save:          Whether to auto-save on completion.
@@ -28895,14 +29769,12 @@ export interface components {
          *                        downstream handlers (e.g. attempt_id, chat_id, grade_id).
          */
         GeneratePayload: {
-            /** Artifact Type */
-            artifact_type: string;
+            /** Artifact Types */
+            artifact_types: components["schemas"]["ArtifactTypeItem"][];
             /** Artifact Id */
             artifact_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /** Artifact Types */
-            artifact_types?: components["schemas"]["ArtifactTypeItem"][] | null;
             /** Resource Types */
             resource_types: string[];
             /** Entry Types */
@@ -32439,9 +33311,9 @@ export interface components {
          * @description Response for benchmark test artifact detail.
          */
         GetTestArtifactResponse: {
-            test?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__19"] | null;
+            test?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__17"] | null;
             /** Invocations */
-            invocations?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__20"][];
+            invocations?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__18"][];
             /**
              * Status
              * @default pending
@@ -51023,9 +51895,9 @@ export interface components {
          */
         TestEntries: {
             /** Test */
-            test?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__19"][] | null;
+            test?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__17"][] | null;
             /** Test Invocation */
-            test_invocation?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__20"][] | null;
+            test_invocation?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__18"][] | null;
             runs?: components["schemas"]["GetRunListViewResponse"] | null;
             /** Test Insights */
             test_insights?: {
@@ -52364,155 +53236,139 @@ export interface components {
             /** Document Id */
             document_id?: string | null;
         };
-        /** CreateGroupInsightsEntriesApiRequest */
+        /** GetHomeTrainingEntriesApiRequest */
         app__sql__types___build_missing_type___locals____MissingSqlType__1: {
             [key: string]: unknown;
         };
-        /** SearchSuiteDepartmentEntriesApiRequest */
+        /** SearchSuiteDraftsEntriesApiRequest */
         app__sql__types___build_missing_type___locals____MissingSqlType__10: {
             [key: string]: unknown;
         };
-        /** GetSuiteDraftsEntriesApiRequest */
+        /** GetTrainingEntriesApiRequest */
         app__sql__types___build_missing_type___locals____MissingSqlType__11: {
             [key: string]: unknown;
         };
-        /** SearchSuiteDraftsEntriesApiRequest */
+        /** SearchTrainingEntriesApiRequest */
         app__sql__types___build_missing_type___locals____MissingSqlType__12: {
             [key: string]: unknown;
         };
-        /** GetTrainingEntriesApiRequest */
+        /** GetTrainingDepartmentEntriesApiRequest */
         app__sql__types___build_missing_type___locals____MissingSqlType__13: {
             [key: string]: unknown;
         };
-        /** SearchTrainingEntriesApiRequest */
+        /** SearchTrainingDepartmentEntriesApiRequest */
         app__sql__types___build_missing_type___locals____MissingSqlType__14: {
             [key: string]: unknown;
         };
-        /** GetTrainingDepartmentEntriesApiRequest */
+        /** GetTrainingDraftsEntriesApiRequest */
         app__sql__types___build_missing_type___locals____MissingSqlType__15: {
             [key: string]: unknown;
         };
-        /** SearchTrainingDepartmentEntriesApiRequest */
+        /** SearchTrainingDraftsEntriesApiRequest */
         app__sql__types___build_missing_type___locals____MissingSqlType__16: {
             [key: string]: unknown;
         };
-        /** GetTrainingDraftsEntriesApiRequest */
+        /** QGetTestViewV4Item */
         app__sql__types___build_missing_type___locals____MissingSqlType__17: {
             [key: string]: unknown;
         };
-        /** SearchTrainingDraftsEntriesApiRequest */
+        /** QGetTestInvocationViewV4Item */
         app__sql__types___build_missing_type___locals____MissingSqlType__18: {
             [key: string]: unknown;
         };
-        /** QGetTestViewV4Item */
+        /** GetHomeTrainingEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__19: {
             [key: string]: unknown;
         };
-        /** GetHomeTrainingEntriesApiRequest */
+        /** SearchHomeTrainingEntriesApiRequest */
         app__sql__types___build_missing_type___locals____MissingSqlType__2: {
             [key: string]: unknown;
         };
-        /** QGetTestInvocationViewV4Item */
+        /** SearchHomeTrainingEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__20: {
             [key: string]: unknown;
         };
-        /** CreateGroupInsightsEntriesApiResponse */
+        /** GetPracticeTrainingEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__21: {
             [key: string]: unknown;
         };
-        /** GetHomeTrainingEntriesApiResponse */
+        /** SearchPracticeTrainingEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__22: {
             [key: string]: unknown;
         };
-        /** SearchHomeTrainingEntriesApiResponse */
+        /** GetSuiteEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__23: {
             [key: string]: unknown;
         };
-        /** GetPracticeTrainingEntriesApiResponse */
+        /** SearchSuiteEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__24: {
             [key: string]: unknown;
         };
-        /** SearchPracticeTrainingEntriesApiResponse */
+        /** GetSuiteDepartmentEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__25: {
             [key: string]: unknown;
         };
-        /** CreateSessionInsightsEntriesApiResponse */
+        /** SearchSuiteDepartmentEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__26: {
             [key: string]: unknown;
         };
-        /** GetSuiteEntriesApiResponse */
+        /** GetSuiteDraftsEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__27: {
             [key: string]: unknown;
         };
-        /** SearchSuiteEntriesApiResponse */
+        /** SearchSuiteDraftsEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__28: {
             [key: string]: unknown;
         };
-        /** GetSuiteDepartmentEntriesApiResponse */
+        /** GetTrainingEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__29: {
             [key: string]: unknown;
         };
-        /** SearchHomeTrainingEntriesApiRequest */
+        /** GetPracticeTrainingEntriesApiRequest */
         app__sql__types___build_missing_type___locals____MissingSqlType__3: {
             [key: string]: unknown;
         };
-        /** SearchSuiteDepartmentEntriesApiResponse */
+        /** SearchTrainingEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__30: {
             [key: string]: unknown;
         };
-        /** GetSuiteDraftsEntriesApiResponse */
+        /** GetTrainingDepartmentEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__31: {
             [key: string]: unknown;
         };
-        /** SearchSuiteDraftsEntriesApiResponse */
+        /** SearchTrainingDepartmentEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__32: {
             [key: string]: unknown;
         };
-        /** GetTrainingEntriesApiResponse */
+        /** GetTrainingDraftsEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__33: {
             [key: string]: unknown;
         };
-        /** SearchTrainingEntriesApiResponse */
+        /** SearchTrainingDraftsEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__34: {
             [key: string]: unknown;
         };
-        /** GetTrainingDepartmentEntriesApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__35: {
-            [key: string]: unknown;
-        };
-        /** SearchTrainingDepartmentEntriesApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__36: {
-            [key: string]: unknown;
-        };
-        /** GetTrainingDraftsEntriesApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__37: {
-            [key: string]: unknown;
-        };
-        /** SearchTrainingDraftsEntriesApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__38: {
-            [key: string]: unknown;
-        };
-        /** GetPracticeTrainingEntriesApiRequest */
+        /** SearchPracticeTrainingEntriesApiRequest */
         app__sql__types___build_missing_type___locals____MissingSqlType__4: {
             [key: string]: unknown;
         };
-        /** SearchPracticeTrainingEntriesApiRequest */
+        /** GetSuiteEntriesApiRequest */
         app__sql__types___build_missing_type___locals____MissingSqlType__5: {
             [key: string]: unknown;
         };
-        /** CreateSessionInsightsEntriesApiRequest */
+        /** SearchSuiteEntriesApiRequest */
         app__sql__types___build_missing_type___locals____MissingSqlType__6: {
             [key: string]: unknown;
         };
-        /** GetSuiteEntriesApiRequest */
+        /** GetSuiteDepartmentEntriesApiRequest */
         app__sql__types___build_missing_type___locals____MissingSqlType__7: {
             [key: string]: unknown;
         };
-        /** SearchSuiteEntriesApiRequest */
+        /** SearchSuiteDepartmentEntriesApiRequest */
         app__sql__types___build_missing_type___locals____MissingSqlType__8: {
             [key: string]: unknown;
         };
-        /** GetSuiteDepartmentEntriesApiRequest */
+        /** GetSuiteDraftsEntriesApiRequest */
         app__sql__types___build_missing_type___locals____MissingSqlType__9: {
             [key: string]: unknown;
         };
@@ -66989,7 +67845,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateActivityInsightsEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateActivityInsightsEntryRequest"];
             };
         };
         responses: {
@@ -66999,7 +67855,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateActivityInsightsEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateActivityInsightsEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67462,7 +68318,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateAttemptEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateAttemptEntryRequest"];
             };
         };
         responses: {
@@ -67472,7 +68328,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateAttemptEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateAttemptEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67608,7 +68464,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateAttemptAnalysisEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateAttemptAnalysisEntryRequest"];
             };
         };
         responses: {
@@ -67618,7 +68474,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateAttemptAnalysisEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateAttemptAnalysisEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67682,7 +68538,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateAttemptArchiveEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateAttemptArchiveEntryRequest"];
             };
         };
         responses: {
@@ -67692,7 +68548,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateAttemptArchiveEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateAttemptArchiveEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67900,7 +68756,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateAttemptChatEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateAttemptChatEntryRequest"];
             };
         };
         responses: {
@@ -67910,7 +68766,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateAttemptChatEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateAttemptChatEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68046,7 +68902,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateAttemptCompletionEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateAttemptCompletionEntryRequest"];
             };
         };
         responses: {
@@ -68056,7 +68912,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateAttemptCompletionEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateAttemptCompletionEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68192,7 +69048,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateAttemptContentEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateAttemptContentEntryRequest"];
             };
         };
         responses: {
@@ -68202,7 +69058,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateAttemptContentEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateAttemptContentEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68338,7 +69194,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateAttemptFeedbackEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateAttemptFeedbackEntryRequest"];
             };
         };
         responses: {
@@ -68348,7 +69204,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateAttemptFeedbackEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateAttemptFeedbackEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68484,7 +69340,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateAttemptGradeEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateAttemptGradeEntryRequest"];
             };
         };
         responses: {
@@ -68494,7 +69350,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateAttemptGradeEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateAttemptGradeEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68630,7 +69486,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateAttemptHighlightEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateAttemptHighlightEntryRequest"];
             };
         };
         responses: {
@@ -68640,7 +69496,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateAttemptHighlightEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateAttemptHighlightEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68776,7 +69632,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateAttemptHintEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateAttemptHintEntryRequest"];
             };
         };
         responses: {
@@ -68786,7 +69642,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateAttemptHintEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateAttemptHintEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68922,7 +69778,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateAttemptImprovementEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateAttemptImprovementEntryRequest"];
             };
         };
         responses: {
@@ -68932,7 +69788,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateAttemptImprovementEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateAttemptImprovementEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69068,7 +69924,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateAttemptInsightsEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateAttemptInsightsEntryRequest"];
             };
         };
         responses: {
@@ -69078,7 +69934,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateAttemptInsightsEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateAttemptInsightsEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69214,7 +70070,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateAttemptMessageEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateAttemptMessageEntryRequest"];
             };
         };
         responses: {
@@ -69224,7 +70080,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateAttemptMessageEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateAttemptMessageEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69469,7 +70325,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateAttemptReplacementEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateAttemptReplacementEntryRequest"];
             };
         };
         responses: {
@@ -69479,7 +70335,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateAttemptReplacementEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateAttemptReplacementEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69615,7 +70471,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateAttemptStrengthEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateAttemptStrengthEntryRequest"];
             };
         };
         responses: {
@@ -69625,7 +70481,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateAttemptStrengthEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateAttemptStrengthEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70197,7 +71053,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateBenchmarkInsightsEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateBenchmarkInsightsEntryRequest"];
             };
         };
         responses: {
@@ -70207,7 +71063,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateBenchmarkInsightsEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateBenchmarkInsightsEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70452,7 +71308,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateCertificatesEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateCertificatesEntryRequest"];
             };
         };
         responses: {
@@ -70462,7 +71318,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateCertificatesEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateCertificatesEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70816,7 +71672,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateConversationsEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateConversationsEntryRequest"];
             };
         };
         responses: {
@@ -70826,7 +71682,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateConversationsEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateConversationsEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70962,7 +71818,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateConversationsCompletionsEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateConversationsCompletionsEntryRequest"];
             };
         };
         responses: {
@@ -70972,7 +71828,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateConversationsCompletionsEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateConversationsCompletionsEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71108,7 +71964,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDashboardInsightsEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateDashboardInsightsEntryRequest"];
             };
         };
         responses: {
@@ -71118,7 +71974,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDashboardInsightsEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateDashboardInsightsEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71254,7 +72110,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDebugInfoEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateDebugInfoEntryRequest"];
             };
         };
         responses: {
@@ -71264,7 +72120,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDebugInfoEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateDebugInfoEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71982,7 +72838,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__1"];
+                "application/json": components["schemas"]["CreateGroupInsightsEntryRequest"];
             };
         };
         responses: {
@@ -71992,7 +72848,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__21"];
+                    "application/json": components["schemas"]["CreateGroupInsightsEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -72346,7 +73202,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateHealthInsightsEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateHealthInsightsEntryRequest"];
             };
         };
         responses: {
@@ -72356,7 +73212,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateHealthInsightsEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateHealthInsightsEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -72601,7 +73457,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateHomeInsightsEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateHomeInsightsEntryRequest"];
             };
         };
         responses: {
@@ -72611,7 +73467,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateHomeInsightsEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateHomeInsightsEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -72638,7 +73494,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__2"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__1"];
             };
         };
         responses: {
@@ -72648,7 +73504,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__22"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__19"];
                 };
             };
             /** @description Validation Error */
@@ -72675,7 +73531,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__3"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__2"];
             };
         };
         responses: {
@@ -72685,7 +73541,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__23"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__20"];
                 };
             };
             /** @description Validation Error */
@@ -72965,7 +73821,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateLeaderboardInsightsEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateLeaderboardInsightsEntryRequest"];
             };
         };
         responses: {
@@ -72975,7 +73831,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateLeaderboardInsightsEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateLeaderboardInsightsEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73656,7 +74512,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateMutesEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateMutesEntryRequest"];
             };
         };
         responses: {
@@ -73666,7 +74522,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateMutesEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateMutesEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74238,7 +75094,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreatePracticeInsightsEntriesApiRequest"];
+                "application/json": components["schemas"]["CreatePracticeInsightsEntryRequest"];
             };
         };
         responses: {
@@ -74248,7 +75104,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreatePracticeInsightsEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreatePracticeInsightsEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74275,7 +75131,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__4"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__3"];
             };
         };
         responses: {
@@ -74285,7 +75141,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__24"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__21"];
                 };
             };
             /** @description Validation Error */
@@ -74312,7 +75168,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__5"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__4"];
             };
         };
         responses: {
@@ -74322,7 +75178,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__25"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__22"];
                 };
             };
             /** @description Validation Error */
@@ -74493,7 +75349,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreatePricingInsightsEntriesApiRequest"];
+                "application/json": components["schemas"]["CreatePricingInsightsEntryRequest"];
             };
         };
         responses: {
@@ -74503,7 +75359,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreatePricingInsightsEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreatePricingInsightsEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74567,7 +75423,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateProblemsEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateProblemsEntryRequest"];
             };
         };
         responses: {
@@ -74577,7 +75433,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateProblemsEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateProblemsEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75003,7 +75859,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateRecordInsightsEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateRecordInsightsEntryRequest"];
             };
         };
         responses: {
@@ -75013,7 +75869,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateRecordInsightsEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateRecordInsightsEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75149,7 +76005,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateReportsEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateReportsEntryRequest"];
             };
         };
         responses: {
@@ -75159,7 +76015,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateReportsEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateReportsEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75295,7 +76151,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateReportsInsightsEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateReportsInsightsEntryRequest"];
             };
         };
         responses: {
@@ -75305,7 +76161,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateReportsInsightsEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateReportsInsightsEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75369,7 +76225,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateResolvesEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateResolvesEntryRequest"];
             };
         };
         responses: {
@@ -75379,7 +76235,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateResolvesEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateResolvesEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76097,7 +76953,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__6"];
+                "application/json": components["schemas"]["CreateSessionInsightsEntryRequest"];
             };
         };
         responses: {
@@ -76107,7 +76963,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__26"];
+                    "application/json": components["schemas"]["CreateSessionInsightsEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76461,7 +77317,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__7"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__5"];
             };
         };
         responses: {
@@ -76471,7 +77327,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__27"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__23"];
                 };
             };
             /** @description Validation Error */
@@ -76498,7 +77354,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__8"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__6"];
             };
         };
         responses: {
@@ -76508,7 +77364,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__28"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__24"];
                 };
             };
             /** @description Validation Error */
@@ -76570,7 +77426,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__9"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__7"];
             };
         };
         responses: {
@@ -76580,7 +77436,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__29"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__25"];
                 };
             };
             /** @description Validation Error */
@@ -76607,7 +77463,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__10"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__8"];
             };
         };
         responses: {
@@ -76617,7 +77473,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__30"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__26"];
                 };
             };
             /** @description Validation Error */
@@ -76679,7 +77535,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__11"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__9"];
             };
         };
         responses: {
@@ -76689,7 +77545,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__31"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__27"];
                 };
             };
             /** @description Validation Error */
@@ -76716,7 +77572,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__12"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__10"];
             };
         };
         responses: {
@@ -76726,7 +77582,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__32"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__28"];
                 };
             };
             /** @description Validation Error */
@@ -76897,7 +77753,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateTestEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateTestEntryRequest"];
             };
         };
         responses: {
@@ -76907,7 +77763,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateTestEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateTestEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76971,7 +77827,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateTestArchiveEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateTestArchiveEntryRequest"];
             };
         };
         responses: {
@@ -76981,7 +77837,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateTestArchiveEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateTestArchiveEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77189,7 +78045,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateTestCompletionEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateTestCompletionEntryRequest"];
             };
         };
         responses: {
@@ -77199,7 +78055,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateTestCompletionEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateTestCompletionEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77335,7 +78191,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateTestFeedbackEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateTestFeedbackEntryRequest"];
             };
         };
         responses: {
@@ -77345,7 +78201,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateTestFeedbackEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateTestFeedbackEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77481,7 +78337,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateTestGradeEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateTestGradeEntryRequest"];
             };
         };
         responses: {
@@ -77491,7 +78347,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateTestGradeEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateTestGradeEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77627,7 +78483,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateTestInsightsEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateTestInsightsEntryRequest"];
             };
         };
         responses: {
@@ -77637,7 +78493,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateTestInsightsEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateTestInsightsEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77664,7 +78520,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateTestInvocationEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateTestInvocationEntryRequest"];
             };
         };
         responses: {
@@ -77674,7 +78530,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateTestInvocationEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateTestInvocationEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77919,7 +78775,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateTestStopEntriesApiRequest"];
+                "application/json": components["schemas"]["CreateTestStopEntryRequest"];
             };
         };
         responses: {
@@ -77929,7 +78785,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateTestStopEntriesApiResponse"];
+                    "application/json": components["schemas"]["CreateTestStopEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78283,7 +79139,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__13"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__11"];
             };
         };
         responses: {
@@ -78293,7 +79149,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__33"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__29"];
                 };
             };
             /** @description Validation Error */
@@ -78320,7 +79176,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__14"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__12"];
             };
         };
         responses: {
@@ -78330,7 +79186,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__34"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__30"];
                 };
             };
             /** @description Validation Error */
@@ -78392,7 +79248,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__15"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__13"];
             };
         };
         responses: {
@@ -78402,7 +79258,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__35"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__31"];
                 };
             };
             /** @description Validation Error */
@@ -78429,7 +79285,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__16"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__14"];
             };
         };
         responses: {
@@ -78439,7 +79295,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__36"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__32"];
                 };
             };
             /** @description Validation Error */
@@ -78501,7 +79357,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__17"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__15"];
             };
         };
         responses: {
@@ -78511,7 +79367,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__37"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__33"];
                 };
             };
             /** @description Validation Error */
@@ -78538,7 +79394,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__18"];
+                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__16"];
             };
         };
         responses: {
@@ -78548,7 +79404,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__38"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__34"];
                 };
             };
             /** @description Validation Error */

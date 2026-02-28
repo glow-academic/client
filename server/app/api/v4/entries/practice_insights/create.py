@@ -5,16 +5,16 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.practice_insights.types import (
+    CreatePracticeInsightsEntryRequest,
+    CreatePracticeInsightsEntryResponse,
+    CreatePracticeInsightsEntrySqlParams,
+    CreatePracticeInsightsEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreatePracticeInsightsEntriesApiRequest,
-    CreatePracticeInsightsEntriesApiResponse,
-    CreatePracticeInsightsEntriesSqlParams,
-    CreatePracticeInsightsEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -27,16 +27,16 @@ async def create_practice_insights_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreatePracticeInsightsEntriesApiResponse:
+) -> CreatePracticeInsightsEntryResponse:
     """Internal function to create practice_insights entry."""
     tags = ["entries", "practice_insights"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreatePracticeInsightsEntriesSqlParams(**request_dict)
+        params = CreatePracticeInsightsEntrySqlParams(**request_dict)
 
         result = cast(
-            CreatePracticeInsightsEntriesSqlRow,
+            CreatePracticeInsightsEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -45,12 +45,12 @@ async def create_practice_insights_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreatePracticeInsightsEntriesApiResponse.model_validate(result.model_dump())
+    return CreatePracticeInsightsEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
-    "/practice_insights/create",
-    response_model=CreatePracticeInsightsEntriesApiResponse,
+    "/practice-insights/create",
+    response_model=CreatePracticeInsightsEntryResponse,
     dependencies=[
         audit_activity(
             "practice_insights.created",
@@ -59,11 +59,11 @@ async def create_practice_insights_entry_internal(
     ],
 )
 async def create_practice_insights_entry(
-    request: CreatePracticeInsightsEntriesApiRequest,
+    request: CreatePracticeInsightsEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreatePracticeInsightsEntriesApiResponse:
+) -> CreatePracticeInsightsEntryResponse:
     """Create practice_insights entry."""
     tags = ["entries", "practice_insights"]
     sql_query = load_sql_query(SQL_PATH)

@@ -48,7 +48,9 @@ router = APIRouter()
 @router.post(
     "/list",
     response_model=ListProfilesApiResponse,
-    dependencies=[audit_activity("profile.list", "{{ actor.name }} viewed profiles list")],
+    dependencies=[
+        audit_activity("profile.list", "{{ actor.name }} viewed profiles list")
+    ],
 )
 async def get_profile_list(
     request: GetProfilesListApiRequest,

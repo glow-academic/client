@@ -1,20 +1,20 @@
-"""TestFeedback entry CREATE endpoint."""
+"""Test feedback entry CREATE endpoint."""
 
 from typing import Annotated, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.test_feedback.types import (
+    CreateTestFeedbackEntryRequest,
+    CreateTestFeedbackEntryResponse,
+    CreateTestFeedbackEntrySqlParams,
+    CreateTestFeedbackEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateTestFeedbackEntriesApiRequest,
-    CreateTestFeedbackEntriesApiResponse,
-    CreateTestFeedbackEntriesSqlParams,
-    CreateTestFeedbackEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -29,16 +29,16 @@ async def create_test_feedback_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateTestFeedbackEntriesApiResponse:
+) -> CreateTestFeedbackEntryResponse:
     """Internal function to create test_feedback entry."""
     tags = ["entries", "test_feedback"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateTestFeedbackEntriesSqlParams(**request_dict)
+        params = CreateTestFeedbackEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateTestFeedbackEntriesSqlRow,
+            CreateTestFeedbackEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -47,12 +47,12 @@ async def create_test_feedback_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateTestFeedbackEntriesApiResponse.model_validate(result.model_dump())
+    return CreateTestFeedbackEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
-    "/test_feedback/create",
-    response_model=CreateTestFeedbackEntriesApiResponse,
+    "/test-feedback/create",
+    response_model=CreateTestFeedbackEntryResponse,
     dependencies=[
         audit_activity(
             "test_feedback.created",
@@ -61,11 +61,11 @@ async def create_test_feedback_entry_internal(
     ],
 )
 async def create_test_feedback_entry(
-    request: CreateTestFeedbackEntriesApiRequest,
+    request: CreateTestFeedbackEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateTestFeedbackEntriesApiResponse:
+) -> CreateTestFeedbackEntryResponse:
     """Create test_feedback entry."""
     tags = ["entries", "test_feedback"]
     sql_query = load_sql_query(SQL_PATH)

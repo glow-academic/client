@@ -65,7 +65,8 @@ async def handle_run_complete(data: dict[str, Any]) -> None:
                 "generate",
                 {
                     "sid": sid,
-                    "artifact_type": artifact_type,
+                    "artifact_types": data.get("artifact_types")
+                    or [{"name": artifact_type, "operation": "get"}],
                     "group_id": group_id_str,
                     "metadata": data.get("metadata", {}),
                 },

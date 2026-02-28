@@ -56,7 +56,14 @@ async def generate_handler(data: dict[str, Any]) -> None:
     on the session without re-entering the full generation pipeline.
     """
     sid = data.get("sid", "")
-    artifact_type = data.get("artifact_type", "unknown")
+
+    # Derive artifact_type from artifact_types[0].name (canonical path)
+    artifact_types_raw = data.get("artifact_types") or []
+    artifact_type = (
+        artifact_types_raw[0]["name"]
+        if artifact_types_raw and isinstance(artifact_types_raw[0], dict)
+        else "unknown"
+    )
 
     if not sid:
         return

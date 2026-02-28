@@ -5,16 +5,16 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.conversations.types import (
+    CreateConversationsEntryRequest,
+    CreateConversationsEntryResponse,
+    CreateConversationsEntrySqlParams,
+    CreateConversationsEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateConversationsEntriesApiRequest,
-    CreateConversationsEntriesApiResponse,
-    CreateConversationsEntriesSqlParams,
-    CreateConversationsEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -29,16 +29,16 @@ async def create_conversations_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateConversationsEntriesApiResponse:
+) -> CreateConversationsEntryResponse:
     """Internal function to create conversations entry."""
     tags = ["entries", "conversations"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateConversationsEntriesSqlParams(**request_dict)
+        params = CreateConversationsEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateConversationsEntriesSqlRow,
+            CreateConversationsEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -47,12 +47,12 @@ async def create_conversations_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateConversationsEntriesApiResponse.model_validate(result.model_dump())
+    return CreateConversationsEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
     "/conversations/create",
-    response_model=CreateConversationsEntriesApiResponse,
+    response_model=CreateConversationsEntryResponse,
     dependencies=[
         audit_activity(
             "conversations.created",
@@ -61,11 +61,11 @@ async def create_conversations_entry_internal(
     ],
 )
 async def create_conversations_entry(
-    request: CreateConversationsEntriesApiRequest,
+    request: CreateConversationsEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateConversationsEntriesApiResponse:
+) -> CreateConversationsEntryResponse:
     """Create conversations entry."""
     tags = ["entries", "conversations"]
     sql_query = load_sql_query(SQL_PATH)

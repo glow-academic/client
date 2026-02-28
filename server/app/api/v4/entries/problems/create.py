@@ -5,16 +5,16 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.problems.types import (
+    CreateProblemsEntryRequest,
+    CreateProblemsEntryResponse,
+    CreateProblemsEntrySqlParams,
+    CreateProblemsEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateProblemsEntriesApiRequest,
-    CreateProblemsEntriesApiResponse,
-    CreateProblemsEntriesSqlParams,
-    CreateProblemsEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -27,16 +27,16 @@ async def create_problems_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateProblemsEntriesApiResponse:
+) -> CreateProblemsEntryResponse:
     """Internal function to create problems entry."""
     tags = ["entries", "problems"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateProblemsEntriesSqlParams(**request_dict)
+        params = CreateProblemsEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateProblemsEntriesSqlRow,
+            CreateProblemsEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -45,12 +45,12 @@ async def create_problems_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateProblemsEntriesApiResponse.model_validate(result.model_dump())
+    return CreateProblemsEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
     "/problems/create",
-    response_model=CreateProblemsEntriesApiResponse,
+    response_model=CreateProblemsEntryResponse,
     dependencies=[
         audit_activity(
             "problems.created",
@@ -59,11 +59,11 @@ async def create_problems_entry_internal(
     ],
 )
 async def create_problems_entry(
-    request: CreateProblemsEntriesApiRequest,
+    request: CreateProblemsEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateProblemsEntriesApiResponse:
+) -> CreateProblemsEntryResponse:
     """Create problems entry."""
     tags = ["entries", "problems"]
     sql_query = load_sql_query(SQL_PATH)

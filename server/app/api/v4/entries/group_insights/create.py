@@ -5,16 +5,16 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.group_insights.types import (
+    CreateGroupInsightsEntryRequest,
+    CreateGroupInsightsEntryResponse,
+    CreateGroupInsightsEntrySqlParams,
+    CreateGroupInsightsEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateGroupInsightsEntriesApiRequest,
-    CreateGroupInsightsEntriesApiResponse,
-    CreateGroupInsightsEntriesSqlParams,
-    CreateGroupInsightsEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -27,16 +27,16 @@ async def create_group_insights_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateGroupInsightsEntriesApiResponse:
+) -> CreateGroupInsightsEntryResponse:
     """Internal function to create group_insights entry."""
     tags = ["entries", "group_insights"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateGroupInsightsEntriesSqlParams(**request_dict)
+        params = CreateGroupInsightsEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateGroupInsightsEntriesSqlRow,
+            CreateGroupInsightsEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -45,12 +45,12 @@ async def create_group_insights_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateGroupInsightsEntriesApiResponse.model_validate(result.model_dump())
+    return CreateGroupInsightsEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
-    "/group_insights/create",
-    response_model=CreateGroupInsightsEntriesApiResponse,
+    "/group-insights/create",
+    response_model=CreateGroupInsightsEntryResponse,
     dependencies=[
         audit_activity(
             "group_insights.created",
@@ -59,11 +59,11 @@ async def create_group_insights_entry_internal(
     ],
 )
 async def create_group_insights_entry(
-    request: CreateGroupInsightsEntriesApiRequest,
+    request: CreateGroupInsightsEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateGroupInsightsEntriesApiResponse:
+) -> CreateGroupInsightsEntryResponse:
     """Create group_insights entry."""
     tags = ["entries", "group_insights"]
     sql_query = load_sql_query(SQL_PATH)

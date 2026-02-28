@@ -51,7 +51,8 @@ async def handle_response_cancelled(data: dict[str, Any]) -> None:
         "generate",
         {
             "sid": sid,
-            "artifact_type": data.get("artifact_type", ""),
+            "artifact_types": data.get("artifact_types")
+            or [{"name": data.get("artifact_type", ""), "operation": "get"}],
             "group_id": group_id,
             "metadata": data.get("metadata", {}),
         },

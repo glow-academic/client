@@ -1,5 +1,7 @@
 """Canonical improvements entry type — single source of truth for entry fields."""
 
+from uuid import UUID
+
 from pydantic import BaseModel
 
 
@@ -11,3 +13,42 @@ class ImprovementsEntryData(BaseModel):
     name: str | None = None
     description: str | None = None
     created_at: str | None = None
+
+
+class CreateAttemptImprovementEntryRequest(BaseModel):
+    run_id: UUID
+    grade_id: UUID
+    message_id: UUID
+    name: str = ""
+    description: str = ""
+
+
+class CreateAttemptImprovementEntryResponse(BaseModel):
+    id: UUID
+    call_id: UUID
+    message_id: UUID
+
+
+class CreateAttemptImprovementEntrySqlParams(BaseModel):
+    run_id: UUID
+    grade_id: UUID
+    message_id: UUID
+    name: str = ""
+    description: str = ""
+    mcp: bool = False
+
+    def to_tuple(self) -> tuple:
+        return (
+            self.run_id,
+            self.grade_id,
+            self.message_id,
+            self.name,
+            self.description,
+            self.mcp,
+        )
+
+
+class CreateAttemptImprovementEntrySqlRow(BaseModel):
+    entry_id: UUID
+    entry_call_id: UUID
+    entry_message_id: UUID

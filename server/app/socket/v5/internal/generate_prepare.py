@@ -179,21 +179,29 @@ async def _fetch_artifact_types(
     for item in artifact_types:
         config = REGISTRY.get(item.name)
         if not config or not config.fetcher:
-            logger.warning(f"No registry config/fetcher for artifact_type '{item.name}' — skipping")
+            logger.warning(
+                f"No registry config/fetcher for artifact_type '{item.name}' — skipping"
+            )
             continue
 
         if item.operation != "get":
             # Only "get" fetchers produce context data; other ops are mutations
-            logger.debug(f"Skipping non-get artifact_type '{item.name}.{item.operation}'")
+            logger.debug(
+                f"Skipping non-get artifact_type '{item.name}.{item.operation}'"
+            )
             continue
 
         try:
             fetcher_pool = pool if config.requires_pool else None
-            result = await config.fetcher(profile_id, artifact_id, draft_id, fetcher_pool)
+            result = await config.fetcher(
+                profile_id, artifact_id, draft_id, fetcher_pool
+            )
             dumped = _dump_fetcher_result(result)
             results.setdefault(item.name, {})[item.operation] = dumped
         except Exception as e:
-            logger.warning(f"Failed to fetch artifact_type '{item.name}.{item.operation}': {e}")
+            logger.warning(
+                f"Failed to fetch artifact_type '{item.name}.{item.operation}': {e}"
+            )
 
     return results
 
@@ -224,7 +232,9 @@ async def _fetch_entry_types(
         try:
             result = await fn(conn)
             if hasattr(result, "model_dump"):
-                results.setdefault(item.name, {})[item.operation] = result.model_dump(mode="json")
+                results.setdefault(item.name, {})[item.operation] = result.model_dump(
+                    mode="json"
+                )
             elif isinstance(result, list):
                 results.setdefault(item.name, {})[item.operation] = [
                     r.model_dump(mode="json") if hasattr(r, "model_dump") else r
@@ -233,7 +243,9 @@ async def _fetch_entry_types(
             else:
                 results.setdefault(item.name, {})[item.operation] = result
         except Exception as e:
-            logger.warning(f"Failed to fetch entry_type '{item.name}.{item.operation}': {e}")
+            logger.warning(
+                f"Failed to fetch entry_type '{item.name}.{item.operation}': {e}"
+            )
 
     return results
 
@@ -393,7 +405,14 @@ def _enrich_tools_with_args_outputs(
 async def generate_prepare_handler(data: dict[str, Any]) -> None:
     """Handle ``generate_prepare`` — runs after rate limit gate passes."""
     sid = data.get("sid", "")
-    artifact_type = data.get("artifact_type", "unknown")
+
+    # Derive artifact_type from artifact_types[0].name
+    artifact_types_raw = data.get("artifact_types") or []
+    artifact_type = (
+        artifact_types_raw[0]["name"]
+        if artifact_types_raw and isinstance(artifact_types_raw[0], dict)
+        else "unknown"
+    )
 
     if not sid:
         return
@@ -531,40 +550,42 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
 
         # Rate limit check moved to generate.py (rate limit gate)
 
-        # Step 8: Build Jinja context
-        # When artifact_types is provided, build namespaced context:
+        # Step 8: Build namespaced Jinja context
         #   artifacts.{name}.{operation}.{resources|entries|agents|...}
-        # Otherwise, use the legacy flat context for backwards compat.
-        if payload.artifact_types:
-            # Fetch supplementary artifact types (the primary is already in `result`)
-            artifact_results = await _fetch_artifact_types(
-                payload.artifact_types,
-                profile_id,
-                artifact_id,
-                payload.draft_id,
-                pool,
-            )
+        # Also injects backward-compat top-level aliases from the primary artifact.
 
-            # Ensure the primary artifact_type is always present
-            if artifact_type not in artifact_results:
-                artifact_results[artifact_type] = {
-                    "get": _dump_fetcher_result(result),
-                }
+        # Fetch all artifact types (may include supplementary artifacts)
+        artifact_results = await _fetch_artifact_types(
+            payload.artifact_types,
+            profile_id,
+            artifact_id,
+            payload.draft_id,
+            pool,
+        )
 
-            # Fetch entry types if provided
-            entry_results: dict[str, dict[str, Any]] | None = None
-            if payload.entry_types:
-                async with get_db_connection() as entry_conn:
-                    entry_results = await _fetch_entry_types(
-                        payload.entry_types, entry_conn
-                    )
+        # Ensure the primary artifact is always present
+        if artifact_type not in artifact_results:
+            artifact_results[artifact_type] = {
+                "get": _dump_fetcher_result(result),
+            }
 
-            jinja_context_base = _build_namespaced_context(
-                artifact_results, entry_results
-            )
-        else:
-            # Legacy path: flat 3-key context
-            jinja_context_base = _build_jinja_context(result)
+        # Fetch entry types if provided
+        entry_results: dict[str, dict[str, Any]] | None = None
+        if payload.entry_types:
+            async with get_db_connection() as entry_conn:
+                entry_results = await _fetch_entry_types(
+                    payload.entry_types, entry_conn
+                )
+
+        jinja_context_base = _build_namespaced_context(artifact_results, entry_results)
+
+        # Backward-compat: inject primary artifact's data as top-level aliases
+        # so existing templates using {{ resources.names }} still work.
+        primary_data = artifact_results.get(artifact_type, {}).get("get", {})
+        if primary_data.get("resources"):
+            jinja_context_base["resources"] = primary_data["resources"]
+        if primary_data.get("entries"):
+            jinja_context_base["entries"] = primary_data["entries"]
 
         # Step 9: Read all tools, enrich, and build createable set (shared)
         config_tools = getattr(result, "tools", None) or []
@@ -754,19 +775,16 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
                 # 13c: Build scoped jinja context (clone base, inject per-agent)
                 jinja_context = copy.deepcopy(jinja_context_base)
 
-                if payload.artifact_types:
-                    # Namespaced path: inject scope metadata at top level
-                    jinja_context["resource_types"] = scoped_resource_types
-                    jinja_context["entry_types"] = scoped_entry_types
-                    jinja_context["artifact_types"] = all_artifact_types
-                else:
-                    # Legacy path: inject into existing namespace keys
+                # Inject scope metadata at top level
+                jinja_context["resource_types"] = scoped_resource_types
+                jinja_context["entry_types"] = scoped_entry_types
+                jinja_context["artifact_types"] = all_artifact_types
+
+                # Backward-compat: also inject into legacy namespace keys
+                if "resources" in jinja_context:
                     jinja_context["resources"]["types"] = scoped_resource_types
+                if "entries" in jinja_context:
                     jinja_context["entries"]["types"] = scoped_entry_types
-                    jinja_context["artifacts"]["types"] = all_artifact_types
-                    # Legacy compat (remove after templates verified)
-                    jinja_context["artifacts"]["resource_types"] = scoped_resource_types
-                    jinja_context["artifacts"]["entry_types"] = scoped_entry_types
 
                 # 13d: Fetch this agent's system prompt + developer instructions
                 async def _fetch_prompt(ar: Any) -> str:

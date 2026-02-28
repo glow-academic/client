@@ -5,16 +5,16 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.attempt_analysis.types import (
+    CreateAttemptAnalysisEntryRequest,
+    CreateAttemptAnalysisEntryResponse,
+    CreateAttemptAnalysisEntrySqlParams,
+    CreateAttemptAnalysisEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateAttemptAnalysisEntriesApiRequest,
-    CreateAttemptAnalysisEntriesApiResponse,
-    CreateAttemptAnalysisEntriesSqlParams,
-    CreateAttemptAnalysisEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -27,16 +27,16 @@ async def create_attempt_analysis_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateAttemptAnalysisEntriesApiResponse:
+) -> CreateAttemptAnalysisEntryResponse:
     """Internal function to create attempt_analysis entry."""
     tags = ["entries", "attempt_analysis"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateAttemptAnalysisEntriesSqlParams(**request_dict)
+        params = CreateAttemptAnalysisEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateAttemptAnalysisEntriesSqlRow,
+            CreateAttemptAnalysisEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -45,12 +45,12 @@ async def create_attempt_analysis_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateAttemptAnalysisEntriesApiResponse.model_validate(result.model_dump())
+    return CreateAttemptAnalysisEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
-    "/attempt_analysis/create",
-    response_model=CreateAttemptAnalysisEntriesApiResponse,
+    "/attempt-analysis/create",
+    response_model=CreateAttemptAnalysisEntryResponse,
     dependencies=[
         audit_activity(
             "attempt_analysis.created",
@@ -59,11 +59,11 @@ async def create_attempt_analysis_entry_internal(
     ],
 )
 async def create_attempt_analysis_entry(
-    request: CreateAttemptAnalysisEntriesApiRequest,
+    request: CreateAttemptAnalysisEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateAttemptAnalysisEntriesApiResponse:
+) -> CreateAttemptAnalysisEntryResponse:
     """Create attempt_analysis entry."""
     tags = ["entries", "attempt_analysis"]
     sql_query = load_sql_query(SQL_PATH)

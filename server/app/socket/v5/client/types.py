@@ -14,7 +14,9 @@ from pydantic import BaseModel, model_validator
 # Operation literals per layer
 # ---------------------------------------------------------------------------
 
-ArtifactOperation = Literal["get", "list", "duplicate", "delete", "draft", "save", "docs"]
+ArtifactOperation = Literal[
+    "get", "list", "duplicate", "delete", "draft", "save", "docs"
+]
 ResourceOperation = Literal["get", "create", "link", "search", "docs"]
 EntryOperation = Literal["get", "search", "docs", "create"]
 
@@ -49,11 +51,12 @@ class GeneratePayload(BaseModel):
     """Unified client-to-server payload for the `generate` WebSocket event.
 
     Fields:
-        artifact_type: Registry key (e.g. "agent", "chat", "attempt").
+        artifact_types: Typed artifact operations — at least one required.
+                        The first item is the primary artifact; its ``name``
+                        is used as the registry key for downstream events.
         artifact_id:   Generic artifact ID — maps to agent_id, chat_entry_id, etc.
         draft_id:      Optional draft ID (required for most artifacts).
-        artifact_types: Typed artifact operations (name + operation).
-        resource_types: Which resources to generate (plain strings, kept for compat).
+        resource_types: Which resources to generate (plain strings).
         entry_types:   Typed entry operations (name + operation).
         user_instructions: Optional user instructions forwarded to LLM.
         save:          Whether to auto-save on completion.
@@ -64,12 +67,17 @@ class GeneratePayload(BaseModel):
                        downstream handlers (e.g. attempt_id, chat_id, grade_id).
     """
 
-    artifact_type: str
+    artifact_types: list[ArtifactTypeItem]
     artifact_id: UUID | None = None
     draft_id: UUID | None = None
-    artifact_types: list[ArtifactTypeItem] | None = None
     resource_types: list[str]
     entry_types: list[EntryTypeItem] | None = None
+
+    @property
+    def artifact_type(self) -> str:
+        """Derived primary artifact type — the name of the first artifact_types entry."""
+        return self.artifact_types[0].name if self.artifact_types else "unknown"
+
     user_instructions: list[str] | None = None
     save: bool = False
 

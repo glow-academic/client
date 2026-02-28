@@ -32,7 +32,9 @@ router = APIRouter()
 @router.post(
     "/search",
     response_model=GetProfilesSearchApiResponse,
-    dependencies=[audit_activity("profile.searched", "{{ actor.name }} searched profiles")],
+    dependencies=[
+        audit_activity("profile.searched", "{{ actor.name }} searched profiles")
+    ],
 )
 async def search_profiles(
     request: GetProfilesSearchApiRequest,

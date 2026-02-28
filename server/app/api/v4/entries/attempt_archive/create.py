@@ -1,20 +1,20 @@
-"""Attempt Archive entry CREATE endpoint."""
+"""AttemptArchive entry CREATE endpoint."""
 
 from typing import Annotated, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.attempt_archive.types import (
+    CreateAttemptArchiveEntryRequest,
+    CreateAttemptArchiveEntryResponse,
+    CreateAttemptArchiveEntrySqlParams,
+    CreateAttemptArchiveEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateAttemptArchiveEntriesApiRequest,
-    CreateAttemptArchiveEntriesApiResponse,
-    CreateAttemptArchiveEntriesSqlParams,
-    CreateAttemptArchiveEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -27,16 +27,16 @@ async def create_attempt_archive_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateAttemptArchiveEntriesApiResponse:
+) -> CreateAttemptArchiveEntryResponse:
     """Internal function to create attempt_archive entry."""
     tags = ["entries", "attempt_archive"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateAttemptArchiveEntriesSqlParams(**request_dict)
+        params = CreateAttemptArchiveEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateAttemptArchiveEntriesSqlRow,
+            CreateAttemptArchiveEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -45,12 +45,12 @@ async def create_attempt_archive_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateAttemptArchiveEntriesApiResponse.model_validate(result.model_dump())
+    return CreateAttemptArchiveEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
-    "/attempt_archive/create",
-    response_model=CreateAttemptArchiveEntriesApiResponse,
+    "/attempt-archive/create",
+    response_model=CreateAttemptArchiveEntryResponse,
     dependencies=[
         audit_activity(
             "attempt_archive.created",
@@ -59,11 +59,11 @@ async def create_attempt_archive_entry_internal(
     ],
 )
 async def create_attempt_archive_entry(
-    request: CreateAttemptArchiveEntriesApiRequest,
+    request: CreateAttemptArchiveEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateAttemptArchiveEntriesApiResponse:
+) -> CreateAttemptArchiveEntryResponse:
     """Create attempt_archive entry."""
     tags = ["entries", "attempt_archive"]
     sql_query = load_sql_query(SQL_PATH)

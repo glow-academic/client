@@ -5,16 +5,16 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.dashboard_insights.types import (
+    CreateDashboardInsightsEntryRequest,
+    CreateDashboardInsightsEntryResponse,
+    CreateDashboardInsightsEntrySqlParams,
+    CreateDashboardInsightsEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateDashboardInsightsEntriesApiRequest,
-    CreateDashboardInsightsEntriesApiResponse,
-    CreateDashboardInsightsEntriesSqlParams,
-    CreateDashboardInsightsEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -27,16 +27,16 @@ async def create_dashboard_insights_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateDashboardInsightsEntriesApiResponse:
+) -> CreateDashboardInsightsEntryResponse:
     """Internal function to create dashboard_insights entry."""
     tags = ["entries", "dashboard_insights"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateDashboardInsightsEntriesSqlParams(**request_dict)
+        params = CreateDashboardInsightsEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateDashboardInsightsEntriesSqlRow,
+            CreateDashboardInsightsEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -45,12 +45,12 @@ async def create_dashboard_insights_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateDashboardInsightsEntriesApiResponse.model_validate(result.model_dump())
+    return CreateDashboardInsightsEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
-    "/dashboard_insights/create",
-    response_model=CreateDashboardInsightsEntriesApiResponse,
+    "/dashboard-insights/create",
+    response_model=CreateDashboardInsightsEntryResponse,
     dependencies=[
         audit_activity(
             "dashboard_insights.created",
@@ -59,11 +59,11 @@ async def create_dashboard_insights_entry_internal(
     ],
 )
 async def create_dashboard_insights_entry(
-    request: CreateDashboardInsightsEntriesApiRequest,
+    request: CreateDashboardInsightsEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateDashboardInsightsEntriesApiResponse:
+) -> CreateDashboardInsightsEntryResponse:
     """Create dashboard_insights entry."""
     tags = ["entries", "dashboard_insights"]
     sql_query = load_sql_query(SQL_PATH)

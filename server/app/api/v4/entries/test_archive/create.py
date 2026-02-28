@@ -1,20 +1,20 @@
-"""Test Archive entry CREATE endpoint."""
+"""Test archive entry CREATE endpoint."""
 
 from typing import Annotated, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.test_archive.types import (
+    CreateTestArchiveEntryRequest,
+    CreateTestArchiveEntryResponse,
+    CreateTestArchiveEntrySqlParams,
+    CreateTestArchiveEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateTestArchiveEntriesApiRequest,
-    CreateTestArchiveEntriesApiResponse,
-    CreateTestArchiveEntriesSqlParams,
-    CreateTestArchiveEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -29,16 +29,16 @@ async def create_test_archive_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateTestArchiveEntriesApiResponse:
+) -> CreateTestArchiveEntryResponse:
     """Internal function to create test_archive entry."""
     tags = ["entries", "test_archive"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateTestArchiveEntriesSqlParams(**request_dict)
+        params = CreateTestArchiveEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateTestArchiveEntriesSqlRow,
+            CreateTestArchiveEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -47,12 +47,12 @@ async def create_test_archive_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateTestArchiveEntriesApiResponse.model_validate(result.model_dump())
+    return CreateTestArchiveEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
-    "/test_archive/create",
-    response_model=CreateTestArchiveEntriesApiResponse,
+    "/test-archive/create",
+    response_model=CreateTestArchiveEntryResponse,
     dependencies=[
         audit_activity(
             "test_archive.created",
@@ -61,11 +61,11 @@ async def create_test_archive_entry_internal(
     ],
 )
 async def create_test_archive_entry(
-    request: CreateTestArchiveEntriesApiRequest,
+    request: CreateTestArchiveEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateTestArchiveEntriesApiResponse:
+) -> CreateTestArchiveEntryResponse:
     """Create test_archive entry."""
     tags = ["entries", "test_archive"]
     sql_query = load_sql_query(SQL_PATH)

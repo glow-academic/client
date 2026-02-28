@@ -5,16 +5,16 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.api.v4.entries.mutes.types import (
+    CreateMutesEntryRequest,
+    CreateMutesEntryResponse,
+    CreateMutesEntrySqlParams,
+    CreateMutesEntrySqlRow,
+)
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateMutesEntriesApiRequest,
-    CreateMutesEntriesApiResponse,
-    CreateMutesEntriesSqlParams,
-    CreateMutesEntriesSqlRow,
-    load_sql_query,
-)
+from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
@@ -27,16 +27,16 @@ async def create_mutes_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
     mcp: bool = False,
-) -> CreateMutesEntriesApiResponse:
+) -> CreateMutesEntryResponse:
     """Internal function to create mutes entry."""
     tags = ["entries", "mutes"]
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
-        params = CreateMutesEntriesSqlParams(**request_dict)
+        params = CreateMutesEntrySqlParams(**request_dict)
 
         result = cast(
-            CreateMutesEntriesSqlRow,
+            CreateMutesEntrySqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
 
@@ -45,12 +45,12 @@ async def create_mutes_entry_internal(
 
     await invalidate_tags(tags)
 
-    return CreateMutesEntriesApiResponse.model_validate(result.model_dump())
+    return CreateMutesEntryResponse.model_validate(result.model_dump())
 
 
 @router.post(
     "/mutes/create",
-    response_model=CreateMutesEntriesApiResponse,
+    response_model=CreateMutesEntryResponse,
     dependencies=[
         audit_activity(
             "mutes.created",
@@ -59,11 +59,11 @@ async def create_mutes_entry_internal(
     ],
 )
 async def create_mutes_entry(
-    request: CreateMutesEntriesApiRequest,
+    request: CreateMutesEntryRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateMutesEntriesApiResponse:
+) -> CreateMutesEntryResponse:
     """Create mutes entry."""
     tags = ["entries", "mutes"]
     sql_query = load_sql_query(SQL_PATH)
