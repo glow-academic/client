@@ -85,9 +85,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
-import { useGenerationModal } from "@/hooks/use-generation-modal";
 import { useProfile } from "@/contexts/profile-context";
 import { cn } from "@/lib/utils";
 import { ICON_MAP } from "@/utils/icons";
@@ -376,32 +374,10 @@ export default function Profiles({
   } = useProfile();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Generation modal via shared hook
-  type ProfileResourceType = "names" | "flags" | "request_limits" | "departments" | "emails";
-  const { generate } = useArtifactAi({
+  useArtifactAi({
     artifactType: "profile",
-    groupId: null,
     validResourceTypes: ["names", "flags", "request_limits", "departments", "emails"],
-  });
-  const { handleOpenStepCardModal, modalProps } = useGenerationModal<ProfileResourceType>({
-    stepResources: {
-      all: ["names", "flags", "request_limits", "departments", "emails"],
-    },
-    resourceLabels: {
-      names: "Names",
-      flags: "Configuration",
-      request_limits: "Request Limits",
-      departments: "Departments",
-      emails: "Emails",
-    },
-    canRegenerate: () => true,
-    onGenerate: (selectedResources, instructions) => {
-      generate(selectedResources, {
-        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-        save: true,
-      });
-    },
-    isGenerating: () => false,
+    onComplete: () => router.refresh(),
   });
 
   // Selection state
@@ -2316,7 +2292,6 @@ export default function Profiles({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-        <GenerateRegenerateModal {...modalProps} />
       </div>
     </TooltipProvider>
   );

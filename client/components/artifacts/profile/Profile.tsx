@@ -23,7 +23,6 @@ import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import {
   Departments,
@@ -44,7 +43,6 @@ import { useProfile } from "@/contexts/profile-context";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
-import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   type ResourceConfig,
@@ -533,7 +531,6 @@ function ProfileComponent({
 
       return {
         input_draft_id: draftId || null,
-        group_id: currentProfileData?.group_id ?? null,
         ...draftFields,
         expected_version: expectedVersion,
       };
@@ -567,7 +564,6 @@ function ProfileComponent({
 
   const { isGenerating, generate } = useArtifactAi({
     artifactType: "profile",
-    groupId: currentProfileData?.group_id,
     validResourceTypes: [...VALID_RESOURCE_TYPES],
   });
 
@@ -630,17 +626,6 @@ function ProfileComponent({
     return !currentProfileData.can_edit;
   }, [currentProfileData]);
 
-  const resourceLabels: Partial<Record<ProfileResourceType, string>> = useMemo(
-    () => ({
-      names: "Names",
-      flags: "Flags",
-      departments: "Departments",
-      emails: "Emails",
-      request_limits: "Request Limits",
-    }),
-    []
-  );
-
   const stepResources = useMemo<Record<string, ProfileResourceType[]>>(
     () => ({
       basic: [...STEP_RESOURCES.basic],
@@ -651,20 +636,15 @@ function ProfileComponent({
     []
   );
 
-  // --- useGenerationModal hook ---
-  const { handleOpenStepCardModal, modalProps } =
-    useGenerationModal<ProfileResourceType>({
-      stepResources,
-      resourceLabels,
-      canRegenerate,
-      onGenerate: (selectedResources, instructions) => {
-        handleGenerateResources(
-          selectedResources as ProfileResourceType[],
-          instructions
-        );
-      },
-      isGenerating,
-    });
+  const handleDirectStepGenerate = useCallback(
+    (stepId: string, _mode: "generate" | "regenerate") => {
+      const resources = stepResources[stepId];
+      if (resources) {
+        handleGenerateResources(resources);
+      }
+    },
+    [stepResources, handleGenerateResources],
+  );
 
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
@@ -767,7 +747,6 @@ function ProfileComponent({
       currentProfileData?.name_required,
       currentProfileData?.departments_required,
       currentProfileData?.emails_required,
-      currentProfileData?.group_id,
       currentProfileData?.draft_version,
       currentProfileData,
     ]
@@ -953,7 +932,7 @@ function ProfileComponent({
                     defaultName="Name"
                     required={currentProfileData?.name_required ?? false}
                     hideDescription={true}
-                    group_id={currentProfileData?.group_id ?? null}
+
                     createNamesAction={createNamesAction}
                     registerFlush={registerFlushCallbacks["names"]}
                   />
@@ -969,7 +948,7 @@ function ProfileComponent({
                       canRegenerate(rt as ProfileResourceType)
                     }
                     isGenerating={(rt) => isGenerating(rt as ProfileResourceType)}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -995,7 +974,7 @@ function ProfileComponent({
                   }
                   onGenerate={handleGenerateDepartments}
                   required={currentProfileData?.departments_required ?? false}
-                  group_id={currentProfileData?.group_id ?? null}
+
                 />
                 <Flags
                   flags={currentProfileData?.flags ?? []}
@@ -1011,7 +990,7 @@ function ProfileComponent({
                     }))
                   }
                   onGenerate={handleGenerateFlags}
-                  group_id={currentProfileData?.group_id ?? null}
+
                 />
               </div>
             </StepCard>
@@ -1038,7 +1017,7 @@ function ProfileComponent({
                       canRegenerate(rt as ProfileResourceType)
                     }
                     isGenerating={(rt) => isGenerating(rt as ProfileResourceType)}
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -1062,7 +1041,7 @@ function ProfileComponent({
                   primary_email_index={formState.primary_email_index ?? 0}
                   onGenerate={handleGenerateEmails}
                   required={currentProfileData?.emails_required ?? false}
-                  group_id={currentProfileData?.group_id ?? null}
+
                   createEmailsAction={createEmailsAction}
                   registerFlush={registerFlushCallbacks["emails"]}
                 />
@@ -1088,7 +1067,7 @@ function ProfileComponent({
                   }
                   onGenerate={handleGenerateRequestLimits}
                   required={currentProfileData?.request_limit_required ?? false}
-                  group_id={currentProfileData?.group_id ?? null}
+
                   createRequestLimitsAction={createRequestLimitsAction}
                   registerFlush={registerFlushCallbacks["request_limits"]}
                 />
@@ -1314,7 +1293,7 @@ function ProfileComponent({
       createEmailsAction,
       createRequestLimitsAction,
       canRegenerate,
-      handleOpenStepCardModal,
+      handleDirectStepGenerate,
     ]
   );
 
@@ -1351,7 +1330,6 @@ function ProfileComponent({
           }}
         />
 
-        <GenerateRegenerateModal {...modalProps} />
       </div>
     </TooltipProvider>
   );

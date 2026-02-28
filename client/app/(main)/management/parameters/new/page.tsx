@@ -6,6 +6,7 @@
  */
 
 import Parameter from "@/components/artifacts/parameter/Parameter";
+import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -108,11 +109,14 @@ export default async function NewParameterPage({
   const loadParameterSearchParams = createLoader(parameterSearchParams);
   const q = loadParameterSearchParams(searchParamsObj);
 
+  const groupId = await resolveGroupId(q.draftId ?? null, "parameter");
+
   // Fetch default parameter detail server-side with filter params and draft_id (parameter_id = null for new mode)
   const input: ParameterGetIn = {
     body: {
       parameter_id: null, // NULL for new mode
       draft_id: q.draftId ?? null,
+      group_id: groupId,
     } as ParameterGetIn["body"],
   };
   const parameterDetailDefault = await getParameterDefault(input);

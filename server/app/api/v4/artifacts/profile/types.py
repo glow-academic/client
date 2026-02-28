@@ -69,6 +69,7 @@ class ProfileRoleResource(BaseModel):
 class GetProfileApiRequest(BaseModel):
     target_profile_id: UUID | None = None
     draft_id: UUID | None = None
+    group_id: UUID | None = None
 
 
 class GetProfileApiResponse(BaseModel):

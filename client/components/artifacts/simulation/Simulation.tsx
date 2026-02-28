@@ -16,7 +16,6 @@ import {
 } from "@/components/common/forms/GenericForm";
 import { StepCard } from "@/components/common/forms/StepCard";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
@@ -34,7 +33,6 @@ import { useDrafts } from "@/contexts/draft-context";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 import { useFlushRegistry } from "@/hooks/use-flush-registry";
-import { useGenerationModal } from "@/hooks/use-generation-modal";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   buildDraftPayload,
@@ -322,7 +320,6 @@ function SimulationComponent({
       scenario_rubrics: simulationData.scenario_rubrics,
       scenario_time_limits: simulationData.scenario_time_limits,
       rubrics: simulationData.rubrics,
-      group_id: simulationData.group_id,
       draft_version: simulationData.draft_version,
       can_edit: simulationData.can_edit,
       disabled_reason: simulationData.disabled_reason,
@@ -364,11 +361,8 @@ function SimulationComponent({
     useState<SimulationFormState>(getInitialFormState);
 
   // --- AI Generation ---
-  const groupId = stableSimulationDataFields?.group_id ?? null;
-
   const { isGenerating, makeOnGenerationComplete, generate } = useArtifactAi({
     artifactType: "simulation",
-    groupId,
     validResourceTypes: VALID_RESOURCE_TYPES,
   });
 
@@ -788,7 +782,7 @@ function SimulationComponent({
         throw new Error("Save action not available");
       }
 
-      if (!stableSimulationDataFields?.group_id) {
+      if (!simulationData?.group_id) {
         toast.error("Group not found. Please try again.");
         throw new Error("Group ID is required for save");
       }
@@ -917,38 +911,15 @@ function SimulationComponent({
     [],
   );
 
-  // Resource labels for display
-  const resourceLabels: Record<string, string> = useMemo(
-    () => ({
-      names: "Names",
-      descriptions: "Descriptions",
-      departments: "Departments",
-      flags: "Flags",
-      scenarios: "Scenarios",
-      scenario_flags: "Scenario Flags",
-      scenario_positions: "Scenario Positions",
-      scenario_rubrics: "Scenario Rubrics",
-      scenario_time_limits: "Scenario Time Limits",
-    }),
-    [],
-  );
-
-  // --- Generation Modal ---
-  const onModalGenerate = useCallback(
-    (selectedResources: SimulationResourceType[], instructions?: string) => {
-      handleGenerateResources(selectedResources, instructions);
+  const handleDirectStepGenerate = useCallback(
+    (stepId: string, _mode: "generate" | "regenerate") => {
+      const resources = stepResources[stepId];
+      if (resources) {
+        handleGenerateResources(resources);
+      }
     },
-    [handleGenerateResources],
+    [stepResources, handleGenerateResources],
   );
-
-  const { handleOpenStepCardModal, modalProps } =
-    useGenerationModal<SimulationResourceType>({
-      stepResources,
-      resourceLabels,
-      canRegenerate,
-      onGenerate: onModalGenerate,
-      isGenerating,
-    });
 
   // Steps configuration for GenericForm
   const steps = useMemo(
@@ -1119,7 +1090,6 @@ function SimulationComponent({
                   }
                   onGenerate={handleGenerateName}
                   createNamesAction={createNamesAction}
-                  group_id={s.group_id ?? null}
                   required={s.names?.required ?? false}
                   placeholder="Simulation name"
                   defaultName="New Simulation"
@@ -1144,7 +1114,7 @@ function SimulationComponent({
                     isGenerating={(rt: string) =>
                       isGenerating(rt as SimulationResourceType)
                     }
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -1167,7 +1137,6 @@ function SimulationComponent({
                   }
                   onGenerate={handleGenerateDescription}
                   createDescriptionsAction={createDescriptionsAction}
-                  group_id={s.group_id ?? null}
                   required={s.descriptions?.required ?? false}
                   showAiGenerate={s.descriptions?.show_ai_generate ?? false}
                   create_tool_id={s.descriptions?.tool_id ?? null}
@@ -1187,7 +1156,6 @@ function SimulationComponent({
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
                   }
                   onGenerate={handleGenerateDepartments}
-                  group_id={s.group_id ?? null}
                   required={s.departments?.required ?? false}
                   showAiGenerate={s.departments?.show_ai_generate ?? false}
                   link_tool_id={s.departments?.link_tool_id ?? null}
@@ -1252,7 +1220,6 @@ function SimulationComponent({
                   }}
                   onGenerate={handleGenerateFlags}
                   showAiGenerate={s.flags?.show_ai_generate ?? false}
-                  group_id={s.group_id ?? null}
                   link_tool_id={s.flags?.link_tool_id ?? null}
                   linkFlagsAction={linkFlagsAction}
                 />
@@ -1319,7 +1286,7 @@ function SimulationComponent({
                     isGenerating={(rt: string) =>
                       isGenerating(rt as SimulationResourceType)
                     }
-                    onOpenModal={handleOpenStepCardModal}
+                    onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
                   />
                 ) : undefined
@@ -1337,7 +1304,6 @@ function SimulationComponent({
                     setFormState((prev) => ({ ...prev, scenario_ids: ids }))
                   }
                   onGenerate={handleGenerateScenarios}
-                  group_id={s.group_id ?? null}
                   required={s.scenarios?.required ?? false}
                   showAiGenerate={s.scenarios?.show_ai_generate ?? false}
                   link_tool_id={s.scenarios?.link_tool_id ?? null}
@@ -1362,7 +1328,6 @@ function SimulationComponent({
                   }
                   createScenarioFlagsAction={createScenarioFlagsAction}
                   onGenerate={handleGenerateScenarioFlags}
-                  group_id={s.group_id ?? null}
                   required={s.scenario_flags?.required ?? false}
                   showAiGenerate={s.scenario_flags?.show_ai_generate ?? false}
                   create_tool_id={s.scenario_flags?.tool_id ?? null}
@@ -1395,7 +1360,6 @@ function SimulationComponent({
                   scenario_ids={formState.scenario_ids}
                   createScenarioPositionsAction={createScenarioPositionsAction}
                   onGenerate={handleGenerateScenarioPositions}
-                  group_id={s.group_id ?? null}
                   required={s.scenario_positions?.required ?? false}
                   showAiGenerate={s.scenario_positions?.show_ai_generate ?? false}
                   create_tool_id={s.scenario_positions?.tool_id ?? null}
@@ -1425,7 +1389,6 @@ function SimulationComponent({
                   }
                   createScenarioRubricsAction={createScenarioRubricsAction}
                   onGenerate={handleGenerateScenarioRubrics}
-                  group_id={s.group_id ?? null}
                   required={s.scenario_rubrics?.required ?? false}
                   showAiGenerate={s.scenario_rubrics?.show_ai_generate ?? false}
                   create_tool_id={s.scenario_rubrics?.tool_id ?? null}
@@ -1452,7 +1415,6 @@ function SimulationComponent({
                       scenario_time_limit_ids: ids,
                     }))
                   }
-                  group_id={s.group_id ?? null}
                   createScenarioTimeLimitsAction={
                     createScenarioTimeLimitsAction
                   }
@@ -1491,7 +1453,7 @@ function SimulationComponent({
       isGenerating,
       stepResources,
       canRegenerate,
-      handleOpenStepCardModal,
+      handleDirectStepGenerate,
       createNamesAction,
       createDescriptionsAction,
       createScenarioFlagsAction,
@@ -1551,7 +1513,6 @@ function SimulationComponent({
           }}
         />
 
-        {modalProps.open && <GenerateRegenerateModal {...modalProps} />}
       </div>
     </TooltipProvider>
   );

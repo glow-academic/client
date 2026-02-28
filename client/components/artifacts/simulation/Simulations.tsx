@@ -27,9 +27,7 @@ import type {
   SearchFlagsOut,
   SimulationsListOut,
 } from "@/app/(main)/training/simulations/page";
-import { GenerateRegenerateModal } from "@/components/common/forms/GenerateRegenerateModal";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { useGenerationModal } from "@/hooks/use-generation-modal";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
@@ -132,39 +130,10 @@ export function Simulations({
   const [flagOptions, setFlagOptions] = useState<{ id: string; name: string; type: string }[]>([]);
   const [flagsLoaded, setFlagsLoaded] = useState(false);
 
-  // Generation via useArtifactAi hook
-  type SimulationResourceType = "names" | "descriptions" | "flags" | "departments" | "scenarios" | "scenario_flags" | "scenario_positions" | "scenario_rubrics" | "scenario_time_limits";
-
-  const { generate } = useArtifactAi({
+  useArtifactAi({
     artifactType: "simulation",
-    groupId: null,
     validResourceTypes: ["names", "descriptions", "flags", "departments", "scenarios", "scenario_flags", "scenario_positions", "scenario_rubrics", "scenario_time_limits"],
     onComplete: () => router.refresh(),
-  });
-
-  const { handleOpenStepCardModal, modalProps } = useGenerationModal<SimulationResourceType>({
-    stepResources: {
-      all: ["names", "descriptions", "flags", "departments", "scenarios", "scenario_flags", "scenario_positions", "scenario_rubrics", "scenario_time_limits"],
-    },
-    resourceLabels: {
-      names: "Name",
-      descriptions: "Description",
-      flags: "Configuration",
-      departments: "Departments",
-      scenarios: "Scenarios",
-      scenario_flags: "Scenario Configuration",
-      scenario_positions: "Scenario Positions",
-      scenario_rubrics: "Scenario Rubrics",
-      scenario_time_limits: "Scenario Time Limits",
-    },
-    canRegenerate: () => true,
-    onGenerate: (selectedResources, instructions) => {
-      generate(selectedResources, {
-        user_instructions: instructions?.trim() ? [instructions.trim()] : null,
-        save: true,
-      });
-    },
-    isGenerating: () => false,
   });
 
   // Debounce refs
@@ -1361,7 +1330,6 @@ export function Simulations({
           </DialogContent>
         </Dialog>
 
-        <GenerateRegenerateModal {...modalProps} />
       </div>
     </TooltipProvider>
   );

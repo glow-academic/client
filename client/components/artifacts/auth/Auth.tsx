@@ -669,7 +669,7 @@ function AuthComponent({
                 }
                 onGenerate={() => handleGenerateResources(["protocols"])}
                 required={s?.protocols?.required ?? false}
-                group_id={s?.group_id ?? null}
+
                 showAiGenerate={s?.protocols?.show_ai_generate ?? false}
                 create_tool_id={s?.protocols?.create_tool_id ?? null}
                 createProtocolsAction={createProtocolsAction}
@@ -715,7 +715,7 @@ function AuthComponent({
                 }
                 onGenerate={() => handleGenerateResources(["slugs"])}
                 required={s?.slugs?.required ?? false}
-                group_id={s?.group_id ?? null}
+
                 showAiGenerate={s?.slugs?.show_ai_generate ?? false}
                 create_tool_id={s?.slugs?.create_tool_id ?? null}
                 createSlugsAction={createSlugsAction}

@@ -6,6 +6,7 @@
  */
 
 import Profile from "@/components/artifacts/profile/Profile";
+import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -126,11 +127,14 @@ export default async function NewProfilePage({
   const loadProfileSearchParams = createLoader(profileSearchParams);
   const q = loadProfileSearchParams(searchParamsObj);
 
+  const groupId = await resolveGroupId(q.draftId ?? null, "profile");
+
   // Fetch default profile detail server-side with draft_id
   const input: GetProfileIn = {
     body: {
       target_profile_id: null, // NULL for new mode
       draft_id: q.draftId ?? null,
+      group_id: groupId,
     } as GetProfileIn["body"],
   };
   const profileDetailDefault = await getProfileDefault(input);

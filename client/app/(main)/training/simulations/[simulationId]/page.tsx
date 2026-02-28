@@ -12,6 +12,7 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
+import { resolveGroupId } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetSimulationIn = InputOf<"/api/v4/artifacts/simulations/get", "post">;
@@ -284,6 +285,9 @@ export default async function EditSimulationPage({
   const loadSimulationSearchParams = createLoader(simulationSearchParams);
   const q = loadSimulationSearchParams(searchParamsObj);
 
+  // Resolve group_id from layout context (cached per request)
+  const groupId = await resolveGroupId(q.draftId ?? null, "simulation");
+
   // Fetch simulation detail (always fresh - source of truth) with draft_id and filters
   // filter_scenario_ids will come from draft payload if draft_id is provided
   try {
@@ -291,6 +295,7 @@ export default async function EditSimulationPage({
       body: {
         simulation_id: simulationId,
         draft_id: q.draftId ?? null,
+        group_id: groupId,
         scenario_search: q.scenarioSearch ?? null,
         // filter_scenario_ids comes from draft payload, not URL params
         filter_scenario_ids: null,

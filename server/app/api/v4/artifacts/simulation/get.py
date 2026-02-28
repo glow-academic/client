@@ -174,6 +174,7 @@ async def get_simulation_internal(
     bypass_cache: bool = False,
     scenario_search: str | None = None,
     filter_scenario_ids: list[UUID] | None = None,
+    group_id: UUID | None = None,
 ) -> SimulationInternalData:
     """Core data fetching layer (cacheable).
 
@@ -214,7 +215,9 @@ async def get_simulation_internal(
     ]
 
     # === GROUP ID: Create in Python (moved from SQL side-effect) ===
-    if draft_item and draft_item.group_id:
+    if group_id:
+        effective_group_id = group_id
+    elif draft_item and draft_item.group_id:
         effective_group_id = draft_item.group_id
     else:
         async with pool.acquire() as c:
@@ -934,6 +937,7 @@ async def get_simulation_client(
     bypass_cache: bool = False,
     scenario_search: str | None = None,
     filter_scenario_ids: list[UUID] | None = None,
+    group_id: UUID | None = None,
 ) -> GetSimulationApiResponse:
     """BFF response for HTTP endpoint/frontend."""
     data = await get_simulation_internal(
@@ -943,6 +947,7 @@ async def get_simulation_client(
         bypass_cache=bypass_cache,
         scenario_search=scenario_search,
         filter_scenario_ids=filter_scenario_ids,
+        group_id=group_id,
     )
 
     resources_bucket = data.resources_payload.resources
@@ -1064,6 +1069,7 @@ async def get_simulation(
             bypass_cache=bypass_cache,
             scenario_search=request.scenario_search,
             filter_scenario_ids=request.filter_scenario_ids,
+            group_id=request.group_id,
         )
 
         # Set audit context

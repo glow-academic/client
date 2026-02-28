@@ -30471,6 +30471,8 @@ export interface components {
             target_profile_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
         };
         /** GetProfileApiResponse */
         GetProfileApiResponse: {
@@ -31374,6 +31376,8 @@ export interface components {
             simulation_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
             /** Scenario Search */
             scenario_search?: string | null;
             /** Filter Scenario Ids */

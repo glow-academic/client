@@ -7,6 +7,7 @@
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import Profile from "@/components/artifacts/profile/Profile";
+import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -133,12 +134,15 @@ export default async function ProfileEditPage({
   const loadProfileSearchParams = createLoader(profileSearchParams);
   const q = loadProfileSearchParams(searchParamsObj);
 
+  const groupId = await resolveGroupId(q.draftId ?? null, "profile");
+
   // Fetch profile detail (always fresh - source of truth) with draft_id
   try {
     const input: GetProfileIn = {
       body: {
         target_profile_id: profileId,
         draft_id: q.draftId ?? null,
+        group_id: groupId,
       } as GetProfileIn["body"],
     };
     const profileDetail = await getProfile(input);

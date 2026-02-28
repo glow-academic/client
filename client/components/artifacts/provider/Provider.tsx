@@ -133,7 +133,6 @@ export default function Provider({
     useFlushRegistry<Record<string, unknown>>(FLUSH_KEYS);
 
   const s = providerData;
-  const groupId = s?.group_id ?? null;
 
   const getInitialFormState = useCallback((): ProviderFormState => {
     if (!s) {
