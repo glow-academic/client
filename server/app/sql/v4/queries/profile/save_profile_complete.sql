@@ -257,15 +257,15 @@ BEGIN
     IF v_run_id IS NOT NULL AND v_name_id IS NOT NULL THEN
         IF (names).create_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
-            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-            VALUES (v_call_id, 'profile_create_names_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+            VALUES (v_call_id, 'profile_create_names_' || v_call_id::text, v_run_id, NOW());
             INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((names).create_tool_id, v_call_id);
             INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id);
         END IF;
         IF (names).link_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
-            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-            VALUES (v_call_id, 'profile_link_names_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+            VALUES (v_call_id, 'profile_link_names_' || v_call_id::text, v_run_id, NOW());
             INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((names).link_tool_id, v_call_id);
             INSERT INTO names_calls_connection (names_id, call_id) VALUES (v_name_id, v_call_id);
         END IF;
@@ -275,15 +275,15 @@ BEGIN
     IF v_run_id IS NOT NULL AND v_active_flag_id IS NOT NULL THEN
         IF (flags).create_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
-            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-            VALUES (v_call_id, 'profile_create_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+            VALUES (v_call_id, 'profile_create_flags_' || v_call_id::text, v_run_id, NOW());
             INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((flags).create_tool_id, v_call_id);
             INSERT INTO flags_calls_connection (flags_id, call_id) VALUES (v_active_flag_id, v_call_id);
         END IF;
         IF (flags).link_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
-            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-            VALUES (v_call_id, 'profile_link_flags_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+            VALUES (v_call_id, 'profile_link_flags_' || v_call_id::text, v_run_id, NOW());
             INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((flags).link_tool_id, v_call_id);
             INSERT INTO flags_calls_connection (flags_id, call_id) VALUES (v_active_flag_id, v_call_id);
         END IF;
@@ -293,15 +293,15 @@ BEGIN
     IF v_run_id IS NOT NULL AND v_request_limit_id IS NOT NULL THEN
         IF (request_limits).create_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
-            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-            VALUES (v_call_id, 'profile_create_request_limits_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+            VALUES (v_call_id, 'profile_create_request_limits_' || v_call_id::text, v_run_id, NOW());
             INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((request_limits).create_tool_id, v_call_id);
             INSERT INTO request_limits_calls_connection (request_limits_id, call_id) VALUES (v_request_limit_id, v_call_id);
         END IF;
         IF (request_limits).link_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
-            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-            VALUES (v_call_id, 'profile_link_request_limits_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+            VALUES (v_call_id, 'profile_link_request_limits_' || v_call_id::text, v_run_id, NOW());
             INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((request_limits).link_tool_id, v_call_id);
             INSERT INTO request_limits_calls_connection (request_limits_id, call_id) VALUES (v_request_limit_id, v_call_id);
         END IF;
@@ -311,16 +311,16 @@ BEGIN
     IF v_run_id IS NOT NULL AND COALESCE(array_length(v_department_ids, 1), 0) > 0 THEN
         IF (departments).create_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
-            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-            VALUES (v_call_id, 'profile_create_departments_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+            VALUES (v_call_id, 'profile_create_departments_' || v_call_id::text, v_run_id, NOW());
             INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((departments).create_tool_id, v_call_id);
             INSERT INTO departments_calls_connection (departments_id, call_id)
             SELECT dept_id, v_call_id FROM UNNEST(v_department_ids) AS dept_id;
         END IF;
         IF (departments).link_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
-            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-            VALUES (v_call_id, 'profile_link_departments_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+            VALUES (v_call_id, 'profile_link_departments_' || v_call_id::text, v_run_id, NOW());
             INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((departments).link_tool_id, v_call_id);
             INSERT INTO departments_calls_connection (departments_id, call_id)
             SELECT dept_id, v_call_id FROM UNNEST(v_department_ids) AS dept_id;
@@ -331,16 +331,16 @@ BEGIN
     IF v_run_id IS NOT NULL AND COALESCE(array_length(v_email_ids, 1), 0) > 0 THEN
         IF (emails).create_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
-            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-            VALUES (v_call_id, 'profile_create_emails_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+            VALUES (v_call_id, 'profile_create_emails_' || v_call_id::text, v_run_id, NOW());
             INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((emails).create_tool_id, v_call_id);
             INSERT INTO emails_calls_connection (emails_id, call_id)
             SELECT eid, v_call_id FROM UNNEST(v_email_ids) AS eid;
         END IF;
         IF (emails).link_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
-            INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-            VALUES (v_call_id, 'profile_link_emails_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+            INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+            VALUES (v_call_id, 'profile_link_emails_' || v_call_id::text, v_run_id, NOW());
             INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((emails).link_tool_id, v_call_id);
             INSERT INTO emails_calls_connection (emails_id, call_id)
             SELECT eid, v_call_id FROM UNNEST(v_email_ids) AS eid;

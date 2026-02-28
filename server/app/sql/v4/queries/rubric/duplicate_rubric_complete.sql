@@ -296,24 +296,27 @@ insert_standard_calls AS (
     INSERT INTO calls_entry (
         id,
         external_call_id,
-        arguments_raw,
-        completed,
-        created_at,
-        updated_at
+        created_at
     )
     SELECT
         sc.call_id,
         'standard_resource_' || sc.standard_id::text || '_' || sc.call_id::text,
-        jsonb_build_object(
-            'standard_id', sc.standard_id::text,
-            'standard_group_id', os.standard_group_id::text
-        )::text,
-        true,
-        NOW(),
         NOW()
     FROM standard_calls sc
     JOIN original_standards os ON os.id = sc.standard_id
     RETURNING id
+),
+insert_standard_calls_completion AS (
+    INSERT INTO calls_completion_entry (call_id, arguments_raw)
+    SELECT
+        sc.call_id,
+        jsonb_build_object(
+            'standard_id', sc.standard_id::text,
+            'standard_group_id', os.standard_group_id::text
+        )::text
+    FROM standard_calls sc
+    JOIN original_standards os ON os.id = sc.standard_id
+    JOIN insert_standard_calls isc ON isc.id = sc.call_id
 ),
 insert_standard_call_tool_junctions AS (
     INSERT INTO tools_calls_connection (tools_id, call_id)

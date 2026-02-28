@@ -285,16 +285,16 @@ BEGIN
         IF COALESCE(array_length(department_ids, 1), 0) > 0 THEN
             IF (departments).create_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
-                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-                VALUES (v_call_id, 'benchmark_draft_create_departments_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+                VALUES (v_call_id, 'benchmark_draft_create_departments_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((departments).create_tool_id, v_call_id);
                 INSERT INTO departments_calls_connection (departments_id, call_id)
                 SELECT x.department_id, v_call_id FROM UNNEST(department_ids) AS x(department_id);
             END IF;
             IF (departments).link_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
-                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-                VALUES (v_call_id, 'benchmark_draft_link_departments_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+                VALUES (v_call_id, 'benchmark_draft_link_departments_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((departments).link_tool_id, v_call_id);
                 INSERT INTO departments_calls_connection (departments_id, call_id)
                 SELECT x.department_id, v_call_id FROM UNNEST(department_ids) AS x(department_id);
@@ -305,16 +305,16 @@ BEGIN
         IF COALESCE(array_length(model_ids, 1), 0) > 0 THEN
             IF (models).create_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
-                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-                VALUES (v_call_id, 'benchmark_draft_create_models_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+                VALUES (v_call_id, 'benchmark_draft_create_models_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((models).create_tool_id, v_call_id);
                 INSERT INTO models_calls_connection (models_id, call_id)
                 SELECT x.model_id, v_call_id FROM UNNEST(model_ids) AS x(model_id);
             END IF;
             IF (models).link_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
-                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-                VALUES (v_call_id, 'benchmark_draft_link_models_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+                VALUES (v_call_id, 'benchmark_draft_link_models_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((models).link_tool_id, v_call_id);
                 INSERT INTO models_calls_connection (models_id, call_id)
                 SELECT x.model_id, v_call_id FROM UNNEST(model_ids) AS x(model_id);
@@ -325,16 +325,16 @@ BEGIN
         IF COALESCE(array_length(prompt_ids, 1), 0) > 0 THEN
             IF (prompts).create_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
-                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-                VALUES (v_call_id, 'benchmark_draft_create_prompts_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+                VALUES (v_call_id, 'benchmark_draft_create_prompts_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((prompts).create_tool_id, v_call_id);
                 INSERT INTO prompts_calls_connection (prompts_id, call_id)
                 SELECT x.prompt_id, v_call_id FROM UNNEST(prompt_ids) AS x(prompt_id);
             END IF;
             IF (prompts).link_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
-                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-                VALUES (v_call_id, 'benchmark_draft_link_prompts_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+                VALUES (v_call_id, 'benchmark_draft_link_prompts_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((prompts).link_tool_id, v_call_id);
                 INSERT INTO prompts_calls_connection (prompts_id, call_id)
                 SELECT x.prompt_id, v_call_id FROM UNNEST(prompt_ids) AS x(prompt_id);
@@ -345,16 +345,16 @@ BEGIN
         IF COALESCE(array_length(instruction_ids, 1), 0) > 0 THEN
             IF (instructions).create_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
-                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-                VALUES (v_call_id, 'benchmark_draft_create_instructions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+                VALUES (v_call_id, 'benchmark_draft_create_instructions_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((instructions).create_tool_id, v_call_id);
                 INSERT INTO instructions_calls_connection (instructions_id, call_id)
                 SELECT x.instruction_id, v_call_id FROM UNNEST(instruction_ids) AS x(instruction_id);
             END IF;
             IF (instructions).link_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
-                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-                VALUES (v_call_id, 'benchmark_draft_link_instructions_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+                VALUES (v_call_id, 'benchmark_draft_link_instructions_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((instructions).link_tool_id, v_call_id);
                 INSERT INTO instructions_calls_connection (instructions_id, call_id)
                 SELECT x.instruction_id, v_call_id FROM UNNEST(instruction_ids) AS x(instruction_id);
@@ -365,16 +365,16 @@ BEGIN
         IF COALESCE(array_length(voice_ids, 1), 0) > 0 THEN
             IF (voices).create_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
-                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-                VALUES (v_call_id, 'benchmark_draft_create_voices_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+                VALUES (v_call_id, 'benchmark_draft_create_voices_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((voices).create_tool_id, v_call_id);
                 INSERT INTO voices_calls_connection (voices_id, call_id)
                 SELECT x.voice_id, v_call_id FROM UNNEST(voice_ids) AS x(voice_id);
             END IF;
             IF (voices).link_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
-                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-                VALUES (v_call_id, 'benchmark_draft_link_voices_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+                VALUES (v_call_id, 'benchmark_draft_link_voices_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((voices).link_tool_id, v_call_id);
                 INSERT INTO voices_calls_connection (voices_id, call_id)
                 SELECT x.voice_id, v_call_id FROM UNNEST(voice_ids) AS x(voice_id);
@@ -385,16 +385,16 @@ BEGIN
         IF COALESCE(array_length(temperature_level_ids, 1), 0) > 0 THEN
             IF (temperature_levels).create_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
-                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-                VALUES (v_call_id, 'benchmark_draft_create_temperature_levels_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+                VALUES (v_call_id, 'benchmark_draft_create_temperature_levels_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((temperature_levels).create_tool_id, v_call_id);
                 INSERT INTO temperature_levels_calls_connection (temperature_levels_id, call_id)
                 SELECT x.tl_id, v_call_id FROM UNNEST(temperature_level_ids) AS x(tl_id);
             END IF;
             IF (temperature_levels).link_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
-                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-                VALUES (v_call_id, 'benchmark_draft_link_temperature_levels_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+                VALUES (v_call_id, 'benchmark_draft_link_temperature_levels_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((temperature_levels).link_tool_id, v_call_id);
                 INSERT INTO temperature_levels_calls_connection (temperature_levels_id, call_id)
                 SELECT x.tl_id, v_call_id FROM UNNEST(temperature_level_ids) AS x(tl_id);
@@ -405,16 +405,16 @@ BEGIN
         IF COALESCE(array_length(reasoning_level_ids, 1), 0) > 0 THEN
             IF (reasoning_levels).create_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
-                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-                VALUES (v_call_id, 'benchmark_draft_create_reasoning_levels_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+                VALUES (v_call_id, 'benchmark_draft_create_reasoning_levels_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((reasoning_levels).create_tool_id, v_call_id);
                 INSERT INTO reasoning_levels_calls_connection (reasoning_levels_id, call_id)
                 SELECT x.rl_id, v_call_id FROM UNNEST(reasoning_level_ids) AS x(rl_id);
             END IF;
             IF (reasoning_levels).link_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
-                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-                VALUES (v_call_id, 'benchmark_draft_link_reasoning_levels_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+                VALUES (v_call_id, 'benchmark_draft_link_reasoning_levels_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((reasoning_levels).link_tool_id, v_call_id);
                 INSERT INTO reasoning_levels_calls_connection (reasoning_levels_id, call_id)
                 SELECT x.rl_id, v_call_id FROM UNNEST(reasoning_level_ids) AS x(rl_id);
@@ -425,16 +425,16 @@ BEGIN
         IF COALESCE(array_length(tool_ids, 1), 0) > 0 THEN
             IF (tools).create_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
-                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-                VALUES (v_call_id, 'benchmark_draft_create_tools_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+                VALUES (v_call_id, 'benchmark_draft_create_tools_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((tools).create_tool_id, v_call_id);
                 INSERT INTO tools_calls_connection (tools_id, call_id)
                 SELECT x.tool_id, v_call_id FROM UNNEST(tool_ids) AS x(tool_id);
             END IF;
             IF (tools).link_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
-                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-                VALUES (v_call_id, 'benchmark_draft_link_tools_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+                VALUES (v_call_id, 'benchmark_draft_link_tools_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((tools).link_tool_id, v_call_id);
                 INSERT INTO tools_calls_connection (tools_id, call_id)
                 SELECT x.tool_id, v_call_id FROM UNNEST(tool_ids) AS x(tool_id);
@@ -445,16 +445,16 @@ BEGIN
         IF COALESCE(array_length(key_ids, 1), 0) > 0 THEN
             IF (keys).create_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
-                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-                VALUES (v_call_id, 'benchmark_draft_create_keys_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+                VALUES (v_call_id, 'benchmark_draft_create_keys_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((keys).create_tool_id, v_call_id);
                 INSERT INTO keys_calls_connection (keys_id, call_id)
                 SELECT x.key_id, v_call_id FROM UNNEST(key_ids) AS x(key_id);
             END IF;
             IF (keys).link_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
-                INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-                VALUES (v_call_id, 'benchmark_draft_link_keys_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+                INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+                VALUES (v_call_id, 'benchmark_draft_link_keys_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((keys).link_tool_id, v_call_id);
                 INSERT INTO keys_calls_connection (keys_id, call_id)
                 SELECT x.key_id, v_call_id FROM UNNEST(key_ids) AS x(key_id);

@@ -8,7 +8,6 @@ class CallsEntryData(BaseModel):
 
     created_at: str | None = None
     external_call_id: str | None = None
-    completed: bool | None = None
     id: str | None = None
     arguments_raw: str | None = None
     run_id: str | None = None

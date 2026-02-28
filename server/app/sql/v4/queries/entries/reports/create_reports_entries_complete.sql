@@ -34,8 +34,8 @@ BEGIN
 
     -- 2. Create call record
     v_call_id := uuidv7();
-    INSERT INTO calls_entry (id, run_id, external_call_id, completed)
-    VALUES (v_call_id, api_create_reports_entry_v4.run_id, 'reports_' || v_call_id::text, true);
+    INSERT INTO calls_entry (id, run_id, external_call_id)
+    VALUES (v_call_id, api_create_reports_entry_v4.run_id, 'reports_' || v_call_id::text);
 
     -- 3. Create entry
     INSERT INTO reports_entry (call_id, upload_id, mcp)

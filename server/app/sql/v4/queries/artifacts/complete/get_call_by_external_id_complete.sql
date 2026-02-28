@@ -30,9 +30,10 @@ AS $$
     SELECT
         c.id,
         tcj.tools_id,
-        c.arguments_raw
+        cce.arguments_raw
     FROM calls_entry c
     JOIN tools_calls_connection tcj ON tcj.call_id = c.id
+    LEFT JOIN calls_completion_entry cce ON cce.call_id = c.id
     WHERE c.external_call_id = external_call_id
     LIMIT 1;
 $$;

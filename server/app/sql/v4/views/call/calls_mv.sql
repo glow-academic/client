@@ -41,9 +41,10 @@ SELECT
     c.id AS call_id,
     c.run_id,
     c.created_at AS call_created_at,
-    c.arguments_raw,
+    cce.arguments_raw,
     tcc.tools_id AS tool_id
 FROM calls_entry c
+LEFT JOIN calls_completion_entry cce ON cce.call_id = c.id
 LEFT JOIN tools_calls_connection tcc ON tcc.call_id = c.id
 WHERE c.run_id IS NOT NULL
 WITH NO DATA;

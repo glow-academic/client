@@ -87,8 +87,8 @@ BEGIN
         VALUES (v_run_id, api_create_simulation_availability_v4.group_id, NOW(), NOW());
 
         v_call_id := uuidv7();
-        INSERT INTO calls_entry (id, external_call_id, run_id, completed, created_at, updated_at)
-        VALUES (v_call_id, 'simulation_availability_' || v_call_id::text, v_run_id, true, NOW(), NOW());
+        INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
+        VALUES (v_call_id, 'simulation_availability_' || v_call_id::text, v_run_id, NOW());
 
         INSERT INTO tools_calls_connection (tools_id, call_id) VALUES (api_create_simulation_availability_v4.tool_id, v_call_id);
 

@@ -1,14 +1,14 @@
 -- Mark call as completed
--- Updates calls_entry table to set completed = true for a given external_call_id
+-- Inserts into calls_completion_entry for the call matching the given external_call_id
 
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'api_mark_call_completed_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -26,10 +26,12 @@ LANGUAGE plpgsql
 VOLATILE
 AS $$
 BEGIN
-    UPDATE calls_entry
-    SET completed = true, updated_at = NOW()
-    WHERE calls_entry.external_call_id = mark_call_completed_v4.external_call_id;
-    
+    INSERT INTO calls_completion_entry (call_id)
+    SELECT c.id
+    FROM calls_entry c
+    WHERE c.external_call_id = api_mark_call_completed_v4.external_call_id
+    ON CONFLICT (call_id) DO NOTHING;
+
     RETURN QUERY SELECT true as updated;
 END;
 $$;

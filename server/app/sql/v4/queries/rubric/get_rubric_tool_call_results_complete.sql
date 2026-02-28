@@ -45,13 +45,13 @@ STABLE
 AS $$
 WITH descriptions_result AS (
     -- Get descriptions array from standard_description tool_call
-    SELECT CASE WHEN tc.arguments_raw ~ '^[\s]*\{' THEN tc.arguments_raw::jsonb->'descriptions' ELSE NULL END as descriptions
+    SELECT CASE WHEN cce.arguments_raw ~ '^[\s]*\{' THEN cce.arguments_raw::jsonb->'descriptions' ELSE NULL END as descriptions
     FROM calls_entry tc
+    JOIN calls_completion_entry cce ON cce.call_id = tc.id
     JOIN tools_calls_connection tcj ON tcj.call_id = tc.id
     JOIN tool_artifact t ON t.id = tcj.tools_id
     WHERE tc.run_id = $1
       AND (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = 'standard_description'
-      AND tc.completed = true
     ORDER BY tc.created_at DESC
     LIMIT 1
 )

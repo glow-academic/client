@@ -35,8 +35,8 @@ BEGIN
 
     -- 2. Create call record
     v_call_id := uuidv7();
-    INSERT INTO calls_entry (id, run_id, external_call_id, completed)
-    VALUES (v_call_id, api_create_attempt_message_entry_v4.run_id, 'attempt_message_' || v_call_id::text, true);
+    INSERT INTO calls_entry (id, run_id, external_call_id)
+    VALUES (v_call_id, api_create_attempt_message_entry_v4.run_id, 'attempt_message_' || v_call_id::text);
 
     -- 3. Create entry (attempt_message_entry has no mcp column)
     INSERT INTO attempt_message_entry (call_id, chat_id, message_id)

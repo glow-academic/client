@@ -39,8 +39,8 @@ BEGIN
 
     -- 2. Create call record
     v_call_id := uuidv7();
-    INSERT INTO calls_entry (id, run_id, external_call_id, completed)
-    VALUES (v_call_id, api_create_test_invocation_entry_v4.run_id, 'test_invocation_' || v_call_id::text, true);
+    INSERT INTO calls_entry (id, run_id, external_call_id)
+    VALUES (v_call_id, api_create_test_invocation_entry_v4.run_id, 'test_invocation_' || v_call_id::text);
 
     -- 3. Create entry
     INSERT INTO test_invocation_entry (call_id, title, group_id, invocation_id, departments_id, config_signature, test_id, mcp)

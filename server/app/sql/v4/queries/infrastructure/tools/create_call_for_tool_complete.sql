@@ -26,21 +26,24 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO calls_entry (
-        external_call_id,
-        run_id,
-        arguments_raw,
-        completed,
-        created_at,
-        updated_at
+    WITH new_call AS (
+        INSERT INTO calls_entry (
+            external_call_id,
+            run_id,
+            created_at
+        )
+        VALUES (
+            $1,
+            $2,
+            NOW()
+        )
+        RETURNING id
+    ),
+    insert_completion AS (
+        INSERT INTO calls_completion_entry (call_id, arguments_raw)
+        SELECT new_call.id, $3
+        FROM new_call
     )
-    VALUES (
-        $1,
-        $2,
-        $3,
-        true,
-        NOW(),
-        NOW()
-    )
-    RETURNING id as call_id;
+    SELECT new_call.id as call_id
+    FROM new_call;
 $$;

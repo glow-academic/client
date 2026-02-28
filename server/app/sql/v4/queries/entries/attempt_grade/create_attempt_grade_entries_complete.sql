@@ -37,8 +37,8 @@ BEGIN
 
     -- 2. Create call record
     v_call_id := uuidv7();
-    INSERT INTO calls_entry (id, run_id, external_call_id, completed)
-    VALUES (v_call_id, api_create_attempt_grade_entry_v4.run_id, 'attempt_grade_' || v_call_id::text, true);
+    INSERT INTO calls_entry (id, run_id, external_call_id)
+    VALUES (v_call_id, api_create_attempt_grade_entry_v4.run_id, 'attempt_grade_' || v_call_id::text);
 
     -- 3. Create entry
     INSERT INTO attempt_grade_entry (call_id, chat_id, run_id, passed, score, time_taken, mcp)

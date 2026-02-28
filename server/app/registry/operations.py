@@ -480,8 +480,6 @@ ENTRY_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
     **_ent("activity"),
     **_ent("activity_insights", create=True),
     **_ent("agent_drafts"),
-    **_ent("args_outputs_values"),
-    **_ent("args_values"),
     **_ent("attempt", create=True),
     **_ent("attempt_analysis", create=True),
     **_ent("attempt_archive", create=True),
