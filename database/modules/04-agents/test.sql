@@ -22,9 +22,9 @@ INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c82b8-5d9c-77ad-9589-47756200136f', 'Benchmark test grading agent for evaluating model outputs against rubric standards', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c82b8-5d9c-757d-9ca9-3247ce810ff2', '## Previous Insights
 
-{% if entries.insights is defined and entries.insights and entries.insights|length > 0 %}
+{% if artifacts.test.get.entries.insights is defined and artifacts.test.get.entries.insights and artifacts.test.get.entries.insights|length > 0 %}
 The following insights were previously generated:
-{% for insight in entries.insights %}
+{% for insight in artifacts.test.get.entries.insights %}
 - {{ insight.content }}
 {% endfor %}
 {% else %}
@@ -33,36 +33,36 @@ No previous insights have been generated yet.
 
 ## Domain Data
 
-{% if entries.test is defined and entries.test %}
+{% if artifacts.test.get.entries.test is defined and artifacts.test.get.entries.test %}
 ### Test Entry
-{{ entries.test | tojson }}
+{{ artifacts.test.get.entries.test | tojson }}
 {% endif %}
 
-{% if entries.test_invocation is defined and entries.test_invocation %}
+{% if artifacts.test.get.entries.test_invocation is defined and artifacts.test.get.entries.test_invocation %}
 ### Test Invocations
-{{ entries.test_invocation | tojson }}
+{{ artifacts.test.get.entries.test_invocation | tojson }}
 {% endif %}
 
-{% if entries.runs is defined and entries.runs %}
+{% if artifacts.test.get.entries.runs is defined and artifacts.test.get.entries.runs %}
 ### Runs
-{{ entries.runs | tojson }}
+{{ artifacts.test.get.entries.runs | tojson }}
 {% endif %}
 
 ## Available Resources
 
-{% if resources.evals is defined and resources.evals %}
+{% if artifacts.test.get.resources.evals is defined and artifacts.test.get.resources.evals %}
 ### Evaluations
-{{ resources.evals | tojson }}
+{{ artifacts.test.get.resources.evals | tojson }}
 {% endif %}
 
-{% if resources.rubrics is defined and resources.rubrics %}
+{% if artifacts.test.get.resources.rubrics is defined and artifacts.test.get.resources.rubrics %}
 ### Rubrics
-{{ resources.rubrics | tojson }}
+{{ artifacts.test.get.resources.rubrics | tojson }}
 {% endif %}
 
-{% if resources.names is defined and resources.names %}
+{% if artifacts.test.get.resources.names is defined and artifacts.test.get.resources.names %}
 ### Names
-{{ resources.names | tojson }}
+{{ artifacts.test.get.resources.names | tojson }}
 {% endif %}
 
 ## Task

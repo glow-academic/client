@@ -36,10 +36,10 @@ INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c82b8-5d9a-7acc-8e17-f49379856a8e', 'Conversational AI agent for conducting training dialogues as personas', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c82b8-5d9a-783f-b383-19b5d186a49d', '## Context
 
-{% set chat = entries.attempt_chat[0] if entries and entries.attempt_chat and entries.attempt_chat|length > 0 else None %}
+{% set chat = artifacts.attempt.get.entries.attempt_chat[0] if artifacts.attempt.get.entries and artifacts.attempt.get.entries.attempt_chat and artifacts.attempt.get.entries.attempt_chat|length > 0 else None %}
 {% set personas_map = {} %}
-{% if resources and resources.personas %}
-{% for p in resources.personas %}
+{% if artifacts.attempt.get.resources and artifacts.attempt.get.resources.personas %}
+{% for p in artifacts.attempt.get.resources.personas %}
 {% if p.id is defined %}
 {% set _ = personas_map.update({p.id|string: p}) %}
 {% endif %}
@@ -48,8 +48,8 @@ INSERT INTO public.instructions_resource (id, template, active, created_at, gene
 
 {% if chat %}
 ### Current State
-{% if chat.scenario_id is defined and resources and resources.scenarios %}
-{% for s in resources.scenarios %}
+{% if chat.scenario_id is defined and artifacts.attempt.get.resources and artifacts.attempt.get.resources.scenarios %}
+{% for s in artifacts.attempt.get.resources.scenarios %}
 {% if s.scenario_id is defined and s.scenario_id|string == chat.scenario_id|string %}
 **Scenario:** {{ s.name }}{% if s.description is defined %} — {{ s.description[:80] }}{% endif %}
 {% endif %}
@@ -57,16 +57,16 @@ INSERT INTO public.instructions_resource (id, template, active, created_at, gene
 {% endif %}
 {% endif %}
 
-{% if resources and resources.problem_statements and resources.problem_statements|length > 0 %}
+{% if artifacts.attempt.get.resources and artifacts.attempt.get.resources.problem_statements and artifacts.attempt.get.resources.problem_statements|length > 0 %}
 ### Problem Statement
-{% for ps in resources.problem_statements %}
+{% for ps in artifacts.attempt.get.resources.problem_statements %}
 {{ ps.problem_statement }}
 {% endfor %}
 {% endif %}
 
-{% if resources and resources.objectives and resources.objectives|length > 0 %}
+{% if artifacts.attempt.get.resources and artifacts.attempt.get.resources.objectives and artifacts.attempt.get.resources.objectives|length > 0 %}
 ### Objectives
-{% for obj in resources.objectives %}
+{% for obj in artifacts.attempt.get.resources.objectives %}
 - {{ obj.objective }}
 {% endfor %}
 {% endif %}
@@ -85,8 +85,8 @@ Use the `persona_id` (personas_entry_id) when calling `create_content`.
 
 ### Current Assistant Message
 {% set ns = namespace(current_message=None) %}
-{% if entries and entries.attempt_message %}
-{% for m in entries.attempt_message|reverse %}
+{% if artifacts.attempt.get.entries and artifacts.attempt.get.entries.attempt_message %}
+{% for m in artifacts.attempt.get.entries.attempt_message|reverse %}
 {% if m.type == ''response'' and not ns.current_message %}
 {% set ns.current_message = m %}
 {% endif %}

@@ -20,72 +20,72 @@ Rules:
 - Return only valid tool calls, no narrative text', 'Cohort Agent System Prompt', 'System prompt for cohort generation agents', true, '66666666-7777-7777-7777-666666666666', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019bcd1b-0ca2-77e8-97a1-0f329141d993', 'AI agent for generating and managing cohort resources including names, descriptions, flags, departments, personas, and scenarios using GPT-5.1', '2026-01-17T17:57:40.639882+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c2f10-4100-7c00-8000-000000000001', '## Current State
-{% set draft = entries.draft_cohort if entries and entries.draft_cohort else None %}
-{% if draft and draft.name_ids and draft.name_ids|length > 0 %}{% set selected_names = [] %}{% for n in resources.names if n.id|string in draft.name_ids|map("string")|list %}{% if selected_names.append(n) %}{% endif %}{% endfor %}{% if selected_names|length > 0 %}Names: {% for n in selected_names %}{{ n.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Names: ({{ draft.name_ids|length }} selected by ID){% endif %}{% else %}Names: (not set){% endif %}
-{% if draft and draft.description_ids and draft.description_ids|length > 0 %}{% set selected_descs = [] %}{% for d in resources.descriptions if d.id|string in draft.description_ids|map("string")|list %}{% if selected_descs.append(d) %}{% endif %}{% endfor %}{% if selected_descs|length > 0 %}Descriptions: {% for d in selected_descs %}{{ d.description[:100] }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Descriptions: ({{ draft.description_ids|length }} selected by ID){% endif %}{% else %}Descriptions: (not set){% endif %}
-{% if draft and draft.flag_ids and draft.flag_ids|length > 0 %}{% set selected_flags = [] %}{% for f in resources.flags if f.flag_option_id|string in draft.flag_ids|map("string")|list %}{% if selected_flags.append(f) %}{% endif %}{% endfor %}{% if selected_flags|length > 0 %}Flags: {% for f in selected_flags %}{{ f.label or f.key }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Flags: ({{ draft.flag_ids|length }} selected by ID){% endif %}{% else %}Flags: (not set){% endif %}
-{% if draft and draft.department_ids and draft.department_ids|length > 0 %}{% set selected_depts = [] %}{% for d in resources.departments if d.department_id|string in draft.department_ids|map("string")|list %}{% if selected_depts.append(d) %}{% endif %}{% endfor %}{% if selected_depts|length > 0 %}Departments: {% for d in selected_depts %}{{ d.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Departments: ({{ draft.department_ids|length }} selected by ID){% endif %}{% else %}Departments: (not set){% endif %}
-{% if draft and draft.simulation_ids and draft.simulation_ids|length > 0 %}{% set selected_sims = [] %}{% for s in resources.simulations if s.simulation_id|string in draft.simulation_ids|map("string")|list %}{% if selected_sims.append(s) %}{% endif %}{% endfor %}{% if selected_sims|length > 0 %}Simulations: {% for s in selected_sims %}{{ s.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Simulations: ({{ draft.simulation_ids|length }} selected by ID){% endif %}{% else %}Simulations: (not set){% endif %}
-{% if draft and draft.profile_ids and draft.profile_ids|length > 0 %}{% set selected_profiles = [] %}{% for p in resources.profiles if p.profile_id|string in draft.profile_ids|map("string")|list %}{% if selected_profiles.append(p) %}{% endif %}{% endfor %}{% if selected_profiles|length > 0 %}Profiles: {% for p in selected_profiles %}{{ p.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Profiles: ({{ draft.profile_ids|length }} selected by ID){% endif %}{% else %}Profiles: (not set){% endif %}
+{% set draft = artifacts.cohort.get.entries.draft_cohort if artifacts.cohort.get.entries and artifacts.cohort.get.entries.draft_cohort else None %}
+{% if draft and draft.name_ids and draft.name_ids|length > 0 %}{% set selected_names = [] %}{% for n in artifacts.cohort.get.resources.names if n.id|string in draft.name_ids|map("string")|list %}{% if selected_names.append(n) %}{% endif %}{% endfor %}{% if selected_names|length > 0 %}Names: {% for n in selected_names %}{{ n.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Names: ({{ draft.name_ids|length }} selected by ID){% endif %}{% else %}Names: (not set){% endif %}
+{% if draft and draft.description_ids and draft.description_ids|length > 0 %}{% set selected_descs = [] %}{% for d in artifacts.cohort.get.resources.descriptions if d.id|string in draft.description_ids|map("string")|list %}{% if selected_descs.append(d) %}{% endif %}{% endfor %}{% if selected_descs|length > 0 %}Descriptions: {% for d in selected_descs %}{{ d.description[:100] }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Descriptions: ({{ draft.description_ids|length }} selected by ID){% endif %}{% else %}Descriptions: (not set){% endif %}
+{% if draft and draft.flag_ids and draft.flag_ids|length > 0 %}{% set selected_flags = [] %}{% for f in artifacts.cohort.get.resources.flags if f.flag_option_id|string in draft.flag_ids|map("string")|list %}{% if selected_flags.append(f) %}{% endif %}{% endfor %}{% if selected_flags|length > 0 %}Flags: {% for f in selected_flags %}{{ f.label or f.key }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Flags: ({{ draft.flag_ids|length }} selected by ID){% endif %}{% else %}Flags: (not set){% endif %}
+{% if draft and draft.department_ids and draft.department_ids|length > 0 %}{% set selected_depts = [] %}{% for d in artifacts.cohort.get.resources.departments if d.department_id|string in draft.department_ids|map("string")|list %}{% if selected_depts.append(d) %}{% endif %}{% endfor %}{% if selected_depts|length > 0 %}Departments: {% for d in selected_depts %}{{ d.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Departments: ({{ draft.department_ids|length }} selected by ID){% endif %}{% else %}Departments: (not set){% endif %}
+{% if draft and draft.simulation_ids and draft.simulation_ids|length > 0 %}{% set selected_sims = [] %}{% for s in artifacts.cohort.get.resources.simulations if s.simulation_id|string in draft.simulation_ids|map("string")|list %}{% if selected_sims.append(s) %}{% endif %}{% endfor %}{% if selected_sims|length > 0 %}Simulations: {% for s in selected_sims %}{{ s.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Simulations: ({{ draft.simulation_ids|length }} selected by ID){% endif %}{% else %}Simulations: (not set){% endif %}
+{% if draft and draft.profile_ids and draft.profile_ids|length > 0 %}{% set selected_profiles = [] %}{% for p in artifacts.cohort.get.resources.profiles if p.profile_id|string in draft.profile_ids|map("string")|list %}{% if selected_profiles.append(p) %}{% endif %}{% endfor %}{% if selected_profiles|length > 0 %}Profiles: {% for p in selected_profiles %}{{ p.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Profiles: ({{ draft.profile_ids|length }} selected by ID){% endif %}{% else %}Profiles: (not set){% endif %}
 {% if draft and draft.simulation_position_ids and draft.simulation_position_ids|length > 0 %}Simulation Positions: {{ draft.simulation_position_ids|length }} configured{% else %}Simulation Positions: (not set){% endif %}
 {% if draft and draft.simulation_availability_ids and draft.simulation_availability_ids|length > 0 %}Simulation Availability: {{ draft.simulation_availability_ids|length }} configured{% else %}Simulation Availability: (not set){% endif %}
 {% if draft and draft.profile_persona_ids and draft.profile_persona_ids|length > 0 %}Profile Personas: {{ draft.profile_persona_ids|length }} configured{% else %}Profile Personas: (not set){% endif %}
 
 ---
 
-{% set all_gen_types = (resources.types or []) + (entries.types or []) %}
+{% set all_gen_types = (artifacts.cohort.get.resources.types or []) + (artifacts.cohort.get.entries.types or []) %}
 ## Available Resources
-{% if "names" in all_gen_types and resources.names and resources.names|length > 0 %}
+{% if "names" in all_gen_types and artifacts.cohort.get.resources.names and artifacts.cohort.get.resources.names|length > 0 %}
 Names:
-{% for item in resources.names %}
+{% for item in artifacts.cohort.get.resources.names %}
 - id: {{ item.id }} | {{ item.name }}
 {% endfor %}
 {% endif %}
-{% if "descriptions" in all_gen_types and resources.descriptions and resources.descriptions|length > 0 %}
+{% if "descriptions" in all_gen_types and artifacts.cohort.get.resources.descriptions and artifacts.cohort.get.resources.descriptions|length > 0 %}
 Descriptions:
-{% for item in resources.descriptions %}
+{% for item in artifacts.cohort.get.resources.descriptions %}
 - id: {{ item.id }} | {{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}
 {% endfor %}
 {% endif %}
-{% if "departments" in all_gen_types and resources.departments and resources.departments|length > 0 %}
+{% if "departments" in all_gen_types and artifacts.cohort.get.resources.departments and artifacts.cohort.get.resources.departments|length > 0 %}
 Departments:
-{% for item in resources.departments %}
+{% for item in artifacts.cohort.get.resources.departments %}
 - id: {{ item.department_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if "flags" in all_gen_types and resources.flags and resources.flags|length > 0 %}
+{% if "flags" in all_gen_types and artifacts.cohort.get.resources.flags and artifacts.cohort.get.resources.flags|length > 0 %}
 Flags:
-{% for item in resources.flags %}
+{% for item in artifacts.cohort.get.resources.flags %}
 - id: {{ item.flag_option_id }} | {{ item.label or item.key }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if "simulations" in all_gen_types and resources.simulations and resources.simulations|length > 0 %}
+{% if "simulations" in all_gen_types and artifacts.cohort.get.resources.simulations and artifacts.cohort.get.resources.simulations|length > 0 %}
 Simulations:
-{% for item in resources.simulations %}
+{% for item in artifacts.cohort.get.resources.simulations %}
 - id: {{ item.simulation_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if "profiles" in all_gen_types and resources.profiles and resources.profiles|length > 0 %}
+{% if "profiles" in all_gen_types and artifacts.cohort.get.resources.profiles and artifacts.cohort.get.resources.profiles|length > 0 %}
 Profiles:
-{% for item in resources.profiles %}
+{% for item in artifacts.cohort.get.resources.profiles %}
 - id: {{ item.profile_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if "simulation_positions" in all_gen_types and resources.simulation_positions and resources.simulation_positions|length > 0 %}
+{% if "simulation_positions" in all_gen_types and artifacts.cohort.get.resources.simulation_positions and artifacts.cohort.get.resources.simulation_positions|length > 0 %}
 Simulation Positions:
-{% for item in resources.simulation_positions %}
+{% for item in artifacts.cohort.get.resources.simulation_positions %}
 - simulation_id: {{ item.simulation_id }} | value: {{ item.value }}
 {% endfor %}
 {% endif %}
-{% if "simulation_availability" in all_gen_types and resources.simulation_availability and resources.simulation_availability|length > 0 %}
+{% if "simulation_availability" in all_gen_types and artifacts.cohort.get.resources.simulation_availability and artifacts.cohort.get.resources.simulation_availability|length > 0 %}
 Simulation Availability:
-{% for item in resources.simulation_availability %}
+{% for item in artifacts.cohort.get.resources.simulation_availability %}
 - id: {{ item.id }} | simulation_id: {{ item.simulation_id }} | {{ item.time }} ({{ item.type }})
 {% endfor %}
 {% endif %}
-{% if "profile_personas" in all_gen_types and resources.profile_personas and resources.profile_personas|length > 0 %}
+{% if "profile_personas" in all_gen_types and artifacts.cohort.get.resources.profile_personas and artifacts.cohort.get.resources.profile_personas|length > 0 %}
 Profile Personas:
-{% for item in resources.profile_personas %}
+{% for item in artifacts.cohort.get.resources.profile_personas %}
 - id: {{ item.id }} | profile_id: {{ item.profile_id }} | persona_id: {{ item.persona_id }}
 {% endfor %}
 {% endif %}
@@ -93,11 +93,11 @@ Profile Personas:
 ---
 
 ## Generating For
-{% if resources.types and resources.types|length > 0 %}
-Resource types (create or use): {{ resources.types|join(", ") }}
+{% if artifacts.cohort.get.resources.types and artifacts.cohort.get.resources.types|length > 0 %}
+Resource types (create or use): {{ artifacts.cohort.get.resources.types|join(", ") }}
 {% endif %}
-{% if entries.types and entries.types|length > 0 %}
-Entry types (use only): {{ entries.types|join(", ") }}
+{% if artifacts.cohort.get.entries.types and artifacts.cohort.get.entries.types|length > 0 %}
+Entry types (use only): {{ artifacts.cohort.get.entries.types|join(", ") }}
 {% endif %}
 
 Rules:

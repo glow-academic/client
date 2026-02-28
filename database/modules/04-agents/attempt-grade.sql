@@ -47,10 +47,10 @@ INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c82b8-5d9b-79db-a7c6-a759e027f938', 'Grading and evaluation agent for analyzing training attempt performance', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c82b8-5d9b-7752-bb49-8d5b028b0a08', '## Context
 
-{% set chat = entries.attempt_chat[0] if entries and entries.attempt_chat and entries.attempt_chat|length > 0 else None %}
+{% set chat = artifacts.attempt.get.entries.attempt_chat[0] if artifacts.attempt.get.entries and artifacts.attempt.get.entries.attempt_chat and artifacts.attempt.get.entries.attempt_chat|length > 0 else None %}
 {% set personas_map = {} %}
-{% if resources and resources.personas %}
-{% for p in resources.personas %}
+{% if artifacts.attempt.get.resources and artifacts.attempt.get.resources.personas %}
+{% for p in artifacts.attempt.get.resources.personas %}
 {% if p.id is defined %}
 {% set _ = personas_map.update({p.id|string: p}) %}
 {% endif %}
@@ -59,15 +59,15 @@ INSERT INTO public.instructions_resource (id, template, active, created_at, gene
 
 {% if chat %}
 ### Current State
-{% if chat.scenario_id is defined and resources and resources.scenarios %}
-{% for s in resources.scenarios %}
+{% if chat.scenario_id is defined and artifacts.attempt.get.resources and artifacts.attempt.get.resources.scenarios %}
+{% for s in artifacts.attempt.get.resources.scenarios %}
 {% if s.scenario_id is defined and s.scenario_id|string == chat.scenario_id|string %}
 **Scenario:** {{ s.name }}{% if s.description is defined %} — {{ s.description[:80] }}{% endif %}
 {% endif %}
 {% endfor %}
 {% endif %}
-{% if chat.rubric_id is defined and resources and resources.rubrics %}
-{% for r in resources.rubrics %}
+{% if chat.rubric_id is defined and artifacts.attempt.get.resources and artifacts.attempt.get.resources.rubrics %}
+{% for r in artifacts.attempt.get.resources.rubrics %}
 {% if r.rubric_id is defined and r.rubric_id|string == chat.rubric_id|string %}
 **Rubric:** {{ r.name }}
 {% endif %}
@@ -75,16 +75,16 @@ INSERT INTO public.instructions_resource (id, template, active, created_at, gene
 {% endif %}
 {% endif %}
 
-{% if resources and resources.problem_statements and resources.problem_statements|length > 0 %}
+{% if artifacts.attempt.get.resources and artifacts.attempt.get.resources.problem_statements and artifacts.attempt.get.resources.problem_statements|length > 0 %}
 ### Problem Statement
-{% for ps in resources.problem_statements %}
+{% for ps in artifacts.attempt.get.resources.problem_statements %}
 {{ ps.problem_statement }}
 {% endfor %}
 {% endif %}
 
-{% if resources and resources.objectives and resources.objectives|length > 0 %}
+{% if artifacts.attempt.get.resources and artifacts.attempt.get.resources.objectives and artifacts.attempt.get.resources.objectives|length > 0 %}
 ### Objectives
-{% for obj in resources.objectives %}
+{% for obj in artifacts.attempt.get.resources.objectives %}
 - {{ obj.objective }}
 {% endfor %}
 {% endif %}
@@ -98,24 +98,24 @@ INSERT INTO public.instructions_resource (id, template, active, created_at, gene
 {% endfor %}
 {% endif %}
 
-{% if resources and resources.standard_groups and resources.standard_groups|length > 0 %}
+{% if artifacts.attempt.get.resources and artifacts.attempt.get.resources.standard_groups and artifacts.attempt.get.resources.standard_groups|length > 0 %}
 ### Rubric Standard Groups
-{% for sg in resources.standard_groups %}
+{% for sg in artifacts.attempt.get.resources.standard_groups %}
 - id: {{ sg.standard_group_id }} | name: {{ sg.name }}{% if sg.description is defined %} | {{ sg.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
 
-{% if resources and resources.standards and resources.standards|length > 0 %}
+{% if artifacts.attempt.get.resources and artifacts.attempt.get.resources.standards and artifacts.attempt.get.resources.standards|length > 0 %}
 ### Rubric Standards
-{% for s in resources.standards %}
+{% for s in artifacts.attempt.get.resources.standards %}
 - id: {{ s.standard_id }} | description: {{ s.description[:80] if s.description is defined else s.standard_id }}
 {% endfor %}
 {% endif %}
 
 ### Current Assistant Message
 {% set ns = namespace(current_message=None) %}
-{% if entries and entries.attempt_message %}
-{% for m in entries.attempt_message|reverse %}
+{% if artifacts.attempt.get.entries and artifacts.attempt.get.entries.attempt_message %}
+{% for m in artifacts.attempt.get.entries.attempt_message|reverse %}
 {% if m.type == ''response'' and not ns.current_message %}
 {% set ns.current_message = m %}
 {% endif %}

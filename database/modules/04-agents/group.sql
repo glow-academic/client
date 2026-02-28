@@ -19,9 +19,9 @@ INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c82b8-5da3-7ad9-8f28-3eaef24d5e84', 'Analytical insights agent for group-level analytics', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c82b8-5da3-7875-ba86-43b9dd06c067', '## Previous Insights
 
-{% if entries.insights is defined and entries.insights and entries.insights|length > 0 %}
+{% if artifacts.group.get.entries.insights is defined and artifacts.group.get.entries.insights and artifacts.group.get.entries.insights|length > 0 %}
 The following insights were previously generated:
-{% for insight in entries.insights %}
+{% for insight in artifacts.group.get.entries.insights %}
 - {{ insight.content }}
 {% endfor %}
 {% else %}
@@ -30,24 +30,24 @@ No previous insights have been generated yet.
 
 ## Domain Data
 
-{% if entries.group_runs is defined and entries.group_runs %}
+{% if artifacts.group.get.entries.group_runs is defined and artifacts.group.get.entries.group_runs %}
 ### Group Runs
-{{ entries.group_runs | tojson }}
+{{ artifacts.group.get.entries.group_runs | tojson }}
 {% endif %}
 
-{% if entries.messages is defined and entries.messages %}
+{% if artifacts.group.get.entries.messages is defined and artifacts.group.get.entries.messages %}
 ### Messages
-{{ entries.messages | tojson }}
+{{ artifacts.group.get.entries.messages | tojson }}
 {% endif %}
 
-{% if entries.calls is defined and entries.calls %}
+{% if artifacts.group.get.entries.calls is defined and artifacts.group.get.entries.calls %}
 ### LLM Calls
-{{ entries.calls | tojson }}
+{{ artifacts.group.get.entries.calls | tojson }}
 {% endif %}
 
-{% if entries.runs is defined and entries.runs %}
+{% if artifacts.group.get.entries.runs is defined and artifacts.group.get.entries.runs %}
 ### Runs
-{{ entries.runs | tojson }}
+{{ artifacts.group.get.entries.runs | tojson }}
 {% endif %}
 
 ## Task

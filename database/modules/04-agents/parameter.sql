@@ -59,44 +59,44 @@ You only need to do ONE of these operations per resource — not both. Check the
 INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-13T03:41:54.664757+00:00', true, false, false, '019c5517-4673-74b4-991e-153c7b8a9174', 'Parameter', 'AI agent for generating and managing parameter resources including names, descriptions, flags, departments, and fields using GPT-5.1', '{}', NULL, NULL, '{019bebc4-d436-7c35-9f98-31957504bf95,019bebc4-d436-7b73-a506-0b196bce4ada,019bebc4-d436-7c01-b86b-9483883762a6,019c4f27-1778-7a54-b3bb-1574ff2c0357,019c06a8-2af5-766c-9713-315ab9567235,98194c0a-97af-4bf8-8c30-12a87bfbacb2,019c06a8-2af6-727b-b94a-71bddc4d76de,019c06a8-2af4-7c97-ab30-1e863db0e8e3,019c06a8-2af5-705d-ae92-7905a846a500}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '11111111-2222-2222-2222-111111111111', '{019c2f13-4100-7c00-8000-000000000001}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019bcd1b-0c8b-789b-8866-7761d9eb1159', 'AI agent for generating and managing parameter resources including names, descriptions, flags, departments, and fields using GPT-5.1', '2026-01-17T17:57:40.566652+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c2f13-4100-7c00-8000-000000000001', '## Current State
-{% set draft = entries.draft_parameter if entries and entries.draft_parameter else None %}
-{% if draft and draft.name_ids and draft.name_ids|length > 0 %}{% set selected = [] %}{% for item in resources.names if item.id|string in draft.name_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Names: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Names: ({{ draft.name_ids|length }} selected by ID){% endif %}{% else %}Names: (not set){% endif %}
-{% if draft and draft.description_ids and draft.description_ids|length > 0 %}{% set selected = [] %}{% for item in resources.descriptions if item.id|string in draft.description_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Descriptions: {% for item in selected %}{{ item.description[:100] }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Descriptions: ({{ draft.description_ids|length }} selected by ID){% endif %}{% else %}Descriptions: (not set){% endif %}
-{% if draft and draft.flag_ids and draft.flag_ids|length > 0 %}{% set selected = [] %}{% for item in resources.flags if item.flag_option_id|string in draft.flag_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Flags: {% for item in selected %}{{ item.label or item.key }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Flags: ({{ draft.flag_ids|length }} selected by ID){% endif %}{% else %}Flags: (not set){% endif %}
-{% if draft and draft.department_ids and draft.department_ids|length > 0 %}{% set selected = [] %}{% for item in resources.departments if item.department_id|string in draft.department_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Departments: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Departments: ({{ draft.department_ids|length }} selected by ID){% endif %}{% else %}Departments: (not set){% endif %}
-{% if draft and draft.field_ids and draft.field_ids|length > 0 %}{% set selected = [] %}{% for item in resources.fields if item.field_id|string in draft.field_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Fields: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Fields: ({{ draft.field_ids|length }} selected by ID){% endif %}{% else %}Fields: (not set){% endif %}
+{% set draft = artifacts.parameter.get.entries.draft_parameter if artifacts.parameter.get.entries and artifacts.parameter.get.entries.draft_parameter else None %}
+{% if draft and draft.name_ids and draft.name_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.parameter.get.resources.names if item.id|string in draft.name_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Names: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Names: ({{ draft.name_ids|length }} selected by ID){% endif %}{% else %}Names: (not set){% endif %}
+{% if draft and draft.description_ids and draft.description_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.parameter.get.resources.descriptions if item.id|string in draft.description_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Descriptions: {% for item in selected %}{{ item.description[:100] }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Descriptions: ({{ draft.description_ids|length }} selected by ID){% endif %}{% else %}Descriptions: (not set){% endif %}
+{% if draft and draft.flag_ids and draft.flag_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.parameter.get.resources.flags if item.flag_option_id|string in draft.flag_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Flags: {% for item in selected %}{{ item.label or item.key }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Flags: ({{ draft.flag_ids|length }} selected by ID){% endif %}{% else %}Flags: (not set){% endif %}
+{% if draft and draft.department_ids and draft.department_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.parameter.get.resources.departments if item.department_id|string in draft.department_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Departments: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Departments: ({{ draft.department_ids|length }} selected by ID){% endif %}{% else %}Departments: (not set){% endif %}
+{% if draft and draft.field_ids and draft.field_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.parameter.get.resources.fields if item.field_id|string in draft.field_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Fields: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Fields: ({{ draft.field_ids|length }} selected by ID){% endif %}{% else %}Fields: (not set){% endif %}
 
 ---
 
-{% set all_gen_types = (resources.types or []) + (entries.types or []) %}
+{% set all_gen_types = (artifacts.parameter.get.resources.types or []) + (artifacts.parameter.get.entries.types or []) %}
 ## Available Resources
-{% if "names" in all_gen_types and resources.names and resources.names|length > 0 %}
+{% if "names" in all_gen_types and artifacts.parameter.get.resources.names and artifacts.parameter.get.resources.names|length > 0 %}
 Names:
-{% for item in resources.names %}
+{% for item in artifacts.parameter.get.resources.names %}
 - id: {{ item.id }} | {{ item.name }}
 {% endfor %}
 {% endif %}
-{% if "descriptions" in all_gen_types and resources.descriptions and resources.descriptions|length > 0 %}
+{% if "descriptions" in all_gen_types and artifacts.parameter.get.resources.descriptions and artifacts.parameter.get.resources.descriptions|length > 0 %}
 Descriptions:
-{% for item in resources.descriptions %}
+{% for item in artifacts.parameter.get.resources.descriptions %}
 - id: {{ item.id }} | {{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}
 {% endfor %}
 {% endif %}
-{% if "flags" in all_gen_types and resources.flags and resources.flags|length > 0 %}
+{% if "flags" in all_gen_types and artifacts.parameter.get.resources.flags and artifacts.parameter.get.resources.flags|length > 0 %}
 Flags:
-{% for item in resources.flags %}
+{% for item in artifacts.parameter.get.resources.flags %}
 - id: {{ item.flag_option_id }} | {{ item.label or item.key }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if "departments" in all_gen_types and resources.departments and resources.departments|length > 0 %}
+{% if "departments" in all_gen_types and artifacts.parameter.get.resources.departments and artifacts.parameter.get.resources.departments|length > 0 %}
 Departments:
-{% for item in resources.departments %}
+{% for item in artifacts.parameter.get.resources.departments %}
 - id: {{ item.department_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if "fields" in all_gen_types and resources.fields and resources.fields|length > 0 %}
+{% if "fields" in all_gen_types and artifacts.parameter.get.resources.fields and artifacts.parameter.get.resources.fields|length > 0 %}
 Fields:
-{% for item in resources.fields %}
+{% for item in artifacts.parameter.get.resources.fields %}
 - id: {{ item.field_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
@@ -104,11 +104,11 @@ Fields:
 ---
 
 ## Generating For
-{% if resources.types and resources.types|length > 0 %}
-Resource types (create or use): {{ resources.types|join(", ") }}
+{% if artifacts.parameter.get.resources.types and artifacts.parameter.get.resources.types|length > 0 %}
+Resource types (create or use): {{ artifacts.parameter.get.resources.types|join(", ") }}
 {% endif %}
-{% if entries.types and entries.types|length > 0 %}
-Entry types (use only): {{ entries.types|join(", ") }}
+{% if artifacts.parameter.get.entries.types and artifacts.parameter.get.entries.types|length > 0 %}
+Entry types (use only): {{ artifacts.parameter.get.entries.types|join(", ") }}
 {% endif %}
 
 Rules:

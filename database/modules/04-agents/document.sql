@@ -66,72 +66,72 @@ You only need to do ONE of these operations per resource — not both. Check the
 ', 'Document Agent System Prompt', 'System prompt for document generation agents', true, '019b3be4-36fe-7be0-9e4c-1981f6603d55', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8ea1-7cc3-af43-22701005aebd', 'Agent for generating and working with documents, templates, and structured content', '2025-12-02T13:15:00.683340+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019b8c1f-2a67-7352-9eb5-3bfe0b853b10', '## Current State
-{% set draft = entries.draft_document if entries and entries.draft_document else None %}
-{% if draft and draft.name_ids and draft.name_ids|length > 0 %}{% set selected = [] %}{% for item in resources.names if item.id|string in draft.name_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Names: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Names: ({{ draft.name_ids|length }} selected by ID){% endif %}{% else %}Names: (not set){% endif %}
-{% if draft and draft.description_ids and draft.description_ids|length > 0 %}{% set selected = [] %}{% for item in resources.descriptions if item.id|string in draft.description_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Descriptions: {% for item in selected %}{{ item.description[:100] }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Descriptions: ({{ draft.description_ids|length }} selected by ID){% endif %}{% else %}Descriptions: (not set){% endif %}
-{% if draft and draft.flag_ids and draft.flag_ids|length > 0 %}{% set selected = [] %}{% for item in resources.flags if item.flag_option_id|string in draft.flag_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Flags: {% for item in selected %}{{ item.label or item.key }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Flags: ({{ draft.flag_ids|length }} selected by ID){% endif %}{% else %}Flags: (not set){% endif %}
-{% if draft and draft.department_ids and draft.department_ids|length > 0 %}{% set selected = [] %}{% for item in resources.departments if item.department_id|string in draft.department_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Departments: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Departments: ({{ draft.department_ids|length }} selected by ID){% endif %}{% else %}Departments: (not set){% endif %}
-{% if draft and draft.image_ids and draft.image_ids|length > 0 %}{% set selected = [] %}{% for item in resources.images if item.id|string in draft.image_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Images: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Images: ({{ draft.image_ids|length }} selected by ID){% endif %}{% else %}Images: (not set){% endif %}
-{% if draft and draft.parameter_field_ids and draft.parameter_field_ids|length > 0 %}{% set selected = [] %}{% for item in resources.parameter_fields if item.id|string in draft.parameter_field_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Parameter Fields: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Parameter Fields: ({{ draft.parameter_field_ids|length }} selected by ID){% endif %}{% else %}Parameter Fields: (not set){% endif %}
-{% if draft and draft.parameter_ids and draft.parameter_ids|length > 0 %}{% set selected = [] %}{% for item in resources.parameters if item.parameter_id|string in draft.parameter_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Parameters: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Parameters: ({{ draft.parameter_ids|length }} selected by ID){% endif %}{% else %}Parameters: (not set){% endif %}
-{% if draft and draft.text_ids and draft.text_ids|length > 0 %}{% set selected = [] %}{% for item in resources.texts if item.id|string in draft.text_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Texts: {% for item in selected %}{{ item.text[:80] }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Texts: ({{ draft.text_ids|length }} selected by ID){% endif %}{% else %}Texts: (not set){% endif %}
-{% if draft and draft.upload_ids and draft.upload_ids|length > 0 %}{% set selected = [] %}{% for item in resources.uploads if item.id|string in draft.upload_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Uploads: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Uploads: ({{ draft.upload_ids|length }} selected by ID){% endif %}{% else %}Uploads: (not set){% endif %}
+{% set draft = artifacts.document.get.entries.draft_document if artifacts.document.get.entries and artifacts.document.get.entries.draft_document else None %}
+{% if draft and draft.name_ids and draft.name_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.document.get.resources.names if item.id|string in draft.name_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Names: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Names: ({{ draft.name_ids|length }} selected by ID){% endif %}{% else %}Names: (not set){% endif %}
+{% if draft and draft.description_ids and draft.description_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.document.get.resources.descriptions if item.id|string in draft.description_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Descriptions: {% for item in selected %}{{ item.description[:100] }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Descriptions: ({{ draft.description_ids|length }} selected by ID){% endif %}{% else %}Descriptions: (not set){% endif %}
+{% if draft and draft.flag_ids and draft.flag_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.document.get.resources.flags if item.flag_option_id|string in draft.flag_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Flags: {% for item in selected %}{{ item.label or item.key }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Flags: ({{ draft.flag_ids|length }} selected by ID){% endif %}{% else %}Flags: (not set){% endif %}
+{% if draft and draft.department_ids and draft.department_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.document.get.resources.departments if item.department_id|string in draft.department_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Departments: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Departments: ({{ draft.department_ids|length }} selected by ID){% endif %}{% else %}Departments: (not set){% endif %}
+{% if draft and draft.image_ids and draft.image_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.document.get.resources.images if item.id|string in draft.image_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Images: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Images: ({{ draft.image_ids|length }} selected by ID){% endif %}{% else %}Images: (not set){% endif %}
+{% if draft and draft.parameter_field_ids and draft.parameter_field_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.document.get.resources.parameter_fields if item.id|string in draft.parameter_field_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Parameter Fields: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Parameter Fields: ({{ draft.parameter_field_ids|length }} selected by ID){% endif %}{% else %}Parameter Fields: (not set){% endif %}
+{% if draft and draft.parameter_ids and draft.parameter_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.document.get.resources.parameters if item.parameter_id|string in draft.parameter_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Parameters: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Parameters: ({{ draft.parameter_ids|length }} selected by ID){% endif %}{% else %}Parameters: (not set){% endif %}
+{% if draft and draft.text_ids and draft.text_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.document.get.resources.texts if item.id|string in draft.text_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Texts: {% for item in selected %}{{ item.text[:80] }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Texts: ({{ draft.text_ids|length }} selected by ID){% endif %}{% else %}Texts: (not set){% endif %}
+{% if draft and draft.upload_ids and draft.upload_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.document.get.resources.uploads if item.id|string in draft.upload_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Uploads: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Uploads: ({{ draft.upload_ids|length }} selected by ID){% endif %}{% else %}Uploads: (not set){% endif %}
 
 ---
 
-{% set all_gen_types = (resources.types or []) + (entries.types or []) %}
+{% set all_gen_types = (artifacts.document.get.resources.types or []) + (artifacts.document.get.entries.types or []) %}
 ## Available Resources
-{% if "names" in all_gen_types and resources.names and resources.names|length > 0 %}
+{% if "names" in all_gen_types and artifacts.document.get.resources.names and artifacts.document.get.resources.names|length > 0 %}
 Names:
-{% for item in resources.names %}
+{% for item in artifacts.document.get.resources.names %}
 - id: {{ item.id }} | {{ item.name }}
 {% endfor %}
 {% endif %}
-{% if "descriptions" in all_gen_types and resources.descriptions and resources.descriptions|length > 0 %}
+{% if "descriptions" in all_gen_types and artifacts.document.get.resources.descriptions and artifacts.document.get.resources.descriptions|length > 0 %}
 Descriptions:
-{% for item in resources.descriptions %}
+{% for item in artifacts.document.get.resources.descriptions %}
 - id: {{ item.id }} | {{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}
 {% endfor %}
 {% endif %}
-{% if "flags" in all_gen_types and resources.flags and resources.flags|length > 0 %}
+{% if "flags" in all_gen_types and artifacts.document.get.resources.flags and artifacts.document.get.resources.flags|length > 0 %}
 Flags:
-{% for item in resources.flags %}
+{% for item in artifacts.document.get.resources.flags %}
 - id: {{ item.flag_option_id }} | {{ item.label or item.key }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if "departments" in all_gen_types and resources.departments and resources.departments|length > 0 %}
+{% if "departments" in all_gen_types and artifacts.document.get.resources.departments and artifacts.document.get.resources.departments|length > 0 %}
 Departments:
-{% for item in resources.departments %}
+{% for item in artifacts.document.get.resources.departments %}
 - id: {{ item.department_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if "images" in all_gen_types and resources.images and resources.images|length > 0 %}
+{% if "images" in all_gen_types and artifacts.document.get.resources.images and artifacts.document.get.resources.images|length > 0 %}
 Images:
-{% for item in resources.images %}
+{% for item in artifacts.document.get.resources.images %}
 - id: {{ item.id }} | {{ item.name }}
 {% endfor %}
 {% endif %}
-{% if "parameter_fields" in all_gen_types and resources.parameter_fields and resources.parameter_fields|length > 0 %}
+{% if "parameter_fields" in all_gen_types and artifacts.document.get.resources.parameter_fields and artifacts.document.get.resources.parameter_fields|length > 0 %}
 Parameter Fields:
-{% for item in resources.parameter_fields %}
+{% for item in artifacts.document.get.resources.parameter_fields %}
 - id: {{ item.id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if "parameters" in all_gen_types and resources.parameters and resources.parameters|length > 0 %}
+{% if "parameters" in all_gen_types and artifacts.document.get.resources.parameters and artifacts.document.get.resources.parameters|length > 0 %}
 Parameters:
-{% for item in resources.parameters %}
+{% for item in artifacts.document.get.resources.parameters %}
 - id: {{ item.parameter_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if "texts" in all_gen_types and resources.texts and resources.texts|length > 0 %}
+{% if "texts" in all_gen_types and artifacts.document.get.resources.texts and artifacts.document.get.resources.texts|length > 0 %}
 Texts:
-{% for item in resources.texts %}
+{% for item in artifacts.document.get.resources.texts %}
 - id: {{ item.id }} | {{ item.text[:80] }}{% if item.text|length > 80 %}...{% endif %}
 {% endfor %}
 {% endif %}
-{% if "uploads" in all_gen_types and resources.uploads and resources.uploads|length > 0 %}
+{% if "uploads" in all_gen_types and artifacts.document.get.resources.uploads and artifacts.document.get.resources.uploads|length > 0 %}
 Uploads:
-{% for item in resources.uploads %}
+{% for item in artifacts.document.get.resources.uploads %}
 - id: {{ item.id }} | {{ item.name }}
 {% endfor %}
 {% endif %}
@@ -139,11 +139,11 @@ Uploads:
 ---
 
 ## Generating For
-{% if resources.types and resources.types|length > 0 %}
-Resource types (create or use): {{ resources.types|join(", ") }}
+{% if artifacts.document.get.resources.types and artifacts.document.get.resources.types|length > 0 %}
+Resource types (create or use): {{ artifacts.document.get.resources.types|join(", ") }}
 {% endif %}
-{% if entries.types and entries.types|length > 0 %}
-Entry types (use only): {{ entries.types|join(", ") }}
+{% if artifacts.document.get.entries.types and artifacts.document.get.entries.types|length > 0 %}
+Entry types (use only): {{ artifacts.document.get.entries.types|join(", ") }}
 {% endif %}
 
 Rules:

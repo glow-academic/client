@@ -19,9 +19,9 @@ INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c82b8-5da0-7782-aa3d-0720ff17f14e', 'Analytical insights agent for real-time activity monitoring', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c82b8-5da0-7596-a925-85b2b098ea22', '## Previous Insights
 
-{% if entries.insights is defined and entries.insights and entries.insights|length > 0 %}
+{% if artifacts.activity.get.entries.insights is defined and artifacts.activity.get.entries.insights and artifacts.activity.get.entries.insights|length > 0 %}
 The following insights were previously generated:
-{% for insight in entries.insights %}
+{% for insight in artifacts.activity.get.entries.insights %}
 - {{ insight.content }}
 {% endfor %}
 {% else %}
@@ -30,39 +30,39 @@ No previous insights have been generated yet.
 
 ## Domain Data
 
-{% if entries.sessions is defined and entries.sessions %}
+{% if artifacts.activity.get.entries.sessions is defined and artifacts.activity.get.entries.sessions %}
 ### Sessions
-{{ entries.sessions | tojson }}
+{{ artifacts.activity.get.entries.sessions | tojson }}
 {% endif %}
 
-{% if entries.activity is defined and entries.activity %}
+{% if artifacts.activity.get.entries.activity is defined and artifacts.activity.get.entries.activity %}
 ### Activity
-{{ entries.activity | tojson }}
+{{ artifacts.activity.get.entries.activity | tojson }}
 {% endif %}
 
-{% if entries.logins is defined and entries.logins %}
+{% if artifacts.activity.get.entries.logins is defined and artifacts.activity.get.entries.logins %}
 ### Logins
-{{ entries.logins | tojson }}
+{{ artifacts.activity.get.entries.logins | tojson }}
 {% endif %}
 
-{% if entries.audits is defined and entries.audits %}
+{% if artifacts.activity.get.entries.audits is defined and artifacts.activity.get.entries.audits %}
 ### Audit Trail
-{{ entries.audits | tojson }}
+{{ artifacts.activity.get.entries.audits | tojson }}
 {% endif %}
 
-{% if entries.problems is defined and entries.problems %}
+{% if artifacts.activity.get.entries.problems is defined and artifacts.activity.get.entries.problems %}
 ### Problems
-{{ entries.problems | tojson }}
+{{ artifacts.activity.get.entries.problems | tojson }}
 {% endif %}
 
-{% if entries.grants is defined and entries.grants %}
+{% if artifacts.activity.get.entries.grants is defined and artifacts.activity.get.entries.grants %}
 ### Grants
-{{ entries.grants | tojson }}
+{{ artifacts.activity.get.entries.grants | tojson }}
 {% endif %}
 
-{% if entries.runs is defined and entries.runs %}
+{% if artifacts.activity.get.entries.runs is defined and artifacts.activity.get.entries.runs %}
 ### Runs
-{{ entries.runs | tojson }}
+{{ artifacts.activity.get.entries.runs | tojson }}
 {% endif %}
 
 ## Task

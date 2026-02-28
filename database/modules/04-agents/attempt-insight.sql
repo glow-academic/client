@@ -18,9 +18,9 @@ INSERT INTO public.prompts_resource (created_at, system_prompt, name, descriptio
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('018f0005-0005-7000-8000-000000000001', 'AI agent for generating analytical insights about individual training attempts including performance, conversation quality, and skill development', '2026-02-23T17:47:02.459307+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('018f0005-0004-7000-8000-000000000001', '## Previous Insights
 
-{% if entries.insights is defined and entries.insights and entries.insights|length > 0 %}
+{% if artifacts.attempt.get.entries.insights is defined and artifacts.attempt.get.entries.insights and artifacts.attempt.get.entries.insights|length > 0 %}
 The following insights were previously generated:
-{% for insight in entries.insights %}
+{% for insight in artifacts.attempt.get.entries.insights %}
 - {{ insight.content }}
 {% endfor %}
 {% else %}
@@ -29,86 +29,86 @@ No previous insights have been generated yet.
 
 ## Domain Data
 
-{% if entries.attempt is defined and entries.attempt %}
+{% if artifacts.attempt.get.entries.attempt is defined and artifacts.attempt.get.entries.attempt %}
 ### Attempt
-{{ entries.attempt | tojson }}
+{{ artifacts.attempt.get.entries.attempt | tojson }}
 {% endif %}
 
-{% if entries.attempt_chat is defined and entries.attempt_chat %}
+{% if artifacts.attempt.get.entries.attempt_chat is defined and artifacts.attempt.get.entries.attempt_chat %}
 ### Chat Data
-{{ entries.attempt_chat | tojson }}
+{{ artifacts.attempt.get.entries.attempt_chat | tojson }}
 {% endif %}
 
-{% if entries.attempt_message is defined and entries.attempt_message %}
+{% if artifacts.attempt.get.entries.attempt_message is defined and artifacts.attempt.get.entries.attempt_message %}
 ### Messages
-{{ entries.attempt_message | tojson }}
+{{ artifacts.attempt.get.entries.attempt_message | tojson }}
 {% endif %}
 
-{% if entries.runs is defined and entries.runs %}
+{% if artifacts.attempt.get.entries.runs is defined and artifacts.attempt.get.entries.runs %}
 ### Runs
-{{ entries.runs | tojson }}
+{{ artifacts.attempt.get.entries.runs | tojson }}
 {% endif %}
 
 ## Available Resources
 
-{% if resources.scenarios is defined and resources.scenarios %}
+{% if artifacts.attempt.get.resources.scenarios is defined and artifacts.attempt.get.resources.scenarios %}
 ### Scenarios
-{{ resources.scenarios | tojson }}
+{{ artifacts.attempt.get.resources.scenarios | tojson }}
 {% endif %}
 
-{% if resources.personas is defined and resources.personas %}
+{% if artifacts.attempt.get.resources.personas is defined and artifacts.attempt.get.resources.personas %}
 ### Personas
-{{ resources.personas | tojson }}
+{{ artifacts.attempt.get.resources.personas | tojson }}
 {% endif %}
 
-{% if resources.rubrics is defined and resources.rubrics %}
+{% if artifacts.attempt.get.resources.rubrics is defined and artifacts.attempt.get.resources.rubrics %}
 ### Rubrics
-{{ resources.rubrics | tojson }}
+{{ artifacts.attempt.get.resources.rubrics | tojson }}
 {% endif %}
 
-{% if resources.standard_groups is defined and resources.standard_groups %}
+{% if artifacts.attempt.get.resources.standard_groups is defined and artifacts.attempt.get.resources.standard_groups %}
 ### Standard Groups
-{{ resources.standard_groups | tojson }}
+{{ artifacts.attempt.get.resources.standard_groups | tojson }}
 {% endif %}
 
-{% if resources.standards is defined and resources.standards %}
+{% if artifacts.attempt.get.resources.standards is defined and artifacts.attempt.get.resources.standards %}
 ### Standards
-{{ resources.standards | tojson }}
+{{ artifacts.attempt.get.resources.standards | tojson }}
 {% endif %}
 
-{% if resources.documents is defined and resources.documents %}
+{% if artifacts.attempt.get.resources.documents is defined and artifacts.attempt.get.resources.documents %}
 ### Documents
-{{ resources.documents | tojson }}
+{{ artifacts.attempt.get.resources.documents | tojson }}
 {% endif %}
 
-{% if resources.objectives is defined and resources.objectives %}
+{% if artifacts.attempt.get.resources.objectives is defined and artifacts.attempt.get.resources.objectives %}
 ### Objectives
-{{ resources.objectives | tojson }}
+{{ artifacts.attempt.get.resources.objectives | tojson }}
 {% endif %}
 
-{% if resources.questions is defined and resources.questions %}
+{% if artifacts.attempt.get.resources.questions is defined and artifacts.attempt.get.resources.questions %}
 ### Questions
-{{ resources.questions | tojson }}
+{{ artifacts.attempt.get.resources.questions | tojson }}
 {% endif %}
 
-{% if resources.options is defined and resources.options %}
+{% if artifacts.attempt.get.resources.options is defined and artifacts.attempt.get.resources.options %}
 ### Options
-{{ resources.options | tojson }}
+{{ artifacts.attempt.get.resources.options | tojson }}
 {% endif %}
 
-{% if resources.problem_statements is defined and resources.problem_statements %}
+{% if artifacts.attempt.get.resources.problem_statements is defined and artifacts.attempt.get.resources.problem_statements %}
 ### Problem Statements
-{{ resources.problem_statements | tojson }}
+{{ artifacts.attempt.get.resources.problem_statements | tojson }}
 {% endif %}
 
-{% if resources.images is defined and resources.images %}
+{% if artifacts.attempt.get.resources.images is defined and artifacts.attempt.get.resources.images %}
 ### Images
-{{ resources.images | tojson }}
+{{ artifacts.attempt.get.resources.images | tojson }}
 {% endif %}
 
-{% if resources.videos is defined and resources.videos %}
+{% if artifacts.attempt.get.resources.videos is defined and artifacts.attempt.get.resources.videos %}
 ### Videos
-{{ resources.videos | tojson }}
+{{ artifacts.attempt.get.resources.videos | tojson }}
 {% endif %}
 
 ## Task

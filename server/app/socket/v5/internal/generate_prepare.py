@@ -579,14 +579,6 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
 
         jinja_context_base = _build_namespaced_context(artifact_results, entry_results)
 
-        # Backward-compat: inject primary artifact's data as top-level aliases
-        # so existing templates using {{ resources.names }} still work.
-        primary_data = artifact_results.get(artifact_type, {}).get("get", {})
-        if primary_data.get("resources"):
-            jinja_context_base["resources"] = primary_data["resources"]
-        if primary_data.get("entries"):
-            jinja_context_base["entries"] = primary_data["entries"]
-
         # Step 9: Read all tools, enrich, and build createable set (shared)
         config_tools = getattr(result, "tools", None) or []
         all_tool_dicts = convert_tools_to_dict(config_tools)

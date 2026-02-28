@@ -438,6 +438,7 @@ export default async function EditScenarioPage({
       objectiveIds?: string[];
       problemStatementIds?: string[];
       urlParameterIds?: string[]; // URL render filter: which parameters are expanded
+      groupId?: string;
     };
     const filterParams: FilterParams = {};
     if (q.draftId) filterParams.draftId = q.draftId;

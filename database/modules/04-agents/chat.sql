@@ -81,121 +81,121 @@ You only need to do ONE of these operations per resource — not both. Check the
 INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-11T20:37:27.875564+00:00', true, false, false, 'bb000003-0000-0000-0000-000000000003', 'Chat', 'AI agent for creating and managing training chat sessions with persona-driven scenario conversations', '{}', NULL, NULL, '{019bebc4-d436-7c01-b86b-9483883762a6,019c0a2d-fc36-7e78-9083-05afa0c8e4d8,019c0a2d-fc36-7d3c-ac2c-a2108a6c55de,019c0a2d-fc36-7ace-adde-c1e47bc14a89,019c0a2d-fc36-7c0c-80c1-098a75897197,019c0a2d-fc36-756e-b50e-a5987eb4f0d5,019c06a8-2af6-7439-b8fb-2a083dd49848,019c0a2d-fc36-7997-bdca-92935994cb93,019c0a2d-fc36-785a-9b6d-02eca12bb6e6,019c06a8-2af6-727b-b94a-71bddc4d76de,019c0a2d-fc36-770a-b18d-af61cdf0f908,019c06a8-2af5-766c-9713-315ab9567235,019c0a2d-fc35-7eb7-8bc4-4a4d9578918d,019c06a8-2af5-705d-ae92-7905a846a500,019c06a8-2af4-7c97-ab30-1e863db0e8e3,019bebc4-d436-7b96-b622-c512f3a418da,019bebc4-d436-78e3-ae05-f12509f43557,019bebc4-d436-7b81-9555-1d88249b6d78,019bebc4-d436-7b9b-b92c-009fbdb67144,019bf207-ca52-70cc-ae3c-a5ca44d6d5e9,019bebc4-d436-7bd2-b670-e4c1b24b1a9c,019bebc4-d436-7b8b-8443-f82efdfd5790,019bebc4-d436-7c35-9f98-31957504bf95,019bebc4-d436-7b8d-adb8-3b17bafdda99,52bd3f2d-8a5f-4a90-940a-a334975adc2a,019c4f27-1778-7a54-b3bb-1574ff2c0357,019c0cd8-ad73-72dd-8a41-ea5b247384db,019c06a8-2af6-7609-9bc5-2782eb639be2,98194c0a-97af-4bf8-8c30-12a87bfbacb2,b4e15440-86af-48e3-b18f-e8d11e55302b,ac2d7f98-3e27-4c0e-87b8-c283a3305062,753f699e-f1dc-4fd9-8701-a69f26d0c110,a51d1d18-44d9-4fd3-a7d3-3db17b652d02}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019c82b8-5daa-7b10-802c-6334ed655fe4', '{019c82b8-5dab-7448-9750-1cf0a3cf6412}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('bb000002-0000-0000-0000-000000000002', 'AI agent for creating and managing training chat sessions with persona-driven scenario conversations', '2026-02-11T20:37:27.875564+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c82b8-5dab-7448-9750-1cf0a3cf6412', '## Current State
-{% set draft = entries.draft_chat if entries and entries.draft_chat else None %}
-{% if draft and draft.name_ids and draft.name_ids|length > 0 %}{% set selected = [] %}{% for item in resources.names if item.id|string in draft.name_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Names: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Names: ({{ draft.name_ids|length }} selected by ID){% endif %}{% else %}Names: (not set){% endif %}
-{% if draft and draft.description_ids and draft.description_ids|length > 0 %}{% set selected = [] %}{% for item in resources.descriptions if item.id|string in draft.description_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Descriptions: {% for item in selected %}{{ item.description[:100] }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Descriptions: ({{ draft.description_ids|length }} selected by ID){% endif %}{% else %}Descriptions: (not set){% endif %}
-{% if draft and draft.flag_ids and draft.flag_ids|length > 0 %}{% set selected = [] %}{% for item in resources.flags if item.flag_option_id|string in draft.flag_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Flags: {% for item in selected %}{{ item.label or item.key }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Flags: ({{ draft.flag_ids|length }} selected by ID){% endif %}{% else %}Flags: (not set){% endif %}
-{% if draft and draft.department_ids and draft.department_ids|length > 0 %}{% set selected = [] %}{% for item in resources.departments if item.department_id|string in draft.department_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Departments: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Departments: ({{ draft.department_ids|length }} selected by ID){% endif %}{% else %}Departments: (not set){% endif %}
-{% if draft and draft.persona_ids and draft.persona_ids|length > 0 %}{% set selected = [] %}{% for item in resources.personas if item.id|string in draft.persona_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Personas: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Personas: ({{ draft.persona_ids|length }} selected by ID){% endif %}{% else %}Personas: (not set){% endif %}
-{% if draft and draft.document_ids and draft.document_ids|length > 0 %}{% set selected = [] %}{% for item in resources.documents if item.id|string in draft.document_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Documents: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Documents: ({{ draft.document_ids|length }} selected by ID){% endif %}{% else %}Documents: (not set){% endif %}
-{% if draft and draft.scenario_ids and draft.scenario_ids|length > 0 %}{% set selected = [] %}{% for item in resources.scenarios if item.id|string in draft.scenario_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Scenarios: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Scenarios: ({{ draft.scenario_ids|length }} selected by ID){% endif %}{% else %}Scenarios: (not set){% endif %}
-{% if draft and draft.parameter_field_ids and draft.parameter_field_ids|length > 0 %}{% set selected = [] %}{% for item in resources.parameter_fields if item.id|string in draft.parameter_field_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Parameter Fields: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Parameter Fields: ({{ draft.parameter_field_ids|length }} selected by ID){% endif %}{% else %}Parameter Fields: (not set){% endif %}
-{% if draft and draft.parameter_ids and draft.parameter_ids|length > 0 %}{% set selected = [] %}{% for item in resources.parameters if item.parameter_id|string in draft.parameter_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Parameters: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Parameters: ({{ draft.parameter_ids|length }} selected by ID){% endif %}{% else %}Parameters: (not set){% endif %}
-{% if draft and draft.field_ids and draft.field_ids|length > 0 %}{% set selected = [] %}{% for item in resources.fields if item.field_id|string in draft.field_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Fields: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Fields: ({{ draft.field_ids|length }} selected by ID){% endif %}{% else %}Fields: (not set){% endif %}
-{% if draft and draft.question_ids and draft.question_ids|length > 0 %}{% set selected = [] %}{% for item in resources.questions if item.id|string in draft.question_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Questions: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Questions: ({{ draft.question_ids|length }} selected by ID){% endif %}{% else %}Questions: (not set){% endif %}
-{% if draft and draft.option_ids and draft.option_ids|length > 0 %}{% set selected = [] %}{% for item in resources.options if item.id|string in draft.option_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Options: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Options: ({{ draft.option_ids|length }} selected by ID){% endif %}{% else %}Options: (not set){% endif %}
-{% if draft and draft.video_ids and draft.video_ids|length > 0 %}{% set selected = [] %}{% for item in resources.videos if item.id|string in draft.video_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Videos: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Videos: ({{ draft.video_ids|length }} selected by ID){% endif %}{% else %}Videos: (not set){% endif %}
-{% if draft and draft.image_ids and draft.image_ids|length > 0 %}{% set selected = [] %}{% for item in resources.images if item.id|string in draft.image_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Images: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Images: ({{ draft.image_ids|length }} selected by ID){% endif %}{% else %}Images: (not set){% endif %}
-{% if draft and draft.objective_ids and draft.objective_ids|length > 0 %}{% set selected = [] %}{% for item in resources.objectives if item.id|string in draft.objective_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Objectives: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Objectives: ({{ draft.objective_ids|length }} selected by ID){% endif %}{% else %}Objectives: (not set){% endif %}
-{% if draft and draft.problem_statement_ids and draft.problem_statement_ids|length > 0 %}{% set selected = [] %}{% for item in resources.problem_statements if item.id|string in draft.problem_statement_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Problem Statements: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Problem Statements: ({{ draft.problem_statement_ids|length }} selected by ID){% endif %}{% else %}Problem Statements: (not set){% endif %}
+{% set draft = artifacts.chat.get.entries.draft_chat if artifacts.chat.get.entries and artifacts.chat.get.entries.draft_chat else None %}
+{% if draft and draft.name_ids and draft.name_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.chat.get.resources.names if item.id|string in draft.name_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Names: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Names: ({{ draft.name_ids|length }} selected by ID){% endif %}{% else %}Names: (not set){% endif %}
+{% if draft and draft.description_ids and draft.description_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.chat.get.resources.descriptions if item.id|string in draft.description_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Descriptions: {% for item in selected %}{{ item.description[:100] }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Descriptions: ({{ draft.description_ids|length }} selected by ID){% endif %}{% else %}Descriptions: (not set){% endif %}
+{% if draft and draft.flag_ids and draft.flag_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.chat.get.resources.flags if item.flag_option_id|string in draft.flag_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Flags: {% for item in selected %}{{ item.label or item.key }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Flags: ({{ draft.flag_ids|length }} selected by ID){% endif %}{% else %}Flags: (not set){% endif %}
+{% if draft and draft.department_ids and draft.department_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.chat.get.resources.departments if item.department_id|string in draft.department_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Departments: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Departments: ({{ draft.department_ids|length }} selected by ID){% endif %}{% else %}Departments: (not set){% endif %}
+{% if draft and draft.persona_ids and draft.persona_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.chat.get.resources.personas if item.id|string in draft.persona_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Personas: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Personas: ({{ draft.persona_ids|length }} selected by ID){% endif %}{% else %}Personas: (not set){% endif %}
+{% if draft and draft.document_ids and draft.document_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.chat.get.resources.documents if item.id|string in draft.document_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Documents: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Documents: ({{ draft.document_ids|length }} selected by ID){% endif %}{% else %}Documents: (not set){% endif %}
+{% if draft and draft.scenario_ids and draft.scenario_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.chat.get.resources.scenarios if item.id|string in draft.scenario_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Scenarios: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Scenarios: ({{ draft.scenario_ids|length }} selected by ID){% endif %}{% else %}Scenarios: (not set){% endif %}
+{% if draft and draft.parameter_field_ids and draft.parameter_field_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.chat.get.resources.parameter_fields if item.id|string in draft.parameter_field_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Parameter Fields: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Parameter Fields: ({{ draft.parameter_field_ids|length }} selected by ID){% endif %}{% else %}Parameter Fields: (not set){% endif %}
+{% if draft and draft.parameter_ids and draft.parameter_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.chat.get.resources.parameters if item.parameter_id|string in draft.parameter_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Parameters: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Parameters: ({{ draft.parameter_ids|length }} selected by ID){% endif %}{% else %}Parameters: (not set){% endif %}
+{% if draft and draft.field_ids and draft.field_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.chat.get.resources.fields if item.field_id|string in draft.field_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Fields: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Fields: ({{ draft.field_ids|length }} selected by ID){% endif %}{% else %}Fields: (not set){% endif %}
+{% if draft and draft.question_ids and draft.question_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.chat.get.resources.questions if item.id|string in draft.question_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Questions: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Questions: ({{ draft.question_ids|length }} selected by ID){% endif %}{% else %}Questions: (not set){% endif %}
+{% if draft and draft.option_ids and draft.option_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.chat.get.resources.options if item.id|string in draft.option_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Options: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Options: ({{ draft.option_ids|length }} selected by ID){% endif %}{% else %}Options: (not set){% endif %}
+{% if draft and draft.video_ids and draft.video_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.chat.get.resources.videos if item.id|string in draft.video_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Videos: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Videos: ({{ draft.video_ids|length }} selected by ID){% endif %}{% else %}Videos: (not set){% endif %}
+{% if draft and draft.image_ids and draft.image_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.chat.get.resources.images if item.id|string in draft.image_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Images: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Images: ({{ draft.image_ids|length }} selected by ID){% endif %}{% else %}Images: (not set){% endif %}
+{% if draft and draft.objective_ids and draft.objective_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.chat.get.resources.objectives if item.id|string in draft.objective_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Objectives: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Objectives: ({{ draft.objective_ids|length }} selected by ID){% endif %}{% else %}Objectives: (not set){% endif %}
+{% if draft and draft.problem_statement_ids and draft.problem_statement_ids|length > 0 %}{% set selected = [] %}{% for item in artifacts.chat.get.resources.problem_statements if item.id|string in draft.problem_statement_ids|map("string")|list %}{% if selected.append(item) %}{% endif %}{% endfor %}{% if selected|length > 0 %}Problem Statements: {% for item in selected %}{{ item.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Problem Statements: ({{ draft.problem_statement_ids|length }} selected by ID){% endif %}{% else %}Problem Statements: (not set){% endif %}
 
 ---
 
-{% set all_gen_types = (resources.types or []) + (entries.types or []) %}
+{% set all_gen_types = (artifacts.chat.get.resources.types or []) + (artifacts.chat.get.entries.types or []) %}
 ## Available Resources
-{% if "names" in all_gen_types and resources.names and resources.names|length > 0 %}
+{% if "names" in all_gen_types and artifacts.chat.get.resources.names and artifacts.chat.get.resources.names|length > 0 %}
 Names:
-{% for item in resources.names %}
+{% for item in artifacts.chat.get.resources.names %}
 - id: {{ item.id }} | {{ item.name }}
 {% endfor %}
 {% endif %}
-{% if "descriptions" in all_gen_types and resources.descriptions and resources.descriptions|length > 0 %}
+{% if "descriptions" in all_gen_types and artifacts.chat.get.resources.descriptions and artifacts.chat.get.resources.descriptions|length > 0 %}
 Descriptions:
-{% for item in resources.descriptions %}
+{% for item in artifacts.chat.get.resources.descriptions %}
 - id: {{ item.id }} | {{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}
 {% endfor %}
 {% endif %}
-{% if "flags" in all_gen_types and resources.flags and resources.flags|length > 0 %}
+{% if "flags" in all_gen_types and artifacts.chat.get.resources.flags and artifacts.chat.get.resources.flags|length > 0 %}
 Flags:
-{% for item in resources.flags %}
+{% for item in artifacts.chat.get.resources.flags %}
 - id: {{ item.flag_option_id }} | {{ item.label or item.key }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if "departments" in all_gen_types and resources.departments and resources.departments|length > 0 %}
+{% if "departments" in all_gen_types and artifacts.chat.get.resources.departments and artifacts.chat.get.resources.departments|length > 0 %}
 Departments:
-{% for item in resources.departments %}
+{% for item in artifacts.chat.get.resources.departments %}
 - id: {{ item.department_id }} | {{ item.name }}{% if item.description %} | {{ item.description[:50] }}{% endif %}
 {% endfor %}
 {% endif %}
-{% if "personas" in all_gen_types and resources.personas and resources.personas|length > 0 %}
+{% if "personas" in all_gen_types and artifacts.chat.get.resources.personas and artifacts.chat.get.resources.personas|length > 0 %}
 Personas:
-{% for item in resources.personas %}
+{% for item in artifacts.chat.get.resources.personas %}
 - id: {{ item.id }} | {{ item.name }}
 {% endfor %}
 {% endif %}
-{% if "documents" in all_gen_types and resources.documents and resources.documents|length > 0 %}
+{% if "documents" in all_gen_types and artifacts.chat.get.resources.documents and artifacts.chat.get.resources.documents|length > 0 %}
 Documents:
-{% for item in resources.documents %}
+{% for item in artifacts.chat.get.resources.documents %}
 - id: {{ item.id }} | {{ item.name }}
 {% endfor %}
 {% endif %}
-{% if "scenarios" in all_gen_types and resources.scenarios and resources.scenarios|length > 0 %}
+{% if "scenarios" in all_gen_types and artifacts.chat.get.resources.scenarios and artifacts.chat.get.resources.scenarios|length > 0 %}
 Scenarios:
-{% for item in resources.scenarios %}
+{% for item in artifacts.chat.get.resources.scenarios %}
 - id: {{ item.id }} | {{ item.name }}
 {% endfor %}
 {% endif %}
-{% if "parameter_fields" in all_gen_types and resources.parameter_fields and resources.parameter_fields|length > 0 %}
+{% if "parameter_fields" in all_gen_types and artifacts.chat.get.resources.parameter_fields and artifacts.chat.get.resources.parameter_fields|length > 0 %}
 Parameter Fields:
-{% for item in resources.parameter_fields %}
+{% for item in artifacts.chat.get.resources.parameter_fields %}
 - id: {{ item.id }} | {{ item.name }}
 {% endfor %}
 {% endif %}
-{% if "parameters" in all_gen_types and resources.parameters and resources.parameters|length > 0 %}
+{% if "parameters" in all_gen_types and artifacts.chat.get.resources.parameters and artifacts.chat.get.resources.parameters|length > 0 %}
 Parameters:
-{% for item in resources.parameters %}
+{% for item in artifacts.chat.get.resources.parameters %}
 - id: {{ item.parameter_id }} | {{ item.name }}
 {% endfor %}
 {% endif %}
-{% if "fields" in all_gen_types and resources.fields and resources.fields|length > 0 %}
+{% if "fields" in all_gen_types and artifacts.chat.get.resources.fields and artifacts.chat.get.resources.fields|length > 0 %}
 Fields:
-{% for item in resources.fields %}
+{% for item in artifacts.chat.get.resources.fields %}
 - id: {{ item.field_id }} | {{ item.name }}
 {% endfor %}
 {% endif %}
-{% if "questions" in all_gen_types and resources.questions and resources.questions|length > 0 %}
+{% if "questions" in all_gen_types and artifacts.chat.get.resources.questions and artifacts.chat.get.resources.questions|length > 0 %}
 Questions:
-{% for item in resources.questions %}
+{% for item in artifacts.chat.get.resources.questions %}
 - id: {{ item.id }} | {{ item.name }}
 {% endfor %}
 {% endif %}
-{% if "options" in all_gen_types and resources.options and resources.options|length > 0 %}
+{% if "options" in all_gen_types and artifacts.chat.get.resources.options and artifacts.chat.get.resources.options|length > 0 %}
 Options:
-{% for item in resources.options %}
+{% for item in artifacts.chat.get.resources.options %}
 - id: {{ item.id }} | {{ item.name }}
 {% endfor %}
 {% endif %}
-{% if "videos" in all_gen_types and resources.videos and resources.videos|length > 0 %}
+{% if "videos" in all_gen_types and artifacts.chat.get.resources.videos and artifacts.chat.get.resources.videos|length > 0 %}
 Videos:
-{% for item in resources.videos %}
+{% for item in artifacts.chat.get.resources.videos %}
 - id: {{ item.id }} | {{ item.name }}
 {% endfor %}
 {% endif %}
-{% if "images" in all_gen_types and resources.images and resources.images|length > 0 %}
+{% if "images" in all_gen_types and artifacts.chat.get.resources.images and artifacts.chat.get.resources.images|length > 0 %}
 Images:
-{% for item in resources.images %}
+{% for item in artifacts.chat.get.resources.images %}
 - id: {{ item.id }} | {{ item.name }}
 {% endfor %}
 {% endif %}
-{% if "objectives" in all_gen_types and resources.objectives and resources.objectives|length > 0 %}
+{% if "objectives" in all_gen_types and artifacts.chat.get.resources.objectives and artifacts.chat.get.resources.objectives|length > 0 %}
 Objectives:
-{% for item in resources.objectives %}
+{% for item in artifacts.chat.get.resources.objectives %}
 - id: {{ item.id }} | {{ item.name }}
 {% endfor %}
 {% endif %}
-{% if "problem_statements" in all_gen_types and resources.problem_statements and resources.problem_statements|length > 0 %}
+{% if "problem_statements" in all_gen_types and artifacts.chat.get.resources.problem_statements and artifacts.chat.get.resources.problem_statements|length > 0 %}
 Problem Statements:
-{% for item in resources.problem_statements %}
+{% for item in artifacts.chat.get.resources.problem_statements %}
 - id: {{ item.id }} | {{ item.name }}
 {% endfor %}
 {% endif %}
@@ -203,11 +203,11 @@ Problem Statements:
 ---
 
 ## Generating For
-{% if resources.types and resources.types|length > 0 %}
-Resource types (create or use): {{ resources.types|join(", ") }}
+{% if artifacts.chat.get.resources.types and artifacts.chat.get.resources.types|length > 0 %}
+Resource types (create or use): {{ artifacts.chat.get.resources.types|join(", ") }}
 {% endif %}
-{% if entries.types and entries.types|length > 0 %}
-Entry types (use only): {{ entries.types|join(", ") }}
+{% if artifacts.chat.get.entries.types and artifacts.chat.get.entries.types|length > 0 %}
+Entry types (use only): {{ artifacts.chat.get.entries.types|join(", ") }}
 {% endif %}
 
 Rules:

@@ -18,9 +18,9 @@ INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c82b8-5d9d-7bd8-b210-c7b8fb070319', 'Navigation and recommendation agent for practice mode entry point', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c82b8-5d9d-7a12-9acc-52d542e221dc', '## Previous Insights
 
-{% if entries.insights is defined and entries.insights and entries.insights|length > 0 %}
+{% if artifacts.practice.get.entries.insights is defined and artifacts.practice.get.entries.insights and artifacts.practice.get.entries.insights|length > 0 %}
 The following insights were previously generated:
-{% for insight in entries.insights %}
+{% for insight in artifacts.practice.get.entries.insights %}
 - {{ insight.content }}
 {% endfor %}
 {% else %}
@@ -29,76 +29,76 @@ No previous insights have been generated yet.
 
 ## Domain Data
 
-{% if entries.draft_training is defined and entries.draft_training %}
+{% if artifacts.practice.get.entries.draft_training is defined and artifacts.practice.get.entries.draft_training %}
 ### Current Training State
-{{ entries.draft_training | tojson }}
+{{ artifacts.practice.get.entries.draft_training | tojson }}
 {% endif %}
 
-{% if entries.runs is defined and entries.runs %}
+{% if artifacts.practice.get.entries.runs is defined and artifacts.practice.get.entries.runs %}
 ### Runs
-{{ entries.runs | tojson }}
+{{ artifacts.practice.get.entries.runs | tojson }}
 {% endif %}
 
 ## Available Resources
 
-{% if resources.scenarios is defined and resources.scenarios %}
+{% if artifacts.practice.get.resources.scenarios is defined and artifacts.practice.get.resources.scenarios %}
 ### Scenarios
-{{ resources.scenarios | tojson }}
+{{ artifacts.practice.get.resources.scenarios | tojson }}
 {% endif %}
 
-{% if resources.personas is defined and resources.personas %}
+{% if artifacts.practice.get.resources.personas is defined and artifacts.practice.get.resources.personas %}
 ### Personas
-{{ resources.personas | tojson }}
+{{ artifacts.practice.get.resources.personas | tojson }}
 {% endif %}
 
-{% if resources.departments is defined and resources.departments %}
+{% if artifacts.practice.get.resources.departments is defined and artifacts.practice.get.resources.departments %}
 ### Departments
-{{ resources.departments | tojson }}
+{{ artifacts.practice.get.resources.departments | tojson }}
 {% endif %}
 
-{% if resources.documents is defined and resources.documents %}
+{% if artifacts.practice.get.resources.documents is defined and artifacts.practice.get.resources.documents %}
 ### Documents
-{{ resources.documents | tojson }}
+{{ artifacts.practice.get.resources.documents | tojson }}
 {% endif %}
 
-{% if resources.parameters is defined and resources.parameters %}
+{% if artifacts.practice.get.resources.parameters is defined and artifacts.practice.get.resources.parameters %}
 ### Parameters
-{{ resources.parameters | tojson }}
+{{ artifacts.practice.get.resources.parameters | tojson }}
 {% endif %}
 
-{% if resources.parameter_fields is defined and resources.parameter_fields %}
+{% if artifacts.practice.get.resources.parameter_fields is defined and artifacts.practice.get.resources.parameter_fields %}
 ### Parameter Fields
-{{ resources.parameter_fields | tojson }}
+{{ artifacts.practice.get.resources.parameter_fields | tojson }}
 {% endif %}
 
-{% if resources.questions is defined and resources.questions %}
+{% if artifacts.practice.get.resources.questions is defined and artifacts.practice.get.resources.questions %}
 ### Questions
-{{ resources.questions | tojson }}
+{{ artifacts.practice.get.resources.questions | tojson }}
 {% endif %}
 
-{% if resources.options is defined and resources.options %}
+{% if artifacts.practice.get.resources.options is defined and artifacts.practice.get.resources.options %}
 ### Options
-{{ resources.options | tojson }}
+{{ artifacts.practice.get.resources.options | tojson }}
 {% endif %}
 
-{% if resources.images is defined and resources.images %}
+{% if artifacts.practice.get.resources.images is defined and artifacts.practice.get.resources.images %}
 ### Images
-{{ resources.images | tojson }}
+{{ artifacts.practice.get.resources.images | tojson }}
 {% endif %}
 
-{% if resources.videos is defined and resources.videos %}
+{% if artifacts.practice.get.resources.videos is defined and artifacts.practice.get.resources.videos %}
 ### Videos
-{{ resources.videos | tojson }}
+{{ artifacts.practice.get.resources.videos | tojson }}
 {% endif %}
 
-{% if resources.problem_statements is defined and resources.problem_statements %}
+{% if artifacts.practice.get.resources.problem_statements is defined and artifacts.practice.get.resources.problem_statements %}
 ### Problem Statements
-{{ resources.problem_statements | tojson }}
+{{ artifacts.practice.get.resources.problem_statements | tojson }}
 {% endif %}
 
-{% if resources.objectives is defined and resources.objectives %}
+{% if artifacts.practice.get.resources.objectives is defined and artifacts.practice.get.resources.objectives %}
 ### Objectives
-{{ resources.objectives | tojson }}
+{{ artifacts.practice.get.resources.objectives | tojson }}
 {% endif %}
 
 ## Task

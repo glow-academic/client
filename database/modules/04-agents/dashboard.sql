@@ -19,9 +19,9 @@ INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c82b8-5d9e-7881-8420-7617df0cea24', 'Analytical insights agent for high-level organizational KPIs and trends', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c82b8-5d9e-7511-a124-6b571e673d57', '## Previous Insights
 
-{% if entries.insights is defined and entries.insights and entries.insights|length > 0 %}
+{% if artifacts.dashboard.get.entries.insights is defined and artifacts.dashboard.get.entries.insights and artifacts.dashboard.get.entries.insights|length > 0 %}
 The following insights were previously generated:
-{% for insight in entries.insights %}
+{% for insight in artifacts.dashboard.get.entries.insights %}
 - {{ insight.content }}
 {% endfor %}
 {% else %}
@@ -30,9 +30,9 @@ No previous insights have been generated yet.
 
 ## Domain Data
 
-{% if entries.runs is defined and entries.runs %}
+{% if artifacts.dashboard.get.entries.runs is defined and artifacts.dashboard.get.entries.runs %}
 ### Runs
-{{ entries.runs | tojson }}
+{{ artifacts.dashboard.get.entries.runs | tojson }}
 {% endif %}
 
 ## Task
