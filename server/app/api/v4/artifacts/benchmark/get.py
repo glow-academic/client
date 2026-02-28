@@ -21,7 +21,7 @@ from app.api.v4.artifacts.types import (
     TestHistoryItem,
     TestHistoryResponse,
 )
-from app.api.v4.entries.tests.get import get_test_internal
+from app.api.v4.entries.test.get import get_test_entries_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.evals.get import get_evals_internal
@@ -54,7 +54,7 @@ async def _fetch_test_history_data(
     )
 
     async with pool.acquire() as c:
-        result = await get_test_internal(
+        result = await get_test_entries_internal(
             conn=c,
             eval_ids=eval_uuids,
             department_ids=department_uuids,
@@ -211,7 +211,7 @@ async def get_benchmark(
         # Step 1: Fetch tests from MV + date range + optional history in parallel
         async def fetch_tests():
             async with pool.acquire() as c:
-                return await get_test_internal(
+                return await get_test_entries_internal(
                     conn=c,
                     department_ids=department_uuids,
                     date_from=date_from,

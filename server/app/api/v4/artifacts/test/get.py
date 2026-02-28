@@ -34,7 +34,7 @@ from app.api.v4.artifacts.test.types import (
 from app.api.v4.entries.test_invocation.get import (
     get_test_invocation_internal,
 )
-from app.api.v4.entries.tests.get import get_test_internal
+from app.api.v4.entries.test.get import get_test_entries_internal  # noqa: F811
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.args.get import get_args_internal
 from app.api.v4.resources.args_outputs.get import get_args_outputs_internal

@@ -7,6 +7,27 @@ or ``None`` when the operation is not yet implemented.
 
 from __future__ import annotations
 
+import importlib
+from collections.abc import Callable
+from typing import Any
+
+
+def resolve_callable(
+    name: str,
+    operation: str,
+    ops: dict[tuple[str, str], tuple[str, str] | None],
+) -> Callable[..., Any] | None:
+    """Look up (name, operation) in an OPS dict and return the imported callable.
+
+    Returns ``None`` if the entry is missing or maps to ``None`` (unimplemented).
+    """
+    entry = ops.get((name, operation))
+    if entry is None:
+        return None
+    module_path, func_name = entry
+    mod = importlib.import_module(module_path)
+    return getattr(mod, func_name)  # type: ignore[no-any-return]
+
 # ---------------------------------------------------------------------------
 # Artifact operations: (artifact_name, op) → (module_path, function_name) | None
 #
