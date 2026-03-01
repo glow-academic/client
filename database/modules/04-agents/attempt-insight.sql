@@ -126,16 +126,12 @@ INSERT INTO public.agent_artifact (created_at, updated_at, id, generated, mcp) V
 INSERT INTO public.agent_descriptions_junction (agent_id, description_id, created_at, generated, mcp, active) VALUES ('018f0005-0001-7000-8000-000000000001', '018f0005-0005-7000-8000-000000000001', '2026-02-23T17:47:02.459307+00:00', false, false, true) ON CONFLICT (agent_id, description_id) DO NOTHING;
 -- agent_flags_junction
 INSERT INTO public.agent_flags_junction (agent_id, flag_id, value, created_at, generated, mcp, active) VALUES ('018f0005-0001-7000-8000-000000000001', '019be334-bfc4-76ac-80d3-c8ba7618bc7a', true, '2026-02-23T17:47:02.459307+00:00', false, false, true) ON CONFLICT (agent_id, flag_id) DO NOTHING;
--- agent_instructions_junction
-INSERT INTO public.agent_instructions_junction (agent_id, instruction_id, created_at, generated, mcp, active) VALUES ('018f0005-0001-7000-8000-000000000001', '018f0005-0004-7000-8000-000000000001', '2026-02-23T17:47:02.459307+00:00', false, false, true) ON CONFLICT (agent_id, instruction_id) DO NOTHING;
 -- config_resource (from agent_models_junction)
-INSERT INTO public.config_resource (id, model_id, created_at, generated, mcp, active) VALUES ('aaee8731-1683-5a7a-8cb4-5188f4664ee1', '019bb25e-e5ff-76f6-90d4-830670bb5d82', '2026-02-23T17:47:02.459307+00:00', false, false, true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.config_resource (id, model_id, prompt_id, instruction_ids, created_at, generated, mcp, active) VALUES ('aaee8731-1683-5a7a-8cb4-5188f4664ee1', '019bb25e-e5ff-76f6-90d4-830670bb5d82', '018f0005-0003-7000-8000-000000000001', ARRAY['018f0005-0004-7000-8000-000000000001'::uuid], '2026-02-23T17:47:02.459307+00:00', false, false, true) ON CONFLICT (id) DO NOTHING;
 -- agent_configs_junction
 INSERT INTO public.agent_configs_junction (agent_id, config_id, created_at, generated, mcp, active) VALUES ('018f0005-0001-7000-8000-000000000001', 'aaee8731-1683-5a7a-8cb4-5188f4664ee1', '2026-02-23T17:47:02.459307+00:00', false, false, true) ON CONFLICT (agent_id, config_id) DO NOTHING;
 -- agent_names_junction
 INSERT INTO public.agent_names_junction (agent_id, name_id, created_at, generated, mcp, active) VALUES ('018f0005-0001-7000-8000-000000000001', '018f0005-0002-7000-8000-000000000001', '2026-02-23T17:36:15.969225+00:00', false, false, true) ON CONFLICT (agent_id, name_id) DO NOTHING;
--- agent_prompts_junction
-INSERT INTO public.agent_prompts_junction (active, created_at, agent_id, prompt_id, generated, mcp) VALUES (true, '2026-02-23T17:47:02.459307+00:00', '018f0005-0001-7000-8000-000000000001', '018f0005-0003-7000-8000-000000000001', false, false) ON CONFLICT (agent_id, prompt_id) DO NOTHING;
 -- Tools (args + tools_resource)
 INSERT INTO public.args_resource (created_at, active, generated, mcp, id, name, description, field_type, required, default_value) VALUES ('2026-02-23T17:36:15.969225+00:00', true, false, false, '018f0001-0001-7000-8000-000000000001', 'insight_content', 'The analytical insight text', 'string', true, '') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.args_resource (created_at, active, generated, mcp, id, name, description, field_type, required, default_value) VALUES ('2026-02-23T17:36:15.969225+00:00', true, false, false, '018f0001-0001-7000-8000-000000000002', 'insight_group_id', 'The group ID to attach the insight to', 'string', true, '') ON CONFLICT (id) DO NOTHING;
