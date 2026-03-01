@@ -10,8 +10,8 @@
 -- via test_feedback_mv using grade_id.
 --
 -- Two sources of run IDs:
---   invocation_run_ids: actual execution runs (test_invocation_runs_connection)
---   run_ids: configured template runs (test_invocation_runs_connection on resolved entry)
+--   invocation_run_ids: actual execution runs (test_invocation_runs_entry + runs_runs_connection)
+--   run_ids: configured template runs (test_invocation_runs_entry + runs_runs_connection on resolved entry)
 --
 -- Dependencies: Only uses _entry and _connection tables
 -- ============================================================================
@@ -44,14 +44,54 @@ DROP MATERIALIZED VIEW IF EXISTS test_invocation_mv CASCADE;
 
 CREATE MATERIALIZED VIEW test_invocation_mv AS
 WITH
--- Actual execution runs (from invocation-level connection)
-invocation_run_links AS (
+-- Runs sub-entry: run_ids from test_invocation_runs_entry → runs_runs_connection
+runs_entry_links AS (
     SELECT
-        c.test_invocation_id,
-        ARRAY_AGG(c.runs_id ORDER BY c.created_at) FILTER (WHERE c.runs_id IS NOT NULL) AS invocation_run_ids
-    FROM test_invocation_runs_connection c
-    WHERE c.active = true
-    GROUP BY c.test_invocation_id
+        re.test_invocation_id,
+        ARRAY_AGG(DISTINCT rrc.runs_id ORDER BY rrc.runs_id) FILTER (WHERE rrc.runs_id IS NOT NULL) AS run_ids
+    FROM test_invocation_runs_entry re
+    JOIN test_invocation_runs_runs_connection rrc ON rrc.test_invocation_runs_id = re.id AND rrc.active = true
+    WHERE re.active = true
+    GROUP BY re.test_invocation_id
+),
+-- Groups sub-entry: group_ids from test_invocation_groups_entry → groups_groups_connection
+groups_entry_links AS (
+    SELECT
+        ge.test_invocation_id,
+        ARRAY_AGG(DISTINCT ggc.groups_id ORDER BY ggc.groups_id) FILTER (WHERE ggc.groups_id IS NOT NULL) AS group_ids
+    FROM test_invocation_groups_entry ge
+    JOIN test_invocation_groups_groups_connection ggc ON ggc.test_invocation_groups_id = ge.id AND ggc.active = true
+    WHERE ge.active = true
+    GROUP BY ge.test_invocation_id
+),
+-- Runs config: config_ids from test_invocation_runs_entry → runs_configs_connection
+runs_config_links AS (
+    SELECT
+        re.test_invocation_id,
+        ARRAY_AGG(DISTINCT rcc.configs_id ORDER BY rcc.configs_id) FILTER (WHERE rcc.configs_id IS NOT NULL) AS run_config_ids
+    FROM test_invocation_runs_entry re
+    JOIN test_invocation_runs_configs_connection rcc ON rcc.test_invocation_runs_id = re.id AND rcc.active = true
+    WHERE re.active = true
+    GROUP BY re.test_invocation_id
+),
+-- Groups config: config_ids from test_invocation_groups_entry → groups_configs_connection
+groups_config_links AS (
+    SELECT
+        ge.test_invocation_id,
+        ARRAY_AGG(DISTINCT gcc.configs_id ORDER BY gcc.configs_id) FILTER (WHERE gcc.configs_id IS NOT NULL) AS group_config_ids
+    FROM test_invocation_groups_entry ge
+    JOIN test_invocation_groups_configs_connection gcc ON gcc.test_invocation_groups_id = ge.id AND gcc.active = true
+    WHERE ge.active = true
+    GROUP BY ge.test_invocation_id
+),
+-- Department links (from connection table, was direct FK)
+department_links AS (
+    SELECT
+        dc.test_invocation_id,
+        ARRAY_AGG(DISTINCT dc.departments_id) FILTER (WHERE dc.departments_id IS NOT NULL) AS department_ids
+    FROM test_invocation_departments_connection dc
+    WHERE dc.active = true
+    GROUP BY dc.test_invocation_id
 ),
 -- Grade data (latest grade per invocation)
 latest_grade AS (
@@ -68,37 +108,25 @@ latest_grade AS (
 -- ============================================================================
 -- Bundle snapshot: configured resource IDs from test_invocation_*
 -- Analogous to subbundle_snapshot in attempt_chat_mv
+-- Now only: models, voices, temperature_levels, reasoning_levels, keys
+-- (prompts, instructions, tools moved to config_resource)
 -- ============================================================================
 bundle_snapshot AS (
     SELECT
         ir.id AS test_invocation_id,
-        -- Configured runs (template runs from bundle) — array, multiple per resolved entry
-        COALESCE(ARRAY_AGG(DISTINCT irr.runs_id ORDER BY irr.runs_id) FILTER (WHERE irr.runs_id IS NOT NULL), ARRAY[]::uuid[]) AS run_ids,
-        -- Configured groups — array, multiple per resolved entry
-        COALESCE(ARRAY_AGG(DISTINCT irg.groups_id ORDER BY irg.groups_id) FILTER (WHERE irg.groups_id IS NOT NULL), ARRAY[]::uuid[]) AS group_ids,
         -- Agent sub-resources — singular (one per resolved entry)
         (ARRAY_AGG(irm.models_id) FILTER (WHERE irm.models_id IS NOT NULL))[1] AS model_id,
-        (ARRAY_AGG(irp.prompts_id) FILTER (WHERE irp.prompts_id IS NOT NULL))[1] AS prompt_id,
-        -- Instructions — array, multiple per resolved entry
-        COALESCE(ARRAY_AGG(DISTINCT iri.instructions_id ORDER BY iri.instructions_id) FILTER (WHERE iri.instructions_id IS NOT NULL), ARRAY[]::uuid[]) AS instruction_ids,
         -- Singular sub-resources (one per resolved entry)
         (ARRAY_AGG(irv.voices_id) FILTER (WHERE irv.voices_id IS NOT NULL))[1] AS voice_id,
         (ARRAY_AGG(irt.temperature_levels_id) FILTER (WHERE irt.temperature_levels_id IS NOT NULL))[1] AS temperature_level_id,
         (ARRAY_AGG(irrl.reasoning_levels_id) FILTER (WHERE irrl.reasoning_levels_id IS NOT NULL))[1] AS reasoning_level_id,
-        -- Tools — array, multiple per resolved entry
-        COALESCE(ARRAY_AGG(DISTINCT irtl.tools_id ORDER BY irtl.tools_id) FILTER (WHERE irtl.tools_id IS NOT NULL), ARRAY[]::uuid[]) AS tool_ids,
         -- Key — singular (one per resolved entry)
         (ARRAY_AGG(irk.keys_id) FILTER (WHERE irk.keys_id IS NOT NULL))[1] AS key_id
     FROM test_invocation_entry ir
-    LEFT JOIN test_invocation_runs_connection irr ON irr.test_invocation_id = ir.id AND irr.active = true
-    LEFT JOIN test_invocation_groups_connection irg ON irg.test_invocation_id = ir.id AND irg.active = true
     LEFT JOIN test_invocation_models_connection irm ON irm.test_invocation_id = ir.id AND irm.active = true
-    LEFT JOIN test_invocation_prompts_connection irp ON irp.test_invocation_id = ir.id AND irp.active = true
-    LEFT JOIN test_invocation_instructions_connection iri ON iri.test_invocation_id = ir.id AND iri.active = true
     LEFT JOIN test_invocation_voices_connection irv ON irv.test_invocation_id = ir.id AND irv.active = true
     LEFT JOIN test_invocation_temperature_levels_connection irt ON irt.test_invocation_id = ir.id AND irt.active = true
     LEFT JOIN test_invocation_reasoning_levels_connection irrl ON irrl.test_invocation_id = ir.id AND irrl.active = true
-    LEFT JOIN test_invocation_tools_connection irtl ON irtl.test_invocation_id = ir.id AND irtl.active = true
     LEFT JOIN test_invocation_keys_connection irk ON irk.test_invocation_id = ir.id AND irk.active = true
     WHERE ir.active = true
     GROUP BY ir.id
@@ -126,6 +154,8 @@ SELECT
     -- Invocation data
     i.created_at AS invocation_created_at,
     i.title AS invocation_title,
+    i.use_custom,
+    i.position,
 
     -- Grade data
     (lg.invocation_id IS NOT NULL) AS invocation_completed,
@@ -135,18 +165,20 @@ SELECT
     lg.grade_time_taken,
     NULL::uuid AS rubric_id,
 
-    -- Actual execution runs (from invocation-level connection)
-    COALESCE(irl.invocation_run_ids, ARRAY[]::uuid[]) AS invocation_run_ids,
+    -- Department IDs (from connection table)
+    COALESCE(dl.department_ids, ARRAY[]::uuid[]) AS department_ids,
 
-    -- Configured resource IDs (from bundle resolved snapshot)
-    -- Arrays (multiple per resolved entry)
-    COALESCE(bs.run_ids, ARRAY[]::uuid[]) AS run_ids,
-    COALESCE(bs.group_ids, ARRAY[]::uuid[]) AS group_ids,
-    COALESCE(bs.instruction_ids, ARRAY[]::uuid[]) AS instruction_ids,
-    COALESCE(bs.tool_ids, ARRAY[]::uuid[]) AS tool_ids,
-    -- Singular (one per resolved entry)
+    -- Configured resource IDs (from sub-entry tables)
+    -- Run IDs (from runs sub-entries)
+    COALESCE(rel.run_ids, ARRAY[]::uuid[]) AS run_ids,
+    -- Group IDs (from groups sub-entries)
+    COALESCE(gel.group_ids, ARRAY[]::uuid[]) AS group_ids,
+    -- Config IDs (from sub-entry config connections)
+    COALESCE(rcl.run_config_ids, ARRAY[]::uuid[]) AS run_config_ids,
+    COALESCE(gcl.group_config_ids, ARRAY[]::uuid[]) AS group_config_ids,
+
+    -- Singular resource IDs (from bundle snapshot, remaining connections)
     bs.model_id,
-    bs.prompt_id,
     bs.voice_id,
     bs.temperature_level_id,
     bs.reasoning_level_id,
@@ -156,7 +188,11 @@ SELECT
     COALESCE(hr.historical_run_ids, ARRAY[]::uuid[]) AS historical_run_ids
 
 FROM test_invocation_entry i
-LEFT JOIN invocation_run_links irl ON irl.test_invocation_id = i.id
+LEFT JOIN runs_entry_links rel ON rel.test_invocation_id = i.id
+LEFT JOIN groups_entry_links gel ON gel.test_invocation_id = i.id
+LEFT JOIN runs_config_links rcl ON rcl.test_invocation_id = i.id
+LEFT JOIN groups_config_links gcl ON gcl.test_invocation_id = i.id
+LEFT JOIN department_links dl ON dl.test_invocation_id = i.id
 LEFT JOIN latest_grade lg ON lg.invocation_id = i.id
 LEFT JOIN bundle_snapshot bs ON bs.test_invocation_id = i.id
 LEFT JOIN historical_runs hr ON hr.invocation_id = i.id
@@ -190,10 +226,6 @@ CREATE INDEX test_invocation_mv_created_at_idx
 CREATE INDEX test_invocation_mv_group_id_idx
     ON test_invocation_mv (group_id)
     WHERE group_id IS NOT NULL;
-
--- Invocation run IDs for filtering by execution run
-CREATE INDEX test_invocation_mv_invocation_run_ids_gin
-    ON test_invocation_mv USING GIN (invocation_run_ids);
 
 -- Configured run IDs for filtering by template run
 CREATE INDEX test_invocation_mv_run_ids_gin

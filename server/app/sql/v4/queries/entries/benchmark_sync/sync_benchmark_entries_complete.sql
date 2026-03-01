@@ -45,7 +45,9 @@ CREATE TYPE types.i_sync_invocation_v4 AS (
     model_index integer,
     model_flag_ids uuid[],
     model_rubric_ids uuid[],
-    model_position_ids uuid[]
+    model_position_ids uuid[],
+    use_custom boolean,
+    "position" integer
 );
 
 CREATE OR REPLACE FUNCTION api_sync_benchmark_entries_v4(
@@ -85,8 +87,8 @@ BEGIN
     -- Create invocation_entry per invocation slot
     FOREACH v_invocation IN ARRAY COALESCE(invocations, ARRAY[]::types.i_sync_invocation_v4[])
     LOOP
-        INSERT INTO invocation_entry (benchmark_id, created_at, updated_at, active)
-        VALUES (v_benchmark_id, NOW(), NOW(), TRUE)
+        INSERT INTO invocation_entry (benchmark_id, created_at, updated_at, active, use_custom, "position")
+        VALUES (v_benchmark_id, NOW(), NOW(), TRUE, COALESCE(v_invocation.use_custom, false), COALESCE(v_invocation."position", 0))
         RETURNING id INTO v_invocation_id;
 
         -- Resolve model from index

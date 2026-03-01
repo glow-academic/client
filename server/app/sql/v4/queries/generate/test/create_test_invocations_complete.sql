@@ -1,6 +1,9 @@
 -- Create test invocations for a benchmark test.
 -- Extracted from start_benchmark_attempt to allow separate invocation creation.
 -- Returns use_groups flag and invocation list (as chats jsonb).
+--
+-- Uses sub-entry pattern: each run/group gets its own entry row
+-- (test_invocation_runs_entry / test_invocation_groups_entry) with attached config.
 
 -- 1) Drop function first
 DO $$
@@ -35,6 +38,7 @@ DECLARE
     v_run RECORD;
     v_group RECORD;
     v_chat_id uuid;
+    v_sub_entry_id uuid;
     v_first_group_id uuid;
     v_run_resource_id uuid;
     v_total_runs integer;
@@ -66,19 +70,30 @@ BEGIN
 
             UPDATE test_invocation_entry SET group_id = v_first_group_id WHERE id = v_chat_id;
 
-            -- Link invocation to source groups_resource
-            INSERT INTO test_invocation_groups_connection (test_invocation_id, groups_id, active)
-            VALUES (v_chat_id, v_group.groups_resource_id, true)
-            ON CONFLICT (test_invocation_id, groups_id) DO NOTHING;
+            -- Create groups sub-entry and link to groups_resource
+            INSERT INTO test_invocation_groups_entry (test_invocation_id, active, created_at, updated_at)
+            VALUES (v_chat_id, true, NOW(), NOW())
+            RETURNING id INTO v_sub_entry_id;
+
+            INSERT INTO test_invocation_groups_groups_connection (test_invocation_groups_id, groups_id, active)
+            VALUES (v_sub_entry_id, v_group.groups_resource_id, true);
 
             IF v_first_group_id IS NOT NULL THEN
-                -- Link all runs_resource from runs_entry belonging to this group
-                INSERT INTO test_invocation_runs_connection (test_invocation_id, runs_id, active)
-                SELECT DISTINCT v_chat_id, rrc.runs_id, true
-                FROM runs_entry re
-                JOIN runs_runs_connection rrc ON rrc.run_id = re.id AND rrc.active = true
-                WHERE re.group_id = v_first_group_id
-                ORDER BY rrc.runs_id;
+                -- Create runs sub-entries for each run in this group
+                FOR v_run IN
+                    SELECT DISTINCT rrc.runs_id
+                    FROM runs_entry re
+                    JOIN runs_runs_connection rrc ON rrc.run_id = re.id AND rrc.active = true
+                    WHERE re.group_id = v_first_group_id
+                    ORDER BY rrc.runs_id
+                LOOP
+                    INSERT INTO test_invocation_runs_entry (test_invocation_id, active, created_at, updated_at)
+                    VALUES (v_chat_id, true, NOW(), NOW())
+                    RETURNING id INTO v_sub_entry_id;
+
+                    INSERT INTO test_invocation_runs_runs_connection (test_invocation_runs_id, runs_id, active)
+                    VALUES (v_sub_entry_id, v_run.runs_id, true);
+                END LOOP;
 
                 -- Count total runs
                 SELECT COUNT(DISTINCT rrc.runs_id) INTO v_total_runs
@@ -111,9 +126,13 @@ BEGIN
             VALUES (p_test_id, '', false, false, NOW(), NOW())
             RETURNING id INTO v_chat_id;
 
-            -- Link invocation to runs_resource
-            INSERT INTO test_invocation_runs_connection (test_invocation_id, runs_id, active)
-            VALUES (v_chat_id, v_run.runs_resource_id, true);
+            -- Create runs sub-entry and link to runs_resource
+            INSERT INTO test_invocation_runs_entry (test_invocation_id, active, created_at, updated_at)
+            VALUES (v_chat_id, true, NOW(), NOW())
+            RETURNING id INTO v_sub_entry_id;
+
+            INSERT INTO test_invocation_runs_runs_connection (test_invocation_runs_id, runs_id, active)
+            VALUES (v_sub_entry_id, v_run.runs_resource_id, true);
 
             -- Set group_id on chat from runs_resource's linked runs_entry
             SELECT re.group_id INTO v_first_group_id
@@ -125,13 +144,16 @@ BEGIN
             IF v_first_group_id IS NOT NULL THEN
                 UPDATE test_invocation_entry SET group_id = v_first_group_id WHERE id = v_chat_id;
 
-                -- Link invocation to source groups_resource if resolvable
-                INSERT INTO test_invocation_groups_connection (test_invocation_id, groups_id, active)
-                SELECT v_chat_id, ggc.groups_id, true
+                -- Create groups sub-entry if resolvable
+                INSERT INTO test_invocation_groups_entry (test_invocation_id, active, created_at, updated_at)
+                VALUES (v_chat_id, true, NOW(), NOW())
+                RETURNING id INTO v_sub_entry_id;
+
+                INSERT INTO test_invocation_groups_groups_connection (test_invocation_groups_id, groups_id, active)
+                SELECT v_sub_entry_id, ggc.groups_id, true
                 FROM groups_groups_connection ggc
                 WHERE ggc.group_id = v_first_group_id
-                  AND ggc.active = true
-                ON CONFLICT (invocation_id, groups_id) DO NOTHING;
+                  AND ggc.active = true;
             END IF;
 
             -- Add to chats array

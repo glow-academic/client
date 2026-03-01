@@ -19,11 +19,12 @@ CREATE OR REPLACE FUNCTION public.api_create_test_invocation_entry_v4(
     title text DEFAULT '',
     group_id uuid DEFAULT NULL,
     invocation_id uuid DEFAULT NULL,
-    departments_id uuid DEFAULT NULL,
     config_signature text DEFAULT NULL,
     test_id uuid DEFAULT NULL,
     tool_id uuid DEFAULT NULL,
-    mcp boolean DEFAULT false
+    mcp boolean DEFAULT false,
+    use_custom boolean DEFAULT false,
+    "position" integer DEFAULT 0
 ) RETURNS TABLE (id uuid, call_id uuid, message_id uuid)
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -50,8 +51,8 @@ BEGIN
     END IF;
 
     -- 4. Create entry
-    INSERT INTO test_invocation_entry (call_id, title, group_id, invocation_id, departments_id, config_signature, test_id, mcp)
-    VALUES (v_call_id, api_create_test_invocation_entry_v4.title, api_create_test_invocation_entry_v4.group_id, api_create_test_invocation_entry_v4.invocation_id, api_create_test_invocation_entry_v4.departments_id, api_create_test_invocation_entry_v4.config_signature, api_create_test_invocation_entry_v4.test_id, api_create_test_invocation_entry_v4.mcp)
+    INSERT INTO test_invocation_entry (call_id, title, group_id, invocation_id, config_signature, test_id, mcp, use_custom, "position")
+    VALUES (v_call_id, api_create_test_invocation_entry_v4.title, api_create_test_invocation_entry_v4.group_id, api_create_test_invocation_entry_v4.invocation_id, api_create_test_invocation_entry_v4.config_signature, api_create_test_invocation_entry_v4.test_id, api_create_test_invocation_entry_v4.mcp, api_create_test_invocation_entry_v4.use_custom, api_create_test_invocation_entry_v4."position")
     RETURNING test_invocation_entry.id INTO v_entry_id;
 
     -- 5. Create message

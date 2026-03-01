@@ -83,6 +83,11 @@ SELECT
     -- Benchmark link (from bridge table)
     bl.benchmark_id,
 
+    -- Test metadata
+    t.name AS test_name,
+    t.description AS test_description,
+    t.num_invocations,
+
     -- Flags
     t.infinite_mode,
     COALESCE(ba_archive.archived, false) AS archived,

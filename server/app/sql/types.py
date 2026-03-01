@@ -6489,6 +6489,8 @@ class ISyncInvocationV4(BaseModel):
     model_flag_ids: list[UUID] | None
     model_rubric_ids: list[UUID] | None
     model_position_ids: list[UUID] | None
+    use_custom: bool | None
+    position: int | None
 
 
 
@@ -6516,7 +6518,7 @@ class SyncBenchmarkEntriesSqlParams(BaseModel):
         ]
         # Convert invocations composite array to tuples for asyncpg
         invocations_tuples = [
-            (conn.model_index, conn.model_flag_ids, conn.model_rubric_ids, conn.model_position_ids)
+            (conn.model_index, conn.model_flag_ids, conn.model_rubric_ids, conn.model_position_ids, conn.use_custom, conn.position)
             for conn in (self.invocations or [])
         ]
         return (
@@ -11883,11 +11885,12 @@ class CreateTestInvocationEntriesSqlParams(BaseModel):
     title: str | None = None
     group_id: UUID | None = None
     invocation_id: UUID | None = None
-    departments_id: UUID | None = None
     config_signature: str | None = None
     test_id: UUID | None = None
     tool_id: UUID | None = None
     mcp: bool | None = False
+    use_custom: bool | None = False
+    position: int
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -11895,11 +11898,12 @@ class CreateTestInvocationEntriesSqlParams(BaseModel):
             self.title,
             self.group_id,
             self.invocation_id,
-            self.departments_id,
             self.config_signature,
             self.test_id,
             self.tool_id,
             self.mcp,
+            self.use_custom,
+            self.position,
         )
 
 class CreateTestInvocationEntriesSqlRow(BaseModel):
@@ -11914,11 +11918,12 @@ class CreateTestInvocationEntriesApiRequest(BaseModel):
     title: str | None = None
     group_id: UUID | None = None
     invocation_id: UUID | None = None
-    departments_id: UUID | None = None
     config_signature: str | None = None
     test_id: UUID | None = None
     tool_id: UUID | None = None
     mcp: bool | None = False
+    use_custom: bool | None = False
+    position: int
 
 class CreateTestInvocationEntriesApiResponse(BaseModel):
 
