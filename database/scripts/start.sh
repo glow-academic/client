@@ -300,7 +300,10 @@ setup_database() {
   
   if ! role_exists; then
     echo "👤 Creating user '$DB_USER'..."
-    as_admin -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';"
+    as_admin -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD' SUPERUSER;"
+  else
+    # Ensure superuser for session_replication_role (needed to bypass FK checks during seeding)
+    as_admin -c "ALTER USER $DB_USER WITH SUPERUSER;" > /dev/null 2>&1 || true
   fi
   
   if db_exists; then
