@@ -80,13 +80,13 @@ WITH params AS (
 existing_run AS (
     SELECT
         r.id as run_id,
-        cac.agents_id as agent_id,
+        cr.id as config_id,
         gd.group_id,
         gd.trace_id
     FROM runs_entry r
     CROSS JOIN params p
-    LEFT JOIN config_entry ce ON ce.run_id = r.id
-    LEFT JOIN config_agents_connection cac ON cac.config_id = ce.id AND cac.active = TRUE
+    LEFT JOIN runs_configs_connection rcc ON rcc.run_id = r.id AND rcc.active = TRUE
+    LEFT JOIN config_resource cr ON cr.id = rcc.config_id AND cr.active = TRUE
     LEFT JOIN groups_entry g ON g.id = r.group_id
     LEFT JOIN LATERAL (
         SELECT
@@ -256,8 +256,10 @@ developer_instruction_data AS (
         ) as developer_instruction_templates
     FROM selected_agent sa
     INNER JOIN agents_resource a ON a.id = sa.agent_id
-    LEFT JOIN agent_instructions_junction ai ON ai.agent_id = a.id
-    LEFT JOIN instructions_resource i ON i.id = ai.instruction_id AND i.active = true
+    LEFT JOIN agent_configs_junction acj ON acj.agent_id = a.id AND acj.active = true
+    LEFT JOIN config_resource cr ON cr.id = acj.config_id AND cr.active = true
+    LEFT JOIN LATERAL UNNEST(cr.instruction_ids) AS iid ON true
+    LEFT JOIN instructions_resource i ON i.id = iid AND i.active = true
     GROUP BY sa.agent_id
 ),
 -- Fetch whitelisted resources based on resource_ids (if provided)
@@ -510,8 +512,9 @@ context_data AS (
     CROSS JOIN run_profile rp
     -- Try department-specific prompt first, fall back to default prompt
     LEFT JOIN agent_departments_junction ad ON ad.agent_id = a.id AND ad.active = true
-    LEFT JOIN agent_prompts_junction ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
-    LEFT JOIN prompts_resource pr_prompt ON pr_prompt.id = ap_default.prompt_id
+    LEFT JOIN agent_configs_junction acj_prompt ON acj_prompt.agent_id = a.id AND acj_prompt.active = true
+    LEFT JOIN config_resource cr_prompt ON cr_prompt.id = acj_prompt.config_id AND cr_prompt.active = true
+    LEFT JOIN prompts_resource pr_prompt ON pr_prompt.id = cr_prompt.prompt_id
     INNER JOIN models_resource m ON m.id = a.model_id
     -- Get provider via models_resource.provider_id
     LEFT JOIN providers_resource pr_prov_res ON pr_prov_res.id = m.provider_id

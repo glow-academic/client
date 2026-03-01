@@ -212,8 +212,6 @@ class GetAgentIdsSqlRow(BaseModel):
     name_id: UUID | None = None
     description_id: UUID | None = None
     model_id: UUID | None = None
-    prompt_id: UUID | None = None
-    instructions_id: UUID | None = None
     active_flag_id: UUID | None = None
     temperature_level_id: UUID | None = None
     reasoning_level_id: UUID | None = None
@@ -233,8 +231,6 @@ class GetAgentIdsApiResponse(BaseModel):
     name_id: UUID | None = None
     description_id: UUID | None = None
     model_id: UUID | None = None
-    prompt_id: UUID | None = None
-    instructions_id: UUID | None = None
     active_flag_id: UUID | None = None
     temperature_level_id: UUID | None = None
     reasoning_level_id: UUID | None = None
@@ -4388,15 +4384,10 @@ class QGetAgentDraftsEntriesV4Item(BaseModel):
     group_id: UUID | None
     name_ids: list[UUID] | None
     description_ids: list[UUID] | None
-    model_ids: list[UUID] | None
-    prompt_ids: list[UUID] | None
-    instruction_ids: list[UUID] | None
+    config_ids: list[UUID] | None
     flag_ids: list[UUID] | None
     department_ids: list[UUID] | None
     tool_ids: list[UUID] | None
-    temperature_level_ids: list[UUID] | None
-    reasoning_level_ids: list[UUID] | None
-    voice_ids: list[UUID] | None
 
 class GetAgentDraftsEntriesSqlRow(BaseModel):
 
@@ -6490,6 +6481,68 @@ class SearchBenchmarkEntriesApiResponse(BaseModel):
 
 
 
+# Generated from: sync_benchmark_entries
+
+class ISyncInvocationV4(BaseModel):
+
+    model_index: int | None
+    model_flag_ids: list[UUID] | None
+    model_rubric_ids: list[UUID] | None
+    model_position_ids: list[UUID] | None
+
+
+
+
+class ISyncModelV4(BaseModel):
+
+    resource_id: UUID | None
+    position: int | None
+    position_resource_ids: list[UUID] | None
+    rubric_resource_ids: list[UUID] | None
+    flag_resource_ids: list[UUID] | None
+
+class SyncBenchmarkEntriesSqlParams(BaseModel):
+
+    evals_resource_id: UUID
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    models: list[ISyncModelV4] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    invocations: list[ISyncInvocationV4] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert models composite array to tuples for asyncpg
+        models_tuples = [
+            (conn.resource_id, conn.position, conn.position_resource_ids, conn.rubric_resource_ids, conn.flag_resource_ids)
+            for conn in (self.models or [])
+        ]
+        # Convert invocations composite array to tuples for asyncpg
+        invocations_tuples = [
+            (conn.model_index, conn.model_flag_ids, conn.model_rubric_ids, conn.model_position_ids)
+            for conn in (self.invocations or [])
+        ]
+        return (
+            self.evals_resource_id,
+            self.department_ids,
+            models_tuples,
+            invocations_tuples,
+        )
+
+class SyncBenchmarkEntriesSqlRow(BaseModel):
+
+    entry_count: int | None = None
+
+class SyncBenchmarkEntriesApiRequest(BaseModel):
+
+    evals_resource_id: UUID
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    models: list[ISyncModelV4] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    invocations: list[ISyncInvocationV4] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class SyncBenchmarkEntriesApiResponse(BaseModel):
+
+    entry_count: int | None = None
+
+
+
 # Generated from: create_calls_entries
 
 class CreateCallsEntriesSqlParams(BaseModel):
@@ -7169,10 +7222,17 @@ class GetConfigEntriesSqlParams(BaseModel):
 class QGetConfigEntriesV4Item(BaseModel):
 
     config_id: UUID | None
-    agents_id: UUID | None
-    models_id: UUID | None
-    providers_id: UUID | None
+    prompt_id: UUID | None
+    instruction_ids: list[UUID] | None
     tool_ids: list[UUID] | None
+    modality_ids: list[UUID] | None
+    rubric_id: UUID | None
+    model_id: UUID | None
+    temperature_level_id: UUID | None
+    reasoning_level_id: UUID | None
+    voice_id: UUID | None
+    quality_id: UUID | None
+    key_id: UUID | None
     created_at: datetime | None
 
 class GetConfigEntriesSqlRow(BaseModel):
@@ -8802,15 +8862,13 @@ class QGetInvocationDraftsEntriesV4Item(BaseModel):
     department_ids: list[UUID] | None
     description_ids: list[UUID] | None
     flag_ids: list[UUID] | None
-    group_ids: list[UUID] | None
-    instruction_ids: list[UUID] | None
     key_ids: list[UUID] | None
+    model_flag_ids: list[UUID] | None
+    model_rubric_ids: list[UUID] | None
+    model_position_ids: list[UUID] | None
     name_ids: list[UUID] | None
-    prompt_ids: list[UUID] | None
     reasoning_level_ids: list[UUID] | None
-    run_ids: list[UUID] | None
     temperature_level_ids: list[UUID] | None
-    tool_ids: list[UUID] | None
     voice_ids: list[UUID] | None
 
 class GetInvocationDraftsEntriesSqlRow(BaseModel):
@@ -12956,7 +13014,6 @@ class GetEvalIdsSqlParams(BaseModel):
     profile_id: UUID
     eval_id: UUID | None = None
     draft_id: UUID | None = None
-    group_id: UUID | None = None
     user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -12964,7 +13021,6 @@ class GetEvalIdsSqlParams(BaseModel):
             self.profile_id,
             self.eval_id,
             self.draft_id,
-            self.group_id,
             self.user_department_ids,
         )
 
@@ -12977,20 +13033,19 @@ class GetEvalIdsSqlRow(BaseModel):
     groups_flag_id: UUID | None = None
     department_ids: list[UUID] | None = None
     rubric_ids: list[UUID] | None = None
-    model_run_ids: list[UUID] | None = None
-    group_ids: list[UUID] | None = None
+    model_ids: list[UUID] | None = None
+    model_flag_ids: list[UUID] | None = None
+    model_rubric_ids: list[UUID] | None = None
+    model_position_ids: list[UUID] | None = None
     name_suggestions: list[UUID] | None = None
     description_suggestions: list[UUID] | None = None
     department_suggestions: list[UUID] | None = None
     rubric_suggestions: list[UUID] | None = None
-    run_rubrics: Any | None = None
-    group_rubrics: Any | None = None
 
 class GetEvalIdsApiRequest(BaseModel):
 
     eval_id: UUID | None = None
     draft_id: UUID | None = None
-    group_id: UUID | None = None
     user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetEvalIdsApiResponse(BaseModel):
@@ -13002,14 +13057,14 @@ class GetEvalIdsApiResponse(BaseModel):
     groups_flag_id: UUID | None = None
     department_ids: list[UUID] | None = None
     rubric_ids: list[UUID] | None = None
-    model_run_ids: list[UUID] | None = None
-    group_ids: list[UUID] | None = None
+    model_ids: list[UUID] | None = None
+    model_flag_ids: list[UUID] | None = None
+    model_rubric_ids: list[UUID] | None = None
+    model_position_ids: list[UUID] | None = None
     name_suggestions: list[UUID] | None = None
     description_suggestions: list[UUID] | None = None
     department_suggestions: list[UUID] | None = None
     rubric_suggestions: list[UUID] | None = None
-    run_rubrics: Any | None = None
-    group_rubrics: Any | None = None
 
 
 
@@ -13144,19 +13199,6 @@ class PatchEvalDraftApiResponse(BaseModel):
 
 # Generated from: save_eval
 
-class QSaveEvalV4GroupRubricLink(BaseModel):
-
-    group_id: UUID | None
-    rubric_ids: list[UUID] | None
-
-
-
-
-class QSaveEvalV4RunRubricLink(BaseModel):
-
-    run_id: UUID | None
-    rubric_ids: list[UUID] | None
-
 class SaveEvalSqlParams(BaseModel):
 
     profile_id: UUID
@@ -13166,25 +13208,13 @@ class SaveEvalSqlParams(BaseModel):
     description_id: UUID | None = None
     flag_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    agent_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    model_run_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    group_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    run_position_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    group_position_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    run_rubric_links: list[QSaveEvalV4RunRubricLink] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    group_rubric_links: list[QSaveEvalV4GroupRubricLink] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    rubric_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    model_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    model_flag_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    model_rubric_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    model_position_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
-        # Convert run_rubric_links composite array to tuples for asyncpg
-        run_rubric_links_tuples = [
-            (conn.run_id, conn.rubric_ids)
-            for conn in (self.run_rubric_links or [])
-        ]
-        # Convert group_rubric_links composite array to tuples for asyncpg
-        group_rubric_links_tuples = [
-            (conn.group_id, conn.rubric_ids)
-            for conn in (self.group_rubric_links or [])
-        ]
         return (
             self.profile_id,
             self.group_id,
@@ -13193,13 +13223,11 @@ class SaveEvalSqlParams(BaseModel):
             self.description_id,
             self.flag_ids,
             self.department_ids,
-            self.agent_ids,
-            self.model_run_ids,
-            self.group_ids,
-            self.run_position_ids,
-            self.group_position_ids,
-            run_rubric_links_tuples,
-            group_rubric_links_tuples,
+            self.rubric_ids,
+            self.model_ids,
+            self.model_flag_ids,
+            self.model_rubric_ids,
+            self.model_position_ids,
         )
 
 class SaveEvalSqlRow(BaseModel):
@@ -13214,13 +13242,11 @@ class SaveEvalApiRequest(BaseModel):
     description_id: UUID | None = None
     flag_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    agent_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    model_run_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    group_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    run_position_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    group_position_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    run_rubric_links: list[QSaveEvalV4RunRubricLink] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    group_rubric_links: list[QSaveEvalV4GroupRubricLink] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    rubric_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    model_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    model_flag_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    model_rubric_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    model_position_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class SaveEvalApiResponse(BaseModel):
 
@@ -15881,6 +15907,38 @@ class CreateTestInvocationsApiResponse(BaseModel):
 
 
 
+# Generated from: get_test_proceed_context
+
+class GetTestProceedContextSqlParams(BaseModel):
+
+    p_test_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_test_id,
+        )
+
+class QGetTestProceedContextV4Result(BaseModel):
+
+    total_invocations: int | None
+    completed_count: int | None
+    invocation_entry_id: UUID | None
+    use_custom: bool | None
+
+class GetTestProceedContextSqlRow(BaseModel):
+
+    items: list[QGetTestProceedContextV4Result] | None = None
+
+class GetTestProceedContextApiRequest(BaseModel):
+
+    p_test_id: UUID
+
+class GetTestProceedContextApiResponse(BaseModel):
+
+    items: list[QGetTestProceedContextV4Result] | None = None
+
+
+
 # Generated from: get_tools_by_resource_ids
 
 class GetToolsByResourceIdsSqlParams(BaseModel):
@@ -15990,6 +16048,73 @@ class PrepareTestRunApiResponse(BaseModel):
 
     run_id: UUID | None = None
     created_at: datetime | None = None
+
+
+
+# Generated from: resolve_test_invocation
+
+class ResolveTestInvocationSqlParams(BaseModel):
+
+    p_test_id: UUID
+    p_invocation_entry_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_test_id,
+            self.p_invocation_entry_id,
+        )
+
+class QResolveTestInvocationV4Result(BaseModel):
+
+    test_invocation_id: UUID | None
+
+class ResolveTestInvocationSqlRow(BaseModel):
+
+    items: list[QResolveTestInvocationV4Result] | None = None
+
+class ResolveTestInvocationApiRequest(BaseModel):
+
+    p_test_id: UUID
+    p_invocation_entry_id: UUID
+
+class ResolveTestInvocationApiResponse(BaseModel):
+
+    items: list[QResolveTestInvocationV4Result] | None = None
+
+
+
+# Generated from: start_test
+
+class StartTestSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_benchmark_id: UUID
+    p_infinite_mode: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_benchmark_id,
+            self.p_infinite_mode,
+        )
+
+class QStartTestV4Result(BaseModel):
+
+    test_id: UUID | None
+
+class StartTestSqlRow(BaseModel):
+
+    items: list[QStartTestV4Result] | None = None
+
+class StartTestApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_benchmark_id: UUID
+    p_infinite_mode: bool | None = False
+
+class StartTestApiResponse(BaseModel):
+
+    items: list[QStartTestV4Result] | None = None
 
 
 
@@ -22477,6 +22602,48 @@ class SearchConditionalParametersApiResponse(BaseModel):
 
 
 
+# Generated from: get_configs
+
+class GetConfigsSqlParams(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.ids,
+        )
+
+class QGetConfigsV4Item(BaseModel):
+
+    id: UUID | None
+    prompt_id: UUID | None
+    instruction_ids: list[UUID] | None
+    tool_ids: list[UUID] | None
+    modality_ids: list[UUID] | None
+    model_id: UUID | None
+    temperature_level_id: UUID | None
+    reasoning_level_id: UUID | None
+    voice_id: UUID | None
+    quality_id: UUID | None
+    key_id: UUID | None
+    rubric_id: UUID | None
+    active: bool | None
+    generated: bool | None
+
+class GetConfigsSqlRow(BaseModel):
+
+    items: list[QGetConfigsV4Item] | None = None
+
+class GetConfigsApiRequest(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetConfigsApiResponse(BaseModel):
+
+    items: list[QGetConfigsV4Item] | None = None
+
+
+
 # Generated from: get_departments
 
 class GetDepartmentsSqlParams(BaseModel):
@@ -23557,82 +23724,6 @@ class SearchFlagsApiResponse(BaseModel):
 
 
 
-# Generated from: get_group_positions
-
-class GetGroupPositionsSqlParams(BaseModel):
-
-    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.ids,
-        )
-
-class QGetGroupPositionsV4Item(BaseModel):
-
-    id: UUID | None
-    groups_id: UUID | None
-    eval_id: UUID | None
-    value: int | None
-    generated: bool | None
-
-class GetGroupPositionsSqlRow(BaseModel):
-
-    items: list[QGetGroupPositionsV4Item] | None = None
-
-class GetGroupPositionsApiRequest(BaseModel):
-
-    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetGroupPositionsApiResponse(BaseModel):
-
-    items: list[QGetGroupPositionsV4Item] | None = None
-
-
-
-# Generated from: search_group_positions
-
-class SearchGroupPositionsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    groups_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    eval_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    eval: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.groups_ids,
-            self.eval_ids,
-            self.eval,
-        )
-
-class SearchGroupPositionsSqlRow(BaseModel):
-
-    items: list[QGetGroupPositionsV4Item] | None = None
-
-class SearchGroupPositionsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    groups_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    eval_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    eval: bool | None = False
-
-class SearchGroupPositionsApiResponse(BaseModel):
-
-    items: list[QGetGroupPositionsV4Item] | None = None
-
-
-
 # Generated from: group_positions
 
 class GroupPositionsSqlParams(BaseModel):
@@ -23675,81 +23766,6 @@ class GroupPositionsApiResponse(BaseModel):
 
 
 
-# Generated from: get_group_rubrics
-
-class GetGroupRubricsSqlParams(BaseModel):
-
-    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.ids,
-        )
-
-class QGetGroupRubricsV4Item(BaseModel):
-
-    id: UUID | None
-    groups_id: UUID | None
-    rubric_id: UUID | None
-    generated: bool | None
-
-class GetGroupRubricsSqlRow(BaseModel):
-
-    items: list[QGetGroupRubricsV4Item] | None = None
-
-class GetGroupRubricsApiRequest(BaseModel):
-
-    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetGroupRubricsApiResponse(BaseModel):
-
-    items: list[QGetGroupRubricsV4Item] | None = None
-
-
-
-# Generated from: search_group_rubrics
-
-class SearchGroupRubricsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    groups_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    rubric_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    eval: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.groups_ids,
-            self.rubric_ids,
-            self.eval,
-        )
-
-class SearchGroupRubricsSqlRow(BaseModel):
-
-    items: list[QGetGroupRubricsV4Item] | None = None
-
-class SearchGroupRubricsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    groups_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    rubric_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    eval: bool | None = False
-
-class SearchGroupRubricsApiResponse(BaseModel):
-
-    items: list[QGetGroupRubricsV4Item] | None = None
-
-
-
 # Generated from: group_rubrics
 
 class GroupRubricsSqlParams(BaseModel):
@@ -23784,73 +23800,6 @@ class GroupRubricsApiRequest(BaseModel):
 class GroupRubricsApiResponse(BaseModel):
 
     id: UUID | None = None
-
-
-
-# Generated from: get_groups
-
-class GetGroupsSqlParams(BaseModel):
-
-    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.ids,
-        )
-
-class QGetGroupsV4Item(BaseModel):
-
-    id: UUID | None
-    generated: bool | None
-
-class GetGroupsSqlRow(BaseModel):
-
-    items: list[QGetGroupsV4Item] | None = None
-
-class GetGroupsApiRequest(BaseModel):
-
-    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetGroupsApiResponse(BaseModel):
-
-    items: list[QGetGroupsV4Item] | None = None
-
-
-
-# Generated from: search_groups
-
-class SearchGroupsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    eval: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.eval,
-        )
-
-class SearchGroupsSqlRow(BaseModel):
-
-    items: list[QGetGroupsV4Item] | None = None
-
-class SearchGroupsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    eval: bool | None = False
-
-class SearchGroupsApiResponse(BaseModel):
-
-    items: list[QGetGroupsV4Item] | None = None
 
 
 
@@ -25370,6 +25319,207 @@ class SearchModalitiesApiRequest(BaseModel):
 class SearchModalitiesApiResponse(BaseModel):
 
     items: list[QGetModalitiesV4Item] | None = None
+
+
+
+# Generated from: get_model_flags
+
+class GetModelFlagsSqlParams(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.ids,
+        )
+
+class QGetModelFlagsV4Item(BaseModel):
+
+    id: UUID | None
+    model_id: UUID | None
+    flag_id: UUID | None
+    name: str | None
+    description: str | None
+    icon: str | None
+    generated: bool | None
+
+class GetModelFlagsSqlRow(BaseModel):
+
+    items: list[QGetModelFlagsV4Item] | None = None
+
+class GetModelFlagsApiRequest(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetModelFlagsApiResponse(BaseModel):
+
+    items: list[QGetModelFlagsV4Item] | None = None
+
+
+
+# Generated from: search_model_flags
+
+class SearchModelFlagsSqlParams(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    model_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    flag_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    eval: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.exclude_ids,
+            self.model_ids,
+            self.flag_ids,
+            self.eval,
+        )
+
+class SearchModelFlagsSqlRow(BaseModel):
+
+    items: list[QGetModelFlagsV4Item] | None = None
+
+class SearchModelFlagsApiRequest(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    model_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    flag_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    eval: bool | None = False
+
+class SearchModelFlagsApiResponse(BaseModel):
+
+    items: list[QGetModelFlagsV4Item] | None = None
+
+
+
+# Generated from: get_model_positions
+
+class GetModelPositionsSqlParams(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.ids,
+        )
+
+class QGetModelPositionsV4Item(BaseModel):
+
+    id: UUID | None
+    model_id: UUID | None
+    value: int | None
+    generated: bool | None
+
+class GetModelPositionsSqlRow(BaseModel):
+
+    items: list[QGetModelPositionsV4Item] | None = None
+
+class GetModelPositionsApiRequest(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetModelPositionsApiResponse(BaseModel):
+
+    items: list[QGetModelPositionsV4Item] | None = None
+
+
+
+# Generated from: search_model_positions
+
+class SearchModelPositionsSqlParams(BaseModel):
+
+    model_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    eval: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.model_ids,
+            self.eval,
+        )
+
+class SearchModelPositionsSqlRow(BaseModel):
+
+    items: list[QGetModelPositionsV4Item] | None = None
+
+class SearchModelPositionsApiRequest(BaseModel):
+
+    model_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    eval: bool | None = False
+
+class SearchModelPositionsApiResponse(BaseModel):
+
+    items: list[QGetModelPositionsV4Item] | None = None
+
+
+
+# Generated from: get_model_rubrics
+
+class GetModelRubricsSqlParams(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.ids,
+        )
+
+class QGetModelRubricsV4Item(BaseModel):
+
+    id: UUID | None
+    model_id: UUID | None
+    rubric_id: UUID | None
+    generated: bool | None
+
+class GetModelRubricsSqlRow(BaseModel):
+
+    items: list[QGetModelRubricsV4Item] | None = None
+
+class GetModelRubricsApiRequest(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetModelRubricsApiResponse(BaseModel):
+
+    items: list[QGetModelRubricsV4Item] | None = None
+
+
+
+# Generated from: search_model_rubrics
+
+class SearchModelRubricsSqlParams(BaseModel):
+
+    model_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    rubric_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    eval: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.model_ids,
+            self.rubric_ids,
+            self.eval,
+        )
+
+class SearchModelRubricsSqlRow(BaseModel):
+
+    items: list[QGetModelRubricsV4Item] | None = None
+
+class SearchModelRubricsApiRequest(BaseModel):
+
+    model_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    rubric_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    eval: bool | None = False
+
+class SearchModelRubricsApiResponse(BaseModel):
+
+    items: list[QGetModelRubricsV4Item] | None = None
 
 
 
@@ -27873,82 +28023,6 @@ class SearchRubricsApiResponse(BaseModel):
 
 
 
-# Generated from: get_run_positions
-
-class GetRunPositionsSqlParams(BaseModel):
-
-    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.ids,
-        )
-
-class QGetRunPositionsV4Item(BaseModel):
-
-    id: UUID | None
-    runs_id: UUID | None
-    eval_id: UUID | None
-    value: int | None
-    generated: bool | None
-
-class GetRunPositionsSqlRow(BaseModel):
-
-    items: list[QGetRunPositionsV4Item] | None = None
-
-class GetRunPositionsApiRequest(BaseModel):
-
-    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetRunPositionsApiResponse(BaseModel):
-
-    items: list[QGetRunPositionsV4Item] | None = None
-
-
-
-# Generated from: search_run_positions
-
-class SearchRunPositionsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    runs_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    eval_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    eval: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.runs_ids,
-            self.eval_ids,
-            self.eval,
-        )
-
-class SearchRunPositionsSqlRow(BaseModel):
-
-    items: list[QGetRunPositionsV4Item] | None = None
-
-class SearchRunPositionsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    runs_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    eval_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    eval: bool | None = False
-
-class SearchRunPositionsApiResponse(BaseModel):
-
-    items: list[QGetRunPositionsV4Item] | None = None
-
-
-
 # Generated from: run_positions
 
 class RunPositionsSqlParams(BaseModel):
@@ -27991,81 +28065,6 @@ class RunPositionsApiResponse(BaseModel):
 
 
 
-# Generated from: get_run_rubrics
-
-class GetRunRubricsSqlParams(BaseModel):
-
-    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.ids,
-        )
-
-class QGetRunRubricsV4Item(BaseModel):
-
-    id: UUID | None
-    runs_id: UUID | None
-    rubric_id: UUID | None
-    generated: bool | None
-
-class GetRunRubricsSqlRow(BaseModel):
-
-    items: list[QGetRunRubricsV4Item] | None = None
-
-class GetRunRubricsApiRequest(BaseModel):
-
-    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetRunRubricsApiResponse(BaseModel):
-
-    items: list[QGetRunRubricsV4Item] | None = None
-
-
-
-# Generated from: search_run_rubrics
-
-class SearchRunRubricsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    runs_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    rubric_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    eval: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.runs_ids,
-            self.rubric_ids,
-            self.eval,
-        )
-
-class SearchRunRubricsSqlRow(BaseModel):
-
-    items: list[QGetRunRubricsV4Item] | None = None
-
-class SearchRunRubricsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    runs_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    rubric_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    eval: bool | None = False
-
-class SearchRunRubricsApiResponse(BaseModel):
-
-    items: list[QGetRunRubricsV4Item] | None = None
-
-
-
 # Generated from: run_rubrics
 
 class RunRubricsSqlParams(BaseModel):
@@ -28100,73 +28099,6 @@ class RunRubricsApiRequest(BaseModel):
 class RunRubricsApiResponse(BaseModel):
 
     id: UUID | None = None
-
-
-
-# Generated from: get_runs
-
-class GetRunsSqlParams(BaseModel):
-
-    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.ids,
-        )
-
-class QGetRunsV4Item(BaseModel):
-
-    id: UUID | None
-    generated: bool | None
-
-class GetRunsSqlRow(BaseModel):
-
-    items: list[QGetRunsV4Item] | None = None
-
-class GetRunsApiRequest(BaseModel):
-
-    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetRunsApiResponse(BaseModel):
-
-    items: list[QGetRunsV4Item] | None = None
-
-
-
-# Generated from: search_runs
-
-class SearchRunsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    eval: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.eval,
-        )
-
-class SearchRunsSqlRow(BaseModel):
-
-    items: list[QGetRunsV4Item] | None = None
-
-class SearchRunsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    eval: bool | None = False
-
-class SearchRunsApiResponse(BaseModel):
-
-    items: list[QGetRunsV4Item] | None = None
 
 
 
@@ -35071,10 +35003,17 @@ class GetConfigViewSqlParams(BaseModel):
 class QGetConfigViewV4Item(BaseModel):
 
     config_id: UUID | None
-    agents_id: UUID | None
-    models_id: UUID | None
-    providers_id: UUID | None
+    prompt_id: UUID | None
+    instruction_ids: list[UUID] | None
     tool_ids: list[UUID] | None
+    modality_ids: list[UUID] | None
+    rubric_id: UUID | None
+    model_id: UUID | None
+    temperature_level_id: UUID | None
+    reasoning_level_id: UUID | None
+    voice_id: UUID | None
+    quality_id: UUID | None
+    key_id: UUID | None
     created_at: datetime | None
 
 class GetConfigViewSqlRow(BaseModel):
@@ -37206,6 +37145,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchBenchmarkEntriesApiRequest",
         "SearchBenchmarkEntriesApiResponse",
     ),
+    "app/sql/v4/queries/entries/benchmark_sync/sync_benchmark_entries_complete.sql": (
+        "SyncBenchmarkEntriesSqlParams",
+        "SyncBenchmarkEntriesSqlRow",
+        "SyncBenchmarkEntriesApiRequest",
+        "SyncBenchmarkEntriesApiResponse",
+    ),
     "app/sql/v4/queries/entries/calls/create_calls_entries_complete.sql": (
         "CreateCallsEntriesSqlParams",
         "CreateCallsEntriesSqlRow",
@@ -38724,6 +38669,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateTestInvocationsApiRequest",
         "CreateTestInvocationsApiResponse",
     ),
+    "app/sql/v4/queries/generate/test/get_test_proceed_context_complete.sql": (
+        "GetTestProceedContextSqlParams",
+        "GetTestProceedContextSqlRow",
+        "GetTestProceedContextApiRequest",
+        "GetTestProceedContextApiResponse",
+    ),
     "app/sql/v4/queries/generate/test/get_tools_by_resource_ids_complete.sql": (
         "GetToolsByResourceIdsSqlParams",
         "GetToolsByResourceIdsSqlRow",
@@ -38741,6 +38692,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareTestRunSqlRow",
         "PrepareTestRunApiRequest",
         "PrepareTestRunApiResponse",
+    ),
+    "app/sql/v4/queries/generate/test/resolve_test_invocation_complete.sql": (
+        "ResolveTestInvocationSqlParams",
+        "ResolveTestInvocationSqlRow",
+        "ResolveTestInvocationApiRequest",
+        "ResolveTestInvocationApiResponse",
+    ),
+    "app/sql/v4/queries/generate/test/start_test_complete.sql": (
+        "StartTestSqlParams",
+        "StartTestSqlRow",
+        "StartTestApiRequest",
+        "StartTestApiResponse",
     ),
     "app/sql/v4/queries/generate/text/get_text_run_context_for_existing_run_complete.sql": (
         "GetTextRunContextForExistingRunSqlParams",
@@ -39648,6 +39611,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchConditionalParametersApiRequest",
         "SearchConditionalParametersApiResponse",
     ),
+    "app/sql/v4/queries/resources/configs/get_configs_complete.sql": (
+        "GetConfigsSqlParams",
+        "GetConfigsSqlRow",
+        "GetConfigsApiRequest",
+        "GetConfigsApiResponse",
+    ),
     "app/sql/v4/queries/resources/departments/get_departments_complete.sql": (
         "GetDepartmentsSqlParams",
         "GetDepartmentsSqlRow",
@@ -39798,53 +39767,17 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchFlagsApiRequest",
         "SearchFlagsApiResponse",
     ),
-    "app/sql/v4/queries/resources/group_positions/get_group_positions_complete.sql": (
-        "GetGroupPositionsSqlParams",
-        "GetGroupPositionsSqlRow",
-        "GetGroupPositionsApiRequest",
-        "GetGroupPositionsApiResponse",
-    ),
-    "app/sql/v4/queries/resources/group_positions/search_group_positions_complete.sql": (
-        "SearchGroupPositionsSqlParams",
-        "SearchGroupPositionsSqlRow",
-        "SearchGroupPositionsApiRequest",
-        "SearchGroupPositionsApiResponse",
-    ),
     "app/sql/v4/queries/resources/group_positions_complete.sql": (
         "GroupPositionsSqlParams",
         "GroupPositionsSqlRow",
         "GroupPositionsApiRequest",
         "GroupPositionsApiResponse",
     ),
-    "app/sql/v4/queries/resources/group_rubrics/get_group_rubrics_complete.sql": (
-        "GetGroupRubricsSqlParams",
-        "GetGroupRubricsSqlRow",
-        "GetGroupRubricsApiRequest",
-        "GetGroupRubricsApiResponse",
-    ),
-    "app/sql/v4/queries/resources/group_rubrics/search_group_rubrics_complete.sql": (
-        "SearchGroupRubricsSqlParams",
-        "SearchGroupRubricsSqlRow",
-        "SearchGroupRubricsApiRequest",
-        "SearchGroupRubricsApiResponse",
-    ),
     "app/sql/v4/queries/resources/group_rubrics_complete.sql": (
         "GroupRubricsSqlParams",
         "GroupRubricsSqlRow",
         "GroupRubricsApiRequest",
         "GroupRubricsApiResponse",
-    ),
-    "app/sql/v4/queries/resources/groups/get_groups_complete.sql": (
-        "GetGroupsSqlParams",
-        "GetGroupsSqlRow",
-        "GetGroupsApiRequest",
-        "GetGroupsApiResponse",
-    ),
-    "app/sql/v4/queries/resources/groups/search_groups_complete.sql": (
-        "SearchGroupsSqlParams",
-        "SearchGroupsSqlRow",
-        "SearchGroupsApiRequest",
-        "SearchGroupsApiResponse",
     ),
     "app/sql/v4/queries/resources/icons/get_icons_complete.sql": (
         "GetIconsSqlParams",
@@ -40121,6 +40054,42 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchModalitiesSqlRow",
         "SearchModalitiesApiRequest",
         "SearchModalitiesApiResponse",
+    ),
+    "app/sql/v4/queries/resources/model_flags/get_model_flags_complete.sql": (
+        "GetModelFlagsSqlParams",
+        "GetModelFlagsSqlRow",
+        "GetModelFlagsApiRequest",
+        "GetModelFlagsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/model_flags/search_model_flags_complete.sql": (
+        "SearchModelFlagsSqlParams",
+        "SearchModelFlagsSqlRow",
+        "SearchModelFlagsApiRequest",
+        "SearchModelFlagsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/model_positions/get_model_positions_complete.sql": (
+        "GetModelPositionsSqlParams",
+        "GetModelPositionsSqlRow",
+        "GetModelPositionsApiRequest",
+        "GetModelPositionsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/model_positions/search_model_positions_complete.sql": (
+        "SearchModelPositionsSqlParams",
+        "SearchModelPositionsSqlRow",
+        "SearchModelPositionsApiRequest",
+        "SearchModelPositionsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/model_rubrics/get_model_rubrics_complete.sql": (
+        "GetModelRubricsSqlParams",
+        "GetModelRubricsSqlRow",
+        "GetModelRubricsApiRequest",
+        "GetModelRubricsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/model_rubrics/search_model_rubrics_complete.sql": (
+        "SearchModelRubricsSqlParams",
+        "SearchModelRubricsSqlRow",
+        "SearchModelRubricsApiRequest",
+        "SearchModelRubricsApiResponse",
     ),
     "app/sql/v4/queries/resources/models/get_models_complete.sql": (
         "GetModelsSqlParams",
@@ -40518,53 +40487,17 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchRubricsApiRequest",
         "SearchRubricsApiResponse",
     ),
-    "app/sql/v4/queries/resources/run_positions/get_run_positions_complete.sql": (
-        "GetRunPositionsSqlParams",
-        "GetRunPositionsSqlRow",
-        "GetRunPositionsApiRequest",
-        "GetRunPositionsApiResponse",
-    ),
-    "app/sql/v4/queries/resources/run_positions/search_run_positions_complete.sql": (
-        "SearchRunPositionsSqlParams",
-        "SearchRunPositionsSqlRow",
-        "SearchRunPositionsApiRequest",
-        "SearchRunPositionsApiResponse",
-    ),
     "app/sql/v4/queries/resources/run_positions_complete.sql": (
         "RunPositionsSqlParams",
         "RunPositionsSqlRow",
         "RunPositionsApiRequest",
         "RunPositionsApiResponse",
     ),
-    "app/sql/v4/queries/resources/run_rubrics/get_run_rubrics_complete.sql": (
-        "GetRunRubricsSqlParams",
-        "GetRunRubricsSqlRow",
-        "GetRunRubricsApiRequest",
-        "GetRunRubricsApiResponse",
-    ),
-    "app/sql/v4/queries/resources/run_rubrics/search_run_rubrics_complete.sql": (
-        "SearchRunRubricsSqlParams",
-        "SearchRunRubricsSqlRow",
-        "SearchRunRubricsApiRequest",
-        "SearchRunRubricsApiResponse",
-    ),
     "app/sql/v4/queries/resources/run_rubrics_complete.sql": (
         "RunRubricsSqlParams",
         "RunRubricsSqlRow",
         "RunRubricsApiRequest",
         "RunRubricsApiResponse",
-    ),
-    "app/sql/v4/queries/resources/runs/get_runs_complete.sql": (
-        "GetRunsSqlParams",
-        "GetRunsSqlRow",
-        "GetRunsApiRequest",
-        "GetRunsApiResponse",
-    ),
-    "app/sql/v4/queries/resources/runs/search_runs_complete.sql": (
-        "SearchRunsSqlParams",
-        "SearchRunsSqlRow",
-        "SearchRunsApiRequest",
-        "SearchRunsApiResponse",
     ),
     "app/sql/v4/queries/resources/scenario_flags/get_scenario_flags_complete.sql": (
         "GetScenarioFlagsSqlParams",
@@ -42513,6 +42446,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/entries/benchmark_sync/sync_benchmark_entries_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/entries/calls/create_calls_entries_complete.sql"]
     ) -> SqlString: ...
 
@@ -43778,6 +43716,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/test/get_test_proceed_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/test/get_tools_by_resource_ids_complete.sql"]
     ) -> SqlString: ...
 
@@ -43789,6 +43732,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/generate/test/prepare_test_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/test/resolve_test_invocation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/generate/test/start_test_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -44548,6 +44501,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/configs/get_configs_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/departments/get_departments_complete.sql"]
     ) -> SqlString: ...
 
@@ -44673,42 +44631,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/group_positions/get_group_positions_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/group_positions/search_group_positions_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/group_positions_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/group_rubrics/get_group_rubrics_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/group_rubrics/search_group_rubrics_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/group_rubrics_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/groups/get_groups_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/groups/search_groups_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -44939,6 +44867,36 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/modalities/search_modalities_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/model_flags/get_model_flags_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/model_flags/search_model_flags_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/model_positions/get_model_positions_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/model_positions/search_model_positions_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/model_rubrics/get_model_rubrics_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/model_rubrics/search_model_rubrics_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -45273,42 +45231,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/run_positions/get_run_positions_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/run_positions/search_run_positions_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/run_positions_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/run_rubrics/get_run_rubrics_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/run_rubrics/search_run_rubrics_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/run_rubrics_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/runs/get_runs_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/runs/search_runs_complete.sql"]
     ) -> SqlString: ...
 
     @overload

@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Query: get_config_view
--- Purpose: Fetch config-level inference config data from config_mv
+-- Purpose: Fetch config-level inference config data from config_resource
 -- Section: VIEWS/CONFIG
 -- ============================================================================
 
@@ -46,10 +46,17 @@ END $$;
 
 CREATE TYPE types.q_get_config_view_v4_item AS (
     config_id uuid,
-    agents_id uuid,
-    models_id uuid,
-    providers_id uuid,
+    prompt_id uuid,
+    instruction_ids uuid[],
     tool_ids uuid[],
+    modality_ids uuid[],
+    rubric_id uuid,
+    model_id uuid,
+    temperature_level_id uuid,
+    reasoning_level_id uuid,
+    voice_id uuid,
+    quality_id uuid,
+    key_id uuid,
     created_at timestamptz
 );
 
@@ -69,17 +76,25 @@ AS $$
     SELECT COALESCE(
         ARRAY_AGG(
             (
-                mc.config_id,
-                mc.agents_id,
-                mc.models_id,
-                mc.providers_id,
-                mc.tool_ids,
-                mc.config_created_at
+                r.id,
+                r.prompt_id,
+                r.instruction_ids,
+                r.tool_ids,
+                r.modality_ids,
+                r.rubric_id,
+                r.model_id,
+                r.temperature_level_id,
+                r.reasoning_level_id,
+                r.voice_id,
+                r.quality_id,
+                r.key_id,
+                r.created_at
             )::types.q_get_config_view_v4_item
-            ORDER BY mc.config_created_at
+            ORDER BY r.created_at
         ),
         ARRAY[]::types.q_get_config_view_v4_item[]
     ) AS items
-    FROM config_mv mc
-    WHERE mc.config_id = config_id_filter;
+    FROM config_resource r
+    WHERE r.id = config_id_filter
+      AND r.active = true;
 $$;

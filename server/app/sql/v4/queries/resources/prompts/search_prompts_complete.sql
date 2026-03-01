@@ -50,7 +50,7 @@ FROM (
       -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (p.id = ANY(exclude_ids)))
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT agent OR EXISTS (SELECT 1 FROM agent_prompts_junction j WHERE j.prompt_id = p.id AND j.active = true))
+      AND (NOT agent OR EXISTS (SELECT 1 FROM config_resource cr WHERE cr.prompt_id = p.id AND cr.active = true))
     ORDER BY p.name
     LIMIT limit_count
     OFFSET offset_count

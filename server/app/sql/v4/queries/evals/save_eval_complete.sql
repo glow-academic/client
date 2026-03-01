@@ -1,4 +1,5 @@
 -- Unified save eval function (ID-first, section-action compatible)
+-- Post-migration 18: runs/groups are runtime-only; evals have direct rubrics + judge models
 
 DO $$
 DECLARE
@@ -14,21 +15,12 @@ BEGIN
     END LOOP;
 END $$;
 
+-- Clean up old composite types that no longer exist
 DO $$
 BEGIN
     DROP TYPE IF EXISTS types.q_save_eval_v4_run_rubric_link;
     DROP TYPE IF EXISTS types.q_save_eval_v4_group_rubric_link;
 END $$;
-
-CREATE TYPE types.q_save_eval_v4_run_rubric_link AS (
-    run_id uuid,
-    rubric_ids uuid[]
-);
-
-CREATE TYPE types.q_save_eval_v4_group_rubric_link AS (
-    group_id uuid,
-    rubric_ids uuid[]
-);
 
 CREATE OR REPLACE FUNCTION api_save_eval_v4(
     profile_id uuid,
@@ -38,13 +30,11 @@ CREATE OR REPLACE FUNCTION api_save_eval_v4(
     description_id uuid DEFAULT NULL,
     flag_ids uuid[] DEFAULT ARRAY[]::uuid[],
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    agent_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    model_run_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    group_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    run_position_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    group_position_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    run_rubric_links types.q_save_eval_v4_run_rubric_link[] DEFAULT ARRAY[]::types.q_save_eval_v4_run_rubric_link[],
-    group_rubric_links types.q_save_eval_v4_group_rubric_link[] DEFAULT ARRAY[]::types.q_save_eval_v4_group_rubric_link[]
+    rubric_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    model_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    model_flag_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    model_rubric_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    model_position_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
     eval_id uuid
@@ -91,12 +81,11 @@ BEGIN
         DELETE FROM eval_descriptions_junction WHERE eval_id = v_eval_id;
         DELETE FROM eval_flags_junction WHERE eval_id = v_eval_id;
         DELETE FROM eval_departments_junction WHERE eval_id = v_eval_id;
-        DELETE FROM eval_runs_junction WHERE eval_id = v_eval_id;
-        DELETE FROM eval_groups_junction WHERE eval_id = v_eval_id;
-        DELETE FROM eval_run_positions_junction WHERE eval_id = v_eval_id;
-        DELETE FROM eval_group_positions_junction WHERE eval_id = v_eval_id;
-        DELETE FROM eval_runs_rubrics_junction WHERE eval_id = v_eval_id;
-        DELETE FROM eval_groups_rubrics_junction WHERE eval_id = v_eval_id;
+        DELETE FROM eval_rubrics_junction WHERE eval_id = v_eval_id;
+        DELETE FROM eval_models_junction WHERE eval_id = v_eval_id;
+        DELETE FROM eval_model_flags_junction WHERE eval_id = v_eval_id;
+        DELETE FROM eval_model_rubrics_junction WHERE eval_id = v_eval_id;
+        DELETE FROM eval_model_positions_junction WHERE eval_id = v_eval_id;
     END IF;
 
     INSERT INTO eval_names_junction (eval_id, name_id, created_at)
@@ -130,61 +119,39 @@ BEGIN
     ON CONFLICT ON CONSTRAINT eval_departments_pkey DO UPDATE
     SET active = TRUE;
 
-    -- Eval no longer persists direct agent links; routing is resource-first.
-
-    INSERT INTO eval_runs_junction (eval_id, run_id, completed, created_at)
-    SELECT v_eval_id, run_id, FALSE, NOW()
-    FROM UNNEST(COALESCE(model_run_ids, ARRAY[]::uuid[])) AS run_id
-    ON CONFLICT ON CONSTRAINT eval_runs_pkey DO UPDATE
-    SET active = TRUE,
-        completed = FALSE;
-
-    INSERT INTO eval_groups_junction (eval_id, group_id, created_at)
-    SELECT v_eval_id, grp_id, NOW()
-    FROM UNNEST(COALESCE(group_ids, ARRAY[]::uuid[])) AS grp_id
-    ON CONFLICT ON CONSTRAINT eval_groups_pkey DO UPDATE
+    -- Direct eval → rubric links (replaces run/group-scoped rubrics)
+    INSERT INTO eval_rubrics_junction (eval_id, rubric_id, active, created_at)
+    SELECT v_eval_id, r_id, TRUE, NOW()
+    FROM UNNEST(COALESCE(rubric_ids, ARRAY[]::uuid[])) AS r_id
+    ON CONFLICT ON CONSTRAINT eval_rubrics_junction_pkey DO UPDATE
     SET active = TRUE;
 
-    INSERT INTO eval_run_positions_junction (eval_id, run_positions_id, created_at)
-    SELECT v_eval_id, rp_id, NOW()
-    FROM UNNEST(COALESCE(run_position_ids, ARRAY[]::uuid[])) AS rp_id
-    ON CONFLICT ON CONSTRAINT eval_run_positions_pkey DO UPDATE
+    -- Direct eval → judge model links
+    INSERT INTO eval_models_junction (eval_id, model_id, active, created_at)
+    SELECT v_eval_id, m_id, TRUE, NOW()
+    FROM UNNEST(COALESCE(model_ids, ARRAY[]::uuid[])) AS m_id
+    ON CONFLICT ON CONSTRAINT eval_models_junction_pkey DO UPDATE
     SET active = TRUE;
 
-    INSERT INTO eval_group_positions_junction (eval_id, group_positions_id, created_at)
-    SELECT v_eval_id, gp_id, NOW()
-    FROM UNNEST(COALESCE(group_position_ids, ARRAY[]::uuid[])) AS gp_id
-    ON CONFLICT ON CONSTRAINT eval_group_positions_pkey DO UPDATE
+    -- Model flag junctions
+    INSERT INTO eval_model_flags_junction (eval_id, model_flag_id, value, active, created_at)
+    SELECT v_eval_id, mf_id, TRUE, TRUE, NOW()
+    FROM UNNEST(COALESCE(model_flag_ids, ARRAY[]::uuid[])) AS mf_id
+    ON CONFLICT ON CONSTRAINT eval_model_flags_junction_pkey DO UPDATE
+    SET value = TRUE, active = TRUE;
+
+    -- Model rubric junctions
+    INSERT INTO eval_model_rubrics_junction (eval_id, model_rubric_id, active, created_at)
+    SELECT v_eval_id, mr_id, TRUE, NOW()
+    FROM UNNEST(COALESCE(model_rubric_ids, ARRAY[]::uuid[])) AS mr_id
+    ON CONFLICT ON CONSTRAINT eval_model_rubrics_junction_pkey DO UPDATE
     SET active = TRUE;
 
-    WITH created_run_rubrics AS (
-        INSERT INTO run_rubrics_resource (runs_id, rubric_id, created_at, generated, mcp, active)
-        SELECT DISTINCT rr.run_id, rubric_id, NOW(), FALSE, FALSE, TRUE
-        FROM UNNEST(COALESCE(run_rubric_links, ARRAY[]::types.q_save_eval_v4_run_rubric_link[])) AS rr
-        CROSS JOIN LATERAL UNNEST(COALESCE(rr.rubric_ids, ARRAY[]::uuid[])) AS rubric_id
-        ON CONFLICT (runs_id, rubric_id) DO UPDATE
-        SET active = TRUE
-        RETURNING id
-    )
-    INSERT INTO eval_runs_rubrics_junction (eval_id, run_rubric_id, created_at, generated, mcp, active)
-    SELECT v_eval_id, crr.id, NOW(), FALSE, FALSE, TRUE
-    FROM created_run_rubrics crr
-    ON CONFLICT ON CONSTRAINT eval_runs_rubrics_junction_pkey DO UPDATE
-    SET active = TRUE;
-
-    WITH created_group_rubrics AS (
-        INSERT INTO group_rubrics_resource (groups_id, rubric_id, created_at, generated, mcp, active)
-        SELECT DISTINCT gr.group_id, rubric_id, NOW(), FALSE, FALSE, TRUE
-        FROM UNNEST(COALESCE(group_rubric_links, ARRAY[]::types.q_save_eval_v4_group_rubric_link[])) AS gr
-        CROSS JOIN LATERAL UNNEST(COALESCE(gr.rubric_ids, ARRAY[]::uuid[])) AS rubric_id
-        ON CONFLICT (groups_id, rubric_id) DO UPDATE
-        SET active = TRUE
-        RETURNING id
-    )
-    INSERT INTO eval_groups_rubrics_junction (eval_id, group_rubric_id, created_at, generated, mcp, active)
-    SELECT v_eval_id, cgr.id, NOW(), FALSE, FALSE, TRUE
-    FROM created_group_rubrics cgr
-    ON CONFLICT ON CONSTRAINT eval_groups_rubrics_junction_pkey DO UPDATE
+    -- Model position junctions
+    INSERT INTO eval_model_positions_junction (eval_id, model_position_id, active, created_at)
+    SELECT v_eval_id, mp_id, TRUE, NOW()
+    FROM UNNEST(COALESCE(model_position_ids, ARRAY[]::uuid[])) AS mp_id
+    ON CONFLICT ON CONSTRAINT eval_model_positions_junction_pkey DO UPDATE
     SET active = TRUE;
 
     -- Keep evals_resource synced for view layers that depend on it.
@@ -196,8 +163,8 @@ BEGIN
     LIMIT 1;
 
     IF v_evals_id IS NULL THEN
-        INSERT INTO evals_resource (group_id, name, description, department_ids, active, generated, mcp)
-        VALUES (api_save_eval_v4.group_id, NULL, NULL, COALESCE(api_save_eval_v4.department_ids, ARRAY[]::uuid[]), TRUE, FALSE, FALSE)
+        INSERT INTO evals_resource (group_id, name, description, department_ids, model_ids, model_rubric_ids, model_flag_ids, model_position_ids, active, generated, mcp)
+        VALUES (api_save_eval_v4.group_id, NULL, NULL, COALESCE(api_save_eval_v4.department_ids, ARRAY[]::uuid[]), COALESCE(api_save_eval_v4.model_ids, ARRAY[]::uuid[]), COALESCE(api_save_eval_v4.model_rubric_ids, ARRAY[]::uuid[]), COALESCE(api_save_eval_v4.model_flag_ids, ARRAY[]::uuid[]), COALESCE(api_save_eval_v4.model_position_ids, ARRAY[]::uuid[]), TRUE, FALSE, FALSE)
         RETURNING id INTO v_evals_id;
 
         INSERT INTO eval_evals_junction (eval_id, evals_id, active, created_at, generated, mcp)
@@ -206,7 +173,11 @@ BEGIN
     ELSE
         UPDATE evals_resource
         SET group_id = api_save_eval_v4.group_id,
-            department_ids = COALESCE(api_save_eval_v4.department_ids, ARRAY[]::uuid[])
+            department_ids = COALESCE(api_save_eval_v4.department_ids, ARRAY[]::uuid[]),
+            model_ids = COALESCE(api_save_eval_v4.model_ids, ARRAY[]::uuid[]),
+            model_rubric_ids = COALESCE(api_save_eval_v4.model_rubric_ids, ARRAY[]::uuid[]),
+            model_flag_ids = COALESCE(api_save_eval_v4.model_flag_ids, ARRAY[]::uuid[]),
+            model_position_ids = COALESCE(api_save_eval_v4.model_position_ids, ARRAY[]::uuid[])
         WHERE id = v_evals_id;
     END IF;
 

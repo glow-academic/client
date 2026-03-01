@@ -102,23 +102,25 @@ model_providers_data AS (
     FROM model_providers_junction mpj
     WHERE mpj.active = true
 ),
--- Active agent count per model (via agent_models_junction with active filter)
+-- Active agent count per model (via agent_configs_junction + config_resource)
 agent_usage AS (
     SELECT
-        am.model_id,
-        COUNT(*)::bigint as active_agent_count
-    FROM agent_models_junction am
-    WHERE am.active = true
-    GROUP BY am.model_id
+        cr.model_id,
+        COUNT(DISTINCT ac.agent_id)::bigint as active_agent_count
+    FROM config_resource cr
+    JOIN agent_configs_junction ac ON ac.config_id = cr.id AND ac.active = true
+    WHERE cr.model_id IS NOT NULL AND cr.active = true
+    GROUP BY cr.model_id
 ),
 -- Agent IDs per model (for filtering)
 model_agents_data AS (
     SELECT
-        am.model_id,
-        ARRAY_AGG(DISTINCT am.agent_id) as agent_ids
-    FROM agent_models_junction am
-    WHERE am.active = true
-    GROUP BY am.model_id
+        cr.model_id,
+        ARRAY_AGG(DISTINCT ac.agent_id) as agent_ids
+    FROM config_resource cr
+    JOIN agent_configs_junction ac ON ac.config_id = cr.id AND ac.active = true
+    WHERE cr.model_id IS NOT NULL AND cr.active = true
+    GROUP BY cr.model_id
 ),
 -- Determine if model is an image model (has 'image' output modality)
 image_model_check AS (

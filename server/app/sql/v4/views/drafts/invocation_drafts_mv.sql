@@ -23,15 +23,13 @@ WITH draft_links AS (
     SELECT draft_id, 'departments'::text AS resource_type, departments_id AS resource_id FROM invocation_drafts_departments_connection WHERE active = true
     UNION ALL SELECT draft_id, 'descriptions'::text AS resource_type, descriptions_id AS resource_id FROM invocation_drafts_descriptions_connection WHERE active = true
     UNION ALL SELECT draft_id, 'flags'::text AS resource_type, flags_id AS resource_id FROM invocation_drafts_flags_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'groups'::text AS resource_type, groups_id AS resource_id FROM invocation_drafts_groups_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'instructions'::text AS resource_type, instructions_id AS resource_id FROM invocation_drafts_instructions_connection WHERE active = true
     UNION ALL SELECT draft_id, 'keys'::text AS resource_type, keys_id AS resource_id FROM invocation_drafts_keys_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'model_flags'::text AS resource_type, model_flags_id AS resource_id FROM invocation_drafts_model_flags_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'model_rubrics'::text AS resource_type, model_rubrics_id AS resource_id FROM invocation_drafts_model_rubrics_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'model_positions'::text AS resource_type, model_positions_id AS resource_id FROM invocation_drafts_model_positions_connection WHERE active = true
     UNION ALL SELECT draft_id, 'names'::text AS resource_type, names_id AS resource_id FROM invocation_drafts_names_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'prompts'::text AS resource_type, prompts_id AS resource_id FROM invocation_drafts_prompts_connection WHERE active = true
     UNION ALL SELECT draft_id, 'reasoning_levels'::text AS resource_type, reasoning_levels_id AS resource_id FROM invocation_drafts_reasoning_levels_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'runs'::text AS resource_type, runs_id AS resource_id FROM invocation_drafts_runs_connection WHERE active = true
     UNION ALL SELECT draft_id, 'temperature_levels'::text AS resource_type, temperature_levels_id AS resource_id FROM invocation_drafts_temperature_levels_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'tools'::text AS resource_type, tools_id AS resource_id FROM invocation_drafts_tools_connection WHERE active = true
     UNION ALL SELECT draft_id, 'voices'::text AS resource_type, voices_id AS resource_id FROM invocation_drafts_voices_connection WHERE active = true
 )
 SELECT
@@ -46,15 +44,13 @@ SELECT
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'departments'), ARRAY[]::uuid[]) AS department_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'descriptions'), ARRAY[]::uuid[]) AS description_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'flags'), ARRAY[]::uuid[]) AS flag_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'groups'), ARRAY[]::uuid[]) AS group_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'instructions'), ARRAY[]::uuid[]) AS instruction_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'keys'), ARRAY[]::uuid[]) AS key_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'model_flags'), ARRAY[]::uuid[]) AS model_flag_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'model_rubrics'), ARRAY[]::uuid[]) AS model_rubric_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'model_positions'), ARRAY[]::uuid[]) AS model_position_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'names'), ARRAY[]::uuid[]) AS name_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'prompts'), ARRAY[]::uuid[]) AS prompt_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'reasoning_levels'), ARRAY[]::uuid[]) AS reasoning_level_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'runs'), ARRAY[]::uuid[]) AS run_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'temperature_levels'), ARRAY[]::uuid[]) AS temperature_level_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'tools'), ARRAY[]::uuid[]) AS tool_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'voices'), ARRAY[]::uuid[]) AS voice_ids
 FROM invocation_drafts_entry d
 LEFT JOIN draft_links l ON l.draft_id = d.id

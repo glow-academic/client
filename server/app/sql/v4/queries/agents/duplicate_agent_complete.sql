@@ -29,13 +29,7 @@ source_agent AS (
         a.id as source_id,
         (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1),
         (SELECT (SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions_junction ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1),
-        (SELECT m.id FROM agent_models_junction am JOIN models_resource m ON am.model_id = m.id WHERE am.agent_id = a.id LIMIT 1) as model_id,
         COALESCE(NULL::artifact_type::text, '') as role,  -- Derive from agent_artifact's tools via inline resource map
-        ap.prompt_id,
-        COALESCE(pr.system_prompt, '') as system_prompt,
-        -- Get temperature and reasoning from junction tables
-        atl.temperature_level_id,
-        arl.reasoning_level_id,
         NULL::artifact_type  -- Need artifact for linking
     FROM params x
     JOIN agents_resource a ON a.id = x.agent_id
@@ -210,21 +204,6 @@ source_agent AS (
         WHERE at.agent_id = a.id AND at.active = TRUE
         LIMIT 1
     ) da ON TRUE
-    LEFT JOIN agent_prompts_junction ap ON ap.agent_id = a.id AND ap.active = true
-    LEFT JOIN prompts_resource pr ON pr.id = ap.prompt_id
-    LEFT JOIN agent_temperature_levels_junction atl ON atl.agent_id = a.id AND atl.active = true
-    LEFT JOIN agent_reasoning_levels_junction arl ON arl.agent_id = a.id AND arl.active = true
-),
-new_prompt AS (
-    INSERT INTO prompts_resource (name, description, system_prompt, created_at)
-    SELECT 
-        COALESCE(pr.name, 'Agent Prompt') || ' Copy',
-        COALESCE(pr.description, ''),
-        sa.system_prompt, 
-        NOW()
-    FROM source_agent sa
-    LEFT JOIN prompts_resource pr ON pr.id = sa.prompt_id
-    RETURNING id as prompt_id
 ),
 -- Insert name INTO names_resource table and get ID
 name_resource AS (
@@ -275,18 +254,6 @@ link_agent_description AS (
     CROSS JOIN description_resource dr
     ON CONFLICT (agent_id, description_id) DO NOTHING
 ),
--- Link agent to model
-link_agent_model AS (
-    INSERT INTO agent_models_junction (agent_id, model_id, created_at)
-    SELECT 
-        na.agent_id::uuid,
-        sa.model_id,
-        NOW()
-    FROM new_agent na
-    CROSS JOIN source_agent sa
-    WHERE sa.model_id IS NOT NULL
-    ON CONFLICT (agent_id, model_id) DO NOTHING
-),
 -- Link agent active flag (defaults to false)
 link_agent_active_flag AS (
     INSERT INTO agent_flags_junction (agent_id, flag_id, value, created_at) SELECT na.agent_id::uuid,
@@ -296,36 +263,20 @@ link_agent_active_flag AS (
     FROM new_agent na
     CROSS JOIN flags_resource f
     WHERE f.name = 'agent_active'
-    ON CONFLICT (agent_id, flag_id) DO UPDATE SET 
+    ON CONFLICT (agent_id, flag_id) DO UPDATE SET
         value = false
 ),
-copy_temperature AS (
-    INSERT INTO agent_temperature_levels_junction (agent_id, temperature_level_id, active, created_at)
-    SELECT 
+-- Copy agent_configs_junction (replaces agent_models, agent_temperature_levels, agent_reasoning_levels, agent_voices)
+copy_configs AS (
+    INSERT INTO agent_configs_junction (agent_id, config_id, active, created_at)
+    SELECT
         na.agent_id::uuid,
-        sa.temperature_level_id,
-        true,
+        acj.config_id,
+        acj.active,
         NOW()
-    FROM source_agent sa
-    CROSS JOIN new_agent na
-    WHERE sa.temperature_level_id IS NOT NULL
-),
-copy_reasoning AS (
-    INSERT INTO agent_reasoning_levels_junction (agent_id, reasoning_level_id, active, created_at)
-    SELECT 
-        na.agent_id::uuid,
-        sa.reasoning_level_id,
-        true,
-        NOW()
-    FROM source_agent sa
-    CROSS JOIN new_agent na
-    WHERE sa.reasoning_level_id IS NOT NULL
-),
-link_prompt AS (
-    INSERT INTO agent_prompts_junction (agent_id, prompt_id, active, created_at)
-    SELECT na.agent_id::uuid, np.prompt_id, true, NOW()
     FROM new_agent na
-    CROSS JOIN new_prompt np
+    CROSS JOIN params x
+    JOIN agent_configs_junction acj ON acj.agent_id = x.agent_id AND acj.active = true
 ),
 copy_departments AS (
     INSERT INTO agent_departments_junction (agent_id, department_id, active, created_at)

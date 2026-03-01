@@ -162,8 +162,8 @@ eval_objects AS (
                 NOT COALESCE((SELECT ef.value FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = pe.id AND f.name = 'eval_active' LIMIT 1), false),
                 COALESCE((SELECT ef.value FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = pe.id AND f.name = 'dynamic' LIMIT 1), false),
                 COALESCE((SELECT ef.value FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = pe.id AND f.name = 'use_groups' LIMIT 1), false),
-                COALESCE((SELECT COUNT(*)::int FROM eval_runs_junction er WHERE er.eval_id = pe.id AND er.active = true), 0),
-                COALESCE((SELECT COUNT(*)::int FROM eval_groups_junction eg WHERE eg.eval_id = pe.id AND eg.active = true), 0),
+                0,  -- num_runs: eval_runs_junction dropped, runs are runtime-only
+                0,  -- num_groups: eval_groups_junction dropped, groups are runtime-only
                 pe.updated_at
             )::types.q_list_evals_v4_eval
             ORDER BY pe.updated_at DESC

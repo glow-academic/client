@@ -1,0 +1,1 @@
+"""Model rubrics resource endpoints."""

@@ -62,6 +62,14 @@ department_links AS (
     FROM test_departments_connection c
     WHERE c.active = true
     GROUP BY c.attempt_id
+),
+benchmark_links AS (
+    SELECT
+        tbe.test_id,
+        (ARRAY_AGG(tbe.benchmark_id ORDER BY tbe.created_at))[1] AS benchmark_id
+    FROM test_benchmark_entry tbe
+    WHERE tbe.active = true
+    GROUP BY tbe.test_id
 )
 SELECT
     -- Primary key
@@ -71,6 +79,9 @@ SELECT
     el.eval_id,
     pl.profile_id,
     COALESCE(dl.department_ids, ARRAY[]::uuid[]) AS department_ids,
+
+    -- Benchmark link (from bridge table)
+    bl.benchmark_id,
 
     -- Flags
     t.infinite_mode,
@@ -83,6 +94,7 @@ FROM test_entry t
 LEFT JOIN eval_links el ON el.test_id = t.id
 LEFT JOIN profile_links pl ON pl.test_id = t.id
 LEFT JOIN department_links dl ON dl.test_id = t.id
+LEFT JOIN benchmark_links bl ON bl.test_id = t.id
 -- Latest archive state (append-only)
 LEFT JOIN LATERAL (
     SELECT archived FROM test_archive_entry
@@ -109,6 +121,10 @@ CREATE INDEX test_mv_eval_id_idx
 -- Profile ID for permission checks and filtering
 CREATE INDEX test_mv_profile_id_idx
     ON test_mv (profile_id);
+
+-- Benchmark ID for filtering
+CREATE INDEX test_mv_benchmark_id_idx
+    ON test_mv (benchmark_id);
 
 -- Archived flag for filtering
 CREATE INDEX test_mv_archived_idx

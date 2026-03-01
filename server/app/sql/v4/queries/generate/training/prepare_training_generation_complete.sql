@@ -315,8 +315,10 @@ developer_instruction_data AS (
         ) as developer_instruction_templates
     FROM selected_agent sa
     INNER JOIN agent_artifact a ON a.id = sa.agent_id
-    LEFT JOIN agent_instructions_junction ai ON ai.agent_id = a.id
-    LEFT JOIN instructions_resource i ON i.id = ai.instruction_id AND i.active = true
+    LEFT JOIN agent_configs_junction acj ON acj.agent_id = a.id AND acj.active = true
+    LEFT JOIN config_resource cr ON cr.id = acj.config_id AND cr.active = true
+    LEFT JOIN LATERAL UNNEST(cr.instruction_ids) AS iid ON true
+    LEFT JOIN instructions_resource i ON i.id = iid AND i.active = true
     GROUP BY sa.agent_id
 ),
 -- Fetch simulation data for Jinja context
@@ -476,9 +478,10 @@ context_data AS (
     INNER JOIN agent_agents_junction aaj ON aaj.agent_id = a.id AND aaj.active = true
     INNER JOIN agents_resource ar ON ar.id = aaj.agents_id
 
-    -- Agent prompt
-    LEFT JOIN agent_prompts_junction ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
-    LEFT JOIN prompts_resource pr_prompt ON pr_prompt.id = ap_default.prompt_id
+    -- Agent prompt (via config_resource)
+    LEFT JOIN agent_configs_junction acj_prompt ON acj_prompt.agent_id = a.id AND acj_prompt.active = true
+    LEFT JOIN config_resource cr_prompt ON cr_prompt.id = acj_prompt.config_id AND cr_prompt.active = true
+    LEFT JOIN prompts_resource pr_prompt ON pr_prompt.id = cr_prompt.prompt_id
 
     -- Model via denormalized agents_resource.model_id
     INNER JOIN models_resource m ON m.id = ar.model_id

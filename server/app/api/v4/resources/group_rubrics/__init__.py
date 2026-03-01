@@ -1,1 +1,0 @@
-"""Group rubrics resource endpoints."""

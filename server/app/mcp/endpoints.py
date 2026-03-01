@@ -68,11 +68,11 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     #     "draft": ("app.api.v4.artifacts.auth.draft", "patch_auth_draft"),
     #     "docs": ("app.api.v4.artifacts.auth.docs", "get_auths_docs"),
     # },
-    # "benchmark": {
-    #     "get": ("app.api.v4.artifacts.benchmark.get", "benchmark_bundle_get"),
-    #     "refresh": ("app.api.v4.artifacts.benchmark.refresh", "benchmark_refresh"),
-    #     "docs": ("app.api.v4.artifacts.benchmark.docs", "get_benchmarks_docs"),
-    # },
+    "benchmark": {
+        "get": ("app.api.v4.artifacts.benchmark.get", "benchmark_bundle_get"),
+        "refresh": ("app.api.v4.artifacts.benchmark.refresh", "benchmark_refresh"),
+        "docs": ("app.api.v4.artifacts.benchmark.docs", "get_benchmarks_docs"),
+    },
     "cohort": {
         "get": ("app.api.v4.artifacts.cohort.get", "get_cohort"),
         "list": ("app.api.v4.artifacts.cohort.list", "get_cohort_list"),

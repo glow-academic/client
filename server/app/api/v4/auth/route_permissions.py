@@ -432,7 +432,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
             ),
         ],
     ),
-    # --- TEMPORARILY COMMENTED OUT: management, intelligence, system, health, benchmark, settings ---
+    # --- TEMPORARILY COMMENTED OUT: management, intelligence, system, health, settings ---
     # SectionPermission(
     #     section="management",
     #     roles=["admin", "superadmin"],
@@ -472,15 +472,37 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
     #     order=8,
     #     routes=[...],
     # ),
-    # SectionPermission(
-    #     section="benchmark",
-    #     roles=["custom", "instructional", "admin", "superadmin"],
-    #     title="Benchmark",
-    #     description="Run and manage evaluations",
-    #     icon="Gauge",
-    #     order=9,
-    #     routes=[...],
-    # ),
+    SectionPermission(
+        section="benchmark",
+        roles=["custom", "instructional", "admin", "superadmin"],
+        title="Benchmark",
+        description="Run and manage evaluations",
+        icon="Gauge",
+        order=9,
+        routes=[
+            RoutePermission(
+                path="/benchmark",
+                roles=["custom", "instructional", "admin", "superadmin"],
+                title="Benchmark",
+                redirectTo="/benchmark",
+                artifact="benchmark",
+            ),
+            RoutePermission(
+                path="/benchmark/[testId]",
+                roles=["custom", "instructional", "admin", "superadmin"],
+                title="Benchmark Test",
+                redirectTo="/benchmark",
+                artifact="test",
+            ),
+            RoutePermission(
+                path="/benchmark/[testId]/[suiteId]",
+                roles=["custom", "instructional", "admin", "superadmin"],
+                title="Benchmark Suite",
+                redirectTo="/benchmark",
+                artifact="eval",
+            ),
+        ],
+    ),
     # SectionPermission(
     #     section="settings",
     #     roles=["admin", "superadmin"],

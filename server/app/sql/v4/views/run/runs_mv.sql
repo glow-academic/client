@@ -38,28 +38,30 @@ DROP MATERIALIZED VIEW IF EXISTS runs_mv CASCADE;
 
 CREATE MATERIALIZED VIEW runs_mv AS
 WITH
--- Per run, collect distinct agent/model/provider IDs from config connections
+-- Per run, collect distinct agent/model/provider IDs from runs_configs_connection + config_resource
 configs_agg AS (
     SELECT
-        ce.run_id,
+        rcc.run_id,
         COALESCE(
-            ARRAY_AGG(DISTINCT cac.agents_id) FILTER (WHERE cac.agents_id IS NOT NULL),
+            ARRAY_AGG(DISTINCT aaj.agent_id) FILTER (WHERE aaj.agent_id IS NOT NULL),
             ARRAY[]::uuid[]
         ) AS agent_ids,
         COALESCE(
-            ARRAY_AGG(DISTINCT cmc.models_id) FILTER (WHERE cmc.models_id IS NOT NULL),
+            ARRAY_AGG(DISTINCT cr.model_id) FILTER (WHERE cr.model_id IS NOT NULL),
             ARRAY[]::uuid[]
         ) AS model_ids,
         COALESCE(
-            ARRAY_AGG(DISTINCT cpc.providers_id) FILTER (WHERE cpc.providers_id IS NOT NULL),
+            ARRAY_AGG(DISTINCT mr.provider_id) FILTER (WHERE mr.provider_id IS NOT NULL),
             ARRAY[]::uuid[]
         ) AS provider_ids
-    FROM config_entry ce
-    LEFT JOIN config_agents_connection cac ON cac.config_id = ce.id AND cac.active = TRUE
-    LEFT JOIN config_models_connection cmc ON cmc.config_id = ce.id AND cmc.active = TRUE
-    LEFT JOIN config_providers_connection cpc ON cpc.config_id = ce.id AND cpc.active = TRUE
-    WHERE ce.run_id IS NOT NULL
-    GROUP BY ce.run_id
+    FROM runs_configs_connection rcc
+    JOIN config_resource cr ON cr.id = rcc.config_id AND cr.active = TRUE
+    -- Resolve agent: find agent_artifact that owns this config via agent_configs_junction
+    LEFT JOIN agent_configs_junction aaj ON aaj.config_id = cr.id AND aaj.active = TRUE
+    -- Resolve provider via models_resource.provider_id
+    LEFT JOIN models_resource mr ON mr.id = cr.model_id
+    WHERE rcc.active = TRUE
+    GROUP BY rcc.run_id
 ),
 -- Per pricing type, get (count, pricing_id) as separate CTEs
 pricing_input AS (

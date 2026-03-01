@@ -49,7 +49,7 @@ FROM (
       -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (t.id = ANY(exclude_ids)))
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT agent OR EXISTS (SELECT 1 FROM agent_temperature_levels_junction j WHERE j.temperature_level_id = t.id AND j.active = true))
+      AND (NOT agent OR EXISTS (SELECT 1 FROM agent_configs_junction acj JOIN config_resource cr ON cr.id = acj.config_id AND cr.active = true WHERE cr.temperature_level_id = t.id AND acj.active = true))
       AND (NOT model OR EXISTS (SELECT 1 FROM model_temperature_levels_junction j WHERE j.temperature_level_id = t.id AND j.active = true))
     ORDER BY t.temperature ASC
     LIMIT limit_count

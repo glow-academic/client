@@ -1,12 +1,14 @@
 -- Mark eval_model_run as incomplete (in progress)
+-- Post-migration 18: eval_runs_junction no longer exists (runs are runtime-only).
+-- This function is retained as a no-op for backward compatibility.
 -- 1) Drop function first
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
-        FROM pg_proc 
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
         WHERE proname = 'infrastructure_evals_mark_model_run_incomplete_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
@@ -14,7 +16,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Recreate function
+-- 2) Recreate function (no-op: runs are runtime-only, no longer tracked on eval)
 CREATE OR REPLACE FUNCTION infrastructure_evals_mark_model_run_incomplete_v4(
     eval_id uuid,
     model_run_id uuid
@@ -23,7 +25,5 @@ RETURNS void
 LANGUAGE sql
 VOLATILE
 AS $$
-    UPDATE eval_runs_junction 
-    SET completed = false
-    WHERE eval_runs_junction.eval_id = $1 AND eval_runs_junction.run_id = $2
+    SELECT NULL::void
 $$;

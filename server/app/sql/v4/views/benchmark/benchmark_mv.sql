@@ -49,38 +49,6 @@ department_agg AS (
     WHERE bdc.active = true
     GROUP BY bdc.benchmark_id
 ),
-run_rubric_agg AS (
-    SELECT
-        brrc.benchmark_id,
-        ARRAY_AGG(DISTINCT brrc.run_rubrics_id ORDER BY brrc.run_rubrics_id) AS run_rubric_ids
-    FROM test_run_rubrics_connection brrc
-    WHERE brrc.active = true
-    GROUP BY brrc.benchmark_id
-),
-group_rubric_agg AS (
-    SELECT
-        bgrc.benchmark_id,
-        ARRAY_AGG(DISTINCT bgrc.group_rubrics_id ORDER BY bgrc.group_rubrics_id) AS group_rubric_ids
-    FROM test_group_rubrics_connection bgrc
-    WHERE bgrc.active = true
-    GROUP BY bgrc.benchmark_id
-),
-run_position_agg AS (
-    SELECT
-        brpc.benchmark_id,
-        ARRAY_AGG(DISTINCT brpc.run_positions_id ORDER BY brpc.run_positions_id) AS run_position_ids
-    FROM test_run_positions_connection brpc
-    WHERE brpc.active = true
-    GROUP BY brpc.benchmark_id
-),
-group_position_agg AS (
-    SELECT
-        bgpc.benchmark_id,
-        ARRAY_AGG(DISTINCT bgpc.group_positions_id ORDER BY bgpc.group_positions_id) AS group_position_ids
-    FROM test_group_positions_connection bgpc
-    WHERE bgpc.active = true
-    GROUP BY bgpc.benchmark_id
-),
 -- benchmark_bundle level (aggregated UP to benchmark_entry)
 bundle_agg AS (
     SELECT
@@ -101,10 +69,6 @@ SELECT
     COALESCE(ev.eval_ids, ARRAY[]::uuid[]) AS eval_ids,
     COALESCE(prof.profile_ids, ARRAY[]::uuid[]) AS profile_ids,
     COALESCE(dep.department_ids, ARRAY[]::uuid[]) AS department_ids,
-    COALESCE(rr.run_rubric_ids, ARRAY[]::uuid[]) AS run_rubric_ids,
-    COALESCE(gr.group_rubric_ids, ARRAY[]::uuid[]) AS group_rubric_ids,
-    COALESCE(rp.run_position_ids, ARRAY[]::uuid[]) AS run_position_ids,
-    COALESCE(gp.group_position_ids, ARRAY[]::uuid[]) AS group_position_ids,
 
     -- Aggregated UP from benchmark_bundle level
     COALESCE(bun.invocation_entry_ids, ARRAY[]::uuid[]) AS invocation_entry_ids,
@@ -117,10 +81,6 @@ FROM benchmark_entry be
 LEFT JOIN eval_agg ev ON ev.benchmark_id = be.id
 LEFT JOIN profile_agg prof ON prof.benchmark_id = be.id
 LEFT JOIN department_agg dep ON dep.benchmark_id = be.id
-LEFT JOIN run_rubric_agg rr ON rr.benchmark_id = be.id
-LEFT JOIN group_rubric_agg gr ON gr.benchmark_id = be.id
-LEFT JOIN run_position_agg rp ON rp.benchmark_id = be.id
-LEFT JOIN group_position_agg gp ON gp.benchmark_id = be.id
 LEFT JOIN bundle_agg bun ON bun.benchmark_id = be.id
 WHERE be.active = true
 WITH NO DATA;

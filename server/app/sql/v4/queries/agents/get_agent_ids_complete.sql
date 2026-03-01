@@ -32,8 +32,6 @@ RETURNS TABLE (
     name_id uuid,
     description_id uuid,
     model_id uuid,
-    prompt_id uuid,
-    instructions_id uuid,
     active_flag_id uuid,
     temperature_level_id uuid,
     reasoning_level_id uuid,
@@ -76,25 +74,9 @@ description_resource_data AS (
 model_resource_data AS (
     SELECT
         COALESCE(
-            (SELECT am.model_id FROM agent_models_junction am WHERE am.agent_id = (SELECT agent_id FROM params) LIMIT 1),
+            (SELECT cr.model_id FROM agent_configs_junction ac JOIN config_resource cr ON cr.id = ac.config_id WHERE ac.agent_id = (SELECT agent_id FROM params) AND ac.active = true AND cr.model_id IS NOT NULL LIMIT 1),
             NULL::uuid
         ) as model_id
-    FROM params
-),
-prompt_resource_data AS (
-    SELECT
-        COALESCE(
-            (SELECT ap.prompt_id FROM agent_prompts_junction ap WHERE ap.agent_id = (SELECT agent_id FROM params) AND ap.active = true LIMIT 1),
-            NULL::uuid
-        ) as prompt_id
-    FROM params
-),
-instructions_resource_data AS (
-    SELECT
-        COALESCE(
-            (SELECT ai.instruction_id FROM agent_instructions_junction ai WHERE ai.agent_id = (SELECT agent_id FROM params) LIMIT 1),
-            NULL::uuid
-        ) as instructions_id
     FROM params
 ),
 flag_resource_data AS (
@@ -118,7 +100,7 @@ flag_resource_data AS (
 temperature_level_resource_data AS (
     SELECT
         COALESCE(
-            (SELECT atl.temperature_level_id FROM agent_temperature_levels_junction atl WHERE atl.agent_id = (SELECT agent_id FROM params) AND atl.active = true LIMIT 1),
+            (SELECT cr.temperature_level_id FROM agent_configs_junction ac JOIN config_resource cr ON cr.id = ac.config_id WHERE ac.agent_id = (SELECT agent_id FROM params) AND ac.active = true AND cr.temperature_level_id IS NOT NULL LIMIT 1),
             NULL::uuid
         ) as temperature_level_id
     FROM params
@@ -126,7 +108,7 @@ temperature_level_resource_data AS (
 reasoning_level_resource_data AS (
     SELECT
         COALESCE(
-            (SELECT arl.reasoning_level_id FROM agent_reasoning_levels_junction arl WHERE arl.agent_id = (SELECT agent_id FROM params) AND arl.active = true LIMIT 1),
+            (SELECT cr.reasoning_level_id FROM agent_configs_junction ac JOIN config_resource cr ON cr.id = ac.config_id WHERE ac.agent_id = (SELECT agent_id FROM params) AND ac.active = true AND cr.reasoning_level_id IS NOT NULL LIMIT 1),
             NULL::uuid
         ) as reasoning_level_id
     FROM params
@@ -167,10 +149,12 @@ tool_ids_data AS (
 voice_ids_data AS (
     SELECT
         COALESCE(
-            (SELECT ARRAY_AGG(av.voice_id ORDER BY av.created_at)
-             FROM agent_voices_junction av
-             WHERE av.agent_id = (SELECT agent_id FROM params)
-               AND av.active = true),
+            (SELECT ARRAY_AGG(cr.voice_id ORDER BY ac.created_at)
+             FROM agent_configs_junction ac
+             JOIN config_resource cr ON cr.id = ac.config_id
+             WHERE ac.agent_id = (SELECT agent_id FROM params)
+               AND ac.active = true
+               AND cr.voice_id IS NOT NULL),
             ARRAY[]::uuid[]
         ) as voice_ids
     FROM params
@@ -181,8 +165,6 @@ SELECT
     (SELECT name_id FROM name_resource_data) as name_id,
     (SELECT description_id FROM description_resource_data) as description_id,
     (SELECT model_id FROM model_resource_data) as model_id,
-    (SELECT prompt_id FROM prompt_resource_data) as prompt_id,
-    (SELECT instructions_id FROM instructions_resource_data) as instructions_id,
     (SELECT active_flag_id FROM flag_resource_data) as active_flag_id,
     (SELECT temperature_level_id FROM temperature_level_resource_data) as temperature_level_id,
     (SELECT reasoning_level_id FROM reasoning_level_resource_data) as reasoning_level_id,

@@ -63,9 +63,7 @@ FROM (
               AND draft_id IS NOT NULL
               AND EXISTS (
                   SELECT 1 FROM (
-                      SELECT instructions_id, draft_id FROM agent_drafts_instructions_connection WHERE active = true
-                      UNION ALL SELECT instructions_id, draft_id FROM persona_drafts_instructions_connection WHERE active = true
-                      UNION ALL SELECT instructions_id, draft_id FROM invocation_drafts_instructions_connection WHERE active = true
+                      SELECT instructions_id, draft_id FROM persona_drafts_instructions_connection WHERE active = true
                   ) dc
                   WHERE dc.instructions_id = i.id
                     AND dc.draft_id = api_search_instructions_v4.draft_id
@@ -73,7 +71,7 @@ FROM (
           )
       )
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT agent OR EXISTS (SELECT 1 FROM agent_instructions_junction j WHERE j.instruction_id = i.id AND j.active = true))
+      AND (NOT agent OR EXISTS (SELECT 1 FROM config_resource cr WHERE i.id = ANY(cr.instruction_ids) AND cr.active = true))
       AND (NOT persona OR EXISTS (SELECT 1 FROM persona_instructions_junction j WHERE j.instruction_id = i.id AND j.active = true))
     ORDER BY i.template
     LIMIT limit_count

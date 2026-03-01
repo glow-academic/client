@@ -1,0 +1,1 @@
+"""Model positions resource endpoints."""

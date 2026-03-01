@@ -40,15 +40,13 @@ CREATE TYPE types.q_get_invocation_drafts_entries_v4_item AS (
     department_ids uuid[],
     description_ids uuid[],
     flag_ids uuid[],
-    group_ids uuid[],
-    instruction_ids uuid[],
     key_ids uuid[],
+    model_flag_ids uuid[],
+    model_rubric_ids uuid[],
+    model_position_ids uuid[],
     name_ids uuid[],
-    prompt_ids uuid[],
     reasoning_level_ids uuid[],
-    run_ids uuid[],
     temperature_level_ids uuid[],
-    tool_ids uuid[],
     voice_ids uuid[]
 );
 
@@ -81,15 +79,13 @@ AS $$
                     department_ids,
                     description_ids,
                     flag_ids,
-                    group_ids,
-                    instruction_ids,
                     key_ids,
+                    model_flag_ids,
+                    model_rubric_ids,
+                    model_position_ids,
                     name_ids,
-                    prompt_ids,
                     reasoning_level_ids,
-                    run_ids,
                     temperature_level_ids,
-                    tool_ids,
                     voice_ids
                 )::types.q_get_invocation_drafts_entries_v4_item
                 ORDER BY updated_at DESC

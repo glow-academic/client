@@ -85,11 +85,11 @@ async def save_eval_internal(
             description_id=_single_id("descriptions"),
             flag_ids=_multi_ids("flags"),
             department_ids=_multi_ids("departments"),
-            agent_ids=_multi_ids("agents"),
-            model_run_ids=_multi_ids("runs"),
-            group_ids=_multi_ids("groups"),
-            run_position_ids=_multi_ids("run_positions"),
-            group_position_ids=_multi_ids("group_positions"),
+            rubric_ids=_multi_ids("rubrics"),
+            model_ids=_multi_ids("models"),
+            model_flag_ids=_multi_ids("model_flags"),
+            model_rubric_ids=_multi_ids("model_rubrics"),
+            model_position_ids=_multi_ids("model_positions"),
         )
 
         async with conn.transaction():
@@ -102,6 +102,23 @@ async def save_eval_internal(
                 return None
 
         await invalidate_tags(["evals"])
+
+        # Sync benchmark entries (fire-and-forget — failure should not fail the save)
+        try:
+            from app.api.v4.artifacts.eval.sync import sync_benchmark_entries
+
+            await sync_benchmark_entries(
+                conn=conn,
+                evals_resource_id=result.eval_id,
+                model_ids=params.model_ids or [],
+                model_flag_ids=params.model_flag_ids or [],
+                model_rubric_ids=params.model_rubric_ids or [],
+                model_position_ids=params.model_position_ids or [],
+                department_ids=params.department_ids or [],
+            )
+        except Exception as sync_err:
+            logger.warning(f"sync_benchmark_entries failed (non-fatal): {sync_err}")
+
         return result.eval_id
 
     except Exception as e:
@@ -249,6 +266,22 @@ async def save_eval(
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
+
+        # Sync benchmark entries (fire-and-forget — failure should not fail the save)
+        try:
+            from app.api.v4.artifacts.eval.sync import sync_benchmark_entries
+
+            await sync_benchmark_entries(
+                conn=conn,
+                evals_resource_id=result.eval_id,
+                model_ids=request.model_ids or [],
+                model_flag_ids=request.model_flag_ids or [],
+                model_rubric_ids=request.model_rubric_ids or [],
+                model_position_ids=request.model_position_ids or [],
+                department_ids=request.department_ids or [],
+            )
+        except Exception as sync_err:
+            logger.warning(f"sync_benchmark_entries failed (non-fatal): {sync_err}")
 
         return api_response
     except HTTPException:

@@ -1,4 +1,4 @@
--- Get config entries by IDs from config_mv
+-- Get config entries by IDs from config_resource
 
 DO $$
 DECLARE
@@ -30,10 +30,17 @@ END $$;
 
 CREATE TYPE types.q_get_config_entries_v4_item AS (
     config_id uuid,
-    agents_id uuid,
-    models_id uuid,
-    providers_id uuid,
+    prompt_id uuid,
+    instruction_ids uuid[],
     tool_ids uuid[],
+    modality_ids uuid[],
+    rubric_id uuid,
+    model_id uuid,
+    temperature_level_id uuid,
+    reasoning_level_id uuid,
+    voice_id uuid,
+    quality_id uuid,
+    key_id uuid,
     created_at timestamptz
 );
 
@@ -46,27 +53,35 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    WITH mv_data AS (
-        SELECT mv.*
-        FROM config_mv mv
-        WHERE mv.config_id = ANY(ids)
+    WITH resource_data AS (
+        SELECT r.*
+        FROM config_resource r
+        WHERE r.id = ANY(ids)
+          AND r.active = true
     ),
     items_agg AS (
         SELECT COALESCE(
             ARRAY_AGG(
                 (
-                    config_id,
-                    agents_id,
-                    models_id,
-                    providers_id,
+                    id,
+                    prompt_id,
+                    instruction_ids,
                     tool_ids,
-                    config_created_at
+                    modality_ids,
+                    rubric_id,
+                    model_id,
+                    temperature_level_id,
+                    reasoning_level_id,
+                    voice_id,
+                    quality_id,
+                    key_id,
+                    created_at
                 )::types.q_get_config_entries_v4_item
-                ORDER BY config_created_at
+                ORDER BY created_at
             ),
             ARRAY[]::types.q_get_config_entries_v4_item[]
         ) AS items
-        FROM mv_data
+        FROM resource_data
     )
     SELECT items FROM items_agg;
 $$;

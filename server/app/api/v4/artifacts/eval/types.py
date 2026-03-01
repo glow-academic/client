@@ -14,11 +14,10 @@ from app.sql.types import (
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
     QGetEvalDraftsEntriesV4Item,
-    QGetGroupPositionsV4Item,
-    QGetGroupRubricsV4Item,
+    QGetModelFlagsV4Item,
+    QGetModelPositionsV4Item,
+    QGetModelRubricsV4Item,
     QGetNamesV4Item,
-    QGetRunPositionsV4Item,
-    QGetRunRubricsV4Item,
 )
 
 # ========== Eval-specific resource types ==========
@@ -211,10 +210,9 @@ class EvalWebsocketResources(BaseModel):
     departments: list[QGetDepartmentsV4Item] | None = None
     eval_agents: list[EvalAgentItem] | None = None
     rubrics: list[EvalRubricItem] | None = None
-    run_positions: list[QGetRunPositionsV4Item] | None = None
-    group_positions: list[QGetGroupPositionsV4Item] | None = None
-    run_rubrics: list[QGetRunRubricsV4Item] | None = None
-    group_rubrics: list[QGetGroupRubricsV4Item] | None = None
+    model_flags: list[QGetModelFlagsV4Item] | None = None
+    model_rubrics: list[QGetModelRubricsV4Item] | None = None
+    model_positions: list[QGetModelPositionsV4Item] | None = None
 
 
 class GetEvalWebsocketResponse(InternalResponseBase):
@@ -277,15 +275,11 @@ class SaveEvalApiRequest(BaseModel):
     description_id: UUID | None = None
     flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
-    agent_ids: list[UUID] | None = None
-    model_run_ids: list[UUID] | None = None
-    group_ids: list[UUID] | None = None
-    run_position_ids: list[UUID] | None = None
-    group_position_ids: list[UUID] | None = None
-
-    # Scoped rubric mappings (target -> rubric ids)
-    run_rubrics: list[EvalRunRubricMapping] | None = None
-    group_rubrics: list[EvalGroupRubricMapping] | None = None
+    rubric_ids: list[UUID] | None = None
+    model_ids: list[UUID] | None = None
+    model_flag_ids: list[UUID] | None = None
+    model_rubric_ids: list[UUID] | None = None
+    model_position_ids: list[UUID] | None = None
 
 
 class SaveEvalApiResponse(BaseModel):
@@ -305,13 +299,11 @@ class SaveEvalSqlParams(BaseModel):
     description_id: UUID | None = None
     flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
-    agent_ids: list[UUID] | None = None
-    model_run_ids: list[UUID] | None = None
-    group_ids: list[UUID] | None = None
-    run_position_ids: list[UUID] | None = None
-    group_position_ids: list[UUID] | None = None
-    run_rubrics: list[EvalRunRubricMapping] | None = None
-    group_rubrics: list[EvalGroupRubricMapping] | None = None
+    rubric_ids: list[UUID] | None = None
+    model_ids: list[UUID] | None = None
+    model_flag_ids: list[UUID] | None = None
+    model_rubric_ids: list[UUID] | None = None
+    model_position_ids: list[UUID] | None = None
 
     @classmethod
     def from_request(
@@ -328,22 +320,14 @@ class SaveEvalSqlParams(BaseModel):
             description_id=request.description_id,
             flag_ids=request.flag_ids,
             department_ids=request.department_ids,
-            agent_ids=request.agent_ids,
-            model_run_ids=request.model_run_ids,
-            group_ids=request.group_ids,
-            run_position_ids=request.run_position_ids,
-            group_position_ids=request.group_position_ids,
-            run_rubrics=request.run_rubrics,
-            group_rubrics=request.group_rubrics,
+            rubric_ids=request.rubric_ids,
+            model_ids=request.model_ids,
+            model_flag_ids=request.model_flag_ids,
+            model_rubric_ids=request.model_rubric_ids,
+            model_position_ids=request.model_position_ids,
         )
 
     def to_tuple(self) -> tuple:
-        run_rubrics_tuples = [
-            (conn.run_id, conn.rubric_ids) for conn in (self.run_rubrics or [])
-        ]
-        group_rubrics_tuples = [
-            (conn.group_id, conn.rubric_ids) for conn in (self.group_rubrics or [])
-        ]
         return (
             self.profile_id,
             self.group_id,
@@ -352,13 +336,11 @@ class SaveEvalSqlParams(BaseModel):
             self.description_id,
             self.flag_ids,
             self.department_ids,
-            self.agent_ids,
-            self.model_run_ids,
-            self.group_ids,
-            self.run_position_ids,
-            self.group_position_ids,
-            run_rubrics_tuples,
-            group_rubrics_tuples,
+            self.rubric_ids,
+            self.model_ids,
+            self.model_flag_ids,
+            self.model_rubric_ids,
+            self.model_position_ids,
         )
 
 
@@ -412,11 +394,11 @@ class PatchEvalDraftApiRequest(BaseModel):
     description_id: UUID | None = None
     flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
-    agent_ids: list[UUID] | None = None
-    model_run_ids: list[UUID] | None = None
-    group_ids: list[UUID] | None = None
-    run_position_ids: list[UUID] | None = None
-    group_position_ids: list[UUID] | None = None
+    rubric_ids: list[UUID] | None = None
+    model_ids: list[UUID] | None = None
+    model_flag_ids: list[UUID] | None = None
+    model_rubric_ids: list[UUID] | None = None
+    model_position_ids: list[UUID] | None = None
     expected_version: int = 0
 
 
@@ -437,11 +419,11 @@ class PatchEvalDraftSqlParams(BaseModel):
     description_id: UUID | None = None
     flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
-    agent_ids: list[UUID] | None = None
-    model_run_ids: list[UUID] | None = None
-    group_ids: list[UUID] | None = None
-    run_position_ids: list[UUID] | None = None
-    group_position_ids: list[UUID] | None = None
+    rubric_ids: list[UUID] | None = None
+    model_ids: list[UUID] | None = None
+    model_flag_ids: list[UUID] | None = None
+    model_rubric_ids: list[UUID] | None = None
+    model_position_ids: list[UUID] | None = None
     expected_version: int = 0
 
     @classmethod
@@ -456,11 +438,11 @@ class PatchEvalDraftSqlParams(BaseModel):
             description_id=request.description_id,
             flag_ids=request.flag_ids,
             department_ids=request.department_ids,
-            agent_ids=request.agent_ids,
-            model_run_ids=request.model_run_ids,
-            group_ids=request.group_ids,
-            run_position_ids=request.run_position_ids,
-            group_position_ids=request.group_position_ids,
+            rubric_ids=request.rubric_ids,
+            model_ids=request.model_ids,
+            model_flag_ids=request.model_flag_ids,
+            model_rubric_ids=request.model_rubric_ids,
+            model_position_ids=request.model_position_ids,
             expected_version=request.expected_version,
         )
 
@@ -473,11 +455,11 @@ class PatchEvalDraftSqlParams(BaseModel):
             self.description_id,
             self.flag_ids,
             self.department_ids,
-            self.agent_ids,
-            self.model_run_ids,
-            self.group_ids,
-            self.run_position_ids,
-            self.group_position_ids,
+            self.rubric_ids,
+            self.model_ids,
+            self.model_flag_ids,
+            self.model_rubric_ids,
+            self.model_position_ids,
             self.expected_version,
         )
 

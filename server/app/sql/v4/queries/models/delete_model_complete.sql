@@ -51,9 +51,11 @@ personas_usage_check AS (
     SELECT 0::bigint as usage_count
 ),
 agents_usage_check AS (
-    SELECT COUNT(*)::bigint as usage_count
-    FROM agent_models_junction
-    WHERE model_id = (SELECT model_id FROM params)
+    SELECT COUNT(DISTINCT ac.agent_id)::bigint as usage_count
+    FROM config_resource cr
+    JOIN agent_configs_junction ac ON ac.config_id = cr.id AND ac.active = true
+    WHERE cr.model_id = (SELECT model_id FROM params)
+      AND cr.active = true
 ),
 model_info AS (
     SELECT 

@@ -23,13 +23,9 @@ WITH draft_links AS (
     UNION ALL SELECT draft_id, 'descriptions'::text AS resource_type, descriptions_id AS resource_id FROM eval_drafts_descriptions_connection WHERE active = true
     UNION ALL SELECT draft_id, 'evals'::text AS resource_type, evals_id AS resource_id FROM eval_drafts_evals_connection WHERE active = true
     UNION ALL SELECT draft_id, 'flags'::text AS resource_type, flags_id AS resource_id FROM eval_drafts_flags_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'group_positions'::text AS resource_type, group_positions_id AS resource_id FROM eval_drafts_group_positions_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'group_rubrics'::text AS resource_type, group_rubrics_id AS resource_id FROM eval_drafts_group_rubrics_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'groups'::text AS resource_type, groups_id AS resource_id FROM eval_drafts_groups_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'models'::text AS resource_type, models_id AS resource_id FROM eval_drafts_models_connection WHERE active = true
     UNION ALL SELECT draft_id, 'names'::text AS resource_type, names_id AS resource_id FROM eval_drafts_names_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'run_positions'::text AS resource_type, run_positions_id AS resource_id FROM eval_drafts_run_positions_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'run_rubrics'::text AS resource_type, run_rubrics_id AS resource_id FROM eval_drafts_run_rubrics_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'runs'::text AS resource_type, runs_id AS resource_id FROM eval_drafts_runs_connection WHERE active = true
+    UNION ALL SELECT draft_id, 'rubrics'::text AS resource_type, rubrics_id AS resource_id FROM eval_drafts_rubrics_connection WHERE active = true
 )
 SELECT
     d.id AS draft_id,
@@ -44,13 +40,9 @@ SELECT
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'descriptions'), ARRAY[]::uuid[]) AS description_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'evals'), ARRAY[]::uuid[]) AS eval_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'flags'), ARRAY[]::uuid[]) AS flag_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'group_positions'), ARRAY[]::uuid[]) AS group_position_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'group_rubrics'), ARRAY[]::uuid[]) AS group_rubric_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'groups'), ARRAY[]::uuid[]) AS group_ids,
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'models'), ARRAY[]::uuid[]) AS model_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'names'), ARRAY[]::uuid[]) AS name_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'run_positions'), ARRAY[]::uuid[]) AS run_position_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'run_rubrics'), ARRAY[]::uuid[]) AS run_rubric_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'runs'), ARRAY[]::uuid[]) AS run_ids
+    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'rubrics'), ARRAY[]::uuid[]) AS rubric_ids
 FROM eval_drafts_entry d
 LEFT JOIN draft_links l ON l.draft_id = d.id
 GROUP BY d.id, d.created_at, d.updated_at, d.version, d.generated, d.mcp, d.active, d.group_id

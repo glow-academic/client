@@ -2,24 +2,6 @@
 -- Fetches all resource IDs using user context from Query 1
 -- This query runs AFTER access check, BEFORE parallel resource fetching
 
--- Drop and recreate composite types for rubric mappings
-DO $$
-BEGIN
-    DROP TYPE IF EXISTS eval_run_rubric_mapping CASCADE;
-    CREATE TYPE eval_run_rubric_mapping AS (
-        run_id uuid,
-        rubric_ids uuid[]
-    );
-
-    DROP TYPE IF EXISTS eval_group_rubric_mapping CASCADE;
-    CREATE TYPE eval_group_rubric_mapping AS (
-        group_id uuid,
-        rubric_ids uuid[]
-    );
-END $$;
-
-DROP TYPE IF EXISTS eval_candidate_agent CASCADE;
-
 -- Drop function if exists
 DO $$
 DECLARE
@@ -40,7 +22,6 @@ CREATE OR REPLACE FUNCTION api_get_eval_ids_v4(
     profile_id uuid,
     eval_id uuid DEFAULT NULL,
     draft_id uuid DEFAULT NULL,
-    group_id uuid DEFAULT NULL,
     user_department_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
@@ -54,18 +35,16 @@ RETURNS TABLE (
     -- Multi-select resource IDs
     department_ids uuid[],
     rubric_ids uuid[],
-    model_run_ids uuid[],
-    group_ids uuid[],
+    model_ids uuid[],
+    model_flag_ids uuid[],
+    model_rubric_ids uuid[],
+    model_position_ids uuid[],
 
     -- Suggestion IDs
     name_suggestions uuid[],
     description_suggestions uuid[],
     department_suggestions uuid[],
-    rubric_suggestions uuid[],
-
-    -- Cross-reference mappings
-    run_rubrics eval_run_rubric_mapping[],
-    group_rubrics eval_group_rubric_mapping[]
+    rubric_suggestions uuid[]
 )
 LANGUAGE sql
 STABLE
@@ -74,7 +53,6 @@ WITH params AS (
     SELECT
         eval_id AS eval_id,
         profile_id AS profile_id,
-        group_id AS group_id,
         user_department_ids AS user_department_ids
 ),
 -- Single-select: name (draft priority)
@@ -142,70 +120,90 @@ eval_department_ids_data AS (
     FROM params
     LIMIT 1
 ),
--- Multi-select: rubric IDs
+-- Multi-select: rubric IDs (now direct via eval_rubrics_junction)
 eval_rubric_ids_data AS (
     SELECT
         CASE
-            WHEN (SELECT eval_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            WHEN (SELECT eval_id FROM params) IS NULL THEN
+                COALESCE(
+                    (SELECT ARRAY_AGG(dr.rubrics_id ORDER BY dr.created_at)
+                     FROM eval_drafts_rubrics_connection dr
+                     WHERE dr.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x)),
+                    ARRAY[]::uuid[]
+                )
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(DISTINCT rubric_id)
-                 FROM (
-                     SELECT rr.rubric_id, err.created_at
-                     FROM eval_runs_rubrics_junction err
-                     JOIN run_rubrics_resource rr ON rr.id = err.run_rubric_id
-                     WHERE err.eval_id = (SELECT eval_id FROM params) AND err.active = true
-                     UNION
-                     SELECT gr.rubric_id, egr.created_at
-                     FROM eval_groups_rubrics_junction egr
-                     JOIN group_rubrics_resource gr ON gr.id = egr.group_rubric_id
-                     WHERE egr.eval_id = (SELECT eval_id FROM params) AND egr.active = true
-                     ORDER BY created_at
-                 ) combined),
+                (SELECT ARRAY_AGG(er.rubric_id ORDER BY er.created_at)
+                 FROM eval_rubrics_junction er
+                 WHERE er.eval_id = (SELECT eval_id FROM params) AND er.active = true),
                 ARRAY[]::uuid[]
             )
         END as rubric_ids
     FROM params
     LIMIT 1
 ),
--- Multi-select: model run IDs (from eval junction or draft)
-eval_run_ids_data AS (
+-- Multi-select: model IDs (judge models, now direct via eval_models_junction)
+eval_model_ids_data AS (
     SELECT
         CASE
             WHEN (SELECT eval_id FROM params) IS NULL THEN
                 COALESCE(
-                    (SELECT ARRAY_AGG(dr.runs_id ORDER BY dr.created_at)
-                     FROM eval_drafts_runs_connection dr
-                     WHERE dr.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x)),
+                    (SELECT ARRAY_AGG(dm.models_id ORDER BY dm.created_at)
+                     FROM eval_drafts_models_connection dm
+                     WHERE dm.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x)),
                     ARRAY[]::uuid[]
                 )
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(er.run_id ORDER BY er.created_at)
-                 FROM eval_runs_junction er
-                 WHERE er.eval_id = (SELECT eval_id FROM params) AND er.active = true),
+                (SELECT ARRAY_AGG(em.model_id ORDER BY em.created_at)
+                 FROM eval_models_junction em
+                 WHERE em.eval_id = (SELECT eval_id FROM params) AND em.active = true),
                 ARRAY[]::uuid[]
             )
-        END as run_ids
+        END as model_ids
     FROM params
     LIMIT 1
 ),
--- Multi-select: group IDs (from eval junction or draft)
-eval_group_ids_data AS (
+-- Multi-select: model_flag IDs
+eval_model_flag_ids_data AS (
     SELECT
         CASE
-            WHEN (SELECT eval_id FROM params) IS NULL THEN
-                COALESCE(
-                    (SELECT ARRAY_AGG(dg.groups_id ORDER BY dg.created_at)
-                     FROM eval_drafts_groups_connection dg
-                     WHERE dg.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x)),
-                    ARRAY[]::uuid[]
-                )
+            WHEN (SELECT eval_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(eg.group_id ORDER BY eg.created_at)
-                 FROM eval_groups_junction eg
-                 WHERE eg.eval_id = (SELECT eval_id FROM params) AND eg.active = true),
+                (SELECT ARRAY_AGG(emf.model_flag_id ORDER BY emf.created_at)
+                 FROM eval_model_flags_junction emf
+                 WHERE emf.eval_id = (SELECT eval_id FROM params) AND emf.active = true),
                 ARRAY[]::uuid[]
             )
-        END as group_ids
+        END as model_flag_ids
+    FROM params
+    LIMIT 1
+),
+-- Multi-select: model_rubric IDs
+eval_model_rubric_ids_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT eval_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(emr.model_rubric_id ORDER BY emr.created_at)
+                 FROM eval_model_rubrics_junction emr
+                 WHERE emr.eval_id = (SELECT eval_id FROM params) AND emr.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as model_rubric_ids
+    FROM params
+    LIMIT 1
+),
+-- Multi-select: model_position IDs
+eval_model_position_ids_data AS (
+    SELECT
+        CASE
+            WHEN (SELECT eval_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(emp.model_position_id ORDER BY emp.created_at)
+                 FROM eval_model_positions_junction emp
+                 WHERE emp.eval_id = (SELECT eval_id FROM params) AND emp.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as model_position_ids
     FROM params
     LIMIT 1
 ),
@@ -291,40 +289,6 @@ rubric_suggestions_data AS (
         ) as rubric_suggestions
     FROM params
     LIMIT 1
-),
--- Run rubric mappings
-eval_run_rubrics_data AS (
-    SELECT
-        COALESCE(
-            ARRAY_AGG((sub.runs_id, sub.rubric_ids)::eval_run_rubric_mapping),
-            '{}'::eval_run_rubric_mapping[]
-        ) as run_rubrics
-    FROM (
-        SELECT
-            rr.runs_id,
-            ARRAY_AGG(rr.rubric_id ORDER BY err.created_at) as rubric_ids
-        FROM eval_runs_rubrics_junction err
-        JOIN run_rubrics_resource rr ON rr.id = err.run_rubric_id
-        WHERE err.eval_id = (SELECT eval_id FROM params) AND err.active = true
-        GROUP BY rr.runs_id
-    ) sub
-),
--- Group rubric mappings
-eval_group_rubrics_data AS (
-    SELECT
-        COALESCE(
-            ARRAY_AGG((sub.groups_id, sub.rubric_ids)::eval_group_rubric_mapping),
-            '{}'::eval_group_rubric_mapping[]
-        ) as group_rubrics
-    FROM (
-        SELECT
-            gr.groups_id,
-            ARRAY_AGG(gr.rubric_id ORDER BY egr.created_at) as rubric_ids
-        FROM eval_groups_rubrics_junction egr
-        JOIN group_rubrics_resource gr ON gr.id = egr.group_rubric_id
-        WHERE egr.eval_id = (SELECT eval_id FROM params) AND egr.active = true
-        GROUP BY gr.groups_id
-    ) sub
 )
 SELECT
     -- Single-select IDs
@@ -337,16 +301,14 @@ SELECT
     -- Multi-select IDs
     COALESCE((SELECT department_ids FROM eval_department_ids_data), ARRAY[]::uuid[]) as department_ids,
     COALESCE((SELECT rubric_ids FROM eval_rubric_ids_data), ARRAY[]::uuid[]) as rubric_ids,
-    COALESCE((SELECT run_ids FROM eval_run_ids_data), ARRAY[]::uuid[]) as model_run_ids,
-    COALESCE((SELECT group_ids FROM eval_group_ids_data), ARRAY[]::uuid[]) as group_ids,
+    COALESCE((SELECT model_ids FROM eval_model_ids_data), ARRAY[]::uuid[]) as model_ids,
+    COALESCE((SELECT model_flag_ids FROM eval_model_flag_ids_data), ARRAY[]::uuid[]) as model_flag_ids,
+    COALESCE((SELECT model_rubric_ids FROM eval_model_rubric_ids_data), ARRAY[]::uuid[]) as model_rubric_ids,
+    COALESCE((SELECT model_position_ids FROM eval_model_position_ids_data), ARRAY[]::uuid[]) as model_position_ids,
 
     -- Suggestion IDs
     COALESCE((SELECT name_suggestions FROM name_suggestions_data), ARRAY[]::uuid[]) as name_suggestions,
     COALESCE((SELECT description_suggestions FROM description_suggestions_data), ARRAY[]::uuid[]) as description_suggestions,
     COALESCE((SELECT department_suggestions FROM department_suggestions_data), ARRAY[]::uuid[]) as department_suggestions,
-    COALESCE((SELECT rubric_suggestions FROM rubric_suggestions_data), ARRAY[]::uuid[]) as rubric_suggestions,
-
-    -- Cross-reference mappings
-    COALESCE((SELECT run_rubrics FROM eval_run_rubrics_data), '{}'::eval_run_rubric_mapping[]) as run_rubrics,
-    COALESCE((SELECT group_rubrics FROM eval_group_rubrics_data), '{}'::eval_group_rubric_mapping[]) as group_rubrics;
+    COALESCE((SELECT rubric_suggestions FROM rubric_suggestions_data), ARRAY[]::uuid[]) as rubric_suggestions;
 $$;

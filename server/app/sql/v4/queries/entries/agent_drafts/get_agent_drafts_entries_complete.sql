@@ -39,15 +39,10 @@ CREATE TYPE types.q_get_agent_drafts_entries_v4_item AS (
     group_id uuid,
     name_ids uuid[],
     description_ids uuid[],
-    model_ids uuid[],
-    prompt_ids uuid[],
-    instruction_ids uuid[],
+    config_ids uuid[],
     flag_ids uuid[],
     department_ids uuid[],
-    tool_ids uuid[],
-    temperature_level_ids uuid[],
-    reasoning_level_ids uuid[],
-    voice_ids uuid[]
+    tool_ids uuid[]
 );
 
 CREATE OR REPLACE FUNCTION public.api_get_agent_drafts_entries_v4(
@@ -78,15 +73,10 @@ AS $$
                     group_id,
                     name_ids,
                     description_ids,
-                    model_ids,
-                    prompt_ids,
-                    instruction_ids,
+                    config_ids,
                     flag_ids,
                     department_ids,
-                    tool_ids,
-                    temperature_level_ids,
-                    reasoning_level_ids,
-                    voice_ids
+                    tool_ids
                 )::types.q_get_agent_drafts_entries_v4_item
                 ORDER BY updated_at DESC
             ),

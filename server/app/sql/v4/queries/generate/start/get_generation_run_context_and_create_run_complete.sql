@@ -73,13 +73,14 @@ selected_agent AS (
       AND EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
     LIMIT 1
 ),
--- Get agent model output modalities
+-- Get agent model output modalities (via config_resource)
 agent_model_modalities AS (
-    SELECT 
+    SELECT
         array_agg(mr.modality::text ORDER BY mr.modality) as output_modalities
     FROM agent_artifact a
-    JOIN agent_models_junction am ON am.agent_id = a.id
-    JOIN model_modalities_junction mm ON mm.model_id = am.model_id
+    JOIN agent_configs_junction ac ON ac.agent_id = a.id AND ac.active = true
+    JOIN config_resource cr ON cr.id = ac.config_id AND cr.model_id IS NOT NULL
+    JOIN model_modalities_junction mm ON mm.model_id = cr.model_id
     JOIN modalities_resource mr ON mr.id = mm.modality_id
     CROSS JOIN params p
     WHERE a.id = p.agent_id

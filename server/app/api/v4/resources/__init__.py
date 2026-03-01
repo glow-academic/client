@@ -201,35 +201,9 @@ from app.api.v4.resources.flags.search import router as flags_search_router
 router.include_router(flags_get_router)
 router.include_router(flags_link_router)
 router.include_router(flags_search_router)
-from app.api.v4.resources.group_positions.create import router as group_positions_router
-from app.api.v4.resources.group_positions.get import (
-    router as group_positions_get_router,
-)
-
-router.include_router(group_positions_router)
-router.include_router(group_positions_get_router)
-from app.api.v4.resources.group_positions.search import (
-    router as group_positions_search_router,
-)
-
-router.include_router(group_positions_search_router)
-from app.api.v4.resources.group_rubrics.create import router as group_rubrics_router
-from app.api.v4.resources.group_rubrics.get import router as group_rubrics_get_router
-
-router.include_router(group_rubrics_router)
-router.include_router(group_rubrics_get_router)
-from app.api.v4.resources.group_rubrics.search import (
-    router as group_rubrics_search_router,
-)
-
-router.include_router(group_rubrics_search_router)
-# NOTE: groups removed - non-creatable (migration 328)
-# GET/Search endpoints available for two-pass architecture
-from app.api.v4.resources.groups.get import router as groups_get_router
-from app.api.v4.resources.groups.search import router as groups_search_router
-
-router.include_router(groups_get_router)
-router.include_router(groups_search_router)
+# NOTE: group_positions removed (migration 18)
+# NOTE: group_rubrics removed (migration 18)
+# NOTE: groups removed (migration 18)
 # NOTE: hints removed - converted to entry table (migration 305)
 # NOTE: icons removed - non-creatable (migration 328)
 # GET endpoint available for personas two-pass architecture
@@ -306,6 +280,38 @@ from app.api.v4.resources.models.search import router as models_search_router
 
 router.include_router(models_get_router)
 router.include_router(models_search_router)
+from app.api.v4.resources.configs.get import router as configs_get_router
+
+router.include_router(configs_get_router)
+# NOTE: model_flags - non-creatable (migration 19)
+# GET/Search endpoints available for eval two-pass architecture
+from app.api.v4.resources.model_flags.get import router as model_flags_get_router
+from app.api.v4.resources.model_flags.search import (
+    router as model_flags_search_router,
+)
+
+router.include_router(model_flags_get_router)
+router.include_router(model_flags_search_router)
+# NOTE: model_rubrics - non-creatable (migration 19)
+# GET/Search endpoints available for eval two-pass architecture
+from app.api.v4.resources.model_rubrics.get import router as model_rubrics_get_router
+from app.api.v4.resources.model_rubrics.search import (
+    router as model_rubrics_search_router,
+)
+
+router.include_router(model_rubrics_get_router)
+router.include_router(model_rubrics_search_router)
+# NOTE: model_positions - non-creatable (migration 19)
+# GET/Search endpoints available for eval two-pass architecture
+from app.api.v4.resources.model_positions.get import (
+    router as model_positions_get_router,
+)
+from app.api.v4.resources.model_positions.search import (
+    router as model_positions_search_router,
+)
+
+router.include_router(model_positions_get_router)
+router.include_router(model_positions_search_router)
 from app.api.v4.resources.names.create import router as names_router
 from app.api.v4.resources.names.get import router as names_get_router
 from app.api.v4.resources.names.link import router as names_link_router
@@ -472,33 +478,9 @@ router.include_router(rubrics_get_router)
 from app.api.v4.resources.rubrics.search import router as rubrics_search_router
 
 router.include_router(rubrics_search_router)
-from app.api.v4.resources.run_positions.create import router as run_positions_router
-from app.api.v4.resources.run_positions.get import router as run_positions_get_router
-
-router.include_router(run_positions_router)
-router.include_router(run_positions_get_router)
-from app.api.v4.resources.run_positions.search import (
-    router as run_positions_search_router,
-)
-
-router.include_router(run_positions_search_router)
-from app.api.v4.resources.run_rubrics.create import router as run_rubrics_router
-from app.api.v4.resources.run_rubrics.get import router as run_rubrics_get_router
-
-router.include_router(run_rubrics_router)
-router.include_router(run_rubrics_get_router)
-from app.api.v4.resources.run_rubrics.search import (
-    router as run_rubrics_search_router,
-)
-
-router.include_router(run_rubrics_search_router)
-# NOTE: runs removed - non-creatable (migration 328)
-# GET/Search endpoints available for two-pass architecture
-from app.api.v4.resources.runs.get import router as runs_get_router
-from app.api.v4.resources.runs.search import router as runs_search_router
-
-router.include_router(runs_get_router)
-router.include_router(runs_search_router)
+# NOTE: run_positions removed (migration 18)
+# NOTE: run_rubrics removed (migration 18)
+# NOTE: runs removed (migration 18)
 # NOTE: scenario_flags removed - non-creatable (migration 328)
 # GET/Search endpoints available for simulations two-pass architecture
 from app.api.v4.resources.scenario_flags.get import router as scenario_flags_get_router

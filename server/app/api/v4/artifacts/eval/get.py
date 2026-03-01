@@ -41,12 +41,10 @@ from app.api.v4.artifacts.eval.types import (
     EvalDescriptionSection,
     EvalFlagConfig,
     EvalFlagSection,
-    EvalGroupRubricMapping,
     EvalGroupSection,
     EvalNameSection,
     EvalRubricItem,
     EvalRubricSection,
-    EvalRunRubricMapping,
     EvalRunSection,
     EvalWebsocketEntries,
     EvalWebsocketResources,
@@ -153,13 +151,11 @@ class EvalInternalData:
     dynamic_flag_id: UUID | None
     groups_flag_id: UUID | None
     department_ids: list[UUID]
-    agent_ids: list[UUID]
-    model_run_ids: list[UUID]
-    group_ids: list[UUID]
-
-    # Eval-specific
-    run_rubrics: list[EvalRunRubricMapping]
-    group_rubrics: list[EvalGroupRubricMapping]
+    rubric_ids: list[UUID]
+    model_ids: list[UUID]
+    model_flag_ids: list[UUID]
+    model_rubric_ids: list[UUID]
+    model_position_ids: list[UUID]
 
 
 async def get_eval_internal(
@@ -505,10 +501,6 @@ async def get_eval_internal(
             detail="You don't have access to this eval. It may be restricted to other departments.",
         )
 
-    # === Parse run/group rubric mappings from Q2 ===
-    run_rubrics = _parse_run_rubrics(ids_result.run_rubrics)
-    group_rubrics = _parse_group_rubrics(ids_result.group_rubrics)
-
     # Build show_ai_generate map
     show_ai_generate_map = {
         "names": name_show_ai_generate,
@@ -601,12 +593,11 @@ async def get_eval_internal(
         dynamic_flag_id=selected_dynamic_flag_id,
         groups_flag_id=selected_groups_flag_id,
         department_ids=selected_department_ids,
-        agent_ids=[],
-        model_run_ids=ids_result.model_run_ids or [],
-        group_ids=ids_result.group_ids or [],
-        # Eval-specific
-        run_rubrics=run_rubrics,
-        group_rubrics=group_rubrics,
+        rubric_ids=ids_result.rubric_ids or [],
+        model_ids=ids_result.model_ids or [],
+        model_flag_ids=ids_result.model_flag_ids or [],
+        model_rubric_ids=ids_result.model_rubric_ids or [],
+        model_position_ids=ids_result.model_position_ids or [],
     )
 
 
@@ -756,13 +747,8 @@ async def get_eval_websocket(
     selected_departments = [
         d for d in data.departments if d.department_id in data.department_ids
     ]
-    selected_agents = [a for a in data.eval_agents if a.id in data.agent_ids]
-    selected_rubrics = []
-    selected_rubric_ids = {
-        rid for mapping in data.run_rubrics for rid in (mapping.rubric_ids or [])
-    } | {rid for mapping in data.group_rubrics for rid in (mapping.rubric_ids or [])}
-    if selected_rubric_ids:
-        selected_rubrics = [r for r in data.rubrics if r.id in selected_rubric_ids]
+    selected_agents = [a for a in data.eval_agents if a.id in set()]
+    selected_rubrics = [r for r in data.rubrics if r.id in set(data.rubric_ids)]
 
     # Build entries (always construct -- both fields optional now)
     entries = EvalWebsocketEntries(
@@ -777,10 +763,9 @@ async def get_eval_websocket(
         departments=selected_departments,
         eval_agents=selected_agents,
         rubrics=selected_rubrics,
-        run_positions=None,
-        group_positions=None,
-        run_rubrics=None,
-        group_rubrics=None,
+        model_flags=None,
+        model_rubrics=None,
+        model_positions=None,
     )
 
     return GetEvalWebsocketResponse(
@@ -845,37 +830,8 @@ async def get_eval_client(
     selected_departments = [
         d for d in data.departments if d.department_id in data.department_ids
     ]
-    selected_agents = [a for a in data.eval_agents if a.id in data.agent_ids]
-    selected_run_ids = set(data.model_run_ids)
-    selected_group_ids = set(data.group_ids)
-    selected_runs = [
-        r
-        for r in (data.available_model_runs or [])
-        if r.model_run_id in selected_run_ids
-    ]
-    if not selected_runs and data.model_run_ids:
-        selected_runs = [
-            {
-                "model_run_id": run_id,
-                "model_name": f"Run {str(run_id)[:8]}",
-            }
-            for run_id in data.model_run_ids
-        ]
-    selected_groups = [
-        g for g in (data.available_groups or []) if g.group_id in selected_group_ids
-    ]
-    if not selected_groups and data.group_ids:
-        selected_groups = [
-            {
-                "group_id": group_id,
-                "name": f"Group {str(group_id)[:8]}",
-            }
-            for group_id in data.group_ids
-        ]
-    selected_rubric_ids = {
-        rid for mapping in data.run_rubrics for rid in (mapping.rubric_ids or [])
-    } | {rid for mapping in data.group_rubrics for rid in (mapping.rubric_ids or [])}
-    selected_rubrics = [r for r in data.rubrics if r.id in selected_rubric_ids]
+    selected_agents = [a for a in data.eval_agents if a.id in set()]
+    selected_rubrics = [r for r in data.rubrics if r.id in set(data.rubric_ids)]
 
     return GetEvalApiResponse(
         actor_name=data.actor_name,
@@ -959,23 +915,23 @@ async def get_eval_client(
         runs=EvalRunSection(
             show=True,
             required=False,
-            current=selected_runs,
-            resources=data.available_model_runs or selected_runs,
+            current=[],
+            resources=data.available_model_runs or [],
         ),
         groups=EvalGroupSection(
             show=True,
             required=False,
-            current=selected_groups,
-            resources=data.available_groups or selected_groups,
+            current=[],
+            resources=data.available_groups or [],
         ),
-        run_rubrics=data.run_rubrics,
-        group_rubrics=data.group_rubrics,
-        available_model_runs=data.available_model_runs or selected_runs,
+        run_rubrics=None,
+        group_rubrics=None,
+        available_model_runs=data.available_model_runs or [],
         available_model_runs_total_count=data.available_model_runs_total_count,
         available_model_runs_page=data.available_model_runs_page,
         available_model_runs_page_size=data.available_model_runs_page_size,
         available_model_runs_total_pages=data.available_model_runs_total_pages,
-        available_groups=data.available_groups or selected_groups,
+        available_groups=data.available_groups or [],
     )
 
 

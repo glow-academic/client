@@ -44,6 +44,22 @@ class TestGradedData(BaseModel):
     feedback: str | None = None
 
 
+class TestProceedData(BaseModel):
+    """Internal bus payload for test_proceed — find next invocation to run.
+
+    Fields:
+        completed_invocation_id: If set, mark this invocation completed before proceeding.
+        complete_all: If True, mark all remaining invocations completed → emit test_ended.
+        force_proceed: If True, skip use_custom lobby.
+    """
+
+    sid: str
+    test_id: str
+    force_proceed: bool = False
+    completed_invocation_id: str | None = None
+    complete_all: bool = False
+
+
 class TestErrorData(BaseModel):
     sid: str | None = None
     rooms: list[str] = []

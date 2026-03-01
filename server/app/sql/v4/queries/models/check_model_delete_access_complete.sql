@@ -44,11 +44,12 @@ model_departments_data AS (
     FROM params x
     LEFT JOIN model_departments_junction md ON md.model_id = x.model_id AND md.active = true
 ),
--- Count active agent links (immediate parent only)
+-- Count active agent links (via config_resource)
 agent_links AS (
-    SELECT COUNT(am.agent_id)::bigint as active_count
+    SELECT COUNT(DISTINCT ac.agent_id)::bigint as active_count
     FROM params x
-    LEFT JOIN agent_models_junction am ON am.model_id = x.model_id AND am.active = true
+    LEFT JOIN config_resource cr ON cr.model_id = x.model_id AND cr.active = true
+    LEFT JOIN agent_configs_junction ac ON ac.config_id = cr.id AND ac.active = true
 )
 SELECT
     (SELECT department_ids FROM model_departments_data) as model_department_ids,

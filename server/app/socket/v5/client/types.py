@@ -168,7 +168,7 @@ class TestLeavePayload(BaseModel):
 class TestStartPayload(BaseModel):
     """Client-to-server: create a new test."""
 
-    eval_id: UUID
+    benchmark_id: UUID
     infinite_mode: bool = False
 
 
@@ -179,18 +179,35 @@ class TestNextPayload(BaseModel):
 
 
 class TestRunPayload(BaseModel):
-    """Client-to-server: run one auto-regressive replay."""
+    """Client-to-server: run one replay against an original run."""
 
-    invocation_id: UUID
     test_id: UUID
+    test_invocation_id: UUID
+    run_id: UUID  # original run to replay (copy all messages except last assistant)
+
+
+class TestGroupPayload(BaseModel):
+    """Client-to-server: run all runs in a group sequentially."""
+
+    test_id: UUID
+    test_invocation_id: UUID
+    group_id: UUID
+    prev_run_id: UUID | None = None  # None = start from first run
 
 
 class TestEndPayload(BaseModel):
-    """Client-to-server: end test (triggers grading)."""
+    """Client-to-server: end a single invocation within a test."""
 
-    invocation_id: UUID
     test_id: UUID
-    run_id: UUID
+    test_invocation_id: UUID
+    run_id: UUID  # the run that was just completed (for grading)
+    grade: bool = True
+
+
+class TestEndAllPayload(BaseModel):
+    """Client-to-server: end all remaining invocations in a test."""
+
+    test_id: UUID
 
 
 class TestStopPayload(BaseModel):
