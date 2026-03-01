@@ -19,7 +19,6 @@ from app.api.v4.artifacts.eval.types import (
     SaveEvalSqlRow,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -36,7 +35,6 @@ logger = get_logger(__name__)
 # SQL paths
 ACCESS_CHECK_SQL_PATH = "app/sql/v4/queries/evals/check_eval_save_access_complete.sql"
 SQL_PATH = "app/sql/v4/queries/evals/save_eval_complete.sql"
-
 
 router = APIRouter()
 
@@ -126,16 +124,7 @@ async def save_eval_internal(
         return None
 
 
-@router.post(
-    "/save",
-    response_model=SaveEvalApiResponse,
-    dependencies=[
-        audit_activity(
-            "eval.saved",
-            "{{ actor.name }} {% if eval %}updated{% else %}created{% endif %} eval{% if eval %} '{{ eval.name }}'{% endif %}",
-        )
-    ],
-)
+@router.post("/save", response_model=SaveEvalApiResponse)
 async def save_eval(
     request: SaveEvalApiRequest,
     http_request: Request,
@@ -157,7 +146,6 @@ async def save_eval(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -240,16 +228,6 @@ async def save_eval(
                     raise ValueError(f"Eval not found: {request.input_eval_id}")
                 else:
                     raise ValueError("Failed to create eval")
-
-            # Set audit context with data from SQL query
-            if actor_name:
-                audit_ctx = {"actor": {"name": actor_name, "id": profile_id}}
-                if request.input_eval_id:
-                    audit_ctx["eval"] = {
-                        "name": "Eval",
-                        "id": str(result.eval_id),
-                    }
-                audit_set(http_request, **audit_ctx)
 
         # Convert SQL result to API response
         is_update = request.input_eval_id is not None

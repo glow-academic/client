@@ -9,7 +9,6 @@ for storing question responses need to be implemented with proper schema.
 import uuid
 from typing import Any
 
-from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.main import get_internal_sio, sio
 from app.socket.v5.client.types import AttemptResponsePayload
@@ -64,14 +63,7 @@ async def _attempt_response_impl(
 
         # Log activity
         try:
-            await log_websocket_activity(
-                sid=sid,
-                event_key="attempt.response.submitted",
-                template="{{ actor.name }} submitted quiz response",
-                context={"chat_id": chat_id, "question_id": question_id},
-                endpoint="/socket/v5/attempt/response_submit",
-                error=False,
-            )
+            pass
         except Exception:
             pass
 

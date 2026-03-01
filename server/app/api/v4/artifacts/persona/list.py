@@ -30,7 +30,6 @@ from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.fields.get import get_fields_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.types import ListFilterOption, ListFilterSection
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -119,17 +118,10 @@ PERSONA_IMPORT_FIELDS: list[ImportField] = [
     ),
 ]
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/list",
-    response_model=ListPersonaApiResponse,
-    dependencies=[
-        audit_activity("personas.list", "{{ actor.name }} visited the Personas page")
-    ],
-)
+@router.post("/list", response_model=ListPersonaApiResponse)
 async def get_persona_list(
     request: GetPersonasListApiRequest,
     http_request: Request,
@@ -166,7 +158,6 @@ async def get_persona_list(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging and permissions
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -209,10 +200,6 @@ async def get_persona_list(
                 params=params,
             ),
         )
-
-        # Set audit context
-        if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         # user_role already fetched from context above
 

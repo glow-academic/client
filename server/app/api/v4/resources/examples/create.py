@@ -6,7 +6,6 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.infra.v4.tools.call_args import record_call_args, resolve_tool
 from app.main import get_db
@@ -68,16 +67,7 @@ async def create_examples_internal(
 router = APIRouter()
 
 
-@router.post(
-    "/examples",
-    response_model=ExamplesApiResponse,
-    dependencies=[
-        audit_activity(
-            "examples.created",
-            "{{ actor.name }} created examples",
-        )
-    ],
-)
+@router.post("/examples", response_model=ExamplesApiResponse)
 async def create_examples(
     request: ExamplesApiRequest,
     http_request: Request,
@@ -124,13 +114,6 @@ async def create_examples(
 
             if not result or not result.example_id:
                 raise ValueError("Failed to create examples")
-
-            # Set audit context
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                examples={"id": str(result.example_id)},
-            )
 
         # Convert SQL result to API response (auto-generated types)
         api_response = ExamplesApiResponse.model_validate(result.model_dump())

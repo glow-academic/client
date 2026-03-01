@@ -15,7 +15,6 @@ from app.api.v4.resources.simulation_positions.types import (
     SearchSimulationPositionsApiResponse,
     SearchSimulationPositionsSqlRow,
 )
-from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import SearchSimulationPositionsSqlParams, load_sql_query
@@ -26,7 +25,6 @@ from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level
 SQL_PATH = "app/sql/v4/queries/resources/simulation_positions/search_simulation_positions_complete.sql"
-
 
 router = APIRouter()
 
@@ -112,14 +110,7 @@ async def search_simulation_positions_internal(
 
 
 @router.post(
-    "/simulation_positions/search",
-    response_model=SearchSimulationPositionsApiResponse,
-    dependencies=[
-        audit_activity(
-            "simulation_positions.search",
-            "{{ actor.name }} searched simulation positions",
-        )
-    ],
+    "/simulation_positions/search", response_model=SearchSimulationPositionsApiResponse
 )
 async def search_simulation_positions(
     request: SearchSimulationPositionsApiRequest,

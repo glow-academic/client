@@ -9,7 +9,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.api.v4.artifacts.cohort.permissions import compute_can_duplicate
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.resources.names.create import create_names_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -30,20 +29,10 @@ ACCESS_SQL_PATH = (
     "app/sql/v4/queries/cohorts/check_cohort_duplicate_access_complete.sql"
 )
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/duplicate",
-    response_model=DuplicateCohortApiResponse,
-    dependencies=[
-        audit_activity(
-            "cohort.duplicated",
-            "{{ actor.name }} duplicated cohort '{{ cohort.name }}'",
-        )
-    ],
-)
+@router.post("/duplicate", response_model=DuplicateCohortApiResponse)
 async def duplicate_cohort(
     request: DuplicateCohortApiRequest,
     http_request: Request,
@@ -65,7 +54,6 @@ async def duplicate_cohort(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -141,14 +129,6 @@ async def duplicate_cohort(
 
             if not result or not result.id:
                 raise HTTPException(status_code=404, detail="Cohort not found")
-
-            # Set audit context with data from SQL query
-            if actor_name:
-                audit_set(
-                    http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    cohort={"name": original_name, "id": str(result.id)},
-                )
 
         # Convert SQL result to API response (no manual conversion needed)
         api_response = DuplicateCohortApiResponse.model_validate(result.model_dump())

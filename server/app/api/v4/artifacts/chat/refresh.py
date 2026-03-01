@@ -9,7 +9,6 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -26,13 +25,7 @@ SQL_PATH = "app/sql/v4/queries/analytics/refresh_mv_training_complete.sql"
 router = APIRouter()
 
 
-@router.post(
-    "/refresh",
-    response_model=RefreshMvTrainingApiResponse,
-    dependencies=[
-        audit_activity("training.refresh", "{{ actor.name }} refreshed training MVs")
-    ],
-)
+@router.post("/refresh", response_model=RefreshMvTrainingApiResponse)
 async def chat_refresh(
     request: RefreshMvTrainingApiRequest,
     http_request: Request,
@@ -53,7 +46,6 @@ async def chat_refresh(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -74,9 +66,6 @@ async def chat_refresh(
             RefreshMvTrainingSqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
-
-        if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         api_response = RefreshMvTrainingApiResponse.model_validate(result.model_dump())
 

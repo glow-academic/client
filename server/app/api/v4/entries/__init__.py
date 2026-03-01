@@ -22,7 +22,6 @@ from app.api.v4.entries.attempt_message_tree import (
 from app.api.v4.entries.attempt_replacement import router as attempt_replacement_router
 from app.api.v4.entries.attempt_strength import router as attempt_strength_router
 from app.api.v4.entries.audios import router as audios_router
-from app.api.v4.entries.audits import router as audits_router
 from app.api.v4.entries.auth_drafts import router as auth_drafts_router
 from app.api.v4.entries.benchmark import router as benchmark_router
 from app.api.v4.entries.calls import router as calls_router
@@ -111,7 +110,6 @@ router.include_router(attempt_message_tree_router)
 router.include_router(attempt_replacement_router)
 router.include_router(attempt_strength_router)
 router.include_router(audios_router)
-router.include_router(audits_router)
 router.include_router(auth_drafts_router)
 router.include_router(benchmark_router)
 router.include_router(calls_router)

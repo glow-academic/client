@@ -276,7 +276,6 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     },
 }
 
-
 # ============================================================================
 # Resource Registry — 75 resources
 # ============================================================================
@@ -416,7 +415,6 @@ for _name in _ALL_RESOURCES:
         )
     RESOURCE_REGISTRY[_name] = _entry
 
-
 # ============================================================================
 # Entry Registry — 101 entries
 # ============================================================================
@@ -547,7 +545,6 @@ for _name in _ALL_ENTRIES:
         )
     ENTRY_REGISTRY[_name] = _entry
 
-
 # ============================================================================
 # Derived Lists
 # ============================================================================
@@ -556,7 +553,6 @@ ARTIFACTS = sorted(ARTIFACT_REGISTRY.keys())
 RESOURCES = sorted(RESOURCE_REGISTRY.keys())
 ENTRIES = sorted(ENTRY_REGISTRY.keys())
 ALL_ITEMS = ARTIFACTS + RESOURCES + ENTRIES
-
 
 # ============================================================================
 # Helper Functions

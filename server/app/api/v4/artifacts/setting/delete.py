@@ -11,7 +11,6 @@ from app.api.v4.artifacts.setting.types import (
     DeleteSettingApiResponse,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -33,16 +32,7 @@ DELETE_SQL_PATH = "app/sql/v4/queries/settings/delete_setting_complete.sql"
 router = APIRouter()
 
 
-@router.post(
-    "/delete",
-    response_model=DeleteSettingApiResponse,
-    dependencies=[
-        audit_activity(
-            "setting.deleted",
-            "{{ actor.name }} deleted setting '{{ setting.name }}'",
-        )
-    ],
-)
+@router.post("/delete", response_model=DeleteSettingApiResponse)
 async def delete_setting(
     request: DeleteSettingApiRequest,
     http_request: Request,
@@ -63,7 +53,6 @@ async def delete_setting(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -133,16 +122,6 @@ async def delete_setting(
                 raise HTTPException(status_code=500, detail="Failed to delete setting")
 
             setting_name = result.name or "Unknown"
-
-            if actor_name:
-                audit_set(
-                    http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    setting={
-                        "name": setting_name,
-                        "id": str(request.setting_id),
-                    },
-                )
 
         # Convert SQL result to API response
         api_response = DeleteSettingApiResponse(

@@ -30,7 +30,6 @@ from app.api.v4.permissions import resolve_agents_for_artifact
 from app.api.v4.resources.descriptions.create import create_descriptions_internal
 from app.api.v4.resources.names.create import create_names_internal
 from app.api.v4.resources.scenarios.create import create_scenarios_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -47,7 +46,6 @@ logger = get_logger(__name__)
 # SQL paths
 SQL_PATH = "app/sql/v4/queries/scenarios/save_scenario_complete.sql"
 ACCESS_SQL_PATH = "app/sql/v4/queries/scenarios/get_scenario_access_complete.sql"
-
 
 router = APIRouter()
 
@@ -445,16 +443,7 @@ async def _resolve_scenario_values(
     return errors
 
 
-@router.post(
-    "/save",
-    response_model=SaveScenarioApiResponse,
-    dependencies=[
-        audit_activity(
-            "scenario.saved",
-            "{{ actor.name }} saved {{ count }} scenario(s)",
-        )
-    ],
-)
+@router.post("/save", response_model=SaveScenarioApiResponse)
 async def save_scenario(
     request: SaveScenarioApiRequest,
     http_request: Request,
@@ -655,13 +644,6 @@ async def save_scenario(
                 )
 
         # Audit context
-        if actor_name:
-            audit_set(
-                http_request,
-                actor={"name": actor_name, "id": profile_id},
-                count=len(results),
-            )
-
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

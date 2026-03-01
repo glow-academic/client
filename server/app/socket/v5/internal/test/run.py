@@ -19,7 +19,6 @@ from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio
 from app.socket.v5.client.types import TestRunPayload
 from app.socket.v5.internal.test.types import TestErrorData
-from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -163,8 +162,7 @@ async def test_run_handler(data: dict[str, Any]) -> None:
 
         # Step 6: Build messages for generate_artifact
         conversation_messages = [
-            {"role": msg["role"], "content": msg["content"]}
-            for msg in messages_to_copy
+            {"role": msg["role"], "content": msg["content"]} for msg in messages_to_copy
         ]
 
         # TODO: resolve LLM config (model, provider, prompt, instructions, tools)

@@ -12,7 +12,6 @@ from app.api.v4.entries.debug_info.types import (
     CreateDebugInfoEntrySqlParams,
     CreateDebugInfoEntrySqlRow,
 )
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.infra.v4.tools.call_args import record_call_args, resolve_tool_for_entry
 from app.main import get_db
@@ -77,16 +76,7 @@ async def create_debug_info_entry_internal(
     return CreateDebugInfoEntryResponse.model_validate(result.model_dump())
 
 
-@router.post(
-    "/debug-info/create",
-    response_model=CreateDebugInfoEntryResponse,
-    dependencies=[
-        audit_activity(
-            "debug_info.created",
-            "{{ actor.name }} created debug_info entry",
-        )
-    ],
-)
+@router.post("/debug-info/create", response_model=CreateDebugInfoEntryResponse)
 async def create_debug_info_entry(
     request: CreateDebugInfoEntryRequest,
     http_request: Request,
@@ -116,12 +106,6 @@ async def create_debug_info_entry(
             )
 
         api_response = await create_debug_info_entry_internal(conn, request_dict, mcp)
-
-        audit_set(
-            http_request,
-            actor={"id": profile_id},
-            debug_info={"id": str(api_response.id)},
-        )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 

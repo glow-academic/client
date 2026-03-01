@@ -31,7 +31,6 @@ BATCH_SQL_PATH = "app/sql/v4/queries/resources/options/get_options_complete.sql"
 
 router = APIRouter()
 
-
 # =============================================================================
 # Internal Function
 # =============================================================================

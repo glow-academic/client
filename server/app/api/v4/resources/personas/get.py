@@ -32,7 +32,6 @@ BATCH_SQL_PATH = "app/sql/v4/queries/resources/personas/get_personas_complete.sq
 
 router = APIRouter()
 
-
 # =============================================================================
 # Internal Function
 # =============================================================================

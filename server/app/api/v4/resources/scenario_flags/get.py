@@ -26,9 +26,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/v4/queries/resources/scenario_flags/get_scenario_flags_complete.sql"
 
-
 router = APIRouter()
-
 
 # =============================================================================
 # Internal Function

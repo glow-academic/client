@@ -16,7 +16,6 @@ from app.api.v4.artifacts.simulation.types import (
     GetScenariosSqlRow,
     QGetScenariosV4Item,
 )
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
@@ -26,7 +25,6 @@ from app.utils.sql_helper import execute_sql_typed
 
 # SQL path for scenarios get
 SQL_PATH = "app/sql/v4/queries/resources/scenarios/get_scenarios_complete.sql"
-
 
 router = APIRouter()
 
@@ -81,16 +79,7 @@ async def get_scenarios_internal(
     return items
 
 
-@router.post(
-    "/scenarios/get",
-    response_model=GetScenariosApiResponse,
-    dependencies=[
-        audit_activity(
-            "scenarios.get",
-            "{{ actor.name }} fetched scenarios",
-        )
-    ],
-)
+@router.post("/scenarios/get", response_model=GetScenariosApiResponse)
 async def get_scenarios(
     request: GetScenariosApiRequest,
     http_request: Request,
@@ -127,9 +116,6 @@ async def get_scenarios(
             )
 
         items = await get_scenarios_internal(conn, request.ids, bypass_cache)
-
-        # Set audit context
-        audit_set(http_request, actor={"id": profile_id})
 
         # Create response
         response_data = GetScenariosApiResponse(items=items)

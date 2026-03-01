@@ -5,7 +5,6 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -21,20 +20,10 @@ from app.utils.sql_helper import execute_sql_typed
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/resources/objectives_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/objectives",
-    response_model=ObjectivesApiResponse,
-    dependencies=[
-        audit_activity(
-            "objectives.created",
-            "{{ actor.name }} created objectives",
-        )
-    ],
-)
+@router.post("/objectives", response_model=ObjectivesApiResponse)
 async def create_objectives(
     request: ObjectivesApiRequest,
     http_request: Request,
@@ -81,13 +70,6 @@ async def create_objectives(
 
             if not result or not result.objective_id:
                 raise ValueError("Failed to create objectives")
-
-            # Set audit context
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                objectives={"id": str(result.objective_id)},
-            )
 
         # Convert SQL result to API response (auto-generated types)
         api_response = ObjectivesApiResponse.model_validate(result.model_dump())

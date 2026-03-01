@@ -34,7 +34,6 @@ BATCH_SQL_PATH = "app/sql/v4/queries/resources/images/get_images_complete.sql"
 
 router = APIRouter()
 
-
 # =============================================================================
 # Internal Function
 # =============================================================================

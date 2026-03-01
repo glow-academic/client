@@ -23,7 +23,6 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/v4/queries/resources/qualities/get_qualities_complete.sql"
 
-
 router = APIRouter()
 
 

@@ -15,7 +15,6 @@ from app.api.v4.artifacts.scenario.types import (
     ExportScenarioApiResponse,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import UPLOAD_FOLDER, get_db, get_pool
 from app.sql.types import (
@@ -81,16 +80,7 @@ def _pipe_strings(vals: list[str] | None) -> str:
     return PIPE.join(vals)
 
 
-@router.post(
-    "/export",
-    response_model=ExportScenarioApiResponse,
-    dependencies=[
-        audit_activity(
-            "scenario.exported",
-            "{{ actor.name }} exported scenarios",
-        )
-    ],
-)
+@router.post("/export", response_model=ExportScenarioApiResponse)
 async def export_scenarios(
     request: ExportScenarioApiRequest,
     http_request: Request,
@@ -109,7 +99,6 @@ async def export_scenarios(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit
         pool = get_pool()
         actor_name = None
         if pool:
@@ -207,12 +196,6 @@ async def export_scenarios(
         upload_id = UUID(upload_result.id)
 
         # Audit
-        if actor_name:
-            audit_set(
-                http_request,
-                actor={"name": actor_name, "id": profile_id},
-            )
-
         return ExportScenarioApiResponse(
             upload_id=upload_id,
             file_name=file_name,

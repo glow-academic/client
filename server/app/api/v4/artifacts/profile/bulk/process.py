@@ -9,7 +9,6 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -32,13 +31,7 @@ SQL_PATH = "app/sql/v4/queries/profiles/process_csv_complete.sql"
 router = APIRouter()
 
 
-@router.post(
-    "/process",
-    response_model=ProcessCsvApiResponse,
-    dependencies=[
-        audit_activity("profile.process", "{{ actor.name }} processed profile CSV")
-    ],
-)
+@router.post("/process", response_model=ProcessCsvApiResponse)
 async def process_profiles(
     request: ProcessCsvApiRequest,
     http_request: Request,
@@ -71,7 +64,6 @@ async def process_profiles(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -179,10 +171,6 @@ async def process_profiles(
                 params=params,
             ),
         )
-
-        # Set audit context
-        if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         # Construct API response with parsed data + actor_name from SQL
         api_response = ProcessCsvApiResponse(

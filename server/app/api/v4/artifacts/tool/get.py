@@ -63,7 +63,6 @@ from app.api.v4.resources.names.search import search_names_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -745,16 +744,7 @@ def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
     return output
 
 
-@router.post(
-    "/get",
-    response_model=GetToolApiResponse,
-    dependencies=[
-        audit_activity(
-            "tool.get",
-            "{{ actor.name }} {% if tool %}viewed{% else %}opened new{% endif %} tool{% if tool %} '{{ tool.name }}'{% endif %}",
-        )
-    ],
-)
+@router.post("/get", response_model=GetToolApiResponse)
 async def get_tool(
     request: GetToolApiRequest,
     http_request: Request,
@@ -779,22 +769,6 @@ async def get_tool(
             bypass_cache=bypass_cache,
             group_id=request.group_id,
         )
-
-        if response_data.actor_name:
-            audit_ctx: dict[str, Any] = {
-                "actor": {"name": response_data.actor_name, "id": profile_id}
-            }
-            current_name = (
-                response_data.names.resource.name
-                if response_data.names and response_data.names.resource
-                else None
-            )
-            if request.tool_id and current_name:
-                audit_ctx["tool"] = {
-                    "name": current_name,
-                    "id": str(request.tool_id),
-                }
-            audit_set(http_request, **audit_ctx)
 
         response.headers["X-Cache-Tags"] = "tools"
         response.headers["X-Cache-Hit"] = "0"

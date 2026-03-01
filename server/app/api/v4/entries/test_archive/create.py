@@ -12,7 +12,6 @@ from app.api.v4.entries.test_archive.types import (
     CreateTestArchiveEntrySqlParams,
     CreateTestArchiveEntrySqlRow,
 )
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.infra.v4.tools.call_args import record_call_args, resolve_tool_for_entry
 from app.main import get_db
@@ -77,16 +76,7 @@ async def create_test_archive_entry_internal(
     return CreateTestArchiveEntryResponse.model_validate(result.model_dump())
 
 
-@router.post(
-    "/test-archive/create",
-    response_model=CreateTestArchiveEntryResponse,
-    dependencies=[
-        audit_activity(
-            "test_archive.created",
-            "{{ actor.name }} created test_archive entry",
-        )
-    ],
-)
+@router.post("/test-archive/create", response_model=CreateTestArchiveEntryResponse)
 async def create_test_archive_entry(
     request: CreateTestArchiveEntryRequest,
     http_request: Request,
@@ -116,12 +106,6 @@ async def create_test_archive_entry(
             )
 
         api_response = await create_test_archive_entry_internal(conn, request_dict, mcp)
-
-        audit_set(
-            http_request,
-            actor={"id": profile_id},
-            test_archive={"id": str(api_response.id)},
-        )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 

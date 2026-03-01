@@ -12,7 +12,6 @@ from app.api.v4.entries.attempt_improvement.types import (
     CreateAttemptImprovementEntrySqlParams,
     CreateAttemptImprovementEntrySqlRow,
 )
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.infra.v4.tools.call_args import resolve_tool_for_entry
 from app.main import get_db
@@ -74,14 +73,7 @@ async def create_attempt_improvement_entry_internal(
 
 
 @router.post(
-    "/attempt-improvement/create",
-    response_model=CreateAttemptImprovementEntryResponse,
-    dependencies=[
-        audit_activity(
-            "attempt_improvement.created",
-            "{{ actor.name }} created attempt_improvement entry",
-        )
-    ],
+    "/attempt-improvement/create", response_model=CreateAttemptImprovementEntryResponse
 )
 async def create_attempt_improvement_entry(
     request: CreateAttemptImprovementEntryRequest,
@@ -113,12 +105,6 @@ async def create_attempt_improvement_entry(
 
         api_response = await create_attempt_improvement_entry_internal(
             conn, request_dict, mcp
-        )
-
-        audit_set(
-            http_request,
-            actor={"id": profile_id},
-            attempt_improvement={"id": str(api_response.id)},
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

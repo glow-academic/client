@@ -152,7 +152,6 @@ AUTH_RESOURCES: set[str] = {
 AUTH_BASIC_RESOURCES: set[str] = {"names", "descriptions", "flags"}
 AUTH_GENERAL_RESOURCES: set[str] = AUTH_RESOURCES
 
-
 # ========== Domain Metadata ==========
 
 AUTH_DOMAIN_METADATA: dict[str, dict[str, str | bool]] = {

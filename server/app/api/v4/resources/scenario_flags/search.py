@@ -28,7 +28,6 @@ SQL_PATH = (
     "app/sql/v4/queries/resources/scenario_flags/search_scenario_flags_complete.sql"
 )
 
-
 router = APIRouter()
 
 

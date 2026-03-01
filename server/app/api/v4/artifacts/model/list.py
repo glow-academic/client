@@ -26,7 +26,6 @@ from app.api.v4.artifacts.model.types import (
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.types import ListFilterSection
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -46,13 +45,7 @@ SQL_PATH = "app/sql/v4/queries/models/list_models_complete.sql"
 router = APIRouter()
 
 
-@router.post(
-    "/list",
-    response_model=ListModelApiResponse,
-    dependencies=[
-        audit_activity("models.list", "{{ actor.name }} visited the Models page")
-    ],
-)
+@router.post("/list", response_model=ListModelApiResponse)
 async def get_model_list(
     request: ListModelsApiRequest,
     http_request: Request,
@@ -89,7 +82,6 @@ async def get_model_list(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging and permissions
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -132,10 +124,6 @@ async def get_model_list(
                 params=params,
             ),
         )
-
-        # Set audit context
-        if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         # Compute permissions for each model in Python
         models_with_permissions: list[ListModelApiModel] = []

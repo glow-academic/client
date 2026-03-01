@@ -22,7 +22,6 @@ from app.api.v4.artifacts.agent.types import (
     SaveAgentSqlRow,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -39,7 +38,6 @@ logger = get_logger(__name__)
 # Load SQL with types at module level - makes it clear what SQL file is used
 ACCESS_SQL_PATH = "app/sql/v4/queries/agents/get_agent_access_complete.sql"
 SQL_PATH = "app/sql/v4/queries/agents/save_agent_complete.sql"
-
 
 router = APIRouter()
 
@@ -110,16 +108,7 @@ async def save_agent_internal(
         return None
 
 
-@router.post(
-    "/save",
-    response_model=SaveAgentApiResponse,
-    dependencies=[
-        audit_activity(
-            "agent.saved",
-            "{{ actor.name }} {% if agent %}updated{% else %}created{% endif %} agent{% if agent %} '{{ agent.name }}'{% endif %}",
-        )
-    ],
-)
+@router.post("/save", response_model=SaveAgentApiResponse)
 async def save_agent(
     request: SaveAgentApiRequest,
     http_request: Request,
@@ -141,7 +130,6 @@ async def save_agent(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -233,12 +221,6 @@ async def save_agent(
                     raise ValueError(f"Agent not found: {request.input_agent_id}")
                 else:
                     raise ValueError("Failed to create agent")
-
-            # Set audit context with data from SQL query
-            if actor_name:
-                audit_ctx = {"actor": {"name": actor_name, "id": profile_id}}
-                audit_ctx["agent"] = {"id": str(result.agent_id)}
-                audit_set(http_request, **audit_ctx)
 
         # Convert SQL result to API response
         api_response = SaveAgentApiResponse.model_validate(

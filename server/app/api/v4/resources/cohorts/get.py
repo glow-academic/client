@@ -23,9 +23,7 @@ from app.utils.sql_helper import execute_sql_typed
 # Load SQL with types at module level
 SQL_PATH = "app/sql/v4/queries/resources/cohorts/get_cohorts_complete.sql"
 
-
 router = APIRouter()
-
 
 # =============================================================================
 # Internal Function

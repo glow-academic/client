@@ -5,7 +5,6 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -20,20 +19,10 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/v4/queries/resources/scenario_rubrics_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/scenario_rubrics",
-    response_model=ScenarioRubricsApiResponse,
-    dependencies=[
-        audit_activity(
-            "scenario_rubrics.created",
-            "{{ actor.name }} created scenario_rubrics",
-        )
-    ],
-)
+@router.post("/scenario_rubrics", response_model=ScenarioRubricsApiResponse)
 async def create_scenario_rubrics(
     request: ScenarioRubricsApiRequest,
     http_request: Request,
@@ -73,12 +62,6 @@ async def create_scenario_rubrics(
 
             if not result or not result.id:
                 raise ValueError("Failed to create scenario_rubrics")
-
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                scenario_rubrics={"id": str(result.id)},
-            )
 
         api_response = ScenarioRubricsApiResponse.model_validate(result.model_dump())
 

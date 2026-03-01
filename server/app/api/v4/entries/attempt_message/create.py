@@ -12,7 +12,6 @@ from app.api.v4.entries.attempt_message.types import (
     CreateAttemptMessageEntrySqlParams,
     CreateAttemptMessageEntrySqlRow,
 )
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.infra.v4.tools.call_args import resolve_tool_for_entry
 from app.main import get_db
@@ -74,14 +73,7 @@ async def create_attempt_message_entry_internal(
 
 
 @router.post(
-    "/attempt-message/create",
-    response_model=CreateAttemptMessageEntryResponse,
-    dependencies=[
-        audit_activity(
-            "attempt_message.created",
-            "{{ actor.name }} created attempt_message entry",
-        )
-    ],
+    "/attempt-message/create", response_model=CreateAttemptMessageEntryResponse
 )
 async def create_attempt_message_entry(
     request: CreateAttemptMessageEntryRequest,
@@ -113,12 +105,6 @@ async def create_attempt_message_entry(
 
         api_response = await create_attempt_message_entry_internal(
             conn, request_dict, mcp
-        )
-
-        audit_set(
-            http_request,
-            actor={"id": profile_id},
-            attempt_message={"id": str(api_response.id)},
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

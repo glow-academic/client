@@ -15,7 +15,6 @@ from app.api.v4.artifacts.scenario.types import (
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.resources.names.create import create_names_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -34,20 +33,10 @@ ACCESS_SQL_PATH = (
     "app/sql/v4/queries/scenario/check_scenario_duplicate_access_complete.sql"
 )
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/duplicate",
-    response_model=DuplicateScenarioApiResponse,
-    dependencies=[
-        audit_activity(
-            "scenario.duplicated",
-            "{{ actor.name }} duplicated scenario '{{ scenario.name }}'",
-        )
-    ],
-)
+@router.post("/duplicate", response_model=DuplicateScenarioApiResponse)
 async def duplicate_scenario(
     request: DuplicateScenarioApiRequest,
     http_request: Request,
@@ -69,7 +58,6 @@ async def duplicate_scenario(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -160,14 +148,6 @@ async def duplicate_scenario(
 
             if not result.scenario_id:
                 raise ValueError(f"Scenario not found: {request.scenario_id}")
-
-            # Set audit context with data from SQL query
-            if actor_name:
-                audit_set(
-                    http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    scenario={"name": original_name, "id": str(result.scenario_id)},
-                )
 
         # Convert SQL result to API response
         api_response = DuplicateScenarioApiResponse.model_validate(result.model_dump())

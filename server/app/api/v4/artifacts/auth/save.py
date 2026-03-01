@@ -23,7 +23,6 @@ from app.api.v4.artifacts.auth.types import (
     SaveAuthSqlRow,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.auth.keycloak_sync import perform_keycloak_sync
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -41,7 +40,6 @@ logger = get_logger(__name__)
 # SQL paths
 ACCESS_CHECK_SQL_PATH = "app/sql/v4/queries/auth/check_auth_save_access_complete.sql"
 SQL_PATH = "app/sql/v4/queries/auth/save_auth_complete.sql"
-
 
 router = APIRouter()
 
@@ -107,16 +105,7 @@ async def save_auth_internal(
         return None
 
 
-@router.post(
-    "/save",
-    response_model=SaveAuthApiResponse,
-    dependencies=[
-        audit_activity(
-            "auth.saved",
-            "{{ actor.name }} {% if auth %}updated{% else %}created{% endif %} auth{% if auth %} '{{ auth.name }}'{% endif %}",
-        )
-    ],
-)
+@router.post("/save", response_model=SaveAuthApiResponse)
 async def save_auth(
     request: SaveAuthApiRequest,
     http_request: Request,
@@ -137,7 +126,6 @@ async def save_auth(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -212,16 +200,6 @@ async def save_auth(
                     raise ValueError(f"Auth not found: {request.input_auth_id}")
                 else:
                     raise ValueError("Failed to create auth")
-
-            # Set audit context
-            if actor_name:
-                audit_ctx = {"actor": {"name": actor_name, "id": profile_id}}
-                if request.input_auth_id:
-                    audit_ctx["auth"] = {
-                        "name": "Auth",
-                        "id": str(result.auth_id),
-                    }
-                audit_set(http_request, **audit_ctx)
 
         # Build response
         is_update = request.input_auth_id is not None

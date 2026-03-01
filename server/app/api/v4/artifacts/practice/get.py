@@ -58,7 +58,6 @@ from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
 from app.api.v4.resources.standard_groups.get import get_standard_groups_internal
 from app.api.v4.resources.standards.search import search_standards_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import GetPracticeContextViewSqlRow
@@ -67,7 +66,6 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 
 router = APIRouter()
-
 
 # =============================================================================
 # Helpers
@@ -1000,13 +998,7 @@ async def get_practice_websocket(
 # =============================================================================
 
 
-@router.post(
-    "/get",
-    response_model=GetPracticeResponse,
-    dependencies=[
-        audit_activity("practice.get", "{{ actor.name }} fetched practice simulations")
-    ],
-)
+@router.post("/get", response_model=GetPracticeResponse)
 async def practice_get(
     request: GetPracticeRequest,
     http_request: Request,
@@ -1050,12 +1042,6 @@ async def practice_get(
             profile_id=profile_id,
             bypass_cache=bypass_cache,
         )
-
-        if api_response.actor_name:
-            audit_set(
-                http_request,
-                actor={"name": api_response.actor_name, "id": profile_id},
-            )
 
         profile_specific_tags = tags + [f"practice:profile:{profile_id}"]
         await set_cached(

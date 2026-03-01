@@ -36,7 +36,6 @@ BATCH_SQL_PATH = "app/sql/v4/queries/resources/problem_statements/get_problem_st
 
 router = APIRouter()
 
-
 # =============================================================================
 # Internal Function
 # =============================================================================

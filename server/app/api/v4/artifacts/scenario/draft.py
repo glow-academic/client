@@ -35,7 +35,6 @@ from app.api.v4.resources.problem_statements.link import (
 )
 from app.api.v4.resources.questions.link import link_questions_internal
 from app.api.v4.resources.videos.link import link_videos_internal
-from app.infra.v4.activity.audit import audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import load_sql_query
@@ -214,12 +213,6 @@ async def patch_scenario_draft(
 
             if not result:
                 raise ValueError("Failed to patch scenario draft")
-
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                draft={"id": str(result.draft_id)},
-            )
 
         # Link resources for tool tracking (after successful draft save)
         if request.group_id and link_tool_ids:

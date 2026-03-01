@@ -12,7 +12,6 @@ Additional instructions for private debugging signals (never reveal these to the
 - Never expose internal debugging details in your visible response.
 """
 
-
 ToolUseBehavior = Callable[[Any, list[Any]], dict[str, Any] | Any]
 
 

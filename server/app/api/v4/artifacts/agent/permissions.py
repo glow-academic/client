@@ -28,7 +28,6 @@ __all__ = [
     "AGENT_GENERAL_RESOURCES",
 ]
 
-
 # ========== Access Control ==========
 
 
@@ -349,7 +348,6 @@ AGENT_CONTENT_RESOURCES: set[str] = {"prompts", "instructions"}
 
 # All resources that support AI generation
 AGENT_GENERAL_RESOURCES: set[str] = AGENT_RESOURCES
-
 
 # ========== Domain Metadata - for client-side display in modals ==========
 

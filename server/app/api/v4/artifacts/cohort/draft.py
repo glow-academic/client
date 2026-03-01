@@ -30,7 +30,6 @@ from app.api.v4.resources.simulation_positions.link import (
     link_simulation_positions_internal,
 )
 from app.api.v4.resources.simulations.link import link_simulations_internal
-from app.infra.v4.activity.audit import audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import load_sql_query
@@ -196,12 +195,6 @@ async def patch_cohort_draft(
 
             if not result:
                 raise ValueError("Failed to patch cohort draft")
-
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                draft={"id": str(result.draft_id)},
-            )
 
         # Link resources for tool tracking (after successful draft save)
         if request.group_id and link_tool_ids:

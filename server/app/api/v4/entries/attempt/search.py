@@ -27,7 +27,6 @@ SQL_PATH = "app/sql/v4/queries/entries/attempt/search_attempt_entries_complete.s
 
 router = APIRouter()
 
-
 # ---------------------------------------------------------------------------
 # Internal: search attempt entries
 # ---------------------------------------------------------------------------

@@ -5,7 +5,6 @@ from typing import Annotated, Any, cast
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -26,15 +25,7 @@ SQL_PATH = "app/sql/v4/queries/profile/search_simulatable_profiles_complete.sql"
 router = APIRouter()
 
 
-@router.post(
-    "/simulatable",
-    response_model=SearchSimulatableProfilesApiResponse,
-    dependencies=[
-        audit_activity(
-            "profile.simulatable", "{{ actor.name }} searched simulatable profiles"
-        )
-    ],
-)
+@router.post("/simulatable", response_model=SearchSimulatableProfilesApiResponse)
 async def search_simulatable_profiles(
     request: SearchSimulatableProfilesApiRequest,
     http_request: Request,
@@ -90,10 +81,6 @@ async def search_simulatable_profiles(
         response_data = SearchSimulatableProfilesApiResponse.model_validate(
             result.model_dump()
         )
-
-        # Set audit context using actor_name from SQL result
-        if result.actor_name:
-            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
         # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(

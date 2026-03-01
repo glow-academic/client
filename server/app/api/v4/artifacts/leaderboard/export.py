@@ -18,7 +18,6 @@ from app.api.v4.artifacts.leaderboard.types import (
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.entries.chat.get import get_chats_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import UPLOAD_FOLDER, get_db, get_pool
 from app.sql.types import (
@@ -69,16 +68,7 @@ def _pipe_strings(vals: list[str] | None) -> str:
     return PIPE.join(vals)
 
 
-@router.post(
-    "/export",
-    response_model=ExportLeaderboardApiResponse,
-    dependencies=[
-        audit_activity(
-            "leaderboard.exported",
-            "{{ actor.name }} exported leaderboard data",
-        )
-    ],
-)
+@router.post("/export", response_model=ExportLeaderboardApiResponse)
 async def export_leaderboard(
     request: ExportLeaderboardApiRequest,
     http_request: Request,
@@ -99,7 +89,6 @@ async def export_leaderboard(
         if not pool:
             raise RuntimeError("Database pool not initialized")
 
-        # Fetch user context for audit
         actor_name = None
         async with pool.acquire() as context_conn:
             profile_ctx = await get_auth_profile_internal(
@@ -303,12 +292,6 @@ async def export_leaderboard(
         upload_id = UUID(upload_result.id)
 
         # Audit
-        if actor_name:
-            audit_set(
-                http_request,
-                actor={"name": actor_name, "id": profile_id},
-            )
-
         return ExportLeaderboardApiResponse(
             upload_id=upload_id,
             file_name=file_name,

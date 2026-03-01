@@ -12,7 +12,6 @@ from app.api.v4.entries.attempt_hint.types import (
     CreateAttemptHintEntrySqlParams,
     CreateAttemptHintEntrySqlRow,
 )
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.infra.v4.tools.call_args import resolve_tool_for_entry
 from app.main import get_db
@@ -75,16 +74,7 @@ async def create_attempt_hint_entry_internal(
     )
 
 
-@router.post(
-    "/attempt-hint/create",
-    response_model=CreateAttemptHintEntryResponse,
-    dependencies=[
-        audit_activity(
-            "attempt_hint.created",
-            "{{ actor.name }} created attempt_hint entry",
-        )
-    ],
-)
+@router.post("/attempt-hint/create", response_model=CreateAttemptHintEntryResponse)
 async def create_attempt_hint_entry(
     request: CreateAttemptHintEntryRequest,
     http_request: Request,
@@ -114,12 +104,6 @@ async def create_attempt_hint_entry(
             )
 
         api_response = await create_attempt_hint_entry_internal(conn, request_dict, mcp)
-
-        audit_set(
-            http_request,
-            actor={"id": profile_id},
-            attempt_hint={"id": str(api_response.id)},
-        )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 

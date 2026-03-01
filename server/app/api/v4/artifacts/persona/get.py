@@ -105,7 +105,6 @@ from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.voices.get import get_voices_internal
 from app.api.v4.resources.voices.search import search_voices_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -1214,16 +1213,7 @@ def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
     return output
 
 
-@router.post(
-    "/get",
-    response_model=GetPersonaApiResponse,
-    dependencies=[
-        audit_activity(
-            "persona.get",
-            "{{ actor.name }} {% if persona %}viewed{% else %}opened new{% endif %} persona{% if persona %} '{{ persona.name }}'{% endif %}",
-        )
-    ],
-)
+@router.post("/get", response_model=GetPersonaApiResponse)
 async def get_persona(
     request: GetPersonaApiRequest,
     http_request: Request,
@@ -1261,21 +1251,6 @@ async def get_persona(
             else None,
             group_id=request.group_id,
         )
-
-        # Set audit context
-        if response_data.actor_name:
-            audit_ctx: dict[str, Any] = {
-                "actor": {"name": response_data.actor_name, "id": profile_id}
-            }
-            current_name = None
-            if response_data.names and response_data.names.resource:
-                current_name = getattr(response_data.names.resource, "name", None)
-            if request.persona_id and current_name:
-                audit_ctx["persona"] = {
-                    "name": current_name,
-                    "id": str(request.persona_id),
-                }
-            audit_set(http_request, **audit_ctx)
 
         # No global cache for this response - individual resources are cached
         response.headers["X-Cache-Tags"] = "personas"

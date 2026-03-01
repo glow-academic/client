@@ -40,7 +40,6 @@ from app.api.v4.resources.objectives.get import get_objectives_internal
 from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
 from app.api.v4.types import ListFilterSection
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import load_sql_query
@@ -147,13 +146,7 @@ SCENARIO_IMPORT_FIELDS: list[ImportField] = [
 router = APIRouter()
 
 
-@router.post(
-    "/list",
-    response_model=ListScenarioApiResponse,
-    dependencies=[
-        audit_activity("scenarios.list", "{{ actor.name }} visited the Scenarios page")
-    ],
-)
+@router.post("/list", response_model=ListScenarioApiResponse)
 async def get_scenario_list(
     request: GetScenariosListApiRequest,
     http_request: Request,
@@ -190,7 +183,6 @@ async def get_scenario_list(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging and permissions
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -224,10 +216,6 @@ async def get_scenario_list(
                 params=params,
             ),
         )
-
-        # Set audit context
-        if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         # --- Python hydration: 6-way parallel fetch from cached *_internal() ---
         # 1. Collect unique IDs from paginated scenarios

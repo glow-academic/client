@@ -6,7 +6,6 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -22,19 +21,10 @@ from app.utils.sql_helper import execute_sql_typed
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/agents/duplicate_agent_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/duplicate",
-    response_model=DuplicateAgentApiResponse,
-    dependencies=[
-        audit_activity(
-            "agent.duplicated", "{{ actor.name }} duplicated agent '{{ agent.name }}'"
-        )
-    ],
-)
+@router.post("/duplicate", response_model=DuplicateAgentApiResponse)
 async def duplicate_agent(
     request: DuplicateAgentApiRequest,
     http_request: Request,
@@ -56,7 +46,6 @@ async def duplicate_agent(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -85,14 +74,6 @@ async def duplicate_agent(
 
         agent_id = result.agent_id
         agent_name = result.agent_name
-
-        # Set audit context with data from SQL query
-        if actor_name:
-            audit_set(
-                http_request,
-                actor={"name": actor_name, "id": profile_id},
-                agent={"name": agent_name, "id": agent_id},
-            )
 
         # Convert SQL result to API response
         api_response = DuplicateAgentApiResponse.model_validate(result.model_dump())

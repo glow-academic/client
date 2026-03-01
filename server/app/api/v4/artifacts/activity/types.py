@@ -11,14 +11,12 @@ from app.api.v4.artifacts.session.types import GetSessionListResponse
 from app.api.v4.artifacts.types import InternalResponseBase
 from app.sql.types import (
     GetActivityListViewSqlRow,
-    GetAuditListViewSqlRow,
     GetGrantListViewSqlRow,
     GetLoginListViewSqlRow,
     GetProblemListViewSqlRow,
     GetSessionListViewSqlRow,
     QGetActivityListViewV4Item,
     QGetAgentsV4Item,
-    QGetAuditListViewV4Item,
     QGetGrantListViewV4Item,
     QGetLoginListViewV4Item,
     QGetModelsV4Item,
@@ -38,7 +36,6 @@ class ActivityInternalData:
     activity_result: GetActivityListViewSqlRow
     sessions_result: GetSessionListViewSqlRow
     logins_result: GetLoginListViewSqlRow
-    audits_result: GetAuditListViewSqlRow
     problems_result: GetProblemListViewSqlRow
     grants_result: GetGrantListViewSqlRow
     # Config chain
@@ -77,7 +74,6 @@ class ActivityViews(BaseModel):
     sessions: list[QGetSessionListViewV4Item] = Field(default_factory=list)
     activity: list[QGetActivityListViewV4Item] = Field(default_factory=list)
     logins: list[QGetLoginListViewV4Item] = Field(default_factory=list)
-    audits: list[QGetAuditListViewV4Item] = Field(default_factory=list)
     problems: list[QGetProblemListViewV4Item] = Field(default_factory=list)
     grants: list[QGetGrantListViewV4Item] = Field(default_factory=list)
 
@@ -146,7 +142,6 @@ class ActivityWebsocketEntries(BaseModel):
     sessions: list[QGetSessionListViewV4Item] | None = None
     activity: list[QGetActivityListViewV4Item] | None = None
     logins: list[QGetLoginListViewV4Item] | None = None
-    audits: list[QGetAuditListViewV4Item] | None = None
     problems: list[QGetProblemListViewV4Item] | None = None
     grants: list[QGetGrantListViewV4Item] | None = None
 

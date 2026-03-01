@@ -1,6 +1,6 @@
 /**
  * app/(main)/session/[sessionId]/page.tsx
- * Canonical session detail page — shows interleaved audits and groups timeline.
+ * Canonical session detail page — shows groups timeline.
  * @AshokSaravanan222
  * 02/06/2026
  */
@@ -70,8 +70,6 @@ export default async function SessionDetailPage({
   const sessionDetail = await getSessionDetail({
     body: {
       session_id: sessionId,
-      audit_limit: 200,
-      audit_offset: 0,
     },
   });
 

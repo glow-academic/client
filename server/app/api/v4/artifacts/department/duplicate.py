@@ -11,7 +11,6 @@ from app.api.v4.artifacts.department.types import (
     DuplicateDepartmentApiResponse,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -30,20 +29,10 @@ ACCESS_CHECK_SQL_PATH = (
 )
 DUPLICATE_SQL_PATH = "app/sql/v4/queries/departments/duplicate_department_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/duplicate",
-    response_model=DuplicateDepartmentApiResponse,
-    dependencies=[
-        audit_activity(
-            "department.duplicated",
-            "{{ actor.name }} duplicated department '{{ department.title }}'",
-        )
-    ],
-)
+@router.post("/duplicate", response_model=DuplicateDepartmentApiResponse)
 async def duplicate_department(
     request: DuplicateDepartmentApiRequest,
     http_request: Request,
@@ -64,7 +53,6 @@ async def duplicate_department(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -125,17 +113,6 @@ async def duplicate_department(
                 raise ValueError(f"Department not found: {request.department_id}")
 
             original_title = result.original_title or "Unknown"
-
-            # Set audit context
-            if actor_name:
-                audit_set(
-                    http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    department={
-                        "title": original_title,
-                        "id": str(request.department_id),
-                    },
-                )
 
         api_response = DuplicateDepartmentApiResponse(
             success=True,

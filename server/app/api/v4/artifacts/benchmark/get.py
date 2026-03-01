@@ -27,7 +27,6 @@ from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.evals.get import get_evals_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
-from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import QGetTestViewV4Item
@@ -171,16 +170,7 @@ async def _fetch_test_history_data(
     )
 
 
-@router.post(
-    "/get",
-    response_model=BenchmarkResponse,
-    dependencies=[
-        audit_activity(
-            "artifacts.benchmark.get",
-            "{{ actor.name }} fetched benchmark artifact data",
-        )
-    ],
-)
+@router.post("/get", response_model=BenchmarkResponse)
 async def get_benchmark(
     request: BenchmarkRequest,
     http_request: Request,

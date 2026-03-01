@@ -309,7 +309,6 @@ PARAMETER_FLAG_NAMES: set[str] = {
     "parameter_video",
 }
 
-
 # ========== Domain Metadata - for client-side display in modals ==========
 
 # Domain display metadata (business logic - rarely changes)

@@ -2,20 +2,12 @@
 
 from fastapi import APIRouter, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.main import TUS_UPLOADS_DIR
 
 router = APIRouter()
 
 
-@router.patch(
-    "/{upload_id}/chunk",
-    dependencies=[
-        audit_activity(
-            "upload.patched", "{{ actor.name }} patched upload '{{ upload.id }}'"
-        )
-    ],
-)
+@router.patch("/{upload_id}/chunk")
 async def tus_chunk(upload_id: str, request: Request) -> Response:
     """Append a chunk to an in-progress upload."""
     if request.headers.get("Tus-Resumable") != "1.0.0":
@@ -56,9 +48,6 @@ async def tus_chunk(upload_id: str, request: Request) -> Response:
         if hasattr(request.state, "profile_id")
         else None
     )
-    if profile_id:
-        audit_set(request, actor={"id": profile_id}, upload={"id": upload_id})
-
     return Response(
         headers={
             "Tus-Resumable": "1.0.0",

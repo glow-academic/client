@@ -5,7 +5,6 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -21,20 +20,10 @@ from app.utils.sql_helper import execute_sql_typed
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/resources/prompts_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/prompts",
-    response_model=PromptsApiResponse,
-    dependencies=[
-        audit_activity(
-            "prompts.created",
-            "{{ actor.name }} created prompts",
-        )
-    ],
-)
+@router.post("/prompts", response_model=PromptsApiResponse)
 async def create_prompts(
     request: PromptsApiRequest,
     http_request: Request,
@@ -81,13 +70,6 @@ async def create_prompts(
 
             if not result or not result.prompt_id:
                 raise ValueError("Failed to create prompts")
-
-            # Set audit context
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                prompts={"id": str(result.prompt_id)},
-            )
 
         # Convert SQL result to API response (auto-generated types)
         api_response = PromptsApiResponse.model_validate(result.model_dump())

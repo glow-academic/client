@@ -209,7 +209,6 @@ TOOL_RESOURCES: set[str] = {
     "flags",
 }
 
-
 # ========== Domain Metadata - for client-side display in modals ==========
 
 TOOL_DOMAIN_METADATA: dict[str, dict[str, str | bool]] = {

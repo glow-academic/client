@@ -19,7 +19,6 @@ from app.api.v4.entries.attempt.get import (
     get_attempt_messages_internal,
 )
 from app.api.v4.entries.attempt.search import get_attempt_list_internal
-from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import GetProfileContextApiRequest
@@ -29,13 +28,7 @@ router = APIRouter()
 _ATTEMPT_PATH_RE = re.compile(r"/attempt/([0-9a-f-]{36})")
 
 
-@router.post(
-    "/attempt",
-    response_model=GetAuthAttemptApiResponse,
-    dependencies=[
-        audit_activity("auth.attempt", "{{ actor.name }} checked attempt controls")
-    ],
-)
+@router.post("/attempt", response_model=GetAuthAttemptApiResponse)
 async def get_auth_attempt(
     request: GetProfileContextApiRequest,
     http_request: Request,

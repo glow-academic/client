@@ -11,7 +11,6 @@ from app.api.v4.artifacts.setting.types import (
     DuplicateSettingApiResponse,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -33,16 +32,7 @@ DUPLICATE_SQL_PATH = "app/sql/v4/queries/settings/duplicate_setting_complete.sql
 router = APIRouter()
 
 
-@router.post(
-    "/duplicate",
-    response_model=DuplicateSettingApiResponse,
-    dependencies=[
-        audit_activity(
-            "setting.duplicated",
-            "{{ actor.name }} duplicated setting '{{ setting.name }}'",
-        )
-    ],
-)
+@router.post("/duplicate", response_model=DuplicateSettingApiResponse)
 async def duplicate_setting(
     request: DuplicateSettingApiRequest,
     http_request: Request,
@@ -64,7 +54,6 @@ async def duplicate_setting(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -127,14 +116,6 @@ async def duplicate_setting(
                 raise ValueError(f"Setting not found: {request.setting_id}")
 
             original_name = result.original_name or "Unknown"
-
-            # Set audit context with data from SQL query
-            if actor_name:
-                audit_set(
-                    http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    setting={"name": original_name, "id": str(request.setting_id)},
-                )
 
         # Convert SQL result to API response
         api_response = DuplicateSettingApiResponse(

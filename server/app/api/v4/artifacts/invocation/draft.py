@@ -11,7 +11,6 @@ from app.api.v4.artifacts.invocation.types import (
     PatchSuiteDraftSqlParams,
     PatchSuiteDraftSqlRow,
 )
-from app.infra.v4.activity.audit import audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import load_sql_query
@@ -60,12 +59,6 @@ async def patch_invocation_draft(
 
             if not result:
                 raise ValueError("Failed to patch invocation bundle draft")
-
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                draft={"id": str(result.draft_id)},
-            )
 
         api_response = PatchSuiteDraftApiResponse.model_validate(result.model_dump())
 

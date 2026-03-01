@@ -15,7 +15,6 @@ from app.api.v4.artifacts.simulation.types import (
     SearchScenariosApiResponse,
     SearchScenariosSqlRow,
 )
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import SearchScenariosSqlParams
@@ -26,7 +25,6 @@ from app.utils.sql_helper import execute_sql_typed
 
 # SQL path for scenarios search
 SQL_PATH = "app/sql/v4/queries/resources/scenarios/search_scenarios_complete.sql"
-
 
 router = APIRouter()
 
@@ -133,16 +131,7 @@ async def search_scenarios_internal(
     return items
 
 
-@router.post(
-    "/scenarios/search",
-    response_model=SearchScenariosApiResponse,
-    dependencies=[
-        audit_activity(
-            "scenarios.search",
-            "{{ actor.name }} searched scenarios",
-        )
-    ],
-)
+@router.post("/scenarios/search", response_model=SearchScenariosApiResponse)
 async def search_scenarios(
     request: SearchScenariosApiRequest,
     http_request: Request,
@@ -190,9 +179,6 @@ async def search_scenarios(
             scenario=request.scenario or False,
             simulation=request.simulation or False,
         )
-
-        # Set audit context
-        audit_set(http_request, actor={"id": profile_id})
 
         # Create response
         response_data = SearchScenariosApiResponse(items=items)

@@ -6,7 +6,6 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.test.types import ArchiveTestsRequest, ArchiveTestsResponse
-from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.utils.cache.invalidate_tags import invalidate_tags
@@ -17,16 +16,7 @@ SQL_PATH = "app/sql/v4/queries/benchmark/archive_test.sql"
 router = APIRouter()
 
 
-@router.post(
-    "/archive",
-    response_model=ArchiveTestsResponse,
-    dependencies=[
-        audit_activity(
-            "artifacts.test.archive",
-            "{{ actor.name }} archived benchmark tests",
-        )
-    ],
-)
+@router.post("/archive", response_model=ArchiveTestsResponse)
 async def archive_test_artifacts(
     request: ArchiveTestsRequest,
     http_request: Request,

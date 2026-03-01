@@ -72,7 +72,6 @@ from app.api.v4.resources.parameter_fields.search import (
 )
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.providers.get import get_providers_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -685,16 +684,7 @@ def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
     return output
 
 
-@router.post(
-    "/get",
-    response_model=GetParameterApiResponse,
-    dependencies=[
-        audit_activity(
-            "parameter.get",
-            "{{ actor.name }} {% if parameter %}viewed{% else %}opened new{% endif %} parameter{% if parameter %} '{{ parameter.name }}'{% endif %}",
-        )
-    ],
-)
+@router.post("/get", response_model=GetParameterApiResponse)
 async def get_parameter(
     request: GetParameterApiRequest,
     http_request: Request,
@@ -719,23 +709,6 @@ async def get_parameter(
             bypass_cache=bypass_cache,
             group_id=request.group_id,
         )
-
-        if response_data.actor_name:
-            audit_ctx: dict[str, Any] = {
-                "actor": {"name": response_data.actor_name, "id": profile_id}
-            }
-            current_name = None
-            current_resources = (
-                response_data.resources.current if response_data.resources else None
-            )
-            if current_resources and current_resources.names:
-                current_name = getattr(current_resources.names[0], "name", None)
-            if request.parameter_id and current_name:
-                audit_ctx["parameter"] = {
-                    "name": current_name,
-                    "id": str(request.parameter_id),
-                }
-            audit_set(http_request, **audit_ctx)
 
         response.headers["X-Cache-Tags"] = "parameters"
         response.headers["X-Cache-Hit"] = "0"

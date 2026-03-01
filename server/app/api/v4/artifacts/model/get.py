@@ -97,7 +97,6 @@ from app.api.v4.resources.temperature_levels.get import get_temperature_levels_i
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.values.get import get_values_internal
 from app.api.v4.resources.voices.get import get_voices_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import load_sql_query
@@ -1024,18 +1023,7 @@ async def get_model_client(
     )
 
 
-@router.post(
-    "/get",
-    response_model=GetModelApiResponse,
-    dependencies=[
-        audit_activity(
-            "model.get",
-            "{{ actor.name }} {% if model %}viewed{% else %}"
-            "opened new{% endif %} model"
-            "{% if model %} '{{ model.name }}'{% endif %}",
-        )
-    ],
-)
+@router.post("/get", response_model=GetModelApiResponse)
 async def get_model(
     request: GetModelApiRequest,
     http_request: Request,
@@ -1060,23 +1048,6 @@ async def get_model(
             bypass_cache=bypass_cache,
             group_id=request.group_id,
         )
-
-        # Set audit context
-        if response_data.actor_name:
-            audit_ctx: dict[str, Any] = {
-                "actor": {"name": response_data.actor_name, "id": profile_id}
-            }
-            current_name = (
-                getattr(response_data.names.resource, "name", None)
-                if response_data.names and response_data.names.resource
-                else None
-            )
-            if request.model_id and current_name:
-                audit_ctx["model"] = {
-                    "name": current_name,
-                    "id": str(request.model_id),
-                }
-            audit_set(http_request, **audit_ctx)
 
         response.headers["X-Cache-Tags"] = "models"
         response.headers["X-Cache-Hit"] = "0"

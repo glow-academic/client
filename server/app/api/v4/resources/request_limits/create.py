@@ -5,7 +5,6 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -21,20 +20,10 @@ from app.utils.sql_helper import execute_sql_typed
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/resources/request_limits_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/request_limits",
-    response_model=RequestLimitsApiResponse,
-    dependencies=[
-        audit_activity(
-            "request_limits.created",
-            "{{ actor.name }} created request_limits",
-        )
-    ],
-)
+@router.post("/request_limits", response_model=RequestLimitsApiResponse)
 async def create_request_limits(
     request: RequestLimitsApiRequest,
     http_request: Request,
@@ -80,13 +69,6 @@ async def create_request_limits(
 
             if not result or not result.request_limits_id:
                 raise ValueError("Failed to create request_limits")
-
-            # Set audit context
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                request_limits={"id": str(result.request_limits_id)},
-            )
 
         # Convert SQL result to API response (auto-generated types)
         api_response = RequestLimitsApiResponse.model_validate(result.model_dump())

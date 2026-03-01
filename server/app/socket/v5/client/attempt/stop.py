@@ -8,7 +8,6 @@ Dual cancel (in-process + Redis) → SQL mutation → emit stopped.
 import uuid
 from typing import Any, cast
 
-from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.cancel_active_result import cancel_active_result
 from app.infra.v4.websocket.cancel_active_run import cancel_active_run
 from app.infra.v4.websocket.get_db_connection import get_db_connection
@@ -66,14 +65,7 @@ async def _attempt_stop_impl(sid: str, data: AttemptStopPayload) -> None:
 
             # Log activity
             try:
-                await log_websocket_activity(
-                    sid=sid,
-                    event_key="attempt.stop.stopped",
-                    template="{{ actor.name }} stopped attempt",
-                    context={"chat_id": chat_id},
-                    endpoint="/socket/v5/attempt/stop",
-                    error=False,
-                )
+                pass
             except Exception:
                 pass
         else:

@@ -12,7 +12,6 @@ from app.api.v4.artifacts.model.types import (
     PatchModelDraftSqlParams,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -57,7 +56,6 @@ async def patch_model_draft(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -111,12 +109,6 @@ async def patch_model_draft(
 
             if not result:
                 raise ValueError("Failed to patch model draft")
-
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                draft={"id": str(result.draft_id)},
-            )
 
         if not result.draft_id or result.new_version is None:
             raise ValueError(

@@ -28,9 +28,7 @@ SQL_PATH = (
     "app/sql/v4/queries/resources/scenario_rubrics/get_scenario_rubrics_complete.sql"
 )
 
-
 router = APIRouter()
-
 
 # =============================================================================
 # Internal Function

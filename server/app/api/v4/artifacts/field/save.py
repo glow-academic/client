@@ -21,7 +21,6 @@ from app.api.v4.artifacts.field.types import (
     SaveFieldSqlRow,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -38,7 +37,6 @@ logger = get_logger(__name__)
 # SQL paths
 ACCESS_CHECK_SQL_PATH = "app/sql/v4/queries/fields/check_field_save_access_complete.sql"
 SQL_PATH = "app/sql/v4/queries/fields/save_field_complete.sql"
-
 
 router = APIRouter()
 
@@ -103,16 +101,7 @@ async def save_field_internal(
         return None
 
 
-@router.post(
-    "/save",
-    response_model=SaveFieldApiResponse,
-    dependencies=[
-        audit_activity(
-            "field.saved",
-            "{{ actor.name }} {% if field %}updated{% else %}created{% endif %} field{% if field %} '{{ field.name }}'{% endif %}",
-        )
-    ],
-)
+@router.post("/save", response_model=SaveFieldApiResponse)
 async def save_field(
     request: SaveFieldApiRequest,
     http_request: Request,
@@ -133,7 +122,6 @@ async def save_field(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -221,15 +209,6 @@ async def save_field(
                     raise ValueError(f"Field not found: {request.input_field_id}")
                 else:
                     raise ValueError("Failed to create field")
-
-            if actor_name:
-                audit_ctx = {"actor": {"name": actor_name, "id": profile_id}}
-                if request.input_field_id:
-                    audit_ctx["field"] = {
-                        "name": getattr(request, "name", "Field"),
-                        "id": str(result.field_id),
-                    }
-                audit_set(http_request, **audit_ctx)
 
         is_update = request.input_field_id is not None
         api_response = SaveFieldApiResponse.model_validate(

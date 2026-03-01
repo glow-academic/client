@@ -15,7 +15,6 @@ from app.api.v4.artifacts.persona.types import (
     ExportPersonaApiResponse,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import UPLOAD_FOLDER, get_db, get_pool
 from app.sql.types import (
@@ -73,16 +72,7 @@ def _pipe_strings(vals: list[str] | None) -> str:
     return PIPE.join(vals)
 
 
-@router.post(
-    "/export",
-    response_model=ExportPersonaApiResponse,
-    dependencies=[
-        audit_activity(
-            "persona.exported",
-            "{{ actor.name }} exported personas",
-        )
-    ],
-)
+@router.post("/export", response_model=ExportPersonaApiResponse)
 async def export_personas(
     request: ExportPersonaApiRequest,
     http_request: Request,
@@ -101,7 +91,6 @@ async def export_personas(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit
         pool = get_pool()
         actor_name = None
         if pool:
@@ -191,12 +180,6 @@ async def export_personas(
         upload_id = UUID(upload_result.id)
 
         # Audit
-        if actor_name:
-            audit_set(
-                http_request,
-                actor={"name": actor_name, "id": profile_id},
-            )
-
         return ExportPersonaApiResponse(
             upload_id=upload_id,
             file_name=file_name,

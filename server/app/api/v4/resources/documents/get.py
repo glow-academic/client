@@ -32,7 +32,6 @@ BATCH_SQL_PATH = "app/sql/v4/queries/resources/documents/get_documents_complete.
 
 router = APIRouter()
 
-
 # =============================================================================
 # Internal Function
 # =============================================================================

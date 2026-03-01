@@ -7,7 +7,6 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -25,17 +24,10 @@ from app.utils.sql_helper import execute_sql_typed
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/profiles/get_profiles_search_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/search",
-    response_model=GetProfilesSearchApiResponse,
-    dependencies=[
-        audit_activity("profile.searched", "{{ actor.name }} searched profiles")
-    ],
-)
+@router.post("/search", response_model=GetProfilesSearchApiResponse)
 async def search_profiles(
     request: GetProfilesSearchApiRequest,
     http_request: Request,
@@ -68,7 +60,6 @@ async def search_profiles(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -97,10 +88,6 @@ async def search_profiles(
                 params=params,
             ),
         )
-
-        # Set audit context
-        if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         # Convert SQL result to API response (no manual filtering needed - SQL handles it)
         api_response = GetProfilesSearchApiResponse.model_validate(result.model_dump())

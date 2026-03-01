@@ -31,7 +31,6 @@ COLUMNS_SQL = "app/sql/v4/queries/docs/get_docs_columns_complete.sql"
 JUNCTIONS_SQL = "app/sql/v4/queries/docs/get_docs_junctions_complete.sql"
 FK_SQL = "app/sql/v4/queries/docs/get_docs_foreign_keys_complete.sql"
 
-
 # ========== Page Metadata Models ==========
 
 

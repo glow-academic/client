@@ -1,6 +1,6 @@
 /**
  * Session.tsx
- * Chat-style timeline interleaving audits and pricing groups chronologically.
+ * Chat-style timeline showing pricing groups chronologically.
  * @AshokSaravanan222
  * 02/06/2026
  */
@@ -17,27 +17,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { AlertCircle, Layers, ScrollText } from "lucide-react";
+import { Layers, ScrollText } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
 
 export interface SessionProps {
   sessionDetail: SessionDetailOut;
 }
-
-type TimelineItem =
-  | { kind: "audit"; data: AuditItem }
-  | { kind: "group"; data: GroupItem };
-
-type AuditItem = {
-  id: string;
-  created_at?: string | null;
-  message?: string | null;
-  endpoint?: string | null;
-  error: boolean;
-};
 
 type GroupItem = {
   group_id: string;
@@ -71,37 +58,17 @@ const formatCost = (cost: string): string => {
 export default function Session({
   sessionDetail,
 }: SessionProps) {
-  const audits = (sessionDetail.audits ?? []) as AuditItem[];
   const groups = (sessionDetail.groups ?? []) as GroupItem[];
 
-  // Merge and sort chronologically
-  const timeline = useMemo<TimelineItem[]>(() => {
-    const items: TimelineItem[] = [];
-
-    for (const a of audits) {
-      items.push({ kind: "audit", data: a });
-    }
-    for (const g of groups) {
-      items.push({ kind: "group", data: g });
-    }
-
-    items.sort((a, b) => {
-      const dateA =
-        a.kind === "audit"
-          ? a.data.created_at
-          : a.data.first_run_at;
-      const dateB =
-        b.kind === "audit"
-          ? b.data.created_at
-          : b.data.first_run_at;
-      if (!dateA && !dateB) return 0;
-      if (!dateA) return -1;
-      if (!dateB) return 1;
-      return new Date(dateA).getTime() - new Date(dateB).getTime();
+  // Sort groups chronologically
+  const sortedGroups = useMemo(() => {
+    return [...groups].sort((a, b) => {
+      if (!a.first_run_at && !b.first_run_at) return 0;
+      if (!a.first_run_at) return -1;
+      if (!b.first_run_at) return 1;
+      return new Date(a.first_run_at).getTime() - new Date(b.first_run_at).getTime();
     });
-
-    return items;
-  }, [audits, groups]);
+  }, [groups]);
 
   if (!sessionDetail.session_exists) {
     return (
@@ -124,7 +91,7 @@ export default function Session({
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div>
               <span className="text-muted-foreground">Profile: </span>
               <span className="font-medium">
@@ -137,12 +104,6 @@ export default function Session({
                 {sessionDetail.session_created_at
                   ? formatDate(sessionDetail.session_created_at)
                   : "—"}
-              </span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Audits: </span>
-              <span className="font-medium">
-                {formatNumber(sessionDetail.audit_total_count ?? 0)}
               </span>
             </div>
             <div>
@@ -161,7 +122,7 @@ export default function Session({
         </CardContent>
       </Card>
 
-      {/* Interleaved timeline */}
+      {/* Groups timeline */}
       <div className="border rounded-lg flex-1 min-h-0 overflow-hidden flex flex-col bg-card">
         <div className="px-4 py-3 border-b">
           <h3 className="text-sm font-semibold">Timeline</h3>
@@ -169,7 +130,7 @@ export default function Session({
         <ScrollArea className="flex-1 h-[500px]">
           <TooltipProvider>
             <div className="space-y-3 p-4">
-              {timeline.length === 0 ? (
+              {sortedGroups.length === 0 ? (
                 <div className="flex flex-col items-center justify-center min-h-[200px] text-muted-foreground">
                   <ScrollText className="h-12 w-12 mb-4 opacity-50" />
                   <p className="text-sm">
@@ -177,16 +138,12 @@ export default function Session({
                   </p>
                 </div>
               ) : (
-                timeline.map((item, idx) =>
-                  item.kind === "audit" ? (
-                    <AuditBubble key={`audit-${item.data.id}`} audit={item.data} />
-                  ) : (
-                    <GroupBubble
-                      key={`group-${item.data.group_id}`}
-                      group={item.data}
-                    />
-                  )
-                )
+                sortedGroups.map((group) => (
+                  <GroupBubble
+                    key={`group-${group.group_id}`}
+                    group={group}
+                  />
+                ))
               )}
             </div>
           </TooltipProvider>
@@ -196,60 +153,7 @@ export default function Session({
   );
 }
 
-/* ---- Audit bubble (left-aligned, muted bg) ---- */
-function AuditBubble({ audit }: { audit: AuditItem }) {
-  const isError = audit.error;
-
-  return (
-    <div className="flex gap-3 justify-start">
-      <div className="flex-shrink-0 pt-0.5">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div
-              className={cn(
-                "w-8 h-8 rounded-md flex items-center justify-center",
-                isError
-                  ? "bg-destructive/10 text-destructive"
-                  : "bg-muted"
-              )}
-            >
-              {isError ? (
-                <AlertCircle className="h-4 w-4" />
-              ) : (
-                <ScrollText className="h-4 w-4" />
-              )}
-            </div>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{isError ? "Error Audit" : "Audit"}</p>
-          </TooltipContent>
-        </Tooltip>
-      </div>
-      <div className="flex flex-col gap-1 max-w-[80%]">
-        <div
-          className={cn(
-            "rounded-lg p-3",
-            isError ? "bg-destructive/5 border border-destructive/20" : "bg-muted"
-          )}
-        >
-          <p className="text-sm">{audit.message || "No message"}</p>
-          {audit.endpoint && (
-            <Badge variant="outline" className="mt-2 text-xs">
-              {audit.endpoint}
-            </Badge>
-          )}
-        </div>
-        {audit.created_at && (
-          <span className="text-xs text-muted-foreground">
-            {formatDate(audit.created_at)}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ---- Group bubble (right-aligned, primary bg) ---- */
+/* ---- Group bubble ---- */
 function GroupBubble({ group }: { group: GroupItem }) {
   return (
     <div className="flex gap-3 justify-end">

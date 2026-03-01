@@ -16,7 +16,6 @@ from app.api.v4.resources.simulations.types import (
     GetSimulationsSqlRow,
     GetSimulationsV4Item,
 )
-from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import load_sql_query
@@ -28,9 +27,7 @@ from app.utils.sql_helper import execute_sql_typed
 # Load SQL with types at module level
 SQL_PATH = "app/sql/v4/queries/resources/simulations/get_simulations_complete.sql"
 
-
 router = APIRouter()
-
 
 # =============================================================================
 # Internal Function
@@ -107,16 +104,7 @@ async def get_simulations_internal(
 # =============================================================================
 
 
-@router.post(
-    "/simulations/get",
-    response_model=GetSimulationsApiResponse,
-    dependencies=[
-        audit_activity(
-            "simulations.get",
-            "{{ actor.name }} fetched simulation",
-        )
-    ],
-)
+@router.post("/simulations/get", response_model=GetSimulationsApiResponse)
 async def get_simulations(
     request: GetSimulationsApiRequest,
     http_request: Request,

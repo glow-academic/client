@@ -7,7 +7,6 @@ from urllib.parse import quote
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -26,13 +25,7 @@ SQL_PATH = "app/sql/v4/queries/auth/create_emulation_grant_complete.sql"
 router = APIRouter()
 
 
-@router.post(
-    "/emulate",
-    response_model=CreateEmulationGrantApiResponse,
-    dependencies=[
-        audit_activity("profile.emulate", "{{ actor.name }} authorized emulation")
-    ],
-)
+@router.post("/emulate", response_model=CreateEmulationGrantApiResponse)
 async def authorize_emulation(
     request: CreateEmulationGrantApiRequest,
     http_request: Request,
@@ -101,13 +94,6 @@ async def authorize_emulation(
 
         if not result.allowed:
             raise HTTPException(status_code=403, detail=result.reason or "Forbidden")
-
-        # Set audit context using actor_name from SQL result
-        if result.actor_name:
-            audit_set(
-                http_request,
-                actor={"name": result.actor_name, "id": requester_profile_id},
-            )
 
         # Construct logout_url from emulate_page_url (Python handles URL encoding properly)
         logout_url = None

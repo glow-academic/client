@@ -12,7 +12,6 @@ from app.api.v4.entries.attempt_content.types import (
     CreateAttemptContentEntrySqlParams,
     CreateAttemptContentEntrySqlRow,
 )
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.infra.v4.tools.call_args import resolve_tool_for_entry
 from app.main import get_db
@@ -74,14 +73,7 @@ async def create_attempt_content_entry_internal(
 
 
 @router.post(
-    "/attempt-content/create",
-    response_model=CreateAttemptContentEntryResponse,
-    dependencies=[
-        audit_activity(
-            "attempt_content.created",
-            "{{ actor.name }} created attempt_content entry",
-        )
-    ],
+    "/attempt-content/create", response_model=CreateAttemptContentEntryResponse
 )
 async def create_attempt_content_entry(
     request: CreateAttemptContentEntryRequest,
@@ -113,12 +105,6 @@ async def create_attempt_content_entry(
 
         api_response = await create_attempt_content_entry_internal(
             conn, request_dict, mcp
-        )
-
-        audit_set(
-            http_request,
-            actor={"id": profile_id},
-            attempt_content={"id": str(api_response.id)},
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

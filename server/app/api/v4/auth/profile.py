@@ -21,7 +21,6 @@ from app.api.v4.auth.types import AuthProfileInternalData, GetAuthProfileApiResp
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.roles.get import get_roles_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.infra.v4.sessions.get import get_session_internal
 from app.main import get_db, get_pool
@@ -92,13 +91,7 @@ async def get_auth_profile_internal(
     )
 
 
-@router.post(
-    "/profile",
-    response_model=GetAuthProfileApiResponse,
-    dependencies=[
-        audit_activity("auth.profile", "{{ actor.name }} viewed auth profile")
-    ],
-)
+@router.post("/profile", response_model=GetAuthProfileApiResponse)
 async def get_auth_profile(
     request: GetProfileContextApiRequest,
     http_request: Request,
@@ -134,12 +127,6 @@ async def get_auth_profile(
         pass1_time = (time.time() - pass1_start) * 1000
 
         access = data.access
-
-        if access.actor_name and profile_id:
-            audit_set(
-                http_request,
-                actor={"name": access.actor_name, "id": profile_id},
-            )
 
         response.headers["X-Two-Pass"] = "1"
         response.headers["X-Pass1-Time"] = f"{pass1_time:.1f}"

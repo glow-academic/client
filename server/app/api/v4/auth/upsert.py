@@ -5,7 +5,6 @@ from typing import Annotated, Any, cast
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, transaction
 from app.sql.types import (
@@ -24,16 +23,7 @@ SQL_PATH = "app/sql/v4/queries/profile/create_or_update_profile_complete.sql"
 router = APIRouter()
 
 
-@router.post(
-    "/upsert",
-    response_model=CreateOrUpdateProfileApiResponse,
-    dependencies=[
-        audit_activity(
-            "profile.upserted",
-            "{{ actor.name }} {{ created }} profile '{{ profile.name }}'",
-        )
-    ],
-)
+@router.post("/upsert", response_model=CreateOrUpdateProfileApiResponse)
 async def create_or_update_profile(
     request: CreateOrUpdateProfileApiRequest,
     http_request: Request,
@@ -96,21 +86,7 @@ async def create_or_update_profile(
             profile_id = result.profile_id
             created = result.created
 
-            # Set audit context
             profile_name = request.name
-            if result.actor_name:
-                audit_set(
-                    http_request,
-                    actor={"name": result.actor_name, "id": current_profile_id}
-                    if current_profile_id
-                    else {},
-                    created="created" if created else "updated",
-                    profile={
-                        "name": profile_name,
-                        "id": str(profile_id),
-                    },
-                )
-
         # Convert SQL result to API response
         response_data = CreateOrUpdateProfileApiResponse.model_validate(
             result.model_dump()

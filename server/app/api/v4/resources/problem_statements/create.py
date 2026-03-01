@@ -6,7 +6,6 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.infra.v4.tools.call_args import record_call_args, resolve_tool
 from app.main import get_db
@@ -81,16 +80,7 @@ async def create_problem_statements_internal(
 router = APIRouter()
 
 
-@router.post(
-    "/problem_statements",
-    response_model=ProblemStatementsApiResponse,
-    dependencies=[
-        audit_activity(
-            "problem_statements.created",
-            "{{ actor.name }} created problem_statements",
-        )
-    ],
-)
+@router.post("/problem_statements", response_model=ProblemStatementsApiResponse)
 async def create_problem_statements(
     request: ProblemStatementsApiRequest,
     http_request: Request,
@@ -137,13 +127,6 @@ async def create_problem_statements(
 
             if not result or not result.problem_statement_id:
                 raise ValueError("Failed to create problem_statements")
-
-            # Set audit context
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                problem_statements={"id": str(result.problem_statement_id)},
-            )
 
         # Convert SQL result to API response (auto-generated types)
         api_response = ProblemStatementsApiResponse.model_validate(result.model_dump())

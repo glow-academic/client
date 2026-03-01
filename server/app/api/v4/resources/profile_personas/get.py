@@ -28,9 +28,7 @@ SQL_PATH = (
     "app/sql/v4/queries/resources/profile_personas/get_profile_personas_complete.sql"
 )
 
-
 router = APIRouter()
-
 
 # =============================================================================
 # Internal Function

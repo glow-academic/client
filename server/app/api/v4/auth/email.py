@@ -5,7 +5,6 @@ from typing import Annotated, Any, cast
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -23,13 +22,7 @@ SQL_PATH = "app/sql/v4/queries/profile/get_profile_by_email_complete.sql"
 router = APIRouter()
 
 
-@router.post(
-    "/email",
-    response_model=GetProfileByEmailApiResponse,
-    dependencies=[
-        audit_activity("profile.email", "{{ actor.name }} viewed profile by email")
-    ],
-)
+@router.post("/email", response_model=GetProfileByEmailApiResponse)
 async def get_profile_by_email(
     request: GetProfileByEmailApiRequest,
     http_request: Request,
@@ -41,7 +34,6 @@ async def get_profile_by_email(
 
     try:
         # Get profile_id from header (set by router-level dependency)
-        # Note: profile_id is optional - only used for audit logging
         profile_id = getattr(http_request.state, "profile_id", None)
 
         # Convert API request to SQL params using double star pattern
@@ -65,10 +57,6 @@ async def get_profile_by_email(
             raise HTTPException(status_code=404, detail="Profile not found")
 
         # Note: actor_name is now computed in SQL and returned in result - no inline SQL needed
-        # Set audit context using actor_name from SQL result
-        if result.actor_name and profile_id:
-            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
-
         # Convert SQL result to API response
         return GetProfileByEmailApiResponse.model_validate(result.model_dump())
     except HTTPException:

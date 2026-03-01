@@ -68,7 +68,6 @@ from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.slugs.get import get_slugs_internal
 from app.api.v4.resources.slugs.search import search_slugs_internal
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -763,16 +762,7 @@ def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
     return output
 
 
-@router.post(
-    "/get",
-    response_model=GetAuthApiResponse,
-    dependencies=[
-        audit_activity(
-            "auth.get",
-            "{{ actor.name }} {% if auth %}viewed{% else %}opened new{% endif %} auth{% if auth %} '{{ auth.name }}'{% endif %}",
-        )
-    ],
-)
+@router.post("/get", response_model=GetAuthApiResponse)
 async def get_auth(
     request: GetAuthApiRequest,
     http_request: Request,
@@ -797,22 +787,6 @@ async def get_auth(
             bypass_cache=bypass_cache,
             group_id=request.group_id,
         )
-
-        if response_data.actor_name:
-            audit_ctx: dict[str, Any] = {
-                "actor": {"name": response_data.actor_name, "id": profile_id}
-            }
-            current_name = (
-                response_data.names.resource.name
-                if response_data.names and response_data.names.resource
-                else None
-            )
-            if request.auth_id and current_name:
-                audit_ctx["auth"] = {
-                    "name": current_name,
-                    "id": str(request.auth_id),
-                }
-            audit_set(http_request, **audit_ctx)
 
         return response_data
 

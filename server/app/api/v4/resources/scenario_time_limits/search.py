@@ -26,7 +26,6 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/v4/queries/resources/scenario_time_limits/search_scenario_time_limits_complete.sql"
 
-
 router = APIRouter()
 
 

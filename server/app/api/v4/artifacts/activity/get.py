@@ -31,7 +31,6 @@ from app.api.v4.artifacts.session.types import (
 )
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.activity.get import get_activity_list_view_internal
-from app.api.v4.entries.audits.get import get_audit_list_view_internal
 from app.api.v4.entries.grants.get import get_grant_list_view_internal
 from app.api.v4.entries.groups.get import get_group_list_view_internal
 from app.api.v4.entries.logins.get import get_login_list_view_internal
@@ -47,12 +46,10 @@ from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.providers.get import get_providers_internal
-from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
     GetActivityListViewSqlRow,
-    GetAuditListViewSqlRow,
     GetGrantListViewSqlRow,
     GetLoginListViewSqlRow,
     GetProblemListViewSqlRow,
@@ -102,7 +99,6 @@ ACTIVITY_BUNDLE_RESOURCES: set[str] = {
     "activity",
     "debug_info",
 }
-
 
 # =============================================================================
 # Internal Layer
@@ -192,15 +188,6 @@ async def get_activity_internal(
                 bypass_cache=bypass_cache,
             )
 
-    async def fetch_audits() -> GetAuditListViewSqlRow:
-        async with pool.acquire() as c:
-            return await get_audit_list_view_internal(
-                conn=c,
-                date_from=date_from,
-                date_to=date_to,
-                bypass_cache=bypass_cache,
-            )
-
     async def fetch_problems() -> GetProblemListViewSqlRow:
         async with pool.acquire() as c:
             return await get_problem_list_view_internal(
@@ -236,7 +223,6 @@ async def get_activity_internal(
         activity_result,
         sessions_result,
         logins_result,
-        audits_result,
         problems_result,
         grants_result,
         config_profile_result,
@@ -245,7 +231,6 @@ async def get_activity_internal(
         fetch_activity(),
         fetch_sessions(),
         fetch_logins(),
-        fetch_audits(),
         fetch_problems(),
         fetch_grants(),
         fetch_config_profile(),
@@ -256,7 +241,6 @@ async def get_activity_internal(
         activity_result=activity_result,
         sessions_result=sessions_result,
         logins_result=logins_result,
-        audits_result=audits_result,
         problems_result=problems_result,
         grants_result=grants_result,
         config_agents=config_agents,
@@ -323,19 +307,13 @@ async def get_session_list_internal(
             total_pages=total_pages,
         )
 
-    # Pass 2: Batch fetch groups, audits via view internals (with session_ids filter)
+    # Pass 2: Batch fetch groups via view internals (with session_ids filter)
     all_profile_ids = list(
         {item.profile_id for item in view_result.items if item.profile_id}
     )
 
-    groups_result, audits_result, profile_name_items = await asyncio.gather(
+    groups_result, profile_name_items = await asyncio.gather(
         get_group_list_view_internal(
-            conn=conn,
-            session_ids=session_ids,
-            page_limit=10000,
-            bypass_cache=bypass_cache,
-        ),
-        get_audit_list_view_internal(
             conn=conn,
             session_ids=session_ids,
             page_limit=10000,
@@ -356,21 +334,6 @@ async def get_session_list_internal(
         if g.session_id:
             group_counts[g.session_id] += 1
             group_ids.append(g.group_id)
-
-    # Compute audit stats per session
-    audit_counts: dict[UUID, int] = defaultdict(int)
-    error_counts: dict[UUID, int] = defaultdict(int)
-    last_audit_at: dict[UUID, object] = {}
-    for a in audits_result.items:
-        if a.session_id:
-            audit_counts[a.session_id] += 1
-            if a.error:
-                error_counts[a.session_id] += 1
-            existing = last_audit_at.get(a.session_id)
-            if a.audit_created_at and (
-                existing is None or a.audit_created_at > existing
-            ):
-                last_audit_at[a.session_id] = a.audit_created_at
 
     # Fetch runs for these groups
     runs_result = await get_run_list_entries_internal(
@@ -432,9 +395,6 @@ async def get_session_list_internal(
                 last_run_at=last_run_at.get(sid),
                 total_tokens=total_tokens_map.get(sid, 0),
                 total_cost=total_cost_map.get(sid, Decimal("0")),
-                audit_count=audit_counts.get(sid, 0),
-                last_audit_at=last_audit_at.get(sid),
-                error_count=error_counts.get(sid, 0),
             )
         )
 
@@ -497,16 +457,7 @@ async def _fetch_session_history_data(
 # =============================================================================
 
 
-@router.post(
-    "/get",
-    response_model=ActivityResponse,
-    dependencies=[
-        audit_activity(
-            "artifacts.activity.get",
-            "{{ actor.name }} fetched activity artifact data",
-        )
-    ],
-)
+@router.post("/get", response_model=ActivityResponse)
 async def get_activity(
     request: ActivityRequest,
     http_request: Request,
@@ -597,7 +548,6 @@ async def get_activity(
             sessions=data.sessions_result.items,
             activity=data.activity_result.items,
             logins=data.logins_result.items,
-            audits=data.audits_result.items,
             problems=data.problems_result.items,
             grants=data.grants_result.items,
         )
@@ -703,7 +653,6 @@ async def get_activity_websocket(
             sessions=data.sessions_result.items,
             activity=data.activity_result.items,
             logins=data.logins_result.items,
-            audits=data.audits_result.items,
             problems=data.problems_result.items,
             grants=data.grants_result.items,
         ),

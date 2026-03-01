@@ -36,7 +36,6 @@ from app.api.v4.resources.scenario_time_limits.link import (
     link_scenario_time_limits_internal,
 )
 from app.api.v4.resources.scenarios.link import link_scenarios_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -137,16 +136,7 @@ async def _link_draft_resources(
                     )
 
 
-@router.patch(
-    "/draft",
-    response_model=PatchSimulationDraftApiResponse,
-    dependencies=[
-        audit_activity(
-            "simulation.draft.patched",
-            "{{ actor.name }} patched simulation draft",
-        )
-    ],
-)
+@router.patch("/draft", response_model=PatchSimulationDraftApiResponse)
 async def patch_simulation_draft(
     request: PatchSimulationDraftApiRequest,
     http_request: Request,
@@ -170,7 +160,6 @@ async def patch_simulation_draft(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging (lazy import to avoid circular deps)
         from app.api.v4.auth.profile import get_auth_profile_internal
 
         pool = get_pool()
@@ -216,12 +205,6 @@ async def patch_simulation_draft(
 
             if not result:
                 raise ValueError("Failed to patch simulation draft")
-
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                draft={"id": str(result.draft_id)},
-            )
 
         # Link resources for tool tracking (after successful draft save)
         if request.group_id and link_tool_ids:

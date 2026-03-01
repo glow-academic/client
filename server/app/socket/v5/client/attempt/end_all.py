@@ -8,7 +8,6 @@ chats as completed and emits attempt_ended.
 
 from typing import Any
 
-from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.main import get_internal_sio, sio
 from app.socket.v5.client.types import AttemptEndAllPayload
 from app.socket.v5.internal.attempt.types import AttemptErrorData, AttemptProceedData
@@ -36,14 +35,7 @@ async def _attempt_end_all_impl(sid: str, data: AttemptEndAllPayload) -> None:
 
         # Log activity
         try:
-            await log_websocket_activity(
-                sid=sid,
-                event_key="attempt.end_all.ended",
-                template="{{ actor.name }} ended all chats",
-                context={"attempt_id": attempt_id},
-                endpoint="/socket/v5/attempt/end_all",
-                error=False,
-            )
+            pass
         except Exception:
             pass
 

@@ -9,7 +9,6 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import FileResponse, StreamingResponse
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import AUDIO_FOLDER, IMAGE_FOLDER, UPLOAD_FOLDER, get_db
 from app.sql.types import (
@@ -82,16 +81,7 @@ def _create_range_streaming_response(
     )
 
 
-@router.get(
-    "/{upload_id}/download",
-    response_model=None,
-    dependencies=[
-        audit_activity(
-            "upload.downloaded",
-            "{{ actor.name }} downloaded upload '{{ upload.id }}'",
-        )
-    ],
-)
+@router.get("/{upload_id}/download", response_model=None)
 async def download_upload(
     upload_id: str,
     http_request: Request,
@@ -128,13 +118,6 @@ async def download_upload(
 
         if not result.upload_exists:
             raise HTTPException(status_code=404, detail="Upload not found")
-
-        if result.actor_name and profile_id:
-            audit_set(
-                http_request,
-                actor={"name": result.actor_name, "id": profile_id},
-                upload={"id": upload_id},
-            )
 
         stored_path = result.file_path or ""
         if stored_path.startswith("audio/"):

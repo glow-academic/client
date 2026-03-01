@@ -126,7 +126,6 @@ class PageMetadata(BaseModel):
 # Rebuild Pydantic models to resolve forward references
 SidebarSection.model_rebuild()
 
-
 # ---------------------------------------------------------------------------
 # ROUTE_PERMISSIONS — all paths use actual filesystem routes (no single-letter
 # prefixes).
@@ -514,7 +513,6 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
     # ),
 ]
 
-
 # ---------------------------------------------------------------------------
 # Lookup helpers (built once at import time)
 # ---------------------------------------------------------------------------
@@ -789,7 +787,6 @@ _CORE_ARTIFACT_SECTIONS = {
 }
 _BUNDLE_SECTIONS = {"home", "practice", "benchmark"}
 
-
 _LIST_OPS = frozenset(
     {"get", "list", "save", "duplicate", "delete", "draft", "docs", "export", "refresh"}
 )
@@ -1052,7 +1049,6 @@ ENTITY_NAME_MAP: dict[tuple[str, str], tuple[str, str]] = {
     ("analytics", "reports"): ("profile", "profile_names_junction"),
     ("settings", ""): ("setting", "setting_names_junction"),
 }
-
 
 # Maps (section,) → (table, column) for entities with denormalized names
 ENTITY_NAME_DIRECT: dict[str, tuple[str, str]] = {

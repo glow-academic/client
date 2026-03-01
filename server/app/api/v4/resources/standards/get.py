@@ -29,7 +29,6 @@ BATCH_SQL_PATH = "app/sql/v4/queries/resources/standards/get_standards_complete.
 
 router = APIRouter()
 
-
 # =============================================================================
 # Internal Function
 # =============================================================================

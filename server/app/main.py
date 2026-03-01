@@ -168,7 +168,6 @@ DEFAULT_CATEGORIES = [
     "syllabi",
 ]
 
-
 # Global storage for voice message IDs (group_id -> list of message IDs)
 # Accumulates message IDs created during voice tool calls, processed when response.done arrives
 _voice_message_ids: dict[str, list[str]] = {}
@@ -177,7 +176,6 @@ _voice_message_ids_lock = asyncio.Lock()
 # Global storage for simulation tool calls (chat_id -> {tool_call_id: {state...}})
 # Tracks tool call state for streaming persona messages from tool call arguments
 _simulation_tool_calls: dict[str, dict[str, dict[str, Any]]] = {}
-
 
 # ----------  Socket.IO with Redis message queue  ----------
 redis_url = os.getenv("REDIS_URL")  # don't default when unset
@@ -571,14 +569,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
 
         pool = get_pool()
         if pool:
-            # Setup activity logger
-            from app.infra.v4.activity.logger import setup_activity_logger  # noqa: E402
-
-            setup_activity_logger(pool)
-            logger.info("Activity logger initialized")
-
             # Keycloak sync moved to app.socket.v4.actions.keycloak
             # Sync is triggered via WebSocket events and after auth mutations
+            pass
 
         # Initialize metrics collector
         from app.infra.v4.metrics.collector import initialize_metrics  # noqa: E402
@@ -762,23 +755,6 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
             except Exception:
                 pass  # Don't break request if metrics fail
 
-            # Log activity to database (fire and forget - don't block response)
-            try:
-                from app.infra.v4.activity.logger import log_activity
-                from app.utils.logging.db_logger import profile_id_context
-
-                # Get resolved profile_id for activity logging
-                resolved_profile_id = profile_id_context.get(None)
-                if resolved_profile_id:
-                    # Log activity if audit intent is present
-                    asyncio.create_task(
-                        log_activity(
-                            request, status_code, duration_ms, resolved_profile_id
-                        )
-                    )
-            except Exception:
-                # Never break the request because logging failed
-                pass
             finally:
                 # Clear profile_id from context
                 set_profile_id(None)
@@ -1072,7 +1048,6 @@ app = socketio.ASGIApp(sio, fastapi_app, socketio_path=socket_path)
 # Add specific logger for evaluation
 eval_logger = logging.getLogger("app.agents.generic")
 eval_logger.setLevel(logging.INFO)
-
 
 if __name__ == "__main__":
     import uvicorn

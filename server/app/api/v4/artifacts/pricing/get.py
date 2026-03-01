@@ -42,7 +42,6 @@ from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.providers.get import get_providers_internal
-from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -60,7 +59,6 @@ router = APIRouter()
 
 # Pricing entry types for agent resolution
 PRICING_BUNDLE_ENTRIES: set[str] = {"debug_info"}
-
 
 # =============================================================================
 # Internal data + websocket layer
@@ -413,16 +411,7 @@ async def _fetch_group_history_data(
         )
 
 
-@router.post(
-    "/get",
-    response_model=PricingResponse,
-    dependencies=[
-        audit_activity(
-            "artifacts.pricing.get",
-            "{{ actor.name }} fetched pricing artifact data",
-        )
-    ],
-)
+@router.post("/get", response_model=PricingResponse)
 async def get_pricing(
     request: PricingRequest,
     http_request: Request,

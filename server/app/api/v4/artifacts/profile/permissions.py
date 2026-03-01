@@ -304,7 +304,6 @@ PROFILE_RESOURCES: set[str] = {
 PROFILE_BASIC_RESOURCES: set[str] = {"names", "emails", "flags", "request_limits"}
 PROFILE_GENERAL_RESOURCES: set[str] = PROFILE_RESOURCES  # All resources
 
-
 # ========== Domain Metadata - for client-side display in modals ==========
 
 PROFILE_DOMAIN_METADATA: dict[str, dict[str, str | bool]] = {

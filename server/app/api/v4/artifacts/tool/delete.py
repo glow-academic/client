@@ -11,7 +11,6 @@ from app.api.v4.artifacts.tool.types import (
     DeleteToolApiResponse,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -28,19 +27,10 @@ from app.utils.sql_helper import execute_sql_typed
 ACCESS_CHECK_SQL_PATH = "app/sql/v4/queries/tools/check_tool_delete_access_complete.sql"
 DELETE_SQL_PATH = "app/sql/v4/queries/tools/delete_tool_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/delete",
-    response_model=DeleteToolApiResponse,
-    dependencies=[
-        audit_activity(
-            "tool.deleted", "{{ actor.name }} deleted tool '{{ tool.name }}'"
-        )
-    ],
-)
+@router.post("/delete", response_model=DeleteToolApiResponse)
 async def delete_tool(
     request: DeleteToolApiRequest,
     http_request: Request,
@@ -62,7 +52,6 @@ async def delete_tool(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -136,14 +125,6 @@ async def delete_tool(
                 raise ValueError(f"Tool not found: {request.tool_id}")
 
             tool_name = result.name or "Unknown"
-
-            # Set audit context with data from SQL query
-            if actor_name:
-                audit_set(
-                    http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    tool={"name": tool_name, "id": str(request.tool_id)},
-                )
 
         # Convert SQL result to API response
         api_response = DeleteToolApiResponse.model_validate(

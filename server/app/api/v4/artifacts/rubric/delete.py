@@ -11,7 +11,6 @@ from app.api.v4.artifacts.rubric.types import (
     DeleteRubricApiResponse,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -30,19 +29,10 @@ ACCESS_CHECK_SQL_PATH = (
 )
 DELETE_SQL_PATH = "app/sql/v4/queries/rubric/delete_rubric_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/delete",
-    response_model=DeleteRubricApiResponse,
-    dependencies=[
-        audit_activity(
-            "rubric.deleted", "{{ actor.name }} deleted rubric '{{ rubric.name }}'"
-        )
-    ],
-)
+@router.post("/delete", response_model=DeleteRubricApiResponse)
 async def delete_rubric(
     request: DeleteRubricApiRequest,
     http_request: Request,
@@ -63,7 +53,6 @@ async def delete_rubric(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -140,13 +129,6 @@ async def delete_rubric(
                 )
 
             rubric_name = result.name or "Unknown"
-
-            if actor_name:
-                audit_set(
-                    http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    rubric={"name": rubric_name, "id": str(request.rubric_id)},
-                )
 
         api_response = DeleteRubricApiResponse.model_validate(
             {

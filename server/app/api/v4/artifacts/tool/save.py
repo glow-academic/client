@@ -21,7 +21,6 @@ from app.api.v4.artifacts.tool.types import (
     ToolResourceAction,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -38,7 +37,6 @@ logger = get_logger(__name__)
 # SQL paths
 ACCESS_CHECK_SQL_PATH = "app/sql/v4/queries/tools/check_tool_save_access_complete.sql"
 SQL_PATH = "app/sql/v4/queries/tools/save_tool_complete.sql"
-
 
 router = APIRouter()
 
@@ -104,16 +102,7 @@ async def save_tool_internal(
         return None
 
 
-@router.post(
-    "/save",
-    response_model=SaveToolApiResponse,
-    dependencies=[
-        audit_activity(
-            "tool.saved",
-            "{{ actor.name }} {% if tool %}updated{% else %}created{% endif %} tool{% if tool %} '{{ tool.name }}'{% endif %}",
-        )
-    ],
-)
+@router.post("/save", response_model=SaveToolApiResponse)
 async def save_tool(
     request: SaveToolApiRequest,
     http_request: Request,
@@ -135,7 +124,6 @@ async def save_tool(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -214,18 +202,6 @@ async def save_tool(
                     raise ValueError(f"Tool not found: {request.input_tool_id}")
                 else:
                     raise ValueError("Failed to create tool")
-
-            # Set audit context with data from SQL query
-            if actor_name:
-                audit_ctx: dict[str, Any] = {
-                    "actor": {"name": actor_name, "id": profile_id}
-                }
-                if request.input_tool_id:
-                    audit_ctx["tool"] = {
-                        "name": "Tool",
-                        "id": str(result.tool_id),
-                    }
-                audit_set(http_request, **audit_ctx)
 
         # Convert SQL result to API response
         is_update = request.input_tool_id is not None

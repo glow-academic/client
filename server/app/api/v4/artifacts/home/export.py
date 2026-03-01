@@ -20,7 +20,6 @@ from app.api.v4.entries.chat.get import get_chats_internal
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import UPLOAD_FOLDER, get_db, get_pool
 from app.sql.types import InsertUploadSqlParams, InsertUploadSqlRow
@@ -531,16 +530,7 @@ def _try_pdfa_conversion(pdf_bytes: bytes) -> bytes:
 router = APIRouter()
 
 
-@router.post(
-    "/export",
-    response_model=ExportHomeApiResponse,
-    dependencies=[
-        audit_activity(
-            "home.exported",
-            "{{ actor.name }} exported certificate",
-        )
-    ],
-)
+@router.post("/export", response_model=ExportHomeApiResponse)
 async def export_home(
     http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
@@ -558,7 +548,6 @@ async def export_home(
         if not pool:
             raise RuntimeError("Database pool not initialized")
 
-        # Fetch user context for audit
         async with pool.acquire() as context_conn:
             profile_ctx = await get_auth_profile_internal(
                 conn=context_conn,
@@ -618,12 +607,6 @@ async def export_home(
         upload_id = UUID(upload_result.id)
 
         # Audit
-        if actor_name:
-            audit_set(
-                http_request,
-                actor={"name": actor_name, "id": profile_id},
-            )
-
         return ExportHomeApiResponse(
             upload_id=upload_id,
             file_name=file_name,

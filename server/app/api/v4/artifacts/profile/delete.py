@@ -11,7 +11,6 @@ from app.api.v4.artifacts.profile.types import (
     DeleteProfileApiResponse,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -33,15 +32,7 @@ DELETE_SQL_PATH = "app/sql/v4/queries/profile/delete_profile_complete.sql"
 router = APIRouter()
 
 
-@router.post(
-    "/delete",
-    response_model=DeleteProfileApiResponse,
-    dependencies=[
-        audit_activity(
-            "profile.deleted", "{{ actor.name }} deleted profile '{{ profile.name }}'"
-        )
-    ],
-)
+@router.post("/delete", response_model=DeleteProfileApiResponse)
 async def delete_profile(
     request: DeleteProfileApiRequest,
     http_request: Request,
@@ -62,7 +53,6 @@ async def delete_profile(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -134,16 +124,6 @@ async def delete_profile(
                 raise HTTPException(status_code=500, detail="Failed to delete profile")
 
             profile_name = access_result.profile_name or result.name or "Unknown"
-
-            if actor_name:
-                audit_set(
-                    http_request,
-                    actor={"name": actor_name, "id": current_profile_id},
-                    profile={
-                        "name": profile_name,
-                        "id": str(result.profile_id),
-                    },
-                )
 
         api_response = DeleteProfileApiResponse.model_validate(
             {

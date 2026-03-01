@@ -11,7 +11,6 @@ from app.api.v4.artifacts.eval.types import (
     DeleteEvalApiResponse,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -28,19 +27,10 @@ from app.utils.sql_helper import execute_sql_typed
 ACCESS_CHECK_SQL_PATH = "app/sql/v4/queries/evals/check_eval_delete_access_complete.sql"
 DELETE_SQL_PATH = "app/sql/v4/queries/evals/delete_eval_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/delete",
-    response_model=DeleteEvalApiResponse,
-    dependencies=[
-        audit_activity(
-            "eval.deleted", "{{ actor.name }} deleted eval '{{ eval.name }}'"
-        )
-    ],
-)
+@router.post("/delete", response_model=DeleteEvalApiResponse)
 async def delete_eval(
     request: DeleteEvalApiRequest,
     http_request: Request,
@@ -62,7 +52,6 @@ async def delete_eval(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -131,14 +120,6 @@ async def delete_eval(
                 raise ValueError(f"Eval not found: {request.eval_id}")
 
             eval_name = result.eval_name or "Unknown"
-
-            # Set audit context with data from SQL query
-            if actor_name:
-                audit_set(
-                    http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    eval={"name": eval_name, "id": str(request.eval_id)},
-                )
 
         # Convert SQL result to API response
         api_response = DeleteEvalApiResponse.model_validate(

@@ -5,7 +5,6 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -21,20 +20,10 @@ from app.utils.sql_helper import execute_sql_typed
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/resources/colors_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/colors",
-    response_model=ColorsApiResponse,
-    dependencies=[
-        audit_activity(
-            "colors.created",
-            "{{ actor.name }} created colors",
-        )
-    ],
-)
+@router.post("/colors", response_model=ColorsApiResponse)
 async def create_colors(
     request: ColorsApiRequest,
     http_request: Request,
@@ -81,13 +70,6 @@ async def create_colors(
 
             if not result or not result.color_id:
                 raise ValueError("Failed to create colors")
-
-            # Set audit context
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                colors={"id": str(result.color_id)},
-            )
 
         # Convert SQL result to API response (auto-generated types)
         api_response = ColorsApiResponse.model_validate(result.model_dump())

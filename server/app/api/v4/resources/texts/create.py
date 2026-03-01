@@ -5,7 +5,6 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -20,20 +19,10 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/v4/queries/resources/texts_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/texts",
-    response_model=TextsApiResponse,
-    dependencies=[
-        audit_activity(
-            "texts.created",
-            "{{ actor.name }} created texts",
-        )
-    ],
-)
+@router.post("/texts", response_model=TextsApiResponse)
 async def create_texts(
     request: TextsApiRequest,
     http_request: Request,
@@ -73,12 +62,6 @@ async def create_texts(
 
             if not result or not result.texts_id:
                 raise ValueError("Failed to create texts")
-
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                texts={"id": str(result.texts_id)},
-            )
 
         api_response = TextsApiResponse.model_validate(result.model_dump())
 

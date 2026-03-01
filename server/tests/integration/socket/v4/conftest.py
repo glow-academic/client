@@ -84,18 +84,6 @@ def patch_sio_instance(
 
 
 @pytest.fixture(autouse=True)
-def patch_websocket_logger(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Patch log_websocket_activity to prevent pool access on different loop."""
-
-    async def _noop(**kwargs: Any) -> None:
-        pass
-
-    import app.socket.v5.client.connect as connect_mod
-
-    monkeypatch.setattr(connect_mod, "log_websocket_activity", _noop)
-
-
-@pytest.fixture(autouse=True)
 def patch_get_db_connection(
     db: asyncpg.Connection, monkeypatch: pytest.MonkeyPatch
 ) -> None:

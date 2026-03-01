@@ -15,7 +15,6 @@ from app.api.v4.artifacts.profile.types import (
     PatchProfileDraftSqlRow,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -59,7 +58,6 @@ async def patch_profile_draft(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -112,12 +110,6 @@ async def patch_profile_draft(
 
             if not result:
                 raise ValueError("Failed to patch profile draft")
-
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                draft={"id": str(result.draft_id)},
-            )
 
         is_update = request.input_draft_id is not None
         api_response = PatchProfileDraftApiResponse.model_validate(

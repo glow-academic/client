@@ -48,9 +48,6 @@ BEGIN
     REFRESH MATERIALIZED VIEW CONCURRENTLY groups_mv;
     refreshed := array_append(refreshed, 'groups_mv');
 
-    REFRESH MATERIALIZED VIEW CONCURRENTLY audits_mv;
-    refreshed := array_append(refreshed, 'audits_mv');
-
     REFRESH MATERIALIZED VIEW CONCURRENTLY runs_mv;
     refreshed := array_append(refreshed, 'runs_mv');
 

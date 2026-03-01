@@ -8,7 +8,6 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.utils.cache.invalidate_tags import invalidate_tags
@@ -30,16 +29,7 @@ class ResolveProblemResponse(BaseModel):
 router = APIRouter(tags=["activity"])
 
 
-@router.post(
-    "/resolve",
-    response_model=ResolveProblemResponse,
-    dependencies=[
-        audit_activity(
-            "problem.resolved",
-            "{{ actor.name }} resolved problem",
-        )
-    ],
-)
+@router.post("/resolve", response_model=ResolveProblemResponse)
 async def resolve_problem(
     request: ResolveProblemRequest,
     http_request: Request,
@@ -74,14 +64,6 @@ async def resolve_problem(
             )
 
         actor_name = result.get("actor_name")
-
-        # Set audit context
-        if actor_name:
-            audit_set(
-                http_request,
-                actor={"name": actor_name, "id": profile_id},
-                problem={"id": str(request.problem_id)},
-            )
 
         result_data = ResolveProblemResponse(
             problem_id=result["problem_id"],

@@ -6,7 +6,6 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, Request
 
-from app.infra.v4.activity.audit import audit_activity
 from app.main import get_db
 from app.sql.types import (
     GetLoginDataApiRequest,
@@ -19,15 +18,10 @@ from app.utils.sql_helper import execute_sql_typed
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/auth/get_login_data_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/login",
-    response_model=GetLoginDataApiResponse,
-    dependencies=[audit_activity("auth.login", "User accessed login page")],
-)
+@router.post("/login", response_model=GetLoginDataApiResponse)
 async def get_login_providers(
     request: GetLoginDataApiRequest,
     http_request: Request,

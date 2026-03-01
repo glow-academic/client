@@ -5,7 +5,6 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -24,16 +23,7 @@ SQL_PATH = "app/sql/v4/queries/resources/simulation_positions_complete.sql"
 router = APIRouter()
 
 
-@router.post(
-    "/simulation_positions",
-    response_model=SimulationPositionsApiResponse,
-    dependencies=[
-        audit_activity(
-            "simulation_positions.created",
-            "{{ actor.name }} created simulation_positions",
-        )
-    ],
-)
+@router.post("/simulation_positions", response_model=SimulationPositionsApiResponse)
 async def create_simulation_positions(
     request: SimulationPositionsApiRequest,
     http_request: Request,
@@ -78,13 +68,6 @@ async def create_simulation_positions(
 
             if not result or not result.id:
                 raise ValueError("Failed to create simulation_positions")
-
-            # Set audit context
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                simulation_positions={"id": str(result.id)},
-            )
 
         # Convert SQL result to API response (auto-generated types)
         api_response = SimulationPositionsApiResponse.model_validate(

@@ -30,9 +30,7 @@ from app.utils.sql_helper import execute_sql_typed
 SQL_PATH = "app/sql/v4/queries/resources/rubrics/get_rubrics_complete.sql"
 BATCH_SQL_PATH = "app/sql/v4/queries/resources/rubrics/get_rubrics_batch_complete.sql"
 
-
 router = APIRouter()
-
 
 # =============================================================================
 # Internal Functions

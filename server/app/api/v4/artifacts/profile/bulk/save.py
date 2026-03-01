@@ -7,7 +7,6 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool, transaction
 from app.sql.types import (
@@ -26,16 +25,7 @@ SQL_PATH = "app/sql/v4/queries/profiles/upsert_profiles_complete.sql"
 router = APIRouter()
 
 
-@router.post(
-    "/save",
-    response_model=UpsertProfilesApiResponse,
-    dependencies=[
-        audit_activity(
-            "profile.saved",
-            "{{ actor.name }} {{ action }} {{ count }} profile(s)",
-        )
-    ],
-)
+@router.post("/save", response_model=UpsertProfilesApiResponse)
 async def save_profiles(
     request: UpsertProfilesApiRequest,
     http_request: Request,
@@ -108,13 +98,6 @@ async def save_profiles(
 
             if not result:
                 raise ValueError("Failed to bulk save profiles")
-
-            # Set audit context
-            audit_set(
-                http_request,
-                actor={"id": current_profile_id},
-                profiles={"count": result.count},
-            )
 
         # Convert SQL result to API response
         api_response = UpsertProfilesApiResponse.model_validate(result.model_dump())

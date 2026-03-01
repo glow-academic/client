@@ -5,7 +5,6 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -21,20 +20,10 @@ from app.utils.sql_helper import execute_sql_typed
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/resources/scenario_positions_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/scenario_positions",
-    response_model=ScenarioPositionsApiResponse,
-    dependencies=[
-        audit_activity(
-            "scenario_positions.created",
-            "{{ actor.name }} created scenario_positions",
-        )
-    ],
-)
+@router.post("/scenario_positions", response_model=ScenarioPositionsApiResponse)
 async def create_scenario_positions(
     request: ScenarioPositionsApiRequest,
     http_request: Request,
@@ -79,13 +68,6 @@ async def create_scenario_positions(
 
             if not result or not result.id:
                 raise ValueError("Failed to create scenario_positions")
-
-            # Set audit context
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                scenario_positions={"id": str(result.id)},
-            )
 
         # Convert SQL result to API response (auto-generated types)
         api_response = ScenarioPositionsApiResponse.model_validate(result.model_dump())

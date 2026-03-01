@@ -12,7 +12,6 @@ from app.api.v4.entries.problems.types import (
     CreateProblemsEntrySqlParams,
     CreateProblemsEntrySqlRow,
 )
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.infra.v4.tools.call_args import record_call_args, resolve_tool_for_entry
 from app.main import get_db
@@ -75,16 +74,7 @@ async def create_problems_entry_internal(
     return CreateProblemsEntryResponse.model_validate(result.model_dump())
 
 
-@router.post(
-    "/problems/create",
-    response_model=CreateProblemsEntryResponse,
-    dependencies=[
-        audit_activity(
-            "problems.created",
-            "{{ actor.name }} created problems entry",
-        )
-    ],
-)
+@router.post("/problems/create", response_model=CreateProblemsEntryResponse)
 async def create_problems_entry(
     request: CreateProblemsEntryRequest,
     http_request: Request,
@@ -114,12 +104,6 @@ async def create_problems_entry(
             )
 
         api_response = await create_problems_entry_internal(conn, request_dict, mcp)
-
-        audit_set(
-            http_request,
-            actor={"id": profile_id},
-            problems={"id": str(api_response.id)},
-        )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 

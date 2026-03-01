@@ -122,7 +122,6 @@ from app.api.v4.resources.standard_groups.get import get_standard_groups_interna
 from app.api.v4.resources.standards.get import get_standards_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.videos.get import get_videos_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.utils.cache.cache_key import cache_key
@@ -750,12 +749,6 @@ async def get_attempt_internal(
                 training_id=None,
                 chat_entry_id=None,
                 group_id=None,
-            )
-
-        if profile_name and http_request:
-            audit_set(
-                http_request,
-                actor={"name": profile_name, "id": profile_id},
             )
 
         # === RESOLVE TRAINING CONTEXT (for lobby flow) ===
@@ -1822,13 +1815,7 @@ async def get_attempt_websocket(
 # =============================================================================
 
 
-@router.post(
-    "/get",
-    response_model=GetAttemptDetailResponse,
-    dependencies=[
-        audit_activity("attempt.get", "{{ actor.name }} viewed attempt detail")
-    ],
-)
+@router.post("/get", response_model=GetAttemptDetailResponse)
 async def attempt_get(
     request: GetAttemptDetailRequest,
     http_request: Request,

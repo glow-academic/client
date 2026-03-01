@@ -185,7 +185,6 @@ class GetChatsResponse(BaseModel):
 
 SQL_PATH = "app/sql/v4/queries/views/chat/get_chat_view_complete.sql"
 
-
 # ---------------------------------------------------------------------------
 # get_chats_internal
 # ---------------------------------------------------------------------------

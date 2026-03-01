@@ -6,7 +6,6 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.infra.v4.tools.call_args import record_call_args, resolve_tool
 from app.main import get_db
@@ -72,16 +71,7 @@ async def create_descriptions_internal(
 router = APIRouter()
 
 
-@router.post(
-    "/descriptions",
-    response_model=DescriptionsApiResponse,
-    dependencies=[
-        audit_activity(
-            "descriptions.created",
-            "{{ actor.name }} created descriptions",
-        )
-    ],
-)
+@router.post("/descriptions", response_model=DescriptionsApiResponse)
 async def create_descriptions(
     request: DescriptionsApiRequest,
     http_request: Request,
@@ -128,13 +118,6 @@ async def create_descriptions(
 
             if not result or not result.description_id:
                 raise ValueError("Failed to create descriptions")
-
-            # Set audit context
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                descriptions={"id": str(result.description_id)},
-            )
 
         # Convert SQL result to API response (auto-generated types)
         api_response = DescriptionsApiResponse.model_validate(result.model_dump())

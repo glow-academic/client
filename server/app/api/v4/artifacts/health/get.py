@@ -31,7 +31,6 @@ from app.api.v4.resources.args_outputs.get import get_args_outputs_internal
 from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.providers.get import get_providers_internal
-from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -48,16 +47,7 @@ router = APIRouter()
 HEALTH_BUNDLE_ENTRIES: set[str] = {"debug_info"}
 
 
-@router.post(
-    "/get",
-    response_model=HealthResponse,
-    dependencies=[
-        audit_activity(
-            "artifacts.health.get",
-            "{{ actor.name }} fetched health artifact data",
-        )
-    ],
-)
+@router.post("/get", response_model=HealthResponse)
 async def get_health(
     request: HealthRequest,
     http_request: Request,

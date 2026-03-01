@@ -12,7 +12,6 @@ from . import complete, error, progress, started  # noqa: F401
 server_router = APIRouter()
 PHASES = ["started", "progress", "complete", "error"]
 
-
 for resource_type, EventClass in RESOURCE_EVENTS.items():
     for phase in PHASES:
         route_path = f"/{resource_type}_generation_{phase}"

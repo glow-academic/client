@@ -7,16 +7,12 @@ import uuid
 
 from fastapi import APIRouter, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.main import TUS_UPLOADS_DIR
 
 router = APIRouter()
 
 
-@router.post(
-    "/create",
-    dependencies=[audit_activity("upload.uploaded", "{{ actor.name }} uploaded file")],
-)
+@router.post("/create")
 async def tus_create(request: Request) -> Response:
     """Create a TUS upload session."""
     if request.headers.get("Tus-Resumable") != "1.0.0":
@@ -60,9 +56,6 @@ async def tus_create(request: Request) -> Response:
         if hasattr(request.state, "profile_id")
         else None
     )
-    if profile_id:
-        audit_set(request, actor={"id": profile_id}, upload={"id": upload_id})
-
     # Handle creation-with-upload if Content-Length > 0
     if request.headers.get("Content-Length", "0") != "0":
         chunk = await request.body()

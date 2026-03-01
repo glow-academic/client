@@ -77,9 +77,7 @@ async def sync_benchmark_entries(
     # ── Pass 1: Parallel fetch all sub-resources ──
     async def _fetch_model_flags() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_model_flags_internal(
-                c, model_flag_ids, bypass_cache=True
-            )
+            return await get_model_flags_internal(c, model_flag_ids, bypass_cache=True)
 
     async def _fetch_model_rubrics() -> list[Any]:
         async with pool.acquire() as c:
@@ -159,9 +157,7 @@ async def sync_benchmark_entries(
         model_index = idx + 1  # 1-based index into models array
         inv_flag_ids = flags_by_model.get(model_id, [])
         inv_rubric_ids = rubrics_by_model.get(model_id, [])
-        inv_position_ids = [
-            pid for pid, _ in positions_by_model.get(model_id, [])
-        ]
+        inv_position_ids = [pid for pid, _ in positions_by_model.get(model_id, [])]
 
         invocation_tuples.append(
             (

@@ -14,7 +14,6 @@ test_group again with prev_run_id=<completed run> to continue the sequence.
 
 from __future__ import annotations
 
-import uuid
 from typing import Any
 
 from app.infra.v4.websocket.get_db_connection import get_db_connection

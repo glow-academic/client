@@ -54,7 +54,6 @@ from app.main import get_pool
 
 router = APIRouter()
 
-
 # =============================================================================
 # Constants
 # =============================================================================
@@ -70,7 +69,6 @@ BENCHMARK_BUNDLE_RESOURCES: set[str] = {
     "tools",
     "keys",
 }
-
 
 # =============================================================================
 # Internal Data
@@ -137,7 +135,6 @@ RESOURCE_CONFIG: list[tuple[str, str, Any, str]] = [
     ("tools", "tool_ids", get_tools_internal, "id"),
     ("keys", "key_ids", get_keys_internal, "id"),
 ]
-
 
 # =============================================================================
 # Internal fetch
@@ -275,7 +272,6 @@ async def get_invocation_internal(
 # =============================================================================
 # Client/BFF Layer
 # =============================================================================
-
 
 # Section class mapping for building typed sections
 _SECTION_CLASSES: dict[str, type] = {

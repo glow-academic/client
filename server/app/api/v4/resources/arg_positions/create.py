@@ -5,7 +5,6 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -23,16 +22,7 @@ SQL_PATH = "app/sql/v4/queries/resources/arg_positions_complete.sql"
 router = APIRouter()
 
 
-@router.post(
-    "/arg_positions",
-    response_model=ArgPositionsApiResponse,
-    dependencies=[
-        audit_activity(
-            "arg_positions.created",
-            "{{ actor.name }} created arg_positions",
-        )
-    ],
-)
+@router.post("/arg_positions", response_model=ArgPositionsApiResponse)
 async def create_arg_positions(
     request: ArgPositionsApiRequest,
     http_request: Request,
@@ -72,12 +62,6 @@ async def create_arg_positions(
 
             if not result or not result.id:
                 raise ValueError("Failed to create arg_positions")
-
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                arg_positions={"id": str(result.id)},
-            )
 
         api_response = ArgPositionsApiResponse.model_validate(result.model_dump())
 

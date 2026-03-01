@@ -29,7 +29,6 @@ from app.api.v4.resources.departments.get import get_departments_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
 from app.api.v4.types import ListFilterSection
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -89,17 +88,10 @@ COHORT_IMPORT_FIELDS: list[dict] = [
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/cohorts/get_cohorts_list_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/list",
-    response_model=ListCohortApiResponse,
-    dependencies=[
-        audit_activity("cohorts.list", "{{ actor.name }} visited the Cohorts page")
-    ],
-)
+@router.post("/list", response_model=ListCohortApiResponse)
 async def get_cohort_list(
     request: GetCohortsListApiRequest,
     http_request: Request,
@@ -136,7 +128,6 @@ async def get_cohort_list(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -169,10 +160,6 @@ async def get_cohort_list(
         )
 
         # actor_name and user_role already fetched from context above
-
-        # Set audit context
-        if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         # Compute permissions in Python for each cohort
         api_cohorts: list[ListCohortApiCohort] = []

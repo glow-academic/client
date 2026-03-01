@@ -11,7 +11,6 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -104,12 +103,7 @@ async def _get_per_simulation_metrics(
     return per_sim_metrics
 
 
-@router.post(
-    "/export",
-    dependencies=[
-        audit_activity("reports.exported", "{{ actor.name }} exported reports")
-    ],
-)
+@router.post("/export")
 async def export_report(
     request: ExportRequest,
     http_request: Request,
@@ -130,7 +124,6 @@ async def export_report(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -166,10 +159,6 @@ async def export_report(
                     params=params,
                 ),
             )
-
-        # Set audit context
-        if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         # Convert bundle result to API response
         bundle_response = GetReportsBundleApiResponse.model_validate(

@@ -5,7 +5,6 @@ from typing import Annotated, Any, cast
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -24,16 +23,7 @@ SQL_PATH = "app/sql/v4/queries/documents/save_document_complete.sql"
 router = APIRouter()
 
 
-@router.post(
-    "/save",
-    response_model=SaveDocumentApiResponse,
-    dependencies=[
-        audit_activity(
-            "document.saved",
-            "{{ actor.name }} {% if document %}updated{% else %}created{% endif %} document{% if document %} '{{ document.name }}'{% endif %}",
-        )
-    ],
-)
+@router.post("/save", response_model=SaveDocumentApiResponse)
 async def save_document(
     request: SaveDocumentApiRequest,
     http_request: Request,
@@ -75,13 +65,6 @@ async def save_document(
 
             if not result or not result.document_id:
                 raise ValueError("Failed to save document")
-
-            # Set audit context
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                document={"id": str(result.document_id)},
-            )
 
         # Convert SQL result to API response
         api_response = SaveDocumentApiResponse.model_validate(result.model_dump())

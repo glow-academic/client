@@ -13,7 +13,6 @@ from app.api.v4.artifacts.simulation.permissions import (
     has_access,
 )
 from app.api.v4.resources.names.create import create_names_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -34,20 +33,10 @@ ACCESS_SQL_PATH = (
     "app/sql/v4/queries/simulations/check_simulation_duplicate_access_complete.sql"
 )
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/duplicate",
-    response_model=DuplicateSimulationApiResponse,
-    dependencies=[
-        audit_activity(
-            "simulation.duplicated",
-            "{{ actor.name }} duplicated simulation '{{ simulation.name }}'",
-        )
-    ],
-)
+@router.post("/duplicate", response_model=DuplicateSimulationApiResponse)
 async def duplicate_simulation(
     request: DuplicateSimulationApiRequest,
     http_request: Request,
@@ -74,7 +63,6 @@ async def duplicate_simulation(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging (lazy import to avoid circular deps)
         from app.api.v4.auth.profile import get_auth_profile_internal
 
         pool = get_pool()
@@ -161,17 +149,6 @@ async def duplicate_simulation(
                 raise HTTPException(
                     status_code=404,
                     detail=f"Simulation {request.simulation_id} not found",
-                )
-
-            # Set audit context with data from SQL query
-            if actor_name:
-                audit_set(
-                    http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    simulation={
-                        "name": original_name,
-                        "id": str(request.simulation_id),
-                    },
                 )
 
         # Convert SQL result to API response

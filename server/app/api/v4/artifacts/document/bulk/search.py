@@ -6,7 +6,6 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -27,13 +26,7 @@ SQL_PATH = "app/sql/v4/queries/documents/get_documents_list_complete.sql"
 router = APIRouter()
 
 
-@router.post(
-    "/search",
-    response_model=GetDocumentsListApiResponse,
-    dependencies=[
-        audit_activity("document.searched", "{{ actor.name }} searched documents")
-    ],
-)
+@router.post("/search", response_model=GetDocumentsListApiResponse)
 async def search_document(
     request: GetDocumentsListApiRequest,
     http_request: Request,
@@ -66,7 +59,6 @@ async def search_document(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -94,10 +86,6 @@ async def search_document(
                 params=params,
             ),
         )
-
-        # Set audit context
-        if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         # Convert SQL result to API response
         api_response = GetDocumentsListApiResponse.model_validate(result.model_dump())

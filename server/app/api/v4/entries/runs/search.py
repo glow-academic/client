@@ -27,7 +27,6 @@ LIST_SQL_PATH = "app/sql/v4/queries/views/run/list/get_run_list_view_complete.sq
 
 router = APIRouter()
 
-
 # ---------------------------------------------------------------------------
 # Types (merged from types.py)
 # ---------------------------------------------------------------------------

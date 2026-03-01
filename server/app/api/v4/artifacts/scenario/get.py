@@ -121,7 +121,6 @@ from app.api.v4.resources.questions.search import search_questions_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.videos.get import get_videos_internal
 from app.api.v4.resources.videos.search import search_videos_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -1572,16 +1571,7 @@ async def get_scenario_client(
 # =============================================================================
 
 
-@router.post(
-    "/get",
-    response_model=GetScenarioApiResponse,
-    dependencies=[
-        audit_activity(
-            "scenario.get",
-            "{{ actor.name }} {% if scenario %}viewed{% else %}opened new{% endif %} scenario{% if scenario %} '{{ scenario.name }}'{% endif %}",
-        )
-    ],
-)
+@router.post("/get", response_model=GetScenarioApiResponse)
 async def get_scenario(
     request: GetScenarioApiRequest,
     http_request: Request,
@@ -1631,23 +1621,6 @@ async def get_scenario(
             else None,
             group_id=request.group_id,
         )
-
-        # Set audit context
-        if response_data.actor_name:
-            audit_ctx: dict[str, Any] = {
-                "actor": {"name": response_data.actor_name, "id": profile_id}
-            }
-            current_name = (
-                getattr(response_data.names.resource, "name", None)
-                if response_data.names and response_data.names.resource
-                else None
-            )
-            if request.scenario_id and current_name:
-                audit_ctx["scenario"] = {
-                    "name": current_name,
-                    "id": str(request.scenario_id),
-                }
-            audit_set(http_request, **audit_ctx)
 
         # No global cache for this response - individual resources are cached
         response.headers["X-Cache-Tags"] = "scenarios"

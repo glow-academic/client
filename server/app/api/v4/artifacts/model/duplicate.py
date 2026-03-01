@@ -12,7 +12,6 @@ from app.api.v4.artifacts.model.types import (
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.resources.names.create import create_names_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -31,19 +30,10 @@ ACCESS_CHECK_SQL_PATH = (
 )
 DUPLICATE_SQL_PATH = "app/sql/v4/queries/models/duplicate_model_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/duplicate",
-    response_model=DuplicateModelApiResponse,
-    dependencies=[
-        audit_activity(
-            "model.duplicated", "{{ actor.name }} duplicated model '{{ model.name }}'"
-        )
-    ],
-)
+@router.post("/duplicate", response_model=DuplicateModelApiResponse)
 async def duplicate_model(
     request: DuplicateModelApiRequest,
     http_request: Request,
@@ -65,7 +55,6 @@ async def duplicate_model(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -134,14 +123,6 @@ async def duplicate_model(
 
             if not result or not result.model_id:
                 raise ValueError(f"Model not found: {request.model_id}")
-
-            # Set audit context with data from SQL query
-            if actor_name:
-                audit_set(
-                    http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    model={"name": original_name, "id": str(request.model_id)},
-                )
 
             # Convert SQL result to API response
             api_response = DuplicateModelApiResponse.model_validate(

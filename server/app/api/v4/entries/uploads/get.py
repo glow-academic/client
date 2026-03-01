@@ -26,7 +26,6 @@ VIEW_SQL_PATH = "app/sql/v4/queries/views/upload/list/get_upload_list_view_compl
 
 router = APIRouter()
 
-
 # ============================================================================
 # MCP mode: Return metadata from uploads_mv
 # ============================================================================

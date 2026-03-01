@@ -25,7 +25,6 @@ SQL_PATH_RUBRIC_SCORES = (
     "app/sql/v4/queries/views/chat/rubric_scores/get_rubric_scores_complete.sql"
 )
 
-
 # ---------------------------------------------------------------------------
 # Rubric scores types (moved from entries/chat/get.py)
 # ---------------------------------------------------------------------------

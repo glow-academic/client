@@ -1,7 +1,7 @@
 """Session detail endpoint - POST /artifacts/session/get.
 
 Uses view internals only — no raw SQL in artifact layer.
-Fetches from sessions_mv, groups_mv, audits_mv, runs_mv via view layer,
+Fetches from sessions_mv, groups_mv, runs_mv via view layer,
 then aggregates in Python.
 """
 
@@ -16,7 +16,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts._shared.pricing import compute_costs_from_runs
 from app.api.v4.artifacts.session.types import (
-    ArtifactSessionAudit,
     ArtifactSessionGroup,
     GetSessionApiRequest,
     GetSessionDetailRequest,
@@ -26,7 +25,6 @@ from app.api.v4.artifacts.session.types import (
     SessionWebsocketEntries,
     SessionWebsocketResources,
 )
-from app.api.v4.entries.audits.get import get_audit_list_view_internal
 from app.api.v4.entries.groups.get import get_group_list_view_internal
 from app.api.v4.entries.runs.search import (
     GetRunListViewResponse,
@@ -40,11 +38,9 @@ from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.providers.get import get_providers_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
-    GetAuditListViewSqlRow,
     GetGroupListViewSqlRow,
     QGetProfilesV4Item,
 )
@@ -57,7 +53,6 @@ router = APIRouter()
 # Session entry types for agent resolution
 SESSION_BUNDLE_ENTRIES: set[str] = {"debug_info"}
 
-
 # =============================================================================
 # Internal Layer
 # =============================================================================
@@ -68,8 +63,6 @@ async def get_session_internal(
     profile_id: UUID,
     session_id: UUID,
     bypass_cache: bool = False,
-    audit_limit: int = 50,
-    audit_offset: int = 0,
 ) -> SessionInternalData:
     """Fetch both domain views and config chain for a session.
 
@@ -137,23 +130,13 @@ async def get_session_internal(
 
     session = session_view.items[0]
 
-    # 4. Parallel fetch: groups, audits, config profile, runs today
+    # 4. Parallel fetch: groups, config profile, runs today
     async def fetch_groups() -> GetGroupListViewSqlRow:
         async with pool.acquire() as c:
             return await get_group_list_view_internal(
                 conn=c,
                 session_id_filter=session_id,
                 page_limit=1000,
-                bypass_cache=bypass_cache,
-            )
-
-    async def fetch_audits() -> GetAuditListViewSqlRow:
-        async with pool.acquire() as c:
-            return await get_audit_list_view_internal(
-                conn=c,
-                session_id_filter=session_id,
-                page_limit=audit_limit,
-                page_offset=audit_offset,
                 bypass_cache=bypass_cache,
             )
 
@@ -176,12 +159,10 @@ async def get_session_internal(
 
     (
         groups_result,
-        audits_result,
         config_profile_result,
         runs_today_result,
     ) = await asyncio.gather(
         fetch_groups(),
-        fetch_audits(),
         fetch_config_profile(),
         fetch_runs_today(),
     )
@@ -209,7 +190,6 @@ async def get_session_internal(
     return SessionInternalData(
         session_view=session_view,
         groups_result=groups_result,
-        audits_result=audits_result,
         runs_result=runs_result,
         config_agents=config_agents,
         config_models=config_models,
@@ -229,22 +209,14 @@ async def get_session_internal(
 # =============================================================================
 
 
-@router.post(
-    "/get",
-    response_model=GetSessionDetailResponse,
-    dependencies=[
-        audit_activity(
-            "artifacts.session.get", "{{ actor.name }} viewed session detail"
-        )
-    ],
-)
+@router.post("/get", response_model=GetSessionDetailResponse)
 async def get_session(
     request: GetSessionDetailRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetSessionDetailResponse:
-    """Get session detail with paginated audits and groups."""
+    """Get session detail with groups."""
     tags = ["artifacts", "session"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
@@ -274,15 +246,9 @@ async def get_session(
             profile_id=profile_id,
             session_id=request.session_id,
             bypass_cache=bypass_cache,
-            audit_limit=request.audit_limit,
-            audit_offset=request.audit_offset,
         )
 
         session = data.session_view.items[0]
-
-        # Set audit context
-        if data.actor_name:
-            audit_set(http_request, actor={"name": data.actor_name, "id": profile_id})
 
         # Compute per-run costs
         run_costs = await compute_costs_from_runs(
@@ -338,18 +304,6 @@ async def get_session(
                 )
             )
 
-        # Build audits
-        audits = [
-            ArtifactSessionAudit(
-                id=a.audit_id,
-                created_at=a.audit_created_at,
-                message=a.message,
-                endpoint=a.endpoint,
-                error=a.error,
-            )
-            for a in data.audits_result.items
-        ]
-
         api_response = GetSessionDetailResponse(
             actor_name=data.actor_name,
             session_exists=True,
@@ -358,8 +312,6 @@ async def get_session(
             profile_name=data.profile_name,
             session_created_at=session.session_created_at,
             active=session.active,
-            audit_total_count=data.audits_result.total_count,
-            audits=audits,
             groups=groups,
         )
 
@@ -454,7 +406,6 @@ async def get_session_websocket(
         entries=SessionWebsocketEntries(
             runs=data.runs_today,
             groups=data.groups_result.items if data.groups_result.items else None,
-            audits=data.audits_result.items if data.audits_result.items else None,
         ),
         resources=SessionWebsocketResources(),
         params=GetSessionApiRequest(session_id=session_id, draft_id=draft_id),

@@ -29,7 +29,6 @@ from app.api.v4.permissions import resolve_agents_for_artifact
 from app.api.v4.resources.descriptions.create import create_descriptions_internal
 from app.api.v4.resources.names.create import create_names_internal
 from app.api.v4.resources.simulations.create import create_simulations_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -48,7 +47,6 @@ SQL_PATH = "app/sql/v4/queries/simulations/save_simulation_complete.sql"
 ACCESS_SQL_PATH = (
     "app/sql/v4/queries/simulations/check_simulation_save_access_complete.sql"
 )
-
 
 router = APIRouter()
 
@@ -279,16 +277,7 @@ async def _resolve_simulation_values(
     return errors
 
 
-@router.post(
-    "/save",
-    response_model=SaveSimulationApiResponse,
-    dependencies=[
-        audit_activity(
-            "simulation.saved",
-            "{{ actor.name }} saved {{ count }} simulation(s)",
-        )
-    ],
-)
+@router.post("/save", response_model=SaveSimulationApiResponse)
 async def save_simulation(
     request: SaveSimulationApiRequest,
     http_request: Request,
@@ -490,13 +479,6 @@ async def save_simulation(
                 )
 
         # Audit context
-        if actor_name:
-            audit_set(
-                http_request,
-                actor={"name": actor_name, "id": profile_id},
-                count=len(results),
-            )
-
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

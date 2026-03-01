@@ -29,7 +29,6 @@ from app.api.v4.permissions import resolve_agents_for_artifact
 from app.api.v4.resources.cohorts.create import create_cohorts_internal
 from app.api.v4.resources.descriptions.create import create_descriptions_internal
 from app.api.v4.resources.names.create import create_names_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -46,7 +45,6 @@ logger = get_logger(__name__)
 # SQL paths
 ACCESS_SQL_PATH = "app/sql/v4/queries/cohorts/get_cohort_access_complete.sql"
 SQL_PATH = "app/sql/v4/queries/cohorts/save_cohort_complete.sql"
-
 
 router = APIRouter()
 
@@ -303,16 +301,7 @@ async def _resolve_cohort_values(
     return errors
 
 
-@router.post(
-    "/save",
-    response_model=SaveCohortApiResponse,
-    dependencies=[
-        audit_activity(
-            "cohort.saved",
-            "{{ actor.name }} saved {{ count }} cohort(s)",
-        )
-    ],
-)
+@router.post("/save", response_model=SaveCohortApiResponse)
 async def save_cohort(
     request: SaveCohortApiRequest,
     http_request: Request,
@@ -513,13 +502,6 @@ async def save_cohort(
                 sync_items.append((cohorts_resource_id, item))
 
         # Audit context
-        if actor_name:
-            audit_set(
-                http_request,
-                actor={"name": actor_name, "id": profile_id},
-                count=len(results),
-            )
-
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

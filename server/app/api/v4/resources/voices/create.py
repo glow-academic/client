@@ -6,7 +6,6 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.infra.v4.tools.call_args import record_call_args, resolve_tool
 from app.main import get_db
@@ -64,16 +63,7 @@ async def create_voices_internal(
 router = APIRouter()
 
 
-@router.post(
-    "/voices",
-    response_model=VoicesApiResponse,
-    dependencies=[
-        audit_activity(
-            "voices.created",
-            "{{ actor.name }} created voices",
-        )
-    ],
-)
+@router.post("/voices", response_model=VoicesApiResponse)
 async def create_voices(
     request: VoicesApiRequest,
     http_request: Request,
@@ -119,13 +109,6 @@ async def create_voices(
 
             if not result or not result.voices_id:
                 raise ValueError("Failed to create voices")
-
-            # Set audit context
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                voices={"id": str(result.voices_id)},
-            )
 
         # Convert SQL result to API response (auto-generated types)
         api_response = VoicesApiResponse.model_validate(result.model_dump())

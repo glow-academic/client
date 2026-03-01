@@ -5,7 +5,6 @@ from typing import Annotated, Any, cast
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -24,14 +23,7 @@ router = APIRouter()
 
 
 @router.post(
-    "/simulation_availability",
-    response_model=SimulationAvailabilityApiResponse,
-    dependencies=[
-        audit_activity(
-            "simulation_availability.created",
-            "{{ actor.name }} created simulation_availability",
-        )
-    ],
+    "/simulation_availability", response_model=SimulationAvailabilityApiResponse
 )
 async def create_simulation_availability(
     request: SimulationAvailabilityApiRequest,
@@ -66,12 +58,6 @@ async def create_simulation_availability(
 
             if not result or not result.id:
                 raise ValueError("Failed to create simulation_availability")
-
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                simulation_availability={"id": str(result.id)},
-            )
 
         api_response = SimulationAvailabilityApiResponse.model_validate(
             result.model_dump()

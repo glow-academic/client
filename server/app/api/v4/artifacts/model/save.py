@@ -24,14 +24,11 @@ from app.api.v4.artifacts.model.types import (
     SaveModelSqlRow,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
     CheckModelSaveAccessSqlParams,
     CheckModelSaveAccessSqlRow,
-    GetNameByIdSqlParams,
-    GetNameByIdSqlRow,
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
@@ -44,7 +41,6 @@ logger = get_logger(__name__)
 ACCESS_CHECK_SQL_PATH = "app/sql/v4/queries/models/check_model_save_access_complete.sql"
 SQL_PATH = "app/sql/v4/queries/models/save_model_complete.sql"
 GET_NAME_SQL_PATH = "app/sql/v4/queries/simulations/get_name_by_id_complete.sql"
-
 
 router = APIRouter()
 
@@ -116,18 +112,7 @@ async def save_model_internal(
         return None
 
 
-@router.post(
-    "/save",
-    response_model=SaveModelApiResponse,
-    dependencies=[
-        audit_activity(
-            "model.saved",
-            "{{ actor.name }} {% if model %}updated{% else %}"
-            "created{% endif %} model"
-            "{% if model %} '{{ model.name }}'{% endif %}",
-        )
-    ],
-)
+@router.post("/save", response_model=SaveModelApiResponse)
 async def save_model(
     request: SaveModelApiRequest,
     http_request: Request,
@@ -154,7 +139,6 @@ async def save_model(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -254,29 +238,6 @@ async def save_model(
                     raise ValueError(f"Model not found: {request.input_model_id}")
                 else:
                     raise ValueError("Failed to create model")
-
-            # Set audit context with data from SQL query
-            if actor_name:
-                audit_ctx: dict[str, Any] = {
-                    "actor": {"name": actor_name, "id": profile_id}
-                }
-                if request.input_model_id:
-                    model_name = "Model"
-                    if request.name_id:
-                        name_params = GetNameByIdSqlParams(name_id=request.name_id)
-                        name_result = cast(
-                            GetNameByIdSqlRow,
-                            await execute_sql_typed(
-                                conn, GET_NAME_SQL_PATH, params=name_params
-                            ),
-                        )
-                        if name_result and name_result.name:
-                            model_name = name_result.name
-                    audit_ctx["model"] = {
-                        "name": model_name,
-                        "id": str(result.model_id),
-                    }
-                audit_set(http_request, **audit_ctx)
 
         # Convert SQL result to API response
         api_response = SaveModelApiResponse.model_validate(

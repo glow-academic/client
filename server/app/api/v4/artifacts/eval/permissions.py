@@ -239,7 +239,6 @@ EVAL_BASIC_RESOURCES: set[str] = {
     "departments",
 }
 
-
 # ========== Domain Metadata - for client-side display in modals ==========
 
 EVAL_DOMAIN_METADATA: dict[str, dict[str, str | bool]] = {

@@ -6,7 +6,6 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.utils.cache.invalidate_tags import invalidate_tags
@@ -28,16 +27,7 @@ class CreateProblemResponse(BaseModel):
 router = APIRouter(tags=["activity"])
 
 
-@router.post(
-    "/problem",
-    response_model=CreateProblemResponse,
-    dependencies=[
-        audit_activity(
-            "problem.created",
-            "{{ actor.name }} reported {{ problem.type }} problem",
-        )
-    ],
-)
+@router.post("/problem", response_model=CreateProblemResponse)
 async def create_problem(
     request: CreateProblemRequest,
     http_request: Request,
@@ -85,14 +75,6 @@ async def create_problem(
             raise HTTPException(status_code=500, detail="Failed to create problem")
 
         actor_name = result.get("actor_name")
-
-        # Set audit context with data from SQL query
-        if actor_name:
-            audit_set(
-                http_request,
-                actor={"name": actor_name, "id": profile_id},
-                problem={"type": request.type},
-            )
 
         result_data = CreateProblemResponse(
             problem_id=str(result["problem_id"]),

@@ -12,7 +12,6 @@ from app.api.v4.entries.attempt_grade.types import (
     CreateAttemptGradeEntrySqlParams,
     CreateAttemptGradeEntrySqlRow,
 )
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.infra.v4.tools.call_args import record_call_args, resolve_tool_for_entry
 from app.main import get_db
@@ -77,16 +76,7 @@ async def create_attempt_grade_entry_internal(
     return CreateAttemptGradeEntryResponse.model_validate(result.model_dump())
 
 
-@router.post(
-    "/attempt-grade/create",
-    response_model=CreateAttemptGradeEntryResponse,
-    dependencies=[
-        audit_activity(
-            "attempt_grade.created",
-            "{{ actor.name }} created attempt_grade entry",
-        )
-    ],
-)
+@router.post("/attempt-grade/create", response_model=CreateAttemptGradeEntryResponse)
 async def create_attempt_grade_entry(
     request: CreateAttemptGradeEntryRequest,
     http_request: Request,
@@ -119,12 +109,6 @@ async def create_attempt_grade_entry(
 
         api_response = await create_attempt_grade_entry_internal(
             conn, request_dict, mcp
-        )
-
-        audit_set(
-            http_request,
-            actor={"id": profile_id},
-            attempt_grade={"id": str(api_response.id)},
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

@@ -101,7 +101,6 @@ from app.api.v4.resources.simulation_positions.get import (
 from app.api.v4.resources.simulations.get import get_simulations_internal
 from app.api.v4.resources.simulations.search import search_simulations_internal
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -116,7 +115,6 @@ from app.utils.sql_helper import execute_sql_typed
 # SQL paths
 QUERY1_SQL_PATH = "app/sql/v4/queries/cohorts/get_cohort_access_complete.sql"
 QUERY2_SQL_PATH = "app/sql/v4/queries/cohorts/get_cohort_ids_complete.sql"
-
 
 router = APIRouter()
 
@@ -1129,16 +1127,7 @@ async def get_cohort_client(
     )
 
 
-@router.post(
-    "/get",
-    response_model=GetCohortApiResponse,
-    dependencies=[
-        audit_activity(
-            "cohort.get",
-            "{{ actor.name }} {% if cohort %}viewed{% else %}opened new{% endif %} cohort{% if cohort %} '{{ cohort.name }}'{% endif %}",
-        )
-    ],
-)
+@router.post("/get", response_model=GetCohortApiResponse)
 async def get_cohort(
     request: GetCohortApiRequest,
     http_request: Request,
@@ -1173,22 +1162,6 @@ async def get_cohort(
             bypass_cache=bypass_cache,
             group_id=request.group_id,
         )
-
-        # Set audit context
-        if response_data.actor_name:
-            audit_ctx: dict[str, Any] = {
-                "actor": {"name": response_data.actor_name, "id": profile_id}
-            }
-            if (
-                request.cohort_id
-                and response_data.names
-                and response_data.names.resource
-            ):
-                audit_ctx["cohort"] = {
-                    "name": response_data.names.resource.name,
-                    "id": str(request.cohort_id),
-                }
-            audit_set(http_request, **audit_ctx)
 
         # No global cache for this response - individual resources are cached
         response.headers["X-Cache-Tags"] = "cohorts"

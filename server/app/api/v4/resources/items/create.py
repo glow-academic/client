@@ -5,7 +5,6 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -21,20 +20,10 @@ from app.utils.sql_helper import execute_sql_typed
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/resources/items_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/items",
-    response_model=ItemsApiResponse,
-    dependencies=[
-        audit_activity(
-            "items.created",
-            "{{ actor.name }} created items",
-        )
-    ],
-)
+@router.post("/items", response_model=ItemsApiResponse)
 async def create_items(
     request: ItemsApiRequest,
     http_request: Request,
@@ -80,13 +69,6 @@ async def create_items(
 
             if not result or not result.items_id:
                 raise ValueError("Failed to create items")
-
-            # Set audit context
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                items={"id": str(result.items_id)},
-            )
 
         # Convert SQL result to API response (auto-generated types)
         api_response = ItemsApiResponse.model_validate(result.model_dump())

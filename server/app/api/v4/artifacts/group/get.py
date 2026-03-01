@@ -47,7 +47,6 @@ from app.api.v4.resources.names.get import get_names_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import GetCallListViewSqlRow, GetMessageListViewSqlRow
@@ -59,7 +58,6 @@ router = APIRouter()
 
 # Group entry types for agent resolution
 GROUP_BUNDLE_ENTRIES: set[str] = {"debug_info"}
-
 
 # =============================================================================
 # Internal Layer
@@ -321,11 +319,7 @@ async def get_group_websocket(
 # =============================================================================
 
 
-@router.post(
-    "/get",
-    response_model=GetGroupDetailResponse,
-    dependencies=[audit_activity("group.get", "{{ actor.name }} viewed group detail")],
-)
+@router.post("/get", response_model=GetGroupDetailResponse)
 async def get_group(
     request: GetGroupDetailRequest,
     http_request: Request,
@@ -361,9 +355,6 @@ async def get_group(
             group_id=request.group_id,
             bypass_cache=bypass_cache,
         )
-
-        if data.actor_name:
-            audit_set(http_request, actor={"name": data.actor_name, "id": profile_id})
 
         # Compute per-run costs
         run_costs = await compute_costs_from_runs(

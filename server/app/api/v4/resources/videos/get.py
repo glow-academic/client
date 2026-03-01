@@ -34,7 +34,6 @@ BATCH_SQL_PATH = "app/sql/v4/queries/resources/videos/get_videos_complete.sql"
 
 router = APIRouter()
 
-
 # =============================================================================
 # Internal Function
 # =============================================================================

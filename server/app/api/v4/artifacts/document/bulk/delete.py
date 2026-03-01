@@ -5,7 +5,6 @@ from typing import Annotated, Any, cast
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -24,15 +23,7 @@ SQL_PATH = "app/sql/v4/queries/documents/delete_document_complete.sql"
 router = APIRouter()
 
 
-@router.post(
-    "/delete",
-    response_model=DeleteDocumentApiResponse,
-    dependencies=[
-        audit_activity(
-            "document.deleted", "{{ actor.name }} deleted {{ count }} document(s)"
-        )
-    ],
-)
+@router.post("/delete", response_model=DeleteDocumentApiResponse)
 async def delete_document(
     request: DeleteDocumentApiRequest,
     http_request: Request,
@@ -73,13 +64,6 @@ async def delete_document(
 
             if not result:
                 raise ValueError("Failed to delete documents")
-
-            # Set audit context
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                document={"count": result.count if hasattr(result, "count") else 1},
-            )
 
         # Convert SQL result to API response
         api_response = DeleteDocumentApiResponse.model_validate(result.model_dump())

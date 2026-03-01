@@ -10,16 +10,6 @@ from pydantic import BaseModel, Field
 from app.api.v4.artifacts.types import InternalResponseBase
 
 
-class ArtifactSessionAudit(BaseModel):
-    """Single audit entry for a session."""
-
-    id: UUID
-    created_at: datetime | None = None
-    message: str | None = None
-    endpoint: str | None = None
-    error: bool = False
-
-
 class ArtifactSessionGroup(BaseModel):
     """Single group entry for a session."""
 
@@ -52,10 +42,6 @@ class SessionListItem(BaseModel):
 
     total_tokens: int = 0
     total_cost: Decimal = Decimal("0")
-
-    audit_count: int = 0
-    last_audit_at: datetime | None = None
-    error_count: int = 0
 
 
 class GetSessionListRequest(BaseModel):
@@ -91,8 +77,6 @@ class GetSessionDetailRequest(BaseModel):
     """Request for session detail endpoint."""
 
     session_id: UUID
-    audit_limit: int = Field(default=50, ge=1, le=200)
-    audit_offset: int = Field(default=0, ge=0)
 
 
 class GetSessionDetailResponse(BaseModel):
@@ -105,8 +89,6 @@ class GetSessionDetailResponse(BaseModel):
     profile_name: str | None = None
     session_created_at: datetime | None = None
     active: bool = False
-    audit_total_count: int = 0
-    audits: list[ArtifactSessionAudit] = Field(default_factory=list)
     groups: list[ArtifactSessionGroup] = Field(default_factory=list)
 
 
@@ -128,7 +110,6 @@ class SessionWebsocketEntries(BaseModel):
     runs: "GetRunListViewResponse | None" = None
     # Domain views (from internal layer)
     groups: "list[QGetGroupListViewV4Item] | None" = None
-    audits: "list[QGetAuditListViewV4Item] | None" = None
 
 
 class SessionWebsocketResources(BaseModel):
@@ -146,11 +127,9 @@ class GetSessionWebsocketResponse(InternalResponseBase):
 
 from app.api.v4.entries.runs.search import GetRunListViewResponse  # noqa: E402
 from app.sql.types import (  # noqa: E402
-    GetAuditListViewSqlRow,
     GetGroupListViewSqlRow,
     GetSessionListViewSqlRow,
     QGetAgentsV4Item,
-    QGetAuditListViewV4Item,
     QGetGroupListViewV4Item,
     QGetModelsV4Item,
     QGetProfilesV4Item,
@@ -170,7 +149,6 @@ class SessionInternalData:
     # Views
     session_view: GetSessionListViewSqlRow
     groups_result: GetGroupListViewSqlRow
-    audits_result: GetAuditListViewSqlRow
     runs_result: GetRunListViewResponse
     # Config chain
     config_agents: list[QGetAgentsV4Item] = field(default_factory=list)

@@ -52,7 +52,6 @@ class TestAllCompleteEvent(BaseModel):
 TEST_GRADE_ENTRY_TYPES = ["grades", "feedbacks"]
 MESSAGE_ENTRY_TYPES = ["contents", "hints"]
 
-
 # =============================================================================
 # Test domain utilities
 # =============================================================================

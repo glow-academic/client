@@ -23,7 +23,6 @@ DEFAULT_USER_ICON = "User"
 DEFAULT_ASSISTANT_COLOR = "#06b6d4"  # Cyan
 DEFAULT_ASSISTANT_ICON = "Bot"
 
-
 ROLE_HIERARCHY: dict[str, int] = {
     "guest": 0,
     "member": 1,

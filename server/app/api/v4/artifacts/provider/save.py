@@ -18,7 +18,6 @@ from app.api.v4.artifacts.provider.types import (
     SaveProviderSqlRow,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -35,20 +34,10 @@ ACCESS_CHECK_SQL_PATH = (
 )
 SQL_PATH = "app/sql/v4/queries/providers/save_provider_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/save",
-    response_model=SaveProviderApiResponse,
-    dependencies=[
-        audit_activity(
-            "provider.saved",
-            "{{ actor.name }} {% if provider %}updated{% else %}created{% endif %} provider{% if provider %} '{{ provider.name }}'{% endif %}",
-        )
-    ],
-)
+@router.post("/save", response_model=SaveProviderApiResponse)
 async def save_provider(
     request: SaveProviderApiRequest,
     http_request: Request,
@@ -70,7 +59,6 @@ async def save_provider(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -156,16 +144,6 @@ async def save_provider(
                     raise ValueError(f"Provider not found: {request.input_provider_id}")
                 else:
                     raise ValueError("Failed to create provider")
-
-            # Set audit context with data from SQL query
-            if actor_name:
-                audit_ctx = {"actor": {"name": actor_name, "id": profile_id}}
-                if request.input_provider_id:
-                    audit_ctx["provider"] = {
-                        "name": "Provider",
-                        "id": str(result.provider_id),
-                    }
-                audit_set(http_request, **audit_ctx)
 
         # Convert SQL result to API response
         is_update = request.input_provider_id is not None

@@ -26,7 +26,6 @@ SQL_PATH = (
     "app/sql/v4/queries/resources/reasoning_levels/get_reasoning_levels_complete.sql"
 )
 
-
 router = APIRouter()
 
 

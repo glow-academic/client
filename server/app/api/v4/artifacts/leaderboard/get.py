@@ -41,7 +41,6 @@ from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
-from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -237,7 +236,6 @@ ACTIVE_SETTINGS_SQL_PATH = (
     "app/sql/v4/queries/settings/get_active_settings_complete.sql"
 )
 
-
 # ---------------------------------------------------------------------------
 # Message stats types
 # ---------------------------------------------------------------------------
@@ -327,16 +325,7 @@ async def get_message_stats_internal(
     return stats_map
 
 
-@router.post(
-    "/get",
-    response_model=LeaderboardResponse,
-    dependencies=[
-        audit_activity(
-            "artifacts.leaderboard.get",
-            "{{ actor.name }} fetched leaderboard artifact data",
-        )
-    ],
-)
+@router.post("/get", response_model=LeaderboardResponse)
 async def get_leaderboard(
     request: LeaderboardRequest,
     http_request: Request,

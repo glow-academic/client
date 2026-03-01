@@ -7,7 +7,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.agent.permissions import compute_can_delete
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -23,19 +22,10 @@ from app.utils.sql_helper import execute_sql_typed
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/agents/delete_agent_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/delete",
-    response_model=DeleteAgentApiResponse,
-    dependencies=[
-        audit_activity(
-            "agent.deleted", "{{ actor.name }} deleted agent '{{ agent.name }}'"
-        )
-    ],
-)
+@router.post("/delete", response_model=DeleteAgentApiResponse)
 async def delete_agent(
     request: DeleteAgentApiRequest,
     http_request: Request,
@@ -57,7 +47,6 @@ async def delete_agent(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging and permissions
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -95,14 +84,6 @@ async def delete_agent(
             raise HTTPException(
                 status_code=403,
                 detail="You don't have permission to delete this agent.",
-            )
-
-        # Set audit context with data from SQL query
-        if actor_name:
-            audit_set(
-                http_request,
-                actor={"name": actor_name, "id": profile_id},
-                agent={"name": result.name, "id": str(request.agent_id)},
             )
 
         # Convert SQL result to API response

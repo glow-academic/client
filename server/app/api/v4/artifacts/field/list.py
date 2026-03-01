@@ -24,7 +24,6 @@ from app.api.v4.artifacts.field.types import (
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.types import ListFilterSection
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -41,17 +40,10 @@ from app.utils.sql_helper import execute_sql_typed
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/fields/get_fields_list_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/list",
-    response_model=ListFieldApiResponse,
-    dependencies=[
-        audit_activity("fields.list", "{{ actor.name }} visited the Fields page")
-    ],
-)
+@router.post("/list", response_model=ListFieldApiResponse)
 async def get_field_list(
     request: GetFieldsListApiRequest,
     http_request: Request,
@@ -87,7 +79,6 @@ async def get_field_list(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging and permissions
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -128,10 +119,6 @@ async def get_field_list(
                 params=params,
             ),
         )
-
-        # Set audit context
-        if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         # user_role already fetched from context above
 

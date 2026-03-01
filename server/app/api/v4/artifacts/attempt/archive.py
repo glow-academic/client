@@ -6,7 +6,6 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -27,15 +26,7 @@ SQL_PATH = "app/sql/v4/queries/attempts/bulk_archive_attempts_complete.sql"
 router = APIRouter()
 
 
-@router.post(
-    "/archive",
-    response_model=BulkArchiveAttemptsApiResponse,
-    dependencies=[
-        audit_activity(
-            "attempt.archived", "{{ actor.name }} archived {{ count }} attempt(s)"
-        )
-    ],
-)
+@router.post("/archive", response_model=BulkArchiveAttemptsApiResponse)
 async def archive_attempts(
     request: BulkArchiveAttemptsApiRequest,
     http_request: Request,
@@ -57,7 +48,6 @@ async def archive_attempts(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -102,14 +92,6 @@ async def archive_attempts(
 
         updated_count = result.updated_count or 0
         count = int(updated_count)
-
-        # Set audit context
-        if actor_name:
-            audit_set(
-                http_request,
-                actor={"name": actor_name, "id": current_profile_id},
-                count=count,
-            )
 
         # Invalidate cache after mutation
         invalidation_tags = tags + ["dashboard"]

@@ -40,7 +40,6 @@ from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
-from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -226,16 +225,7 @@ ACTIVE_SETTINGS_SQL_PATH = (
 )
 
 
-@router.post(
-    "/get",
-    response_model=ReportsResponse,
-    dependencies=[
-        audit_activity(
-            "artifacts.reports.get",
-            "{{ actor.name }} fetched reports artifact data",
-        )
-    ],
-)
+@router.post("/get", response_model=ReportsResponse)
 async def get_reports(
     request: ReportsRequest,
     http_request: Request,

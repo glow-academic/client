@@ -12,7 +12,6 @@ from app.api.v4.entries.conversations_completions.types import (
     CreateConversationsCompletionsEntrySqlParams,
     CreateConversationsCompletionsEntrySqlRow,
 )
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.infra.v4.tools.call_args import record_call_args, resolve_tool_for_entry
 from app.main import get_db
@@ -80,12 +79,6 @@ async def create_conversations_completions_entry_internal(
 @router.post(
     "/conversations-completions/create",
     response_model=CreateConversationsCompletionsEntryResponse,
-    dependencies=[
-        audit_activity(
-            "conversations_completions.created",
-            "{{ actor.name }} created conversations_completions entry",
-        )
-    ],
 )
 async def create_conversations_completions_entry(
     request: CreateConversationsCompletionsEntryRequest,
@@ -117,12 +110,6 @@ async def create_conversations_completions_entry(
 
         api_response = await create_conversations_completions_entry_internal(
             conn, request_dict, mcp
-        )
-
-        audit_set(
-            http_request,
-            actor={"id": profile_id},
-            conversations_completions={"id": str(api_response.id)},
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

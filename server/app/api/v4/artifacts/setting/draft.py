@@ -13,7 +13,6 @@ from app.api.v4.artifacts.setting.types import (
     PatchSettingDraftSqlRow,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -107,12 +106,6 @@ async def patch_setting_draft(
 
             if not result:
                 raise ValueError("Failed to patch setting draft")
-
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                draft={"id": str(result.draft_id)},
-            )
 
         api_response = PatchSettingDraftApiResponse(
             success=True,

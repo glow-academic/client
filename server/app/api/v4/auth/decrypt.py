@@ -5,7 +5,6 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -21,19 +20,10 @@ from app.utils.sql_helper import execute_sql_typed
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/queries/keys/get_key_for_decrypt_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/decrypt",
-    response_model=GetKeyForDecryptApiResponse,
-    dependencies=[
-        audit_activity(
-            "key.decrypted", "{{ actor.name }} decrypted key '{{ key.name }}'"
-        )
-    ],
-)
+@router.post("/decrypt", response_model=GetKeyForDecryptApiResponse)
 async def decrypt_key(
     request: GetKeyForDecryptApiRequest,
     http_request: Request,
@@ -79,14 +69,6 @@ async def decrypt_key(
             decrypted_key = decrypt_api_key(result.key)
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e)) from e
-
-        # Set audit context
-        if result.actor_name and result.name:
-            audit_set(
-                http_request,
-                actor={"name": result.actor_name, "id": profile_id},
-                key={"name": result.name, "id": str(request.key_id)},
-            )
 
         # Convert SQL result to API response
         api_response = GetKeyForDecryptApiResponse.model_validate(

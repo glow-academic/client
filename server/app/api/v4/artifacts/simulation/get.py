@@ -104,7 +104,6 @@ from app.api.v4.resources.scenario_time_limits.search import (
 )
 from app.api.v4.resources.scenarios.search import search_scenarios_internal
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import QGetScenarioFlagsV4Item, load_sql_query
@@ -1029,16 +1028,7 @@ async def get_simulation_client(
     )
 
 
-@router.post(
-    "/get",
-    response_model=GetSimulationApiResponse,
-    dependencies=[
-        audit_activity(
-            "simulation.get",
-            "{{ actor.name }} {% if simulation %}viewed{% else %}opened new{% endif %} simulation{% if simulation %} '{{ simulation.name }}'{% endif %}",
-        )
-    ],
-)
+@router.post("/get", response_model=GetSimulationApiResponse)
 async def get_simulation(
     request: GetSimulationApiRequest,
     http_request: Request,
@@ -1068,23 +1058,6 @@ async def get_simulation(
             filter_scenario_ids=request.filter_scenario_ids,
             group_id=request.group_id,
         )
-
-        # Set audit context
-        if response_data.actor_name:
-            audit_ctx: dict[str, Any] = {
-                "actor": {"name": response_data.actor_name, "id": profile_id}
-            }
-            current_name = (
-                getattr(response_data.names.resource, "name", None)
-                if response_data.names and response_data.names.resource
-                else None
-            )
-            if request.simulation_id and current_name:
-                audit_ctx["simulation"] = {
-                    "name": current_name,
-                    "id": str(request.simulation_id),
-                }
-            audit_set(http_request, **audit_ctx)
 
         response.headers["X-Cache-Tags"] = "simulations"
         response.headers["X-Cache-Hit"] = "0"

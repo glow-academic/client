@@ -21,7 +21,6 @@ from app.api.v4.auth.route_permissions import (
     get_entity_name_junction,
 )
 from app.api.v4.auth.types import GetAuthPageApiResponse
-from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import GetProfileContextApiRequest
@@ -29,13 +28,7 @@ from app.sql.types import GetProfileContextApiRequest
 router = APIRouter()
 
 
-@router.post(
-    "/page",
-    response_model=GetAuthPageApiResponse,
-    dependencies=[
-        audit_activity("auth.page", "{{ actor.name }} viewed auth page metadata")
-    ],
-)
+@router.post("/page", response_model=GetAuthPageApiResponse)
 async def get_auth_page(
     request: GetProfileContextApiRequest,
     http_request: Request,

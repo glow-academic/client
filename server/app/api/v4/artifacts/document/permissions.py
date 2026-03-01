@@ -315,7 +315,6 @@ DOCUMENT_BASIC_RESOURCES: set[str] = {"names", "descriptions", "flags", "departm
 DOCUMENT_CONTENT_RESOURCES: set[str] = {"fields", "uploads", "images", "texts"}
 DOCUMENT_GENERAL_RESOURCES: set[str] = DOCUMENT_RESOURCES  # All resources
 
-
 # ========== Domain Metadata - for client-side display in modals ==========
 
 # Domain display metadata (business logic - rarely changes)

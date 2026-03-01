@@ -6,7 +6,6 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.infra.v4.tools.call_args import record_call_args, resolve_tool
 from app.main import get_db
@@ -72,16 +71,7 @@ async def create_instructions_internal(
 router = APIRouter()
 
 
-@router.post(
-    "/instructions",
-    response_model=InstructionsApiResponse,
-    dependencies=[
-        audit_activity(
-            "instructions.created",
-            "{{ actor.name }} created instructions",
-        )
-    ],
-)
+@router.post("/instructions", response_model=InstructionsApiResponse)
 async def create_instructions(
     request: InstructionsApiRequest,
     http_request: Request,
@@ -128,13 +118,6 @@ async def create_instructions(
 
             if not result or not result.instruction_id:
                 raise ValueError("Failed to create instructions")
-
-            # Set audit context
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                instructions={"id": str(result.instruction_id)},
-            )
 
         # Convert SQL result to API response (auto-generated types)
         api_response = InstructionsApiResponse.model_validate(result.model_dump())

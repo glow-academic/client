@@ -5,7 +5,6 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -24,16 +23,7 @@ SQL_PATH = "app/sql/v4/queries/resources/parameter_fields/parameter_fields_compl
 router = APIRouter()
 
 
-@router.post(
-    "/parameter_fields",
-    response_model=ParameterFieldsApiResponse,
-    dependencies=[
-        audit_activity(
-            "parameter_fields.created",
-            "{{ actor.name }} created parameter_fields",
-        )
-    ],
-)
+@router.post("/parameter_fields", response_model=ParameterFieldsApiResponse)
 async def create_parameter_fields(
     request: ParameterFieldsApiRequest,
     http_request: Request,
@@ -77,13 +67,6 @@ async def create_parameter_fields(
 
             if not result or not result.parameter_fields_id:
                 raise ValueError("Failed to create parameter_fields")
-
-            # Set audit context
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                parameter_fields={"id": str(result.parameter_fields_id)},
-            )
 
         # Convert SQL result to API response
         api_response = ParameterFieldsApiResponse.model_validate(result.model_dump())

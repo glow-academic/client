@@ -11,7 +11,6 @@ from app.api.v4.artifacts.field.types import (
     DuplicateFieldApiResponse,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -30,20 +29,10 @@ ACCESS_CHECK_SQL_PATH = (
 )
 DUPLICATE_SQL_PATH = "app/sql/v4/queries/fields/duplicate_field_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/duplicate",
-    response_model=DuplicateFieldApiResponse,
-    dependencies=[
-        audit_activity(
-            "field.duplicated",
-            "{{ actor.name }} duplicated field '{{ field.name }}'",
-        )
-    ],
-)
+@router.post("/duplicate", response_model=DuplicateFieldApiResponse)
 async def duplicate_field(
     request: DuplicateFieldApiRequest,
     http_request: Request,
@@ -64,7 +53,6 @@ async def duplicate_field(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -125,14 +113,6 @@ async def duplicate_field(
                 raise ValueError(f"Field not found: {request.field_id}")
 
             original_name = result.original_name or "Unknown"
-
-            # Set audit context with data from SQL query
-            if actor_name:
-                audit_set(
-                    http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    field={"name": original_name, "id": str(request.field_id)},
-                )
 
             # Convert SQL result to API response
             api_response = DuplicateFieldApiResponse.model_validate(

@@ -253,7 +253,6 @@ RUBRIC_CONTENT_RESOURCES: set[str] = {
     "standards",
 }
 
-
 # ========== Domain Metadata - for client-side display in modals ==========
 
 RUBRIC_DOMAIN_METADATA: dict[str, dict[str, str | bool]] = {

@@ -539,7 +539,6 @@ class DashboardBundleResponse(BaseModel):
 # Resolve forward reference for DashboardPrimaryMetrics.skill_performance
 DashboardPrimaryMetrics.model_rebuild()
 
-
 # =============================================================================
 # Export Types
 # =============================================================================

@@ -7,7 +7,6 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -26,15 +25,7 @@ SQL_PATH = "app/sql/v4/queries/profiles/bulk_delete_profiles_complete.sql"
 router = APIRouter()
 
 
-@router.post(
-    "/delete",
-    response_model=BulkDeleteProfilesApiResponse,
-    dependencies=[
-        audit_activity(
-            "profile.deleted", "{{ actor.name }} deleted {{ count }} profile(s)"
-        )
-    ],
-)
+@router.post("/delete", response_model=BulkDeleteProfilesApiResponse)
 async def delete_profiles(
     request: BulkDeleteProfilesApiRequest,
     http_request: Request,
@@ -54,7 +45,6 @@ async def delete_profiles(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -100,14 +90,6 @@ async def delete_profiles(
             deleted_count=deleted_count,
             actor_name=actor_name,
         )
-
-        # Set audit context
-        if actor_name:
-            audit_set(
-                http_request,
-                actor={"name": actor_name, "id": profile_id},
-                count=deleted_count,
-            )
 
         # Invalidate cache after mutation
         tags = ["profile"]

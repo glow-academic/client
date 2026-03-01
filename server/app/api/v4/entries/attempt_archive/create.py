@@ -12,7 +12,6 @@ from app.api.v4.entries.attempt_archive.types import (
     CreateAttemptArchiveEntrySqlParams,
     CreateAttemptArchiveEntrySqlRow,
 )
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.infra.v4.tools.call_args import record_call_args, resolve_tool_for_entry
 from app.main import get_db
@@ -76,14 +75,7 @@ async def create_attempt_archive_entry_internal(
 
 
 @router.post(
-    "/attempt-archive/create",
-    response_model=CreateAttemptArchiveEntryResponse,
-    dependencies=[
-        audit_activity(
-            "attempt_archive.created",
-            "{{ actor.name }} created attempt_archive entry",
-        )
-    ],
+    "/attempt-archive/create", response_model=CreateAttemptArchiveEntryResponse
 )
 async def create_attempt_archive_entry(
     request: CreateAttemptArchiveEntryRequest,
@@ -115,12 +107,6 @@ async def create_attempt_archive_entry(
 
         api_response = await create_attempt_archive_entry_internal(
             conn, request_dict, mcp
-        )
-
-        audit_set(
-            http_request,
-            actor={"id": profile_id},
-            attempt_archive={"id": str(api_response.id)},
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

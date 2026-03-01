@@ -82,7 +82,6 @@ SQL_PATH_START_CONTEXT = (
     "app/sql/v4/queries/generate/training/get_training_start_context_complete.sql"
 )
 
-
 # =============================================================================
 # Chat Start Context (moved from list.py)
 # =============================================================================
@@ -260,7 +259,6 @@ RESOURCE_CONFIG: list[tuple[str, str, str, Any, str]] = [
         "objective_id",
     ),
 ]
-
 
 # =============================================================================
 # Internal fetch
@@ -593,7 +591,6 @@ async def get_chat_websocket(
 # =============================================================================
 # Client/BFF Layer
 # =============================================================================
-
 
 # Section class mapping for building typed sections
 _SECTION_CLASSES: dict[str, type] = {

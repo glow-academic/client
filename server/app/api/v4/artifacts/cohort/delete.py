@@ -15,7 +15,6 @@ from app.api.v4.artifacts.cohort.types import (
     DeleteCohortResult,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -34,20 +33,10 @@ ACCESS_CHECK_SQL_PATH = (
 )
 DELETE_SQL_PATH = "app/sql/v4/queries/cohorts/delete_cohort_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/delete",
-    response_model=DeleteCohortApiResponse,
-    dependencies=[
-        audit_activity(
-            "cohort.deleted",
-            "{{ actor.name }} deleted {{ count }} cohort(s)",
-        )
-    ],
-)
+@router.post("/delete", response_model=DeleteCohortApiResponse)
 async def delete_cohort(
     request: DeleteCohortApiRequest,
     http_request: Request,
@@ -163,13 +152,6 @@ async def delete_cohort(
                 )
 
         # Audit context
-        if actor_name:
-            audit_set(
-                http_request,
-                actor={"name": actor_name, "id": profile_id},
-                count=len(results),
-            )
-
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

@@ -28,9 +28,7 @@ logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
 
-SQL_PATH_START_TEST = (
-    "app/sql/v4/queries/generate/test/start_test_complete.sql"
-)
+SQL_PATH_START_TEST = "app/sql/v4/queries/generate/test/start_test_complete.sql"
 
 
 @internal_sio.on("test_start")  # type: ignore

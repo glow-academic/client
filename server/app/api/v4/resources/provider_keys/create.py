@@ -5,7 +5,6 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -23,16 +22,7 @@ SQL_PATH = "app/sql/v4/queries/resources/provider_keys_complete.sql"
 router = APIRouter()
 
 
-@router.post(
-    "/provider_keys",
-    response_model=ProviderKeysApiResponse,
-    dependencies=[
-        audit_activity(
-            "provider_keys.created",
-            "{{ actor.name }} created provider_keys",
-        )
-    ],
-)
+@router.post("/provider_keys", response_model=ProviderKeysApiResponse)
 async def create_provider_keys(
     request: ProviderKeysApiRequest,
     http_request: Request,
@@ -67,12 +57,6 @@ async def create_provider_keys(
 
             if not result or not result.provider_keys_id:
                 raise ValueError("Failed to create provider_keys")
-
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                provider_keys={"id": str(result.provider_keys_id)},
-            )
 
         api_response = ProviderKeysApiResponse.model_validate(result.model_dump())
 

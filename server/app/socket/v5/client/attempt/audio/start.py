@@ -11,7 +11,6 @@ Flow:
 import uuid
 from typing import Any
 
-from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
@@ -124,14 +123,7 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
 
         # Log activity
         try:
-            await log_websocket_activity(
-                sid=sid,
-                event_key="attempt.audio.started",
-                template="{{ actor.name }} started voice session",
-                context={"chat_id": str(chat_id)},
-                endpoint="/socket/v5/attempt/audio_start",
-                error=False,
-            )
+            pass
         except Exception:
             pass
 

@@ -6,7 +6,6 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.infra.v4.tools.call_args import record_call_args, resolve_tool
 from app.main import get_db
@@ -65,16 +64,7 @@ async def create_names_internal(
 router = APIRouter()
 
 
-@router.post(
-    "/names",
-    response_model=NamesApiResponse,
-    dependencies=[
-        audit_activity(
-            "names.created",
-            "{{ actor.name }} created names",
-        )
-    ],
-)
+@router.post("/names", response_model=NamesApiResponse)
 async def create_names(
     request: NamesApiRequest,
     http_request: Request,
@@ -120,13 +110,6 @@ async def create_names(
 
             if not result or not result.name_id:
                 raise ValueError("Failed to create names")
-
-            # Set audit context
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                names={"id": str(result.name_id)},
-            )
 
         # Convert SQL result to API response (auto-generated types)
         api_response = NamesApiResponse.model_validate(result.model_dump())

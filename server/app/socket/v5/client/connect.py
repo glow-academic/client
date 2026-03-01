@@ -8,7 +8,6 @@ import uuid
 from datetime import UTC, datetime
 from typing import cast
 
-from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.add_guest_socket import add_guest_socket
 from app.infra.v4.websocket.decrement_guest_count import decrement_guest_count
 from app.infra.v4.websocket.find_chats_by_socket import find_chats_by_socket
@@ -160,14 +159,7 @@ async def connect(
         )
 
     try:
-        await log_websocket_activity(
-            sid=sid,
-            event_key="websocket.connected",
-            template="{{ actor.name }} connected to WebSocket",
-            context={},
-            endpoint="/socket/v5/connect",
-            error=False,
-        )
+        pass
     except Exception:
         pass
 
@@ -184,14 +176,7 @@ async def disconnect(sid: str) -> None:
     """Handle WebSocket disconnection with cleanup."""
     # Log before cleanup so profile lookup still works
     try:
-        await log_websocket_activity(
-            sid=sid,
-            event_key="websocket.disconnected",
-            template="{{ actor.name }} disconnected from WebSocket",
-            context={},
-            endpoint="/socket/v5/disconnect",
-            error=False,
-        )
+        pass
     except Exception:
         pass
 

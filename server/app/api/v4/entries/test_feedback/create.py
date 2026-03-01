@@ -12,7 +12,6 @@ from app.api.v4.entries.test_feedback.types import (
     CreateTestFeedbackEntrySqlParams,
     CreateTestFeedbackEntrySqlRow,
 )
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.infra.v4.tools.call_args import record_call_args, resolve_tool_for_entry
 from app.main import get_db
@@ -77,16 +76,7 @@ async def create_test_feedback_entry_internal(
     return CreateTestFeedbackEntryResponse.model_validate(result.model_dump())
 
 
-@router.post(
-    "/test-feedback/create",
-    response_model=CreateTestFeedbackEntryResponse,
-    dependencies=[
-        audit_activity(
-            "test_feedback.created",
-            "{{ actor.name }} created test_feedback entry",
-        )
-    ],
-)
+@router.post("/test-feedback/create", response_model=CreateTestFeedbackEntryResponse)
 async def create_test_feedback_entry(
     request: CreateTestFeedbackEntryRequest,
     http_request: Request,
@@ -117,12 +107,6 @@ async def create_test_feedback_entry(
 
         api_response = await create_test_feedback_entry_internal(
             conn, request_dict, mcp
-        )
-
-        audit_set(
-            http_request,
-            actor={"id": profile_id},
-            test_feedback={"id": str(api_response.id)},
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

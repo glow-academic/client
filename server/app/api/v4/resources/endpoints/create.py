@@ -6,7 +6,6 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.infra.v4.tools.call_args import record_call_args, resolve_tool
 from app.main import get_db
@@ -68,16 +67,7 @@ async def create_endpoints_internal(
 router = APIRouter()
 
 
-@router.post(
-    "/endpoints",
-    response_model=EndpointsApiResponse,
-    dependencies=[
-        audit_activity(
-            "endpoints.created",
-            "{{ actor.name }} created endpoints",
-        )
-    ],
-)
+@router.post("/endpoints", response_model=EndpointsApiResponse)
 async def create_endpoints(
     request: EndpointsApiRequest,
     http_request: Request,
@@ -123,13 +113,6 @@ async def create_endpoints(
 
             if not result or not result.endpoints_id:
                 raise ValueError("Failed to create endpoints")
-
-            # Set audit context
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                endpoints={"id": str(result.endpoints_id)},
-            )
 
         # Convert SQL result to API response (auto-generated types)
         api_response = EndpointsApiResponse.model_validate(result.model_dump())

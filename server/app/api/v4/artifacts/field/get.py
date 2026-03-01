@@ -61,7 +61,6 @@ from app.api.v4.resources.parameters.search import search_parameters_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -749,16 +748,7 @@ async def get_field_client(
     )
 
 
-@router.post(
-    "/get",
-    response_model=GetFieldApiResponse,
-    dependencies=[
-        audit_activity(
-            "field.get",
-            "{{ actor.name }} {% if field %}viewed{% else %}opened new{% endif %} field{% if field %} '{{ field.name }}'{% endif %}",
-        )
-    ],
-)
+@router.post("/get", response_model=GetFieldApiResponse)
 async def get_field(
     request: GetFieldApiRequest,
     http_request: Request,
@@ -784,19 +774,6 @@ async def get_field(
             bypass_cache=bypass_cache,
             group_id=request.group_id,
         )
-
-        if response_data.actor_name:
-            audit_ctx: dict[str, Any] = {
-                "actor": {"name": response_data.actor_name, "id": profile_id}
-            }
-            current_name = (
-                response_data.names.resource.name
-                if response_data.names and response_data.names.resource
-                else None
-            )
-            if request.field_id and current_name:
-                audit_ctx["field"] = {"name": current_name, "id": str(request.field_id)}
-            audit_set(http_request, **audit_ctx)
 
         response.headers["X-Cache-Tags"] = "fields"
         response.headers["X-Cache-Hit"] = "0"

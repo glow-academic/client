@@ -9,7 +9,6 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -26,13 +25,7 @@ SQL_PATH = "app/sql/v4/queries/analytics/refresh_mv_dashboard_complete.sql"
 router = APIRouter()
 
 
-@router.post(
-    "/refresh",
-    response_model=RefreshMvDashboardApiResponse,
-    dependencies=[
-        audit_activity("dashboard.refresh", "{{ actor.name }} refreshed dashboard MVs")
-    ],
-)
+@router.post("/refresh", response_model=RefreshMvDashboardApiResponse)
 async def dashboard_refresh(
     request: RefreshMvDashboardApiRequest,
     http_request: Request,
@@ -53,7 +46,6 @@ async def dashboard_refresh(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -74,9 +66,6 @@ async def dashboard_refresh(
             RefreshMvDashboardSqlRow,
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
-
-        if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         api_response = RefreshMvDashboardApiResponse.model_validate(result.model_dump())
 

@@ -5,7 +5,6 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -23,16 +22,7 @@ SQL_PATH = "app/sql/v4/queries/resources/auth_item_keys_complete.sql"
 router = APIRouter()
 
 
-@router.post(
-    "/auth_item_keys",
-    response_model=AuthItemKeysApiResponse,
-    dependencies=[
-        audit_activity(
-            "auth_item_keys.created",
-            "{{ actor.name }} created auth_item_keys",
-        )
-    ],
-)
+@router.post("/auth_item_keys", response_model=AuthItemKeysApiResponse)
 async def create_auth_item_keys(
     request: AuthItemKeysApiRequest,
     http_request: Request,
@@ -67,12 +57,6 @@ async def create_auth_item_keys(
 
             if not result or not result.auth_item_keys_id:
                 raise ValueError("Failed to create auth_item_keys")
-
-            audit_set(
-                http_request,
-                actor={"id": profile_id},
-                auth_item_keys={"id": str(result.auth_item_keys_id)},
-            )
 
         api_response = AuthItemKeysApiResponse.model_validate(result.model_dump())
 

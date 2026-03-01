@@ -26,7 +26,6 @@ SQL_PATH = (
     "app/sql/v4/queries/resources/parameter_fields/get_parameter_fields_complete.sql"
 )
 
-
 router = APIRouter()
 
 

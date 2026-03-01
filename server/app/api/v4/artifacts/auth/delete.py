@@ -13,7 +13,6 @@ from app.api.v4.artifacts.auth.types import (
     DeleteAuthApiResponse,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.auth.keycloak_sync import perform_keycloak_sync
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -31,19 +30,10 @@ from app.utils.sql_helper import execute_sql_typed
 ACCESS_CHECK_SQL_PATH = "app/sql/v4/queries/auth/check_auth_delete_access_complete.sql"
 DELETE_SQL_PATH = "app/sql/v4/queries/auth/delete_auth_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/delete",
-    response_model=DeleteAuthApiResponse,
-    dependencies=[
-        audit_activity(
-            "auth.deleted", "{{ actor.name }} deleted auth '{{ auth.name }}'"
-        )
-    ],
-)
+@router.post("/delete", response_model=DeleteAuthApiResponse)
 async def delete_auth(
     request: DeleteAuthApiRequest,
     http_request: Request,
@@ -64,7 +54,6 @@ async def delete_auth(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -134,14 +123,6 @@ async def delete_auth(
             if not result or not result.auth_exists:
                 raise HTTPException(
                     status_code=404, detail=f"Auth {request.auth_id} not found"
-                )
-
-            # Set audit context
-            if actor_name:
-                audit_set(
-                    http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    auth={"name": result.name, "id": str(request.auth_id)},
                 )
 
         # Build response

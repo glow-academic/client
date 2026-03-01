@@ -23,7 +23,6 @@ from app.api.v4.auth.types import (
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.settings.get import get_settings_internal
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -174,13 +173,7 @@ async def get_auth_settings_internal(
     )
 
 
-@router.post(
-    "/settings",
-    response_model=GetAuthSettingsApiResponse,
-    dependencies=[
-        audit_activity("auth.settings", "{{ actor.name }} viewed auth settings")
-    ],
-)
+@router.post("/settings", response_model=GetAuthSettingsApiResponse)
 async def get_auth_settings(
     request: GetProfileContextApiRequest,
     http_request: Request,

@@ -65,7 +65,6 @@ from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.settings.get import get_settings_internal
 from app.api.v4.resources.tools.get import get_tools_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -749,16 +748,7 @@ def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
     return output
 
 
-@router.post(
-    "/get",
-    response_model=GetDepartmentApiResponse,
-    dependencies=[
-        audit_activity(
-            "department.get",
-            "{{ actor.name }} {% if department %}viewed{% else %}opened new{% endif %} department{% if department %} '{{ department.title }}'{% endif %}",
-        )
-    ],
-)
+@router.post("/get", response_model=GetDepartmentApiResponse)
 async def get_department(
     request: GetDepartmentApiRequest,
     http_request: Request,
@@ -786,23 +776,6 @@ async def get_department(
             bypass_cache=bypass_cache,
             group_id=request.group_id,
         )
-
-        # Set audit context
-        if response_data.actor_name:
-            audit_ctx: dict[str, Any] = {
-                "actor": {"name": response_data.actor_name, "id": profile_id}
-            }
-            current_name = (
-                response_data.names.resource.name
-                if (response_data.names and response_data.names.resource)
-                else None
-            )
-            if request.department_id and current_name:
-                audit_ctx["department"] = {
-                    "title": current_name,
-                    "id": str(request.department_id),
-                }
-            audit_set(http_request, **audit_ctx)
 
         response.headers["X-Cache-Tags"] = "departments"
         response.headers["X-Cache-Hit"] = "0"

@@ -12,7 +12,6 @@ from app.api.v4.entries.certificates.types import (
     CreateCertificatesEntrySqlParams,
     CreateCertificatesEntrySqlRow,
 )
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.infra.v4.tools.call_args import record_call_args, resolve_tool_for_entry
 from app.main import get_db
@@ -77,16 +76,7 @@ async def create_certificates_entry_internal(
     return CreateCertificatesEntryResponse.model_validate(result.model_dump())
 
 
-@router.post(
-    "/certificates/create",
-    response_model=CreateCertificatesEntryResponse,
-    dependencies=[
-        audit_activity(
-            "certificates.created",
-            "{{ actor.name }} created certificates entry",
-        )
-    ],
-)
+@router.post("/certificates/create", response_model=CreateCertificatesEntryResponse)
 async def create_certificates_entry(
     request: CreateCertificatesEntryRequest,
     http_request: Request,
@@ -116,12 +106,6 @@ async def create_certificates_entry(
             )
 
         api_response = await create_certificates_entry_internal(conn, request_dict, mcp)
-
-        audit_set(
-            http_request,
-            actor={"id": profile_id},
-            certificates={"id": str(api_response.id)},
-        )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 

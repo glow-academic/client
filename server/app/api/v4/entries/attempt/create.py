@@ -12,7 +12,6 @@ from app.api.v4.entries.attempt.types import (
     CreateAttemptEntrySqlParams,
     CreateAttemptEntrySqlRow,
 )
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.infra.v4.tools.call_args import record_call_args, resolve_tool_for_entry
 from app.main import get_db
@@ -75,16 +74,7 @@ async def create_attempt_entry_internal(
     return CreateAttemptEntryResponse.model_validate(result.model_dump())
 
 
-@router.post(
-    "/attempt/create",
-    response_model=CreateAttemptEntryResponse,
-    dependencies=[
-        audit_activity(
-            "attempt.created",
-            "{{ actor.name }} created attempt entry",
-        )
-    ],
-)
+@router.post("/attempt/create", response_model=CreateAttemptEntryResponse)
 async def create_attempt_entry(
     request: CreateAttemptEntryRequest,
     http_request: Request,
@@ -114,12 +104,6 @@ async def create_attempt_entry(
             )
 
         api_response = await create_attempt_entry_internal(conn, request_dict, mcp)
-
-        audit_set(
-            http_request,
-            actor={"id": profile_id},
-            attempt={"id": str(api_response.id)},
-        )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 

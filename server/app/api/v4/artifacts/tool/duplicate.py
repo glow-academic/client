@@ -11,7 +11,6 @@ from app.api.v4.artifacts.tool.types import (
     DuplicateToolApiResponse,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -30,20 +29,10 @@ ACCESS_CHECK_SQL_PATH = (
 )
 DUPLICATE_SQL_PATH = "app/sql/v4/queries/tools/duplicate_tool_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/duplicate",
-    response_model=DuplicateToolApiResponse,
-    dependencies=[
-        audit_activity(
-            "tool.duplicated",
-            "{{ actor.name }} duplicated tool '{{ tool.name }}'",
-        )
-    ],
-)
+@router.post("/duplicate", response_model=DuplicateToolApiResponse)
 async def duplicate_tool(
     request: DuplicateToolApiRequest,
     http_request: Request,
@@ -65,7 +54,6 @@ async def duplicate_tool(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -128,14 +116,6 @@ async def duplicate_tool(
                 raise ValueError(f"Tool not found: {request.tool_id}")
 
             original_name = result.original_name or "Unknown"
-
-            # Set audit context with data from SQL query
-            if actor_name:
-                audit_set(
-                    http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    tool={"name": original_name, "id": str(request.tool_id)},
-                )
 
             # Convert SQL result to API response
             api_response = DuplicateToolApiResponse.model_validate(

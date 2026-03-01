@@ -9,7 +9,6 @@ from typing import Annotated, Any, cast
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import AUDIO_FOLDER, TUS_UPLOADS_DIR, UPLOAD_FOLDER, VIDEO_FOLDER, get_db
 from app.sql.types import (
@@ -30,15 +29,7 @@ logger = get_logger(__name__)
 router = APIRouter()
 
 
-@router.post(
-    "/{upload_id}/finalize",
-    response_model=FinalizeUploadApiResponse,
-    dependencies=[
-        audit_activity(
-            "upload.finalized", "{{ actor.name }} finalized upload '{{ upload.id }}'"
-        )
-    ],
-)
+@router.post("/{upload_id}/finalize", response_model=FinalizeUploadApiResponse)
 async def finalize_upload(
     upload_id: str,
     http_request: Request,
@@ -131,13 +122,6 @@ async def finalize_upload(
             shutil.rmtree(str(upload_dir))
         except Exception as e:
             logger.warning(f"Failed to clean up upload directory: {str(e)}")
-
-        if sql_result.actor_name:
-            audit_set(
-                http_request,
-                actor={"name": sql_result.actor_name, "id": profile_id},
-                upload={"id": str(sql_result.upload_id)},
-            )
 
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

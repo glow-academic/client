@@ -81,7 +81,6 @@ from app.api.v4.resources.texts.search import search_texts_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.api.v4.resources.uploads.get import get_uploads_internal
 from app.api.v4.resources.uploads.search import search_uploads_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -975,16 +974,7 @@ def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
     return output
 
 
-@router.post(
-    "/get",
-    response_model=GetDocumentApiResponse,
-    dependencies=[
-        audit_activity(
-            "document.get",
-            "{{ actor.name }} {% if document %}viewed{% else %}opened new{% endif %} document{% if document %} '{{ document.name }}'{% endif %}",
-        )
-    ],
-)
+@router.post("/get", response_model=GetDocumentApiResponse)
 async def get_document(
     request: GetDocumentApiRequest,
     http_request: Request,
@@ -1012,21 +1002,6 @@ async def get_document(
             bypass_cache=bypass_cache,
             group_id=request.group_id,
         )
-
-        # Set audit context
-        if response_data.actor_name:
-            audit_ctx: dict[str, Any] = {
-                "actor": {"name": response_data.actor_name, "id": profile_id}
-            }
-            current_name = None
-            if response_data.names and response_data.names.resource:
-                current_name = getattr(response_data.names.resource, "name", None)
-            if request.document_id and current_name:
-                audit_ctx["document"] = {
-                    "name": current_name,
-                    "id": str(request.document_id),
-                }
-            audit_set(http_request, **audit_ctx)
 
         # No global cache for this response - individual resources are cached
         response.headers["X-Cache-Tags"] = "documents"

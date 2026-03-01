@@ -12,7 +12,6 @@ from app.api.v4.artifacts.persona.types import (
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.resources.names.create import create_names_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -31,20 +30,10 @@ ACCESS_CHECK_SQL_PATH = (
 )
 DUPLICATE_SQL_PATH = "app/sql/v4/queries/personas/duplicate_persona_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/duplicate",
-    response_model=DuplicatePersonaApiResponse,
-    dependencies=[
-        audit_activity(
-            "persona.duplicated",
-            "{{ actor.name }} duplicated persona '{{ persona.name }}'",
-        )
-    ],
-)
+@router.post("/duplicate", response_model=DuplicatePersonaApiResponse)
 async def duplicate_persona(
     request: DuplicatePersonaApiRequest,
     http_request: Request,
@@ -66,7 +55,6 @@ async def duplicate_persona(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -135,14 +123,6 @@ async def duplicate_persona(
 
             if not result or not result.new_persona_id:
                 raise ValueError(f"Persona not found: {request.persona_id}")
-
-            # Set audit context with data from SQL query
-            if actor_name:
-                audit_set(
-                    http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    persona={"name": original_name, "id": str(request.persona_id)},
-                )
 
             # Convert SQL result to API response
             api_response = DuplicatePersonaApiResponse.model_validate(

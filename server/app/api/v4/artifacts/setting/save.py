@@ -19,7 +19,6 @@ from app.api.v4.artifacts.setting.types import (
     SettingResourceAction,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -38,7 +37,6 @@ ACCESS_CHECK_SQL_PATH = (
     "app/sql/v4/queries/settings/check_setting_save_access_complete.sql"
 )
 SQL_PATH = "app/sql/v4/queries/settings/save_setting_complete.sql"
-
 
 router = APIRouter()
 
@@ -108,16 +106,7 @@ async def save_setting_internal(
         return None
 
 
-@router.post(
-    "/save",
-    response_model=SaveSettingApiResponse,
-    dependencies=[
-        audit_activity(
-            "setting.saved",
-            "{{ actor.name }} {% if setting %}updated{% else %}created{% endif %} setting{% if setting %} '{{ setting.name }}'{% endif %}",
-        )
-    ],
-)
+@router.post("/save", response_model=SaveSettingApiResponse)
 async def save_setting(
     request: SaveSettingApiRequest,
     http_request: Request,
@@ -139,7 +128,6 @@ async def save_setting(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -223,20 +211,6 @@ async def save_setting(
                     raise ValueError(f"Setting not found: {request.input_setting_id}")
                 else:
                     raise ValueError("Failed to create setting")
-
-            # Set audit context with data from SQL query
-            if actor_name:
-                audit_ctx = {"actor": {"name": actor_name, "id": profile_id}}
-                # Only add setting to audit context if input_setting_id was provided (update mode)
-                # For create mode, we don't have the name yet, so we'll use the request name if available
-                if request.input_setting_id:
-                    # Update mode: use request name (from request body)
-                    # Note: In update mode, request should have name field
-                    audit_ctx["setting"] = {
-                        "name": getattr(request, "name", "Setting"),
-                        "id": str(result.setting_id),
-                    }
-                audit_set(http_request, **audit_ctx)
 
         # Convert SQL result to API response
         api_response = SaveSettingApiResponse.model_validate(

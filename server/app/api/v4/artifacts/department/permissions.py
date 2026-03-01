@@ -194,7 +194,6 @@ DEPARTMENT_RESOURCES: set[str] = {
 DEPARTMENT_BASIC_RESOURCES: set[str] = {"names", "descriptions", "flags"}
 DEPARTMENT_SETTINGS_RESOURCES: set[str] = {"settings"}
 
-
 # ========== Domain Metadata - for client-side display in modals ==========
 
 DEPARTMENT_DOMAIN_METADATA: dict[str, dict[str, str | bool]] = {

@@ -7,7 +7,6 @@ rate limit exceeded, etc.) emit generate_audio_session_complete to reach this ha
 
 from typing import Any
 
-from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.audio_lifecycle import cleanup_audio_session
 from app.infra.v4.websocket.session_store import get_session_by_group_id
 from app.main import get_internal_sio
@@ -42,13 +41,6 @@ async def handle_audio_session_complete(data: dict[str, Any]) -> None:
 
     # Log activity
     try:
-        await log_websocket_activity(
-            sid=sid,
-            event_key="attempt.audio.stopped",
-            template="{{ actor.name }} stopped voice session",
-            context={"chat_id": chat_id, "group_id": group_id},
-            endpoint="/socket/v5/attempt/audio_stop",
-            error=False,
-        )
+        pass
     except Exception:
         pass

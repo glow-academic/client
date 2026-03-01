@@ -65,7 +65,6 @@ from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal
-from app.infra.v4.activity.audit import audit_activity
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 
@@ -79,7 +78,6 @@ DASHBOARD_BUNDLE_RESOURCES: set[str] = {
     "departments",
     "debug_info",
 }
-
 
 # =============================================================================
 # History helpers — inline pipeline (entries layer → HistoryResponse)
@@ -1151,16 +1149,7 @@ async def get_dashboard_websocket(
 # =============================================================================
 
 
-@router.post(
-    "/get",
-    response_model=DashboardBundleResponse,
-    dependencies=[
-        audit_activity(
-            "artifacts.dashboard.get",
-            "{{ actor.name }} fetched dashboard artifact data",
-        )
-    ],
-)
+@router.post("/get", response_model=DashboardBundleResponse)
 async def get_dashboard(
     request: DashboardRequest,
     http_request: Request,

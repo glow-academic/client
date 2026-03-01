@@ -12,7 +12,6 @@ from app.api.v4.artifacts.persona.types import (
     DeletePersonaResult,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -31,20 +30,10 @@ ACCESS_CHECK_SQL_PATH = (
 )
 DELETE_SQL_PATH = "app/sql/v4/queries/personas/delete_persona_complete.sql"
 
-
 router = APIRouter()
 
 
-@router.post(
-    "/delete",
-    response_model=DeletePersonaApiResponse,
-    dependencies=[
-        audit_activity(
-            "persona.deleted",
-            "{{ actor.name }} deleted {{ count }} persona(s)",
-        )
-    ],
-)
+@router.post("/delete", response_model=DeletePersonaApiResponse)
 async def delete_persona(
     request: DeletePersonaApiRequest,
     http_request: Request,
@@ -153,13 +142,6 @@ async def delete_persona(
                 )
 
         # Audit context
-        if actor_name:
-            audit_set(
-                http_request,
-                actor={"name": actor_name, "id": profile_id},
-                count=len(results),
-            )
-
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

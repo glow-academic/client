@@ -21,7 +21,6 @@ from app.api.v4.artifacts.department.types import (
     SaveDepartmentSqlRow,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -40,7 +39,6 @@ ACCESS_CHECK_SQL_PATH = (
     "app/sql/v4/queries/departments/check_department_save_access_complete.sql"
 )
 SQL_PATH = "app/sql/v4/queries/departments/save_department_complete.sql"
-
 
 router = APIRouter()
 
@@ -104,16 +102,7 @@ async def save_department_internal(
         return None
 
 
-@router.post(
-    "/save",
-    response_model=SaveDepartmentApiResponse,
-    dependencies=[
-        audit_activity(
-            "department.saved",
-            "{{ actor.name }} {% if department %}updated{% else %}created{% endif %} department{% if department %} '{{ department.title }}'{% endif %}",
-        )
-    ],
-)
+@router.post("/save", response_model=SaveDepartmentApiResponse)
 async def save_department(
     request: SaveDepartmentApiRequest,
     http_request: Request,
@@ -134,7 +123,6 @@ async def save_department(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -218,16 +206,6 @@ async def save_department(
                     )
                 else:
                     raise ValueError("Failed to create department")
-
-            # Set audit context
-            if actor_name:
-                audit_ctx = {"actor": {"name": actor_name, "id": profile_id}}
-                if request.input_department_id:
-                    audit_ctx["department"] = {
-                        "title": "Department",
-                        "id": str(result.department_id),
-                    }
-                audit_set(http_request, **audit_ctx)
 
         # Convert SQL result to API response
         is_update = request.input_department_id is not None

@@ -5,7 +5,6 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
@@ -48,16 +47,7 @@ async def create_responses_entry_internal(
     return CreateResponsesEntriesApiResponse.model_validate(result.model_dump())
 
 
-@router.post(
-    "/responses/create",
-    response_model=CreateResponsesEntriesApiResponse,
-    dependencies=[
-        audit_activity(
-            "responses.created",
-            "{{ actor.name }} created responses entry",
-        )
-    ],
-)
+@router.post("/responses/create", response_model=CreateResponsesEntriesApiResponse)
 async def create_responses_entry(
     request: CreateResponsesEntriesApiRequest,
     http_request: Request,
@@ -80,12 +70,6 @@ async def create_responses_entry(
         request_dict = request.model_dump()
 
         api_response = await create_responses_entry_internal(conn, request_dict, mcp)
-
-        audit_set(
-            http_request,
-            actor={"id": profile_id},
-            responses={"id": str(api_response.id)},
-        )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 

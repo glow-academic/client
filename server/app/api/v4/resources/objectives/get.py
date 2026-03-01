@@ -34,7 +34,6 @@ BATCH_SQL_PATH = "app/sql/v4/queries/resources/objectives/get_objectives_complet
 
 router = APIRouter()
 
-
 # =============================================================================
 # Internal Function
 # =============================================================================

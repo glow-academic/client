@@ -26,7 +26,6 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/v4/queries/resources/scenario_positions/search_scenario_positions_complete.sql"
 
-
 router = APIRouter()
 
 

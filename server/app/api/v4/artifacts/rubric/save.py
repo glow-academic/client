@@ -21,7 +21,6 @@ from app.api.v4.artifacts.rubric.types import (
     SaveRubricSqlRow,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
@@ -40,7 +39,6 @@ ACCESS_CHECK_SQL_PATH = (
     "app/sql/v4/queries/rubrics/check_rubric_save_access_complete.sql"
 )
 SQL_PATH = "app/sql/v4/queries/rubrics/save_rubric_complete.sql"
-
 
 router = APIRouter()
 
@@ -108,16 +106,7 @@ async def save_rubric_internal(
         return None
 
 
-@router.post(
-    "/save",
-    response_model=SaveRubricApiResponse,
-    dependencies=[
-        audit_activity(
-            "rubric.saved",
-            "{{ actor.name }} {% if rubric %}updated{% else %}created{% endif %} rubric{% if rubric %} '{{ rubric.name }}'{% endif %}",
-        )
-    ],
-)
+@router.post("/save", response_model=SaveRubricApiResponse)
 async def save_rubric(
     request: SaveRubricApiRequest,
     http_request: Request,
@@ -138,7 +127,6 @@ async def save_rubric(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions and audit logging
         pool = get_pool()
         if pool:
             async with pool.acquire() as context_conn:
@@ -224,16 +212,6 @@ async def save_rubric(
                     raise ValueError(f"Rubric not found: {request.input_rubric_id}")
                 else:
                     raise ValueError("Failed to create rubric")
-
-            # Set audit context
-            if actor_name:
-                audit_ctx = {"actor": {"name": actor_name, "id": profile_id}}
-                if request.input_rubric_id:
-                    audit_ctx["rubric"] = {
-                        "name": getattr(request, "name", "Rubric"),
-                        "id": str(result.rubric_id),
-                    }
-                audit_set(http_request, **audit_ctx)
 
         is_update = request.input_rubric_id is not None
         api_response = SaveRubricApiResponse.model_validate(
