@@ -60,6 +60,8 @@ DECLARE
     v_personas_entry_id uuid;
     v_persona_id uuid;
     v_num_chats int;
+    v_simulation_name text;
+    v_simulation_description text;
 BEGIN
     -- Validate exactly one parent
     IF (p_home_id IS NULL AND p_practice_id IS NULL)
@@ -118,6 +120,23 @@ BEGIN
         WHERE home_id = p_home_id AND active = true;
     END IF;
 
+    -- Resolve simulation name/description from parent
+    IF v_is_practice THEN
+        SELECT sr.name, sr.description
+        INTO v_simulation_name, v_simulation_description
+        FROM practice_simulations_connection psc
+        JOIN simulations_resource sr ON sr.id = psc.simulations_id AND sr.active = true
+        WHERE psc.practice_id = p_practice_id AND psc.active = true
+        LIMIT 1;
+    ELSE
+        SELECT sr.name, sr.description
+        INTO v_simulation_name, v_simulation_description
+        FROM home_simulations_connection hsc
+        JOIN simulations_resource sr ON sr.id = hsc.simulations_id AND sr.active = true
+        WHERE hsc.home_id = p_home_id AND hsc.active = true
+        LIMIT 1;
+    END IF;
+
     -- 1. Create personas_entry
     INSERT INTO personas_entry DEFAULT VALUES
     RETURNING id INTO v_personas_entry_id;
@@ -126,9 +145,9 @@ BEGIN
     INSERT INTO personas_personas_connection (personas_entry_id, personas_id)
     VALUES (v_personas_entry_id, v_persona_id);
 
-    -- 2. Create attempt_entry with user_persona_id link
-    INSERT INTO attempt_entry (infinite_mode, num_chats, user_persona_id)
-    VALUES (p_infinite_mode, GREATEST(v_num_chats, 1), v_personas_entry_id)
+    -- 2. Create attempt_entry with user_persona_id link + simulation metadata
+    INSERT INTO attempt_entry (infinite_mode, num_chats, user_persona_id, name, description, practice)
+    VALUES (p_infinite_mode, GREATEST(v_num_chats, 1), v_personas_entry_id, v_simulation_name, v_simulation_description, v_is_practice)
     RETURNING id INTO v_attempt_id;
 
     -- 3. Link attempt → profiles_resource

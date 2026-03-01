@@ -679,9 +679,14 @@ def compute_breadcrumbs(pathname: str) -> list[BreadcrumbItem]:
         if not title:
             title = segment.replace("-", " ").title()
 
-        # For section-level breadcrumbs, use the section
+        # For section-level breadcrumbs, try to resolve section from route patterns
         if not section and i == 0:
-            section = segment
+            for pattern, sec in _ROUTE_TO_SECTION.items():
+                if _match_route_pattern(pattern, pathname):
+                    section = sec
+                    break
+            if not section:
+                section = segment
 
         breadcrumbs.append(
             BreadcrumbItem(
@@ -1025,6 +1030,32 @@ ENTITY_NAME_MAP: dict[tuple[str, str], tuple[str, str]] = {
     ("analytics", "reports"): ("profile", "profile_names_junction"),
     ("settings", ""): ("setting", "setting_names_junction"),
 }
+
+
+# Maps (section,) → (table, column) for entities with denormalized names
+ENTITY_NAME_DIRECT: dict[str, tuple[str, str]] = {
+    "attempt": ("attempt_entry", "name"),
+}
+
+
+def get_entity_name_direct(pathname: str) -> tuple[str, str, str] | None:
+    """Given a pathname, return (entity_id, table, column) if the entity has a
+    denormalized name column, or None."""
+    segments = [s for s in pathname.split("/") if s]
+    if len(segments) < 2:
+        return None
+
+    section = segments[0]
+    mapping = ENTITY_NAME_DIRECT.get(section)
+    if not mapping:
+        return None
+
+    # Find the UUID segment
+    for seg in segments:
+        if _is_uuid(seg):
+            return (seg, mapping[0], mapping[1])
+
+    return None
 
 
 def get_entity_name_junction(pathname: str) -> tuple[str, str, str] | None:

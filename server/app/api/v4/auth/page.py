@@ -17,6 +17,7 @@ from app.api.v4.auth.route_permissions import (
     compute_page_access,
     compute_page_metadata,
     compute_sidebar_routes,
+    get_entity_name_direct,
     get_entity_name_junction,
 )
 from app.api.v4.auth.types import GetAuthPageApiResponse
@@ -78,13 +79,33 @@ async def get_auth_page(
 
         # Resolve entity name for breadcrumbs if pathname has a UUID
         if pathname and breadcrumbs:
+            entity_direct = get_entity_name_direct(pathname)
             entity_info = get_entity_name_junction(pathname)
-            if entity_info:
-                entity_id, _entity_type, name_junction = entity_info
-                try:
-                    pool = get_pool()
-                    if pool:
-                        async with pool.acquire() as c:
+
+            try:
+                pool = get_pool()
+                if pool:
+                    async with pool.acquire() as c:
+                        entity_name: str | None = None
+
+                        if entity_direct:
+                            # Direct denormalized name (e.g. attempt_entry.name)
+                            entity_id, table, column = entity_direct
+                            row = await c.fetchrow(
+                                f"SELECT {column}, practice FROM {table} "  # noqa: S608
+                                f"WHERE id = $1::uuid LIMIT 1",
+                                UUID(entity_id),
+                            )
+                            if row:
+                                entity_name = row[column]
+                                # Override section based on practice flag
+                                if row["practice"] and breadcrumbs:
+                                    breadcrumbs[0].section = "practice"
+                                    breadcrumbs[0].url = "/practice"
+                                    breadcrumbs[0].title = "Practice"
+                        elif entity_info:
+                            # Junction-based name (e.g. persona_names_junction)
+                            entity_id, _entity_type, name_junction = entity_info
                             entity_name = await c.fetchval(
                                 f"SELECT nr.name FROM {name_junction} nj "  # noqa: S608
                                 f"JOIN names_resource nr ON nr.id = nj.name_id "
@@ -92,12 +113,13 @@ async def get_auth_page(
                                 f"AND nj.active = true LIMIT 1",
                                 UUID(entity_id),
                             )
+
                         if entity_name:
                             for bc in breadcrumbs:
                                 if bc.url and entity_id in bc.url and "..." in bc.title:
                                     bc.title = entity_name
-                except Exception:
-                    pass  # Graceful fallback — keep truncated UUID
+            except Exception:
+                pass  # Graceful fallback — keep truncated UUID
 
         pass2_time = (time.time() - pass2_start) * 1000
 

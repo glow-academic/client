@@ -444,7 +444,7 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
             await _emit_error(sid, "resource_types must be provided", artifact_type)
             return
 
-        resource_types = [rt for rt in payload.resource_types if rt]
+        resource_types = [rt.name for rt in payload.resource_types if rt]
         if not resource_types:
             await _emit_error(sid, "No valid resource_types provided", artifact_type)
             return
