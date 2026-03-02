@@ -19,6 +19,10 @@ CREATE OR REPLACE FUNCTION public.api_create_attempt_entry_v4(
     infinite_mode boolean DEFAULT false,
     num_chats integer DEFAULT 1,
     user_persona_id uuid DEFAULT NULL,
+    name text DEFAULT NULL,
+    description text DEFAULT NULL,
+    practice boolean DEFAULT false,
+    profiles_id uuid DEFAULT NULL,
     tool_id uuid DEFAULT NULL,
     mcp boolean DEFAULT false
 ) RETURNS TABLE (id uuid, call_id uuid, message_id uuid)
@@ -47,11 +51,26 @@ BEGIN
     END IF;
 
     -- 4. Create entry
-    INSERT INTO attempt_entry (call_id, infinite_mode, num_chats, user_persona_id, mcp)
-    VALUES (v_call_id, api_create_attempt_entry_v4.infinite_mode, api_create_attempt_entry_v4.num_chats, api_create_attempt_entry_v4.user_persona_id, api_create_attempt_entry_v4.mcp)
+    INSERT INTO attempt_entry (call_id, infinite_mode, num_chats, user_persona_id, name, description, practice, mcp)
+    VALUES (
+        v_call_id,
+        api_create_attempt_entry_v4.infinite_mode,
+        api_create_attempt_entry_v4.num_chats,
+        api_create_attempt_entry_v4.user_persona_id,
+        api_create_attempt_entry_v4.name,
+        api_create_attempt_entry_v4.description,
+        api_create_attempt_entry_v4.practice,
+        api_create_attempt_entry_v4.mcp
+    )
     RETURNING attempt_entry.id INTO v_entry_id;
 
-    -- 5. Create message
+    -- 5. Link attempt → profiles_resource if provided
+    IF api_create_attempt_entry_v4.profiles_id IS NOT NULL THEN
+        INSERT INTO attempt_profiles_connection (attempt_id, profiles_id)
+        VALUES (v_entry_id, api_create_attempt_entry_v4.profiles_id);
+    END IF;
+
+    -- 6. Create message
     INSERT INTO messages_entry (run_id, call_id, role, text_id, generated, mcp)
     VALUES (api_create_attempt_entry_v4.run_id, v_call_id, 'assistant', v_text_id, true, api_create_attempt_entry_v4.mcp)
     RETURNING messages_entry.id INTO v_message_id;

@@ -8103,6 +8103,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/attempt-home/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Attempt Home Entry
+         * @description Create attempt_home bridge entry.
+         */
+        post: operations["create_attempt_home_entry_api_v4_entries_attempt_home_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/attempt_completion/get": {
         parameters: {
             query?: never;
@@ -8737,6 +8757,26 @@ export interface paths {
          * @description Create attempt_message entry.
          */
         post: operations["create_attempt_message_entry_api_v4_entries_attempt_message_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/attempt-practice/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Attempt Practice Entry
+         * @description Create attempt_practice bridge entry.
+         */
+        post: operations["create_attempt_practice_entry_api_v4_entries_attempt_practice_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10737,6 +10777,26 @@ export interface paths {
          * @description Refresh the persona_mv materialized view.
          */
         post: operations["refresh_persona_api_v4_entries_persona_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/persona/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Persona Entry
+         * @description Create persona entry.
+         */
+        post: operations["create_persona_entry_api_v4_entries_persona_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -24143,6 +24203,17 @@ export interface components {
             num_chats: number;
             /** User Persona Id */
             user_persona_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /**
+             * Practice
+             * @default false
+             */
+            practice: boolean;
+            /** Profiles Id */
+            profiles_id?: string | null;
         };
         /** CreateAttemptEntryResponse */
         CreateAttemptEntryResponse: {
@@ -24318,6 +24389,42 @@ export interface components {
              */
             message_id: string;
         };
+        /** CreateAttemptHomeEntryRequest */
+        CreateAttemptHomeEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /**
+             * Home Id
+             * Format: uuid
+             */
+            home_id: string;
+        };
+        /** CreateAttemptHomeEntryResponse */
+        CreateAttemptHomeEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
         /** CreateAttemptImprovementEntryRequest */
         CreateAttemptImprovementEntryRequest: {
             /**
@@ -24381,6 +24488,42 @@ export interface components {
         };
         /** CreateAttemptMessageEntryResponse */
         CreateAttemptMessageEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateAttemptPracticeEntryRequest */
+        CreateAttemptPracticeEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /**
+             * Practice Id
+             * Format: uuid
+             */
+            practice_id: string;
+        };
+        /** CreateAttemptPracticeEntryResponse */
+        CreateAttemptPracticeEntryResponse: {
             /**
              * Id
              * Format: uuid
@@ -24742,6 +24885,34 @@ export interface components {
             created?: boolean | null;
             /** Session Id */
             session_id?: string | null;
+        };
+        /** CreatePersonaEntryRequest */
+        CreatePersonaEntryRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Personas Id */
+            personas_id?: string | null;
+        };
+        /** CreatePersonaEntryResponse */
+        CreatePersonaEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
         };
         /** CreateProblemRequest */
         CreateProblemRequest: {
@@ -66360,6 +66531,43 @@ export interface operations {
             };
         };
     };
+    create_attempt_home_entry_api_v4_entries_attempt_home_create_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAttemptHomeEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateAttemptHomeEntryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_attempt_completion_entries_api_v4_entries_attempt_completion_get_post: {
         parameters: {
             query?: never;
@@ -67515,6 +67723,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreateAttemptMessageEntryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_attempt_practice_entry_api_v4_entries_attempt_practice_create_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAttemptPracticeEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateAttemptPracticeEntryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71153,6 +71398,43 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_persona_entry_api_v4_entries_persona_create_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePersonaEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatePersonaEntryResponse"];
                 };
             };
             /** @description Validation Error */

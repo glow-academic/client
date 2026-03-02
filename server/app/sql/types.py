@@ -4445,6 +4445,10 @@ class CreateAttemptEntriesSqlParams(BaseModel):
     infinite_mode: bool | None = False
     num_chats: int | None = 1
     user_persona_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    practice: bool | None = False
+    profiles_id: UUID | None = None
     tool_id: UUID | None = None
     mcp: bool | None = False
 
@@ -4454,6 +4458,10 @@ class CreateAttemptEntriesSqlParams(BaseModel):
             self.infinite_mode,
             self.num_chats,
             self.user_persona_id,
+            self.name,
+            self.description,
+            self.practice,
+            self.profiles_id,
             self.tool_id,
             self.mcp,
         )
@@ -4470,6 +4478,10 @@ class CreateAttemptEntriesApiRequest(BaseModel):
     infinite_mode: bool | None = False
     num_chats: int | None = 1
     user_persona_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    practice: bool | None = False
+    profiles_id: UUID | None = None
     tool_id: UUID | None = None
     mcp: bool | None = False
 
@@ -5567,6 +5579,47 @@ class SearchAttemptHintEntriesApiResponse(BaseModel):
 
 
 
+# Generated from: create_attempt_home_entries
+
+class CreateAttemptHomeEntriesSqlParams(BaseModel):
+
+    run_id: UUID
+    attempt_id: UUID
+    home_id: UUID
+    tool_id: UUID | None = None
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+            self.attempt_id,
+            self.home_id,
+            self.tool_id,
+            self.mcp,
+        )
+
+class CreateAttemptHomeEntriesSqlRow(BaseModel):
+
+    id: UUID | None = None
+    call_id: UUID | None = None
+    message_id: UUID | None = None
+
+class CreateAttemptHomeEntriesApiRequest(BaseModel):
+
+    run_id: UUID
+    attempt_id: UUID
+    home_id: UUID
+    tool_id: UUID | None = None
+    mcp: bool | None = False
+
+class CreateAttemptHomeEntriesApiResponse(BaseModel):
+
+    id: UUID | None = None
+    call_id: UUID | None = None
+    message_id: UUID | None = None
+
+
+
 # Generated from: create_attempt_improvement_entries
 
 class CreateAttemptImprovementEntriesSqlParams(BaseModel):
@@ -5871,6 +5924,47 @@ class SearchAttemptMessageTreeEntriesApiRequest(BaseModel):
 class SearchAttemptMessageTreeEntriesApiResponse(BaseModel):
 
     items: Any | None = None
+
+
+
+# Generated from: create_attempt_practice_entries
+
+class CreateAttemptPracticeEntriesSqlParams(BaseModel):
+
+    run_id: UUID
+    attempt_id: UUID
+    practice_id: UUID
+    tool_id: UUID | None = None
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+            self.attempt_id,
+            self.practice_id,
+            self.tool_id,
+            self.mcp,
+        )
+
+class CreateAttemptPracticeEntriesSqlRow(BaseModel):
+
+    id: UUID | None = None
+    call_id: UUID | None = None
+    message_id: UUID | None = None
+
+class CreateAttemptPracticeEntriesApiRequest(BaseModel):
+
+    run_id: UUID
+    attempt_id: UUID
+    practice_id: UUID
+    tool_id: UUID | None = None
+    mcp: bool | None = False
+
+class CreateAttemptPracticeEntriesApiResponse(BaseModel):
+
+    id: UUID | None = None
+    call_id: UUID | None = None
+    message_id: UUID | None = None
 
 
 
@@ -9415,32 +9509,37 @@ class SearchParameterDraftsEntriesApiResponse(BaseModel):
 
 class CreatePersonaEntriesSqlParams(BaseModel):
 
-    call_id: UUID | None = None
+    run_id: UUID
+    personas_id: UUID | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
-    entry_data: Any | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.call_id,
+            self.run_id,
+            self.personas_id,
+            self.tool_id,
             self.mcp,
-            self.entry_data,
         )
 
 class CreatePersonaEntriesSqlRow(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
+    call_id: UUID | None = None
+    message_id: UUID | None = None
 
 class CreatePersonaEntriesApiRequest(BaseModel):
 
-    call_id: UUID | None = None
+    run_id: UUID
+    personas_id: UUID | None = None
+    tool_id: UUID | None = None
     mcp: bool | None = False
-    entry_data: Any | None = None
 
 class CreatePersonaEntriesApiResponse(BaseModel):
 
     id: UUID | None = None
-    already_exists: bool | None = None
+    call_id: UUID | None = None
+    message_id: UUID | None = None
 
 
 
@@ -36730,6 +36829,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchAttemptHintEntriesApiRequest",
         "SearchAttemptHintEntriesApiResponse",
     ),
+    "app/sql/v4/queries/entries/attempt_home/create_attempt_home_entries_complete.sql": (
+        "CreateAttemptHomeEntriesSqlParams",
+        "CreateAttemptHomeEntriesSqlRow",
+        "CreateAttemptHomeEntriesApiRequest",
+        "CreateAttemptHomeEntriesApiResponse",
+    ),
     "app/sql/v4/queries/entries/attempt_improvement/create_attempt_improvement_entries_complete.sql": (
         "CreateAttemptImprovementEntriesSqlParams",
         "CreateAttemptImprovementEntriesSqlRow",
@@ -36783,6 +36888,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchAttemptMessageTreeEntriesSqlRow",
         "SearchAttemptMessageTreeEntriesApiRequest",
         "SearchAttemptMessageTreeEntriesApiResponse",
+    ),
+    "app/sql/v4/queries/entries/attempt_practice/create_attempt_practice_entries_complete.sql": (
+        "CreateAttemptPracticeEntriesSqlParams",
+        "CreateAttemptPracticeEntriesSqlRow",
+        "CreateAttemptPracticeEntriesApiRequest",
+        "CreateAttemptPracticeEntriesApiResponse",
     ),
     "app/sql/v4/queries/entries/attempt_replacement/create_attempt_replacement_entries_complete.sql": (
         "CreateAttemptReplacementEntriesSqlParams",
@@ -42016,6 +42127,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/entries/attempt_home/create_attempt_home_entries_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/entries/attempt_improvement/create_attempt_improvement_entries_complete.sql"]
     ) -> SqlString: ...
 
@@ -42057,6 +42173,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/entries/attempt_message_tree/search_attempt_message_tree_entries_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/entries/attempt_practice/create_attempt_practice_entries_complete.sql"]
     ) -> SqlString: ...
 
     @overload

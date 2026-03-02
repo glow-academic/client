@@ -8,6 +8,7 @@ from app.api.v4.entries.attempt import router as attempt_router
 from app.api.v4.entries.attempt_analysis import router as attempt_analysis_router
 from app.api.v4.entries.attempt_archive import router as attempt_archive_router
 from app.api.v4.entries.attempt_chat import router as attempt_chat_router
+from app.api.v4.entries.attempt_home import router as attempt_home_router
 from app.api.v4.entries.attempt_completion import router as attempt_completion_router
 from app.api.v4.entries.attempt_content import router as attempt_content_router
 from app.api.v4.entries.attempt_feedback import router as attempt_feedback_router
@@ -16,6 +17,7 @@ from app.api.v4.entries.attempt_highlight import router as attempt_highlight_rou
 from app.api.v4.entries.attempt_hint import router as attempt_hint_router
 from app.api.v4.entries.attempt_improvement import router as attempt_improvement_router
 from app.api.v4.entries.attempt_message import router as attempt_message_router
+from app.api.v4.entries.attempt_practice import router as attempt_practice_router
 from app.api.v4.entries.attempt_message_tree import (
     router as attempt_message_tree_router,
 )
@@ -97,6 +99,7 @@ router.include_router(attempt_router)
 router.include_router(attempt_analysis_router)
 router.include_router(attempt_archive_router)
 router.include_router(attempt_chat_router)
+router.include_router(attempt_home_router)
 router.include_router(attempt_completion_router)
 router.include_router(attempt_content_router)
 router.include_router(attempt_feedback_router)
@@ -105,6 +108,7 @@ router.include_router(attempt_highlight_router)
 router.include_router(attempt_hint_router)
 router.include_router(attempt_improvement_router)
 router.include_router(attempt_message_router)
+router.include_router(attempt_practice_router)
 router.include_router(attempt_message_tree_router)
 router.include_router(attempt_replacement_router)
 router.include_router(attempt_strength_router)

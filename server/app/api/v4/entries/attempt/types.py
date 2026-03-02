@@ -19,6 +19,10 @@ class CreateAttemptEntryRequest(BaseModel):
     infinite_mode: bool = False
     num_chats: int = 1
     user_persona_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    practice: bool = False
+    profiles_id: UUID | None = None
 
 
 class CreateAttemptEntryResponse(BaseModel):
@@ -32,6 +36,10 @@ class CreateAttemptEntrySqlParams(BaseModel):
     infinite_mode: bool = False
     num_chats: int = 1
     user_persona_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    practice: bool = False
+    profiles_id: UUID | None = None
     tool_id: UUID | None = None
     mcp: bool = False
 
@@ -41,6 +49,10 @@ class CreateAttemptEntrySqlParams(BaseModel):
             self.infinite_mode,
             self.num_chats,
             self.user_persona_id,
+            self.name,
+            self.description,
+            self.practice,
+            self.profiles_id,
             self.tool_id,
             self.mcp,
         )

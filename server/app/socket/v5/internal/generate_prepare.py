@@ -32,6 +32,7 @@ from app.infra.v4.websocket.generation_tracker import (
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, get_pool
+from app.registry.modalities import get_tool_output_modalities
 from app.socket.v5.client.registry import REGISTRY, ArtifactGenerateConfig
 from app.socket.v5.client.types import ArtifactTypeItem, EntryTypeItem, GeneratePayload
 from app.socket.v5.internal.generate_artifact import GenerateArtifactPayload
@@ -529,6 +530,13 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
 
         # Build lookup dicts from final-layer resolved resources
         agents_by_id = {a.id: a for a in config_agents if a.id}
+
+        # Build tools_by_id for modality-aware agent selection
+        config_tools_all = getattr(result, "tools", None) or []
+        tools_by_id = {
+            t.id: t for t in config_tools_all if getattr(t, "id", None)
+        }
+
         model_ids = list({a.model_id for a in config_agents if a.model_id})
         config_models = []
         if model_ids and pool:
@@ -560,18 +568,55 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
         systems_by_id = {s.id: s for s in config_systems if s.id}
         agent_groups: dict[uuid.UUID, list[str]] = {}
 
+        def _agent_output_modalities(aid: uuid.UUID) -> frozenset[str]:
+            """Compute output modalities an agent supports from its tools."""
+            agent = agents_by_id.get(aid)
+            if not agent:
+                return frozenset({"call"})
+            modalities: set[str] = set()
+            for tid in getattr(agent, "tool_ids", None) or []:
+                tool = tools_by_id.get(tid)
+                if tool:
+                    modalities |= get_tool_output_modalities(
+                        getattr(tool, "operation", None),
+                        getattr(tool, "resources", None),
+                        getattr(tool, "entries", None),
+                        getattr(tool, "artifacts", None),
+                    )
+            return frozenset(modalities) if modalities else frozenset({"call"})
+
         if config_systems:
-            # Resolve resource type -> system -> agent.
+            # Resolve resource type -> system -> agent (modality-aware).
+            # Prefer the most specialized agent — the one whose tool-derived
+            # output modalities are the tightest fit for payload.modality.
+            requested_modality = payload.modality or "call"
             default_system_id = next(iter(systems_by_id), None)
             for rt in resource_types:
                 system_id = resource_system_ids.get(rt) or default_system_id
                 system = systems_by_id.get(system_id) if system_id else None
                 candidate_agent_ids = (getattr(system, "agent_ids", None) or []) if system else []
-                resolved_agent_id = next(
-                    (aid for aid in candidate_agent_ids if aid in agents_by_id), None
-                )
-                if resolved_agent_id is not None:
-                    agent_groups.setdefault(resolved_agent_id, []).append(rt)
+                candidates = [
+                    aid for aid in candidate_agent_ids if aid in agents_by_id
+                ]
+                if not candidates:
+                    continue
+
+                # Score: filter to agents supporting the requested modality,
+                # then prefer fewest total modalities (most specialized).
+                scored = []
+                for aid in candidates:
+                    agent_mods = _agent_output_modalities(aid)
+                    if requested_modality in agent_mods:
+                        scored.append((len(agent_mods), aid))
+
+                if scored:
+                    scored.sort()  # smallest modality set first, then by UUID
+                    resolved_agent_id = scored[0][1]
+                else:
+                    # No agent supports the requested modality; fall back to first
+                    resolved_agent_id = candidates[0]
+
+                agent_groups.setdefault(resolved_agent_id, []).append(rt)
 
         # Legacy fallback path
         if not agent_groups:
