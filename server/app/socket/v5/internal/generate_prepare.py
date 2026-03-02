@@ -619,48 +619,22 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
             if not pool:
                 raise RuntimeError("Database pool not initialized")
 
-            # Step 11: Create config snapshot (canonical — always done here)
+            # Step 11: Link run -> existing config_resource rows via agent configs
             first_agent = config_agents[0]
-            first_model = (
-                models_by_id.get(first_agent.model_id)  # type: ignore[arg-type]
-                if first_agent.model_id
-                else None
-            )
-            first_provider = (
-                providers_by_id.get(first_model.provider_id)  # type: ignore[arg-type]
-                if first_model and getattr(first_model, "provider_id", None)
-                else None
-            )
+            agent_ids_for_run = [aid for aid in agent_groups if aid]
+            if not agent_ids_for_run and first_agent.id:
+                agent_ids_for_run = [first_agent.id]
 
-            config_id = await conn.fetchval(
-                """INSERT INTO config_entry (created_at, updated_at, generated, mcp, active, run_id)
-                VALUES (NOW(), NOW(), false, false, true, $1) RETURNING id""",
-                run_id,
-            )
-
-            if first_agent.id:
+            if agent_ids_for_run:
                 await conn.execute(
-                    """INSERT INTO config_agents_connection (config_id, agents_id, created_at, active, generated, mcp)
-                    VALUES ($1, $2, NOW(), true, false, false)
-                    ON CONFLICT (config_id, agents_id) DO NOTHING""",
-                    config_id,
-                    first_agent.id,
-                )
-            if first_model and first_model.id:
-                await conn.execute(
-                    """INSERT INTO config_models_connection (config_id, models_id, created_at, active, generated, mcp)
-                    VALUES ($1, $2, NOW(), true, false, false)
-                    ON CONFLICT (config_id, models_id) DO NOTHING""",
-                    config_id,
-                    first_model.id,
-                )
-            if first_provider and getattr(first_provider, "id", None):
-                await conn.execute(
-                    """INSERT INTO config_providers_connection (config_id, providers_id, created_at, active, generated, mcp)
-                    VALUES ($1, $2, NOW(), true, false, false)
-                    ON CONFLICT (config_id, providers_id) DO NOTHING""",
-                    config_id,
-                    first_provider.id,
+                    """INSERT INTO runs_configs_connection (run_id, config_id, created_at, active, generated, mcp)
+                    SELECT $1, ac.config_id, NOW(), true, false, false
+                    FROM agent_configs_junction ac
+                    WHERE ac.agent_id = ANY($2::uuid[])
+                      AND ac.active = true
+                    ON CONFLICT (run_id, config_id) DO NOTHING""",
+                    run_id,
+                    agent_ids_for_run,
                 )
 
             # Step 12: Initialize generation tracker (run-level)
