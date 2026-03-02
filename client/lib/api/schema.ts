@@ -22825,10 +22825,10 @@ export interface components {
             description?: string | null;
         };
         /**
-         * BenchmarkEvalItem
-         * @description Eval resource metadata for benchmark hydration.
+         * BenchmarkEvalCard
+         * @description Eval card for the benchmark page — analogous to simulation card on home.
          */
-        BenchmarkEvalItem: {
+        BenchmarkEvalCard: {
             /** Eval Id */
             eval_id: string;
             /** Name */
@@ -22837,6 +22837,16 @@ export interface components {
             description?: string | null;
             /** Department Ids */
             department_ids?: string[];
+            /**
+             * Total Tests
+             * @default 0
+             */
+            total_tests: number;
+            /**
+             * Archived Tests
+             * @default 0
+             */
+            archived_tests: number;
         };
         /**
          * BenchmarkRequest
@@ -22863,8 +22873,6 @@ export interface components {
             history_eval_ids?: string[];
             /** History Search */
             history_search?: string | null;
-            /** History Status */
-            history_status?: string | null;
             /** History Archived */
             history_archived?: boolean | null;
             /**
@@ -22883,15 +22891,8 @@ export interface components {
          * @description Response with benchmark data.
          */
         BenchmarkResponse: {
-            /** Tests */
-            tests?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__17"][];
-            /**
-             * Total Count
-             * @default 0
-             */
-            total_count: number;
             /** Evals */
-            evals?: components["schemas"]["BenchmarkEvalItem"][];
+            evals?: components["schemas"]["BenchmarkEvalCard"][];
             /** Departments */
             departments?: components["schemas"]["BenchmarkDepartmentItem"][];
             /** Department Options */
@@ -32144,9 +32145,9 @@ export interface components {
          * @description Response for benchmark test artifact detail.
          */
         GetTestArtifactResponse: {
-            test?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__17"] | null;
+            test?: components["schemas"]["QGetTestListViewV4Item"] | null;
             /** Invocations */
-            invocations?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__18"][];
+            invocations?: components["schemas"]["QGetTestInvocationViewV4Item"][];
             /**
              * Status
              * @default pending
@@ -40893,6 +40894,84 @@ export interface components {
             temperature: number | null;
             /** Generated */
             generated: boolean | null;
+        };
+        /** QGetTestInvocationViewV4Item */
+        QGetTestInvocationViewV4Item: {
+            /** Invocation Id */
+            invocation_id: string | null;
+            /** Test Id */
+            test_id: string | null;
+            /** Group Id */
+            group_id: string | null;
+            /** Invocation Created At */
+            invocation_created_at: string | null;
+            /** Invocation Title */
+            invocation_title: string | null;
+            /** Use Custom */
+            use_custom: boolean | null;
+            /** Position */
+            position: number | null;
+            /** Invocation Completed */
+            invocation_completed: boolean | null;
+            /** Grade Id */
+            grade_id: string | null;
+            /** Grade Score */
+            grade_score: number | null;
+            /** Grade Passed */
+            grade_passed: boolean | null;
+            /** Grade Time Taken */
+            grade_time_taken: number | null;
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Run Ids */
+            run_ids: string[] | null;
+            /** Group Ids */
+            group_ids: string[] | null;
+            /** Run Agent Ids */
+            run_agent_ids: string[] | null;
+            /** Group Agent Ids */
+            group_agent_ids: string[] | null;
+            /** Model Id */
+            model_id: string | null;
+            /** Voice Id */
+            voice_id: string | null;
+            /** Temperature Level Id */
+            temperature_level_id: string | null;
+            /** Reasoning Level Id */
+            reasoning_level_id: string | null;
+            /** Key Id */
+            key_id: string | null;
+            /** Historical Run Ids */
+            historical_run_ids: string[] | null;
+        };
+        /** QGetTestListViewV4Item */
+        QGetTestListViewV4Item: {
+            /** Test Id */
+            test_id: string | null;
+            /** Eval Id */
+            eval_id: string | null;
+            /** Profile Id */
+            profile_id: string | null;
+            /** Benchmark Id */
+            benchmark_id: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Test Name */
+            test_name: string | null;
+            /** Test Description */
+            test_description: string | null;
+            /** Num Invocations */
+            num_invocations: number | null;
+            /** Num Invocations Completed */
+            num_invocations_completed: number | null;
+            /** Infinite Mode */
+            infinite_mode: boolean | null;
+            /** Archived */
+            archived: boolean | null;
+            /** Test Created At */
+            test_created_at: string | null;
         };
         /** QGetTextsV4Item */
         QGetTextsV4Item: {
@@ -50478,9 +50557,9 @@ export interface components {
          */
         TestEntries: {
             /** Test */
-            test?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__17"][] | null;
+            test?: components["schemas"]["QGetTestListViewV4Item"][] | null;
             /** Test Invocation */
-            test_invocation?: components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__18"][] | null;
+            test_invocation?: components["schemas"]["QGetTestInvocationViewV4Item"][] | null;
             runs?: components["schemas"]["GetRunListViewResponse"] | null;
         };
         /**
@@ -51869,15 +51948,15 @@ export interface components {
         app__sql__types___build_missing_type___locals____MissingSqlType__16: {
             [key: string]: unknown;
         };
-        /** QGetTestViewV4Item */
+        /** GetHomeTrainingEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__17: {
             [key: string]: unknown;
         };
-        /** QGetTestInvocationViewV4Item */
+        /** SearchHomeTrainingEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__18: {
             [key: string]: unknown;
         };
-        /** GetHomeTrainingEntriesApiResponse */
+        /** GetPracticeTrainingEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__19: {
             [key: string]: unknown;
         };
@@ -51885,43 +51964,43 @@ export interface components {
         app__sql__types___build_missing_type___locals____MissingSqlType__2: {
             [key: string]: unknown;
         };
-        /** SearchHomeTrainingEntriesApiResponse */
+        /** SearchPracticeTrainingEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__20: {
             [key: string]: unknown;
         };
-        /** GetPracticeTrainingEntriesApiResponse */
+        /** GetSuiteEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__21: {
             [key: string]: unknown;
         };
-        /** SearchPracticeTrainingEntriesApiResponse */
+        /** SearchSuiteEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__22: {
             [key: string]: unknown;
         };
-        /** GetSuiteEntriesApiResponse */
+        /** GetSuiteDepartmentEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__23: {
             [key: string]: unknown;
         };
-        /** SearchSuiteEntriesApiResponse */
+        /** SearchSuiteDepartmentEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__24: {
             [key: string]: unknown;
         };
-        /** GetSuiteDepartmentEntriesApiResponse */
+        /** GetSuiteDraftsEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__25: {
             [key: string]: unknown;
         };
-        /** SearchSuiteDepartmentEntriesApiResponse */
+        /** SearchSuiteDraftsEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__26: {
             [key: string]: unknown;
         };
-        /** GetSuiteDraftsEntriesApiResponse */
+        /** GetTrainingEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__27: {
             [key: string]: unknown;
         };
-        /** SearchSuiteDraftsEntriesApiResponse */
+        /** SearchTrainingEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__28: {
             [key: string]: unknown;
         };
-        /** GetTrainingEntriesApiResponse */
+        /** GetTrainingDepartmentEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__29: {
             [key: string]: unknown;
         };
@@ -51929,24 +52008,16 @@ export interface components {
         app__sql__types___build_missing_type___locals____MissingSqlType__3: {
             [key: string]: unknown;
         };
-        /** SearchTrainingEntriesApiResponse */
+        /** SearchTrainingDepartmentEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__30: {
             [key: string]: unknown;
         };
-        /** GetTrainingDepartmentEntriesApiResponse */
+        /** GetTrainingDraftsEntriesApiResponse */
         app__sql__types___build_missing_type___locals____MissingSqlType__31: {
             [key: string]: unknown;
         };
-        /** SearchTrainingDepartmentEntriesApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__32: {
-            [key: string]: unknown;
-        };
-        /** GetTrainingDraftsEntriesApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__33: {
-            [key: string]: unknown;
-        };
         /** SearchTrainingDraftsEntriesApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__34: {
+        app__sql__types___build_missing_type___locals____MissingSqlType__32: {
             [key: string]: unknown;
         };
         /** SearchPracticeTrainingEntriesApiRequest */
@@ -71087,7 +71158,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__19"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__17"];
                 };
             };
             /** @description Validation Error */
@@ -71124,7 +71195,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__20"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__18"];
                 };
             };
             /** @description Validation Error */
@@ -72543,7 +72614,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__21"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__19"];
                 };
             };
             /** @description Validation Error */
@@ -72580,7 +72651,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__22"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__20"];
                 };
             };
             /** @description Validation Error */
@@ -74217,7 +74288,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__23"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__21"];
                 };
             };
             /** @description Validation Error */
@@ -74254,7 +74325,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__24"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__22"];
                 };
             };
             /** @description Validation Error */
@@ -74326,7 +74397,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__25"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__23"];
                 };
             };
             /** @description Validation Error */
@@ -74363,7 +74434,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__26"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__24"];
                 };
             };
             /** @description Validation Error */
@@ -74435,7 +74506,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__27"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__25"];
                 };
             };
             /** @description Validation Error */
@@ -74472,7 +74543,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__28"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__26"];
                 };
             };
             /** @description Validation Error */
@@ -75893,7 +75964,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__29"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__27"];
                 };
             };
             /** @description Validation Error */
@@ -75930,7 +76001,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__30"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__28"];
                 };
             };
             /** @description Validation Error */
@@ -76002,7 +76073,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__31"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__29"];
                 };
             };
             /** @description Validation Error */
@@ -76039,7 +76110,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__32"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__30"];
                 };
             };
             /** @description Validation Error */
@@ -76111,7 +76182,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__33"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__31"];
                 };
             };
             /** @description Validation Error */
@@ -76148,7 +76219,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__34"];
+                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__32"];
                 };
             };
             /** @description Validation Error */

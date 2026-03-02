@@ -31,6 +31,7 @@ from app.api.v4.artifacts.test.types import (
     TestStatusSummary,
     TestWebsocketResources,
 )
+from app.api.v4.entries.test.search import get_test_list_internal
 from app.api.v4.entries.test_invocation.get import (
     get_test_invocation_internal,
 )
@@ -75,14 +76,13 @@ async def get_test_internal(
         # === PARALLEL FETCH: Tests + Invocations ===
         async def fetch_tests() -> list:
             async with pool.acquire() as c:
-                result = await get_test_internal(
-                    conn=c,
+                result = await get_test_list_internal(
+                    c,
                     test_ids=[test_id],
-                    bypass_cache=bypass_cache,
                     page_limit=1,
-                    page_offset=0,
+                    bypass_cache=bypass_cache,
                 )
-                return result.items
+                return result.items or []
 
         async def fetch_invocations() -> list:
             async with pool.acquire() as c:

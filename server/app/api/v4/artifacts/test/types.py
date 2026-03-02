@@ -20,7 +20,7 @@ from app.sql.types import (
     QGetModelsV4Item,
     QGetProvidersV4Item,
     QGetTestInvocationViewV4Item,
-    QGetTestViewV4Item,
+    QGetTestListViewV4Item,
 )
 
 # =============================================================================
@@ -60,7 +60,7 @@ class TestStatusSummary(BaseModel):
 class TestEntries(BaseModel):
     """View payloads grouped by view type."""
 
-    test: list[QGetTestViewV4Item] | None = None
+    test: list[QGetTestListViewV4Item] | None = None
     test_invocation: list[QGetTestInvocationViewV4Item] | None = None
     runs: GetRunListViewResponse | None = None
 
@@ -76,7 +76,7 @@ class TestResources(BaseModel):
 class GetTestArtifactResponse(BaseModel):
     """Response for benchmark test artifact detail."""
 
-    test: QGetTestViewV4Item | None = None
+    test: QGetTestListViewV4Item | None = None
     invocations: list[QGetTestInvocationViewV4Item] = Field(default_factory=list)
     status: str = "pending"
 
@@ -112,7 +112,7 @@ class TestInternalData:
     """
 
     # Raw MV results
-    test: QGetTestViewV4Item | None = None
+    test: QGetTestListViewV4Item | None = None
     invocations: list[QGetTestInvocationViewV4Item] = field(default_factory=list)
 
     # Config chain

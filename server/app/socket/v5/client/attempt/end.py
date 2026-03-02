@@ -10,7 +10,12 @@ Flow:
 import uuid
 from typing import Any
 
+from app.api.v4.auth.access import get_access_internal
+from app.api.v4.entries.attempt_grade.create import create_attempt_grade_entry_internal
+from app.api.v4.entries.groups.create import create_groups_entry_internal
+from app.api.v4.entries.runs.create import create_runs_entry_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.find_session_by_socket import find_session_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
 from app.socket.v5.client.types import AttemptEndPayload
@@ -60,40 +65,37 @@ async def attempt_end(sid: str, data: dict[str, Any]) -> None:
 
         # Step 1: Trigger grading if requested
         if payload.grade:
+            session_id_str = await find_session_by_socket(sid)
+            session_id = uuid.UUID(session_id_str) if session_id_str else None
+
             async with get_db_connection() as conn:
-                group_id = await conn.fetchval(
-                    """INSERT INTO groups_entry (created_at, updated_at, session_id)
-                    VALUES (NOW(), NOW(), (
-                        SELECT id FROM sessions_entry
-                        WHERE profile_id = $1 AND active = true
-                        ORDER BY created_at DESC LIMIT 1
-                    )) RETURNING id""",
-                    profile_id,
-                )
+                access = await get_access_internal(conn, profile_id)
+                profiles_id = access.profiles_id
 
-                run_id = await conn.fetchval(
-                    """INSERT INTO runs_entry (group_id)
-                    VALUES ($1) RETURNING id""",
-                    group_id,
+                group_result = await create_groups_entry_internal(
+                    conn,
+                    session_id=session_id,
                 )
+                group_id = group_result.id
 
-                await conn.execute(
-                    """INSERT INTO profiles_runs_connection (profiles_id, run_id)
-                    SELECT ppj.profiles_id, $2
-                    FROM profile_profiles_junction ppj
-                    WHERE ppj.profile_id = $1
-                    LIMIT 1""",
-                    profile_id,
-                    run_id,
+                run_result = await create_runs_entry_internal(
+                    conn,
+                    session_id=session_id,
+                    group_id=group_id,
+                    profiles_id=profiles_id,
                 )
+                run_id = run_result.id
 
-                grade_id = await conn.fetchval(
-                    """INSERT INTO attempt_grade_entry (chat_id, run_id, created_at, updated_at, score, passed)
-                    VALUES ($1, $2, NOW(), NOW(), 0, false)
-                    RETURNING id""",
-                    uuid.UUID(chat_id),
-                    run_id,
+                grade_result = await create_attempt_grade_entry_internal(
+                    conn,
+                    {
+                        "chat_id": uuid.UUID(chat_id),
+                        "score": 0,
+                        "passed": False,
+                    },
+                    run_id=run_id,
                 )
+                grade_id = grade_result.id
 
             await internal_sio.emit(
                 "attempt_grade_start",

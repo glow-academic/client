@@ -93,9 +93,8 @@ async def test_run_handler(data: dict[str, Any]) -> None:
                     ue.file_path as file_path,
                     me.created_at
                 FROM messages_entry me
-                LEFT JOIN texts_entry te ON te.id = me.text_id
-                LEFT JOIN text_uploads_entry tue ON tue.text_id = te.id AND tue.active = true
-                LEFT JOIN uploads_entry ue ON ue.id = tue.upload_id
+                LEFT JOIN message_uploads_entry mue ON mue.message_id = me.id AND mue.active = true
+                LEFT JOIN uploads_entry ue ON ue.id = mue.upload_id
                 WHERE me.run_id = $1 AND me.active = true
                 ORDER BY me.created_at""",
                 original_run_id,

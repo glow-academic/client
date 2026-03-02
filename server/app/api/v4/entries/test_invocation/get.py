@@ -72,7 +72,7 @@ async def get_test_invocation_internal(
     bypass_cache: bool = False,
 ) -> list[QGetTestInvocationViewV4Item]:
     """Internal function for reading lean benchmark invocation rows."""
-    from app.sql.types import GetBenchmarkInvocationsViewSqlParams
+    from app.sql.types import GetTestInvocationViewSqlParams
 
     normalized_invocation_ids = invocation_ids or []
     cache_key_val = cache_key(
@@ -91,7 +91,7 @@ async def get_test_invocation_internal(
                 for item in cached["items"]
             ]
 
-    params = GetBenchmarkInvocationsViewSqlParams(
+    params = GetTestInvocationViewSqlParams(
         test_id_filter=test_id,
         invocation_ids_filter=normalized_invocation_ids or None,
     )

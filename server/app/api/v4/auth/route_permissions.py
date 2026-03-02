@@ -500,6 +500,14 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
                 redirectTo="/benchmark",
                 artifact="eval",
             ),
+            # Canonical routes (top-level)
+            RoutePermission(
+                path="/test/[testId]",
+                roles=["custom", "instructional", "admin", "superadmin"],
+                title="Benchmark Test",
+                redirectTo="/benchmark",
+                artifact="test",
+            ),
         ],
     ),
     # SectionPermission(

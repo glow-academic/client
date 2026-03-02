@@ -15,7 +15,7 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION public.api_create_groups_entry_v4(
-    session_id uuid,
+    session_id uuid DEFAULT NULL,
     name text DEFAULT NULL,
     custom_model boolean DEFAULT false,
     mcp boolean DEFAULT false

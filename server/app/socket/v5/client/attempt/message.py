@@ -17,6 +17,7 @@ All attempt_* emits go to internal bus → internal/ handlers (DB) → server/ h
 import uuid
 from typing import Any
 
+from app.api.v4.auth.access import get_access_internal
 from app.api.v4.entries.attempt_chat.get import get_attempt_chat_entries_internal
 from app.api.v4.entries.attempt_message.refresh import refresh_attempt_message_internal
 from app.api.v4.entries.attempt_message_tree.create import (
@@ -119,14 +120,9 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
                 )
                 return
 
-            # Step 2: Resolve profiles_id + create run
-            profiles_id = await conn.fetchval(
-                """SELECT ppj.profiles_id
-                FROM profile_profiles_junction ppj
-                WHERE ppj.profile_id = $1
-                LIMIT 1""",
-                profile_id,
-            )
+            # Step 2: Resolve profiles_id via access internal + create run
+            access = await get_access_internal(conn, profile_id)
+            profiles_id = access.profiles_id
 
             run_result = await create_runs_entry_internal(
                 conn,

@@ -17,7 +17,7 @@ SQL_PATH = "app/sql/v4/queries/entries/groups/create_groups_entries_complete.sql
 
 async def create_groups_entry_internal(
     conn: asyncpg.Connection,
-    session_id: UUID,
+    session_id: UUID | None = None,
     name: str | None = None,
     custom_model: bool = False,
     mcp: bool = False,

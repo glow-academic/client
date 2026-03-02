@@ -13,8 +13,7 @@ class MessagesEntryData(BaseModel):
     run_id: str | None = None
     created_at: str | None = None
     role: str | None = None
-    text_id: str | None = None
-    call_id: str | None = None
+    upload_id: str | None = None
 
 
 class CreateMessagesEntrySqlParams(BaseModel):

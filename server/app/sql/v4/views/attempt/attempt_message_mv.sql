@@ -64,8 +64,8 @@ base_messages AS (
         m.created_at,
         -- Run resource ID (one hop to hydrate)
         rra.runs_id,
-        -- Text entry ID (for resource hydration)
-        m.text_id,
+        -- Text entry ID (for resource hydration, reverse-lookup via shared upload)
+        tue.text_id,
         -- History file path (for LLM context — read from disk)
         ue.file_path AS history_file_path,
         -- Audio resource ID
@@ -76,9 +76,9 @@ base_messages AS (
     JOIN attempt_chat_bridge_entry ac ON ac.attempt_chat_id = c.id
     JOIN attempt_entry a ON a.id = ac.attempt_id
     LEFT JOIN runs_resource_agg rra ON rra.run_id = m.run_id
-    LEFT JOIN texts_entry te ON te.id = m.text_id
-    LEFT JOIN text_uploads_entry tue ON tue.text_id = te.id AND tue.active = true
-    LEFT JOIN uploads_entry ue ON ue.id = tue.upload_id
+    LEFT JOIN message_uploads_entry mue ON mue.message_id = m.id AND mue.active = true
+    LEFT JOIN uploads_entry ue ON ue.id = mue.upload_id
+    LEFT JOIN text_uploads_entry tue ON tue.upload_id = mue.upload_id AND tue.active = true
     LEFT JOIN audio_agg aa ON aa.message_id = sm.id
     -- Latest message completion state (append-only)
     LEFT JOIN LATERAL (

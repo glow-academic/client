@@ -323,7 +323,7 @@ async def fetch_benchmark_filters(
     str | None,
     str | None,
 ]:
-    """Fetch filter options from mv_benchmark_eval_summary."""
+    """Fetch filter options from test_mv."""
     dept_opts: list[AnalyticsFilterOption] = []
     earliest: str | None = None
     latest: str | None = None
@@ -332,15 +332,14 @@ async def fetch_benchmark_filters(
         async with pool.acquire() as c:
             rows = await c.fetch(
                 """
-                SELECT DISTINCT unnest(bes.department_ids) as department_id, dr.name
-                FROM mv_benchmark_eval_summary bes
-                JOIN departments_resource dr ON dr.id = ANY(bes.department_ids)
-                WHERE bes.department_ids && $1::uuid[]
+                SELECT DISTINCT unnest(tm.department_ids) AS department_id, dr.name
+                FROM test_mv tm
+                JOIN departments_resource dr ON dr.id = ANY(tm.department_ids)
+                WHERE tm.department_ids && $1::uuid[]
                 ORDER BY dr.name
                 """,
                 [UUID(did) for did in dept_ids],
             )
-            # Deduplicate and filter to only accessible departments
             dept_id_set = set(dept_ids)
             seen: set[str] = set()
             for r in rows:
@@ -353,8 +352,9 @@ async def fetch_benchmark_filters(
         async with pool.acquire() as c:
             row = await c.fetchrow(
                 """
-                SELECT MIN(created_at) as earliest, MAX(created_at) as latest
-                FROM mv_benchmark_eval_summary
+                SELECT MIN(test_created_at) AS earliest,
+                       MAX(test_created_at) AS latest
+                FROM test_mv
                 """,
             )
             if row and row["earliest"]:
@@ -373,7 +373,7 @@ async def fetch_health_filters(
     str | None,
     str | None,
 ]:
-    """Fetch filter options from mv_health_metrics_hourly."""
+    """Fetch filter options from health_mv."""
     earliest: str | None = None
     latest: str | None = None
 
@@ -381,8 +381,8 @@ async def fetch_health_filters(
         async with pool.acquire() as c:
             row = await c.fetchrow(
                 """
-                SELECT MIN(date_hour) as earliest, MAX(date_hour) as latest
-                FROM mv_health_metrics_hourly
+                SELECT MIN(date_hour) AS earliest, MAX(date_hour) AS latest
+                FROM health_mv
                 """,
             )
             if row and row["earliest"]:

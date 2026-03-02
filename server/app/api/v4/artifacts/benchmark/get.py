@@ -1,4 +1,8 @@
-"""Get endpoint for benchmark artifact."""
+"""Get endpoint for benchmark artifact.
+
+Pulls from benchmark_mv (eval cards) and test_mv (test history).
+Follows the home/get.py pattern: parallel fetch → collect IDs → batch hydrate.
+"""
 
 import asyncio
 from collections import Counter
@@ -11,7 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts.benchmark.types import (
     BenchmarkDepartmentItem,
-    BenchmarkEvalItem,
+    BenchmarkEvalCard,
     BenchmarkRequest,
     BenchmarkResponse,
 )
@@ -21,153 +25,219 @@ from app.api.v4.artifacts.types import (
     TestHistoryItem,
     TestHistoryResponse,
 )
-from app.api.v4.entries.test.get import get_test_entries_internal
+from app.api.v4.entries.test.search import get_test_list_internal
 from app.api.v4.resources.departments.get import get_departments_internal
-from app.api.v4.resources.descriptions.get import get_descriptions_internal
 from app.api.v4.resources.evals.get import get_evals_internal
-from app.api.v4.resources.names.get import get_names_internal
-from app.api.v4.resources.rubrics.get import get_rubrics_batch_internal
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
-from app.sql.types import QGetTestViewV4Item
+from app.sql.types import QGetTestListViewV4Item
 
 router = APIRouter()
 
 
-async def _fetch_test_history_data(
+# =============================================================================
+# Helpers
+# =============================================================================
+
+
+async def _fetch_benchmark_entries(
     pool: asyncpg.Pool,
+    department_ids: list[UUID] | None,
+    date_from: datetime | None,
+    date_to: datetime | None,
+) -> list[dict]:
+    """Fetch benchmark entries from benchmark_mv with optional filters."""
+    conditions: list[str] = []
+    params: list = []
+    idx = 1
+
+    if department_ids:
+        conditions.append(f"bm.department_ids && ${idx}::uuid[]")
+        params.append(department_ids)
+        idx += 1
+
+    if date_from:
+        conditions.append(f"bm.created_at >= ${idx}")
+        params.append(date_from)
+        idx += 1
+
+    if date_to:
+        conditions.append(f"bm.created_at < ${idx}")
+        params.append(date_to)
+        idx += 1
+
+    where = " AND ".join(conditions) if conditions else "TRUE"
+
+    async with pool.acquire() as c:
+        rows = await c.fetch(
+            f"""
+            SELECT
+                bm.benchmark_id,
+                bm.eval_ids,
+                bm.profile_ids,
+                bm.department_ids,
+                bm.invocation_entry_ids,
+                bm.use_groups,
+                bm.dynamic,
+                bm.created_at
+            FROM benchmark_mv bm
+            WHERE {where}
+            ORDER BY bm.created_at DESC
+            """,
+            *params,
+        )
+
+    return [dict(r) for r in rows]
+
+
+def _build_eval_cards(
+    benchmark_entries: list[dict],
+    test_items: list[QGetTestListViewV4Item],
+    evals_list: list,
+) -> list[BenchmarkEvalCard]:
+    """Build eval cards with aggregated test stats."""
+    # Count tests per eval
+    tests_per_eval: Counter[UUID] = Counter()
+    archived_per_eval: Counter[UUID] = Counter()
+    for t in test_items:
+        if t.eval_id:
+            tests_per_eval[t.eval_id] += 1
+            if t.archived:
+                archived_per_eval[t.eval_id] += 1
+
+    # Collect department_ids per eval from benchmark entries
+    dept_ids_per_eval: dict[UUID, set[str]] = {}
+    for be in benchmark_entries:
+        for eid in be.get("eval_ids") or []:
+            if eid not in dept_ids_per_eval:
+                dept_ids_per_eval[eid] = set()
+            for did in be.get("department_ids") or []:
+                dept_ids_per_eval[eid].add(str(did))
+
+    # Build cards from hydrated evals
+    cards: list[BenchmarkEvalCard] = []
+    for ev in evals_list:
+        if not ev.id:
+            continue
+        eid = ev.id
+        cards.append(
+            BenchmarkEvalCard(
+                eval_id=str(eid),
+                name=ev.name,
+                description=ev.description,
+                department_ids=sorted(dept_ids_per_eval.get(eid, set())),
+                total_tests=tests_per_eval.get(eid, 0),
+                archived_tests=archived_per_eval.get(eid, 0),
+            )
+        )
+
+    return cards
+
+
+async def _fetch_test_history(
+    conn: asyncpg.Connection,
     request: BenchmarkRequest,
-    department_uuids: list[UUID] | None,
+    department_ids: list[UUID] | None,
     date_from: datetime | None,
     date_to: datetime | None,
     bypass_cache: bool,
 ) -> TestHistoryResponse:
-    """Fetch paginated test history with hydrated names — adapted from test/list.py."""
-    page_limit = request.history_page_size
-    page_offset = request.history_page * request.history_page_size
-
+    """Fetch paginated test history with hydrated names."""
     eval_uuids = (
         [UUID(e) for e in request.history_eval_ids]
         if request.history_eval_ids
         else None
     )
 
-    async with pool.acquire() as c:
-        result = await get_test_entries_internal(
-            conn=c,
-            eval_ids=eval_uuids,
-            department_ids=department_uuids,
-            date_from=date_from,
-            date_to=date_to,
-            archived=request.history_archived,
-            search=request.history_search,
-            sort_by=request.history_sort_by,
-            sort_order=request.history_sort_order,
-            page_limit=page_limit,
-            page_offset=page_offset,
-            bypass_cache=bypass_cache,
-        )
+    result = await get_test_list_internal(
+        conn,
+        department_ids=department_ids,
+        eval_ids=eval_uuids,
+        is_archived_filter=request.history_archived,
+        date_from=date_from,
+        date_to=date_to,
+        search_text=request.history_search,
+        sort_by=request.history_sort_by,
+        sort_order=request.history_sort_order,
+        page_limit=request.history_page_size,
+        page_offset=request.history_page * request.history_page_size,
+        bypass_cache=bypass_cache,
+    )
+
+    items_list = result.items or []
 
     # Collect IDs for hydration
-    eval_name_ids: set[UUID] = set()
-    eval_description_ids: set[UUID] = set()
-    rubric_ids: set[UUID] = set()
+    eval_ids_set: set[UUID] = set()
+    for item in items_list:
+        if item.eval_id:
+            eval_ids_set.add(item.eval_id)
 
-    for row in result.items:
-        if row.eval_name_id:
-            eval_name_ids.add(row.eval_name_id)
-        if row.eval_description_id:
-            eval_description_ids.add(row.eval_description_id)
-        if row.rubric_id:
-            rubric_ids.add(row.rubric_id)
+    # Batch resolve names via evals resource
+    evals = await get_evals_internal(
+        conn, list(eval_ids_set), bypass_cache=bypass_cache
+    )
 
-    # Batch resolve names, descriptions, rubrics
-    async with pool.acquire() as c:
-        eval_names = await get_names_internal(
-            c, list(eval_name_ids), bypass_cache=bypass_cache
-        )
-        eval_descriptions = await get_descriptions_internal(
-            c, list(eval_description_ids), bypass_cache=bypass_cache
-        )
-        rubrics = await get_rubrics_batch_internal(
-            c, list(rubric_ids), bypass_cache=bypass_cache
-        )
-
-    # Build lookup maps
-    name_map: dict[UUID, str] = {}
-    for n in eval_names:
-        if n.id and n.name:
-            name_map[n.id] = n.name
-
-    desc_map: dict[UUID, str] = {}
-    for d in eval_descriptions:
-        if d.id and d.description:
-            desc_map[d.id] = d.description
-
-    rubric_name_map: dict[UUID, str] = {}
-    for r in rubrics:
-        if r.rubric_id and r.name:
-            rubric_name_map[r.rubric_id] = r.name
+    eval_name_map: dict[UUID, str | None] = {}
+    eval_desc_map: dict[UUID, str | None] = {}
+    for ev in evals:
+        if ev.id:
+            eval_name_map[ev.id] = ev.name
+            eval_desc_map[ev.id] = ev.description
 
     # Build enriched items
-    items: list[TestHistoryItem] = []
+    history_items: list[TestHistoryItem] = []
     eval_counter: Counter[str] = Counter()
     eval_id_to_name: dict[str, str | None] = {}
 
-    for row in result.items:
-        eval_name = name_map.get(row.eval_name_id) if row.eval_name_id else None
-        eval_desc = (
-            desc_map.get(row.eval_description_id) if row.eval_description_id else None
-        )
-        rubric_name = rubric_name_map.get(row.rubric_id) if row.rubric_id else None
+    for item in items_list:
+        eval_name = eval_name_map.get(item.eval_id) if item.eval_id else None
+        eval_desc = eval_desc_map.get(item.eval_id) if item.eval_id else None
 
-        total_runs = row.num_chats
-        completed_runs = row.num_chats_completed
+        total_runs = item.num_invocations or 0
+        completed_runs = item.num_invocations_completed or 0
         pending_runs = total_runs - completed_runs
 
-        if row.eval_id:
-            eid = str(row.eval_id)
+        if item.eval_id:
+            eid = str(item.eval_id)
             eval_counter[eid] += 1
             if eid not in eval_id_to_name:
                 eval_id_to_name[eid] = eval_name
 
-        items.append(
+        history_items.append(
             TestHistoryItem(
-                attempt_id=str(row.test_id),
-                eval_id=str(row.eval_id) if row.eval_id else None,
+                attempt_id=str(item.test_id),
+                eval_id=str(item.eval_id) if item.eval_id else None,
                 eval_name=eval_name,
                 eval_description=eval_desc,
-                rubric_id=str(row.rubric_id) if row.rubric_id else None,
-                rubric_name=rubric_name,
                 created_at=(
-                    row.test_created_at.isoformat() if row.test_created_at else None
+                    item.test_created_at.isoformat() if item.test_created_at else None
                 ),
-                archived=row.archived,
-                status=compute_test_status(row.num_chats, row.num_chats_completed),
+                archived=item.archived or False,
+                status=compute_test_status(total_runs, completed_runs),
                 total_runs=total_runs,
                 completed_runs=completed_runs,
                 pending_runs=pending_runs,
             )
         )
 
-    # Build eval_options with name labels
     eval_options = [
-        FilterOption(
-            value=eval_id,
-            label=eval_id_to_name.get(eval_id),
-            count=count,
-        )
+        FilterOption(value=eval_id, label=eval_id_to_name.get(eval_id), count=count)
         for eval_id, count in eval_counter.items()
     ]
-    eval_options.sort(key=lambda option: option.value)
+    eval_options.sort(key=lambda o: o.value)
 
     return TestHistoryResponse(
-        data=items,
-        total_count=result.total_count,
+        data=history_items,
+        total_count=result.total_count or 0,
         page=request.history_page,
         page_size=request.history_page_size,
         eval_options=eval_options,
     )
+
+
+# =============================================================================
+# HTTP endpoint
+# =============================================================================
 
 
 @router.post("/get", response_model=BenchmarkResponse)
@@ -183,14 +253,11 @@ async def get_benchmark(
     pool = get_pool()
 
     try:
-        # Convert string department_ids to UUIDs for filtering
         department_uuids = (
             [UUID(d) for d in request.department_ids]
             if request.department_ids
             else None
         )
-
-        # Parse date strings to datetime
         date_from: datetime | None = None
         date_to: datetime | None = None
         if request.start_date:
@@ -198,88 +265,58 @@ async def get_benchmark(
         if request.end_date:
             date_to = datetime.fromisoformat(request.end_date)
 
-        # Step 1: Fetch tests from MV + date range + optional history in parallel
-        async def fetch_tests():
+        # --- Phase 1: Parallel fetches ---
+        # Use entries-layer get_test_list_internal for test data (canonical pattern)
+        async def fetch_all_tests():
             async with pool.acquire() as c:
-                return await get_test_entries_internal(
-                    conn=c,
+                return await get_test_list_internal(
+                    c,
                     department_ids=department_uuids,
                     date_from=date_from,
                     date_to=date_to,
-                    page_limit=200,
+                    page_limit=10000,
                     bypass_cache=bypass_cache,
                 )
 
-        async def fetch_benchmark_date_range() -> tuple[str | None, str | None]:
+        async def fetch_history():
             async with pool.acquire() as c:
-                conditions: list[str] = []
-                params: list = []
-                idx = 1
-                if department_uuids:
-                    conditions.append(f"department_ids && ${idx}::uuid[]")
-                    params.append(department_uuids)
-                    idx += 1
-                if date_from:
-                    conditions.append(f"created_at >= ${idx}")
-                    params.append(date_from)
-                    idx += 1
-                if date_to:
-                    conditions.append(f"created_at < ${idx}")
-                    params.append(date_to)
-                    idx += 1
-                where = " AND ".join(conditions) if conditions else "TRUE"
-                row = await c.fetchrow(
-                    f"""
-                    SELECT MIN(created_at) as earliest, MAX(created_at) as latest
-                    FROM test_mv
-                    WHERE {where}
-                    """,
-                    *params,
+                return await _fetch_test_history(
+                    c, request, department_uuids, date_from, date_to, bypass_cache
                 )
-                if row and row["earliest"]:
-                    return (
-                        row["earliest"].isoformat(),
-                        row["latest"].isoformat(),
-                    )
-                return (None, None)
 
-        # Build parallel tasks
-        parallel_tasks: list = [
-            fetch_tests(),
-            fetch_benchmark_date_range(),
-            _fetch_test_history_data(
-                pool=pool,
-                request=request,
-                department_uuids=department_uuids,
-                date_from=date_from,
-                date_to=date_to,
-                bypass_cache=bypass_cache,
-            ),
-        ]
+        benchmark_entries, all_tests_result, history = await asyncio.gather(
+            _fetch_benchmark_entries(pool, department_uuids, date_from, date_to),
+            fetch_all_tests(),
+            fetch_history(),
+        )
 
-        parallel_results = await asyncio.gather(*parallel_tasks)
-        tests_result = parallel_results[0]
-        benchmark_date_range = parallel_results[1]
-        history_data: TestHistoryResponse | None = parallel_results[2]
+        all_test_items = all_tests_result.items or []
 
-        # Step 2: Collect unique IDs from tests
+        # --- Phase 2: Collect IDs for batch hydration ---
         eval_ids: set[UUID] = set()
         all_department_ids: set[UUID] = set()
 
-        for item in tests_result.items:
-            if item.eval_id:
-                eval_ids.add(item.eval_id)
-            if item.department_ids:
-                all_department_ids.update(item.department_ids)
+        for be in benchmark_entries:
+            for eid in be.get("eval_ids") or []:
+                eval_ids.add(eid)
+            for did in be.get("department_ids") or []:
+                all_department_ids.add(did)
 
-        # Step 3: Batch resolve evals and departments
-        async def fetch_evals():
+        # Also collect from tests (may have departments not on benchmarks)
+        for t in all_test_items:
+            if t.eval_id:
+                eval_ids.add(t.eval_id)
+            if t.department_ids:
+                all_department_ids.update(t.department_ids)
+
+        # --- Phase 3: Batch hydrate resources ---
+        async def fetch_evals() -> list:
             async with pool.acquire() as c:
                 return await get_evals_internal(
                     c, list(eval_ids), bypass_cache=bypass_cache
                 )
 
-        async def fetch_departments():
+        async def fetch_departments() -> list:
             async with pool.acquire() as c:
                 return await get_departments_internal(
                     c, list(all_department_ids), bypass_cache=bypass_cache
@@ -290,21 +327,22 @@ async def get_benchmark(
             fetch_departments(),
         )
 
-        # Step 4: Build eval items from eval resource
-        evals: list[BenchmarkEvalItem] = []
-        for ev in evals_list:
-            evals.append(
-                BenchmarkEvalItem(
-                    eval_id=str(ev.id),
-                    name=ev.name,
-                    description=ev.description,
-                    department_ids=(
-                        [str(d) for d in ev.department_ids] if ev.department_ids else []
-                    ),
-                )
-            )
+        # --- Phase 4: Build response ---
+        # Derive date range from all_test_items instead of a separate query
+        date_range_earliest: str | None = None
+        date_range_latest: str | None = None
+        if all_test_items:
+            dates = [
+                t.test_created_at
+                for t in all_test_items
+                if t.test_created_at is not None
+            ]
+            if dates:
+                date_range_earliest = min(dates).isoformat()
+                date_range_latest = max(dates).isoformat()
 
-        # Step 5: Build department items
+        eval_cards = _build_eval_cards(benchmark_entries, all_test_items, evals_list)
+
         department_items = [
             BenchmarkDepartmentItem(
                 department_id=str(d.department_id),
@@ -315,26 +353,20 @@ async def get_benchmark(
             if d.department_id
         ]
 
-        # Step 6: Build filter options
         department_options = [
             FilterOption(value=str(d.department_id), label=d.name)
             for d in departments
             if d.department_id
         ]
 
-        # Build test items for response
-        tests: list[QGetTestViewV4Item] = tests_result.items
-
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return BenchmarkResponse(
-            tests=tests,
-            total_count=tests_result.total_count,
-            evals=evals,
+            evals=eval_cards,
             departments=department_items,
             department_options=department_options,
-            date_range_earliest=benchmark_date_range[0],
-            date_range_latest=benchmark_date_range[1],
-            history=history_data,
+            date_range_earliest=date_range_earliest,
+            date_range_latest=date_range_latest,
+            history=history,
         )
 
     except HTTPException:

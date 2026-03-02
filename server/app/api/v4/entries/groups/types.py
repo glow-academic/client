@@ -17,7 +17,7 @@ class GroupsEntryData(BaseModel):
 
 
 class CreateGroupsEntrySqlParams(BaseModel):
-    session_id: UUID
+    session_id: UUID | None = None
     name: str | None = None
     custom_model: bool = False
     mcp: bool = False
