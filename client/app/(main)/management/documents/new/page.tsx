@@ -149,7 +149,7 @@ export default async function NewDocumentPage({
   const q = loadDocumentSearchParams(searchParamsObj);
 
   // Resolve group_id from layout context (cached per request)
-  const groupId = await resolveGroupId(q.draftId ?? null, "document");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "document" })).group_id;
 
   // Fetch default document detail server-side with filter params and draft_id
   const input: GetDocumentIn = {

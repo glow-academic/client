@@ -156,7 +156,7 @@ export default async function FieldEditPage({
   const q = loadFieldSearchParams(searchParamsObj);
 
   // Resolve group_id from layout context (cached per request)
-  const groupId = await resolveGroupId(q.draftId ?? null, "field");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "field" })).group_id;
 
   // Fetch field data (always fresh - source of truth) with draft_id
   try {

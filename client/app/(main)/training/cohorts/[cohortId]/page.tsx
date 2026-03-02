@@ -160,7 +160,7 @@ export default async function CohortEditPage({
   const loadCohortSearchParams = createLoader(cohortSearchParams);
   const q = loadCohortSearchParams(searchParamsObj);
 
-  const groupId = await resolveGroupId(q.draftId ?? null, "cohort");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "cohort" })).group_id;
 
   // Check cohort access by fetching detail (will return 403 if no access)
   let cohortData: GetCohortOut;

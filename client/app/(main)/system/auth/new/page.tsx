@@ -132,7 +132,7 @@ export default async function AuthCreatePage({
   const loadAuthSearchParams = createLoader(authSearchParams);
   const q = loadAuthSearchParams(searchParamsObj);
 
-  const groupId = await resolveGroupId(q.draftId ?? null, "auth");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "auth" })).group_id;
 
   // Fetch default auth detail with draft_id (auth_id = NULL for new mode)
   const input: GetAuthIn = {

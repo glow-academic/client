@@ -129,7 +129,7 @@ export default async function NewToolPage({
   const q = loadToolSearchParams(searchParamsObj);
 
   // Resolve group_id from layout context (cached per request)
-  const groupId = await resolveGroupId(q.draftId ?? null, "tool");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "tool" })).group_id;
 
   // Fetch tool default data (for dropdowns and defaults) with draft_id
   const input: GetToolIn = {

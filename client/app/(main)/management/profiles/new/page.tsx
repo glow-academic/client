@@ -127,7 +127,7 @@ export default async function NewProfilePage({
   const loadProfileSearchParams = createLoader(profileSearchParams);
   const q = loadProfileSearchParams(searchParamsObj);
 
-  const groupId = await resolveGroupId(q.draftId ?? null, "profile");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "profile" })).group_id;
 
   // Fetch default profile detail server-side with draft_id
   const input: GetProfileIn = {

@@ -134,7 +134,7 @@ export default async function ProfileEditPage({
   const loadProfileSearchParams = createLoader(profileSearchParams);
   const q = loadProfileSearchParams(searchParamsObj);
 
-  const groupId = await resolveGroupId(q.draftId ?? null, "profile");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "profile" })).group_id;
 
   // Fetch profile detail (always fresh - source of truth) with draft_id
   try {

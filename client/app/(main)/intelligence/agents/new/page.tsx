@@ -95,7 +95,7 @@ export default async function NewAgentPage({
   const q = loadAgentSearchParams(searchParamsObj);
 
   // Resolve group_id from layout context (cached per request)
-  const groupId = await resolveGroupId(q.draftId ?? null, "agent");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "agent" })).group_id;
 
   // Fetch default agent detail server-side with draft_id (agent_id = null for new mode)
   const input: GetAgentIn = {

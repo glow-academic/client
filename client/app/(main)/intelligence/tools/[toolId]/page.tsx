@@ -137,7 +137,7 @@ export default async function ToolDetailPage({
   const q = loadToolSearchParams(searchParamsObj);
 
   // Resolve group_id from layout context (cached per request)
-  const groupId = await resolveGroupId(q.draftId ?? null, "tool");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "tool" })).group_id;
 
   // Fetch tool detail with draft_id
   try {

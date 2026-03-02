@@ -218,7 +218,7 @@ export default async function NewCohortPage({
   const loadCohortSearchParams = createLoader(cohortSearchParams);
   const q = loadCohortSearchParams(searchParamsObj);
 
-  const groupId = await resolveGroupId(q.draftId ?? null, "cohort");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "cohort" })).group_id;
 
   // Fetch default cohort detail server-side with filter params and draft_id
   // Note: cohort_id is null for new mode

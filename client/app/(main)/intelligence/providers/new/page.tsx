@@ -136,7 +136,7 @@ export default async function NewProviderPage({
   const q = loadProviderSearchParams(searchParamsObj);
 
   // Resolve group_id from layout context (cached per request)
-  const groupId = await resolveGroupId(q.draftId ?? null, "provider");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "provider" })).group_id;
 
   // Fetch default provider detail server-side with draft_id (provider_id = NULL for new mode)
   const input: GetProviderIn = {

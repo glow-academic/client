@@ -97,7 +97,7 @@ export default async function NewEvalPage({
   const q = loadEvalSearchParams(searchParamsObj);
 
   // Resolve group_id from layout context (cached per request)
-  const groupId = await resolveGroupId(q.draftId ?? null, "eval");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "eval" })).group_id;
 
   // Fetch eval default data (for dropdowns and defaults) with draft_id and search params
   const input: GetEvalIn = {

@@ -203,7 +203,7 @@ export default async function PersonaEditPage({
   const q = loadPersonaSearchParams(searchParamsObj);
 
   // Resolve group_id from layout context (cached per request)
-  const groupId = await resolveGroupId(q.draftId ?? null, "persona");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "persona" })).group_id;
 
   // Fetch persona detail (always fresh - source of truth) with filter params
   // Note: OpenAPI schema may need regeneration to include new filter params

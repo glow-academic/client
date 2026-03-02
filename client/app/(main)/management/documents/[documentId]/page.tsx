@@ -163,7 +163,7 @@ export default async function DocumentEditPage({
   const q = loadDocumentSearchParams(searchParamsObj);
 
   // Resolve group_id from layout context (cached per request)
-  const groupId = await resolveGroupId(q.draftId ?? null, "document");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "document" })).group_id;
 
   // Fetch document detail (always fresh - source of truth) with draft_id
   try {

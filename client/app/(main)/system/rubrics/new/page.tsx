@@ -158,7 +158,7 @@ export default async function NewRubricPage({
   const q = loadRubricSearchParams(searchParamsObj);
 
   // Resolve group_id from layout context (cached per request)
-  const groupId = await resolveGroupId(q.draftId ?? null, "rubric");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "rubric" })).group_id;
 
   // Fetch rubric data using unified get endpoint (rubric_id = null for new mode)
   const rubricData = await getRubric(

@@ -28,7 +28,7 @@ from app.api.v4.artifacts.leaderboard.types import (
 )
 from app.api.v4.artifacts.types import FilterOption
 from app.api.v4.auth.settings import get_auth_settings_internal
-from app.api.v4.entries.chat.get import get_chats_internal
+from app.api.v4.entries.attempt_chat.get import get_chats_internal
 from app.api.v4.entries.runs.search import (
     GetRunListViewResponse,
     get_run_list_entries_internal,

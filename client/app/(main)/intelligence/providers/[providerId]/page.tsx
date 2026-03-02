@@ -147,7 +147,7 @@ export default async function EditProviderPage({
   const q = loadProviderSearchParams(searchParamsObj);
 
   // Resolve group_id from layout context (cached per request)
-  const groupId = await resolveGroupId(q.draftId ?? null, "provider");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "provider" })).group_id;
 
   // Fetch data for edit mode (always fresh - source of truth) with draft_id
   try {

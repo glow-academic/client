@@ -220,7 +220,7 @@ export default async function EditSimulationPage({
   const q = loadSimulationSearchParams(searchParamsObj);
 
   // Resolve group_id from layout context (cached per request)
-  const groupId = await resolveGroupId(q.draftId ?? null, "simulation");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "simulation" })).group_id;
 
   // Fetch simulation detail (always fresh - source of truth) with draft_id and filters
   // filter_scenario_ids will come from draft payload if draft_id is provided

@@ -109,7 +109,7 @@ export default async function NewParameterPage({
   const loadParameterSearchParams = createLoader(parameterSearchParams);
   const q = loadParameterSearchParams(searchParamsObj);
 
-  const groupId = await resolveGroupId(q.draftId ?? null, "parameter");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "parameter" })).group_id;
 
   // Fetch default parameter detail server-side with filter params and draft_id (parameter_id = null for new mode)
   const input: ParameterGetIn = {

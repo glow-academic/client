@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.api.v4.artifacts.home.types import ExportHomeApiResponse
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.api.v4.entries.chat.get import get_chats_internal
+from app.api.v4.entries.attempt_chat.get import get_chats_internal
 from app.api.v4.resources.cohorts.get import get_cohorts_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.simulations.get import get_simulations_internal

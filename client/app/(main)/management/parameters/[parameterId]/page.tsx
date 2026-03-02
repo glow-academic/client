@@ -119,7 +119,7 @@ export default async function ParameterEditPage({
   const loadParameterSearchParams = createLoader(parameterSearchParams);
   const q = loadParameterSearchParams(searchParamsObj);
 
-  const groupId = await resolveGroupId(q.draftId ?? null, "parameter");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "parameter" })).group_id;
 
   // Fetch parameter detail (always fresh - source of truth) with filter params
   try {

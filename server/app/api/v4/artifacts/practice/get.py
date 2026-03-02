@@ -42,7 +42,7 @@ from app.api.v4.artifacts.types import (
 from app.api.v4.auth.profile import get_auth_profile_internal
 from app.api.v4.entries.attempt.get import ChatViewItem, get_attempt_chats_internal
 from app.api.v4.entries.attempt.search import get_attempt_list_internal
-from app.api.v4.entries.chat.get import ChatItem, GetChatsResponse, get_chats_internal
+from app.api.v4.entries.attempt_chat.get import ChatItem, GetChatsResponse, get_chats_internal
 from app.api.v4.entries.practice.get import get_practice_context_view_internal
 from app.api.v4.entries.runs.search import get_run_list_entries_internal
 from app.api.v4.resources.args.get import get_args_internal

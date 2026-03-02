@@ -102,7 +102,7 @@ export default async function EvalDetailPage({
   const q = loadEvalSearchParams(searchParamsObj);
 
   // Resolve group_id from layout context (cached per request)
-  const groupId = await resolveGroupId(q.draftId ?? null, "eval");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "eval" })).group_id;
 
   // Fetch eval detail with draft_id and search params
   const input: GetEvalIn = {

@@ -261,7 +261,7 @@ export default async function NewScenarioPage({
     extractFieldShowSelectedByParam(searchParamsObj);
 
   // Resolve group_id from layout context (cached per request)
-  const groupId = await resolveGroupId(q.draftId ?? null, "scenario");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "scenario" })).group_id;
 
   // Fetch default scenario detail server-side with filter params
   const scenarioDetailDefault = await getScenario({

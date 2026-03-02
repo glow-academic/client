@@ -143,7 +143,7 @@ export default async function NewModelPage({
   const q = loadModelSearchParams(searchParamsObj);
 
   // Resolve group_id from layout context (cached per request)
-  const groupId = await resolveGroupId(q.draftId ?? null, "model");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "model" })).group_id;
 
   // Fetch default model data with draft_id (model_id = null for new mode)
   const input: GetModelIn = {

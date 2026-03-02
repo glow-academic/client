@@ -211,9 +211,14 @@ class ResolveGroupApiResponse(BaseModel):
 
     group_id: str
     show_controls: bool = False
+    # Attempt controls (simulation path)
     attempt_id: str | None = None
     current_chat_id: str | None = None
     has_messages: bool = False
+    # Test controls (benchmark path)
+    test_id: str | None = None
+    current_invocation_id: str | None = None
+    has_runs_or_groups: bool = False
 
 
 # ---------------------------------------------------------------------------

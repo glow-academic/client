@@ -192,7 +192,7 @@ export default async function SettingEditPage({
   const q = loadSettingSearchParams(searchParamsObj);
 
   // Resolve group_id from layout context (cached per request)
-  const groupId = await resolveGroupId(q.draftId ?? null, "setting");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "setting" })).group_id;
 
   // Fetch setting detail (always fresh - source of truth) with filter params
   try {

@@ -42077,6 +42077,15 @@ export interface components {
              * @default false
              */
             has_messages: boolean;
+            /** Test Id */
+            test_id?: string | null;
+            /** Current Invocation Id */
+            current_invocation_id?: string | null;
+            /**
+             * Has Runs Or Groups
+             * @default false
+             */
+            has_runs_or_groups: boolean;
         };
         /** ResolveProblemRequest */
         ResolveProblemRequest: {

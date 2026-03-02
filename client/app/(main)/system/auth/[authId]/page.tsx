@@ -142,7 +142,7 @@ export default async function AuthEditPage({
   const loadAuthSearchParams = createLoader(authSearchParams);
   const q = loadAuthSearchParams(searchParamsObj);
 
-  const groupId = await resolveGroupId(q.draftId ?? null, "auth");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "auth" })).group_id;
 
   // Fetch auth detail (always fresh - source of truth) with draft_id
   try {

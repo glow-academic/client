@@ -121,7 +121,7 @@ export default async function AgentEditPage({
   const q = loadAgentSearchParams(searchParamsObj);
 
   // Resolve group_id from layout context (cached per request)
-  const groupId = await resolveGroupId(q.draftId ?? null, "agent");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "agent" })).group_id;
 
   // Fetch agent detail (always fresh - source of truth) with draft_id
   try {

@@ -215,16 +215,37 @@ async def resolve_group(
         # Priority 2: test_id → resolve from test_invocation_entry
         if request.test_id is not None:
             async with pool.acquire() as conn:
-                group_id = await conn.fetchval(
+                row = await conn.fetchrow(
                     """
-                    SELECT group_id FROM test_invocation_entry
+                    SELECT id, group_id FROM test_invocation_entry
                     WHERE test_id = $1 AND active = true
                     ORDER BY created_at DESC LIMIT 1
                     """,
                     request.test_id,
                 )
-            if group_id:
-                return ResolveGroupApiResponse(group_id=str(group_id))
+            if row:
+                invocation_id = row["id"]
+                # Check if the invocation has any runs or groups
+                async with pool.acquire() as conn:
+                    has_runs_or_groups = await conn.fetchval(
+                        """
+                        SELECT EXISTS(
+                            SELECT 1 FROM test_invocation_runs_entry
+                            WHERE test_invocation_id = $1 AND active = true
+                        ) OR EXISTS(
+                            SELECT 1 FROM test_invocation_groups_entry
+                            WHERE test_invocation_id = $1 AND active = true
+                        )
+                        """,
+                        invocation_id,
+                    )
+                return ResolveGroupApiResponse(
+                    group_id=str(row["group_id"]),
+                    show_controls=True,
+                    test_id=str(request.test_id),
+                    current_invocation_id=str(invocation_id),
+                    has_runs_or_groups=bool(has_runs_or_groups),
+                )
 
         # Priority 3: draft_id → resolve from draft entry
         group_id = None

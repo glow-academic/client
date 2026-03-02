@@ -128,7 +128,7 @@ export default async function DepartmentEditPage({
   const q = loadDepartmentSearchParams(searchParamsObj);
 
   // Resolve group_id from layout context (cached per request)
-  const groupId = await resolveGroupId(q.draftId ?? null, "department");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "department" })).group_id;
 
   // Fetch department detail (always fresh - source of truth) with draft_id (unified get endpoint)
   try {

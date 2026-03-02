@@ -17,7 +17,7 @@ from app.api.v4.artifacts.dashboard.types import (
     ExportDashboardApiResponse,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.api.v4.entries.chat.get import get_chats_internal
+from app.api.v4.entries.attempt_chat.get import get_chats_internal
 from app.api.v4.resources.personas.get import get_personas_internal
 from app.api.v4.resources.profiles.get import get_profiles_internal
 from app.api.v4.resources.scenarios.get import get_scenarios_internal

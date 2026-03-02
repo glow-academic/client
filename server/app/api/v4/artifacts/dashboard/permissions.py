@@ -14,7 +14,7 @@ from app.api.v4.artifacts.dashboard.types import (
     DashboardPrimaryMetrics,
     DashboardSecondaryMetrics,
 )
-from app.api.v4.entries.chat.get import ChatItem
+from app.api.v4.entries.attempt_chat.get import ChatItem
 
 # Compat aliases for old type annotations — all now use ChatItem
 ProfileFactsItem = ChatItem

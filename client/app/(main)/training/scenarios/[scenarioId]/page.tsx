@@ -428,7 +428,7 @@ export default async function EditScenarioPage({
     if (urlParameterIds) filterParams.urlParameterIds = urlParameterIds;
 
     // Resolve group_id from layout context (cached per request)
-    const groupId = await resolveGroupId(filterParams.draftId ?? null, "scenario");
+    const groupId = (await resolveGroupId({ draft_id: filterParams.draftId ?? null, artifact_type: "scenario" })).group_id;
     filterParams.groupId = groupId;
 
     const scenarioDetail = await getScenario(

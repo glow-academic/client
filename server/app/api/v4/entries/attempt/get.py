@@ -267,7 +267,7 @@ async def get_attempt_chats_internal(
     Uses attempt_chat_mv for base data + training config service for config flags
     and resource ID arrays.
     """
-    from app.api.v4.entries.chat.get import get_chats_internal
+    from app.api.v4.entries.attempt_chat.get import get_chats_internal
 
     ids = attempt_ids or ([attempt_id] if attempt_id else [])
 

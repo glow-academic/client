@@ -202,7 +202,7 @@ export default async function NewSimulationPage({
   const q = loadSimulationSearchParams(searchParamsObj);
 
   // Resolve group_id from layout context (cached per request)
-  const groupId = await resolveGroupId(q.draftId ?? null, "simulation");
+  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "simulation" })).group_id;
 
   // Fetch default simulation detail server-side with filter params and draft_id
   const input: GetSimulationIn = {

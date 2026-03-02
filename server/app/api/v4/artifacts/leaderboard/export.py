@@ -17,7 +17,7 @@ from app.api.v4.artifacts.leaderboard.types import (
     ExportLeaderboardApiResponse,
 )
 from app.api.v4.auth.profile import get_auth_profile_internal
-from app.api.v4.entries.chat.get import get_chats_internal
+from app.api.v4.entries.attempt_chat.get import get_chats_internal
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import UPLOAD_FOLDER, get_db, get_pool
 from app.sql.types import (

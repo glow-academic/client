@@ -13,6 +13,7 @@ import { PanelRight, Plus } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useEffect, useMemo } from "react";
 
+import { InvocationControls } from "@/components/common/InvocationControls";
 import { SimulationControls } from "@/components/common/SimulationControls";
 
 import { GenerationPanel } from "@/components/common/ai/GenerationPanel";
@@ -193,12 +194,21 @@ function MainLayoutContent({
               />
             </div>
 
-            {attemptControls?.show_controls && (
+            {attemptControls?.show_controls && attemptControls.attempt_id && (
               <div className="pr-0">
                 <SimulationControls
-                  attemptId={attemptControls.attempt_id!}
+                  attemptId={attemptControls.attempt_id}
                   currentChatId={attemptControls.current_chat_id!}
                   hasMessages={attemptControls.has_messages ?? false}
+                />
+              </div>
+            )}
+            {attemptControls?.show_controls && attemptControls.test_id && (
+              <div className="pr-0">
+                <InvocationControls
+                  testId={attemptControls.test_id}
+                  currentInvocationId={attemptControls.current_invocation_id!}
+                  hasRunsOrGroups={attemptControls.has_runs_or_groups ?? false}
                 />
               </div>
             )}
