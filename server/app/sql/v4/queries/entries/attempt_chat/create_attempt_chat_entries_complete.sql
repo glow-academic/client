@@ -1,4 +1,4 @@
--- Create attempt_chat entry with strongly-typed params
+-- Create attempt_chat entry with strongly-typed params + optional connections
 
 DO $$
 DECLARE
@@ -41,6 +41,20 @@ CREATE OR REPLACE FUNCTION public.api_create_attempt_chat_entry_v4(
     images_enabled boolean DEFAULT false,
     questions_enabled boolean DEFAULT false,
     assistant_persona_ids uuid[] DEFAULT NULL,
+    -- Optional connection ID arrays
+    rubrics_ids uuid[] DEFAULT NULL,
+    standards_ids uuid[] DEFAULT NULL,
+    standard_groups_ids uuid[] DEFAULT NULL,
+    departments_ids uuid[] DEFAULT NULL,
+    personas_ids uuid[] DEFAULT NULL,
+    problem_statements_ids uuid[] DEFAULT NULL,
+    objectives_ids uuid[] DEFAULT NULL,
+    questions_ids uuid[] DEFAULT NULL,
+    options_ids uuid[] DEFAULT NULL,
+    videos_ids uuid[] DEFAULT NULL,
+    images_ids uuid[] DEFAULT NULL,
+    documents_ids uuid[] DEFAULT NULL,
+    parameter_fields_ids uuid[] DEFAULT NULL,
     tool_id uuid DEFAULT NULL,
     mcp boolean DEFAULT false
 ) RETURNS TABLE (id uuid, call_id uuid, message_id uuid)
@@ -50,6 +64,7 @@ DECLARE
     v_call_id uuid;
     v_text_id uuid;
     v_message_id uuid;
+    v_persona_entry_ids uuid[];
 BEGIN
     -- 1. Create text record
     INSERT INTO texts_entry (content, generated, mcp)
@@ -108,7 +123,126 @@ BEGIN
     )
     RETURNING attempt_chat_entry.id INTO v_entry_id;
 
-    -- 5. Create message
+    -- 5. Optional connections: rubrics
+    IF api_create_attempt_chat_entry_v4.rubrics_ids IS NOT NULL THEN
+        INSERT INTO attempt_chat_rubrics_connection (attempt_chat_id, rubrics_id)
+        SELECT v_entry_id, unnest(api_create_attempt_chat_entry_v4.rubrics_ids)
+        ON CONFLICT DO NOTHING;
+    END IF;
+
+    -- 6. Optional connections: standards
+    IF api_create_attempt_chat_entry_v4.standards_ids IS NOT NULL THEN
+        INSERT INTO attempt_chat_standards_connection (attempt_chat_id, standards_id)
+        SELECT v_entry_id, unnest(api_create_attempt_chat_entry_v4.standards_ids)
+        ON CONFLICT DO NOTHING;
+    END IF;
+
+    -- 7. Optional connections: standard_groups
+    IF api_create_attempt_chat_entry_v4.standard_groups_ids IS NOT NULL THEN
+        INSERT INTO attempt_chat_standard_groups_connection (attempt_chat_id, standard_groups_id)
+        SELECT v_entry_id, unnest(api_create_attempt_chat_entry_v4.standard_groups_ids)
+        ON CONFLICT DO NOTHING;
+    END IF;
+
+    -- 8. Optional connections: departments
+    IF api_create_attempt_chat_entry_v4.departments_ids IS NOT NULL THEN
+        INSERT INTO attempt_chat_departments_connection (attempt_chat_id, departments_id)
+        SELECT v_entry_id, unnest(api_create_attempt_chat_entry_v4.departments_ids)
+        ON CONFLICT DO NOTHING;
+    END IF;
+
+    -- 9. Optional connections: personas (resource connection + entry creation + link)
+    IF api_create_attempt_chat_entry_v4.personas_ids IS NOT NULL THEN
+        -- Resource-level connection
+        INSERT INTO attempt_chat_personas_connection (attempt_chat_id, personas_id)
+        SELECT v_entry_id, unnest(api_create_attempt_chat_entry_v4.personas_ids)
+        ON CONFLICT DO NOTHING;
+
+        -- Create personas_entry for each, link via personas_personas_connection,
+        -- and set assistant_persona_ids on the attempt_chat_entry
+        WITH persona_resources AS (
+            SELECT unnest(api_create_attempt_chat_entry_v4.personas_ids) AS personas_id
+        ),
+        new_entries AS (
+            INSERT INTO personas_entry (active, generated, mcp)
+            SELECT true, false, false
+            FROM persona_resources
+            RETURNING id
+        ),
+        paired AS (
+            SELECT ne.id AS entry_id, pr.personas_id
+            FROM (SELECT id, ROW_NUMBER() OVER () AS rn FROM new_entries) ne
+            JOIN (SELECT personas_id, ROW_NUMBER() OVER () AS rn FROM persona_resources) pr
+                ON ne.rn = pr.rn
+        ),
+        link_entries AS (
+            INSERT INTO personas_personas_connection (personas_entry_id, personas_id)
+            SELECT entry_id, personas_id FROM paired
+        )
+        SELECT ARRAY_AGG(entry_id) INTO v_persona_entry_ids FROM paired;
+
+        UPDATE attempt_chat_entry
+        SET assistant_persona_ids = v_persona_entry_ids
+        WHERE id = v_entry_id;
+    END IF;
+
+    -- 10. Optional connections: problem_statements
+    IF api_create_attempt_chat_entry_v4.problem_statements_ids IS NOT NULL THEN
+        INSERT INTO attempt_chat_problem_statements_connection (attempt_chat_id, problem_statements_id)
+        SELECT v_entry_id, unnest(api_create_attempt_chat_entry_v4.problem_statements_ids)
+        ON CONFLICT DO NOTHING;
+    END IF;
+
+    -- 11. Optional connections: objectives
+    IF api_create_attempt_chat_entry_v4.objectives_ids IS NOT NULL THEN
+        INSERT INTO attempt_chat_objectives_connection (attempt_chat_id, objectives_id)
+        SELECT v_entry_id, unnest(api_create_attempt_chat_entry_v4.objectives_ids)
+        ON CONFLICT DO NOTHING;
+    END IF;
+
+    -- 12. Optional connections: questions
+    IF api_create_attempt_chat_entry_v4.questions_ids IS NOT NULL THEN
+        INSERT INTO attempt_chat_questions_connection (attempt_chat_id, questions_id)
+        SELECT v_entry_id, unnest(api_create_attempt_chat_entry_v4.questions_ids)
+        ON CONFLICT DO NOTHING;
+    END IF;
+
+    -- 13. Optional connections: options
+    IF api_create_attempt_chat_entry_v4.options_ids IS NOT NULL THEN
+        INSERT INTO attempt_chat_options_connection (attempt_chat_id, options_id)
+        SELECT v_entry_id, unnest(api_create_attempt_chat_entry_v4.options_ids)
+        ON CONFLICT DO NOTHING;
+    END IF;
+
+    -- 14. Optional connections: videos
+    IF api_create_attempt_chat_entry_v4.videos_ids IS NOT NULL THEN
+        INSERT INTO attempt_chat_videos_connection (attempt_chat_id, videos_id)
+        SELECT v_entry_id, unnest(api_create_attempt_chat_entry_v4.videos_ids)
+        ON CONFLICT DO NOTHING;
+    END IF;
+
+    -- 15. Optional connections: images
+    IF api_create_attempt_chat_entry_v4.images_ids IS NOT NULL THEN
+        INSERT INTO attempt_chat_images_connection (attempt_chat_id, images_id)
+        SELECT v_entry_id, unnest(api_create_attempt_chat_entry_v4.images_ids)
+        ON CONFLICT DO NOTHING;
+    END IF;
+
+    -- 16. Optional connections: documents
+    IF api_create_attempt_chat_entry_v4.documents_ids IS NOT NULL THEN
+        INSERT INTO attempt_chat_documents_connection (attempt_chat_id, documents_id)
+        SELECT v_entry_id, unnest(api_create_attempt_chat_entry_v4.documents_ids)
+        ON CONFLICT DO NOTHING;
+    END IF;
+
+    -- 17. Optional connections: parameter_fields
+    IF api_create_attempt_chat_entry_v4.parameter_fields_ids IS NOT NULL THEN
+        INSERT INTO attempt_chat_parameter_fields_connection (attempt_chat_id, parameter_fields_id)
+        SELECT v_entry_id, unnest(api_create_attempt_chat_entry_v4.parameter_fields_ids)
+        ON CONFLICT DO NOTHING;
+    END IF;
+
+    -- 18. Create message
     INSERT INTO messages_entry (run_id, call_id, role, text_id, generated, mcp)
     VALUES (api_create_attempt_chat_entry_v4.run_id, v_call_id, 'assistant', v_text_id, true, api_create_attempt_chat_entry_v4.mcp)
     RETURNING messages_entry.id INTO v_message_id;

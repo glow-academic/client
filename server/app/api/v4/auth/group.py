@@ -1,12 +1,22 @@
-"""Resolve group_id endpoint — looks up draft group_id or creates a new one."""
+"""Resolve group_id endpoint — unified resolution from attempt, test, draft, or fresh."""
 
 from __future__ import annotations
+
+import asyncio
+from datetime import UTC, datetime
+from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request
 
 from app.api.v4.auth.types import ResolveGroupApiRequest, ResolveGroupApiResponse
+from app.api.v4.entries.attempt.get import (
+    get_attempt_chats_internal,
+    get_attempt_messages_internal,
+)
+from app.api.v4.entries.attempt.search import get_attempt_list_internal
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_pool
+from app.sql.types import GetAttemptListViewSqlRow
 
 router = APIRouter()
 
@@ -36,31 +46,197 @@ _DRAFT_TABLE_MAP: dict[str, str] = {
 _ALL_DRAFT_TABLES = list(_DRAFT_TABLE_MAP.values())
 
 
+async def _resolve_attempt_group(
+    pool: object,
+    attempt_uuid: UUID,
+    profile_id: str | None,
+    bypass_cache: bool,
+) -> ResolveGroupApiResponse | None:
+    """Attempt resolution: ownership check → chat state → group_id from current chat.
+
+    Returns a full response if the attempt is active with controls, or None to fall through.
+    """
+    # Resolve profiles_id for ownership check
+    profiles_id: UUID | None = None
+    if profile_id:
+        async with pool.acquire() as conn:  # type: ignore[union-attr]
+            profiles_id = await conn.fetchval(
+                """
+                SELECT profiles_id FROM profile_profiles_junction
+                WHERE profile_id = $1 AND active = true
+                LIMIT 1
+                """,
+                UUID(profile_id) if isinstance(profile_id, str) else profile_id,
+            )
+
+    # Fetch attempt list + chats in parallel
+    async def fetch_attempt() -> GetAttemptListViewSqlRow:  # type: ignore[return]
+        async with pool.acquire() as c:  # type: ignore[union-attr]
+            return await get_attempt_list_internal(
+                conn=c,
+                attempt_ids=[attempt_uuid],
+                bypass_cache=bypass_cache,
+            )
+
+    async def fetch_chats() -> list:
+        async with pool.acquire() as c:  # type: ignore[union-attr]
+            return await get_attempt_chats_internal(
+                conn=c,
+                attempt_id=attempt_uuid,
+                bypass_cache=bypass_cache,
+            )
+
+    attempt_result, chats_result = await asyncio.gather(fetch_attempt(), fetch_chats())
+
+    if not attempt_result or not attempt_result.items:
+        return None
+
+    attempt_item = attempt_result.items[0]
+
+    # Ownership check
+    is_own = (
+        profiles_id is not None
+        and attempt_item.profile_id is not None
+        and attempt_item.profile_id == profiles_id
+    )
+    if not is_own:
+        return None
+
+    # Compute control state
+    chats = chats_result or []
+    all_chats_completed = all(c.completed for c in chats) if chats else False
+
+    time_limit_seconds = sum(c.time_limit_seconds or 0 for c in chats)
+    elapsed_seconds = 0
+    now = datetime.now(UTC)
+    for chat in chats:
+        if chat.grade and chat.grade.time_taken is not None:
+            elapsed_seconds += chat.grade.time_taken
+        elif chat.created_at and not chat.completed:
+            try:
+                created = (
+                    chat.created_at
+                    if hasattr(chat.created_at, "tzinfo")
+                    else datetime.fromisoformat(str(chat.created_at))
+                )
+                if created.tzinfo is None:
+                    created = created.replace(tzinfo=UTC)
+                elapsed_seconds += max(int((now - created).total_seconds()), 0)
+            except (ValueError, TypeError):
+                pass
+
+    is_active = True
+    if time_limit_seconds > 0:
+        infinite_mode = attempt_item.infinite_mode or False
+        if infinite_mode:
+            is_active = (time_limit_seconds - elapsed_seconds) > 0
+        else:
+            is_active = elapsed_seconds <= time_limit_seconds
+
+    show_controls = is_own and is_active and not all_chats_completed
+
+    if not show_controls:
+        # Not active — fall through to fresh group
+        return None
+
+    # Current chat (first incomplete, or last if all complete)
+    current_chat = None
+    for chat in chats:
+        if not chat.completed:
+            current_chat = chat
+            break
+    if current_chat is None and chats:
+        current_chat = chats[-1]
+
+    current_chat_id = str(current_chat.chat_id) if current_chat else None
+
+    # Resolve group_id from the current chat's attempt_chat_entry
+    group_id = None
+    if current_chat_id:
+        async with pool.acquire() as c:  # type: ignore[union-attr]
+            group_id = await c.fetchval(
+                "SELECT group_id FROM attempt_chat_entry WHERE id = $1",
+                UUID(current_chat_id),
+            )
+
+    if not group_id:
+        return None
+
+    # has_messages check
+    has_messages = False
+    if current_chat_id:
+        async with pool.acquire() as c:  # type: ignore[union-attr]
+            messages = await get_attempt_messages_internal(
+                conn=c,
+                attempt_id=attempt_uuid,
+                bypass_cache=bypass_cache,
+            )
+        has_messages = any(str(msg.chat_id) == current_chat_id for msg in messages)
+
+    return ResolveGroupApiResponse(
+        group_id=str(group_id),
+        show_controls=True,
+        attempt_id=str(attempt_uuid),
+        current_chat_id=current_chat_id,
+        has_messages=has_messages,
+    )
+
+
 @router.post("/group", response_model=ResolveGroupApiResponse)
 async def resolve_group(
     request: ResolveGroupApiRequest,
     http_request: Request,
 ) -> ResolveGroupApiResponse:
-    """Resolve a group_id: look up from draft if available, otherwise create new."""
+    """Resolve a group_id from attempt, test, draft, or create fresh."""
     try:
         pool = get_pool()
         if not pool:
             raise HTTPException(status_code=500, detail="Database pool not available")
 
-        group_id = None
+        # Priority 1: attempt_id → resolve from active attempt chat
+        if request.attempt_id is not None:
+            try:
+                profile_id = http_request.state.profile_id
+            except AttributeError:
+                profile_id = None
 
-        # Try to find group_id from an existing draft
+            bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+
+            result = await _resolve_attempt_group(
+                pool=pool,
+                attempt_uuid=request.attempt_id,
+                profile_id=profile_id,
+                bypass_cache=bypass_cache,
+            )
+            if result is not None:
+                return result
+            # Fall through to fresh group if attempt not active
+
+        # Priority 2: test_id → resolve from test_invocation_entry
+        if request.test_id is not None:
+            async with pool.acquire() as conn:
+                group_id = await conn.fetchval(
+                    """
+                    SELECT group_id FROM test_invocation_entry
+                    WHERE test_id = $1 AND active = true
+                    ORDER BY created_at DESC LIMIT 1
+                    """,
+                    request.test_id,
+                )
+            if group_id:
+                return ResolveGroupApiResponse(group_id=str(group_id))
+
+        # Priority 3: draft_id → resolve from draft entry
+        group_id = None
         if request.draft_id is not None:
             async with pool.acquire() as conn:
                 if request.artifact_type and request.artifact_type in _DRAFT_TABLE_MAP:
-                    # Narrow lookup: query the specific draft table
                     table = _DRAFT_TABLE_MAP[request.artifact_type]
                     group_id = await conn.fetchval(
                         f"SELECT group_id FROM {table} WHERE id = $1",  # noqa: S608
                         request.draft_id,
                     )
                 else:
-                    # Broad lookup: try all draft tables via UNION
                     parts = [
                         f"SELECT group_id FROM {t} WHERE id = $1"
                         for t in _ALL_DRAFT_TABLES
@@ -68,7 +244,7 @@ async def resolve_group(
                     union_query = " UNION ALL ".join(parts) + " LIMIT 1"
                     group_id = await conn.fetchval(union_query, request.draft_id)
 
-        # If no group_id found (no draft, or draft has no group), create a new one
+        # Priority 4: Fallback — create a fresh group
         if not group_id:
             async with pool.acquire() as conn:
                 group_id = await conn.fetchval(

@@ -43,6 +43,20 @@ class CreateAttemptChatEntryRequest(BaseModel):
     images_enabled: bool = False
     questions_enabled: bool = False
     assistant_persona_ids: list[UUID] | None = None
+    # Optional connection ID arrays
+    rubrics_ids: list[UUID] | None = None
+    standards_ids: list[UUID] | None = None
+    standard_groups_ids: list[UUID] | None = None
+    departments_ids: list[UUID] | None = None
+    personas_ids: list[UUID] | None = None
+    problem_statements_ids: list[UUID] | None = None
+    objectives_ids: list[UUID] | None = None
+    questions_ids: list[UUID] | None = None
+    options_ids: list[UUID] | None = None
+    videos_ids: list[UUID] | None = None
+    images_ids: list[UUID] | None = None
+    documents_ids: list[UUID] | None = None
+    parameter_fields_ids: list[UUID] | None = None
 
 
 class CreateAttemptChatEntryResponse(BaseModel):
@@ -78,6 +92,20 @@ class CreateAttemptChatEntrySqlParams(BaseModel):
     images_enabled: bool = False
     questions_enabled: bool = False
     assistant_persona_ids: list[UUID] | None = None
+    # Optional connection ID arrays
+    rubrics_ids: list[UUID] | None = None
+    standards_ids: list[UUID] | None = None
+    standard_groups_ids: list[UUID] | None = None
+    departments_ids: list[UUID] | None = None
+    personas_ids: list[UUID] | None = None
+    problem_statements_ids: list[UUID] | None = None
+    objectives_ids: list[UUID] | None = None
+    questions_ids: list[UUID] | None = None
+    options_ids: list[UUID] | None = None
+    videos_ids: list[UUID] | None = None
+    images_ids: list[UUID] | None = None
+    documents_ids: list[UUID] | None = None
+    parameter_fields_ids: list[UUID] | None = None
     tool_id: UUID | None = None
     mcp: bool = False
 
@@ -109,6 +137,19 @@ class CreateAttemptChatEntrySqlParams(BaseModel):
             self.images_enabled,
             self.questions_enabled,
             self.assistant_persona_ids,
+            self.rubrics_ids,
+            self.standards_ids,
+            self.standard_groups_ids,
+            self.departments_ids,
+            self.personas_ids,
+            self.problem_statements_ids,
+            self.objectives_ids,
+            self.questions_ids,
+            self.options_ids,
+            self.videos_ids,
+            self.images_ids,
+            self.documents_ids,
+            self.parameter_fields_ids,
             self.tool_id,
             self.mcp,
         )

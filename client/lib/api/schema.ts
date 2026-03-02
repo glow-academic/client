@@ -8103,6 +8103,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/attempt-chat-bridge/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Attempt Chat Bridge Entry
+         * @description Create attempt_chat_bridge entry.
+         */
+        post: operations["create_attempt_chat_bridge_entry_api_v4_entries_attempt_chat_bridge_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/attempt-chat-bridge/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Attempt Chat Bridge Entries
+         * @description Search attempt_chat_bridge entries.
+         */
+        post: operations["search_attempt_chat_bridge_entries_api_v4_entries_attempt_chat_bridge_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/attempt-home/create": {
         parameters: {
             query?: never;
@@ -8117,6 +8157,26 @@ export interface paths {
          * @description Create attempt_home bridge entry.
          */
         post: operations["create_attempt_home_entry_api_v4_entries_attempt_home_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/attempt-home/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Attempt Home Entries
+         * @description Search attempt_home entries.
+         */
+        post: operations["search_attempt_home_entries_api_v4_entries_attempt_home_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8777,6 +8837,26 @@ export interface paths {
          * @description Create attempt_practice bridge entry.
          */
         post: operations["create_attempt_practice_entry_api_v4_entries_attempt_practice_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/attempt-practice/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Attempt Practice Entries
+         * @description Search attempt_practice entries.
+         */
+        post: operations["search_attempt_practice_entries_api_v4_entries_attempt_practice_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -13286,26 +13366,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/auth/attempt": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Auth Attempt
-         * @description Lightweight attempt control state for layout header SSR.
-         */
-        post: operations["get_auth_attempt_api_v4_auth_attempt_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/auth/profile": {
         parameters: {
             query?: never;
@@ -13459,7 +13519,7 @@ export interface paths {
         put?: never;
         /**
          * Resolve Group
-         * @description Resolve a group_id: look up from draft if available, otherwise create new.
+         * @description Resolve a group_id from attempt, test, draft, or create fresh.
          */
         post: operations["resolve_group_api_v4_auth_group_post"];
         delete?: never;
@@ -24116,6 +24176,40 @@ export interface components {
              */
             message_id: string;
         };
+        /** CreateAttemptChatBridgeEntriesApiRequest */
+        CreateAttemptChatBridgeEntriesApiRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /**
+             * Attempt Chat Id
+             * Format: uuid
+             */
+            attempt_chat_id: string;
+            /** Tool Id */
+            tool_id?: string | null;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** CreateAttemptChatBridgeEntriesApiResponse */
+        CreateAttemptChatBridgeEntriesApiResponse: {
+            /** Id */
+            id?: string | null;
+            /** Call Id */
+            call_id?: string | null;
+            /** Message Id */
+            message_id?: string | null;
+        };
         /** CreateAttemptChatEntryRequest */
         CreateAttemptChatEntryRequest: {
             /**
@@ -24236,6 +24330,32 @@ export interface components {
             questions_enabled: boolean;
             /** Assistant Persona Ids */
             assistant_persona_ids?: string[] | null;
+            /** Rubrics Ids */
+            rubrics_ids?: string[] | null;
+            /** Standards Ids */
+            standards_ids?: string[] | null;
+            /** Standard Groups Ids */
+            standard_groups_ids?: string[] | null;
+            /** Departments Ids */
+            departments_ids?: string[] | null;
+            /** Personas Ids */
+            personas_ids?: string[] | null;
+            /** Problem Statements Ids */
+            problem_statements_ids?: string[] | null;
+            /** Objectives Ids */
+            objectives_ids?: string[] | null;
+            /** Questions Ids */
+            questions_ids?: string[] | null;
+            /** Options Ids */
+            options_ids?: string[] | null;
+            /** Videos Ids */
+            videos_ids?: string[] | null;
+            /** Images Ids */
+            images_ids?: string[] | null;
+            /** Documents Ids */
+            documents_ids?: string[] | null;
+            /** Parameter Fields Ids */
+            parameter_fields_ids?: string[] | null;
         };
         /** CreateAttemptChatEntryResponse */
         CreateAttemptChatEntryResponse: {
@@ -29123,28 +29243,6 @@ export interface components {
             protocols?: components["schemas"]["AuthProtocolSection"] | null;
             slugs?: components["schemas"]["AuthSlugSection"] | null;
             items?: components["schemas"]["AuthItemSection"] | null;
-        };
-        /**
-         * GetAuthAttemptApiResponse
-         * @description Lightweight attempt control state for layout header SSR.
-         */
-        GetAuthAttemptApiResponse: {
-            /**
-             * Show Controls
-             * @default false
-             */
-            show_controls: boolean;
-            /** Attempt Id */
-            attempt_id?: string | null;
-            /** Current Chat Id */
-            current_chat_id?: string | null;
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /**
-             * Has Messages
-             * @default false
-             */
-            has_messages: boolean;
         };
         /** GetAuthCallbackApiResponse */
         GetAuthCallbackApiResponse: {
@@ -41953,14 +42051,32 @@ export interface components {
             draft_id?: string | null;
             /** Artifact Type */
             artifact_type?: string | null;
+            /** Attempt Id */
+            attempt_id?: string | null;
+            /** Test Id */
+            test_id?: string | null;
         };
         /**
          * ResolveGroupApiResponse
-         * @description Response for POST /auth/group — resolved group_id.
+         * @description Response for POST /auth/group — resolved group_id + optional attempt controls.
          */
         ResolveGroupApiResponse: {
             /** Group Id */
             group_id: string;
+            /**
+             * Show Controls
+             * @default false
+             */
+            show_controls: boolean;
+            /** Attempt Id */
+            attempt_id?: string | null;
+            /** Current Chat Id */
+            current_chat_id?: string | null;
+            /**
+             * Has Messages
+             * @default false
+             */
+            has_messages: boolean;
         };
         /** ResolveProblemRequest */
         ResolveProblemRequest: {
@@ -44741,6 +44857,30 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
+        /** SearchAttemptChatBridgeEntriesApiRequest */
+        SearchAttemptChatBridgeEntriesApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Attempt Id */
+            attempt_id?: string | null;
+            /** Attempt Chat Id */
+            attempt_chat_id?: string | null;
+        };
+        /** SearchAttemptChatBridgeEntriesApiResponse */
+        SearchAttemptChatBridgeEntriesApiResponse: {
+            /** Items */
+            items?: unknown | null;
+        };
         /** SearchAttemptChatEntriesApiRequest */
         SearchAttemptChatEntriesApiRequest: {
             /** Search */
@@ -44943,6 +45083,30 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
+        /** SearchAttemptHomeEntriesApiRequest */
+        SearchAttemptHomeEntriesApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Attempt Id */
+            attempt_id?: string | null;
+            /** Home Id */
+            home_id?: string | null;
+        };
+        /** SearchAttemptHomeEntriesApiResponse */
+        SearchAttemptHomeEntriesApiResponse: {
+            /** Items */
+            items?: unknown | null;
+        };
         /** SearchAttemptImprovementEntriesApiRequest */
         SearchAttemptImprovementEntriesApiRequest: {
             /** Search */
@@ -45012,6 +45176,30 @@ export interface components {
         };
         /** SearchAttemptMessageTreeEntriesApiResponse */
         SearchAttemptMessageTreeEntriesApiResponse: {
+            /** Items */
+            items?: unknown | null;
+        };
+        /** SearchAttemptPracticeEntriesApiRequest */
+        SearchAttemptPracticeEntriesApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Attempt Id */
+            attempt_id?: string | null;
+            /** Practice Id */
+            practice_id?: string | null;
+        };
+        /** SearchAttemptPracticeEntriesApiResponse */
+        SearchAttemptPracticeEntriesApiResponse: {
             /** Items */
             items?: unknown | null;
         };
@@ -66778,6 +66966,80 @@ export interface operations {
             };
         };
     };
+    create_attempt_chat_bridge_entry_api_v4_entries_attempt_chat_bridge_create_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAttemptChatBridgeEntriesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateAttemptChatBridgeEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_attempt_chat_bridge_entries_api_v4_entries_attempt_chat_bridge_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchAttemptChatBridgeEntriesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchAttemptChatBridgeEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_attempt_home_entry_api_v4_entries_attempt_home_create_post: {
         parameters: {
             query?: never;
@@ -66802,6 +67064,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreateAttemptHomeEntryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_attempt_home_entries_api_v4_entries_attempt_home_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchAttemptHomeEntriesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchAttemptHomeEntriesApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68007,6 +68306,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreateAttemptPracticeEntryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_attempt_practice_entries_api_v4_entries_attempt_practice_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchAttemptPracticeEntriesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchAttemptPracticeEntriesApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76198,43 +76534,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetLoginDataApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_auth_attempt_api_v4_auth_attempt_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetProfileContextApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetAuthAttemptApiResponse"];
                 };
             };
             /** @description Validation Error */

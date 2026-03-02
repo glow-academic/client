@@ -30,7 +30,6 @@ import { SocketProviderClient } from "@/contexts/socket-context";
 import { useGenerationPanel } from "@/hooks/use-generation-panel";
 import type {
   AnalyticsFiltersResponse,
-  AuthAttemptOut,
   AuthPageResponse,
   AuthProfileResponse,
   AuthSettingsResponse,
@@ -40,6 +39,7 @@ import type {
   GenerateMessagesIn,
   GenerateMessagesOut,
   RefreshPageFn,
+  ResolveGroupResponse,
   SafeSessionSnapshot,
   SearchSimulatableProfilesIn,
   SearchSimulatableProfilesOut,
@@ -63,7 +63,7 @@ function MainLayoutContent({
 }: {
   children: React.ReactNode;
   pageData: AuthPageResponse | null;
-  attemptControls: AuthAttemptOut | null;
+  attemptControls: ResolveGroupResponse | null;
   initialSidebarOpen?: boolean;
   initialPanelOpen?: boolean;
   switchEffectiveProfileAction: (
@@ -198,7 +198,6 @@ function MainLayoutContent({
                 <SimulationControls
                   attemptId={attemptControls.attempt_id!}
                   currentChatId={attemptControls.current_chat_id!}
-                  simulationId={attemptControls.simulation_id!}
                   hasMessages={attemptControls.has_messages ?? false}
                 />
               </div>
@@ -266,7 +265,7 @@ export function MainLayoutClient({
   settingsData: AuthSettingsResponse | null;
   pageData: AuthPageResponse | null;
   sessionSnapshot: SafeSessionSnapshot;
-  attemptControls: AuthAttemptOut | null;
+  attemptControls: ResolveGroupResponse | null;
   drafts: DraftItem[];
   analyticsFilters: AnalyticsFiltersResponse | null;
   /** Initial sidebar open state from SSR cookie */

@@ -186,16 +186,6 @@ class GetAuthPageApiResponse(BaseModel):
     page_metadata: PageMetadata | None = None
 
 
-class GetAuthAttemptApiResponse(BaseModel):
-    """Lightweight attempt control state for layout header SSR."""
-
-    show_controls: bool = False
-    attempt_id: str | None = None
-    current_chat_id: str | None = None
-    simulation_id: str | None = None
-    has_messages: bool = False
-
-
 class GetDraftsApiResponse(BaseModel):
     """Response model for /auth/drafts endpoint."""
 
@@ -212,12 +202,18 @@ class ResolveGroupApiRequest(BaseModel):
 
     draft_id: UUID | None = None
     artifact_type: str | None = None
+    attempt_id: UUID | None = None
+    test_id: UUID | None = None
 
 
 class ResolveGroupApiResponse(BaseModel):
-    """Response for POST /auth/group — resolved group_id."""
+    """Response for POST /auth/group — resolved group_id + optional attempt controls."""
 
     group_id: str
+    show_controls: bool = False
+    attempt_id: str | None = None
+    current_chat_id: str | None = None
+    has_messages: bool = False
 
 
 # ---------------------------------------------------------------------------

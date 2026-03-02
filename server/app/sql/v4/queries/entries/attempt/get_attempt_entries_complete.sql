@@ -34,6 +34,7 @@ BEGIN
             'user_persona_id', m.user_persona_id,
             'attempt_created_at', m.attempt_created_at,
             'infinite_mode', m.infinite_mode,
+            'num_chats', m.num_chats,
             'is_archived', m.is_archived,
             'scenario_ids', m.scenario_ids,
             'chat_entry_id', m.chat_entry_id,

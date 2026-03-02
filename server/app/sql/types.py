@@ -4792,6 +4792,19 @@ class CreateAttemptChatEntriesSqlParams(BaseModel):
     images_enabled: bool | None = False
     questions_enabled: bool | None = False
     assistant_persona_ids: list[UUID] | None = None
+    rubrics_ids: list[UUID] | None = None
+    standards_ids: list[UUID] | None = None
+    standard_groups_ids: list[UUID] | None = None
+    departments_ids: list[UUID] | None = None
+    personas_ids: list[UUID] | None = None
+    problem_statements_ids: list[UUID] | None = None
+    objectives_ids: list[UUID] | None = None
+    questions_ids: list[UUID] | None = None
+    options_ids: list[UUID] | None = None
+    videos_ids: list[UUID] | None = None
+    images_ids: list[UUID] | None = None
+    documents_ids: list[UUID] | None = None
+    parameter_fields_ids: list[UUID] | None = None
     tool_id: UUID | None = None
     mcp: bool | None = False
 
@@ -4823,6 +4836,19 @@ class CreateAttemptChatEntriesSqlParams(BaseModel):
             self.images_enabled,
             self.questions_enabled,
             self.assistant_persona_ids,
+            self.rubrics_ids,
+            self.standards_ids,
+            self.standard_groups_ids,
+            self.departments_ids,
+            self.personas_ids,
+            self.problem_statements_ids,
+            self.objectives_ids,
+            self.questions_ids,
+            self.options_ids,
+            self.videos_ids,
+            self.images_ids,
+            self.documents_ids,
+            self.parameter_fields_ids,
             self.tool_id,
             self.mcp,
         )
@@ -4861,6 +4887,19 @@ class CreateAttemptChatEntriesApiRequest(BaseModel):
     images_enabled: bool | None = False
     questions_enabled: bool | None = False
     assistant_persona_ids: list[UUID] | None = None
+    rubrics_ids: list[UUID] | None = None
+    standards_ids: list[UUID] | None = None
+    standard_groups_ids: list[UUID] | None = None
+    departments_ids: list[UUID] | None = None
+    personas_ids: list[UUID] | None = None
+    problem_statements_ids: list[UUID] | None = None
+    objectives_ids: list[UUID] | None = None
+    questions_ids: list[UUID] | None = None
+    options_ids: list[UUID] | None = None
+    videos_ids: list[UUID] | None = None
+    images_ids: list[UUID] | None = None
+    documents_ids: list[UUID] | None = None
+    parameter_fields_ids: list[UUID] | None = None
     tool_id: UUID | None = None
     mcp: bool | None = False
 
@@ -4952,6 +4991,84 @@ class SearchAttemptChatEntriesApiRequest(BaseModel):
     rubric_id: UUID | None = None
 
 class SearchAttemptChatEntriesApiResponse(BaseModel):
+
+    items: Any | None = None
+
+
+
+# Generated from: create_attempt_chat_bridge_entries
+
+class CreateAttemptChatBridgeEntriesSqlParams(BaseModel):
+
+    run_id: UUID
+    attempt_id: UUID
+    attempt_chat_id: UUID
+    tool_id: UUID | None = None
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+            self.attempt_id,
+            self.attempt_chat_id,
+            self.tool_id,
+            self.mcp,
+        )
+
+class CreateAttemptChatBridgeEntriesSqlRow(BaseModel):
+
+    id: UUID | None = None
+    call_id: UUID | None = None
+    message_id: UUID | None = None
+
+class CreateAttemptChatBridgeEntriesApiRequest(BaseModel):
+
+    run_id: UUID
+    attempt_id: UUID
+    attempt_chat_id: UUID
+    tool_id: UUID | None = None
+    mcp: bool | None = False
+
+class CreateAttemptChatBridgeEntriesApiResponse(BaseModel):
+
+    id: UUID | None = None
+    call_id: UUID | None = None
+    message_id: UUID | None = None
+
+
+
+# Generated from: search_attempt_chat_bridge_entries
+
+class SearchAttemptChatBridgeEntriesSqlParams(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    attempt_id: UUID | None = None
+    attempt_chat_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.attempt_id,
+            self.attempt_chat_id,
+        )
+
+class SearchAttemptChatBridgeEntriesSqlRow(BaseModel):
+
+    items: Any | None = None
+
+class SearchAttemptChatBridgeEntriesApiRequest(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    attempt_id: UUID | None = None
+    attempt_chat_id: UUID | None = None
+
+class SearchAttemptChatBridgeEntriesApiResponse(BaseModel):
 
     items: Any | None = None
 
@@ -5622,6 +5739,43 @@ class CreateAttemptHomeEntriesApiResponse(BaseModel):
 
 
 
+# Generated from: search_attempt_home_entries
+
+class SearchAttemptHomeEntriesSqlParams(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    attempt_id: UUID | None = None
+    home_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.attempt_id,
+            self.home_id,
+        )
+
+class SearchAttemptHomeEntriesSqlRow(BaseModel):
+
+    items: Any | None = None
+
+class SearchAttemptHomeEntriesApiRequest(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    attempt_id: UUID | None = None
+    home_id: UUID | None = None
+
+class SearchAttemptHomeEntriesApiResponse(BaseModel):
+
+    items: Any | None = None
+
+
+
 # Generated from: create_attempt_improvement_entries
 
 class CreateAttemptImprovementEntriesSqlParams(BaseModel):
@@ -5967,6 +6121,43 @@ class CreateAttemptPracticeEntriesApiResponse(BaseModel):
     id: UUID | None = None
     call_id: UUID | None = None
     message_id: UUID | None = None
+
+
+
+# Generated from: search_attempt_practice_entries
+
+class SearchAttemptPracticeEntriesSqlParams(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    attempt_id: UUID | None = None
+    practice_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.attempt_id,
+            self.practice_id,
+        )
+
+class SearchAttemptPracticeEntriesSqlRow(BaseModel):
+
+    items: Any | None = None
+
+class SearchAttemptPracticeEntriesApiRequest(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    attempt_id: UUID | None = None
+    practice_id: UUID | None = None
+
+class SearchAttemptPracticeEntriesApiResponse(BaseModel):
+
+    items: Any | None = None
 
 
 
@@ -36825,6 +37016,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchAttemptChatEntriesApiRequest",
         "SearchAttemptChatEntriesApiResponse",
     ),
+    "app/sql/v4/queries/entries/attempt_chat_bridge/create_attempt_chat_bridge_entries_complete.sql": (
+        "CreateAttemptChatBridgeEntriesSqlParams",
+        "CreateAttemptChatBridgeEntriesSqlRow",
+        "CreateAttemptChatBridgeEntriesApiRequest",
+        "CreateAttemptChatBridgeEntriesApiResponse",
+    ),
+    "app/sql/v4/queries/entries/attempt_chat_bridge/search_attempt_chat_bridge_entries_complete.sql": (
+        "SearchAttemptChatBridgeEntriesSqlParams",
+        "SearchAttemptChatBridgeEntriesSqlRow",
+        "SearchAttemptChatBridgeEntriesApiRequest",
+        "SearchAttemptChatBridgeEntriesApiResponse",
+    ),
     "app/sql/v4/queries/entries/attempt_completion/create_attempt_completion_entries_complete.sql": (
         "CreateAttemptCompletionEntriesSqlParams",
         "CreateAttemptCompletionEntriesSqlRow",
@@ -36939,6 +37142,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateAttemptHomeEntriesApiRequest",
         "CreateAttemptHomeEntriesApiResponse",
     ),
+    "app/sql/v4/queries/entries/attempt_home/search_attempt_home_entries_complete.sql": (
+        "SearchAttemptHomeEntriesSqlParams",
+        "SearchAttemptHomeEntriesSqlRow",
+        "SearchAttemptHomeEntriesApiRequest",
+        "SearchAttemptHomeEntriesApiResponse",
+    ),
     "app/sql/v4/queries/entries/attempt_improvement/create_attempt_improvement_entries_complete.sql": (
         "CreateAttemptImprovementEntriesSqlParams",
         "CreateAttemptImprovementEntriesSqlRow",
@@ -36998,6 +37207,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateAttemptPracticeEntriesSqlRow",
         "CreateAttemptPracticeEntriesApiRequest",
         "CreateAttemptPracticeEntriesApiResponse",
+    ),
+    "app/sql/v4/queries/entries/attempt_practice/search_attempt_practice_entries_complete.sql": (
+        "SearchAttemptPracticeEntriesSqlParams",
+        "SearchAttemptPracticeEntriesSqlRow",
+        "SearchAttemptPracticeEntriesApiRequest",
+        "SearchAttemptPracticeEntriesApiResponse",
     ),
     "app/sql/v4/queries/entries/attempt_replacement/create_attempt_replacement_entries_complete.sql": (
         "CreateAttemptReplacementEntriesSqlParams",
@@ -42159,6 +42374,16 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/entries/attempt_chat_bridge/create_attempt_chat_bridge_entries_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/entries/attempt_chat_bridge/search_attempt_chat_bridge_entries_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/entries/attempt_completion/create_attempt_completion_entries_complete.sql"]
     ) -> SqlString: ...
 
@@ -42254,6 +42479,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/entries/attempt_home/search_attempt_home_entries_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/entries/attempt_improvement/create_attempt_improvement_entries_complete.sql"]
     ) -> SqlString: ...
 
@@ -42300,6 +42530,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/entries/attempt_practice/create_attempt_practice_entries_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/entries/attempt_practice/search_attempt_practice_entries_complete.sql"]
     ) -> SqlString: ...
 
     @overload

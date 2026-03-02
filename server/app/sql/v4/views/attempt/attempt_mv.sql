@@ -75,6 +75,7 @@ SELECT
     -- Attempt timestamps and flags
     a.created_at AS attempt_created_at,
     COALESCE(a.infinite_mode, FALSE) AS infinite_mode,
+    COALESCE(a.num_chats, 1) AS num_chats,
 
     -- Archived flag (for filtering archived attempts)
     COALESCE(sa_archive.archived, FALSE) AS is_archived,

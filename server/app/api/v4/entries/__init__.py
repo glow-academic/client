@@ -8,6 +8,7 @@ from app.api.v4.entries.attempt import router as attempt_router
 from app.api.v4.entries.attempt_analysis import router as attempt_analysis_router
 from app.api.v4.entries.attempt_archive import router as attempt_archive_router
 from app.api.v4.entries.attempt_chat import router as attempt_chat_router
+from app.api.v4.entries.attempt_chat_bridge import router as attempt_chat_bridge_router
 from app.api.v4.entries.attempt_completion import router as attempt_completion_router
 from app.api.v4.entries.attempt_content import router as attempt_content_router
 from app.api.v4.entries.attempt_feedback import router as attempt_feedback_router
@@ -102,6 +103,7 @@ router.include_router(attempt_router)
 router.include_router(attempt_analysis_router)
 router.include_router(attempt_archive_router)
 router.include_router(attempt_chat_router)
+router.include_router(attempt_chat_bridge_router)
 router.include_router(attempt_home_router)
 router.include_router(attempt_completion_router)
 router.include_router(attempt_content_router)

@@ -83,9 +83,7 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
                 # --- Resolution via _internal() calls ---
 
                 # 1. Resolve profiles_resource_id via access internal
-                access = await get_access_internal(
-                    conn, profile_id, bypass_cache=True
-                )
+                access = await get_access_internal(conn, profile_id, bypass_cache=True)
                 profiles_resource_id = access.profiles_id
                 if not profiles_resource_id:
                     raise ValueError(

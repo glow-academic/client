@@ -34,8 +34,6 @@ const REFRESH_ENDPOINT_MAP: Record<string, string> = {
   activity: "/artifacts/activity/refresh",
   health: "/artifacts/health/refresh",
 };
-type AuthAttemptIn = InputOf<"/api/v4/auth/attempt", "post">;
-type AuthAttemptOut = OutputOf<"/api/v4/auth/attempt", "post">;
 type AttemptFullIn = InputOf<"/api/v4/artifacts/attempt/get", "post">;
 type AttemptFullOut = OutputOf<"/api/v4/artifacts/attempt/get", "post">;
 type SearchSimulatableProfilesIn = InputOf<"/api/v4/auth/simulatable", "post">;
@@ -104,37 +102,30 @@ export const getAnalyticsFilters = cache(
   }
 );
 
-/** ---- Cached auth attempt fetch (lightweight controls for layout header) ---- */
-export const getAuthAttempt = cache(
-  async (): Promise<AuthAttemptOut | null> => {
-    try {
-      const extraHeaders = await buildAuthHeaders();
-      return await api.post("/auth/attempt", { body: {} } as AuthAttemptIn, {
-        headers: extraHeaders,
-      });
-    } catch {
-      return null;
-    }
-  }
-);
-
 /** ---- Resolve group_id (cached per request) ---- */
 type ResolveGroupIn = InputOf<"/api/v4/auth/group", "post">;
+type ResolveGroupOut = OutputOf<"/api/v4/auth/group", "post">;
 
 export const resolveGroupId = cache(
-  async (draftId: string | null, artifactType: string | null): Promise<string> => {
+  async (params: {
+    draft_id?: string | null;
+    artifact_type?: string | null;
+    attempt_id?: string | null;
+    test_id?: string | null;
+  }): Promise<ResolveGroupOut> => {
     const extraHeaders = await buildAuthHeaders();
-    const res = await api.post(
+    return api.post(
       "/auth/group",
       {
         body: {
-          draft_id: draftId ?? null,
-          artifact_type: artifactType ?? null,
+          draft_id: params.draft_id ?? null,
+          artifact_type: params.artifact_type ?? null,
+          attempt_id: params.attempt_id ?? null,
+          test_id: params.test_id ?? null,
         },
       } as ResolveGroupIn,
       { headers: extraHeaders },
     );
-    return res.group_id;
   },
 );
 
@@ -151,6 +142,7 @@ export async function getGenerateMessages(
 /** ---- Export type for client (type-only imports) ---- */
 export type DraftsResponse = DraftsOut;
 export type AnalyticsFiltersResponse = AnalyticsFiltersOut;
+export type ResolveGroupResponse = ResolveGroupOut;
 
 /** ---- Helper to get validated profile ID (reusable for API calls) ----
  * @param session - Optional session to reuse. If not provided, will fetch session.
@@ -210,23 +202,20 @@ export async function getLayoutContextData(session?: Session | null) {
   let pageData: AuthPageOut | null = null;
   let draftsResult: DraftsOut | null = null;
   let analyticsFilters: AnalyticsFiltersOut | null = null;
-  let attemptControls: AuthAttemptOut | null = null;
 
   try {
-    const [profileRes, settingsRes, pageRes, draftsRes, filtersRes, attemptRes] = await Promise.all([
+    const [profileRes, settingsRes, pageRes, draftsRes, filtersRes] = await Promise.all([
       getAuthProfile(),
       getAuthSettings(),
       getAuthPage(),
       getDrafts(),
       getAnalyticsFilters(),
-      getAuthAttempt(),
     ]);
     profileData = profileRes;
     settingsData = settingsRes;
     pageData = pageRes;
     draftsResult = draftsRes;
     analyticsFilters = filtersRes;
-    attemptControls = attemptRes;
   } catch {
     // If fetch fails (e.g., 403/404), return null
     return {
@@ -234,7 +223,6 @@ export async function getLayoutContextData(session?: Session | null) {
       settingsData: null,
       pageData: null,
       snapshot,
-      attemptControls: null,
       drafts: [],
       analyticsFilters: null,
     };
@@ -247,7 +235,6 @@ export async function getLayoutContextData(session?: Session | null) {
       settingsData: null,
       pageData: null,
       snapshot,
-      attemptControls: null,
       drafts: [],
       analyticsFilters: null,
     };
@@ -258,7 +245,6 @@ export async function getLayoutContextData(session?: Session | null) {
     settingsData,
     pageData,
     snapshot,
-    attemptControls,
     drafts: draftsResult?.drafts ?? [],
     analyticsFilters,
   };
@@ -396,7 +382,6 @@ export type ExportPageFn = typeof exportPage;
 
 export type {
   AnalyticsFiltersOut,
-  AuthAttemptOut,
   AttemptFullIn,
   AttemptFullOut,
   CreateFeedbackIn,

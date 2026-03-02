@@ -71,7 +71,7 @@ export default async function MainLayout({
   }
 
   // Fetch all layout data in parallel
-  const { profileData, settingsData, pageData, snapshot, attemptControls, drafts, analyticsFilters } =
+  const { profileData, settingsData, pageData, snapshot, drafts, analyticsFilters } =
     await getLayoutContextData(session);
 
   // Profile resolution failed → full-width access denied
@@ -87,16 +87,38 @@ export default async function MainLayout({
     );
   }
 
-  // Resolve group_id: find the current draft's group_id or create a fresh one
+  // Resolve group_id: unified resolution from attempt, test, draft, or fresh
   const artifactType = pageData?.page_metadata?.artifact_type ?? null;
   const currentDraft = drafts.find((d) => d.artifact_type === artifactType);
   const draftGroupId = currentDraft?.group_id ?? null;
   const draftId = currentDraft?.id ? String(currentDraft.id) : null;
 
-  // Only resolve group_id for artifact pages (not list pages)
+  // Parse attempt_id and test_id from pathname
+  const attemptMatch = pathname.match(/\/attempt\/([0-9a-f-]{36})/);
+  const attemptId = attemptMatch?.[1] ?? null;
+  const testMatch = pathname.match(/\/test\/([0-9a-f-]{36})/);
+  const testId = testMatch?.[1] ?? null;
+
+  // Resolve group_id — handles attempt, test, draft, or creates fresh
   let groupId: string | null = null;
-  if (artifactType && pageData?.page_metadata?.show_drafts) {
-    groupId = draftGroupId ?? await resolveGroupId(draftId, artifactType);
+  let attemptControls: Awaited<ReturnType<typeof resolveGroupId>> | null = null;
+  const needsGroup = attemptId || testId || (artifactType && pageData?.page_metadata?.show_drafts);
+  if (needsGroup) {
+    // Skip API call if draft already has a group_id and no attempt/test context
+    if (draftGroupId && !attemptId && !testId) {
+      groupId = draftGroupId;
+    } else {
+      const groupResult = await resolveGroupId({
+        draft_id: draftId,
+        artifact_type: artifactType,
+        attempt_id: attemptId,
+        test_id: testId,
+      });
+      groupId = groupResult.group_id;
+      if (groupResult.show_controls) {
+        attemptControls = groupResult;
+      }
+    }
   }
 
   // Determine page content: access denied (inside sidebar) or normal page

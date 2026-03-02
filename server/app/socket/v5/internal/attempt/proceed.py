@@ -7,21 +7,48 @@ All attempt lifecycle events route through here:
 - attempt_end → proceed with completed_chat_id (marks chat done, then finds next)
 - attempt_end_all → proceed with complete_all=True (marks all done → ended)
 
-Flow:
-1. If completed_chat_id → insert into attempt_completion_entry
-2. If complete_all → mark all remaining chats completed → emit attempt_ended
-3. Check if all chats are done → emit attempt_ended
-4. Resolve attempt_chat via SQL function (create entry, copy connections, create bridge)
-5. If no generation needed → refresh MVs, emit attempt_chat_started
-6. If generation needed → emit generate(resource_types=[true flags])
+Flow (all via _internal() calls — zero inline SQL):
+1. If completed_chat_id → create_attempt_completion_entry_internal
+2. If complete_all → search bridges → loop create completions → refresh → ended
+3. Resolve context: attempt entry → bridges → parent chats → chat entry
+4. Check if all chats are done → emit attempt_ended
+5. Resolve department from chat entry + attempt fallback
+6. Branch on generation/user-choice flags
+7. Create attempt_chat_entry (with connection params) + bridge (separate)
+8. If generation → emit generate; else → refresh MVs + emit chat_started
 """
 
 from __future__ import annotations
 
 import uuid
-from typing import Any, cast
+from typing import Any
 
+from app.api.v4.auth.access import get_access_internal
+from app.api.v4.entries.attempt.get import get_attempt_entries_internal
+from app.api.v4.entries.attempt.refresh import refresh_attempt_internal
+from app.api.v4.entries.attempt_chat.create import create_attempt_chat_entry_internal
+from app.api.v4.entries.attempt_chat.refresh import refresh_attempt_chat_internal
+from app.api.v4.entries.attempt_chat_bridge.create import (
+    create_attempt_chat_bridge_entry_internal,
+)
+from app.api.v4.entries.attempt_chat_bridge.search import (
+    search_attempt_chat_bridge_entries_internal,
+)
+from app.api.v4.entries.attempt_completion.create import (
+    create_attempt_completion_entry_internal,
+)
+from app.api.v4.entries.attempt_home.search import search_attempt_home_entries_internal
+from app.api.v4.entries.attempt_practice.search import (
+    search_attempt_practice_entries_internal,
+)
+from app.api.v4.entries.chat.get import get_chat_entries_internal
+from app.api.v4.entries.home_chat.search import search_home_chat_entries_internal
+from app.api.v4.entries.practice_chat.search import (
+    search_practice_chat_entries_internal,
+)
+from app.api.v4.entries.runs.create import create_runs_entry_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.find_session_by_socket import find_session_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio
 from app.socket.v5.internal.attempt.helpers import emit_chat_generate
@@ -32,26 +59,11 @@ from app.socket.v5.internal.attempt.types import (
     AttemptProceedData,
     AttemptStartedData,
 )
-from app.sql.types import (
-    GetAttemptProceedContextSqlParams,
-    GetAttemptProceedContextSqlRow,
-    ResolveAttemptChatSqlParams,
-    ResolveAttemptChatSqlRow,
-)
-from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
-
-SQL_PATH_PROCEED_CONTEXT = (
-    "app/sql/v4/queries/generate/attempt/get_attempt_proceed_context_complete.sql"
-)
-SQL_PATH_RESOLVE_CHAT = (
-    "app/sql/v4/queries/generate/attempt/resolve_attempt_chat_complete.sql"
-)
 
 # Map generate_* flag names to resource_types for the generate pipeline
 GENERATE_FLAG_TO_RESOURCE = {
@@ -66,6 +78,32 @@ GENERATE_FLAG_TO_RESOURCE = {
     "generate_documents": "documents",
     "generate_options": "options",
     "generate_parameter_fields": "parameter_fields",
+}
+
+# Map generate_* flag names to connection param names on create_attempt_chat_entry
+GENERATE_FLAG_TO_CONNECTION = {
+    "generate_personas": "personas_ids",
+    "generate_problem_statements": "problem_statements_ids",
+    "generate_objectives": "objectives_ids",
+    "generate_questions": "questions_ids",
+    "generate_options": "options_ids",
+    "generate_videos": "videos_ids",
+    "generate_images": "images_ids",
+    "generate_documents": "documents_ids",
+    "generate_parameter_fields": "parameter_fields_ids",
+}
+
+# Map chat_mv connection array names to create_attempt_chat_entry param names
+CHAT_CONNECTION_TO_PARAM = {
+    "persona_ids": "personas_ids",
+    "problem_statement_ids": "problem_statements_ids",
+    "objective_ids": "objectives_ids",
+    "question_ids": "questions_ids",
+    "option_ids": "options_ids",
+    "video_ids": "video_ids",
+    "image_ids": "images_ids",
+    "document_ids": "documents_ids",
+    "parameter_field_ids": "parameter_fields_ids",
 }
 
 
@@ -98,30 +136,64 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
         )
         complete_all = payload.complete_all
 
-        # Step 2a: If completed_chat_id, mark that chat completed first
+        # Resolve session + create run for entry creates
+        session_id_str = await find_session_by_socket(sid)
+        if not session_id_str:
+            raise ValueError("Session not found for socket")
+        session_id = uuid.UUID(session_id_str)
+
+        async with get_db_connection() as conn:
+            access = await get_access_internal(conn, profile_id, bypass_cache=True)
+            profiles_resource_id = access.profiles_id
+
+            run_result = await create_runs_entry_internal(
+                conn,
+                session_id=session_id,
+                profiles_id=profiles_resource_id,
+            )
+            run_id = run_result.id
+
+        # Step 2a: If completed_chat_id, mark that chat completed
         if completed_chat_id:
             async with get_db_connection() as conn:
-                await conn.execute(
-                    """INSERT INTO attempt_completion_entry (chat_id)
-                    VALUES ($1) ON CONFLICT (chat_id) DO NOTHING""",
-                    completed_chat_id,
-                )
+                try:
+                    await create_attempt_completion_entry_internal(
+                        conn,
+                        {"chat_id": str(completed_chat_id)},
+                        run_id=run_id,
+                    )
+                except Exception:
+                    # Already completed — ON CONFLICT equivalent
+                    logger.debug(f"Chat {completed_chat_id} already completed")
 
         # Step 2b: If complete_all, mark all remaining chats completed → ended
         if complete_all:
             async with get_db_connection() as conn:
-                await conn.execute(
-                    """INSERT INTO attempt_completion_entry (chat_id)
-                    SELECT ac.attempt_chat_id
-                    FROM attempt_chat_bridge_entry ac
-                    JOIN attempt_chat_entry c ON c.id = ac.attempt_chat_id
-                    WHERE ac.attempt_id = $1 AND c.active = TRUE
-                    ON CONFLICT (chat_id) DO NOTHING""",
-                    attempt_id,
+                # Find all bridges for this attempt
+                bridges = await search_attempt_chat_bridge_entries_internal(
+                    conn,
+                    attempt_id=attempt_id,
+                    limit_count=1000,
+                    bypass_cache=True,
                 )
-                await conn.execute("REFRESH MATERIALIZED VIEW attempt_mv")
-                await conn.execute("REFRESH MATERIALIZED VIEW attempt_chat_mv")
-            await invalidate_tags(["attempt", "attempts"])
+
+                # Create completion for each bridge (skip already-completed)
+                for bridge in bridges:
+                    bridge_chat_id = bridge.get("attempt_chat_id")
+                    if bridge_chat_id:
+                        try:
+                            await create_attempt_completion_entry_internal(
+                                conn,
+                                {"chat_id": str(bridge_chat_id)},
+                                run_id=run_id,
+                            )
+                        except Exception:
+                            # Already completed
+                            pass
+
+                # Refresh MVs
+                await refresh_attempt_internal(conn)
+                await refresh_attempt_chat_internal(conn)
 
             await internal_sio.emit(
                 "attempt_ended",
@@ -135,39 +207,79 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
             )
             return
 
-        # Step 3: Get all context in one SQL call
+        # ---- Context Resolution (replacing get_attempt_proceed_context) ----
+
         async with get_db_connection() as conn:
-            row = cast(
-                GetAttemptProceedContextSqlRow,
-                await execute_sql_typed(
-                    conn,
-                    SQL_PATH_PROCEED_CONTEXT,
-                    params=GetAttemptProceedContextSqlParams(
-                        p_attempt_id=attempt_id,
-                        p_profile_id=profile_id,
-                    ),
-                ),
+            # 3a. Get attempt entry (num_chats, practice flag, department_id)
+            attempt_entries = await get_attempt_entries_internal(
+                conn, [attempt_id], bypass_cache=True
+            )
+            if not attempt_entries:
+                raise ValueError(f"Attempt not found: {attempt_id}")
+            attempt_data = attempt_entries[0]
+
+            num_chats = attempt_data.get("num_chats", 1)
+            is_practice = attempt_data.get("practice", False)
+            attempt_department_id = attempt_data.get("department_id")
+
+            # 3b. Get already-resolved bridges (completed_count + resolved chat_ids)
+            bridges = await search_attempt_chat_bridge_entries_internal(
+                conn,
+                attempt_id=attempt_id,
+                limit_count=1000,
+                bypass_cache=True,
+            )
+            resolved_chat_ids = {
+                bridge.get("chat_id") for bridge in bridges if bridge.get("chat_id")
+            }
+            completed_count = len(bridges)
+
+            # 3c. Get parent chat_ids from practice/home
+            if is_practice:
+                practice_entries = await search_attempt_practice_entries_internal(
+                    conn, attempt_id=attempt_id, bypass_cache=True
+                )
+                if not practice_entries:
+                    raise ValueError("No practice link for this attempt")
+                practice_id = uuid.UUID(practice_entries[0].get("practice_id"))
+                parent_chat_links = await search_practice_chat_entries_internal(
+                    conn, practice_id=practice_id, limit_count=1000, bypass_cache=True
+                )
+            else:
+                home_entries = await search_attempt_home_entries_internal(
+                    conn, attempt_id=attempt_id, bypass_cache=True
+                )
+                if not home_entries:
+                    raise ValueError("No home link for this attempt")
+                home_id = uuid.UUID(home_entries[0].get("home_id"))
+                parent_chat_links = await search_home_chat_entries_internal(
+                    conn, home_id=home_id, limit_count=1000, bypass_cache=True
+                )
+
+            # Extract all parent chat_ids
+            all_parent_chat_ids = [
+                uuid.UUID(link.get("chat_id"))
+                for link in parent_chat_links
+                if link.get("chat_id")
+            ]
+
+            # 3d. Get chat entry details for all parent chats (includes position)
+            all_chat_entries = await get_chat_entries_internal(
+                conn,
+                all_parent_chat_ids,
+                bypass_cache=True,
             )
 
-        if not row or not row.items:
-            await internal_sio.emit(
-                "attempt_error",
-                AttemptErrorData(
-                    sid=sid,
-                    error_type="proceed",
-                    message="Failed to resolve attempt context",
-                ).model_dump(mode="json"),
-            )
-            return
-
-        ctx = row.items[0]
+            # Sort by position, filter out already-resolved
+            remaining = [
+                ce
+                for ce in all_chat_entries
+                if str(ce.get("chat_entry_id")) not in {str(rid) for rid in resolved_chat_ids}
+            ]
+            remaining.sort(key=lambda ce: (ce.get("position", 0) or 0, str(ce.get("created_at", ""))))
 
         # Step 4: Check if all chats are done
-        if ctx.chat_entry_id is None or (
-            ctx.completed_count is not None
-            and ctx.num_chats is not None
-            and ctx.completed_count >= ctx.num_chats
-        ):
+        if not remaining or completed_count >= num_chats:
             await internal_sio.emit(
                 "attempt_ended",
                 AttemptEndedData(
@@ -180,10 +292,17 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
             )
             return
 
-        chat_entry_id = ctx.chat_entry_id
-        department_id = ctx.department_id
+        # Next chat to resolve
+        next_chat = remaining[0]
+        chat_entry_id = uuid.UUID(str(next_chat.get("chat_entry_id")))
 
-        if not department_id:
+        # Step 5: Resolve department
+        chat_department_ids = next_chat.get("department_ids") or []
+        if len(chat_department_ids) == 1:
+            department_id = uuid.UUID(str(chat_department_ids[0]))
+        elif attempt_department_id:
+            department_id = uuid.UUID(str(attempt_department_id))
+        else:
             await internal_sio.emit(
                 "attempt_error",
                 AttemptErrorData(
@@ -194,22 +313,18 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
             )
             return
 
-        # Step 5: Determine generation needs and user choices
+        # Step 6: Determine generation needs and user choices
         resource_types_to_generate: list[str] = []
         for flag_name, resource_type in GENERATE_FLAG_TO_RESOURCE.items():
-            if getattr(ctx, flag_name, False):
+            if next_chat.get(flag_name, False):
                 resource_types_to_generate.append(resource_type)
 
         needs_generation = len(resource_types_to_generate) > 0
-        has_user_choice = bool(ctx.use_custom) or bool(ctx.use_previous)
+        has_user_choice = bool(next_chat.get("use_custom")) or bool(
+            next_chat.get("use_previous")
+        )
 
-        # Step 6: Branch on state
-        #
-        # Path 1: No generation + no user choice → resolve + chat_started
-        # Path 2: Generation + no user choice → resolve + generate
-        # Path 3: force_proceed (from lobby) → resolve + (generate or chat_started)
-        # Path 4: has_user_choice + not force_proceed → lobby
-
+        # Step 7: Branch on state
         if has_user_choice and not force_proceed:
             # Path 4: Show lobby — user needs to choose
             await internal_sio.emit(
@@ -222,45 +337,94 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
             )
             return
 
-        # Paths 1, 2, 3: Create entry + copy connections + bridge
+        # ---- Write Phase (replacing resolve_attempt_chat) ----
+
+        # Build request_dict from chat entry data
+        request_dict: dict[str, Any] = {
+            "chat_id": str(chat_entry_id),
+            "title": next_chat.get("name") or "",
+            "position": next_chat.get("position", 0),
+            "time_limit": next_chat.get("time_limit"),
+            "negative_time": next_chat.get("negative_time", False),
+            "audio_enabled": next_chat.get("audio_enabled", True),
+            "text_enabled": next_chat.get("text_enabled", True),
+            "hints_enabled": next_chat.get("hints_enabled", False),
+            "copy_paste_allowed": next_chat.get("copy_paste_allowed", True),
+            "show_images": next_chat.get("show_images", True),
+            "show_objectives": next_chat.get("show_objectives", True),
+            "show_problem_statement": next_chat.get("show_problem_statement", True),
+            "analyses_enabled": next_chat.get("analyses_enabled", True),
+            "improvements_enabled": next_chat.get("improvements_enabled", True),
+            "replacements_enabled": next_chat.get("replacements_enabled", True),
+            "strengths_enabled": next_chat.get("strengths_enabled", True),
+            "use_custom": next_chat.get("use_custom", False),
+            "use_previous": next_chat.get("use_previous", False),
+            "problem_statement_enabled": next_chat.get("problem_statement_enabled", True),
+            "objectives_enabled": next_chat.get("objectives_enabled", True),
+            "video_enabled": next_chat.get("video_enabled", False),
+            "images_enabled": next_chat.get("images_enabled", False),
+            "questions_enabled": next_chat.get("questions_enabled", False),
+        }
+
+        # Always-copied connections: rubrics, standards, standard_groups, departments
+        rubric_ids = next_chat.get("rubric_ids") or []
+        if rubric_ids:
+            request_dict["rubrics_ids"] = [str(rid) for rid in rubric_ids]
+
+        standard_ids = next_chat.get("standard_ids") or []
+        if standard_ids:
+            request_dict["standards_ids"] = [str(sid_val) for sid_val in standard_ids]
+
+        standard_group_ids = next_chat.get("standard_group_ids") or []
+        if standard_group_ids:
+            request_dict["standard_groups_ids"] = [
+                str(sgid) for sgid in standard_group_ids
+            ]
+
+        department_ids_list = next_chat.get("department_ids") or []
+        if department_ids_list:
+            request_dict["departments_ids"] = [
+                str(did) for did in department_ids_list
+            ]
+
+        # Conditional connections: only copy when generate_*=false
+        for gen_flag, conn_param in GENERATE_FLAG_TO_CONNECTION.items():
+            if not next_chat.get(gen_flag, False):
+                # Not generating → copy from chat entry
+                chat_mv_key = {
+                    "personas_ids": "persona_ids",
+                    "problem_statements_ids": "problem_statement_ids",
+                    "objectives_ids": "objective_ids",
+                    "questions_ids": "question_ids",
+                    "options_ids": "option_ids",
+                    "videos_ids": "video_ids",
+                    "images_ids": "image_ids",
+                    "documents_ids": "document_ids",
+                    "parameter_fields_ids": "parameter_field_ids",
+                }.get(conn_param, conn_param)
+
+                ids_from_chat = next_chat.get(chat_mv_key) or []
+                if ids_from_chat:
+                    request_dict[conn_param] = [str(cid) for cid in ids_from_chat]
+
+        # Step 8: Create attempt_chat entry + bridge (separate)
         async with get_db_connection() as conn:
-            resolve_row = cast(
-                ResolveAttemptChatSqlRow,
-                await execute_sql_typed(
+            async with conn.transaction():
+                chat_result = await create_attempt_chat_entry_internal(
+                    conn, request_dict, run_id=run_id
+                )
+                attempt_chat_id = chat_result.id
+
+                await create_attempt_chat_bridge_entry_internal(
                     conn,
-                    SQL_PATH_RESOLVE_CHAT,
-                    params=ResolveAttemptChatSqlParams(
-                        p_attempt_id=attempt_id,
-                        p_chat_entry_id=chat_entry_id,
-                        p_department_id=department_id,
-                        p_generate_personas=ctx.generate_personas or False,
-                        p_generate_problem_statements=ctx.generate_problem_statements
-                        or False,
-                        p_generate_objectives=ctx.generate_objectives or False,
-                        p_generate_questions=ctx.generate_questions or False,
-                        p_generate_options=ctx.generate_options or False,
-                        p_generate_videos=ctx.generate_videos or False,
-                        p_generate_images=ctx.generate_images or False,
-                        p_generate_documents=ctx.generate_documents or False,
-                        p_generate_parameter_fields=ctx.generate_parameter_fields
-                        or False,
-                    ),
-                ),
-            )
+                    {
+                        "attempt_id": str(attempt_id),
+                        "attempt_chat_id": str(attempt_chat_id),
+                    },
+                    run_id=run_id,
+                )
 
-        if not resolve_row or not resolve_row.items:
-            await internal_sio.emit(
-                "attempt_error",
-                AttemptErrorData(
-                    sid=sid,
-                    error_type="proceed",
-                    message="Failed to create attempt chat entry",
-                ).model_dump(mode="json"),
-            )
-            return
-
-        attempt_chat_id = resolve_row.items[0].attempt_chat_id
-
+        # Step 9: Post-write
         if needs_generation:
             # Paths 2 & 3 (with generation): emit generate
             await emit_chat_generate(
@@ -276,9 +440,8 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
         else:
             # Paths 1 & 3 (no generation): refresh MVs, emit chat_started
             async with get_db_connection() as conn:
-                await conn.execute("REFRESH MATERIALIZED VIEW attempt_mv")
-                await conn.execute("REFRESH MATERIALIZED VIEW attempt_chat_mv")
-            await invalidate_tags(["attempt", "attempts"])
+                await refresh_attempt_internal(conn)
+                await refresh_attempt_chat_internal(conn)
 
             await internal_sio.emit(
                 "attempt_chat_started",

@@ -26,14 +26,12 @@ import { toast } from "sonner";
 export interface SimulationControlsProps {
   attemptId: string;
   currentChatId: string;
-  simulationId: string;
   hasMessages: boolean;
 }
 
 export function SimulationControls({
   attemptId,
   currentChatId,
-  simulationId,
   hasMessages,
 }: SimulationControlsProps) {
   const { socket } = useSocket();

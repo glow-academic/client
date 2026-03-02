@@ -3,7 +3,6 @@
 from fastapi import APIRouter
 
 from app.api.v4.auth.analytics import router as analytics_router
-from app.api.v4.auth.attempt import router as attempt_router
 from app.api.v4.auth.callback import router as callback_router
 from app.api.v4.auth.decrypt import router as decrypt_router
 from app.api.v4.auth.drafts import router as drafts_router
@@ -22,7 +21,6 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 # Include all auth endpoint routers
 router.include_router(login_router)
-router.include_router(attempt_router)
 router.include_router(profile_router)
 router.include_router(settings_router)
 router.include_router(page_router)

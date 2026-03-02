@@ -911,7 +911,9 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
                         content_blocks = post_process_media_sentinels(
                             m, agent_input_modalities=None
                         )
-                        messages.append({"role": "developer", "content": content_blocks})
+                        messages.append(
+                            {"role": "developer", "content": content_blocks}
+                        )
                     else:
                         messages.append({"role": "developer", "content": m})
                     await conn.fetchval(
