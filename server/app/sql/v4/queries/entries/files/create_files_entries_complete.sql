@@ -16,14 +16,13 @@ END $$;
 
 CREATE OR REPLACE FUNCTION public.api_create_files_entry_v4(
     session_id uuid,
-    upload_id uuid DEFAULT NULL,
     mcp boolean DEFAULT false
 ) RETURNS TABLE (id uuid)
 LANGUAGE plpgsql AS $$
 DECLARE v_id uuid;
 BEGIN
-    INSERT INTO files_entry (session_id, upload_id, mcp, generated)
-    VALUES (api_create_files_entry_v4.session_id, api_create_files_entry_v4.upload_id, api_create_files_entry_v4.mcp, true)
+    INSERT INTO files_entry (session_id, mcp, generated)
+    VALUES (api_create_files_entry_v4.session_id, api_create_files_entry_v4.mcp, true)
     RETURNING files_entry.id INTO v_id;
     RETURN QUERY SELECT v_id;
 END; $$;

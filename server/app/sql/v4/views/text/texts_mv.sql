@@ -7,7 +7,7 @@
 -- Purpose: Text entry metadata (file_path, mime_type via uploads_entry)
 -- Section: TEXT (lean MV)
 --
--- Dependencies: texts_resource, texts_texts_connection, texts_entry, uploads_entry, uploads_uploads_connection, uploads_resource
+-- Dependencies: texts_resource, texts_texts_connection, texts_entry, text_uploads_entry, uploads_entry, uploads_uploads_connection, uploads_resource
 -- ============================================================================
 -- Step 1: Drop all indexes on texts_mv materialized view (if it exists)
 -- ============================================================================
@@ -47,7 +47,8 @@ SELECT
 FROM texts_resource tr
 JOIN texts_texts_connection ttc ON ttc.texts_id = tr.id AND ttc.active = true
 JOIN texts_entry te ON te.id = ttc.text_id AND te.active = true
-LEFT JOIN uploads_entry ue ON ue.id = te.upload_id AND ue.active = true
+LEFT JOIN text_uploads_entry tue ON tue.text_id = te.id AND tue.active = true
+LEFT JOIN uploads_entry ue ON ue.id = tue.upload_id AND ue.active = true
 LEFT JOIN uploads_uploads_connection uuc ON uuc.upload_id = ue.id AND uuc.active = true
 LEFT JOIN uploads_resource ur ON ur.id = uuc.uploads_id AND ur.active = true
 WHERE tr.active = true

@@ -7,7 +7,7 @@
 -- Purpose: File entry with upload entry metadata (file_path, mime_type, size)
 -- Section: FILE (lean MV)
 --
--- Dependencies: files_entry, uploads_entry, uploads_uploads_connection, uploads_resource
+-- Dependencies: files_entry, file_uploads_entry, uploads_entry, uploads_uploads_connection, uploads_resource
 -- ============================================================================
 -- Step 1: Drop all indexes on files_mv materialized view (if it exists)
 -- ============================================================================
@@ -45,7 +45,8 @@ SELECT
     ue.size,
     fe.created_at
 FROM files_entry fe
-JOIN uploads_entry ue ON ue.id = fe.upload_id AND ue.active = true
+JOIN file_uploads_entry fue ON fue.file_id = fe.id AND fue.active = true
+JOIN uploads_entry ue ON ue.id = fue.upload_id AND ue.active = true
 JOIN uploads_uploads_connection uuc ON uuc.upload_id = ue.id AND uuc.active = true
 JOIN uploads_resource ur ON ur.id = uuc.uploads_id AND ur.active = true
 WHERE fe.active = true

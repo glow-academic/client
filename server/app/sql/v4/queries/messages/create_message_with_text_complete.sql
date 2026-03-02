@@ -1,25 +1,28 @@
-WITH inserted_text AS (
+WITH existing_text AS (
+    SELECT tue.text_id AS id
+    FROM text_uploads_entry tue
+    WHERE tue.upload_id = $3::uuid AND tue.active = true
+    LIMIT 1
+),
+inserted_text AS (
     INSERT INTO texts_entry (
-        upload_id,
         created_at,
         updated_at
     )
-    VALUES (
-        $3::uuid,
-        NOW(),
-        NOW()
-    )
-    ON CONFLICT (upload_id) DO UPDATE
-    SET updated_at = NOW()
+    SELECT NOW(), NOW()
+    WHERE NOT EXISTS (SELECT 1 FROM existing_text)
     RETURNING id
 ),
+link_upload AS (
+    INSERT INTO text_uploads_entry (text_id, upload_id)
+    SELECT it.id, $3::uuid
+    FROM inserted_text it
+    RETURNING text_id AS id
+),
 resolved_text AS (
-    SELECT id
-    FROM inserted_text
+    SELECT id FROM existing_text
     UNION ALL
-    SELECT te.id
-    FROM texts_entry te
-    WHERE te.upload_id = $3::uuid
+    SELECT id FROM inserted_text
     LIMIT 1
 ),
 new_message AS (

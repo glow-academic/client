@@ -15,13 +15,11 @@ class FilesEntryData(BaseModel):
 
 class CreateFilesEntrySqlParams(BaseModel):
     session_id: UUID
-    upload_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
         return (
             self.session_id,
-            self.upload_id,
             self.mcp,
         )
 

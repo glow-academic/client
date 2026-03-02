@@ -18,13 +18,12 @@ SQL_PATH = "app/sql/v4/queries/entries/images/create_images_entries_complete.sql
 async def create_images_entry_internal(
     conn: asyncpg.Connection,
     session_id: UUID,
-    upload_id: UUID | None = None,
     message_id: UUID | None = None,
     mcp: bool = False,
 ) -> CreateImagesEntryResponse:
     """Create a images entry. Internal only — no HTTP route."""
     params = CreateImagesEntrySqlParams(
-        session_id=session_id, upload_id=upload_id, message_id=message_id, mcp=mcp
+        session_id=session_id, message_id=message_id, mcp=mcp
     )
 
     result = cast(

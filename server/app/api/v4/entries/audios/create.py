@@ -18,7 +18,6 @@ SQL_PATH = "app/sql/v4/queries/entries/audios/create_audios_entries_complete.sql
 async def create_audios_entry_internal(
     conn: asyncpg.Connection,
     session_id: UUID,
-    upload_id: UUID | None = None,
     message_id: UUID | None = None,
     length_seconds: int = 0,
     mcp: bool = False,
@@ -26,7 +25,6 @@ async def create_audios_entry_internal(
     """Create a audios entry. Internal only — no HTTP route."""
     params = CreateAudiosEntrySqlParams(
         session_id=session_id,
-        upload_id=upload_id,
         message_id=message_id,
         length_seconds=length_seconds,
         mcp=mcp,

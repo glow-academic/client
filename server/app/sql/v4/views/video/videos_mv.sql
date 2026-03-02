@@ -7,7 +7,7 @@
 -- Purpose: Video entry with upload entry metadata (file_path, mime_type, size) + domain attrs (length_seconds)
 -- Section: VIDEO (lean MV)
 --
--- Dependencies: videos_entry, uploads_entry, uploads_uploads_connection, uploads_resource
+-- Dependencies: videos_entry, video_uploads_entry, uploads_entry, uploads_uploads_connection, uploads_resource
 -- ============================================================================
 -- Step 1: Drop all indexes on videos_mv materialized view (if it exists)
 -- ============================================================================
@@ -46,7 +46,8 @@ SELECT
     ve.length_seconds,
     ve.created_at
 FROM videos_entry ve
-JOIN uploads_entry ue ON ue.id = ve.upload_id AND ue.active = true
+JOIN video_uploads_entry vue ON vue.video_id = ve.id AND vue.active = true
+JOIN uploads_entry ue ON ue.id = vue.upload_id AND ue.active = true
 JOIN uploads_uploads_connection uuc ON uuc.upload_id = ue.id AND uuc.active = true
 JOIN uploads_resource ur ON ur.id = uuc.uploads_id AND ur.active = true
 WHERE ve.active = true

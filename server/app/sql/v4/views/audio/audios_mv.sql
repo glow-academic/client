@@ -7,7 +7,7 @@
 -- Purpose: Audio entry with upload entry metadata (file_path, mime_type, size) + domain attrs (length_seconds, voice_id)
 -- Section: AUDIO (lean MV)
 --
--- Dependencies: audios_entry, uploads_entry, uploads_uploads_connection, uploads_resource, audios_voices_connection
+-- Dependencies: audios_entry, audio_uploads_entry, uploads_entry, uploads_uploads_connection, uploads_resource, audios_voices_connection
 -- ============================================================================
 -- Step 1: Drop all indexes on audios_mv materialized view (if it exists)
 -- ============================================================================
@@ -47,7 +47,8 @@ SELECT
     avc.voice_id,
     ae.created_at
 FROM audios_entry ae
-JOIN uploads_entry ue ON ue.id = ae.upload_id AND ue.active = true
+JOIN audio_uploads_entry aue ON aue.audio_id = ae.id AND aue.active = true
+JOIN uploads_entry ue ON ue.id = aue.upload_id AND ue.active = true
 JOIN uploads_uploads_connection uuc ON uuc.upload_id = ue.id AND uuc.active = true
 JOIN uploads_resource ur ON ur.id = uuc.uploads_id AND ur.active = true
 LEFT JOIN audios_voices_connection avc ON avc.audio_id = ae.id AND avc.active = true

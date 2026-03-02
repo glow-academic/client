@@ -77,7 +77,8 @@ base_messages AS (
     JOIN attempt_entry a ON a.id = ac.attempt_id
     LEFT JOIN runs_resource_agg rra ON rra.run_id = m.run_id
     LEFT JOIN texts_entry te ON te.id = m.text_id
-    LEFT JOIN uploads_entry ue ON ue.id = te.upload_id
+    LEFT JOIN text_uploads_entry tue ON tue.text_id = te.id AND tue.active = true
+    LEFT JOIN uploads_entry ue ON ue.id = tue.upload_id
     LEFT JOIN audio_agg aa ON aa.message_id = sm.id
     -- Latest message completion state (append-only)
     LEFT JOIN LATERAL (

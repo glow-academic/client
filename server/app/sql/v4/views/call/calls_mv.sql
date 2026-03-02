@@ -7,7 +7,7 @@
 -- Purpose: Exposes tool_id (resource ID) — name resolved in hydration layer
 -- Section: CALL (lean MV - used by group detail artifact)
 --
--- Dependencies: calls_entry, uploads_entry, uploads_uploads_connection, uploads_resource, tools_calls_connection
+-- Dependencies: calls_entry, call_uploads_entry, uploads_entry, uploads_uploads_connection, uploads_resource, tools_calls_connection
 -- ============================================================================
 -- Step 1: Drop all indexes on calls_mv materialized view (if it exists)
 -- ============================================================================
@@ -46,7 +46,8 @@ SELECT
     ue.mime_type,
     tcc.tools_id AS tool_id
 FROM calls_entry c
-LEFT JOIN uploads_entry ue ON ue.id = c.upload_id AND ue.active = true
+LEFT JOIN call_uploads_entry cue ON cue.call_id = c.id AND cue.active = true
+LEFT JOIN uploads_entry ue ON ue.id = cue.upload_id AND ue.active = true
 LEFT JOIN uploads_uploads_connection uuc ON uuc.upload_id = ue.id AND uuc.active = true
 LEFT JOIN uploads_resource ur ON ur.id = uuc.uploads_id AND ur.active = true
 LEFT JOIN tools_calls_connection tcc ON tcc.call_id = c.id

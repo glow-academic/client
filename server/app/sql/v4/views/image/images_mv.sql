@@ -7,7 +7,7 @@
 -- Purpose: Image entry with upload entry metadata (file_path, mime_type, size) + domain attrs (quality_id)
 -- Section: IMAGE (lean MV)
 --
--- Dependencies: images_entry, uploads_entry, uploads_uploads_connection, uploads_resource, images_qualities_connection
+-- Dependencies: images_entry, image_uploads_entry, uploads_entry, uploads_uploads_connection, uploads_resource, images_qualities_connection
 -- ============================================================================
 -- Step 1: Drop all indexes on images_mv materialized view (if it exists)
 -- ============================================================================
@@ -46,7 +46,8 @@ SELECT
     iqc.quality_id,
     ie.created_at
 FROM images_entry ie
-JOIN uploads_entry ue ON ue.id = ie.upload_id AND ue.active = true
+JOIN image_uploads_entry iue ON iue.image_id = ie.id AND iue.active = true
+JOIN uploads_entry ue ON ue.id = iue.upload_id AND ue.active = true
 JOIN uploads_uploads_connection uuc ON uuc.upload_id = ue.id AND uuc.active = true
 JOIN uploads_resource ur ON ur.id = uuc.uploads_id AND ur.active = true
 LEFT JOIN images_qualities_connection iqc ON iqc.image_id = ie.id AND iqc.active = true

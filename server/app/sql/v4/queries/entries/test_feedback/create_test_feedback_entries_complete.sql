@@ -33,10 +33,15 @@ DECLARE
     v_message_id uuid;
 BEGIN
     -- 1. Create text record
-    INSERT INTO texts_entry (upload_id, generated, mcp)
-    VALUES (api_create_test_feedback_entry_v4.upload_id, true, api_create_test_feedback_entry_v4.mcp)
-    ON CONFLICT (upload_id) DO UPDATE SET id = texts_entry.id
+    INSERT INTO texts_entry (generated, mcp)
+    VALUES (true, api_create_test_feedback_entry_v4.mcp)
     RETURNING texts_entry.id INTO v_text_id;
+
+    -- Link upload to text entry
+    IF api_create_test_feedback_entry_v4.upload_id IS NOT NULL THEN
+        INSERT INTO text_uploads_entry (text_id, upload_id)
+        VALUES (v_text_id, api_create_test_feedback_entry_v4.upload_id);
+    END IF;
 
     -- 2. Create call record
     v_call_id := uuidv7();

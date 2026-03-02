@@ -16,13 +16,11 @@ class TextsEntryData(BaseModel):
 
 class CreateTextsEntrySqlParams(BaseModel):
     session_id: UUID
-    upload_id: UUID
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
         return (
             self.session_id,
-            self.upload_id,
             self.mcp,
         )
 

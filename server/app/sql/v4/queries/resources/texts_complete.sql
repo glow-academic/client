@@ -1,6 +1,6 @@
 -- Create texts resource
 -- SIMPLIFIED: No agent_id required, optional tool_id for tracking
--- Creates texts_entry (with upload_id dedup), texts_resource, texts_texts_connection
+-- Creates texts_entry, links upload via text_uploads_entry, creates texts_resource + texts_texts_connection
 -- Parameters: upload_id (uuid), mcp (boolean), group_id (uuid, optional), tool_id (uuid, optional)
 -- Returns: texts_id (uuid)
 
@@ -38,16 +38,20 @@ DECLARE
     v_call_id uuid;
     v_text_entry_id uuid;
 BEGIN
-    -- Get or create texts_entry (dedup by upload_id)
-    SELECT te.id INTO v_text_entry_id
-    FROM texts_entry te
-    WHERE te.upload_id = api_create_texts_v4.upload_id
+    -- Get or create texts_entry (dedup by upload_id via junction)
+    SELECT tue.text_id INTO v_text_entry_id
+    FROM text_uploads_entry tue
+    WHERE tue.upload_id = api_create_texts_v4.upload_id AND tue.active = true
     LIMIT 1;
 
     IF v_text_entry_id IS NULL THEN
-        INSERT INTO texts_entry (id, upload_id, active, generated, mcp, created_at, updated_at)
-        VALUES (uuidv7(), api_create_texts_v4.upload_id, true, false, mcp, NOW(), NOW())
+        INSERT INTO texts_entry (id, active, generated, mcp, created_at, updated_at)
+        VALUES (uuidv7(), true, false, mcp, NOW(), NOW())
         RETURNING id INTO v_text_entry_id;
+
+        -- Link upload to text entry
+        INSERT INTO text_uploads_entry (text_id, upload_id)
+        VALUES (v_text_entry_id, api_create_texts_v4.upload_id);
     END IF;
 
     -- Create texts_resource

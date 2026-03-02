@@ -18,13 +18,11 @@ SQL_PATH = "app/sql/v4/queries/entries/files/create_files_entries_complete.sql"
 async def create_files_entry_internal(
     conn: asyncpg.Connection,
     session_id: UUID,
-    upload_id: UUID | None = None,
     mcp: bool = False,
 ) -> CreateFilesEntryResponse:
     """Create a files entry. Internal only — no HTTP route."""
     params = CreateFilesEntrySqlParams(
         session_id=session_id,
-        upload_id=upload_id,
         mcp=mcp,
     )
 
