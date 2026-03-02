@@ -158,9 +158,6 @@ INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp)
 -- agent_artifact
 INSERT INTO public.agent_artifact (created_at, updated_at, id, generated, mcp) VALUES ('2025-12-02T13:15:00.683340+00:00', '2025-12-02T13:15:00.683340+00:00', '019b3be4-3112-774d-82b2-c4c3ed98238e', false, false) ON CONFLICT (id) DO NOTHING;
 
--- Tools (tools_resource for create_html)
-INSERT INTO public.tools_resource (created_at, active, generated, mcp, id, name, description, department_ids, operation, args_ids, args_output_ids, resources, entries, artifacts) VALUES ('2026-01-13T23:48:20.098044+00:00', true, false, false, '019bebc4-d436-7bcc-b38a-2799877eb259', 'create_html', 'Generate the Jinja template HTML for the document.', '{}', 'create', '{}', '{}', '{}'::text[], '{}'::text[], '{}'::text[]) ON CONFLICT (id) DO NOTHING;
-
 -- Junctions
 -- agent_descriptions_junction
 INSERT INTO public.agent_descriptions_junction (agent_id, description_id, created_at, generated, mcp, active) VALUES ('019b3be4-3112-774d-82b2-c4c3ed98238e', '019b995c-8ea1-7cc3-af43-22701005aebd', '2025-12-02T13:15:00.683340+00:00', false, false, true) ON CONFLICT (agent_id, description_id) DO NOTHING;

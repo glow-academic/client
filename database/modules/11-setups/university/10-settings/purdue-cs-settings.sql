@@ -68,154 +68,40 @@ INSERT INTO public.setting_thresholds_junction (setting_id, threshold_id, type, 
 -- department_settings_junction (moved from department file — needs settings_resource to exist)
 INSERT INTO public.department_settings_junction (active, created_at, department_id, settings_id, generated, mcp) VALUES (true, '2025-12-12T13:26:55.664826+00:00', '019b3be4-3247-7cb0-bd74-9b2467b5e32d', '019bb25e-e615-7952-a7d4-4fdee85d18cc', false, false) ON CONFLICT (department_id, settings_id) DO NOTHING;
 
--- systems_resource + system junctions (1 system per agent, except attempt-chat has text+audio agents)
-WITH setting_scope AS (
-    SELECT '019b3be4-3c61-76ff-befb-69b082df2acd'::uuid AS setting_id
-),
-active_agents AS (
-    SELECT DISTINCT
-        aaj.agents_id,
-        ar.name AS agent_name
-    FROM public.agent_agents_junction aaj
-    JOIN public.agents_resource ar ON ar.id = aaj.agents_id
-    WHERE aaj.active = true
-      AND ar.active = true
-),
-system_mapping AS (
-    SELECT
-        ss.setting_id,
-        aa.agents_id,
-        aa.agent_name,
-        CASE
-            WHEN aa.agent_name IN ('Attempt Chat', 'Attempt Chat Audio') THEN 'attempt-chat'
-            ELSE regexp_replace(lower(regexp_replace(aa.agent_name, '[^a-zA-Z0-9]+', '-', 'g')), '(^-|-$)', '', 'g')
-        END AS system_key
-    FROM setting_scope ss
-    CROSS JOIN active_agents aa
-),
-systems_to_seed AS (
-    SELECT
-        sm.setting_id,
-        sm.system_key,
-        (
-            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 1, 8) || '-' ||
-            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 9, 4) || '-' ||
-            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 13, 4) || '-' ||
-            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 17, 4) || '-' ||
-            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 21, 12)
-        )::uuid AS system_id,
-        initcap(replace(sm.system_key, '-', ' ')) || ' System' AS system_name,
-        'Seeded system for ' || sm.system_key || ' agents' AS system_description,
-        ARRAY_AGG(DISTINCT sm.agents_id ORDER BY sm.agents_id) AS agent_ids
-    FROM system_mapping sm
-    GROUP BY sm.setting_id, sm.system_key
-)
-INSERT INTO public.systems_resource (id, created_at, active, generated, mcp, name, description, department_ids, agent_ids)
-SELECT
-    sts.system_id,
-    NOW(),
-    true,
-    false,
-    false,
-    sts.system_name,
-    sts.system_description,
-    ARRAY[]::uuid[],
-    sts.agent_ids
-FROM systems_to_seed sts
-ON CONFLICT (id) DO NOTHING;
-
-WITH setting_scope AS (
-    SELECT '019b3be4-3c61-76ff-befb-69b082df2acd'::uuid AS setting_id
-),
-active_agents AS (
-    SELECT DISTINCT
-        aaj.agents_id,
-        ar.name AS agent_name
-    FROM public.agent_agents_junction aaj
-    JOIN public.agents_resource ar ON ar.id = aaj.agents_id
-    WHERE aaj.active = true
-      AND ar.active = true
-),
-system_mapping AS (
-    SELECT
-        ss.setting_id,
-        aa.agents_id,
-        CASE
-            WHEN aa.agent_name IN ('Attempt Chat', 'Attempt Chat Audio') THEN 'attempt-chat'
-            ELSE regexp_replace(lower(regexp_replace(aa.agent_name, '[^a-zA-Z0-9]+', '-', 'g')), '(^-|-$)', '', 'g')
-        END AS system_key
-    FROM setting_scope ss
-    CROSS JOIN active_agents aa
-),
-systems_to_seed AS (
-    SELECT
-        sm.setting_id,
-        (
-            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 1, 8) || '-' ||
-            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 9, 4) || '-' ||
-            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 13, 4) || '-' ||
-            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 17, 4) || '-' ||
-            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 21, 12)
-        )::uuid AS system_id,
-        ARRAY_AGG(DISTINCT sm.agents_id ORDER BY sm.agents_id) AS agent_ids
-    FROM system_mapping sm
-    GROUP BY sm.setting_id, sm.system_key
-)
-INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp)
-SELECT
-    sts.setting_id,
-    sts.system_id,
-    NOW(),
-    true,
-    false,
-    false
-FROM systems_to_seed sts
-ON CONFLICT (setting_id, systems_id) DO NOTHING;
-
-WITH setting_scope AS (
-    SELECT '019b3be4-3c61-76ff-befb-69b082df2acd'::uuid AS setting_id
-),
-active_agents AS (
-    SELECT DISTINCT
-        aaj.agents_id,
-        ar.name AS agent_name
-    FROM public.agent_agents_junction aaj
-    JOIN public.agents_resource ar ON ar.id = aaj.agents_id
-    WHERE aaj.active = true
-      AND ar.active = true
-),
-system_mapping AS (
-    SELECT
-        ss.setting_id,
-        aa.agents_id,
-        CASE
-            WHEN aa.agent_name IN ('Attempt Chat', 'Attempt Chat Audio') THEN 'attempt-chat'
-            ELSE regexp_replace(lower(regexp_replace(aa.agent_name, '[^a-zA-Z0-9]+', '-', 'g')), '(^-|-$)', '', 'g')
-        END AS system_key
-    FROM setting_scope ss
-    CROSS JOIN active_agents aa
-),
-systems_to_seed AS (
-    SELECT
-        (
-            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 1, 8) || '-' ||
-            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 9, 4) || '-' ||
-            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 13, 4) || '-' ||
-            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 17, 4) || '-' ||
-            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 21, 12)
-        )::uuid AS system_id,
-        ARRAY_AGG(DISTINCT sm.agents_id ORDER BY sm.agents_id) AS agent_ids
-    FROM system_mapping sm
-    GROUP BY sm.setting_id, sm.system_key
-)
-INSERT INTO public.system_agents_junction (system_id, agents_id, created_at, active, generated, mcp)
-SELECT
-    sts.system_id,
-    agent_id,
-    NOW(),
-    true,
-    false,
-    false
-FROM systems_to_seed sts
-CROSS JOIN LATERAL unnest(sts.agent_ids) AS agent_id
-ON CONFLICT (system_id, agents_id) DO NOTHING;
+-- setting_systems_junction (references pre-existing systems from 10-systems/)
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99c7-78a6-849d-1258f99e47e4', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99c8-7bba-946c-e6b9d55d2fc3', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99ca-7f95-9038-206fe1734be3', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99cb-700e-b879-41628a9218c5', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99cc-7cc3-a040-981957508b2a', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99cd-7470-bc4b-7eb189b96d43', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99cf-7087-81ee-58450c4a9aca', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99d0-7d2c-bfba-49be9f4acd87', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99d1-771d-a01f-80f8aae924df', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99d2-752b-ab22-5f9455aa1e9a', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99d4-7fb7-8cec-e9a0de527479', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99d5-7ff1-a78c-485cbcd14b60', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99d6-70d6-90eb-f580991fcf89', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99d7-792a-a47b-246dd0a84352', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99d9-73dc-a8be-a47def47c3e0', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99da-7af2-875a-9c8eb8fd70e9', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99db-7090-87a2-0c2dff148860', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99dc-73fa-848e-fcc5947b6bb1', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99de-7c11-9dd7-a8878ef28a07', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99df-716b-abc9-a4c3ba2f32c8', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99e0-7e2c-9f64-37bde94a00c6', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99e1-717c-b4ea-8a6055664887', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99e3-723d-920c-78e5ac8f19dd', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99e4-7571-8bb7-155d53173005', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99e5-75e8-b0f1-a5bd20b35bfa', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99e6-7886-96fe-71a0bb6090d1', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99e8-7cd5-8d61-a7800f1a6686', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99e9-72be-8c27-e3f264eeefa4', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99ea-7f17-8bac-4ed76165c512', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99ec-727f-be3c-4224ee4f9bef', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99ed-79c0-926c-d302897f4322', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99ee-7f5e-934d-1c9eaeb52f24', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99ef-7358-87a9-29cb15f52fd3', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99f1-7230-bee2-f5e15bd56400', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99f2-7ea3-8a59-24fcd0ff8b8c', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019caf25-99f3-7408-b7d0-968fe57800f7', '2026-03-02T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, systems_id) DO NOTHING;

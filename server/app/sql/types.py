@@ -21356,7 +21356,7 @@ class QGetAgentsV4Item(BaseModel):
     reasoning: str | None
     tool_ids: list[UUID] | None
     quality: str | None
-    voice: str | None
+    voices: list[str] | None
     prompt_id: UUID | None
     instruction_ids: list[UUID] | None
     active: bool | None
@@ -29139,7 +29139,6 @@ class QGetSystemsV4Item(BaseModel):
     id: UUID | None
     name: str | None
     description: str | None
-    department_ids: list[UUID] | None
     agent_ids: list[UUID] | None
     active: bool | None
     generated: bool | None
@@ -29166,7 +29165,6 @@ class SearchSystemsSqlParams(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     agent_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     setting: bool | None = False
 
@@ -29176,7 +29174,6 @@ class SearchSystemsSqlParams(BaseModel):
             self.limit_count,
             self.offset_count,
             self.exclude_ids,
-            self.department_ids,
             self.agent_ids,
             self.setting,
         )
@@ -29191,7 +29188,6 @@ class SearchSystemsApiRequest(BaseModel):
     limit_count: int | None = 20
     offset_count: int | None = 0
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     agent_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     setting: bool | None = False
 

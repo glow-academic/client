@@ -345,6 +345,9 @@ load_root_module "evals" "08-evals"
 # --- 09-profiles --------------------------------------------------------------
 load_root_module "profiles" "09-profiles"
 
+# --- 10-systems (after agents — systems reference agents via system_agents_junction)
+load_root_module "systems" "10-systems"
+
 # --- 11-setups: Organization --------------------------------------------------
 load_setup_categories "organization"
 

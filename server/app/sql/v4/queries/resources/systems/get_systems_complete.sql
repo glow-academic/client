@@ -48,7 +48,6 @@ CREATE TYPE types.q_get_systems_v4_item AS (
     id uuid,
     name text,
     description text,
-    department_ids uuid[],
     agent_ids uuid[],
     active boolean,
     generated boolean
@@ -69,7 +68,6 @@ SELECT COALESCE(
             s.id,
             s.name,
             s.description,
-            COALESCE(s.department_ids, ARRAY[]::uuid[]),
             COALESCE(s.agent_ids, ARRAY[]::uuid[]),
             COALESCE(s.active, true),
             COALESCE(s.generated, false)

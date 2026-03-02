@@ -128,11 +128,6 @@ INSERT INTO public.agent_descriptions_junction (agent_id, description_id, create
 INSERT INTO public.agent_flags_junction (agent_id, flag_id, value, created_at, generated, mcp, active) VALUES ('018f0005-0001-7000-8000-000000000001', '019be334-bfc4-76ac-80d3-c8ba7618bc7a', true, '2026-02-23T17:47:02.459307+00:00', false, false, true) ON CONFLICT (agent_id, flag_id) DO NOTHING;
 -- agent_names_junction
 INSERT INTO public.agent_names_junction (agent_id, name_id, created_at, generated, mcp, active) VALUES ('018f0005-0001-7000-8000-000000000001', '018f0005-0002-7000-8000-000000000001', '2026-02-23T17:36:15.969225+00:00', false, false, true) ON CONFLICT (agent_id, name_id) DO NOTHING;
--- Tools (args + tools_resource)
-INSERT INTO public.args_resource (created_at, active, generated, mcp, id, name, description, field_type, required, default_value) VALUES ('2026-02-23T17:36:15.969225+00:00', true, false, false, '018f0001-0001-7000-8000-000000000001', 'insight_content', 'The analytical insight text', 'string', true, '') ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.args_resource (created_at, active, generated, mcp, id, name, description, field_type, required, default_value) VALUES ('2026-02-23T17:36:15.969225+00:00', true, false, false, '018f0001-0001-7000-8000-000000000002', 'insight_group_id', 'The group ID to attach the insight to', 'string', true, '') ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.tools_resource (created_at, active, generated, mcp, id, name, description, department_ids, operation, args_ids, args_output_ids, resources, entries, artifacts) VALUES ('2026-02-23T17:36:15.969225+00:00', true, false, false, '018f0002-0001-7000-8000-000000000002', 'create_attempt_insights', 'Create an attempt insight entry', '{}', 'create', '{018f0001-0001-7000-8000-000000000001,018f0001-0001-7000-8000-000000000002}', '{}', '{}'::text[], '{attempt_insights}'::text[], '{}'::text[]) ON CONFLICT (id) DO NOTHING;
-
 -- agent_tools_junction
 INSERT INTO public.agent_tools_junction (agent_id, tool_id, active, created_at, generated, mcp) VALUES ('018f0005-0001-7000-8000-000000000001', '018f0002-0001-7000-8000-000000000002', true, '2026-02-23T17:47:02.459307+00:00', false, false) ON CONFLICT (agent_id, tool_id) DO NOTHING;
 

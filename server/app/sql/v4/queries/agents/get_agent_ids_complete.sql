@@ -163,9 +163,9 @@ voice_ids_data AS (
         COALESCE(
             (SELECT ARRAY_AGG(v.id ORDER BY v.id)
              FROM agents_resource ar
-             JOIN voices_resource v ON v.voice = ar.voice AND v.active = true
+             JOIN voices_resource v ON v.voice = ANY(ar.voices) AND v.active = true
              WHERE ar.id = (SELECT agent_id FROM params)
-               AND ar.voice IS NOT NULL),
+               AND ar.voices IS NOT NULL),
             ARRAY[]::uuid[]
         ) as voice_ids
     FROM params

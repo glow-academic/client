@@ -21,7 +21,6 @@ CREATE OR REPLACE FUNCTION api_search_systems_v4(
     limit_count int DEFAULT 20,
     offset_count int DEFAULT 0,
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     agent_ids uuid[] DEFAULT ARRAY[]::uuid[],
     setting boolean DEFAULT false
 )
@@ -37,7 +36,6 @@ SELECT COALESCE(
             q.id,
             q.name,
             q.description,
-            q.department_ids,
             q.agent_ids,
             q.active,
             q.generated
@@ -51,7 +49,6 @@ FROM (
         s.id,
         s.name,
         s.description,
-        COALESCE(s.department_ids, ARRAY[]::uuid[]) AS department_ids,
         COALESCE(s.agent_ids, ARRAY[]::uuid[]) AS agent_ids,
         COALESCE(s.active, true) AS active,
         COALESCE(s.generated, false) AS generated
@@ -59,7 +56,6 @@ FROM (
     WHERE s.active = true
       AND (search IS NULL OR search = '' OR LOWER(s.name) LIKE '%' || LOWER(search) || '%' OR LOWER(s.description) LIKE '%' || LOWER(search) || '%')
       AND (exclude_ids IS NULL OR NOT (s.id = ANY(exclude_ids)))
-      AND (COALESCE(array_length(department_ids, 1), 0) = 0 OR s.department_ids && department_ids)
       AND (COALESCE(array_length(agent_ids, 1), 0) = 0 OR s.agent_ids && agent_ids)
       AND (
         NOT setting

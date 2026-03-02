@@ -58,7 +58,7 @@ CREATE TYPE types.q_get_agents_v4_item AS (
     reasoning text,
     tool_ids uuid[],
     quality text,
-    voice text,
+    voices text[],
     prompt_id uuid,
     instruction_ids uuid[],
     active boolean,
@@ -77,7 +77,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (a.id, a.name, a.description, a.model_id, a.temperature, a.reasoning, COALESCE(a.tool_ids, ARRAY[]::uuid[]), a.quality::text, a.voice, a.prompt_id, COALESCE(a.instruction_ids, ARRAY[]::uuid[]), COALESCE(a.active, true), COALESCE(a.generated, false))::types.q_get_agents_v4_item
+        (a.id, a.name, a.description, a.model_id, a.temperature, a.reasoning, COALESCE(a.tool_ids, ARRAY[]::uuid[]), a.quality::text, COALESCE(a.voices, ARRAY[]::text[]), a.prompt_id, COALESCE(a.instruction_ids, ARRAY[]::uuid[]), COALESCE(a.active, true), COALESCE(a.generated, false))::types.q_get_agents_v4_item
         ORDER BY array_position(ids, a.id)
     ),
     ARRAY[]::types.q_get_agents_v4_item[]

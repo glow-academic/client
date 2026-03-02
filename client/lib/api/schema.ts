@@ -5225,28 +5225,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/configs/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Configs
-         * @description Get config resources by IDs.
-         *
-         *     HTTP wrapper that delegates to internal function for caching and data fetching.
-         */
-        post: operations["get_configs_api_v4_resources_configs_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/resources/model_flags/get": {
         parameters: {
             query?: never;
@@ -9359,66 +9337,6 @@ export interface paths {
          * @description Refresh the cohort_drafts_mv materialized view.
          */
         post: operations["refresh_cohort_drafts_api_v4_entries_cohort_drafts_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/config/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Config Entries
-         * @description Get config entries by IDs.
-         */
-        post: operations["get_config_entries_api_v4_entries_config_get_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/config/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Config Entries
-         * @description Search config entries.
-         */
-        post: operations["search_config_entries_api_v4_entries_config_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/entries/config/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Config
-         * @description Refresh the config_mv materialized view.
-         */
-        post: operations["refresh_config_api_v4_entries_config_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -29257,26 +29175,6 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetConditionalParametersV4Item"][] | null;
         };
-        /** GetConfigEntriesApiRequest */
-        GetConfigEntriesApiRequest: {
-            /** Ids */
-            ids: string[];
-        };
-        /** GetConfigEntriesApiResponse */
-        GetConfigEntriesApiResponse: {
-            /** Items */
-            items?: components["schemas"]["QGetConfigEntriesV4Item"][] | null;
-        };
-        /** GetConfigsApiRequest */
-        GetConfigsApiRequest: {
-            /** Ids */
-            ids?: string[] | null;
-        };
-        /** GetConfigsApiResponse */
-        GetConfigsApiResponse: {
-            /** Items */
-            items?: components["schemas"]["QGetConfigsV4Item"][] | null;
-        };
         /** GetConversationsCompletionsEntriesApiRequest */
         GetConversationsCompletionsEntriesApiRequest: {
             /** Ids */
@@ -38920,8 +38818,8 @@ export interface components {
             tool_ids: string[] | null;
             /** Quality */
             quality: string | null;
-            /** Voice */
-            voice: string | null;
+            /** Voices */
+            voices: string[] | null;
             /** Prompt Id */
             prompt_id: string | null;
             /** Instruction Ids */
@@ -39138,66 +39036,6 @@ export interface components {
             id: string | null;
             /** Parameter Id */
             parameter_id: string | null;
-            /** Generated */
-            generated: boolean | null;
-        };
-        /** QGetConfigEntriesV4Item */
-        QGetConfigEntriesV4Item: {
-            /** Config Id */
-            config_id: string | null;
-            /** Prompt Id */
-            prompt_id: string | null;
-            /** Instruction Ids */
-            instruction_ids: string[] | null;
-            /** Tool Ids */
-            tool_ids: string[] | null;
-            /** Modality Ids */
-            modality_ids: string[] | null;
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Model Id */
-            model_id: string | null;
-            /** Temperature Level Id */
-            temperature_level_id: string | null;
-            /** Reasoning Level Id */
-            reasoning_level_id: string | null;
-            /** Voice Id */
-            voice_id: string | null;
-            /** Quality Id */
-            quality_id: string | null;
-            /** Key Id */
-            key_id: string | null;
-            /** Created At */
-            created_at: string | null;
-        };
-        /** QGetConfigsV4Item */
-        QGetConfigsV4Item: {
-            /** Id */
-            id: string | null;
-            /** Prompt Id */
-            prompt_id: string | null;
-            /** Instruction Ids */
-            instruction_ids: string[] | null;
-            /** Tool Ids */
-            tool_ids: string[] | null;
-            /** Modality Ids */
-            modality_ids: string[] | null;
-            /** Model Id */
-            model_id: string | null;
-            /** Temperature Level Id */
-            temperature_level_id: string | null;
-            /** Reasoning Level Id */
-            reasoning_level_id: string | null;
-            /** Voice Id */
-            voice_id: string | null;
-            /** Quality Id */
-            quality_id: string | null;
-            /** Key Id */
-            key_id: string | null;
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Active */
-            active: boolean | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -40594,8 +40432,6 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
             /** Agent Ids */
             agent_ids: string[] | null;
             /** Active */
@@ -45158,32 +44994,6 @@ export interface components {
             /** Items */
             items?: components["schemas"]["QGetParametersV4Item"][] | null;
         };
-        /** SearchConfigEntriesApiRequest */
-        SearchConfigEntriesApiRequest: {
-            /** Search */
-            search?: string | null;
-            /**
-             * Limit Count
-             * @default 20
-             */
-            limit_count: number | null;
-            /**
-             * Offset Count
-             * @default 0
-             */
-            offset_count: number | null;
-            /** Agents Id */
-            agents_id?: string | null;
-            /** Models Id */
-            models_id?: string | null;
-            /** Providers Id */
-            providers_id?: string | null;
-        };
-        /** SearchConfigEntriesApiResponse */
-        SearchConfigEntriesApiResponse: {
-            /** Items */
-            items?: unknown | null;
-        };
         /** SearchConversationsCompletionsEntriesApiRequest */
         SearchConversationsCompletionsEntriesApiRequest: {
             /** Search */
@@ -47936,8 +47746,6 @@ export interface components {
             offset_count: number | null;
             /** Exclude Ids */
             exclude_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
             /** Agent Ids */
             agent_ids?: string[] | null;
             /**
@@ -61236,43 +61044,6 @@ export interface operations {
             };
         };
     };
-    get_configs_api_v4_resources_configs_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetConfigsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetConfigsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_model_flags_api_v4_resources_model_flags_get_post: {
         parameters: {
             query?: never;
@@ -68815,115 +68586,6 @@ export interface operations {
         };
     };
     refresh_cohort_drafts_api_v4_entries_cohort_drafts_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_config_entries_api_v4_entries_config_get_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetConfigEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetConfigEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_config_entries_api_v4_entries_config_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchConfigEntriesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SearchConfigEntriesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_config_api_v4_entries_config_refresh_post: {
         parameters: {
             query?: never;
             header?: {

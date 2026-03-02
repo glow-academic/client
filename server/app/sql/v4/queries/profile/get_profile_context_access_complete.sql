@@ -243,17 +243,16 @@ draft_ids_data AS (
 ),
 settings_agent_ids_data AS (
     SELECT COALESCE(
-        ARRAY_AGG(DISTINCT src.agents_id),
+        ARRAY_AGG(DISTINCT src.agent_id),
         ARRAY[]::uuid[]
     ) as settings_agent_ids
     FROM (
-        -- setting -> systems -> agents links
-        SELECT saj.agents_id
+        -- setting -> systems -> agents links (unnest agent_ids array)
+        SELECT unnest(sr.agent_ids) AS agent_id
         FROM setting_systems_junction ssj
-        JOIN system_agents_junction saj ON saj.system_id = ssj.systems_id
+        JOIN systems_resource sr ON sr.id = ssj.systems_id
         WHERE ssj.setting_id = (SELECT settings_id FROM settings_resolution)
           AND ssj.active = true
-          AND saj.active = true
     ) src
 ),
 settings_system_ids_data AS (

@@ -41,13 +41,13 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.id, q.name, q.description, q.model_id, q.temperature, q.reasoning, q.tool_ids, q.quality, q.voice, q.prompt_id, q.instruction_ids, q.active, q.generated)::types.q_get_agents_v4_item
+        (q.id, q.name, q.description, q.model_id, q.temperature, q.reasoning, q.tool_ids, q.quality, q.voices, q.prompt_id, q.instruction_ids, q.active, q.generated)::types.q_get_agents_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_agents_v4_item[]
 ) as items
 FROM (
-    SELECT r.id, r.name, r.description, r.model_id, r.temperature, r.reasoning, COALESCE(r.tool_ids, ARRAY[]::uuid[]) AS tool_ids, r.quality::text AS quality, r.voice, r.prompt_id, COALESCE(r.instruction_ids, ARRAY[]::uuid[]) AS instruction_ids, COALESCE(r.active, true) AS active, COALESCE(r.generated, false) AS generated
+    SELECT r.id, r.name, r.description, r.model_id, r.temperature, r.reasoning, COALESCE(r.tool_ids, ARRAY[]::uuid[]) AS tool_ids, r.quality::text AS quality, COALESCE(r.voices, ARRAY[]::text[]) AS voices, r.prompt_id, COALESCE(r.instruction_ids, ARRAY[]::uuid[]) AS instruction_ids, COALESCE(r.active, true) AS active, COALESCE(r.generated, false) AS generated
     FROM agents_resource r
     WHERE r.active = true
       AND (search IS NULL OR search = '' OR LOWER(r.name) LIKE '%' || LOWER(search) || '%' OR LOWER(r.description) LIKE '%' || LOWER(search) || '%')
@@ -65,10 +65,9 @@ FROM (
         OR EXISTS (
             SELECT 1
             FROM setting_systems_junction ssj
-            JOIN system_agents_junction saj ON saj.system_id = ssj.systems_id
-            WHERE saj.agents_id = r.id
+            JOIN systems_resource sr ON sr.id = ssj.systems_id
+            WHERE r.id = ANY(sr.agent_ids)
               AND ssj.active = true
-              AND saj.active = true
         )
       )
     ORDER BY r.name

@@ -111,11 +111,6 @@ INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp)
 -- agent_artifact
 INSERT INTO public.agent_artifact (created_at, updated_at, id, generated, mcp) VALUES ('2026-01-17T17:57:40.639882+00:00', '2026-01-17T17:57:40.639882+00:00', '66666666-6666-6666-6666-666666666666', false, false) ON CONFLICT (id) DO NOTHING;
 
--- Tools (args + tools_resource for profile_personas)
-INSERT INTO public.args_resource (created_at, active, generated, mcp, id, name, description, field_type, required, default_value) VALUES ('2026-02-22T23:46:41.084407+00:00', true, false, false, '00a47b46-e1a2-4ac4-be19-8416200778cb', 'profile_persona_id', '', 'string', true, '') ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.tools_resource (created_at, active, generated, mcp, id, name, description, department_ids, operation, args_ids, args_output_ids, resources, entries, artifacts) VALUES ('2026-02-22T23:46:41.084407+00:00', true, false, false, '98dfa8d8-31e9-4917-8c59-43fb8eedd84b', 'use_profile_personas', 'Use an existing profile persona assignment by its ID', '{}', 'link', '{00a47b46-e1a2-4ac4-be19-8416200778cb}', '{}', '{profile_personas}'::text[], '{}'::text[], '{}'::text[]) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.tools_resource (created_at, active, generated, mcp, id, name, description, department_ids, operation, args_ids, args_output_ids, resources, entries, artifacts) VALUES ('2026-02-22T23:46:41.084407+00:00', true, false, false, 'fb98d031-edcc-4945-a569-84083134b310', 'create_profile_personas', 'Create a new profile persona assignment', '{}', 'create', '{019c0a2d-fc3b-7e62-bcb0-75124c777dcd,019c4f27-1781-7589-8927-6eb5ddfb1472}', '{}', '{profile_personas}'::text[], '{}'::text[], '{}'::text[]) ON CONFLICT (id) DO NOTHING;
-
 -- Junctions
 -- agent_descriptions_junction
 INSERT INTO public.agent_descriptions_junction (agent_id, description_id, created_at, generated, mcp, active) VALUES ('66666666-6666-6666-6666-666666666666', '019bcd1b-0ca2-77e8-97a1-0f329141d993', '2026-01-17T17:57:40.639882+00:00', false, false, true) ON CONFLICT (agent_id, description_id) DO NOTHING;
