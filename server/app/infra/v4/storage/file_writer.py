@@ -50,6 +50,12 @@ async def _create_upload_record(
     return row["id"]  # type: ignore[index,no-any-return]
 
 
+def read_text_file(file_path: str) -> str:
+    """Read text content from an upload file path."""
+    full_path = UPLOAD_FOLDER / file_path
+    return full_path.read_text(encoding="utf-8")
+
+
 async def write_text_file(
     conn: asyncpg.Connection,
     session_id: UUID | None,

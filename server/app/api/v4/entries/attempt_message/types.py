@@ -17,7 +17,7 @@ class SimulationMessagesEntryData(BaseModel):
     runs_id: str | None = None
     text_id: str | None = None
     audio_id: str | None = None
-    history_content: str | None = None
+    history_file_path: str | None = None
 
 
 class CreateAttemptMessageEntryRequest(BaseModel):
@@ -37,6 +37,7 @@ class CreateAttemptMessageEntrySqlParams(BaseModel):
     chat_id: UUID
     message_id: UUID | None = None
     tool_id: UUID | None = None
+    upload_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
@@ -45,6 +46,7 @@ class CreateAttemptMessageEntrySqlParams(BaseModel):
             self.chat_id,
             self.message_id,
             self.tool_id,
+            self.upload_id,
             self.mcp,
         )
 

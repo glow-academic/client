@@ -32,6 +32,7 @@ class CreateAttemptHintEntrySqlParams(BaseModel):
     message_id: UUID
     hint: str = ""
     tool_id: UUID | None = None
+    upload_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
@@ -40,6 +41,7 @@ class CreateAttemptHintEntrySqlParams(BaseModel):
             self.message_id,
             self.hint,
             self.tool_id,
+            self.upload_id,
             self.mcp,
         )
 

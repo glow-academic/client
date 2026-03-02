@@ -6,6 +6,7 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.v4.error.handle_route_error import handle_route_error
+from app.infra.v4.storage.file_writer import write_text_file
 from app.main import get_db
 from app.sql.types import (
     TextsApiRequest,
@@ -48,6 +49,10 @@ async def create_texts(
 
             request_dict = request.model_dump()
             request_dict["mcp"] = mcp
+            # Write content to disk, pass upload_id to SQL
+            content = request_dict.pop("content", "")
+            upload_id = await write_text_file(conn, None, content)
+            request_dict["upload_id"] = upload_id
             params = TextsSqlParams(**request_dict)
             sql_params = params.to_tuple()
 

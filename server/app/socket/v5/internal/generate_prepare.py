@@ -29,6 +29,7 @@ from app.infra.v4.generation.media_context import (
     post_process_media_sentinels,
     wrap_media_entries,
 )
+from app.infra.v4.storage.file_writer import write_text_file
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.generation_tracker import (
     init_generation,
@@ -894,11 +895,12 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
 
                 if system_prompt:
                     messages.append({"role": "system", "content": system_prompt})
+                    sys_upload_id = await write_text_file(conn, None, system_prompt)
                     await conn.fetchval(
                         create_message_sql,
                         run_id,
                         "system",
-                        system_prompt,
+                        sys_upload_id,
                         True,
                     )
 
@@ -916,11 +918,12 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
                         )
                     else:
                         messages.append({"role": "developer", "content": m})
+                    dev_upload_id = await write_text_file(conn, None, m)
                     await conn.fetchval(
                         create_message_sql,
                         run_id,
                         "developer",
-                        m,
+                        dev_upload_id,
                         True,
                     )
 
@@ -931,11 +934,12 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
                 if payload.user_instructions:
                     for instruction in payload.user_instructions:
                         messages.append({"role": "user", "content": instruction})
+                        user_upload_id = await write_text_file(conn, None, instruction)
                         await conn.fetchval(
                             create_message_sql,
                             run_id,
                             "user",
-                            instruction,
+                            user_upload_id,
                             True,
                         )
 

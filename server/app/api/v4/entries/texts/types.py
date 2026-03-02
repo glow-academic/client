@@ -9,20 +9,20 @@ class TextsEntryData(BaseModel):
     """Canonical texts entry fields. All optional for streaming support."""
 
     id: str | None = None
-    content: str | None = None
-    content_hash: str | None = None
+    file_path: str | None = None
+    mime_type: str | None = None
     created_at: str | None = None
 
 
 class CreateTextsEntrySqlParams(BaseModel):
     session_id: UUID
-    content: str
+    upload_id: UUID
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
         return (
             self.session_id,
-            self.content,
+            self.upload_id,
             self.mcp,
         )
 

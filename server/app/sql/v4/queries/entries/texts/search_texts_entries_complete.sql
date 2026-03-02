@@ -32,8 +32,8 @@ BEGIN
         SELECT jsonb_build_object(
             'texts_id', m.texts_id,
             'text_id', m.text_id,
-            'content', m.content,
-            'content_hash', m.content_hash,
+            'file_path', m.file_path,
+            'mime_type', m.mime_type,
             'created_at', m.created_at
         ) AS row_data
         FROM texts_mv m

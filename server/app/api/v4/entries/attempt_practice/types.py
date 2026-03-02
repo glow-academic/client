@@ -30,6 +30,7 @@ class CreateAttemptPracticeEntrySqlParams(BaseModel):
     attempt_id: UUID
     practice_id: UUID
     tool_id: UUID | None = None
+    upload_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
@@ -38,6 +39,7 @@ class CreateAttemptPracticeEntrySqlParams(BaseModel):
             self.attempt_id,
             self.practice_id,
             self.tool_id,
+            self.upload_id,
             self.mcp,
         )
 

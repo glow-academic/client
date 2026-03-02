@@ -1,15 +1,15 @@
 WITH inserted_text AS (
     INSERT INTO texts_entry (
-        content,
+        upload_id,
         created_at,
         updated_at
     )
     VALUES (
-        $3::text,
+        $3::uuid,
         NOW(),
         NOW()
     )
-    ON CONFLICT (content_hash) DO UPDATE
+    ON CONFLICT (upload_id) DO UPDATE
     SET updated_at = NOW()
     RETURNING id
 ),
@@ -19,7 +19,7 @@ resolved_text AS (
     UNION ALL
     SELECT te.id
     FROM texts_entry te
-    WHERE te.content_hash = md5($3::text)
+    WHERE te.upload_id = $3::uuid
     LIMIT 1
 ),
 new_message AS (

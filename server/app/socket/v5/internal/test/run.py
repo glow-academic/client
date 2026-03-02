@@ -15,6 +15,7 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
+from app.infra.v4.storage.file_writer import write_text_file
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio
 from app.socket.v5.client.types import TestRunPayload
@@ -89,10 +90,11 @@ async def test_run_handler(data: dict[str, Any]) -> None:
             original_messages = await conn.fetch(
                 """SELECT
                     me.role::text as role,
-                    COALESCE(te.content, '') as content,
+                    ue.file_path as file_path,
                     me.created_at
                 FROM messages_entry me
                 LEFT JOIN texts_entry te ON te.id = me.text_id
+                LEFT JOIN uploads_entry ue ON ue.id = te.upload_id
                 WHERE me.run_id = $1 AND me.active = true
                 ORDER BY me.created_at""",
                 original_run_id,
@@ -119,11 +121,17 @@ async def test_run_handler(data: dict[str, Any]) -> None:
 
             # Copy messages into the new run
             for msg in messages_to_copy:
+                # Read original content from disk and write a new copy
+                from app.infra.v4.storage.file_writer import read_text_file
+
+                content = read_text_file(msg["file_path"]) if msg["file_path"] else ""
+                upload_id = await write_text_file(conn, None, content)
+
                 # Create text entry
                 text_id = await conn.fetchval(
-                    """INSERT INTO texts_entry (content)
+                    """INSERT INTO texts_entry (upload_id)
                     VALUES ($1) RETURNING id""",
-                    msg["content"],
+                    upload_id,
                 )
 
                 # Create message entry

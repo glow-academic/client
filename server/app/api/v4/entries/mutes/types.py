@@ -31,6 +31,7 @@ class CreateMutesEntrySqlParams(BaseModel):
     conversation_id: UUID
     muted: bool = False
     tool_id: UUID | None = None
+    upload_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:

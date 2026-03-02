@@ -14,6 +14,7 @@ Steps:
 import uuid
 from typing import Any
 
+from app.infra.v4.storage.file_writer import write_text_file
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.generation_tracker import (
     cleanup_generation,
@@ -94,12 +95,13 @@ async def handle_run_complete(data: dict[str, Any]) -> None:
                     uuid.UUID(run_id),
                 )
                 if not existing:
+                    upload_id = await write_text_file(conn, None, assistant_output)
                     create_message_sql = load_sql(SQL_PATH_CREATE_MESSAGE_WITH_TEXT)
                     await conn.fetchval(
                         create_message_sql,
                         uuid.UUID(run_id),
                         "assistant",
-                        assistant_output,
+                        upload_id,
                         True,
                     )
 

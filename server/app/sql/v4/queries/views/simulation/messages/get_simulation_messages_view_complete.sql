@@ -55,7 +55,7 @@ CREATE TYPE types.q_get_simulation_messages_view_v4_item AS (
     runs_id uuid,
     text_id uuid,
     audio_id uuid,
-    history_content text
+    history_file_path text
 );
 
 -- ============================================================================
@@ -90,7 +90,7 @@ AS $$
                     mv.runs_id,
                     mv.text_id,
                     mv.audio_id,
-                    mv.history_content
+                    mv.history_file_path
                 )::types.q_get_simulation_messages_view_v4_item
                 ORDER BY mv.chat_id, mv.created_at, mv.message_id
             ),

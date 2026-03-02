@@ -274,9 +274,15 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
             remaining = [
                 ce
                 for ce in all_chat_entries
-                if str(ce.get("chat_entry_id")) not in {str(rid) for rid in resolved_chat_ids}
+                if str(ce.get("chat_entry_id"))
+                not in {str(rid) for rid in resolved_chat_ids}
             ]
-            remaining.sort(key=lambda ce: (ce.get("position", 0) or 0, str(ce.get("created_at", ""))))
+            remaining.sort(
+                key=lambda ce: (
+                    ce.get("position", 0) or 0,
+                    str(ce.get("created_at", "")),
+                )
+            )
 
         # Step 4: Check if all chats are done
         if not remaining or completed_count >= num_chats:
@@ -359,7 +365,9 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
             "strengths_enabled": next_chat.get("strengths_enabled", True),
             "use_custom": next_chat.get("use_custom", False),
             "use_previous": next_chat.get("use_previous", False),
-            "problem_statement_enabled": next_chat.get("problem_statement_enabled", True),
+            "problem_statement_enabled": next_chat.get(
+                "problem_statement_enabled", True
+            ),
             "objectives_enabled": next_chat.get("objectives_enabled", True),
             "video_enabled": next_chat.get("video_enabled", False),
             "images_enabled": next_chat.get("images_enabled", False),
@@ -383,9 +391,7 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
 
         department_ids_list = next_chat.get("department_ids") or []
         if department_ids_list:
-            request_dict["departments_ids"] = [
-                str(did) for did in department_ids_list
-            ]
+            request_dict["departments_ids"] = [str(did) for did in department_ids_list]
 
         # Conditional connections: only copy when generate_*=false
         for gen_flag, conn_param in GENERATE_FLAG_TO_CONNECTION.items():

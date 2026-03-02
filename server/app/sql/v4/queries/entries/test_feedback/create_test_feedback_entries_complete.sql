@@ -22,6 +22,7 @@ CREATE OR REPLACE FUNCTION public.api_create_test_feedback_entry_v4(
     total_points int DEFAULT NULL,
     pass_points int DEFAULT NULL,
     tool_id uuid DEFAULT NULL,
+    upload_id uuid DEFAULT NULL,
     mcp boolean DEFAULT false
 ) RETURNS TABLE (id uuid, call_id uuid, message_id uuid)
 LANGUAGE plpgsql AS $$
@@ -32,9 +33,9 @@ DECLARE
     v_message_id uuid;
 BEGIN
     -- 1. Create text record
-    INSERT INTO texts_entry (content, generated, mcp)
-    VALUES ('Feedback for grade ' || api_create_test_feedback_entry_v4.grade_id || ': total=' || api_create_test_feedback_entry_v4.total, true, api_create_test_feedback_entry_v4.mcp)
-    ON CONFLICT (content_hash) DO UPDATE SET id = texts_entry.id
+    INSERT INTO texts_entry (upload_id, generated, mcp)
+    VALUES (api_create_test_feedback_entry_v4.upload_id, true, api_create_test_feedback_entry_v4.mcp)
+    ON CONFLICT (upload_id) DO UPDATE SET id = texts_entry.id
     RETURNING texts_entry.id INTO v_text_id;
 
     -- 2. Create call record

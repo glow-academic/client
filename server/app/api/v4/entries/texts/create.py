@@ -18,11 +18,13 @@ SQL_PATH = "app/sql/v4/queries/entries/texts/create_texts_entries_complete.sql"
 async def create_texts_entry_internal(
     conn: asyncpg.Connection,
     session_id: UUID,
-    content: str,
+    upload_id: UUID,
     mcp: bool = False,
 ) -> CreateTextsEntryResponse:
     """Create a texts entry. Internal only — no HTTP route."""
-    params = CreateTextsEntrySqlParams(session_id=session_id, content=content, mcp=mcp)
+    params = CreateTextsEntrySqlParams(
+        session_id=session_id, upload_id=upload_id, mcp=mcp
+    )
 
     result = cast(
         CreateTextsEntrySqlRow,

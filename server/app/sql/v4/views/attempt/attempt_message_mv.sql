@@ -8,7 +8,7 @@
 -- Purpose: Provides lean message-level data for parallel fetching
 -- Section: ATTEMPT (unified view - both home and practice)
 --
--- Dependencies: Only uses _entry and _connection tables
+-- Dependencies: Only uses _entry and _connection tables (+ uploads_entry for file paths)
 -- ============================================================================
 -- Step 1: Drop all indexes on attempt_message_mv materialized view (if it exists)
 -- ============================================================================
@@ -66,8 +66,8 @@ base_messages AS (
         rra.runs_id,
         -- Text entry ID (for resource hydration)
         m.text_id,
-        -- History content (for LLM context)
-        te.content AS history_content,
+        -- History file path (for LLM context — read from disk)
+        ue.file_path AS history_file_path,
         -- Audio resource ID
         aa.audio_id
     FROM attempt_message_entry sm
@@ -77,6 +77,7 @@ base_messages AS (
     JOIN attempt_entry a ON a.id = ac.attempt_id
     LEFT JOIN runs_resource_agg rra ON rra.run_id = m.run_id
     LEFT JOIN texts_entry te ON te.id = m.text_id
+    LEFT JOIN uploads_entry ue ON ue.id = te.upload_id
     LEFT JOIN audio_agg aa ON aa.message_id = sm.id
     -- Latest message completion state (append-only)
     LEFT JOIN LATERAL (
@@ -113,8 +114,8 @@ SELECT
     -- Text entry ID (for resource hydration)
     bm.text_id,
 
-    -- History content (for LLM context)
-    bm.history_content,
+    -- History file path (for LLM context — read from disk)
+    bm.history_file_path,
 
     -- Audio resource ID
     bm.audio_id

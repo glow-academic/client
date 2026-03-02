@@ -24195,6 +24195,8 @@ export interface components {
             attempt_chat_id: string;
             /** Tool Id */
             tool_id?: string | null;
+            /** Upload Id */
+            upload_id?: string | null;
             /**
              * Mcp
              * @default false
@@ -50832,8 +50834,11 @@ export interface components {
         };
         /** TextsApiRequest */
         TextsApiRequest: {
-            /** Content */
-            content: string;
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
             /**
              * Mcp
              * @default false

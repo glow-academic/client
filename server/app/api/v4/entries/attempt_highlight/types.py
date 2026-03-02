@@ -34,6 +34,7 @@ class CreateAttemptHighlightEntrySqlParams(BaseModel):
     section: str = ""
     idx: int = 0
     tool_id: UUID | None = None
+    upload_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
@@ -43,6 +44,7 @@ class CreateAttemptHighlightEntrySqlParams(BaseModel):
             self.section,
             self.idx,
             self.tool_id,
+            self.upload_id,
             self.mcp,
         )
 

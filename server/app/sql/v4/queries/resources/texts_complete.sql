@@ -1,7 +1,7 @@
 -- Create texts resource
 -- SIMPLIFIED: No agent_id required, optional tool_id for tracking
--- Creates texts_entry (with content_hash dedup), texts_resource, texts_texts_connection
--- Parameters: content (text), mcp (boolean), group_id (uuid, optional), tool_id (uuid, optional)
+-- Creates texts_entry (with upload_id dedup), texts_resource, texts_texts_connection
+-- Parameters: upload_id (uuid), mcp (boolean), group_id (uuid, optional), tool_id (uuid, optional)
 -- Returns: texts_id (uuid)
 
 -- Drop function if exists (handles signature variations)
@@ -20,7 +20,7 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION api_create_texts_v4(
-    content text,
+    upload_id uuid,
     mcp boolean DEFAULT false,
     group_id uuid DEFAULT NULL,
     tool_id uuid DEFAULT NULL
@@ -37,19 +37,16 @@ DECLARE
     v_run_id uuid;
     v_call_id uuid;
     v_text_entry_id uuid;
-    v_content_hash text;
 BEGIN
-    -- Get or create texts_entry (dedup by content hash)
-    v_content_hash := md5(content);
-
+    -- Get or create texts_entry (dedup by upload_id)
     SELECT te.id INTO v_text_entry_id
     FROM texts_entry te
-    WHERE md5(te.content) = v_content_hash
+    WHERE te.upload_id = api_create_texts_v4.upload_id
     LIMIT 1;
 
     IF v_text_entry_id IS NULL THEN
-        INSERT INTO texts_entry (id, content, active, generated, mcp, created_at, updated_at)
-        VALUES (uuidv7(), content, true, false, mcp, NOW(), NOW())
+        INSERT INTO texts_entry (id, upload_id, active, generated, mcp, created_at, updated_at)
+        VALUES (uuidv7(), api_create_texts_v4.upload_id, true, false, mcp, NOW(), NOW())
         RETURNING id INTO v_text_entry_id;
     END IF;
 

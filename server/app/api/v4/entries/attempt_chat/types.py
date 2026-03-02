@@ -107,6 +107,7 @@ class CreateAttemptChatEntrySqlParams(BaseModel):
     documents_ids: list[UUID] | None = None
     parameter_fields_ids: list[UUID] | None = None
     tool_id: UUID | None = None
+    upload_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
@@ -151,6 +152,7 @@ class CreateAttemptChatEntrySqlParams(BaseModel):
             self.documents_ids,
             self.parameter_fields_ids,
             self.tool_id,
+            self.upload_id,
             self.mcp,
         )
 

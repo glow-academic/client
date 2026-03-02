@@ -41,6 +41,7 @@ class CreateTestInvocationEntrySqlParams(BaseModel):
     config_signature: str | None = None
     test_id: UUID | None = None
     tool_id: UUID | None = None
+    upload_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
@@ -53,6 +54,7 @@ class CreateTestInvocationEntrySqlParams(BaseModel):
             self.config_signature,
             self.test_id,
             self.tool_id,
+            self.upload_id,
             self.mcp,
         )
 

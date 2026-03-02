@@ -7,6 +7,7 @@ Saves assistant message to DB on text_complete. Run-level completion
 import uuid
 from typing import Any
 
+from app.infra.v4.storage.file_writer import write_text_file
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio
 from app.utils.logging.db_logger import get_logger
@@ -35,12 +36,13 @@ async def handle_text_complete(data: dict[str, Any]) -> None:
 
     try:
         async with get_db_connection() as conn:
+            upload_id = await write_text_file(conn, None, final_content)
             create_message_sql = load_sql(SQL_PATH_CREATE_MESSAGE_WITH_TEXT)
             await conn.fetchval(
                 create_message_sql,
                 uuid.UUID(run_id),
                 "assistant",
-                final_content,
+                upload_id,
                 True,
             )
     except Exception as e:

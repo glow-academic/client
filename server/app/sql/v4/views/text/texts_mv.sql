@@ -4,7 +4,7 @@
 -- Grain: One row per text entry (within a texts resource)
 -- Filter: active = true only
 --
--- Purpose: Text entry metadata (content, content_hash)
+-- Purpose: Text entry metadata (file_path, mime_type via uploads_entry)
 -- Section: TEXT (lean MV)
 --
 -- Dependencies: texts_resource, texts_texts_connection, texts_entry, uploads_entry, uploads_uploads_connection, uploads_resource
@@ -43,8 +43,6 @@ SELECT
     ur.id        AS uploads_id,
     ue.file_path,
     ue.mime_type,
-    te.content,
-    te.content_hash,
     te.created_at
 FROM texts_resource tr
 JOIN texts_texts_connection ttc ON ttc.texts_id = tr.id AND ttc.active = true
@@ -74,9 +72,6 @@ CREATE INDEX texts_mv_text_id_idx
 
 CREATE INDEX texts_mv_uploads_id_idx
     ON texts_mv (uploads_id);
-
-CREATE INDEX texts_mv_content_hash_idx
-    ON texts_mv (content_hash);
 
 CREATE INDEX texts_mv_created_at_idx
     ON texts_mv (created_at DESC);

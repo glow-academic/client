@@ -41,6 +41,7 @@ class CreateAttemptGradeEntrySqlParams(BaseModel):
     score: int = 0
     time_taken: int | None = None
     tool_id: UUID | None = None
+    upload_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
@@ -51,6 +52,7 @@ class CreateAttemptGradeEntrySqlParams(BaseModel):
             self.score,
             self.time_taken,
             self.tool_id,
+            self.upload_id,
             self.mcp,
         )
 

@@ -28,6 +28,7 @@ class CreatePersonaEntrySqlParams(BaseModel):
     run_id: UUID
     personas_id: UUID | None = None
     tool_id: UUID | None = None
+    upload_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
@@ -35,6 +36,7 @@ class CreatePersonaEntrySqlParams(BaseModel):
             self.run_id,
             self.personas_id,
             self.tool_id,
+            self.upload_id,
             self.mcp,
         )
 

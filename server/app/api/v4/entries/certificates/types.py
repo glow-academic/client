@@ -28,6 +28,7 @@ class CreateCertificatesEntrySqlParams(BaseModel):
     run_id: UUID
     upload_id: UUID
     tool_id: UUID | None = None
+    text_upload_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:

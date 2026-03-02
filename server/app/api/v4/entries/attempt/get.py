@@ -115,7 +115,7 @@ class AttemptMessageViewItem(BaseModel):
     created_at: datetime | None = None
     completed: bool = False
     runs_id: UUID | None = None
-    history_content: str | None = None
+    history_file_path: str | None = None
     audio_id: UUID | None = None
     parent_message_id: UUID | None = None
     sibling_index: int | None = None
@@ -420,7 +420,7 @@ async def get_attempt_messages_internal(
                     created_at=item.created_at,
                     completed=item.completed or False,
                     runs_id=item.runs_id,
-                    history_content=item.history_content,
+                    history_file_path=item.history_file_path,
                     audio_id=item.audio_id,
                     parent_message_id=item.parent_message_id,
                     sibling_index=item.sibling_index,

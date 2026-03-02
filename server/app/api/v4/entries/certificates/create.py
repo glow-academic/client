@@ -13,6 +13,7 @@ from app.api.v4.entries.certificates.types import (
     CreateCertificatesEntrySqlRow,
 )
 from app.infra.v4.error.handle_route_error import handle_route_error
+from app.infra.v4.storage.file_writer import write_text_file
 from app.infra.v4.tools.call_args import record_call_args, resolve_tool_for_entry
 from app.main import get_db
 from app.sql.types import load_sql_query
@@ -51,6 +52,9 @@ async def create_certificates_entry_internal(
 
     async with conn.transaction():
         request_dict["mcp"] = mcp
+        request_dict["text_upload_id"] = await write_text_file(
+            conn, None, "Created certificates entry"
+        )
         request_dict["tool_id"] = tool_id
         if run_id is not None:
             request_dict["run_id"] = run_id

@@ -36,6 +36,7 @@ class CreateAttemptImprovementEntrySqlParams(BaseModel):
     name: str = ""
     description: str = ""
     tool_id: UUID | None = None
+    upload_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
@@ -46,6 +47,7 @@ class CreateAttemptImprovementEntrySqlParams(BaseModel):
             self.name,
             self.description,
             self.tool_id,
+            self.upload_id,
             self.mcp,
         )
 

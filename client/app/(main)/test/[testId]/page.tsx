@@ -5,7 +5,7 @@
  * 02/2025
  */
 
-import Test from "@/components/artifacts/test/Test";
+import TestChat from "@/components/artifacts/test/setups/TestChat";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -51,21 +51,23 @@ export async function generateMetadata({
 /** ---- Page component ---- */
 export default async function TestPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ testId: string }>;
+  searchParams: Promise<{ draftId?: string }>;
 }) {
   const { testId } = await params;
+  const { draftId } = await searchParams;
 
   try {
     const testData = await getTestArtifact(testId);
 
     return (
-      <div className="space-y-6">
-        <Test
-          attemptId={testId}
-          attemptData={testData}
-        />
-      </div>
+      <TestChat
+        test_id={testId}
+        test_data={testData}
+        draft_id={draftId ?? null}
+      />
     );
   } catch (error: unknown) {
     if (

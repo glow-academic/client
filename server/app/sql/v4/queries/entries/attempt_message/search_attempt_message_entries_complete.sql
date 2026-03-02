@@ -42,7 +42,7 @@ BEGIN
             'completed', m.completed,
             'runs_id', m.runs_id,
             'text_id', m.text_id,
-            'history_content', m.history_content,
+            'history_file_path', m.history_file_path,
             'audio_id', m.audio_id
         ) AS row_data
         FROM attempt_message_mv m
