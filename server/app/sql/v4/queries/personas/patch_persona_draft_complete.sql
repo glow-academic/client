@@ -51,7 +51,8 @@ CREATE OR REPLACE FUNCTION api_patch_persona_draft_v4(
     examples types.persona_multi_resource_action DEFAULT NULL,
     parameters types.persona_multi_resource_action DEFAULT NULL,
     voices types.persona_multi_resource_action DEFAULT NULL,
-    expected_version int DEFAULT 0
+    expected_version int DEFAULT 0,
+    active_value boolean DEFAULT true
 )
 RETURNS TABLE (
     draft_id uuid,
@@ -182,14 +183,26 @@ BEGIN
             RETURNING id INTO v_group_id;
         END IF;
 
-        UPDATE persona_drafts_entry
-        SET version = persona_drafts_entry.version + 1,
-            updated_at = now(),
-            group_id = COALESCE(persona_drafts_entry.group_id, v_group_id)
-        WHERE id = input_draft_id
-          AND EXISTS (SELECT 1 FROM persona_drafts_profiles_connection pdj WHERE pdj.draft_id = persona_drafts_entry.id AND pdj.profiles_id = v_profiles_resource_id)
-          AND persona_drafts_entry.version = expected_version
-        RETURNING id, version INTO v_draft_id, v_new_version;
+        IF active_value = true THEN
+            -- Normal update: optimistic lock + version increment
+            UPDATE persona_drafts_entry
+            SET version = persona_drafts_entry.version + 1,
+                updated_at = now(),
+                group_id = COALESCE(persona_drafts_entry.group_id, v_group_id)
+            WHERE id = input_draft_id
+              AND EXISTS (SELECT 1 FROM persona_drafts_profiles_connection pdj WHERE pdj.draft_id = persona_drafts_entry.id AND pdj.profiles_id = v_profiles_resource_id)
+              AND persona_drafts_entry.version = expected_version
+            RETURNING id, version INTO v_draft_id, v_new_version;
+        ELSE
+            -- Soft update: no version increment, no version guard, set active=false
+            UPDATE persona_drafts_entry
+            SET active = false,
+                updated_at = now(),
+                group_id = COALESCE(persona_drafts_entry.group_id, v_group_id)
+            WHERE id = input_draft_id
+              AND EXISTS (SELECT 1 FROM persona_drafts_profiles_connection pdj WHERE pdj.draft_id = persona_drafts_entry.id AND pdj.profiles_id = v_profiles_resource_id)
+            RETURNING id, version INTO v_draft_id, v_new_version;
+        END IF;
 
         IF v_draft_id IS NOT NULL THEN
             v_draft_exists := true;
@@ -209,83 +222,83 @@ BEGIN
 
             -- Insert new resource links
             IF v_name_id IS NOT NULL THEN
-                INSERT INTO persona_drafts_names_connection (draft_id, names_id, version)
-                VALUES (v_draft_id, v_name_id, v_new_version)
-                ON CONFLICT ON CONSTRAINT persona_drafts_names_connection_pkey DO UPDATE SET version = v_new_version;
+                INSERT INTO persona_drafts_names_connection (draft_id, names_id, version, active)
+                VALUES (v_draft_id, v_name_id, v_new_version, active_value)
+                ON CONFLICT ON CONSTRAINT persona_drafts_names_connection_pkey DO UPDATE SET version = v_new_version, active = active_value;
             END IF;
 
             IF v_description_id IS NOT NULL THEN
-                INSERT INTO persona_drafts_descriptions_connection (draft_id, descriptions_id, version)
-                VALUES (v_draft_id, v_description_id, v_new_version)
+                INSERT INTO persona_drafts_descriptions_connection (draft_id, descriptions_id, version, active)
+                VALUES (v_draft_id, v_description_id, v_new_version, active_value)
                 ON CONFLICT ON CONSTRAINT persona_drafts_descriptions_connection_pkey DO UPDATE
-                SET version = v_new_version;
+                SET version = v_new_version, active = active_value;
             END IF;
 
             IF v_color_id IS NOT NULL THEN
-                INSERT INTO persona_drafts_colors_connection (draft_id, colors_id, version)
-                VALUES (v_draft_id, v_color_id, v_new_version)
+                INSERT INTO persona_drafts_colors_connection (draft_id, colors_id, version, active)
+                VALUES (v_draft_id, v_color_id, v_new_version, active_value)
                 ON CONFLICT ON CONSTRAINT persona_drafts_colors_connection_pkey DO UPDATE
-                SET version = v_new_version;
+                SET version = v_new_version, active = active_value;
             END IF;
 
             IF v_icon_id IS NOT NULL THEN
-                INSERT INTO persona_drafts_icons_connection (draft_id, icons_id, version)
-                VALUES (v_draft_id, v_icon_id, v_new_version)
+                INSERT INTO persona_drafts_icons_connection (draft_id, icons_id, version, active)
+                VALUES (v_draft_id, v_icon_id, v_new_version, active_value)
                 ON CONFLICT ON CONSTRAINT persona_drafts_icons_connection_pkey DO UPDATE
-                SET version = v_new_version;
+                SET version = v_new_version, active = active_value;
             END IF;
 
             IF v_instructions_id IS NOT NULL THEN
-                INSERT INTO persona_drafts_instructions_connection (draft_id, instructions_id, version)
-                VALUES (v_draft_id, v_instructions_id, v_new_version)
+                INSERT INTO persona_drafts_instructions_connection (draft_id, instructions_id, version, active)
+                VALUES (v_draft_id, v_instructions_id, v_new_version, active_value)
                 ON CONFLICT ON CONSTRAINT persona_drafts_instructions_connection_pkey DO UPDATE
-                SET version = v_new_version;
+                SET version = v_new_version, active = active_value;
             END IF;
 
             IF v_active_flag_id IS NOT NULL THEN
-                INSERT INTO persona_drafts_flags_connection (draft_id, flags_id, version)
-                VALUES (v_draft_id, v_active_flag_id, v_new_version)
+                INSERT INTO persona_drafts_flags_connection (draft_id, flags_id, version, active)
+                VALUES (v_draft_id, v_active_flag_id, v_new_version, active_value)
                 ON CONFLICT ON CONSTRAINT persona_drafts_flags_connection_pkey DO UPDATE
-                SET version = v_new_version;
+                SET version = v_new_version, active = active_value;
             END IF;
 
             -- Handle array resources (departments, fields, examples)
             IF v_department_ids IS NOT NULL THEN
                 DELETE FROM persona_drafts_departments_connection WHERE persona_drafts_departments_connection.draft_id = v_draft_id;
-                INSERT INTO persona_drafts_departments_connection (draft_id, departments_id, version)
-                SELECT v_draft_id, dept_id, v_new_version
+                INSERT INTO persona_drafts_departments_connection (draft_id, departments_id, version, active)
+                SELECT v_draft_id, dept_id, v_new_version, active_value
                 FROM UNNEST(v_department_ids) as dept_id
                 ON CONFLICT ON CONSTRAINT persona_drafts_departments_connection_pkey DO UPDATE
-                SET version = v_new_version;
+                SET version = v_new_version, active = active_value;
             END IF;
 
             IF v_parameter_field_ids IS NOT NULL THEN
                 DELETE FROM persona_drafts_parameter_fields_connection WHERE persona_drafts_parameter_fields_connection.draft_id = v_draft_id;
-                INSERT INTO persona_drafts_parameter_fields_connection (draft_id, parameter_fields_id, version)
-                SELECT v_draft_id, field_id, v_new_version
+                INSERT INTO persona_drafts_parameter_fields_connection (draft_id, parameter_fields_id, version, active)
+                SELECT v_draft_id, field_id, v_new_version, active_value
                 FROM UNNEST(v_parameter_field_ids) as field_id
                 ON CONFLICT ON CONSTRAINT persona_drafts_parameter_fields_connection_pkey DO UPDATE
-                SET version = v_new_version;
+                SET version = v_new_version, active = active_value;
             END IF;
 
             IF v_example_ids IS NOT NULL THEN
                 DELETE FROM persona_drafts_examples_connection WHERE persona_drafts_examples_connection.draft_id = v_draft_id;
-                INSERT INTO persona_drafts_examples_connection (draft_id, examples_id, version)
-                SELECT v_draft_id, ex_id, v_new_version
+                INSERT INTO persona_drafts_examples_connection (draft_id, examples_id, version, active)
+                SELECT v_draft_id, ex_id, v_new_version, active_value
                 FROM UNNEST(v_example_ids) as ex_id
                 ON CONFLICT ON CONSTRAINT persona_drafts_examples_connection_pkey DO UPDATE
-                SET version = v_new_version;
+                SET version = v_new_version, active = active_value;
             END IF;
 
             -- persona_drafts_parameters_connection dropped — v_parameter_ids ignored
 
             IF v_voice_ids IS NOT NULL THEN
                 DELETE FROM persona_drafts_voices_connection WHERE persona_drafts_voices_connection.draft_id = v_draft_id;
-                INSERT INTO persona_drafts_voices_connection (draft_id, voices_id, version)
-                SELECT v_draft_id, vid, v_new_version
+                INSERT INTO persona_drafts_voices_connection (draft_id, voices_id, version, active)
+                SELECT v_draft_id, vid, v_new_version, active_value
                 FROM UNNEST(v_voice_ids) as vid
                 ON CONFLICT (draft_id, voices_id) DO UPDATE
-                SET version = v_new_version;
+                SET version = v_new_version, active = active_value;
             END IF;
 
             -- === TOOL CALL TRACKING (UPDATE path) ===
@@ -515,90 +528,97 @@ BEGIN
     RETURNING id INTO v_group_id;
 
     -- Create new draft with group_id
-    INSERT INTO persona_drafts_entry (group_id)
-    VALUES (v_group_id)
-    RETURNING id, version INTO v_draft_id, v_new_version;
+    IF active_value = true THEN
+        INSERT INTO persona_drafts_entry (group_id)
+        VALUES (v_group_id)
+        RETURNING id, version INTO v_draft_id, v_new_version;
+    ELSE
+        -- Soft create: dormant draft at expected_version
+        INSERT INTO persona_drafts_entry (group_id, active, version)
+        VALUES (v_group_id, false, expected_version)
+        RETURNING id, version INTO v_draft_id, v_new_version;
+    END IF;
 
     -- Link profile to draft (using profiles_resource.id, not profile_artifact.id)
-    INSERT INTO persona_drafts_profiles_connection (draft_id, profiles_id, version)
-    VALUES (v_draft_id, v_profiles_resource_id, v_new_version);
+    INSERT INTO persona_drafts_profiles_connection (draft_id, profiles_id, version, active)
+    VALUES (v_draft_id, v_profiles_resource_id, v_new_version, active_value);
 
     -- Link resources to draft
     IF v_name_id IS NOT NULL THEN
-        INSERT INTO persona_drafts_names_connection (draft_id, names_id, version)
-        VALUES (v_draft_id, v_name_id, v_new_version)
+        INSERT INTO persona_drafts_names_connection (draft_id, names_id, version, active)
+        VALUES (v_draft_id, v_name_id, v_new_version, active_value)
         ON CONFLICT ON CONSTRAINT persona_drafts_names_connection_pkey DO UPDATE
-        SET version = v_new_version;
+        SET version = v_new_version, active = active_value;
     END IF;
 
     IF v_description_id IS NOT NULL THEN
-        INSERT INTO persona_drafts_descriptions_connection (draft_id, descriptions_id, version)
-        VALUES (v_draft_id, v_description_id, v_new_version)
+        INSERT INTO persona_drafts_descriptions_connection (draft_id, descriptions_id, version, active)
+        VALUES (v_draft_id, v_description_id, v_new_version, active_value)
         ON CONFLICT ON CONSTRAINT persona_drafts_descriptions_connection_pkey DO UPDATE
-        SET version = v_new_version;
+        SET version = v_new_version, active = active_value;
     END IF;
 
     IF v_color_id IS NOT NULL THEN
-        INSERT INTO persona_drafts_colors_connection (draft_id, colors_id, version)
-        VALUES (v_draft_id, v_color_id, v_new_version)
+        INSERT INTO persona_drafts_colors_connection (draft_id, colors_id, version, active)
+        VALUES (v_draft_id, v_color_id, v_new_version, active_value)
         ON CONFLICT ON CONSTRAINT persona_drafts_colors_connection_pkey DO UPDATE
-        SET version = v_new_version;
+        SET version = v_new_version, active = active_value;
     END IF;
 
     IF v_icon_id IS NOT NULL THEN
-        INSERT INTO persona_drafts_icons_connection (draft_id, icons_id, version)
-        VALUES (v_draft_id, v_icon_id, v_new_version)
+        INSERT INTO persona_drafts_icons_connection (draft_id, icons_id, version, active)
+        VALUES (v_draft_id, v_icon_id, v_new_version, active_value)
         ON CONFLICT ON CONSTRAINT persona_drafts_icons_connection_pkey DO UPDATE
-        SET version = v_new_version;
+        SET version = v_new_version, active = active_value;
     END IF;
 
     IF v_instructions_id IS NOT NULL THEN
-        INSERT INTO persona_drafts_instructions_connection (draft_id, instructions_id, version)
-        VALUES (v_draft_id, v_instructions_id, v_new_version)
+        INSERT INTO persona_drafts_instructions_connection (draft_id, instructions_id, version, active)
+        VALUES (v_draft_id, v_instructions_id, v_new_version, active_value)
         ON CONFLICT ON CONSTRAINT persona_drafts_instructions_connection_pkey DO UPDATE
-        SET version = v_new_version;
+        SET version = v_new_version, active = active_value;
     END IF;
 
     IF v_active_flag_id IS NOT NULL THEN
-        INSERT INTO persona_drafts_flags_connection (draft_id, flags_id, version)
-        VALUES (v_draft_id, v_active_flag_id, v_new_version)
+        INSERT INTO persona_drafts_flags_connection (draft_id, flags_id, version, active)
+        VALUES (v_draft_id, v_active_flag_id, v_new_version, active_value)
         ON CONFLICT ON CONSTRAINT persona_drafts_flags_connection_pkey DO UPDATE
-        SET version = v_new_version;
+        SET version = v_new_version, active = active_value;
     END IF;
 
     -- Handle array resources
     IF v_department_ids IS NOT NULL THEN
-        INSERT INTO persona_drafts_departments_connection (draft_id, departments_id, version)
-        SELECT v_draft_id, dept_id, v_new_version
+        INSERT INTO persona_drafts_departments_connection (draft_id, departments_id, version, active)
+        SELECT v_draft_id, dept_id, v_new_version, active_value
         FROM UNNEST(v_department_ids) as dept_id
         ON CONFLICT ON CONSTRAINT persona_drafts_departments_connection_pkey DO UPDATE
-        SET version = v_new_version;
+        SET version = v_new_version, active = active_value;
     END IF;
 
     IF v_parameter_field_ids IS NOT NULL THEN
-        INSERT INTO persona_drafts_parameter_fields_connection (draft_id, parameter_fields_id, version)
-        SELECT v_draft_id, field_id, v_new_version
+        INSERT INTO persona_drafts_parameter_fields_connection (draft_id, parameter_fields_id, version, active)
+        SELECT v_draft_id, field_id, v_new_version, active_value
         FROM UNNEST(v_parameter_field_ids) as field_id
         ON CONFLICT ON CONSTRAINT persona_drafts_parameter_fields_connection_pkey DO UPDATE
-        SET version = v_new_version;
+        SET version = v_new_version, active = active_value;
     END IF;
 
     IF v_example_ids IS NOT NULL THEN
-        INSERT INTO persona_drafts_examples_connection (draft_id, examples_id, version)
-        SELECT v_draft_id, ex_id, v_new_version
+        INSERT INTO persona_drafts_examples_connection (draft_id, examples_id, version, active)
+        SELECT v_draft_id, ex_id, v_new_version, active_value
         FROM UNNEST(v_example_ids) as ex_id
         ON CONFLICT ON CONSTRAINT persona_drafts_examples_connection_pkey DO UPDATE
-        SET version = v_new_version;
+        SET version = v_new_version, active = active_value;
     END IF;
 
     -- persona_drafts_parameters_connection dropped — v_parameter_ids ignored
 
     IF v_voice_ids IS NOT NULL THEN
-        INSERT INTO persona_drafts_voices_connection (draft_id, voices_id, version)
-        SELECT v_draft_id, vid, v_new_version
+        INSERT INTO persona_drafts_voices_connection (draft_id, voices_id, version, active)
+        SELECT v_draft_id, vid, v_new_version, active_value
         FROM UNNEST(v_voice_ids) as vid
         ON CONFLICT (draft_id, voices_id) DO UPDATE
-        SET version = v_new_version;
+        SET version = v_new_version, active = active_value;
     END IF;
 
     -- === TOOL CALL TRACKING (CREATE path) ===

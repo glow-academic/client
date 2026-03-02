@@ -1,5 +1,6 @@
 """Persona duplicate endpoint - v4 API following DHH principles."""
 
+import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
@@ -31,6 +32,46 @@ ACCESS_CHECK_SQL_PATH = (
 DUPLICATE_SQL_PATH = "app/sql/v4/queries/personas/duplicate_persona_complete.sql"
 
 router = APIRouter()
+
+
+async def duplicate_persona_internal(
+    conn: asyncpg.Connection,
+    profile_id: uuid.UUID,
+    persona_id: uuid.UUID,
+    name_resource_id: uuid.UUID,
+    soft: bool = False,
+) -> DuplicatePersonaSqlRow:
+    """Composable persona duplicate — no transaction or cache management.
+
+    The caller owns the transaction boundary and cache invalidation.
+
+    Args:
+        conn: Database connection (caller manages transaction).
+        profile_id: Acting user's profile ID.
+        persona_id: Persona to duplicate.
+        name_resource_id: Pre-created name resource for the copy.
+        soft: If True, creates duplicate with active=false (dormant).
+
+    Returns the DuplicatePersonaSqlRow result.
+    Raises ValueError if the persona is not found.
+    """
+    active_value = not soft
+    params = DuplicatePersonaSqlParams(
+        persona_id=persona_id,
+        profile_id=profile_id,
+        name_resource_id=name_resource_id,
+        active_value=active_value,
+    )
+
+    result = cast(
+        DuplicatePersonaSqlRow,
+        await execute_sql_typed(conn, DUPLICATE_SQL_PATH, params=params),
+    )
+
+    if not result or not result.new_persona_id:
+        raise ValueError(f"Persona not found: {persona_id}")
+
+    return result
 
 
 @router.post("/duplicate", response_model=DuplicatePersonaApiResponse)
@@ -104,25 +145,9 @@ async def duplicate_persona(
 
         async with conn.transaction():
             # Phase 2: SQL creates artifact + links junctions
-            params = DuplicatePersonaSqlParams(
-                persona_id=request.persona_id,
-                profile_id=profile_id,
-                name_resource_id=name_resource_id,
+            result = await duplicate_persona_internal(
+                conn, profile_id, request.persona_id, name_resource_id
             )
-            sql_params = params.to_tuple()
-
-            # Execute SQL with typed helper - automatically detects and calls function if present
-            result = cast(
-                DuplicatePersonaSqlRow,
-                await execute_sql_typed(
-                    conn,
-                    DUPLICATE_SQL_PATH,
-                    params=params,
-                ),
-            )
-
-            if not result or not result.new_persona_id:
-                raise ValueError(f"Persona not found: {request.persona_id}")
 
             # Convert SQL result to API response
             api_response = DuplicatePersonaApiResponse.model_validate(

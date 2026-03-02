@@ -425,6 +425,7 @@ class SavePersonaSqlParams(BaseModel):
     example_ids: list[UUID] | None = None
     voice_ids: list[UUID] | None = None
     personas_resource_id: UUID | None = None
+    active_value: bool = True
 
     @classmethod
     def from_request(
@@ -432,6 +433,7 @@ class SavePersonaSqlParams(BaseModel):
         request: SavePersonaItem,
         profile_id: UUID,
         personas_resource_id: UUID | None = None,
+        active_value: bool = True,
     ) -> SavePersonaSqlParams:
         return cls(
             profile_id=profile_id,
@@ -447,6 +449,7 @@ class SavePersonaSqlParams(BaseModel):
             example_ids=request.example_ids,
             voice_ids=request.voice_ids,
             personas_resource_id=personas_resource_id,
+            active_value=active_value,
         )
 
     def to_tuple(self) -> tuple:
@@ -469,6 +472,7 @@ class SavePersonaSqlParams(BaseModel):
             self.example_ids,
             self.voice_ids,
             self.personas_resource_id,
+            self.active_value,
         )
 
 
@@ -569,6 +573,7 @@ class PatchPersonaDraftSqlParams(BaseModel):
     parameters: PersonaMultiResourceAction
     voices: PersonaMultiResourceAction
     expected_version: int = 0
+    active_value: bool = True
 
     @classmethod
     def from_request(
@@ -576,6 +581,7 @@ class PatchPersonaDraftSqlParams(BaseModel):
         request: PatchPersonaDraftApiRequest,
         profile_id: UUID,
         group_id: UUID | None = None,
+        active_value: bool = True,
     ) -> PatchPersonaDraftSqlParams:
         return cls(
             profile_id=profile_id,
@@ -595,6 +601,7 @@ class PatchPersonaDraftSqlParams(BaseModel):
             parameters=PersonaMultiResourceAction(resource_ids=request.parameter_ids),
             voices=PersonaMultiResourceAction(resource_ids=request.voice_ids),
             expected_version=request.expected_version,
+            active_value=active_value,
         )
 
     def to_tuple(self) -> tuple:
@@ -622,6 +629,7 @@ class PatchPersonaDraftSqlParams(BaseModel):
             multi(self.parameters),
             multi(self.voices),
             self.expected_version,
+            self.active_value,
         )
 
 

@@ -67,82 +67,113 @@ async def save_persona_internal(
     group_id: uuid.UUID | None,
     resource_actions: dict[str, Any],
     persona_id: uuid.UUID | None = None,
+    soft: bool = False,
 ) -> uuid.UUID | None:
-    """Save a persona from resource actions dict (used by generation complete handler).
+    """Composable persona save — no transaction or cache management.
 
-    Extracts flat resource IDs from resource_actions, creates the denormalized
-    personas_resource, then executes the save SQL in a transaction.
+    The caller owns the transaction boundary and cache invalidation.
+
+    Args:
+        conn: Database connection (caller manages transaction).
+        profile_id: Acting user's profile ID.
+        group_id: Tool tracking group (unused internally, kept for signature compat).
+        resource_actions: Dict of resource_type -> {resource_id, resource_ids} dicts.
+        persona_id: Existing persona ID for update, None for create.
+        soft: If True, creates persona with active=false (dormant).
 
     Returns the persona_id on success, None on failure.
     """
+
+    def _id(key: str) -> uuid.UUID | None:
+        val = resource_actions.get(key, {})
+        if isinstance(val, dict):
+            return val.get("resource_id")
+        return None
+
+    def _ids(key: str) -> list[uuid.UUID] | None:
+        val = resource_actions.get(key, {})
+        if isinstance(val, dict):
+            return val.get("resource_ids")
+        return None
+
+    name_id = _id("names")
+    description_id = _id("descriptions")
+    color_id = _id("colors")
+    icon_id = _id("icons")
+    instructions_id = _id("instructions")
+    active_flag_id = _id("flags")
+    department_ids = _ids("departments")
+    parameter_field_ids = _ids("parameter_fields")
+    example_ids = _ids("examples")
+    voice_ids = _ids("voices")
+
+    # Create denormalized personas_resource
+    personas_resource_id = await create_personas_internal(
+        conn,
+        name_id=name_id,
+        description_id=description_id,
+        color_id=color_id,
+        icon_id=icon_id,
+        instructions_id=instructions_id,
+        department_ids=department_ids,
+        example_ids=example_ids,
+        parameter_field_ids=parameter_field_ids,
+    )
+
+    active_value = not soft
+
+    params = SavePersonaSqlParams(
+        profile_id=profile_id,
+        input_persona_id=persona_id,
+        name_id=name_id,
+        description_id=description_id,
+        color_id=color_id,
+        icon_id=icon_id,
+        instructions_id=instructions_id,
+        active_flag_id=active_flag_id,
+        department_ids=department_ids,
+        parameter_field_ids=parameter_field_ids,
+        example_ids=example_ids,
+        voice_ids=voice_ids,
+        personas_resource_id=personas_resource_id,
+        active_value=active_value,
+    )
+
+    result = cast(
+        SavePersonaSqlRow,
+        await execute_sql_typed(conn, SQL_PATH, params=params),
+    )
+
+    if not result or not result.persona_id:
+        return None
+
+    return result.persona_id
+
+
+async def _save_persona_legacy(
+    conn: asyncpg.Connection,
+    profile_id: uuid.UUID,
+    group_id: uuid.UUID | None,
+    resource_actions: dict[str, Any],
+    persona_id: uuid.UUID | None = None,
+) -> uuid.UUID | None:
+    """Legacy wrapper for socket handler — manages its own transaction + cache.
+
+    Preserves the original behavior: wraps save_persona_internal in a transaction
+    and invalidates cache on success.
+    """
     try:
-
-        def _id(key: str) -> uuid.UUID | None:
-            val = resource_actions.get(key, {})
-            if isinstance(val, dict):
-                return val.get("resource_id")
-            return None
-
-        def _ids(key: str) -> list[uuid.UUID] | None:
-            val = resource_actions.get(key, {})
-            if isinstance(val, dict):
-                return val.get("resource_ids")
-            return None
-
-        name_id = _id("names")
-        description_id = _id("descriptions")
-        color_id = _id("colors")
-        icon_id = _id("icons")
-        instructions_id = _id("instructions")
-        active_flag_id = _id("flags")
-        department_ids = _ids("departments")
-        parameter_field_ids = _ids("parameter_fields")
-        example_ids = _ids("examples")
-        voice_ids = _ids("voices")
-
         async with conn.transaction():
-            # Create denormalized personas_resource
-            personas_resource_id = await create_personas_internal(
-                conn,
-                name_id=name_id,
-                description_id=description_id,
-                color_id=color_id,
-                icon_id=icon_id,
-                instructions_id=instructions_id,
-                department_ids=department_ids,
-                example_ids=example_ids,
-                parameter_field_ids=parameter_field_ids,
+            result_id = await save_persona_internal(
+                conn, profile_id, group_id, resource_actions, persona_id
             )
-
-            params = SavePersonaSqlParams(
-                profile_id=profile_id,
-                input_persona_id=persona_id,
-                name_id=name_id,
-                description_id=description_id,
-                color_id=color_id,
-                icon_id=icon_id,
-                instructions_id=instructions_id,
-                active_flag_id=active_flag_id,
-                department_ids=department_ids,
-                parameter_field_ids=parameter_field_ids,
-                example_ids=example_ids,
-                voice_ids=voice_ids,
-                personas_resource_id=personas_resource_id,
-            )
-
-            result = cast(
-                SavePersonaSqlRow,
-                await execute_sql_typed(conn, SQL_PATH, params=params),
-            )
-
-            if not result or not result.persona_id:
+            if not result_id:
                 return None
 
         await invalidate_tags(["personas"])
-        return result.persona_id
-
+        return result_id
     except Exception as e:
-        logger.exception(f"save_persona_internal failed: {e}")
+        logger.exception(f"_save_persona_legacy failed: {e}")
         return None
 
 

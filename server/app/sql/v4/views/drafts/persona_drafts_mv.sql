@@ -54,6 +54,7 @@ SELECT
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'voices'), ARRAY[]::uuid[]) AS voice_ids
 FROM persona_drafts_entry d
 LEFT JOIN draft_links l ON l.draft_id = d.id
+WHERE d.active = true
 GROUP BY d.id, d.created_at, d.updated_at, d.version, d.generated, d.mcp, d.active, d.group_id
 WITH NO DATA;
 

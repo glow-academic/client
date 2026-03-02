@@ -30,7 +30,8 @@ CREATE OR REPLACE FUNCTION api_save_persona_v4(
     parameter_field_ids uuid[] DEFAULT NULL,
     example_ids uuid[] DEFAULT NULL,
     voice_ids uuid[] DEFAULT NULL,
-    personas_resource_id uuid DEFAULT NULL
+    personas_resource_id uuid DEFAULT NULL,
+    active_value boolean DEFAULT true
 )
 RETURNS TABLE (
     persona_id uuid
@@ -67,8 +68,8 @@ BEGIN
 
     -- Create or update persona_artifact
     IF is_create THEN
-        INSERT INTO persona_artifact (created_at, updated_at)
-        VALUES (NOW(), NOW())
+        INSERT INTO persona_artifact (created_at, updated_at, active)
+        VALUES (NOW(), NOW(), active_value)
         RETURNING id INTO v_persona_id;
     ELSE
         v_persona_id := input_persona_id;
@@ -178,42 +179,42 @@ BEGIN
     -- Link name
     link_name AS (
         INSERT INTO persona_names_junction (persona_id, name_id, active, created_at)
-        SELECT x.persona_id, x.name_id, true, NOW()
+        SELECT x.persona_id, x.name_id, active_value, NOW()
         FROM params x
         WHERE x.name_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT persona_names_pkey DO UPDATE SET active = true
+        ON CONFLICT ON CONSTRAINT persona_names_pkey DO UPDATE SET active = active_value
     ),
     -- Link description
     link_description AS (
         INSERT INTO persona_descriptions_junction (persona_id, description_id, active, created_at)
-        SELECT x.persona_id, x.description_id, true, NOW()
+        SELECT x.persona_id, x.description_id, active_value, NOW()
         FROM params x
         WHERE x.description_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT persona_descriptions_pkey DO UPDATE SET active = true
+        ON CONFLICT ON CONSTRAINT persona_descriptions_pkey DO UPDATE SET active = active_value
     ),
     -- Link color
     link_color AS (
         INSERT INTO persona_colors_junction (persona_id, color_id, active, created_at)
-        SELECT x.persona_id, x.color_id, true, NOW()
+        SELECT x.persona_id, x.color_id, active_value, NOW()
         FROM params x
         WHERE x.color_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT persona_colors_pkey DO UPDATE SET active = true
+        ON CONFLICT ON CONSTRAINT persona_colors_pkey DO UPDATE SET active = active_value
     ),
     -- Link icon
     link_icon AS (
         INSERT INTO persona_icons_junction (persona_id, icon_id, active, created_at)
-        SELECT x.persona_id, x.icon_id, true, NOW()
+        SELECT x.persona_id, x.icon_id, active_value, NOW()
         FROM params x
         WHERE x.icon_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT persona_icons_pkey DO UPDATE SET active = true
+        ON CONFLICT ON CONSTRAINT persona_icons_pkey DO UPDATE SET active = active_value
     ),
     -- Link instructions
     link_instruction AS (
         INSERT INTO persona_instructions_junction (persona_id, instruction_id, active, created_at)
-        SELECT x.persona_id, x.instructions_id, true, NOW()
+        SELECT x.persona_id, x.instructions_id, active_value, NOW()
         FROM params x
         WHERE x.instructions_id IS NOT NULL
-        ON CONFLICT ON CONSTRAINT persona_instructions_pkey DO UPDATE SET active = true
+        ON CONFLICT ON CONSTRAINT persona_instructions_pkey DO UPDATE SET active = active_value
     ),
     -- Upsert active flag
     upsert_flag AS (
@@ -232,20 +233,20 @@ BEGIN
     -- Link departments
     link_departments AS (
         INSERT INTO persona_departments_junction (persona_id, department_id, active, created_at)
-        SELECT x.persona_id, dept_id, true, NOW()
+        SELECT x.persona_id, dept_id, active_value, NOW()
         FROM params x
         CROSS JOIN UNNEST(x.department_ids) AS dept_id
         WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT persona_departments_pkey DO UPDATE SET active = true
+        ON CONFLICT ON CONSTRAINT persona_departments_pkey DO UPDATE SET active = active_value
     ),
     -- Link parameter fields
     link_parameter_fields AS (
         INSERT INTO persona_parameter_fields_junction (persona_id, parameter_field_id, active, created_at)
-        SELECT x.persona_id, field_id, true, NOW()
+        SELECT x.persona_id, field_id, active_value, NOW()
         FROM params x
         CROSS JOIN UNNEST(x.parameter_field_ids) AS field_id
         WHERE COALESCE(array_length(x.parameter_field_ids, 1), 0) > 0
-        ON CONFLICT (persona_id, parameter_field_id) DO UPDATE SET active = true
+        ON CONFLICT (persona_id, parameter_field_id) DO UPDATE SET active = active_value
     ),
     -- Link examples (with ordering)
     examples_with_index AS (
@@ -256,22 +257,22 @@ BEGIN
     ),
     link_examples AS (
         INSERT INTO persona_examples_junction (persona_id, example_id, idx, active, created_at)
-        SELECT x.persona_id, ewi.ex_id, ewi.idx, true, NOW()
+        SELECT x.persona_id, ewi.ex_id, ewi.idx, active_value, NOW()
         FROM params x
         CROSS JOIN examples_with_index ewi
         ON CONFLICT ON CONSTRAINT persona_examples_pkey DO UPDATE SET
             idx = EXCLUDED.idx,
-            active = true,
+            active = active_value,
             created_at = EXCLUDED.created_at
     ),
     -- Link voices
     link_voices AS (
         INSERT INTO persona_voices_junction (persona_id, voice_id, active, created_at)
-        SELECT x.persona_id, vid, true, NOW()
+        SELECT x.persona_id, vid, active_value, NOW()
         FROM params x
         CROSS JOIN UNNEST(x.voice_ids) AS vid
         WHERE COALESCE(array_length(x.voice_ids, 1), 0) > 0
-        ON CONFLICT (persona_id, voice_id) DO UPDATE SET active = true
+        ON CONFLICT (persona_id, voice_id) DO UPDATE SET active = active_value
     ),
     -- Deactivate old personas_resource link
     deactivate_old_resource AS (
@@ -284,7 +285,7 @@ BEGIN
     -- Link pre-created personas_resource
     link_new_resource AS (
         INSERT INTO persona_personas_junction (persona_id, personas_id, active)
-        SELECT x.persona_id, x.personas_resource_id, true
+        SELECT x.persona_id, x.personas_resource_id, active_value
         FROM params x
         WHERE x.personas_resource_id IS NOT NULL
     )

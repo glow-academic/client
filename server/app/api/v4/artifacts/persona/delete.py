@@ -1,5 +1,6 @@
 """Persona delete endpoint - v4 API following DHH principles."""
 
+import uuid
 from typing import Annotated, cast
 
 import asyncpg  # type: ignore
@@ -31,6 +32,47 @@ ACCESS_CHECK_SQL_PATH = (
 DELETE_SQL_PATH = "app/sql/v4/queries/personas/delete_persona_complete.sql"
 
 router = APIRouter()
+
+
+async def delete_persona_internal(
+    conn: asyncpg.Connection,
+    profile_id: uuid.UUID,
+    persona_id: uuid.UUID,
+    soft: bool = False,
+) -> DeletePersonaSqlRow:
+    """Composable persona delete — no transaction or cache management.
+
+    The caller owns the transaction boundary and cache invalidation.
+
+    Args:
+        conn: Database connection (caller manages transaction).
+        profile_id: Acting user's profile ID.
+        persona_id: Persona to delete.
+        soft: If True, sets active=false instead of hard deleting.
+
+    Returns the DeletePersonaSqlRow result.
+    Raises ValueError if persona is in use or not found/deleted.
+    """
+    params = DeletePersonaSqlParams(
+        persona_id=persona_id, profile_id=profile_id, soft=soft
+    )
+
+    result = cast(
+        DeletePersonaSqlRow,
+        await execute_sql_typed(conn, DELETE_SQL_PATH, params=params),
+    )
+
+    if not result:
+        raise ValueError(f"Failed to check persona usage: {persona_id}")
+
+    usage_count = result.usage_count or 0
+    if usage_count > 0:
+        raise ValueError("Cannot delete persona that is in use by scenarios")
+
+    if not result.deleted:
+        raise ValueError(f"Persona not found: {persona_id}")
+
+    return result
 
 
 @router.post("/delete", response_model=DeletePersonaApiResponse)
@@ -107,30 +149,10 @@ async def delete_persona(
 
         async with conn.transaction():
             for idx, persona_id in enumerate(request.persona_ids):
-                params = DeletePersonaSqlParams(
-                    persona_id=persona_id, profile_id=profile_id
-                )
-
-                result = cast(
-                    DeletePersonaSqlRow,
-                    await execute_sql_typed(
-                        conn,
-                        DELETE_SQL_PATH,
-                        params=params,
-                    ),
-                )
-
-                if not result:
-                    raise ValueError(f"Item {idx}: Failed to check persona usage")
-
-                usage_count = result.usage_count or 0
-                if usage_count > 0:
-                    raise ValueError(
-                        f"Item {idx}: Cannot delete persona that is in use by scenarios"
-                    )
-
-                if not result.deleted:
-                    raise ValueError(f"Item {idx}: Persona not found: {persona_id}")
+                try:
+                    result = await delete_persona_internal(conn, profile_id, persona_id)
+                except ValueError as e:
+                    raise ValueError(f"Item {idx}: {e}") from e
 
                 persona_name = result.name or "Unknown"
                 results.append(

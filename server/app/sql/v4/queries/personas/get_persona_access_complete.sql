@@ -45,7 +45,7 @@ persona_exists_check AS (
     SELECT
         CASE
             WHEN (SELECT persona_id FROM params) IS NULL THEN NULL::boolean
-            ELSE EXISTS(SELECT 1 FROM persona_artifact WHERE id = (SELECT persona_id FROM params))::boolean
+            ELSE EXISTS(SELECT 1 FROM persona_artifact WHERE id = (SELECT persona_id FROM params) AND active = true)::boolean
         END as persona_exists
 ),
 -- Get persona departments (for access check)

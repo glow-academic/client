@@ -73,6 +73,12 @@ export default async function ActivityPage({
   const activityPage = q.activityPage ?? 0;
   const activityPageSize = q.activityPageSize ?? 50;
 
+  // Profile summary filter from search params
+  const rawParams = await searchParams;
+  const summaryProfileId = typeof rawParams.summaryProfileId === "string"
+    ? rawParams.summaryProfileId
+    : undefined;
+
   // Fetch bundle + embedded session history in a single API call
   const bundleData = await getActivityBundle({
     body: {
@@ -82,6 +88,7 @@ export default async function ActivityPage({
       roles: filters.roles,
       page_limit: 50,
       page_offset: 0,
+      summary_profile_id: summaryProfileId,
       // Embedded session history params
       history_page: activityPage,
       history_page_size: activityPageSize,

@@ -22,6 +22,7 @@ from app.api.v4.artifacts.session.types import (
     GetSessionDetailResponse,
     GetSessionWebsocketResponse,
     SessionInternalData,
+    SessionTimelineItem,
     SessionWebsocketEntries,
     SessionWebsocketResources,
 )
@@ -31,6 +32,7 @@ from app.api.v4.entries.runs.search import (
     get_run_list_entries_internal,
 )
 from app.api.v4.entries.sessions.get import get_session_list_view_internal
+from app.api.v4.entries.sessions.timeline import get_session_timeline_view_internal
 from app.api.v4.permissions import resolve_agents_for_artifact
 from app.api.v4.resources.args.get import get_args_internal
 from app.api.v4.resources.args_outputs.get import get_args_outputs_internal
@@ -42,6 +44,7 @@ from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
 from app.sql.types import (
     GetGroupListViewSqlRow,
+    GetSessionTimelineViewSqlRow,
     QGetProfilesV4Item,
 )
 from app.utils.cache.cache_key import cache_key
@@ -157,14 +160,24 @@ async def get_session_internal(
                 bypass_cache=True,
             )
 
+    async def fetch_timeline() -> GetSessionTimelineViewSqlRow:
+        async with pool.acquire() as c:
+            return await get_session_timeline_view_internal(
+                conn=c,
+                session_id=session_id,
+                bypass_cache=bypass_cache,
+            )
+
     (
         groups_result,
         config_profile_result,
         runs_today_result,
+        timeline_result,
     ) = await asyncio.gather(
         fetch_groups(),
         fetch_config_profile(),
         fetch_runs_today(),
+        fetch_timeline(),
     )
 
     # 5. Fetch runs for groups (needs group IDs from step 4)
@@ -199,6 +212,7 @@ async def get_session_internal(
         runs_today=runs_today_result,
         resource_agent_ids=agent_ids,
         group_id=None,
+        timeline_result=timeline_result,
         actor_name=actor_name,
         profile_name=profile_name,
     )
@@ -304,6 +318,21 @@ async def get_session(
                 )
             )
 
+        # Build timeline from timeline_result
+        timeline: list[SessionTimelineItem] = []
+        if data.timeline_result and data.timeline_result.items:
+            for t in data.timeline_result.items:
+                timeline.append(
+                    SessionTimelineItem(
+                        event_type=t.event_type,
+                        entity_id=t.entity_id,
+                        entity_name=t.entity_name,
+                        created_at=t.created_at,
+                        extra_1=t.extra_1,
+                        extra_2=t.extra_2,
+                    )
+                )
+
         api_response = GetSessionDetailResponse(
             actor_name=data.actor_name,
             session_exists=True,
@@ -313,6 +342,7 @@ async def get_session(
             session_created_at=session.session_created_at,
             active=session.active,
             groups=groups,
+            timeline=timeline,
         )
 
         # Cache response

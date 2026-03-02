@@ -14,6 +14,7 @@ from app.sql.types import (
     GetGrantListViewSqlRow,
     GetLoginListViewSqlRow,
     GetProblemListViewSqlRow,
+    GetProfileSummaryViewSqlRow,
     GetSessionListViewSqlRow,
     QGetActivityListViewV4Item,
     QGetAgentsV4Item,
@@ -47,6 +48,7 @@ class ActivityInternalData:
     runs_today: Any = None  # GetRunListViewResponse — lazy to avoid circular import
     resource_agent_ids: dict[str, UUID | None] = field(default_factory=dict)
     group_id: UUID | None = None
+    profile_summary_result: GetProfileSummaryViewSqlRow | None = None
 
 
 class ActivityRequest(BaseModel):
@@ -59,6 +61,9 @@ class ActivityRequest(BaseModel):
     roles: list[str] = Field(default_factory=list)
     page_limit: int = Field(default=50, ge=1, le=100)
     page_offset: int = Field(default=0, ge=0)
+
+    # Profile summary filter
+    summary_profile_id: UUID | None = Field(default=None)
 
     # Embedded session history params
     history_page: int = 0
@@ -84,20 +89,16 @@ class ActivityResources(BaseModel):
     profiles: dict[str, dict] = Field(default_factory=dict)
 
 
-class ActivityChartPoint(BaseModel):
-    """Single chart data point for activity metrics graph."""
+class ProfileSummaryItem(BaseModel):
+    """Per-profile aggregate stats for the summary card."""
 
-    date: str
-    event_id: str
-    count: int = 0
-
-
-class ActivityAvailableEvent(BaseModel):
-    """Available event type for the activity chart selector."""
-
-    id: str
-    name: str
-    total_count: int = 0
+    profile_id: UUID | None = None
+    profile_name: str | None = None
+    sessions_count: int = 0
+    logins_count: int = 0
+    grants_count: int = 0
+    problems_count: int = 0
+    activity_count: int = 0
 
 
 class ActivityResponse(BaseModel):
@@ -108,9 +109,8 @@ class ActivityResponse(BaseModel):
     active_profiles_count: int = 0
     logins_count: int = 0
     emulations_count: int = 0
-    # Chart data
-    chart_data: list[ActivityChartPoint] = Field(default_factory=list)
-    available_events: list[ActivityAvailableEvent] = Field(default_factory=list)
+    # Profile summary (replaces chart)
+    profile_summary: list[ProfileSummaryItem] = Field(default_factory=list)
     # Problems
     problems: list[QGetProblemListViewV4Item] = Field(default_factory=list)
     # Keep views/resources for any other consumers

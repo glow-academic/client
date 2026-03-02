@@ -10,11 +10,14 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
+    GetSessionCountsViewSqlParams,
+    GetSessionCountsViewSqlRow,
     GetSessionListViewSqlRow,
     GetSessionsEntriesApiRequest,
     GetSessionsEntriesApiResponse,
     GetSessionsEntriesSqlParams,
     GetSessionsEntriesSqlRow,
+    QGetSessionCountsViewV4Item,
     load_sql_query,
 )
 from app.utils.cache.cache_key import cache_key
@@ -25,6 +28,9 @@ from app.utils.sql_helper import execute_sql_typed
 SQL_PATH = "app/sql/v4/queries/entries/sessions/get_sessions_entries_complete.sql"
 VIEW_SQL_PATH = (
     "app/sql/v4/queries/views/session/list/get_session_list_view_complete.sql"
+)
+COUNTS_SQL_PATH = (
+    "app/sql/v4/queries/views/session/counts/get_session_counts_view_complete.sql"
 )
 
 router = APIRouter()
@@ -136,6 +142,49 @@ async def get_session_list_view_internal(
     )
 
     return response
+
+
+async def get_session_counts_view_internal(
+    conn: asyncpg.Connection,
+    session_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> dict[UUID, QGetSessionCountsViewV4Item]:
+    """Fetch chat/attempt/message/problem counts for a batch of session IDs."""
+    if not session_ids:
+        return {}
+
+    cache_key_val = cache_key(
+        "views/session/counts/get",
+        {"session_ids": [str(s) for s in session_ids]},
+    )
+
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            items = [
+                QGetSessionCountsViewV4Item.model_validate(i)
+                for i in cached.get("items", [])
+            ]
+            return {item.session_id: item for item in items if item.session_id}
+
+    params = GetSessionCountsViewSqlParams(session_ids_filter=session_ids)
+    result = cast(
+        GetSessionCountsViewSqlRow,
+        await execute_sql_typed(conn, COUNTS_SQL_PATH, params=params),
+    )
+
+    items: list[QGetSessionCountsViewV4Item] = (
+        list(result.items) if result and result.items else []
+    )
+
+    await set_cached(
+        cache_key_val,
+        {"items": [i.model_dump(mode="json") for i in items]},
+        ttl=60,
+        tags=["views", "session", "counts"],
+    )
+
+    return {item.session_id: item for item in items if item.session_id}
 
 
 @router.post(

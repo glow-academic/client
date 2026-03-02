@@ -32,7 +32,6 @@ from app.api.v4.resources.parameter_fields.link import link_parameter_fields_int
 from app.api.v4.resources.voices.link import link_voices_internal
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
-from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
@@ -79,6 +78,41 @@ MULTI_REQUEST_FIELDS: dict[str, str] = {
 }
 
 router = APIRouter()
+
+
+async def patch_persona_draft_internal(
+    conn: asyncpg.Connection,
+    profile_id: UUID,
+    request: PatchPersonaDraftApiRequest,
+    group_id: UUID | None = None,
+    soft: bool = False,
+) -> PatchPersonaDraftSqlRow:
+    """Core draft patch logic — no transaction management or cache invalidation.
+
+    Args:
+        conn: Database connection (caller owns transaction).
+        profile_id: The profile performing the action.
+        request: The draft patch request with resource IDs.
+        group_id: Optional group_id for tool tracking.
+        soft: If True, creates dormant draft (active=false).
+
+    Returns:
+        PatchPersonaDraftSqlRow with draft_id, new_version, draft_exists.
+    """
+    active_value = not soft
+    params = PatchPersonaDraftSqlParams.from_request(
+        request, profile_id=profile_id, group_id=group_id, active_value=active_value
+    )
+
+    result = cast(
+        PatchPersonaDraftSqlRow,
+        await execute_sql_typed(conn, SQL_PATH, params=params),
+    )
+
+    if not result:
+        raise ValueError("Failed to patch persona draft")
+
+    return result
 
 
 async def _link_draft_resources(
@@ -143,9 +177,6 @@ async def patch_persona_draft(
     """Patch persona draft - accepts resource IDs and creates/updates draft."""
     tags = ["personas", "drafts"]
 
-    sql_query = load_sql_query(SQL_PATH)
-    sql_params: tuple[Any, ...] | None = None
-
     try:
         profile_id = http_request.state.profile_id
         if not profile_id:
@@ -188,18 +219,12 @@ async def patch_persona_draft(
             )
 
         async with conn.transaction():
-            params = PatchPersonaDraftSqlParams.from_request(
-                request, profile_id=profile_id, group_id=request.group_id
+            result = await patch_persona_draft_internal(
+                conn,
+                profile_id=profile_id,
+                request=request,
+                group_id=request.group_id,
             )
-            sql_params = params.to_tuple()
-
-            result = cast(
-                PatchPersonaDraftSqlRow,
-                await execute_sql_typed(conn, SQL_PATH, params=params),
-            )
-
-            if not result:
-                raise ValueError("Failed to patch persona draft")
 
         # Link resources for tool tracking (after successful draft save)
         if request.group_id and link_tool_ids:
@@ -234,7 +259,7 @@ async def patch_persona_draft(
             error=e,
             route_path=http_request.url.path,
             operation="patch_persona_draft",
-            sql_query=sql_query,
-            sql_params=sql_params,
+            sql_query=None,
+            sql_params=None,
             request=http_request,
         )

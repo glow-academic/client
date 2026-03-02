@@ -14,25 +14,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  flexRender,
-  getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  useReactTable,
+  flexRender, getCoreRowModel, getFacetedRowModel, getFacetedUniqueValues, useReactTable,
 } from "@tanstack/react-table";
 import SessionsMetric from "./header/SessionsMetric";
 import ActiveProfilesMetric from "./header/ActiveProfilesMetric";
 import LoginsMetric from "./header/LoginsMetric";
 import EmulationsMetric from "./header/ContentCreatedMetric";
-import ActivityMetricsGraph from "./ActivityMetricsGraph";
+import ProfileSummaryCard from "./ProfileSummaryCard";
+
 interface ActivityProps {
   activityData: ActivityOut;
   isLoading?: boolean;
@@ -44,12 +36,25 @@ type SessionRow = {
   profile_name: string;
   profile_id: string;
   active: boolean;
+  chat_count: number;
+  attempt_count: number;
+  message_count: number;
+  problem_count: number;
 };
 
-export default function Activity({
-  activityData,
-  isLoading = false,
-}: ActivityProps) {
+function formatDuration(start: string | null | undefined, end: string | null | undefined): string {
+  if (!start) return "-";
+  const startDate = new Date(start);
+  const endDate = end ? new Date(end) : new Date();
+  const diffMs = endDate.getTime() - startDate.getTime();
+  if (diffMs < 0) return "-";
+  const mins = Math.floor(diffMs / 60000);
+  const hrs = Math.floor(mins / 60);
+  if (hrs > 0) return `${hrs}h ${mins % 60}m`;
+  return `${mins}m`;
+}
+
+export default function Activity({ activityData, isLoading = false }: ActivityProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -59,26 +64,27 @@ export default function Activity({
     return items.map((item) => ({
       ...item,
       created_at: item.session_created_at ?? "",
+      chat_count: item.chat_count ?? 0,
+      attempt_count: item.attempt_count ?? 0,
+      message_count: item.message_count ?? 0,
+      problem_count: item.problem_count ?? 0,
     }));
   }, [activityData.activityData?.items]);
   const sessionsPage = activityData.activityData?.page || 0;
   const sessionsPageSize = activityData.activityData?.page_size || 50;
   const sessionsTotalPages = activityData.activityData?.total_pages || 0;
 
-  // Search state
-  const [searchTerm, setSearchTerm] = useState(
-    searchParams.get("activitySearch") || ""
-  );
+  const summaryProfileId = searchParams.get("summaryProfileId") || undefined;
+
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("activitySearch") || "");
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Sync URL params
   useEffect(() => {
     const urlSearch = searchParams.get("activitySearch") || "";
     setSearchTerm(urlSearch);
   }, [searchParams]);
 
-  // Update URL params helper
   const updateURLParams = useCallback(
     (updates: Record<string, string | null>) => {
       const params = new URLSearchParams(searchParams.toString());
@@ -100,145 +106,121 @@ export default function Activity({
     [router, searchParams]
   );
 
-  // Commit search to URL
   const commitSearch = useCallback(
     (value: string) => {
-      updateURLParams({
-        activityPage: "0",
-        activitySearch: value.trim() || null,
-      });
+      updateURLParams({ activityPage: "0", activitySearch: value.trim() || null });
     },
     [updateURLParams]
   );
 
-  // Handle search input change with debounce
   const handleSearchChange = useCallback(
     (value: string) => {
       setSearchTerm(value);
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-      if (value === "") {
-        commitSearch("");
-        return;
-      }
-      searchTimeoutRef.current = setTimeout(() => {
-        commitSearch(value);
-      }, 500);
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+      if (value === "") { commitSearch(""); return; }
+      searchTimeoutRef.current = setTimeout(() => { commitSearch(value); }, 500);
     },
     [commitSearch]
   );
 
-  // Extract chart data and available events from bundle
-  const chartPoints = useMemo(() => {
-    const raw = bundleData?.chart_data || [];
-    return raw
-      .filter((p) => p.date && p.event_id)
-      .map((p) => ({
-        date: p.date!,
-        event_id: p.event_id!,
-        count: p.count ?? 0,
-      }));
-  }, [bundleData?.chart_data]);
-
-  const availableEvents = useMemo(() => {
-    const raw = bundleData?.available_events || [];
-    return raw
-      .filter((e) => e.id && e.name)
-      .map((e) => ({
-        id: e.id!,
-        name: e.name!,
-        total_count: e.total_count ?? 0,
-      }));
-  }, [bundleData?.available_events]);
-
-  // Problems from bundle
   const problems = useMemo(() => bundleData?.problems || [], [bundleData?.problems]);
+  const profileSummary = useMemo(() => bundleData?.profile_summary || [], [bundleData?.profile_summary]);
 
-  // Extract unique profiles for faceted filter
   const profileOptions = useMemo(() => {
     const profileMap = new Map<string, { label: string; value: string }>();
     sessionsList.forEach((item) => {
       if (item.profile_id && item.profile_name) {
         if (!profileMap.has(item.profile_id)) {
-          profileMap.set(item.profile_id, {
-            label: item.profile_name,
-            value: item.profile_id,
-          });
+          profileMap.set(item.profile_id, { label: item.profile_name, value: item.profile_id });
         }
       }
     });
     return Array.from(profileMap.values());
   }, [sessionsList]);
 
-  // Column filters state
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
-  // Define sessions table columns
-  const sessionsColumns: ColumnDef<SessionRow>[] = useMemo(
-    () => [
-      {
-        accessorKey: "created_at",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Time" />
-        ),
-        cell: ({ row }) => {
-          const date = new Date(row.getValue("created_at") as string);
-          return (
-            <div className="text-sm">
-              {date.toLocaleString(undefined, {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </div>
-          );
-        },
+  const sessionsColumns: ColumnDef<SessionRow>[] = useMemo(() => [
+    {
+      accessorKey: "created_at",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Time" />,
+      cell: ({ row }) => {
+        const date = new Date(row.getValue("created_at") as string);
+        return (
+          <div className="text-sm">
+            {date.toLocaleString(undefined, {
+              year: "numeric", month: "short", day: "numeric",
+              hour: "2-digit", minute: "2-digit",
+            })}
+          </div>
+        );
       },
-      {
-        accessorKey: "profile_name",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Profile" />
-        ),
-        cell: ({ row }) => (
-          <div className="text-sm">{row.getValue("profile_name")}</div>
-        ),
+    },
+    {
+      accessorKey: "profile_name",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Profile" />,
+      cell: ({ row }) => <div className="text-sm">{row.getValue("profile_name")}</div>,
+    },
+    {
+      id: "profileId",
+      header: () => null,
+      cell: () => null,
+      enableHiding: true,
+      enableSorting: false,
+      accessorFn: (row: SessionRow) => row.profile_id || "",
+      filterFn: (row, _id, value: string[]) => {
+        if (!value || value.length === 0) return true;
+        return value.includes(row.original.profile_id || "");
       },
-      // Hidden faceting column for Profile (IDs)
-      {
-        id: "profileId",
-        header: () => null,
-        cell: () => null,
-        enableHiding: true,
-        enableSorting: false,
-        accessorFn: (row: SessionRow) => row.profile_id || "",
-        filterFn: (row, _id, value: string[]) => {
-          if (!value || value.length === 0) return true;
-          const profileId = row.original.profile_id || "";
-          return value.includes(profileId);
-        },
+    },
+    {
+      id: "duration",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Duration" />,
+      cell: ({ row }) => {
+        const orig = row.original as SessionRow & { first_run_at?: string; last_run_at?: string };
+        return <div className="text-sm text-muted-foreground">{formatDuration(orig.first_run_at, orig.last_run_at)}</div>;
       },
-      {
-        accessorKey: "active",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Status" />
-        ),
-        cell: ({ row }) => {
-          const active = row.getValue("active") as boolean;
-          return (
-            <Badge variant={active ? "default" : "secondary"}>
-              {active ? "Active" : "Inactive"}
-            </Badge>
-          );
-        },
+    },
+    {
+      accessorKey: "chat_count",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Chats" />,
+      cell: ({ row }) => <div className="text-sm tabular-nums">{row.getValue("chat_count")}</div>,
+    },
+    {
+      accessorKey: "attempt_count",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Attempts" />,
+      cell: ({ row }) => <div className="text-sm tabular-nums">{row.getValue("attempt_count")}</div>,
+    },
+    {
+      accessorKey: "message_count",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Messages" />,
+      cell: ({ row }) => <div className="text-sm tabular-nums">{row.getValue("message_count")}</div>,
+    },
+    {
+      accessorKey: "problem_count",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Problems" />,
+      cell: ({ row }) => {
+        const count = row.getValue("problem_count") as number;
+        if (count > 0) {
+          return <Badge variant="destructive">{count}</Badge>;
+        }
+        return <div className="text-sm tabular-nums text-muted-foreground">0</div>;
       },
-    ],
-    []
-  );
+    },
+    {
+      accessorKey: "active",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+      cell: ({ row }) => {
+        const active = row.getValue("active") as boolean;
+        return (
+          <Badge variant={active ? "default" : "secondary"}>
+            {active ? "Active" : "Inactive"}
+          </Badge>
+        );
+      },
+    },
+  ], []);
 
-  // Sessions table
   const sessionsTable = useReactTable({
     data: sessionsList as SessionRow[],
     columns: sessionsColumns as ColumnDef<SessionRow>[],
@@ -248,10 +230,7 @@ export default function Activity({
     manualPagination: true,
     pageCount: sessionsTotalPages,
     state: {
-      pagination: {
-        pageIndex: sessionsPage,
-        pageSize: sessionsPageSize,
-      },
+      pagination: { pageIndex: sessionsPage, pageSize: sessionsPageSize },
       columnFilters,
     },
     onColumnFiltersChange: setColumnFilters,
@@ -267,16 +246,13 @@ export default function Activity({
     },
   });
 
-  // Get profile column for faceted filter
   const profileIdColumn = sessionsTable.getColumn("profileId");
 
   if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="grid gap-4 grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-24" />
-          ))}
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24" />)}
         </div>
         <div className="flex gap-4 min-h-[500px] max-h-[500px]">
           <Skeleton className="flex-[2]" />
@@ -297,18 +273,14 @@ export default function Activity({
         <EmulationsMetric emulationsCount={bundleData?.emulations_count ?? 0} />
       </div>
 
-      {/* Main Content: Graph (2/3) + Problems List (1/3) */}
-      <div className="flex gap-4 min-h-[500px] max-h-[500px]">
-        {/* Activity Metrics Graph - 2/3 width */}
+      {/* Main Content: Profile Summary (2/3) + Problems List (1/3) */}
+      <div className="flex gap-4 min-h-[300px] max-h-[400px]">
         <div className="flex-[2]">
-          <ActivityMetricsGraph
-            chartPoints={chartPoints}
-            availableEvents={availableEvents}
-            hasDataAvailable={chartPoints.length > 0}
+          <ProfileSummaryCard
+            items={profileSummary}
+            selectedProfileId={summaryProfileId}
           />
         </div>
-
-        {/* Problems List - 1/3 width */}
         <div className="flex-1">
           <Card className="h-full flex flex-col">
             <CardHeader>
@@ -316,25 +288,19 @@ export default function Activity({
                 <AlertTriangle className="h-5 w-5" />
                 <div className="flex-1">
                   <CardTitle>Problems</CardTitle>
-                  <CardDescription>
-                    Recent issues and warnings
-                  </CardDescription>
+                  <CardDescription>Recent issues and warnings</CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto">
               <div className="space-y-4">
                 {problems.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-8">
-                    No problems found.
-                  </div>
+                  <div className="text-center text-muted-foreground py-8">No problems found.</div>
                 ) : (
                   problems.map((item) => (
                     <div
                       key={item.problem_id}
-                      className={`p-4 border rounded-lg ${
-                        item.resolved ? "opacity-60" : ""
-                      }`}
+                      className={`p-4 border rounded-lg ${item.resolved ? "opacity-60" : ""}`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -342,9 +308,7 @@ export default function Activity({
                             <Badge variant={item.resolved ? "secondary" : "destructive"}>
                               {item.type}
                             </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {item.profile_name}
-                            </span>
+                            <span className="text-xs text-muted-foreground">{item.profile_name}</span>
                             <span className="text-xs text-muted-foreground">
                               {item.created_at ? new Date(item.created_at).toLocaleDateString() : ""}
                             </span>
@@ -366,30 +330,19 @@ export default function Activity({
 
       {/* Sessions Table Section */}
       <div className="space-y-4">
-        {/* Search and Filters */}
         <div className="flex items-center gap-2 flex-wrap">
           <Input
             ref={searchInputRef}
             placeholder="Search sessions..."
             value={searchTerm}
             onChange={(e) => handleSearchChange(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                commitSearch(searchTerm);
-              }
-            }}
+            onKeyDown={(e) => { if (e.key === "Enter") commitSearch(searchTerm); }}
             className="max-w-sm"
           />
           {profileIdColumn && profileOptions.length > 0 && (
-            <DataTableFacetedFilter
-              column={profileIdColumn}
-              title="Profile"
-              options={profileOptions}
-            />
+            <DataTableFacetedFilter column={profileIdColumn} title="Profile" options={profileOptions} />
           )}
         </div>
-
-        {/* Table */}
         <div className="rounded-md border">
           <Table>
             <TableHeader>
@@ -399,10 +352,7 @@ export default function Activity({
                     <TableHead key={header.id}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                        : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
                   ))}
                 </TableRow>
@@ -415,28 +365,18 @@ export default function Activity({
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
                     className="cursor-pointer hover:bg-muted/50"
-                    onClick={() =>
-                      router.push(
-                        `/session/${row.original.session_id}`
-                      )
-                    }
+                    onClick={() => router.push(`/session/${row.original.session_id}`)}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell
-                    colSpan={sessionsColumns.length}
-                    className="h-24 text-center"
-                  >
+                  <TableCell colSpan={sessionsColumns.length} className="h-24 text-center">
                     No sessions found.
                   </TableCell>
                 </TableRow>
@@ -444,11 +384,8 @@ export default function Activity({
             </TableBody>
           </Table>
         </div>
-
-        {/* Pagination */}
         <DataTablePagination table={sessionsTable} />
       </div>
-
     </div>
   );
 }

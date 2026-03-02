@@ -187,6 +187,7 @@ persona_data AS (
     LEFT JOIN persona_voices_data pvd ON pvd.persona_id = p.id
     -- Access check: user shares at least one department (or persona has no departments)
     LEFT JOIN persona_departments_junction pdj ON pdj.persona_id = p.id AND pdj.department_id IN (SELECT department_id FROM user_departments)
+    WHERE p.active = true
     GROUP BY p.id, p.updated_at,
         pdd.department_ids, pdd.department_names,
         ped.example_ids, ped.example_values,

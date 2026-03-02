@@ -12,8 +12,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.api.v4.artifacts._shared.pricing import compute_costs_from_runs
 from app.api.v4.artifacts.activity.types import (
-    ActivityAvailableEvent,
-    ActivityChartPoint,
     ActivityInternalData,
     ActivityRequest,
     ActivityResources,
@@ -23,6 +21,7 @@ from app.api.v4.artifacts.activity.types import (
     ActivityWebsocketResources,
     GetActivityApiRequest,
     GetActivityWebsocketResponse,
+    ProfileSummaryItem,
 )
 from app.api.v4.artifacts.session.types import (
     GetSessionListRequest,
@@ -31,6 +30,9 @@ from app.api.v4.artifacts.session.types import (
 )
 from app.api.v4.auth.settings import get_auth_settings_internal
 from app.api.v4.entries.activity.get import get_activity_list_view_internal
+from app.api.v4.entries.activity.profile_summary import (
+    get_profile_summary_view_internal,
+)
 from app.api.v4.entries.grants.get import get_grant_list_view_internal
 from app.api.v4.entries.groups.get import get_group_list_view_internal
 from app.api.v4.entries.logins.get import get_login_list_view_internal
@@ -38,7 +40,10 @@ from app.api.v4.entries.problems.get import get_problem_list_view_internal
 from app.api.v4.entries.runs.search import (
     get_run_list_entries_internal,
 )
-from app.api.v4.entries.sessions.get import get_session_list_view_internal
+from app.api.v4.entries.sessions.get import (
+    get_session_counts_view_internal,
+    get_session_list_view_internal,
+)
 from app.api.v4.permissions import resolve_agents_for_artifact
 from app.api.v4.resources.args.get import get_args_internal
 from app.api.v4.resources.args_outputs.get import get_args_outputs_internal
@@ -53,6 +58,7 @@ from app.sql.types import (
     GetGrantListViewSqlRow,
     GetLoginListViewSqlRow,
     GetProblemListViewSqlRow,
+    GetProfileSummaryViewSqlRow,
     GetSessionListViewSqlRow,
     QGetProfilesV4Item,
 )
@@ -116,6 +122,7 @@ async def get_activity_internal(
     date_to: datetime | None = None,
     page_limit: int = 50,
     page_offset: int = 0,
+    summary_profile_id: UUID | None = None,
 ) -> ActivityInternalData:
     """Fetch both domain views and config chain in parallel.
 
@@ -219,6 +226,14 @@ async def get_activity_internal(
                 bypass_cache=True,
             )
 
+    async def fetch_profile_summary() -> GetProfileSummaryViewSqlRow:
+        async with pool.acquire() as c:
+            return await get_profile_summary_view_internal(
+                conn=c,
+                profile_id_filter=summary_profile_id,
+                bypass_cache=bypass_cache,
+            )
+
     (
         activity_result,
         sessions_result,
@@ -227,6 +242,7 @@ async def get_activity_internal(
         grants_result,
         config_profile_result,
         runs_result,
+        profile_summary_result,
     ) = await asyncio.gather(
         fetch_activity(),
         fetch_sessions(),
@@ -235,6 +251,7 @@ async def get_activity_internal(
         fetch_grants(),
         fetch_config_profile(),
         fetch_runs_today(),
+        fetch_profile_summary(),
     )
 
     return ActivityInternalData(
@@ -251,6 +268,7 @@ async def get_activity_internal(
         runs_today=runs_result,
         resource_agent_ids=agent_ids,
         group_id=None,
+        profile_summary_result=profile_summary_result,
     )
 
 
@@ -312,7 +330,7 @@ async def get_session_list_internal(
         {item.profile_id for item in view_result.items if item.profile_id}
     )
 
-    groups_result, profile_name_items = await asyncio.gather(
+    groups_result, profile_name_items, session_counts = await asyncio.gather(
         get_group_list_view_internal(
             conn=conn,
             session_ids=session_ids,
@@ -320,6 +338,7 @@ async def get_session_list_internal(
             bypass_cache=bypass_cache,
         ),
         get_names_internal(conn, all_profile_ids, bypass_cache),
+        get_session_counts_view_internal(conn, session_ids, bypass_cache),
     )
 
     # Build profile name lookup
@@ -379,6 +398,7 @@ async def get_session_list_internal(
     items = []
     for view_item in view_result.items:
         sid = view_item.session_id
+        counts = session_counts.get(sid)
 
         items.append(
             SessionListItem(
@@ -395,6 +415,10 @@ async def get_session_list_internal(
                 last_run_at=last_run_at.get(sid),
                 total_tokens=total_tokens_map.get(sid, 0),
                 total_cost=total_cost_map.get(sid, Decimal("0")),
+                chat_count=counts.chat_count or 0 if counts else 0,
+                attempt_count=counts.attempt_count or 0 if counts else 0,
+                message_count=counts.message_count or 0 if counts else 0,
+                problem_count=counts.problem_count or 0 if counts else 0,
             )
         )
 
@@ -493,6 +517,7 @@ async def get_activity(
                 date_to=request.date_to,
                 page_limit=request.page_limit,
                 page_offset=request.page_offset,
+                summary_profile_id=request.summary_profile_id,
             )
         ]
         parallel_tasks.append(
@@ -505,33 +530,34 @@ async def get_activity(
         data = parallel_results[0]
         history_data: Any = parallel_results[1]
 
-        # Build chart_data from activity view (date_key + event_type + event_count)
-        chart_data = [
-            ActivityChartPoint(
-                date=str(item.date_key),
-                event_id=item.event_type or "",
-                count=item.event_count,
-            )
-            for item in data.activity_result.items
-        ]
-
-        # Build available_events by aggregating activity items by event_type
-        event_totals: dict[str, int] = defaultdict(int)
-        for item in data.activity_result.items:
-            if item.event_type:
-                event_totals[item.event_type] += item.event_count
-        available_events = sorted(
-            [
-                ActivityAvailableEvent(
-                    id=event_type,
-                    name=event_type,
-                    total_count=total,
+        # Build profile summary from profile_summary_result
+        profile_summary: list[ProfileSummaryItem] = []
+        if data.profile_summary_result and data.profile_summary_result.items:
+            # Collect profile IDs for name resolution
+            summary_pids = [
+                i.profile_id for i in data.profile_summary_result.items if i.profile_id
+            ]
+            summary_names: dict[UUID, str] = {}
+            if summary_pids:
+                async with pool.acquire() as c:
+                    name_items = await get_names_internal(c, summary_pids, bypass_cache)
+                    summary_names = {
+                        i.id: i.name for i in name_items if i.id and i.name
+                    }
+            for item in data.profile_summary_result.items:
+                profile_summary.append(
+                    ProfileSummaryItem(
+                        profile_id=item.profile_id,
+                        profile_name=summary_names.get(item.profile_id)
+                        if item.profile_id
+                        else None,
+                        sessions_count=item.sessions_count or 0,
+                        logins_count=item.logins_count or 0,
+                        grants_count=item.grants_count or 0,
+                        problems_count=item.problems_count or 0,
+                        activity_count=item.activity_count or 0,
+                    )
                 )
-                for event_type, total in event_totals.items()
-            ],
-            key=lambda e: e.total_count,
-            reverse=True,
-        )
 
         # Derive header metrics from view total_counts
         sessions_count = data.sessions_result.total_count
@@ -570,8 +596,7 @@ async def get_activity(
             active_profiles_count=active_profiles_count,
             logins_count=logins_count,
             emulations_count=emulations_count,
-            chart_data=chart_data,
-            available_events=available_events,
+            profile_summary=profile_summary,
             problems=data.problems_result.items,
             views=views,
             resources=resources,

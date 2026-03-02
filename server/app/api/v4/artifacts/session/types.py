@@ -43,6 +43,12 @@ class SessionListItem(BaseModel):
     total_tokens: int = 0
     total_cost: Decimal = Decimal("0")
 
+    # Enrichment counts (Phase 1)
+    chat_count: int = 0
+    attempt_count: int = 0
+    message_count: int = 0
+    problem_count: int = 0
+
 
 class GetSessionListRequest(BaseModel):
     """Request for session list endpoint."""
@@ -73,6 +79,17 @@ class GetSessionListResponse(BaseModel):
     total_pages: int = Field(default=0)
 
 
+class SessionTimelineItem(BaseModel):
+    """Single event in the unified session timeline."""
+
+    event_type: str | None = None
+    entity_id: UUID | None = None
+    entity_name: str | None = None
+    created_at: datetime | None = None
+    extra_1: str | None = None
+    extra_2: str | None = None
+
+
 class GetSessionDetailRequest(BaseModel):
     """Request for session detail endpoint."""
 
@@ -90,6 +107,7 @@ class GetSessionDetailResponse(BaseModel):
     session_created_at: datetime | None = None
     active: bool = False
     groups: list[ArtifactSessionGroup] = Field(default_factory=list)
+    timeline: list[SessionTimelineItem] = Field(default_factory=list)
 
 
 # =============================================================================
@@ -129,6 +147,7 @@ from app.api.v4.entries.runs.search import GetRunListViewResponse  # noqa: E402
 from app.sql.types import (  # noqa: E402
     GetGroupListViewSqlRow,
     GetSessionListViewSqlRow,
+    GetSessionTimelineViewSqlRow,
     QGetAgentsV4Item,
     QGetGroupListViewV4Item,
     QGetModelsV4Item,
@@ -159,6 +178,8 @@ class SessionInternalData:
     runs_today: GetRunListViewResponse | None = None
     resource_agent_ids: dict[str, UUID | None] = field(default_factory=dict)
     group_id: UUID | None = None
+    # Timeline
+    timeline_result: GetSessionTimelineViewSqlRow | None = None
     # Context
     actor_name: str | None = None
     profile_name: str | None = None

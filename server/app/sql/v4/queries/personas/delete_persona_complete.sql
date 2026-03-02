@@ -18,41 +18,50 @@ END $$;
 
 CREATE OR REPLACE FUNCTION api_delete_persona_v4(
     persona_id uuid,
-    profile_id uuid
+    profile_id uuid,
+    soft boolean DEFAULT false
 )
 RETURNS TABLE (
     usage_count bigint,
     name text,
     deleted boolean
 )
-LANGUAGE sql
+LANGUAGE plpgsql
 VOLATILE
 AS $$
 -- User context (actor_name, user_role, department_ids) comes from get_profile_context_internal() in Python
-WITH params AS (
-    SELECT persona_id AS persona_id,
-           profile_id AS profile_id
-),
-usage_check AS (
-    SELECT COUNT(*)::bigint as usage_count
-    FROM params x
-    JOIN scenario_personas_junction sp ON sp.persona_id = x.persona_id AND sp.active = true
-),
-persona_info AS (
-    SELECT 
-        (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as name
-    FROM params x
-    JOIN persona_artifact p ON p.id = x.persona_id
-),
-delete_result AS (
-    DELETE FROM persona_artifact 
-    WHERE id = (SELECT persona_id FROM params)
-      AND (SELECT usage_count FROM usage_check) = 0
-      AND EXISTS(SELECT 1 FROM persona_info)
-    RETURNING id
-)
-SELECT 
-    (SELECT usage_count FROM usage_check) as usage_count,
-    (SELECT name FROM persona_info) as name,
-    CASE WHEN EXISTS(SELECT 1 FROM delete_result) THEN true ELSE false END as deleted
+DECLARE
+    v_usage_count bigint;
+    v_name text;
+    v_deleted boolean := false;
+BEGIN
+    -- Check usage
+    SELECT COUNT(*)::bigint INTO v_usage_count
+    FROM scenario_personas_junction sp
+    WHERE sp.persona_id = api_delete_persona_v4.persona_id AND sp.active = true;
+
+    -- Get persona name
+    SELECT n.name INTO v_name
+    FROM persona_names_junction pn
+    JOIN names_resource n ON pn.name_id = n.id
+    WHERE pn.persona_id = api_delete_persona_v4.persona_id
+    LIMIT 1;
+
+    -- Guard: only proceed if persona exists and has no usage
+    IF v_name IS NOT NULL AND v_usage_count = 0 THEN
+        IF soft THEN
+            -- Soft delete: deactivate
+            UPDATE persona_artifact SET active = false
+            WHERE id = api_delete_persona_v4.persona_id;
+            v_deleted := true;
+        ELSE
+            -- Hard delete
+            DELETE FROM persona_artifact
+            WHERE id = api_delete_persona_v4.persona_id;
+            v_deleted := true;
+        END IF;
+    END IF;
+
+    RETURN QUERY SELECT v_usage_count, v_name, v_deleted;
+END;
 $$;

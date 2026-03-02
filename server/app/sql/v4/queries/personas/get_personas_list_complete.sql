@@ -156,6 +156,7 @@ persona_data_base AS (
     LEFT JOIN persona_fields_data pfd ON pfd.persona_id = p.id
     LEFT JOIN persona_cohorts pc ON pc.persona_id = p.id
     LEFT JOIN persona_departments_junction pd ON pd.persona_id = p.id AND pd.department_id IN (SELECT department_id FROM user_departments)
+    WHERE p.active = true
     GROUP BY p.id,
         (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
         (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1),

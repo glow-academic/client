@@ -1276,6 +1276,16 @@ async def compile_sql_types(
     _created_keycloak_stub = False
     try:
         await conn.execute("CREATE SCHEMA IF NOT EXISTS keycloak")
+        # Clean up any leftover stub from a previous interrupted run.
+        # If Keycloak's databasechangelog table doesn't exist, Keycloak hasn't
+        # bootstrapped yet — so any keycloak.org table is a stale stub we left
+        # behind (e.g. if uvicorn reload killed the process before finally ran).
+        keycloak_bootstrapped = await conn.fetchval(
+            "SELECT EXISTS(SELECT 1 FROM information_schema.tables "
+            "WHERE table_schema = 'keycloak' AND table_name = 'databasechangelog')"
+        )
+        if not keycloak_bootstrapped:
+            await conn.execute("DROP TABLE IF EXISTS keycloak.org")
         # Check if keycloak.org already exists (created by Keycloak)
         exists = await conn.fetchval(
             "SELECT EXISTS(SELECT 1 FROM information_schema.tables "

@@ -23,7 +23,8 @@ END $$;
 CREATE OR REPLACE FUNCTION api_duplicate_persona_v4(
     persona_id uuid,
     profile_id uuid,
-    name_resource_id uuid DEFAULT NULL
+    name_resource_id uuid DEFAULT NULL,
+    active_value boolean DEFAULT true
 )
 RETURNS TABLE (
     new_persona_id uuid,
@@ -71,11 +72,13 @@ original_examples AS (
 new_persona AS (
     INSERT INTO persona_artifact (
         created_at,
-        updated_at
+        updated_at,
+        active
     )
     SELECT
         NOW(),
-        NOW()
+        NOW(),
+        active_value
     FROM original_persona op
     RETURNING id
 ),
@@ -152,7 +155,7 @@ copy_departments AS (
     SELECT
         np.id,
         od.department_id,
-        true,
+        active_value,
         NOW()
     FROM new_persona np
     CROSS JOIN original_departments od
@@ -164,7 +167,7 @@ copy_fields AS (
     SELECT
         np.id,
         ofi.parameter_field_id,
-        true,
+        active_value,
         NOW()
     FROM new_persona np
     CROSS JOIN original_fields ofi
@@ -177,7 +180,7 @@ copy_examples AS (
         np.id,
         oe.example_id,
         oe.idx,
-        true,
+        active_value,
         NOW()
     FROM new_persona np
     CROSS JOIN original_examples oe
