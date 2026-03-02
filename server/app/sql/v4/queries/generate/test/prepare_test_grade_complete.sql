@@ -44,28 +44,22 @@ BEGIN
     VALUES (0, 0, p_group_id)
     RETURNING id INTO v_grade_run_id;
 
-    -- Create config snapshot with run_id
-    INSERT INTO config_entry (created_at, updated_at, generated, mcp, active, run_id)
-    VALUES (NOW(), NOW(), false, false, true, v_grade_run_id)
-    RETURNING id INTO v_config_id;
-
-    -- Config connections (agents, models, providers)
+    -- Link run to existing config_resource rows via agent configuration
     IF p_agents_resource_id IS NOT NULL THEN
-        INSERT INTO config_agents_connection (config_id, agents_id, created_at, active, generated, mcp)
-        VALUES (v_config_id, p_agents_resource_id, NOW(), true, false, false)
-        ON CONFLICT (config_id, agents_id) DO NOTHING;
-    END IF;
+        INSERT INTO runs_configs_connection (run_id, config_id, created_at, active, generated, mcp)
+        SELECT v_grade_run_id, ac.config_id, NOW(), true, false, false
+        FROM agent_configs_junction ac
+        WHERE ac.agent_id = p_agents_resource_id
+          AND ac.active = true
+        ON CONFLICT (run_id, config_id) DO NOTHING;
 
-    IF p_models_resource_id IS NOT NULL THEN
-        INSERT INTO config_models_connection (config_id, models_id, created_at, active, generated, mcp)
-        VALUES (v_config_id, p_models_resource_id, NOW(), true, false, false)
-        ON CONFLICT (config_id, models_id) DO NOTHING;
-    END IF;
-
-    IF p_providers_resource_id IS NOT NULL THEN
-        INSERT INTO config_providers_connection (config_id, providers_id, created_at, active, generated, mcp)
-        VALUES (v_config_id, p_providers_resource_id, NOW(), true, false, false)
-        ON CONFLICT (config_id, providers_id) DO NOTHING;
+        -- Backward-compat return field: choose one linked config_id
+        SELECT ac.config_id INTO v_config_id
+        FROM agent_configs_junction ac
+        WHERE ac.agent_id = p_agents_resource_id
+          AND ac.active = true
+        ORDER BY ac.created_at DESC
+        LIMIT 1;
     END IF;
 
     -- Link run to profile

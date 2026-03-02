@@ -150,15 +150,14 @@ async def get_test_internal(
         if group_id:
             config_row = await conn.fetchrow(
                 """
-                SELECT aaj.agent_id, ar.model_id, mr.provider_id
+                SELECT acj.agent_id, cr.model_id, mr.provider_id
                 FROM runs_entry r
-                JOIN config_entry ce ON ce.run_id = r.id
-                JOIN config_agents_connection cac ON cac.config_id = ce.id AND cac.active = true
-                JOIN agent_agents_junction aaj ON aaj.agents_id = cac.agents_id AND aaj.active = true
-                JOIN agents_resource ar ON ar.id = aaj.agents_id
-                LEFT JOIN models_resource mr ON mr.id = ar.model_id
+                JOIN runs_configs_connection rcc ON rcc.run_id = r.id AND rcc.active = true
+                JOIN config_resource cr ON cr.id = rcc.config_id AND cr.active = true
+                LEFT JOIN agent_configs_junction acj ON acj.config_id = cr.id AND acj.active = true
+                LEFT JOIN models_resource mr ON mr.id = cr.model_id
                 WHERE r.group_id = $1
-                ORDER BY r.created_at DESC
+                ORDER BY r.created_at DESC, rcc.created_at DESC
                 LIMIT 1
                 """,
                 group_id,
@@ -230,17 +229,19 @@ async def get_test_internal(
             async with pool.acquire() as c:
                 rows = await c.fetch(
                     """
-                    SELECT rrc.runs_id,
+                    SELECT DISTINCT ON (rrc.runs_id)
+                           rrc.runs_id,
                            mnj.name_id AS model_name_id,
                            anj.name_id AS agent_name_id
                     FROM runs_runs_connection rrc
                     JOIN runs_entry re ON re.id = rrc.run_id
-                    LEFT JOIN config_entry ce ON ce.run_id = re.id
-                    LEFT JOIN config_agents_connection cac ON cac.config_id = ce.id AND cac.active = true
-                    LEFT JOIN agent_names_junction anj ON anj.agent_id = cac.agents_id AND anj.active = true
-                    LEFT JOIN model_runs_junction mrj ON mrj.run_id = re.id AND mrj.active = true
-                    LEFT JOIN model_names_junction mnj ON mnj.model_id = mrj.model_id AND mnj.active = true
+                    LEFT JOIN runs_configs_connection rcc ON rcc.run_id = re.id AND rcc.active = true
+                    LEFT JOIN config_resource cr ON cr.id = rcc.config_id AND cr.active = true
+                    LEFT JOIN agent_configs_junction acj ON acj.config_id = cr.id AND acj.active = true
+                    LEFT JOIN agent_names_junction anj ON anj.agent_id = acj.agent_id AND anj.active = true
+                    LEFT JOIN model_names_junction mnj ON mnj.model_id = cr.model_id AND mnj.active = true
                     WHERE rrc.runs_id = ANY($1::uuid[]) AND rrc.active = true
+                    ORDER BY rrc.runs_id, rcc.created_at DESC NULLS LAST
                     """,
                     all_run_ids,
                 )
