@@ -19,7 +19,7 @@ Rules:
 - Operate only on the resource/entry types specified in the developer instructions
 - Do not invent IDs — use IDs from context
 - Return only valid tool calls, no narrative text', 'Scenario Agent', 'Default prompt for scenario agent type', true, '019b3be4-36fe-7e85-ad55-bd71c027fb7b', false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2025-08-12T12:52:09.818852+00:00', true, false, false, '019bb25e-e5f2-7e66-be40-89ff408bbce5', 'Scenario', 'Helps create distinct scenarios for chat interactions.', '{}', NULL, NULL, '{019bebc4-d436-7b8d-adb8-3b17bafdda99,019bebc4-d436-7b8b-8443-f82efdfd5790,019bebc4-d436-7c01-b86b-9483883762a6,019bebc4-d436-7b81-9555-1d88249b6d78,019bebc4-d436-7c35-9f98-31957504bf95,019bebc4-d436-7bd2-b670-e4c1b24b1a9c,019bebc4-d436-7b96-b622-c512f3a418da,019bebc4-d436-7b9b-b92c-009fbdb67144,019c0a2d-fc36-756e-b50e-a5987eb4f0d5,019c0a2d-fc35-7eb7-8bc4-4a4d9578918d,019c06a8-2af5-705d-ae92-7905a846a500,019c06a8-2af5-766c-9713-315ab9567235,019c06a8-2af6-727b-b94a-71bddc4d76de,019c0a2d-fc36-7ace-adde-c1e47bc14a89,019c0a2d-fc36-7997-bdca-92935994cb93,019c0a2d-fc36-785a-9b6d-02eca12bb6e6,019c0a2d-fc36-770a-b18d-af61cdf0f908,019c0a2d-fc36-7c0c-80c1-098a75897197,019c06a8-2af4-7c97-ab30-1e863db0e8e3,019c0a2d-fc36-7e78-9083-05afa0c8e4d8,019bf207-ca52-70cc-ae3c-a5ca44d6d5e9,019c06a8-2af6-7609-9bc5-2782eb639be2,019523a0-0020-7000-8000-000000000001}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019b3be4-36fe-7e85-ad55-bd71c027fb7b', '{019c0a2d-fc41-7ed9-a57b-b348734e1ea6}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voices, model_id, prompt_id, instruction_ids) VALUES ('2025-08-12T12:52:09.818852+00:00', true, false, false, '019bb25e-e5f2-7e66-be40-89ff408bbce5', 'Scenario', 'Helps create distinct scenarios for chat interactions.', '{}', 0, 'none', '{019bebc4-d436-7b8d-adb8-3b17bafdda99,019bebc4-d436-7b8b-8443-f82efdfd5790,019bebc4-d436-7c01-b86b-9483883762a6,019bebc4-d436-7b81-9555-1d88249b6d78,019bebc4-d436-7c35-9f98-31957504bf95,019bebc4-d436-7bd2-b670-e4c1b24b1a9c,019bebc4-d436-7b96-b622-c512f3a418da,019bebc4-d436-7b9b-b92c-009fbdb67144,019c0a2d-fc36-756e-b50e-a5987eb4f0d5,019c0a2d-fc35-7eb7-8bc4-4a4d9578918d,019c06a8-2af5-705d-ae92-7905a846a500,019c06a8-2af5-766c-9713-315ab9567235,019c06a8-2af6-727b-b94a-71bddc4d76de,019c0a2d-fc36-7ace-adde-c1e47bc14a89,019c0a2d-fc36-7997-bdca-92935994cb93,019c0a2d-fc36-785a-9b6d-02eca12bb6e6,019c0a2d-fc36-770a-b18d-af61cdf0f908,019c0a2d-fc36-7c0c-80c1-098a75897197,019c06a8-2af4-7c97-ab30-1e863db0e8e3,019c0a2d-fc36-7e78-9083-05afa0c8e4d8,019bf207-ca52-70cc-ae3c-a5ca44d6d5e9,019c06a8-2af6-7609-9bc5-2782eb639be2,019523a0-0020-7000-8000-000000000001}', NULL, '{}', '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019b3be4-36fe-7e85-ad55-bd71c027fb7b', '{019c0a2d-fc41-7ed9-a57b-b348734e1ea6}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8ea1-7cad-9f2d-378a5856d842', 'Helps create distinct scenarios for chat interactions.', '2025-08-12T12:52:09.818852+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c0a2d-fc41-7ed9-a57b-b348734e1ea6', '## Current State
 {% set draft = artifacts.scenario.get.entries.draft_scenario if artifacts.scenario.get.entries and artifacts.scenario.get.entries.draft_scenario else None %}
@@ -291,6 +291,44 @@ INSERT INTO public.agent_artifact (created_at, updated_at, id, generated, mcp) V
 -- Junctions
 -- agent_agents_junction
 INSERT INTO public.agent_agents_junction (agent_id, agents_id, active, created_at, generated, mcp) VALUES ('019b3be4-3112-7685-8967-a5488fadb090', '019bb25e-e5f2-7e66-be40-89ff408bbce5', true, '2025-08-12T12:52:09.818852+00:00', false, false) ON CONFLICT (agent_id, agents_id) DO NOTHING;
+-- agent_models_junction
+INSERT INTO public.agent_models_junction (agent_id, model_id, active, created_at, generated, mcp)
+SELECT '019b3be4-3112-7685-8967-a5488fadb090', ar.model_id, true, '2025-08-12T12:52:09.818852+00:00', false, false
+FROM public.agents_resource ar
+WHERE ar.id = '019bb25e-e5f2-7e66-be40-89ff408bbce5'
+  AND ar.model_id IS NOT NULL
+ON CONFLICT (agent_id, model_id) DO NOTHING;
+-- agent_reasoning_levels_junction
+INSERT INTO public.agent_reasoning_levels_junction (agent_id, reasoning_level_id, active, created_at, generated, mcp)
+SELECT '019b3be4-3112-7685-8967-a5488fadb090', rlr.id, true, '2025-08-12T12:52:09.818852+00:00', false, false
+FROM public.agents_resource ar
+JOIN public.reasoning_levels_resource rlr
+  ON rlr.reasoning_level = ar.reasoning
+ AND rlr.active = true
+WHERE ar.id = '019bb25e-e5f2-7e66-be40-89ff408bbce5'
+  AND ar.reasoning IS NOT NULL
+ON CONFLICT (agent_id, reasoning_level_id) DO NOTHING;
+-- agent_temperature_levels_junction
+INSERT INTO public.agent_temperature_levels_junction (agent_id, temperature_level_id, active, created_at, generated, mcp)
+SELECT '019b3be4-3112-7685-8967-a5488fadb090', tlr.id, true, '2025-08-12T12:52:09.818852+00:00', false, false
+FROM public.agents_resource ar
+JOIN public.temperature_levels_resource tlr
+  ON tlr.temperature = ar.temperature
+ AND tlr.active = true
+WHERE ar.id = '019bb25e-e5f2-7e66-be40-89ff408bbce5'
+  AND ar.temperature IS NOT NULL
+ON CONFLICT (agent_id, temperature_level_id) DO NOTHING;
+-- agent_voices_junction
+INSERT INTO public.agent_voices_junction (agent_id, voice_id, active, created_at, generated, mcp)
+
+SELECT DISTINCT '019b3be4-3112-7685-8967-a5488fadb090'::uuid, vr.id, true, '2025-08-12T12:52:09.818852+00:00'::timestamptz, false, false
+FROM public.agents_resource ar
+JOIN unnest(COALESCE(ar.voices, ARRAY[]::text[])) AS v(voice) ON true
+JOIN public.voices_resource vr
+  ON vr.voice = v.voice
+ AND vr.active = true
+WHERE ar.id = '019bb25e-e5f2-7e66-be40-89ff408bbce5'
+ON CONFLICT (agent_id, voice_id) DO NOTHING;
 -- agent_descriptions_junction
 INSERT INTO public.agent_descriptions_junction (agent_id, description_id, created_at, generated, mcp, active) VALUES ('019b3be4-3112-7685-8967-a5488fadb090', '019b995c-8ea1-7cad-9f2d-378a5856d842', '2025-08-12T12:52:09.818852+00:00', false, false, true) ON CONFLICT (agent_id, description_id) DO NOTHING;
 -- agent_flags_junction

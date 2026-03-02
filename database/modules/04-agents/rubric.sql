@@ -60,7 +60,7 @@ You only need to do ONE of these operations per resource — not both. Check the
 - Return only valid tool calls and arguments
 - Do not output narrative text
 ', 'Rubric', 'System prompt for rubric generation agents', true, '019b3be4-36fe-7e8e-bdfd-05e834f7834d', false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2025-12-19T19:02:10.223443+00:00', true, false, false, '019bb25e-e5f2-7f73-abf4-164c630526b2', 'Rubric', 'Agent for generating rubric descriptions and grid cell content', '{}', NULL, NULL, '{019bebc4-d436-7c01-b86b-9483883762a6,019bebc4-d436-7c48-bbb0-2700d1deb830,019bebc4-d436-7c35-9f98-31957504bf95,019bebc4-d436-7bc3-aadf-8fb01ebadfdb,019c06a8-2af5-766c-9713-315ab9567235,019c06a8-2af4-7c97-ab30-1e863db0e8e3,019c06a8-2af6-727b-b94a-71bddc4d76de,019c06a8-2af5-705d-ae92-7905a846a500,019c4f61-51e9-775a-8905-76dda83cfb77,6dd11e8a-c1b0-4ebf-a5f6-9e8f16c00175,d0e82950-8f92-46b9-90d6-0fdbeaebc9bb,e234b7b3-fd49-4179-9a96-ea5c355bf919,3ac11084-85a1-4f04-9dba-5e514d9afc00}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019b3be4-36fe-7e8e-bdfd-05e834f7834d', '{019bcd1b-0c44-7d26-927b-8b7a081ffac3}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voices, model_id, prompt_id, instruction_ids) VALUES ('2025-12-19T19:02:10.223443+00:00', true, false, false, '019bb25e-e5f2-7f73-abf4-164c630526b2', 'Rubric', 'Agent for generating rubric descriptions and grid cell content', '{}', 0, 'none', '{019bebc4-d436-7c01-b86b-9483883762a6,019bebc4-d436-7c48-bbb0-2700d1deb830,019bebc4-d436-7c35-9f98-31957504bf95,019bebc4-d436-7bc3-aadf-8fb01ebadfdb,019c06a8-2af5-766c-9713-315ab9567235,019c06a8-2af4-7c97-ab30-1e863db0e8e3,019c06a8-2af6-727b-b94a-71bddc4d76de,019c06a8-2af5-705d-ae92-7905a846a500,019c4f61-51e9-775a-8905-76dda83cfb77,6dd11e8a-c1b0-4ebf-a5f6-9e8f16c00175,d0e82950-8f92-46b9-90d6-0fdbeaebc9bb,e234b7b3-fd49-4179-9a96-ea5c355bf919,3ac11084-85a1-4f04-9dba-5e514d9afc00}', NULL, '{}', '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019b3be4-36fe-7e8e-bdfd-05e834f7834d', '{019bcd1b-0c44-7d26-927b-8b7a081ffac3}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8ea1-7cb0-9364-428e72031db8', 'Agent for generating rubric descriptions and grid cell content', '2025-12-19T19:02:10.223443+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019bcd1b-0c44-7d26-927b-8b7a081ffac3', '## Current State
 {% set draft = artifacts.rubric.get.entries.draft_rubric if artifacts.rubric.get.entries and artifacts.rubric.get.entries.draft_rubric else None %}
@@ -144,6 +144,44 @@ INSERT INTO public.agent_artifact (created_at, updated_at, id, generated, mcp) V
 -- Junctions
 -- agent_agents_junction
 INSERT INTO public.agent_agents_junction (agent_id, agents_id, active, created_at, generated, mcp) VALUES ('019b3be4-3112-7786-ad7d-45ee39b86bc5', '019bb25e-e5f2-7f73-abf4-164c630526b2', true, '2025-12-19T19:02:10.223443+00:00', false, false) ON CONFLICT (agent_id, agents_id) DO NOTHING;
+-- agent_models_junction
+INSERT INTO public.agent_models_junction (agent_id, model_id, active, created_at, generated, mcp)
+SELECT '019b3be4-3112-7786-ad7d-45ee39b86bc5', ar.model_id, true, '2025-12-19T19:02:10.223443+00:00', false, false
+FROM public.agents_resource ar
+WHERE ar.id = '019bb25e-e5f2-7f73-abf4-164c630526b2'
+  AND ar.model_id IS NOT NULL
+ON CONFLICT (agent_id, model_id) DO NOTHING;
+-- agent_reasoning_levels_junction
+INSERT INTO public.agent_reasoning_levels_junction (agent_id, reasoning_level_id, active, created_at, generated, mcp)
+SELECT '019b3be4-3112-7786-ad7d-45ee39b86bc5', rlr.id, true, '2025-12-19T19:02:10.223443+00:00', false, false
+FROM public.agents_resource ar
+JOIN public.reasoning_levels_resource rlr
+  ON rlr.reasoning_level = ar.reasoning
+ AND rlr.active = true
+WHERE ar.id = '019bb25e-e5f2-7f73-abf4-164c630526b2'
+  AND ar.reasoning IS NOT NULL
+ON CONFLICT (agent_id, reasoning_level_id) DO NOTHING;
+-- agent_temperature_levels_junction
+INSERT INTO public.agent_temperature_levels_junction (agent_id, temperature_level_id, active, created_at, generated, mcp)
+SELECT '019b3be4-3112-7786-ad7d-45ee39b86bc5', tlr.id, true, '2025-12-19T19:02:10.223443+00:00', false, false
+FROM public.agents_resource ar
+JOIN public.temperature_levels_resource tlr
+  ON tlr.temperature = ar.temperature
+ AND tlr.active = true
+WHERE ar.id = '019bb25e-e5f2-7f73-abf4-164c630526b2'
+  AND ar.temperature IS NOT NULL
+ON CONFLICT (agent_id, temperature_level_id) DO NOTHING;
+-- agent_voices_junction
+INSERT INTO public.agent_voices_junction (agent_id, voice_id, active, created_at, generated, mcp)
+
+SELECT DISTINCT '019b3be4-3112-7786-ad7d-45ee39b86bc5'::uuid, vr.id, true, '2025-12-19T19:02:10.223443+00:00'::timestamptz, false, false
+FROM public.agents_resource ar
+JOIN unnest(COALESCE(ar.voices, ARRAY[]::text[])) AS v(voice) ON true
+JOIN public.voices_resource vr
+  ON vr.voice = v.voice
+ AND vr.active = true
+WHERE ar.id = '019bb25e-e5f2-7f73-abf4-164c630526b2'
+ON CONFLICT (agent_id, voice_id) DO NOTHING;
 -- agent_descriptions_junction
 INSERT INTO public.agent_descriptions_junction (agent_id, description_id, created_at, generated, mcp, active) VALUES ('019b3be4-3112-7786-ad7d-45ee39b86bc5', '019b995c-8ea1-7cb0-9364-428e72031db8', '2025-12-19T19:02:10.223443+00:00', false, false, true) ON CONFLICT (agent_id, description_id) DO NOTHING;
 -- agent_flags_junction

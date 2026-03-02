@@ -60,7 +60,7 @@ You only need to do ONE of these operations per resource — not both. Check the
 - Return only valid tool calls and arguments
 - Do not output narrative text
 ', 'Profile Agent System Prompt', 'System prompt for profile generation agents that create and manage profile resources', true, '33333333-4444-4444-4444-333333333333', false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-13T03:41:54.664757+00:00', true, false, false, '019c5517-4673-759e-81e6-40d247dea759', 'Profile', 'AI agent for generating and managing profile resources including names, descriptions, flags, departments, emails, cohorts, and request limits using GPT-5.1', '{}', NULL, NULL, '{019bebc4-d436-7be9-a1d4-e55d4017097e,019bebc4-d436-7c35-9f98-31957504bf95,019bebc4-d436-7cb5-b393-0f9756ccc867,019bebc4-d436-7cbe-a7bf-4b364674f3e0,019bebc4-d436-7d28-8f22-23d852477486,019c06a8-2af4-7c97-ab30-1e863db0e8e3,f54cfc67-dd10-4677-b076-5c91a63db489,4f07ae5c-a08c-4dee-a8f8-60f20dbf96e2,611f8ec9-1863-402d-8c7a-88329f5721bb,019c4f27-1774-759b-acb1-e09575f36f0d,019c06a8-2af6-727b-b94a-71bddc4d76de,eb52f323-b454-48c8-8385-69fad8f8388b,019c06a8-2af5-766c-9713-315ab9567235}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '33333333-4444-4444-4444-333333333333', '{019c2f11-4100-7c00-8000-000000000002}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voices, model_id, prompt_id, instruction_ids) VALUES ('2026-02-13T03:41:54.664757+00:00', true, false, false, '019c5517-4673-759e-81e6-40d247dea759', 'Profile', 'AI agent for generating and managing profile resources including names, descriptions, flags, departments, emails, cohorts, and request limits using GPT-5.1', '{}', 0, 'none', '{019bebc4-d436-7be9-a1d4-e55d4017097e,019bebc4-d436-7c35-9f98-31957504bf95,019bebc4-d436-7cb5-b393-0f9756ccc867,019bebc4-d436-7cbe-a7bf-4b364674f3e0,019bebc4-d436-7d28-8f22-23d852477486,019c06a8-2af4-7c97-ab30-1e863db0e8e3,f54cfc67-dd10-4677-b076-5c91a63db489,4f07ae5c-a08c-4dee-a8f8-60f20dbf96e2,611f8ec9-1863-402d-8c7a-88329f5721bb,019c4f27-1774-759b-acb1-e09575f36f0d,019c06a8-2af6-727b-b94a-71bddc4d76de,eb52f323-b454-48c8-8385-69fad8f8388b,019c06a8-2af5-766c-9713-315ab9567235}', NULL, '{}', '019bb25e-e5ff-76f6-90d4-830670bb5d82', '33333333-4444-4444-4444-333333333333', '{019c2f11-4100-7c00-8000-000000000002}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019bcd1b-0c9b-745c-8a86-2c7fa4b8f759', 'AI agent for generating and managing profile resources including names, descriptions, flags, departments, emails, cohorts, and request limits using GPT-5.1', '2026-01-17T17:57:40.632192+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c2f11-4100-7c00-8000-000000000002', '## Current State
 {% set draft = artifacts.profile.get.entries.draft_profile if artifacts.profile.get.entries and artifacts.profile.get.entries.draft_profile else None %}
@@ -144,6 +144,44 @@ INSERT INTO public.agent_artifact (created_at, updated_at, id, generated, mcp) V
 -- Junctions
 -- agent_agents_junction
 INSERT INTO public.agent_agents_junction (agent_id, agents_id, active, created_at, generated, mcp) VALUES ('33333333-3333-3333-3333-333333333333', '019c5517-4673-759e-81e6-40d247dea759', true, '2026-02-13T03:41:54.664757+00:00', false, false) ON CONFLICT (agent_id, agents_id) DO NOTHING;
+-- agent_models_junction
+INSERT INTO public.agent_models_junction (agent_id, model_id, active, created_at, generated, mcp)
+SELECT '33333333-3333-3333-3333-333333333333', ar.model_id, true, '2026-02-13T03:41:54.664757+00:00', false, false
+FROM public.agents_resource ar
+WHERE ar.id = '019c5517-4673-759e-81e6-40d247dea759'
+  AND ar.model_id IS NOT NULL
+ON CONFLICT (agent_id, model_id) DO NOTHING;
+-- agent_reasoning_levels_junction
+INSERT INTO public.agent_reasoning_levels_junction (agent_id, reasoning_level_id, active, created_at, generated, mcp)
+SELECT '33333333-3333-3333-3333-333333333333', rlr.id, true, '2026-02-13T03:41:54.664757+00:00', false, false
+FROM public.agents_resource ar
+JOIN public.reasoning_levels_resource rlr
+  ON rlr.reasoning_level = ar.reasoning
+ AND rlr.active = true
+WHERE ar.id = '019c5517-4673-759e-81e6-40d247dea759'
+  AND ar.reasoning IS NOT NULL
+ON CONFLICT (agent_id, reasoning_level_id) DO NOTHING;
+-- agent_temperature_levels_junction
+INSERT INTO public.agent_temperature_levels_junction (agent_id, temperature_level_id, active, created_at, generated, mcp)
+SELECT '33333333-3333-3333-3333-333333333333', tlr.id, true, '2026-02-13T03:41:54.664757+00:00', false, false
+FROM public.agents_resource ar
+JOIN public.temperature_levels_resource tlr
+  ON tlr.temperature = ar.temperature
+ AND tlr.active = true
+WHERE ar.id = '019c5517-4673-759e-81e6-40d247dea759'
+  AND ar.temperature IS NOT NULL
+ON CONFLICT (agent_id, temperature_level_id) DO NOTHING;
+-- agent_voices_junction
+INSERT INTO public.agent_voices_junction (agent_id, voice_id, active, created_at, generated, mcp)
+
+SELECT DISTINCT '33333333-3333-3333-3333-333333333333'::uuid, vr.id, true, '2026-02-13T03:41:54.664757+00:00'::timestamptz, false, false
+FROM public.agents_resource ar
+JOIN unnest(COALESCE(ar.voices, ARRAY[]::text[])) AS v(voice) ON true
+JOIN public.voices_resource vr
+  ON vr.voice = v.voice
+ AND vr.active = true
+WHERE ar.id = '019c5517-4673-759e-81e6-40d247dea759'
+ON CONFLICT (agent_id, voice_id) DO NOTHING;
 -- agent_descriptions_junction
 INSERT INTO public.agent_descriptions_junction (agent_id, description_id, created_at, generated, mcp, active) VALUES ('33333333-3333-3333-3333-333333333333', '019bcd1b-0c9b-745c-8a86-2c7fa4b8f759', '2026-01-17T17:57:40.632192+00:00', false, false, true) ON CONFLICT (agent_id, description_id) DO NOTHING;
 -- agent_flags_junction

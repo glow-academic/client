@@ -15,7 +15,7 @@ INSERT INTO public.prompts_resource (created_at, system_prompt, name, descriptio
 - Include longitudinal trends and period-over-period comparisons
 - Surface actionable patterns for training improvement
 - Do not output narrative text — all output must be valid tool calls', 'Reports Prompt', 'Analytical insights agent for detailed training outcome reports', true, '019c82b8-5d9f-708d-8b0e-d00022ff16c0', false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-22T00:20:46.593734+00:00', true, false, false, '019c82b8-5d9f-71af-a2ac-3bfc3d189410', 'Reports', 'Analytical insights agent for detailed training outcome reports', '{}', NULL, NULL, '{8abd2bea-d252-4a7c-857c-475147ff6877,019522a0-0020-7000-8000-000000000007}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019c82b8-5d9f-708d-8b0e-d00022ff16c0', '{019c82b8-5d9f-70f2-875e-b435dcc24083}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voices, model_id, prompt_id, instruction_ids) VALUES ('2026-02-22T00:20:46.593734+00:00', true, false, false, '019c82b8-5d9f-71af-a2ac-3bfc3d189410', 'Reports', 'Analytical insights agent for detailed training outcome reports', '{}', 0, 'none', '{8abd2bea-d252-4a7c-857c-475147ff6877,019522a0-0020-7000-8000-000000000007}', NULL, '{}', '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019c82b8-5d9f-708d-8b0e-d00022ff16c0', '{019c82b8-5d9f-70f2-875e-b435dcc24083}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019c82b8-5d9f-72f2-9205-d1b904c0b54b', 'Analytical insights agent for detailed training outcome reports', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c82b8-5d9f-70f2-875e-b435dcc24083', '## Previous Insights
 
@@ -47,6 +47,44 @@ INSERT INTO public.agent_artifact (created_at, updated_at, id, generated, mcp) V
 -- Junctions
 -- agent_agents_junction
 INSERT INTO public.agent_agents_junction (agent_id, agents_id, active, created_at, generated, mcp) VALUES ('ab000008-0000-0000-0000-000000000008', '019c82b8-5d9f-71af-a2ac-3bfc3d189410', true, '2026-02-22T00:20:46.593734+00:00', false, false) ON CONFLICT (agent_id, agents_id) DO NOTHING;
+-- agent_models_junction
+INSERT INTO public.agent_models_junction (agent_id, model_id, active, created_at, generated, mcp)
+SELECT 'ab000008-0000-0000-0000-000000000008', ar.model_id, true, '2026-02-22T00:20:46.593734+00:00', false, false
+FROM public.agents_resource ar
+WHERE ar.id = '019c82b8-5d9f-71af-a2ac-3bfc3d189410'
+  AND ar.model_id IS NOT NULL
+ON CONFLICT (agent_id, model_id) DO NOTHING;
+-- agent_reasoning_levels_junction
+INSERT INTO public.agent_reasoning_levels_junction (agent_id, reasoning_level_id, active, created_at, generated, mcp)
+SELECT 'ab000008-0000-0000-0000-000000000008', rlr.id, true, '2026-02-22T00:20:46.593734+00:00', false, false
+FROM public.agents_resource ar
+JOIN public.reasoning_levels_resource rlr
+  ON rlr.reasoning_level = ar.reasoning
+ AND rlr.active = true
+WHERE ar.id = '019c82b8-5d9f-71af-a2ac-3bfc3d189410'
+  AND ar.reasoning IS NOT NULL
+ON CONFLICT (agent_id, reasoning_level_id) DO NOTHING;
+-- agent_temperature_levels_junction
+INSERT INTO public.agent_temperature_levels_junction (agent_id, temperature_level_id, active, created_at, generated, mcp)
+SELECT 'ab000008-0000-0000-0000-000000000008', tlr.id, true, '2026-02-22T00:20:46.593734+00:00', false, false
+FROM public.agents_resource ar
+JOIN public.temperature_levels_resource tlr
+  ON tlr.temperature = ar.temperature
+ AND tlr.active = true
+WHERE ar.id = '019c82b8-5d9f-71af-a2ac-3bfc3d189410'
+  AND ar.temperature IS NOT NULL
+ON CONFLICT (agent_id, temperature_level_id) DO NOTHING;
+-- agent_voices_junction
+INSERT INTO public.agent_voices_junction (agent_id, voice_id, active, created_at, generated, mcp)
+
+SELECT DISTINCT 'ab000008-0000-0000-0000-000000000008'::uuid, vr.id, true, '2026-02-22T00:20:46.593734+00:00'::timestamptz, false, false
+FROM public.agents_resource ar
+JOIN unnest(COALESCE(ar.voices, ARRAY[]::text[])) AS v(voice) ON true
+JOIN public.voices_resource vr
+  ON vr.voice = v.voice
+ AND vr.active = true
+WHERE ar.id = '019c82b8-5d9f-71af-a2ac-3bfc3d189410'
+ON CONFLICT (agent_id, voice_id) DO NOTHING;
 -- agent_descriptions_junction
 INSERT INTO public.agent_descriptions_junction (agent_id, description_id, created_at, generated, mcp, active) VALUES ('ab000008-0000-0000-0000-000000000008', '019c82b8-5d9f-72f2-9205-d1b904c0b54b', '2026-02-22T00:20:46.593734+00:00', false, false, true) ON CONFLICT (agent_id, description_id) DO NOTHING;
 -- agent_flags_junction

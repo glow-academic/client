@@ -66,7 +66,7 @@ You only need to do ONE of these operations per resource — not both. Check the
 - Return only valid tool calls and arguments
 - Do not output narrative text
 ', 'Eval Prompt', 'AI agent for creating and managing evaluation configurations with runs, groups, and rubric bindings', true, '019c82b8-5d90-7dd8-8a75-b66daccc81c0', false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-22T00:20:46.593734+00:00', true, false, false, '019c82b8-5d91-7995-a6ef-94dcca1c92be', 'Eval', 'AI agent for generating and managing eval resources including names, descriptions, flags, departments, scenarios, rubrics, and various eval-specific resources using GPT-5.1', '{}', NULL, NULL, '{019bebc4-d436-7cdb-9b0e-0d85b487bde8,cbae0937-636c-4b82-9ecc-ed4f4abadc07,019c06a8-2af6-727b-b94a-71bddc4d76de,4264ba54-2e31-4a1c-ab6b-605b2c63e759,019bebc4-d436-7c01-b86b-9483883762a6,019c06a8-2af5-705d-ae92-7905a846a500,019c06a8-2af5-766c-9713-315ab9567235,019c06a8-2af4-7c97-ab30-1e863db0e8e3,019bebc4-d436-7cfd-9d16-5083f373be80,019c4f27-1783-7c26-b0a1-3103c94891b6,019bebc4-d436-7cfa-abc2-0b12c8166a91,88115f24-f7ca-45cd-a431-ef9b381a96d0,eb7d2884-cc40-4d92-bed8-b23f604c0f0c,093e0e28-1bd1-49a3-8464-c6322ddac802,451a9536-b994-47ab-8663-1a7757735505,019bebc4-d436-7cd5-9cfb-f52df7b3d47d,019c4f27-177b-7617-a58c-86ec6b464e38,019bebc4-d436-7c35-9f98-31957504bf95}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019c82b8-5d90-7dd8-8a75-b66daccc81c0', '{019c82b8-5d91-731a-a632-4b4732a87cf5}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voices, model_id, prompt_id, instruction_ids) VALUES ('2026-02-22T00:20:46.593734+00:00', true, false, false, '019c82b8-5d91-7995-a6ef-94dcca1c92be', 'Eval', 'AI agent for generating and managing eval resources including names, descriptions, flags, departments, scenarios, rubrics, and various eval-specific resources using GPT-5.1', '{}', 0, 'none', '{019bebc4-d436-7cdb-9b0e-0d85b487bde8,cbae0937-636c-4b82-9ecc-ed4f4abadc07,019c06a8-2af6-727b-b94a-71bddc4d76de,4264ba54-2e31-4a1c-ab6b-605b2c63e759,019bebc4-d436-7c01-b86b-9483883762a6,019c06a8-2af5-705d-ae92-7905a846a500,019c06a8-2af5-766c-9713-315ab9567235,019c06a8-2af4-7c97-ab30-1e863db0e8e3,019bebc4-d436-7cfd-9d16-5083f373be80,019c4f27-1783-7c26-b0a1-3103c94891b6,019bebc4-d436-7cfa-abc2-0b12c8166a91,88115f24-f7ca-45cd-a431-ef9b381a96d0,eb7d2884-cc40-4d92-bed8-b23f604c0f0c,093e0e28-1bd1-49a3-8464-c6322ddac802,451a9536-b994-47ab-8663-1a7757735505,019bebc4-d436-7cd5-9cfb-f52df7b3d47d,019c4f27-177b-7617-a58c-86ec6b464e38,019bebc4-d436-7c35-9f98-31957504bf95}', NULL, '{}', '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019c82b8-5d90-7dd8-8a75-b66daccc81c0', '{019c82b8-5d91-731a-a632-4b4732a87cf5}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019bcd1c-333f-7a05-a8ba-10219e4394dc', 'AI agent for generating and managing eval resources including names, descriptions, flags, departments, scenarios, rubrics, and various eval-specific resources using GPT-5.1', '2026-01-17T17:58:56.053417+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c82b8-5d91-731a-a632-4b4732a87cf5', '## Current State
 {% set draft = artifacts.eval.get.entries.draft_eval if artifacts.eval.get.entries and artifacts.eval.get.entries.draft_eval else None %}
@@ -171,6 +171,44 @@ INSERT INTO public.agent_artifact (created_at, updated_at, id, generated, mcp) V
 -- Junctions
 -- agent_agents_junction
 INSERT INTO public.agent_agents_junction (agent_id, agents_id, active, created_at, generated, mcp) VALUES ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', '019c82b8-5d91-7995-a6ef-94dcca1c92be', true, '2026-02-22T00:20:46.593734+00:00', false, false) ON CONFLICT (agent_id, agents_id) DO NOTHING;
+-- agent_models_junction
+INSERT INTO public.agent_models_junction (agent_id, model_id, active, created_at, generated, mcp)
+SELECT 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', ar.model_id, true, '2026-02-22T00:20:46.593734+00:00', false, false
+FROM public.agents_resource ar
+WHERE ar.id = '019c82b8-5d91-7995-a6ef-94dcca1c92be'
+  AND ar.model_id IS NOT NULL
+ON CONFLICT (agent_id, model_id) DO NOTHING;
+-- agent_reasoning_levels_junction
+INSERT INTO public.agent_reasoning_levels_junction (agent_id, reasoning_level_id, active, created_at, generated, mcp)
+SELECT 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', rlr.id, true, '2026-02-22T00:20:46.593734+00:00', false, false
+FROM public.agents_resource ar
+JOIN public.reasoning_levels_resource rlr
+  ON rlr.reasoning_level = ar.reasoning
+ AND rlr.active = true
+WHERE ar.id = '019c82b8-5d91-7995-a6ef-94dcca1c92be'
+  AND ar.reasoning IS NOT NULL
+ON CONFLICT (agent_id, reasoning_level_id) DO NOTHING;
+-- agent_temperature_levels_junction
+INSERT INTO public.agent_temperature_levels_junction (agent_id, temperature_level_id, active, created_at, generated, mcp)
+SELECT 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', tlr.id, true, '2026-02-22T00:20:46.593734+00:00', false, false
+FROM public.agents_resource ar
+JOIN public.temperature_levels_resource tlr
+  ON tlr.temperature = ar.temperature
+ AND tlr.active = true
+WHERE ar.id = '019c82b8-5d91-7995-a6ef-94dcca1c92be'
+  AND ar.temperature IS NOT NULL
+ON CONFLICT (agent_id, temperature_level_id) DO NOTHING;
+-- agent_voices_junction
+INSERT INTO public.agent_voices_junction (agent_id, voice_id, active, created_at, generated, mcp)
+
+SELECT DISTINCT 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'::uuid, vr.id, true, '2026-02-22T00:20:46.593734+00:00'::timestamptz, false, false
+FROM public.agents_resource ar
+JOIN unnest(COALESCE(ar.voices, ARRAY[]::text[])) AS v(voice) ON true
+JOIN public.voices_resource vr
+  ON vr.voice = v.voice
+ AND vr.active = true
+WHERE ar.id = '019c82b8-5d91-7995-a6ef-94dcca1c92be'
+ON CONFLICT (agent_id, voice_id) DO NOTHING;
 -- agent_descriptions_junction
 INSERT INTO public.agent_descriptions_junction (agent_id, description_id, created_at, generated, mcp, active) VALUES ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', '019bcd1c-333f-7a05-a8ba-10219e4394dc', '2026-01-17T17:58:56.053417+00:00', false, false, true) ON CONFLICT (agent_id, description_id) DO NOTHING;
 -- agent_flags_junction

@@ -78,7 +78,7 @@ You only need to do ONE of these operations per resource — not both. Check the
 - Return only valid tool calls and arguments
 - Do not output narrative text
 ', 'Chat Prompt', 'AI agent for creating and managing training chat sessions with persona-driven scenario conversations', true, '019c82b8-5daa-7b10-802c-6334ed655fe4', false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-11T20:37:27.875564+00:00', true, false, false, 'bb000003-0000-0000-0000-000000000003', 'Chat', 'AI agent for creating and managing training chat sessions with persona-driven scenario conversations', '{}', NULL, NULL, '{019bebc4-d436-7c01-b86b-9483883762a6,019c0a2d-fc36-7e78-9083-05afa0c8e4d8,019c0a2d-fc36-7d3c-ac2c-a2108a6c55de,019c0a2d-fc36-7ace-adde-c1e47bc14a89,019c0a2d-fc36-7c0c-80c1-098a75897197,019c0a2d-fc36-756e-b50e-a5987eb4f0d5,019c06a8-2af6-7439-b8fb-2a083dd49848,019c0a2d-fc36-7997-bdca-92935994cb93,019c0a2d-fc36-785a-9b6d-02eca12bb6e6,019c06a8-2af6-727b-b94a-71bddc4d76de,019c0a2d-fc36-770a-b18d-af61cdf0f908,019c06a8-2af5-766c-9713-315ab9567235,019c0a2d-fc35-7eb7-8bc4-4a4d9578918d,019c06a8-2af5-705d-ae92-7905a846a500,019c06a8-2af4-7c97-ab30-1e863db0e8e3,019bebc4-d436-7b96-b622-c512f3a418da,019bebc4-d436-78e3-ae05-f12509f43557,019bebc4-d436-7b81-9555-1d88249b6d78,019bebc4-d436-7b9b-b92c-009fbdb67144,019bf207-ca52-70cc-ae3c-a5ca44d6d5e9,019bebc4-d436-7bd2-b670-e4c1b24b1a9c,019bebc4-d436-7b8b-8443-f82efdfd5790,019bebc4-d436-7c35-9f98-31957504bf95,019bebc4-d436-7b8d-adb8-3b17bafdda99,52bd3f2d-8a5f-4a90-940a-a334975adc2a,019c4f27-1778-7a54-b3bb-1574ff2c0357,019c0cd8-ad73-72dd-8a41-ea5b247384db,019c06a8-2af6-7609-9bc5-2782eb639be2,98194c0a-97af-4bf8-8c30-12a87bfbacb2,b4e15440-86af-48e3-b18f-e8d11e55302b,ac2d7f98-3e27-4c0e-87b8-c283a3305062,753f699e-f1dc-4fd9-8701-a69f26d0c110,a51d1d18-44d9-4fd3-a7d3-3db17b652d02}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019c82b8-5daa-7b10-802c-6334ed655fe4', '{019c82b8-5dab-7448-9750-1cf0a3cf6412}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voices, model_id, prompt_id, instruction_ids) VALUES ('2026-02-11T20:37:27.875564+00:00', true, false, false, 'bb000003-0000-0000-0000-000000000003', 'Chat', 'AI agent for creating and managing training chat sessions with persona-driven scenario conversations', '{}', 0, 'none', '{019bebc4-d436-7c01-b86b-9483883762a6,019c0a2d-fc36-7e78-9083-05afa0c8e4d8,019c0a2d-fc36-7d3c-ac2c-a2108a6c55de,019c0a2d-fc36-7ace-adde-c1e47bc14a89,019c0a2d-fc36-7c0c-80c1-098a75897197,019c0a2d-fc36-756e-b50e-a5987eb4f0d5,019c06a8-2af6-7439-b8fb-2a083dd49848,019c0a2d-fc36-7997-bdca-92935994cb93,019c0a2d-fc36-785a-9b6d-02eca12bb6e6,019c06a8-2af6-727b-b94a-71bddc4d76de,019c0a2d-fc36-770a-b18d-af61cdf0f908,019c06a8-2af5-766c-9713-315ab9567235,019c0a2d-fc35-7eb7-8bc4-4a4d9578918d,019c06a8-2af5-705d-ae92-7905a846a500,019c06a8-2af4-7c97-ab30-1e863db0e8e3,019bebc4-d436-7b96-b622-c512f3a418da,019bebc4-d436-78e3-ae05-f12509f43557,019bebc4-d436-7b81-9555-1d88249b6d78,019bebc4-d436-7b9b-b92c-009fbdb67144,019bf207-ca52-70cc-ae3c-a5ca44d6d5e9,019bebc4-d436-7bd2-b670-e4c1b24b1a9c,019bebc4-d436-7b8b-8443-f82efdfd5790,019bebc4-d436-7c35-9f98-31957504bf95,019bebc4-d436-7b8d-adb8-3b17bafdda99,52bd3f2d-8a5f-4a90-940a-a334975adc2a,019c4f27-1778-7a54-b3bb-1574ff2c0357,019c0cd8-ad73-72dd-8a41-ea5b247384db,019c06a8-2af6-7609-9bc5-2782eb639be2,98194c0a-97af-4bf8-8c30-12a87bfbacb2,b4e15440-86af-48e3-b18f-e8d11e55302b,ac2d7f98-3e27-4c0e-87b8-c283a3305062,753f699e-f1dc-4fd9-8701-a69f26d0c110,a51d1d18-44d9-4fd3-a7d3-3db17b652d02}', NULL, '{}', '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019c82b8-5daa-7b10-802c-6334ed655fe4', '{019c82b8-5dab-7448-9750-1cf0a3cf6412}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('bb000002-0000-0000-0000-000000000002', 'AI agent for creating and managing training chat sessions with persona-driven scenario conversations', '2026-02-11T20:37:27.875564+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c82b8-5dab-7448-9750-1cf0a3cf6412', '## Current State
 {% set draft = artifacts.chat.get.entries.draft_chat if artifacts.chat.get.entries and artifacts.chat.get.entries.draft_chat else None %}
@@ -225,6 +225,44 @@ INSERT INTO public.agent_artifact (created_at, updated_at, id, generated, mcp) V
 -- Junctions
 -- agent_agents_junction
 INSERT INTO public.agent_agents_junction (agent_id, agents_id, active, created_at, generated, mcp) VALUES ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'bb000003-0000-0000-0000-000000000003', true, '2026-02-13T03:41:54.664757+00:00', false, false) ON CONFLICT (agent_id, agents_id) DO NOTHING;
+-- agent_models_junction
+INSERT INTO public.agent_models_junction (agent_id, model_id, active, created_at, generated, mcp)
+SELECT 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', ar.model_id, true, '2026-02-13T03:41:54.664757+00:00', false, false
+FROM public.agents_resource ar
+WHERE ar.id = 'bb000003-0000-0000-0000-000000000003'
+  AND ar.model_id IS NOT NULL
+ON CONFLICT (agent_id, model_id) DO NOTHING;
+-- agent_reasoning_levels_junction
+INSERT INTO public.agent_reasoning_levels_junction (agent_id, reasoning_level_id, active, created_at, generated, mcp)
+SELECT 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', rlr.id, true, '2026-02-13T03:41:54.664757+00:00', false, false
+FROM public.agents_resource ar
+JOIN public.reasoning_levels_resource rlr
+  ON rlr.reasoning_level = ar.reasoning
+ AND rlr.active = true
+WHERE ar.id = 'bb000003-0000-0000-0000-000000000003'
+  AND ar.reasoning IS NOT NULL
+ON CONFLICT (agent_id, reasoning_level_id) DO NOTHING;
+-- agent_temperature_levels_junction
+INSERT INTO public.agent_temperature_levels_junction (agent_id, temperature_level_id, active, created_at, generated, mcp)
+SELECT 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', tlr.id, true, '2026-02-13T03:41:54.664757+00:00', false, false
+FROM public.agents_resource ar
+JOIN public.temperature_levels_resource tlr
+  ON tlr.temperature = ar.temperature
+ AND tlr.active = true
+WHERE ar.id = 'bb000003-0000-0000-0000-000000000003'
+  AND ar.temperature IS NOT NULL
+ON CONFLICT (agent_id, temperature_level_id) DO NOTHING;
+-- agent_voices_junction
+INSERT INTO public.agent_voices_junction (agent_id, voice_id, active, created_at, generated, mcp)
+
+SELECT DISTINCT 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid, vr.id, true, '2026-02-13T03:41:54.664757+00:00'::timestamptz, false, false
+FROM public.agents_resource ar
+JOIN unnest(COALESCE(ar.voices, ARRAY[]::text[])) AS v(voice) ON true
+JOIN public.voices_resource vr
+  ON vr.voice = v.voice
+ AND vr.active = true
+WHERE ar.id = 'bb000003-0000-0000-0000-000000000003'
+ON CONFLICT (agent_id, voice_id) DO NOTHING;
 -- agent_descriptions_junction
 INSERT INTO public.agent_descriptions_junction (agent_id, description_id, created_at, generated, mcp, active) VALUES ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'bb000002-0000-0000-0000-000000000002', '2026-02-11T20:37:27.875564+00:00', false, false, true) ON CONFLICT (agent_id, description_id) DO NOTHING;
 -- agent_flags_junction

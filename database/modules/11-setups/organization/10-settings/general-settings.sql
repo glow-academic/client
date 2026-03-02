@@ -60,64 +60,154 @@ INSERT INTO public.setting_settings_junction (setting_id, settings_id, active, c
 -- department_settings_junction (moved from department file — needs settings_resource to exist)
 INSERT INTO public.department_settings_junction (active, created_at, department_id, settings_id, generated, mcp) VALUES (true, '2026-02-25T22:07:55.636235+00:00', '019c3f8c-b97b-7350-8d77-632e29b1c3f9', '019c51c3-5130-734a-b5f4-c7e48130cc99', false, false) ON CONFLICT (department_id, settings_id) DO NOTHING;
 
--- systems_resource + system junctions (agent system grouping)
-WITH sys AS (
+-- systems_resource + system junctions (1 system per agent, except attempt-chat has text+audio agents)
+WITH setting_scope AS (
+    SELECT '019c3f8c-b97c-7fa5-b369-7d7418bedbcf'::uuid AS setting_id
+),
+active_agents AS (
+    SELECT DISTINCT
+        aaj.agents_id,
+        ar.name AS agent_name
+    FROM public.agent_agents_junction aaj
+    JOIN public.agents_resource ar ON ar.id = aaj.agents_id
+    WHERE aaj.active = true
+      AND ar.active = true
+),
+system_mapping AS (
     SELECT
-        '019c3f8c-b97c-7fa5-b369-7d7418bedbcf'::uuid AS setting_id,
+        ss.setting_id,
+        aa.agents_id,
+        aa.agent_name,
+        CASE
+            WHEN aa.agent_name IN ('Attempt Chat', 'Attempt Chat Audio') THEN 'attempt-chat'
+            ELSE regexp_replace(lower(regexp_replace(aa.agent_name, '[^a-zA-Z0-9]+', '-', 'g')), '(^-|-$)', '', 'g')
+        END AS system_key
+    FROM setting_scope ss
+    CROSS JOIN active_agents aa
+),
+systems_to_seed AS (
+    SELECT
+        sm.setting_id,
+        sm.system_key,
         (
-            substr(md5('019c3f8c-b97c-7fa5-b369-7d7418bedbcf:default-system'), 1, 8) || '-' ||
-            substr(md5('019c3f8c-b97c-7fa5-b369-7d7418bedbcf:default-system'), 9, 4) || '-' ||
-            substr(md5('019c3f8c-b97c-7fa5-b369-7d7418bedbcf:default-system'), 13, 4) || '-' ||
-            substr(md5('019c3f8c-b97c-7fa5-b369-7d7418bedbcf:default-system'), 17, 4) || '-' ||
-            substr(md5('019c3f8c-b97c-7fa5-b369-7d7418bedbcf:default-system'), 21, 12)
-        )::uuid AS system_id
+            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 1, 8) || '-' ||
+            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 9, 4) || '-' ||
+            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 13, 4) || '-' ||
+            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 17, 4) || '-' ||
+            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 21, 12)
+        )::uuid AS system_id,
+        initcap(replace(sm.system_key, '-', ' ')) || ' System' AS system_name,
+        'Seeded system for ' || sm.system_key || ' agents' AS system_description,
+        ARRAY_AGG(DISTINCT sm.agents_id ORDER BY sm.agents_id) AS agent_ids
+    FROM system_mapping sm
+    GROUP BY sm.setting_id, sm.system_key
 )
 INSERT INTO public.systems_resource (id, created_at, active, generated, mcp, name, description, department_ids, agent_ids)
 SELECT
-    sys.system_id,
+    sts.system_id,
     NOW(),
     true,
     false,
     false,
-    'Default System 019c3f8c-b97c-7fa5-b369-7d7418bedbcf',
-    'Seeded system for organization settings',
+    sts.system_name,
+    sts.system_description,
     ARRAY[]::uuid[],
-    ARRAY(
-        SELECT DISTINCT aaj.agents_id
-        FROM agent_agents_junction aaj
-        WHERE aaj.active = true
-        ORDER BY aaj.agents_id
-    )
-FROM sys
+    sts.agent_ids
+FROM systems_to_seed sts
 ON CONFLICT (id) DO NOTHING;
 
-WITH sys AS (
+WITH setting_scope AS (
+    SELECT '019c3f8c-b97c-7fa5-b369-7d7418bedbcf'::uuid AS setting_id
+),
+active_agents AS (
+    SELECT DISTINCT
+        aaj.agents_id,
+        ar.name AS agent_name
+    FROM public.agent_agents_junction aaj
+    JOIN public.agents_resource ar ON ar.id = aaj.agents_id
+    WHERE aaj.active = true
+      AND ar.active = true
+),
+system_mapping AS (
     SELECT
-        '019c3f8c-b97c-7fa5-b369-7d7418bedbcf'::uuid AS setting_id,
+        ss.setting_id,
+        aa.agents_id,
+        CASE
+            WHEN aa.agent_name IN ('Attempt Chat', 'Attempt Chat Audio') THEN 'attempt-chat'
+            ELSE regexp_replace(lower(regexp_replace(aa.agent_name, '[^a-zA-Z0-9]+', '-', 'g')), '(^-|-$)', '', 'g')
+        END AS system_key
+    FROM setting_scope ss
+    CROSS JOIN active_agents aa
+),
+systems_to_seed AS (
+    SELECT
+        sm.setting_id,
         (
-            substr(md5('019c3f8c-b97c-7fa5-b369-7d7418bedbcf:default-system'), 1, 8) || '-' ||
-            substr(md5('019c3f8c-b97c-7fa5-b369-7d7418bedbcf:default-system'), 9, 4) || '-' ||
-            substr(md5('019c3f8c-b97c-7fa5-b369-7d7418bedbcf:default-system'), 13, 4) || '-' ||
-            substr(md5('019c3f8c-b97c-7fa5-b369-7d7418bedbcf:default-system'), 17, 4) || '-' ||
-            substr(md5('019c3f8c-b97c-7fa5-b369-7d7418bedbcf:default-system'), 21, 12)
-        )::uuid AS system_id
+            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 1, 8) || '-' ||
+            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 9, 4) || '-' ||
+            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 13, 4) || '-' ||
+            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 17, 4) || '-' ||
+            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 21, 12)
+        )::uuid AS system_id,
+        ARRAY_AGG(DISTINCT sm.agents_id ORDER BY sm.agents_id) AS agent_ids
+    FROM system_mapping sm
+    GROUP BY sm.setting_id, sm.system_key
 )
 INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp)
-SELECT sys.setting_id, sys.system_id, NOW(), true, false, false
-FROM sys
+SELECT
+    sts.setting_id,
+    sts.system_id,
+    NOW(),
+    true,
+    false,
+    false
+FROM systems_to_seed sts
 ON CONFLICT (setting_id, systems_id) DO NOTHING;
 
-WITH sys AS (
-    SELECT (
-        substr(md5('019c3f8c-b97c-7fa5-b369-7d7418bedbcf:default-system'), 1, 8) || '-' ||
-        substr(md5('019c3f8c-b97c-7fa5-b369-7d7418bedbcf:default-system'), 9, 4) || '-' ||
-        substr(md5('019c3f8c-b97c-7fa5-b369-7d7418bedbcf:default-system'), 13, 4) || '-' ||
-        substr(md5('019c3f8c-b97c-7fa5-b369-7d7418bedbcf:default-system'), 17, 4) || '-' ||
-        substr(md5('019c3f8c-b97c-7fa5-b369-7d7418bedbcf:default-system'), 21, 12)
-    )::uuid AS system_id
+WITH setting_scope AS (
+    SELECT '019c3f8c-b97c-7fa5-b369-7d7418bedbcf'::uuid AS setting_id
+),
+active_agents AS (
+    SELECT DISTINCT
+        aaj.agents_id,
+        ar.name AS agent_name
+    FROM public.agent_agents_junction aaj
+    JOIN public.agents_resource ar ON ar.id = aaj.agents_id
+    WHERE aaj.active = true
+      AND ar.active = true
+),
+system_mapping AS (
+    SELECT
+        ss.setting_id,
+        aa.agents_id,
+        CASE
+            WHEN aa.agent_name IN ('Attempt Chat', 'Attempt Chat Audio') THEN 'attempt-chat'
+            ELSE regexp_replace(lower(regexp_replace(aa.agent_name, '[^a-zA-Z0-9]+', '-', 'g')), '(^-|-$)', '', 'g')
+        END AS system_key
+    FROM setting_scope ss
+    CROSS JOIN active_agents aa
+),
+systems_to_seed AS (
+    SELECT
+        (
+            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 1, 8) || '-' ||
+            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 9, 4) || '-' ||
+            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 13, 4) || '-' ||
+            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 17, 4) || '-' ||
+            substr(md5(sm.setting_id::text || ':system:' || sm.system_key), 21, 12)
+        )::uuid AS system_id,
+        ARRAY_AGG(DISTINCT sm.agents_id ORDER BY sm.agents_id) AS agent_ids
+    FROM system_mapping sm
+    GROUP BY sm.setting_id, sm.system_key
 )
 INSERT INTO public.system_agents_junction (system_id, agents_id, created_at, active, generated, mcp)
-SELECT sys.system_id, aaj.agents_id, NOW(), true, false, false
-FROM sys
-JOIN agent_agents_junction aaj ON aaj.active = true
+SELECT
+    sts.system_id,
+    agent_id,
+    NOW(),
+    true,
+    false,
+    false
+FROM systems_to_seed sts
+CROSS JOIN LATERAL unnest(sts.agent_ids) AS agent_id
 ON CONFLICT (system_id, agents_id) DO NOTHING;

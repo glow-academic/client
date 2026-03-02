@@ -137,6 +137,44 @@ INSERT INTO public.tools_resource (created_at, active, generated, mcp, id, name,
 INSERT INTO public.agent_tools_junction (agent_id, tool_id, active, created_at, generated, mcp) VALUES ('018f0005-0001-7000-8000-000000000001', '018f0002-0001-7000-8000-000000000002', true, '2026-02-23T17:47:02.459307+00:00', false, false) ON CONFLICT (agent_id, tool_id) DO NOTHING;
 
 -- agents_resource (denormalized row for generation pipeline)
-INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-23T17:47:02.459307+00:00', true, false, false, '018f0005-0006-7000-8000-000000000001', 'Attempt Insight', 'AI agent for generating analytical insights about individual training attempts including performance, conversation quality, and skill development', '{}', NULL, NULL, '{018f0002-0001-7000-8000-000000000002}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '018f0005-0003-7000-8000-000000000001', '{018f0005-0004-7000-8000-000000000001}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voices, model_id, prompt_id, instruction_ids) VALUES ('2026-02-23T17:47:02.459307+00:00', true, false, false, '018f0005-0006-7000-8000-000000000001', 'Attempt Insight', 'AI agent for generating analytical insights about individual training attempts including performance, conversation quality, and skill development', '{}', 0, 'none', '{018f0002-0001-7000-8000-000000000002}', NULL, '{}', '019bb25e-e5ff-76f6-90d4-830670bb5d82', '018f0005-0003-7000-8000-000000000001', '{018f0005-0004-7000-8000-000000000001}') ON CONFLICT (id) DO NOTHING;
 -- agent_agents_junction
 INSERT INTO public.agent_agents_junction (agent_id, agents_id, active, created_at, generated, mcp) VALUES ('018f0005-0001-7000-8000-000000000001', '018f0005-0006-7000-8000-000000000001', true, '2026-02-23T17:47:02.459307+00:00', false, false) ON CONFLICT (agent_id, agents_id) DO NOTHING;
+-- agent_models_junction
+INSERT INTO public.agent_models_junction (agent_id, model_id, active, created_at, generated, mcp)
+SELECT '018f0005-0001-7000-8000-000000000001', ar.model_id, true, '2026-02-23T17:47:02.459307+00:00', false, false
+FROM public.agents_resource ar
+WHERE ar.id = '018f0005-0006-7000-8000-000000000001'
+  AND ar.model_id IS NOT NULL
+ON CONFLICT (agent_id, model_id) DO NOTHING;
+-- agent_reasoning_levels_junction
+INSERT INTO public.agent_reasoning_levels_junction (agent_id, reasoning_level_id, active, created_at, generated, mcp)
+SELECT '018f0005-0001-7000-8000-000000000001', rlr.id, true, '2026-02-23T17:47:02.459307+00:00', false, false
+FROM public.agents_resource ar
+JOIN public.reasoning_levels_resource rlr
+  ON rlr.reasoning_level = ar.reasoning
+ AND rlr.active = true
+WHERE ar.id = '018f0005-0006-7000-8000-000000000001'
+  AND ar.reasoning IS NOT NULL
+ON CONFLICT (agent_id, reasoning_level_id) DO NOTHING;
+-- agent_temperature_levels_junction
+INSERT INTO public.agent_temperature_levels_junction (agent_id, temperature_level_id, active, created_at, generated, mcp)
+SELECT '018f0005-0001-7000-8000-000000000001', tlr.id, true, '2026-02-23T17:47:02.459307+00:00', false, false
+FROM public.agents_resource ar
+JOIN public.temperature_levels_resource tlr
+  ON tlr.temperature = ar.temperature
+ AND tlr.active = true
+WHERE ar.id = '018f0005-0006-7000-8000-000000000001'
+  AND ar.temperature IS NOT NULL
+ON CONFLICT (agent_id, temperature_level_id) DO NOTHING;
+-- agent_voices_junction
+INSERT INTO public.agent_voices_junction (agent_id, voice_id, active, created_at, generated, mcp)
+
+SELECT DISTINCT '018f0005-0001-7000-8000-000000000001'::uuid, vr.id, true, '2026-02-23T17:47:02.459307+00:00'::timestamptz, false, false
+FROM public.agents_resource ar
+JOIN unnest(COALESCE(ar.voices, ARRAY[]::text[])) AS v(voice) ON true
+JOIN public.voices_resource vr
+  ON vr.voice = v.voice
+ AND vr.active = true
+WHERE ar.id = '018f0005-0006-7000-8000-000000000001'
+ON CONFLICT (agent_id, voice_id) DO NOTHING;

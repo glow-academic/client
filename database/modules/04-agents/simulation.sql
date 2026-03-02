@@ -19,7 +19,7 @@ Rules:
 - Operate only on the resource/entry types specified in the developer instructions
 - Do not invent IDs — use IDs from context
 - Return only valid tool calls, no narrative text', 'Simulation Agent System Prompt', 'System prompt for simulation generation agents that create and manage simulation resources', true, '019c0cd8-ad7d-79da-8469-639662fc6a3f', false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voice, model_id, prompt_id, instruction_ids) VALUES ('2026-02-13T03:41:54.664757+00:00', true, false, false, '019c5517-4673-775e-852f-114fee676a28', 'Simulation', 'AI agent for generating and managing simulation scenario resources including scenarios, scenario positions, scenario flags, and scenario rubric grade agents', '{}', NULL, NULL, '{019bebc4-d436-7c35-9f98-31957504bf95,019bebc4-d436-7cb0-a120-7762b81276c3,019bebc4-d436-7c01-b86b-9483883762a6,019bebc4-d436-7d09-a5fb-d51eae133785,019c06a8-2af5-766c-9713-315ab9567235,019c0cd8-ad73-72dd-8a41-ea5b247384db,019c0cd8-ad73-7621-b92d-91764faa013e,019c0cd8-ad73-781f-a3aa-1f1049dd213c,019c0cd8-ad73-7a10-805f-28e22f591d29,019c06a8-2af6-727b-b94a-71bddc4d76de,019c0cd8-ad73-7b6f-b393-86ceeddd1beb,019c06a8-2af4-7c97-ab30-1e863db0e8e3,019c06a8-2af5-705d-ae92-7905a846a500,7dc39eae-ae96-43d8-bf84-738d775b2780,71082313-23e6-428e-a32f-86ea85aad6bb,019523a0-0020-7000-8000-000000000002}', NULL, NULL, '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019c0cd8-ad7d-79da-8469-639662fc6a3f', '{019c0cd8-ad7e-785c-a3d5-6999d78c5b2c}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voices, model_id, prompt_id, instruction_ids) VALUES ('2026-02-13T03:41:54.664757+00:00', true, false, false, '019c5517-4673-775e-852f-114fee676a28', 'Simulation', 'AI agent for generating and managing simulation scenario resources including scenarios, scenario positions, scenario flags, and scenario rubric grade agents', '{}', 0, 'none', '{019bebc4-d436-7c35-9f98-31957504bf95,019bebc4-d436-7cb0-a120-7762b81276c3,019bebc4-d436-7c01-b86b-9483883762a6,019bebc4-d436-7d09-a5fb-d51eae133785,019c06a8-2af5-766c-9713-315ab9567235,019c0cd8-ad73-72dd-8a41-ea5b247384db,019c0cd8-ad73-7621-b92d-91764faa013e,019c0cd8-ad73-781f-a3aa-1f1049dd213c,019c0cd8-ad73-7a10-805f-28e22f591d29,019c06a8-2af6-727b-b94a-71bddc4d76de,019c0cd8-ad73-7b6f-b393-86ceeddd1beb,019c06a8-2af4-7c97-ab30-1e863db0e8e3,019c06a8-2af5-705d-ae92-7905a846a500,7dc39eae-ae96-43d8-bf84-738d775b2780,71082313-23e6-428e-a32f-86ea85aad6bb,019523a0-0020-7000-8000-000000000002}', NULL, '{}', '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019c0cd8-ad7d-79da-8469-639662fc6a3f', '{019c0cd8-ad7e-785c-a3d5-6999d78c5b2c}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019bb544-1328-7d59-8ae7-68bea0af451c', 'AI agent for generating and managing simulation scenario resources including scenarios, scenario positions, scenario flags, and scenario rubric grade agents', '2026-01-13T02:51:36.094810+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.instructions_resource (id, template, active, created_at, generated, mcp) VALUES ('019c0cd8-ad7e-785c-a3d5-6999d78c5b2c', '## Current State
 {% set draft = artifacts.simulation.get.entries.draft_simulation if artifacts.simulation.get.entries and artifacts.simulation.get.entries.draft_simulation else None %}
@@ -116,6 +116,44 @@ INSERT INTO public.agent_artifact (created_at, updated_at, id, generated, mcp) V
 -- Junctions
 -- agent_agents_junction
 INSERT INTO public.agent_agents_junction (agent_id, agents_id, active, created_at, generated, mcp) VALUES ('dddddddd-dddd-dddd-dddd-dddddddddddd', '019c5517-4673-775e-852f-114fee676a28', true, '2026-02-13T03:41:54.664757+00:00', false, false) ON CONFLICT (agent_id, agents_id) DO NOTHING;
+-- agent_models_junction
+INSERT INTO public.agent_models_junction (agent_id, model_id, active, created_at, generated, mcp)
+SELECT 'dddddddd-dddd-dddd-dddd-dddddddddddd', ar.model_id, true, '2026-02-13T03:41:54.664757+00:00', false, false
+FROM public.agents_resource ar
+WHERE ar.id = '019c5517-4673-775e-852f-114fee676a28'
+  AND ar.model_id IS NOT NULL
+ON CONFLICT (agent_id, model_id) DO NOTHING;
+-- agent_reasoning_levels_junction
+INSERT INTO public.agent_reasoning_levels_junction (agent_id, reasoning_level_id, active, created_at, generated, mcp)
+SELECT 'dddddddd-dddd-dddd-dddd-dddddddddddd', rlr.id, true, '2026-02-13T03:41:54.664757+00:00', false, false
+FROM public.agents_resource ar
+JOIN public.reasoning_levels_resource rlr
+  ON rlr.reasoning_level = ar.reasoning
+ AND rlr.active = true
+WHERE ar.id = '019c5517-4673-775e-852f-114fee676a28'
+  AND ar.reasoning IS NOT NULL
+ON CONFLICT (agent_id, reasoning_level_id) DO NOTHING;
+-- agent_temperature_levels_junction
+INSERT INTO public.agent_temperature_levels_junction (agent_id, temperature_level_id, active, created_at, generated, mcp)
+SELECT 'dddddddd-dddd-dddd-dddd-dddddddddddd', tlr.id, true, '2026-02-13T03:41:54.664757+00:00', false, false
+FROM public.agents_resource ar
+JOIN public.temperature_levels_resource tlr
+  ON tlr.temperature = ar.temperature
+ AND tlr.active = true
+WHERE ar.id = '019c5517-4673-775e-852f-114fee676a28'
+  AND ar.temperature IS NOT NULL
+ON CONFLICT (agent_id, temperature_level_id) DO NOTHING;
+-- agent_voices_junction
+INSERT INTO public.agent_voices_junction (agent_id, voice_id, active, created_at, generated, mcp)
+
+SELECT DISTINCT 'dddddddd-dddd-dddd-dddd-dddddddddddd'::uuid, vr.id, true, '2026-02-13T03:41:54.664757+00:00'::timestamptz, false, false
+FROM public.agents_resource ar
+JOIN unnest(COALESCE(ar.voices, ARRAY[]::text[])) AS v(voice) ON true
+JOIN public.voices_resource vr
+  ON vr.voice = v.voice
+ AND vr.active = true
+WHERE ar.id = '019c5517-4673-775e-852f-114fee676a28'
+ON CONFLICT (agent_id, voice_id) DO NOTHING;
 -- agent_descriptions_junction
 INSERT INTO public.agent_descriptions_junction (agent_id, description_id, created_at, generated, mcp, active) VALUES ('dddddddd-dddd-dddd-dddd-dddddddddddd', '019bb544-1328-7d59-8ae7-68bea0af451c', '2026-01-13T02:51:36.094810+00:00', false, false, true) ON CONFLICT (agent_id, description_id) DO NOTHING;
 -- agent_flags_junction
