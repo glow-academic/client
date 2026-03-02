@@ -19,6 +19,8 @@ from typing import Any
 
 from app.api.v4.auth.access import get_access_internal
 from app.api.v4.entries.attempt.create import create_attempt_entry_internal
+from app.api.v4.entries.attempt.refresh import refresh_attempt_internal
+from app.api.v4.entries.attempt_chat.refresh import refresh_attempt_chat_internal
 from app.api.v4.entries.attempt_home.create import create_attempt_home_entry_internal
 from app.api.v4.entries.attempt_practice.create import (
     create_attempt_practice_entry_internal,
@@ -42,7 +44,6 @@ from app.socket.v5.internal.attempt.types import (
     AttemptErrorData,
     AttemptProceedData,
 )
-from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -216,9 +217,8 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
 
         # Step 2: Refresh MVs so the attempt is visible immediately
         async with get_db_connection() as conn:
-            await conn.execute("REFRESH MATERIALIZED VIEW attempt_mv")
-            await conn.execute("REFRESH MATERIALIZED VIEW attempt_chat_mv")
-        await invalidate_tags(["attempt", "attempts"])
+            await refresh_attempt_internal(conn)
+            await refresh_attempt_chat_internal(conn)
 
         # Step 3: Delegate to attempt_proceed
         await internal_sio.emit(

@@ -10223,6 +10223,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/home_chat/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Home Chat Entries
+         * @description Get home_chat entries by IDs.
+         */
+        post: operations["get_home_chat_entries_api_v4_entries_home_chat_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/home_chat/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Home Chat Entries
+         * @description Search home_chat entries.
+         */
+        post: operations["search_home_chat_entries_api_v4_entries_home_chat_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/home_training/get": {
         parameters: {
             query?: never;
@@ -10977,6 +11017,46 @@ export interface paths {
          * @description Refresh the practice_mv materialized view.
          */
         post: operations["refresh_practice_api_v4_entries_practice_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/practice_chat/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Practice Chat Entries
+         * @description Get practice_chat entries by IDs.
+         */
+        post: operations["get_practice_chat_entries_api_v4_entries_practice_chat_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/practice_chat/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Practice Chat Entries
+         * @description Search practice_chat entries.
+         */
+        post: operations["search_practice_chat_entries_api_v4_entries_practice_chat_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -30025,6 +30105,16 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
+        /** GetHomeChatEntriesApiRequest */
+        GetHomeChatEntriesApiRequest: {
+            /** Ids */
+            ids: string[];
+        };
+        /** GetHomeChatEntriesApiResponse */
+        GetHomeChatEntriesApiResponse: {
+            /** Items */
+            items?: unknown | null;
+        };
         /** GetHomeEntriesApiRequest */
         GetHomeEntriesApiRequest: {
             /** Ids */
@@ -30691,6 +30781,16 @@ export interface components {
         GetPointsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetPointsV4Item"][] | null;
+        };
+        /** GetPracticeChatEntriesApiRequest */
+        GetPracticeChatEntriesApiRequest: {
+            /** Ids */
+            ids: string[];
+        };
+        /** GetPracticeChatEntriesApiResponse */
+        GetPracticeChatEntriesApiResponse: {
+            /** Items */
+            items?: unknown | null;
         };
         /** GetPracticeEntriesApiRequest */
         GetPracticeEntriesApiRequest: {
@@ -32342,8 +32442,8 @@ export interface components {
             id: string;
             /** Template Name */
             template_name?: string | null;
-            /** Arguments */
-            arguments?: string | null;
+            /** File Path */
+            file_path?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -46077,6 +46177,30 @@ export interface components {
             /** Items */
             items?: unknown | null;
         };
+        /** SearchHomeChatEntriesApiRequest */
+        SearchHomeChatEntriesApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Home Id */
+            home_id?: string | null;
+            /** Chat Id */
+            chat_id?: string | null;
+        };
+        /** SearchHomeChatEntriesApiResponse */
+        SearchHomeChatEntriesApiResponse: {
+            /** Items */
+            items?: unknown | null;
+        };
         /** SearchHomeEntriesApiRequest */
         SearchHomeEntriesApiRequest: {
             /** Search */
@@ -46931,6 +47055,30 @@ export interface components {
         SearchPointsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetPointsV4Item"][] | null;
+        };
+        /** SearchPracticeChatEntriesApiRequest */
+        SearchPracticeChatEntriesApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Practice Id */
+            practice_id?: string | null;
+            /** Chat Id */
+            chat_id?: string | null;
+        };
+        /** SearchPracticeChatEntriesApiResponse */
+        SearchPracticeChatEntriesApiResponse: {
+            /** Items */
+            items?: unknown | null;
         };
         /** SearchPracticeEntriesApiRequest */
         SearchPracticeEntriesApiRequest: {
@@ -70492,6 +70640,80 @@ export interface operations {
             };
         };
     };
+    get_home_chat_entries_api_v4_entries_home_chat_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetHomeChatEntriesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetHomeChatEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_home_chat_entries_api_v4_entries_home_chat_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchHomeChatEntriesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchHomeChatEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_home_training_entries_api_v4_entries_home_training_get_post: {
         parameters: {
             query?: never;
@@ -71861,6 +72083,80 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_practice_chat_entries_api_v4_entries_practice_chat_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetPracticeChatEntriesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetPracticeChatEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_practice_chat_entries_api_v4_entries_practice_chat_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchPracticeChatEntriesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchPracticeChatEntriesApiResponse"];
                 };
             };
             /** @description Validation Error */

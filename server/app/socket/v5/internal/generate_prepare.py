@@ -506,6 +506,8 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
             profile_id, artifact_id, payload.draft_id, pool
         )
 
+        bypass_cache = True
+
         # Step 6a: Resolve systems/agents at the final layer
         config_systems = getattr(result, "systems", None) or []
         config_agents = getattr(result, "agents", None) or []
