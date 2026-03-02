@@ -70,6 +70,8 @@ RETURNS TABLE (
     available_sections text[],
     artifacts text[],
     actor_name text,
+    -- Profiles resource ID
+    profiles_id uuid,
     -- Artifact agent IDs
     artifact_agent_ids types.q_get_profile_context_access_v4_artifact_agent[]
 )

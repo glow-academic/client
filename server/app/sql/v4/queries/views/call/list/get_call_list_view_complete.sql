@@ -55,7 +55,8 @@ CREATE TYPE types.q_get_call_list_view_v4_item AS (
     call_id uuid,
     run_id uuid,
     call_created_at timestamptz,
-    arguments_raw text,
+    file_path text,
+    mime_type text,
     tool_id uuid
 );
 
@@ -103,7 +104,8 @@ AS $$
                     call_id,
                     run_id,
                     call_created_at,
-                    arguments_raw,
+                    file_path,
+                    mime_type,
                     tool_id
                 )::types.q_get_call_list_view_v4_item
                 ORDER BY run_id, call_created_at

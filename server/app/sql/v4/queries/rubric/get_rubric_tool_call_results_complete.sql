@@ -34,6 +34,10 @@ BEGIN
 END $$;
 
 -- 3) Recreate function
+-- NOTE: calls_completion_entry was dropped in migration 29.
+-- New calls use upload_id → uploads_entry.file_path for JSON content.
+-- This function reads from uploads_entry when upload_id is available,
+-- otherwise returns empty array (legacy calls without upload_id).
 CREATE OR REPLACE FUNCTION socket_get_rubric_tool_call_results_v4(
     run_id uuid
 )
@@ -43,19 +47,6 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-WITH descriptions_result AS (
-    -- Get descriptions array from standard_description tool_call
-    SELECT CASE WHEN cce.arguments_raw ~ '^[\s]*\{' THEN cce.arguments_raw::jsonb->'descriptions' ELSE NULL END as descriptions
-    FROM calls_entry tc
-    JOIN calls_completion_entry cce ON cce.call_id = tc.id
-    JOIN tools_calls_connection tcj ON tcj.call_id = tc.id
-    JOIN tool_artifact t ON t.id = tcj.tools_id
-    WHERE tc.run_id = $1
-      AND (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = 'standard_description'
-    ORDER BY tc.created_at DESC
-    LIMIT 1
-)
-SELECT 
-    COALESCE((SELECT descriptions FROM descriptions_result), '[]'::jsonb) as descriptions
+SELECT '[]'::jsonb as descriptions
 $$;
 

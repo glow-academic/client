@@ -9923,6 +9923,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/entries/files/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Files Entries
+         * @description Get files entries by IDs.
+         */
+        post: operations["get_files_entries_api_v4_entries_files_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/files/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Files Entries
+         * @description Search files entries.
+         */
+        post: operations["search_files_entries_api_v4_entries_files_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/entries/files/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Files
+         * @description Refresh the files_mv materialized view.
+         */
+        post: operations["refresh_files_api_v4_entries_files_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/entries/grants/get": {
         parameters: {
             query?: never;
@@ -22159,6 +22219,11 @@ export interface components {
          * @description Client-to-server: create a new attempt.
          */
         AttemptStartPayload: {
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Home Id */
             home_id?: string | null;
             /** Practice Id */
@@ -29820,6 +29885,16 @@ export interface components {
              * @default 0
              */
             page_offset: number | null;
+        };
+        /** GetFilesEntriesApiRequest */
+        GetFilesEntriesApiRequest: {
+            /** Ids */
+            ids: string[];
+        };
+        /** GetFilesEntriesApiResponse */
+        GetFilesEntriesApiResponse: {
+            /** Items */
+            items?: unknown | null;
         };
         /** GetFlagsApiRequest */
         GetFlagsApiRequest: {
@@ -45796,6 +45871,30 @@ export interface components {
         SearchFieldsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetFieldsV4Item"][] | null;
+        };
+        /** SearchFilesEntriesApiRequest */
+        SearchFilesEntriesApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Uploads Id */
+            uploads_id?: string | null;
+            /** Mime Type */
+            mime_type?: string | null;
+        };
+        /** SearchFilesEntriesApiResponse */
+        SearchFilesEntriesApiResponse: {
+            /** Items */
+            items?: unknown | null;
         };
         /** SearchFlagsApiRequest */
         SearchFlagsApiRequest: {
@@ -69814,6 +69913,115 @@ export interface operations {
         };
     };
     refresh_field_drafts_api_v4_entries_field_drafts_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_files_entries_api_v4_entries_files_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetFilesEntriesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetFilesEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_files_entries_api_v4_entries_files_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchFilesEntriesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchFilesEntriesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_files_api_v4_entries_files_refresh_post: {
         parameters: {
             query?: never;
             header?: {

@@ -439,7 +439,7 @@ async def get_group(
                                 template_name=tool_name_map.get(call.tool_id)
                                 if call.tool_id
                                 else None,
-                                arguments=call.arguments_raw,
+                                file_path=call.file_path,
                                 created_at=call.call_created_at,
                             )
                         )
@@ -469,7 +469,7 @@ async def get_group(
                             template_name=tool_name_map.get(call.tool_id)
                             if call.tool_id
                             else None,
-                            arguments=call.arguments_raw,
+                            file_path=call.file_path,
                             created_at=call.call_created_at,
                         )
                     )

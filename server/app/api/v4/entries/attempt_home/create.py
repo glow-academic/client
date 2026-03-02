@@ -19,7 +19,9 @@ from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/v4/queries/entries/attempt_home/create_attempt_home_entries_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/queries/entries/attempt_home/create_attempt_home_entries_complete.sql"
+)
 
 ENTRY_TYPE = "attempt_homes"
 
@@ -98,9 +100,7 @@ async def create_attempt_home_entry(
                 detail="run_id is required",
             )
 
-        api_response = await create_attempt_home_entry_internal(
-            conn, request_dict, mcp
-        )
+        api_response = await create_attempt_home_entry_internal(conn, request_dict, mcp)
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 

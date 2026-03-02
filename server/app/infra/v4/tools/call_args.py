@@ -110,44 +110,7 @@ async def record_call_args(
     request_dict: dict,
     mcp: bool = False,
 ) -> None:
-    """Record arg values for a call.
+    """No-op — calls_args_entry and calls_args_args_connection were dropped in migration 29.
 
-    For each arg in the tool's definition, inserts:
-    - calls_args_entry (the value)
-    - calls_args_args_connection (link to args_resource)
+    Kept as a no-op so existing callers don't break. Will be removed in Phase 2.
     """
-    for arg in tool_info.args:
-        if arg.name not in request_dict:
-            continue
-
-        value = request_dict[arg.name]
-        if value is None:
-            continue
-
-        str_val = str(value) if arg.field_type == "string" else None
-        num_val = float(value) if arg.field_type == "number" else None
-        bool_val = bool(value) if arg.field_type == "boolean" else None
-
-        row_id = await conn.fetchval(
-            """
-            INSERT INTO calls_args_entry
-                (call_id, string_value, number_value, boolean_value, mcp)
-            VALUES ($1, $2, $3, $4, $5)
-            RETURNING id
-            """,
-            call_id,
-            str_val,
-            num_val,
-            bool_val,
-            mcp,
-        )
-
-        await conn.execute(
-            """
-            INSERT INTO calls_args_args_connection
-                (calls_args_entry_id, args_id)
-            VALUES ($1, $2)
-            """,
-            row_id,
-            arg.args_id,
-        )

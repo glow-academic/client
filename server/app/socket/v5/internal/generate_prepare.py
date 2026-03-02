@@ -21,8 +21,8 @@ from typing import Any
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.instructions.get import get_instructions_internal
 from app.api.v4.resources.models.get import get_models_internal
-from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.prompts.get import get_prompts_internal
+from app.api.v4.resources.providers.get import get_providers_internal
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.generation_tracker import (
@@ -533,9 +533,7 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
 
         # Build tools_by_id for modality-aware agent selection
         config_tools_all = getattr(result, "tools", None) or []
-        tools_by_id = {
-            t.id: t for t in config_tools_all if getattr(t, "id", None)
-        }
+        tools_by_id = {t.id: t for t in config_tools_all if getattr(t, "id", None)}
 
         model_ids = list({a.model_id for a in config_agents if a.model_id})
         config_models = []
@@ -560,9 +558,9 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
         providers_by_id = {p.id: p for p in config_providers if getattr(p, "id", None)}
 
         # Step 6b: Build agent_groups from systems first, then legacy resource_agent_ids
-        resource_system_ids: dict[str, uuid.UUID] = getattr(
-            result, "resource_system_ids", {}
-        ) or {}
+        resource_system_ids: dict[str, uuid.UUID] = (
+            getattr(result, "resource_system_ids", {}) or {}
+        )
         resource_agent_ids: dict[str, uuid.UUID] = result.resource_agent_ids or {}
 
         systems_by_id = {s.id: s for s in config_systems if s.id}
@@ -594,10 +592,10 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
             for rt in resource_types:
                 system_id = resource_system_ids.get(rt) or default_system_id
                 system = systems_by_id.get(system_id) if system_id else None
-                candidate_agent_ids = (getattr(system, "agent_ids", None) or []) if system else []
-                candidates = [
-                    aid for aid in candidate_agent_ids if aid in agents_by_id
-                ]
+                candidate_agent_ids = (
+                    (getattr(system, "agent_ids", None) or []) if system else []
+                )
+                candidates = [aid for aid in candidate_agent_ids if aid in agents_by_id]
                 if not candidates:
                     continue
 

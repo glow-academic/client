@@ -155,6 +155,7 @@ ENTRY_MODALITIES: dict[tuple[str, str], frozenset[str]] = {
     ("create", "conversations_completions"): _CALL,
     ("create", "emulations"): _CALL,
     ("create", "feedbacks"): _CALL,
+    ("create", "files"): _CALL,
     ("create", "grants"): _CALL,
     ("create", "highlights"): _CALL,
     ("create", "hints"): _CALL,
@@ -266,9 +267,7 @@ def get_tool_output_modalities(
             (operation, name), DEFAULT_OUTPUT_MODALITIES
         )
     for name in entries or []:
-        modalities |= ENTRY_MODALITIES.get(
-            (operation, name), DEFAULT_OUTPUT_MODALITIES
-        )
+        modalities |= ENTRY_MODALITIES.get((operation, name), DEFAULT_OUTPUT_MODALITIES)
     for name in artifacts or []:
         modalities |= ARTIFACT_MODALITIES.get(
             (operation, name), DEFAULT_OUTPUT_MODALITIES

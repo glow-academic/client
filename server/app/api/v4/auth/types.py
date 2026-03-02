@@ -21,8 +21,8 @@ from app.sql.types import (
     QGetDepartmentsV4Item,
     QGetProfileContextV4RoleResource,
     QGetProfileContextV4ThemeTokens,
-    QGetSystemsV4Item,
     QGetSettingsV4Item,
+    QGetSystemsV4Item,
     QGetToolsV4Item,
 )
 

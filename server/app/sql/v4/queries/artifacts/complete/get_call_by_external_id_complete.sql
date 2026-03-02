@@ -22,7 +22,8 @@ CREATE OR REPLACE FUNCTION api_get_call_by_external_id_v4(
 RETURNS TABLE (
     id uuid,
     tool_id uuid,
-    arguments_raw text
+    upload_id uuid,
+    file_path text
 )
 LANGUAGE sql
 STABLE
@@ -30,10 +31,11 @@ AS $$
     SELECT
         c.id,
         tcj.tools_id,
-        cce.arguments_raw
+        c.upload_id,
+        ue.file_path
     FROM calls_entry c
     JOIN tools_calls_connection tcj ON tcj.call_id = c.id
-    LEFT JOIN calls_completion_entry cce ON cce.call_id = c.id
+    LEFT JOIN uploads_entry ue ON ue.id = c.upload_id
     WHERE c.external_call_id = external_call_id
     LIMIT 1;
 $$;

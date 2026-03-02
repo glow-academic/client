@@ -16,12 +16,16 @@ class RunsEntryData(BaseModel):
 class CreateRunsEntrySqlParams(BaseModel):
     session_id: UUID
     group_id: UUID | None = None
+    profiles_id: UUID | None = None
+    agent_ids: list[UUID] | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
         return (
             self.session_id,
             self.group_id,
+            self.profiles_id,
+            self.agent_ids,
             self.mcp,
         )
 

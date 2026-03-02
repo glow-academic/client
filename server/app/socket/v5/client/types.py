@@ -314,6 +314,7 @@ class TestErrorEvent(BaseModel):
 class AttemptStartPayload(BaseModel):
     """Client-to-server: create a new attempt."""
 
+    group_id: UUID
     home_id: UUID | None = None
     practice_id: UUID | None = None
     infinite_mode: bool = False

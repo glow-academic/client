@@ -81,7 +81,7 @@ class GroupDetailCallItem(BaseModel):
 
     id: UUID
     template_name: str | None = None
-    arguments: str | None = None
+    file_path: str | None = None
     created_at: datetime
 
 

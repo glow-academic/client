@@ -291,9 +291,7 @@ def gen_resource_modalities() -> list[tuple[str, str]]:
     # Read current file to determine which resources have modalities
     from app.registry.modalities import RESOURCE_MODALITIES as current
 
-    modalities = generate_resource_modalities(
-        sorted({k for _, k in current.keys()})
-    )
+    modalities = generate_resource_modalities(sorted({k for _, k in current.keys()}))
 
     content = "\n".join(
         [

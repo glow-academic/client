@@ -38,11 +38,6 @@ AS $$
             NOW()
         )
         RETURNING id
-    ),
-    insert_completion AS (
-        INSERT INTO calls_completion_entry (call_id, arguments_raw)
-        SELECT new_call.id, $3
-        FROM new_call
     )
     SELECT new_call.id as call_id
     FROM new_call;

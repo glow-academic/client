@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { AppSocket } from "@/contexts/socket-context";
+import { useGroupId } from "@/contexts/group-context";
 import type { ServerToClientEvents } from "@/lib/ws/types";
 
 // Re-export event types for consumer convenience
@@ -64,6 +65,8 @@ export function useAttemptLifecycle({
   onError,
   onResponseResult,
 }: UseAttemptLifecycleConfig): UseAttemptLifecycleReturn {
+  const { groupId } = useGroupId();
+
   // Store callbacks in refs to avoid re-registering socket listeners on every render
   const callbacksRef = useRef({
     onStarted,
@@ -148,14 +151,15 @@ export function useAttemptLifecycle({
       practiceId?: string;
       infiniteMode?: boolean;
     }) => {
-      if (!socket) return;
+      if (!socket || !groupId) return;
       socket.emit("attempt_start", {
+        group_id: groupId,
         ...(opts.homeId && { home_id: opts.homeId }),
         ...(opts.practiceId && { practice_id: opts.practiceId }),
         infinite_mode: opts.infiniteMode ?? false,
       });
     },
-    [socket],
+    [socket, groupId],
   );
 
   const nextScenario = useCallback(

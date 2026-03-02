@@ -1,5 +1,5 @@
 -- Mark call as completed
--- Inserts into calls_completion_entry for the call matching the given external_call_id
+-- Updates calls_entry.completed_at for the call matching the given external_call_id
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -26,11 +26,10 @@ LANGUAGE plpgsql
 VOLATILE
 AS $$
 BEGIN
-    INSERT INTO calls_completion_entry (call_id)
-    SELECT c.id
-    FROM calls_entry c
-    WHERE c.external_call_id = api_mark_call_completed_v4.external_call_id
-    ON CONFLICT (call_id) DO NOTHING;
+    UPDATE calls_entry
+    SET completed_at = NOW()
+    WHERE calls_entry.external_call_id = api_mark_call_completed_v4.external_call_id
+      AND calls_entry.completed_at IS NULL;
 
     RETURN QUERY SELECT true as updated;
 END;
