@@ -138,6 +138,30 @@ persona_agg AS (
     WHERE tbpc.active = true
     GROUP BY tbpc.chat_id
 ),
+rubric_agg AS (
+    SELECT
+        tbrc.chat_id,
+        ARRAY_AGG(DISTINCT tbrc.rubrics_id ORDER BY tbrc.rubrics_id) AS rubric_ids
+    FROM chat_rubrics_connection tbrc
+    WHERE tbrc.active = true
+    GROUP BY tbrc.chat_id
+),
+standard_agg AS (
+    SELECT
+        tbsc.chat_id,
+        ARRAY_AGG(DISTINCT tbsc.standards_id ORDER BY tbsc.standards_id) AS standard_ids
+    FROM chat_standards_connection tbsc
+    WHERE tbsc.active = true
+    GROUP BY tbsc.chat_id
+),
+standard_group_agg AS (
+    SELECT
+        tbsgc.chat_id,
+        ARRAY_AGG(DISTINCT tbsgc.standard_groups_id ORDER BY tbsgc.standard_groups_id) AS standard_group_ids
+    FROM chat_standard_groups_connection tbsgc
+    WHERE tbsgc.active = true
+    GROUP BY tbsgc.chat_id
+),
 -- Scenario flags: resolved from scenario_flags_junction via scenario_scenarios_junction.
 -- Each bundle has one scenario (via chat_scenarios_connection);
 -- we resolve scenario_artifact via scenario_scenarios_junction
@@ -187,6 +211,9 @@ SELECT
     COALESCE(nm.name_ids, ARRAY[]::uuid[]) AS name_ids,
     COALESCE(dsc.description_ids, ARRAY[]::uuid[]) AS description_ids,
     COALESCE(per.persona_ids, ARRAY[]::uuid[]) AS persona_ids,
+    COALESCE(rub.rubric_ids, ARRAY[]::uuid[]) AS rubric_ids,
+    COALESCE(std.standard_ids, ARRAY[]::uuid[]) AS standard_ids,
+    COALESCE(stg.standard_group_ids, ARRAY[]::uuid[]) AS standard_group_ids,
 
     -- Scenario flags (resolved from scenario_flags_junction — fixed booleans)
     COALESCE(fp.video_enabled, false) AS video_enabled,
@@ -194,6 +221,39 @@ SELECT
     COALESCE(fp.objectives_enabled, false) AS objectives_enabled,
     COALESCE(fp.images_enabled, false) AS images_enabled,
     COALESCE(fp.questions_enabled, false) AS questions_enabled,
+
+    -- Chat entry direct fields
+    tbe."position",
+    tbe.time_limit,
+    tbe.negative_time,
+    tbe.name,
+    tbe.description,
+    tbe.use_custom,
+    tbe.use_previous,
+    tbe.audio_enabled,
+    tbe.text_enabled,
+    tbe.hints_enabled,
+    tbe.copy_paste_allowed,
+    tbe.show_images,
+    tbe.show_objectives,
+    tbe.show_problem_statement,
+    tbe.analyses_enabled,
+    tbe.improvements_enabled,
+    tbe.replacements_enabled,
+    tbe.strengths_enabled,
+
+    -- Generate flags
+    tbe.generate_problem_statements,
+    tbe.generate_objectives,
+    tbe.generate_videos,
+    tbe.generate_images,
+    tbe.generate_questions,
+    tbe.generate_names,
+    tbe.generate_descriptions,
+    tbe.generate_personas,
+    tbe.generate_documents,
+    tbe.generate_options,
+    tbe.generate_parameter_fields,
 
     tbe.created_at,
     tbe.updated_at,
@@ -216,6 +276,9 @@ LEFT JOIN flag_agg flg ON flg.chat_id = tbe.id
 LEFT JOIN name_agg nm ON nm.chat_id = tbe.id
 LEFT JOIN description_agg dsc ON dsc.chat_id = tbe.id
 LEFT JOIN persona_agg per ON per.chat_id = tbe.id
+LEFT JOIN rubric_agg rub ON rub.chat_id = tbe.id
+LEFT JOIN standard_agg std ON std.chat_id = tbe.id
+LEFT JOIN standard_group_agg stg ON stg.chat_id = tbe.id
 LEFT JOIN flag_pivot fp ON fp.chat_id = tbe.id
 WHERE tbe.active = true
 WITH NO DATA;
