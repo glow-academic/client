@@ -1,5 +1,8 @@
 """Canonical messages entry type — single source of truth for entry fields."""
 
+from datetime import datetime
+from uuid import UUID
+
 from pydantic import BaseModel
 
 
@@ -12,3 +15,28 @@ class MessagesEntryData(BaseModel):
     role: str | None = None
     text_id: str | None = None
     call_id: str | None = None
+
+
+class CreateMessagesEntrySqlParams(BaseModel):
+    run_id: UUID
+    role: str
+    chat_id: UUID | None = None
+    mcp: bool = False
+
+    def to_tuple(self) -> tuple:
+        return (
+            self.run_id,
+            self.role,
+            self.chat_id,
+            self.mcp,
+        )
+
+
+class CreateMessagesEntrySqlRow(BaseModel):
+    id: UUID
+    created_at: datetime
+
+
+class CreateMessagesEntryResponse(BaseModel):
+    id: UUID
+    created_at: datetime

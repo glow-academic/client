@@ -21,9 +21,7 @@ async def create_texts_entry_internal(
     mcp: bool = False,
 ) -> CreateTextsEntryResponse:
     """Create a texts entry. Internal only — no HTTP route."""
-    params = CreateTextsEntrySqlParams(
-        session_id=session_id, mcp=mcp
-    )
+    params = CreateTextsEntrySqlParams(session_id=session_id, mcp=mcp)
 
     result = cast(
         CreateTextsEntrySqlRow,

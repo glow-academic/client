@@ -31,11 +31,12 @@ AS $$
     SELECT
         c.id,
         tcj.tools_id,
-        c.upload_id,
+        cue.upload_id,
         ue.file_path
     FROM calls_entry c
     JOIN tools_calls_connection tcj ON tcj.call_id = c.id
-    LEFT JOIN uploads_entry ue ON ue.id = c.upload_id
+    LEFT JOIN call_uploads_entry cue ON cue.call_id = c.id AND cue.active = true
+    LEFT JOIN uploads_entry ue ON ue.id = cue.upload_id
     WHERE c.external_call_id = external_call_id
     LIMIT 1;
 $$;

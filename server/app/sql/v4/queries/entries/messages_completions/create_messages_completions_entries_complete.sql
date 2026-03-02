@@ -15,8 +15,8 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION public.api_create_messages_completions_entry_v4(
-    session_id uuid,
     message_id uuid,
+    session_id uuid DEFAULT NULL,
     mcp boolean DEFAULT false
 ) RETURNS TABLE (id uuid)
 LANGUAGE plpgsql AS $$

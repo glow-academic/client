@@ -17,7 +17,7 @@ SQL_PATH = "app/sql/v4/queries/entries/runs/create_runs_entries_complete.sql"
 
 async def create_runs_entry_internal(
     conn: asyncpg.Connection,
-    session_id: UUID,
+    session_id: UUID | None = None,
     group_id: UUID | None = None,
     profiles_id: UUID | None = None,
     agent_ids: list[UUID] | None = None,

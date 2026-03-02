@@ -56,9 +56,15 @@ BEGIN
     RETURNING debug_info_entry.id INTO v_entry_id;
 
     -- 5. Create message
-    INSERT INTO messages_entry (run_id, call_id, role, text_id, generated, mcp)
-    VALUES (api_create_debug_info_entry_v4.run_id, v_call_id, 'assistant', v_text_id, true, api_create_debug_info_entry_v4.mcp)
+    INSERT INTO messages_entry (run_id, role, generated, mcp)
+    VALUES (api_create_debug_info_entry_v4.run_id, 'assistant', true, api_create_debug_info_entry_v4.mcp)
     RETURNING messages_entry.id INTO v_message_id;
+
+    -- Link upload to message
+    IF api_create_debug_info_entry_v4.upload_id IS NOT NULL THEN
+        INSERT INTO message_uploads_entry (message_id, upload_id)
+        VALUES (v_message_id, api_create_debug_info_entry_v4.upload_id);
+    END IF;
 
     RETURN QUERY SELECT v_entry_id, v_call_id, v_message_id;
 END; $$;

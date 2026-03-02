@@ -1,4 +1,4 @@
--- Create messages entry via generic api_create_entry_record_v4
+-- Create messages entry with strongly-typed params
 
 DO $$
 DECLARE
@@ -15,22 +15,27 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION public.api_create_messages_entry_v4(
-    call_id uuid DEFAULT NULL,
-    mcp boolean DEFAULT false,
-    entry_data jsonb DEFAULT '{}'::jsonb
-) RETURNS TABLE(
-    id uuid,
-    already_exists boolean
-)
-LANGUAGE plpgsql
-AS $$
+    run_id uuid,
+    role message_type,
+    chat_id uuid DEFAULT NULL,
+    mcp boolean DEFAULT false
+) RETURNS TABLE (id uuid, created_at timestamptz)
+LANGUAGE plpgsql AS $$
+DECLARE
+    v_id uuid;
+    v_created_at timestamptz;
 BEGIN
-    RETURN QUERY
-    SELECT * FROM api_create_entry_record_v4(
-        entry_type := 'messages',
-        call_id := call_id,
-        mcp := mcp,
-        entry_data := entry_data
-    );
-END;
-$$;
+    v_created_at := NOW();
+
+    INSERT INTO messages_entry (run_id, role, created_at, updated_at, mcp, generated)
+    VALUES (api_create_messages_entry_v4.run_id, api_create_messages_entry_v4.role, v_created_at, v_created_at, api_create_messages_entry_v4.mcp, true)
+    RETURNING messages_entry.id INTO v_id;
+
+    -- If chat_id provided, also create attempt_message_entry link
+    IF api_create_messages_entry_v4.chat_id IS NOT NULL THEN
+        INSERT INTO attempt_message_entry (id, chat_id)
+        VALUES (v_id, api_create_messages_entry_v4.chat_id);
+    END IF;
+
+    RETURN QUERY SELECT v_id, v_created_at;
+END; $$;

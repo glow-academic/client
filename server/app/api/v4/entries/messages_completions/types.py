@@ -14,14 +14,14 @@ class MessagesCompletionsEntryData(BaseModel):
 
 
 class CreateMessagesCompletionsEntrySqlParams(BaseModel):
-    session_id: UUID
+    session_id: UUID | None = None
     message_id: UUID
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
         return (
-            self.session_id,
             self.message_id,
+            self.session_id,
             self.mcp,
         )
 

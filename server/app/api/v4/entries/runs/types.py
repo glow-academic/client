@@ -14,7 +14,7 @@ class RunsEntryData(BaseModel):
 
 
 class CreateRunsEntrySqlParams(BaseModel):
-    session_id: UUID
+    session_id: UUID | None = None
     group_id: UUID | None = None
     profiles_id: UUID | None = None
     agent_ids: list[UUID] | None = None

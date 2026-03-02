@@ -37,10 +37,15 @@ WITH upload_row AS (
     RETURNING id
 ),
 insert_image_entry AS (
-    INSERT INTO images_entry (upload_id, active, generated, mcp)
-    SELECT upload_row.id, true, true, false
-    FROM upload_row
-    RETURNING id AS image_entry_id, upload_id AS entry_upload_id
+    INSERT INTO images_entry (active, generated, mcp)
+    VALUES (true, true, false)
+    RETURNING id AS image_entry_id
+),
+link_upload AS (
+    INSERT INTO image_uploads_entry (image_id, upload_id)
+    SELECT iie.image_entry_id, upload_row.id
+    FROM insert_image_entry iie, upload_row
+    RETURNING image_id
 ),
 link_image AS (
     INSERT INTO images_images_connection (image_id, images_id)

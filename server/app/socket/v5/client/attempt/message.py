@@ -17,6 +17,17 @@ All attempt_* emits go to internal bus → internal/ handlers (DB) → server/ h
 import uuid
 from typing import Any
 
+from app.api.v4.entries.attempt_chat.get import get_attempt_chat_entries_internal
+from app.api.v4.entries.attempt_message.refresh import refresh_attempt_message_internal
+from app.api.v4.entries.attempt_message_tree.create import (
+    create_attempt_message_tree_entry_internal,
+)
+from app.api.v4.entries.attempt_message_tree.refresh import (
+    refresh_attempt_message_tree_internal,
+)
+from app.api.v4.entries.messages.create import create_messages_entry_internal
+from app.api.v4.entries.messages.search import search_messages_entries_internal
+from app.api.v4.entries.runs.create import create_runs_entry_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
@@ -76,10 +87,25 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
 
         async with get_db_connection() as conn:
             # Step 1: Resolve group_id from attempt_chat_entry
-            group_id = await conn.fetchval(
-                "SELECT group_id FROM attempt_chat_entry WHERE id = $1",
-                chat_id,
+            chat_entries = await get_attempt_chat_entries_internal(
+                conn, [chat_id], bypass_cache=True
             )
+
+            if not chat_entries:
+                await internal_sio.emit(
+                    "attempt_error",
+                    AttemptErrorData(
+                        sid=sid,
+                        error_type="send",
+                        message="No group found for chat",
+                        chat_id=str(chat_id),
+                    ).model_dump(mode="json"),
+                )
+                return
+
+            group_id = chat_entries[0].get("group_id")
+            if group_id and isinstance(group_id, str):
+                group_id = uuid.UUID(group_id)
 
             if not group_id:
                 await internal_sio.emit(
@@ -93,22 +119,21 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
                 )
                 return
 
-            # Step 2: Create run + profile link
-            run_id = await conn.fetchval(
-                """INSERT INTO runs_entry (group_id)
-                VALUES ($1) RETURNING id""",
-                group_id,
-            )
-
-            await conn.execute(
-                """INSERT INTO profiles_runs_connection (profiles_id, run_id)
-                SELECT ppj.profiles_id, $2
+            # Step 2: Resolve profiles_id + create run
+            profiles_id = await conn.fetchval(
+                """SELECT ppj.profiles_id
                 FROM profile_profiles_junction ppj
                 WHERE ppj.profile_id = $1
                 LIMIT 1""",
                 profile_id,
-                run_id,
             )
+
+            run_result = await create_runs_entry_internal(
+                conn,
+                group_id=group_id,
+                profiles_id=profiles_id,
+            )
+            run_id = run_result.id
 
         # Step 3: Emit user_received_start → internal handler creates message shell
         await internal_sio.emit(
@@ -137,51 +162,44 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
 
         # Step 5: Create assistant placeholder + emit assistant_start
         async with get_db_connection() as conn:
-            created_at = await conn.fetchval("SELECT NOW()")
-
-            assistant_message_id = await conn.fetchval(
-                """INSERT INTO messages_entry (run_id, role, created_at, updated_at)
-                VALUES ($1, 'assistant'::message_type, $2, $2)
-                RETURNING id""",
-                run_id,
-                created_at,
+            assistant_result = await create_messages_entry_internal(
+                conn,
+                run_id=run_id,
+                role="assistant",
+                chat_id=chat_id,
             )
-
-            await conn.execute(
-                """INSERT INTO attempt_message_entry (id, chat_id)
-                VALUES ($1, $2)""",
-                assistant_message_id,
-                chat_id,
-            )
+            assistant_message_id = assistant_result.id
+            created_at = assistant_result.created_at
 
             # Step 5a: Insert tree edges for message branching
             # Look up the user message_id just created in this run
-            user_message_id = await conn.fetchval(
-                """SELECT me.id FROM messages_entry me
-                JOIN attempt_message_entry ame ON ame.id = me.id
-                WHERE me.run_id = $1 AND me.role = 'user'::message_type
-                LIMIT 1""",
-                run_id,
+            messages = await search_messages_entries_internal(
+                conn, run_id=run_id, bypass_cache=True
             )
+            user_message_id = None
+            for msg in messages:
+                if msg.get("role") == "user":
+                    msg_id = msg.get("id")
+                    if msg_id:
+                        user_message_id = (
+                            uuid.UUID(msg_id) if isinstance(msg_id, str) else msg_id
+                        )
+                    break
 
             if user_message_id:
                 # If forking from an existing message, link parent -> user
                 if payload.parent_message_id:
-                    await conn.execute(
-                        """INSERT INTO attempt_message_tree_entry (parent_id, child_id)
-                        VALUES ($1, $2)
-                        ON CONFLICT (parent_id, child_id) DO NOTHING""",
-                        payload.parent_message_id,
-                        user_message_id,
+                    await create_attempt_message_tree_entry_internal(
+                        conn,
+                        parent_id=payload.parent_message_id,
+                        child_id=user_message_id,
                     )
 
                 # Always link user -> assistant
-                await conn.execute(
-                    """INSERT INTO attempt_message_tree_entry (parent_id, child_id)
-                    VALUES ($1, $2)
-                    ON CONFLICT (parent_id, child_id) DO NOTHING""",
-                    user_message_id,
-                    assistant_message_id,
+                await create_attempt_message_tree_entry_internal(
+                    conn,
+                    parent_id=user_message_id,
+                    child_id=assistant_message_id,
                 )
 
         await internal_sio.emit(
@@ -196,12 +214,8 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
 
         # Step 5b: Refresh MVs so generate_prepare sees the new message
         async with get_db_connection() as conn:
-            await conn.execute(
-                "REFRESH MATERIALIZED VIEW CONCURRENTLY attempt_message_mv"
-            )
-            await conn.execute(
-                "REFRESH MATERIALIZED VIEW CONCURRENTLY attempt_message_tree_mv"
-            )
+            await refresh_attempt_message_internal(conn)
+            await refresh_attempt_message_tree_internal(conn)
 
         # Step 5c: Invalidate attempt caches so generate_prepare fetches fresh data
         await invalidate_tags(["attempt", "messages"])

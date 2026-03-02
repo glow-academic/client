@@ -15,7 +15,7 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION public.api_create_runs_entry_v4(
-    session_id uuid,
+    session_id uuid DEFAULT NULL,
     group_id uuid DEFAULT NULL,
     profiles_id uuid DEFAULT NULL,
     agent_ids uuid[] DEFAULT NULL,

@@ -59,13 +59,14 @@ messages_data AS (
         fc.content,
         m.created_at,
         (mc.message_id IS NOT NULL) AS completed,
-        ar.upload_id,
+        aue.upload_id,
         array_position(p.message_ids, m.id) as pos
     FROM params p
     CROSS JOIN unnest(p.message_ids) AS msg_id
     JOIN messages_entry m ON m.id = msg_id
     LEFT JOIN first_content fc ON fc.message_id = m.id
     LEFT JOIN audios_entry ar ON ar.message_id = m.id AND ar.active = true
+    LEFT JOIN audio_uploads_entry aue ON aue.audio_id = ar.id AND aue.active = true
     LEFT JOIN LATERAL (
         SELECT message_id FROM messages_completions_entry
         WHERE message_id = m.id AND active = TRUE ORDER BY created_at DESC LIMIT 1

@@ -1,4 +1,4 @@
--- Create attempt_message_tree entry via generic api_create_entry_record_v4
+-- Create attempt_message_tree entry with strongly-typed params
 
 DO $$
 DECLARE
@@ -15,22 +15,20 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION public.api_create_attempt_message_tree_entry_v4(
-    call_id uuid DEFAULT NULL,
-    mcp boolean DEFAULT false,
-    entry_data jsonb DEFAULT '{}'::jsonb
-) RETURNS TABLE(
-    id uuid,
-    already_exists boolean
-)
-LANGUAGE plpgsql
-AS $$
+    parent_id uuid,
+    child_id uuid,
+    mcp boolean DEFAULT false
+) RETURNS TABLE (id uuid)
+LANGUAGE plpgsql AS $$
+DECLARE
+    v_id uuid;
 BEGIN
-    RETURN QUERY
-    SELECT * FROM api_create_entry_record_v4(
-        entry_type := 'attempt_message_tree',
-        call_id := call_id,
-        mcp := mcp,
-        entry_data := entry_data
-    );
-END;
-$$;
+    INSERT INTO attempt_message_tree_entry (parent_id, child_id, mcp, generated)
+    VALUES (api_create_attempt_message_tree_entry_v4.parent_id, api_create_attempt_message_tree_entry_v4.child_id, api_create_attempt_message_tree_entry_v4.mcp, true)
+    ON CONFLICT (parent_id, child_id) DO NOTHING
+    RETURNING attempt_message_tree_entry.id INTO v_id;
+
+    IF v_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_id;
+    END IF;
+END; $$;

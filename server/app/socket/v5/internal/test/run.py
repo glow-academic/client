@@ -94,7 +94,8 @@ async def test_run_handler(data: dict[str, Any]) -> None:
                     me.created_at
                 FROM messages_entry me
                 LEFT JOIN texts_entry te ON te.id = me.text_id
-                LEFT JOIN uploads_entry ue ON ue.id = te.upload_id
+                LEFT JOIN text_uploads_entry tue ON tue.text_id = te.id AND tue.active = true
+                LEFT JOIN uploads_entry ue ON ue.id = tue.upload_id
                 WHERE me.run_id = $1 AND me.active = true
                 ORDER BY me.created_at""",
                 original_run_id,
@@ -129,20 +130,34 @@ async def test_run_handler(data: dict[str, Any]) -> None:
 
                 # Create text entry
                 text_id = await conn.fetchval(
-                    """INSERT INTO texts_entry (upload_id)
-                    VALUES ($1) RETURNING id""",
+                    """INSERT INTO texts_entry DEFAULT VALUES RETURNING id""",
+                )
+
+                # Link upload to text entry
+                await conn.execute(
+                    """INSERT INTO text_uploads_entry (text_id, upload_id)
+                    VALUES ($1, $2)""",
+                    text_id,
                     upload_id,
                 )
 
                 # Create message entry
-                await conn.execute(
-                    """INSERT INTO messages_entry (run_id, role, text_id, created_at, updated_at)
-                    VALUES ($1, $2::message_type, $3, $4, $4)""",
+                message_id = await conn.fetchval(
+                    """INSERT INTO messages_entry (run_id, role, created_at, updated_at)
+                    VALUES ($1, $2::message_type, $3, $3) RETURNING id""",
                     new_run_id,
                     msg["role"],
-                    text_id,
                     msg["created_at"],
                 )
+
+                # Link upload to message
+                if upload_id:
+                    await conn.execute(
+                        """INSERT INTO message_uploads_entry (message_id, upload_id)
+                        VALUES ($1, $2)""",
+                        message_id,
+                        upload_id,
+                    )
 
             # Step 4: Create assistant placeholder
             created_at = await conn.fetchval("SELECT NOW()")

@@ -17,8 +17,8 @@ SQL_PATH = "app/sql/v4/queries/entries/messages_completions/create_messages_comp
 
 async def create_messages_completions_entry_internal(
     conn: asyncpg.Connection,
-    session_id: UUID,
     message_id: UUID,
+    session_id: UUID | None = None,
     mcp: bool = False,
 ) -> CreateMessagesCompletionsEntryResponse:
     """Create a messages_completions entry. Internal only — no HTTP route."""

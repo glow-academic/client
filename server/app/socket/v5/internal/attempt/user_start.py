@@ -9,6 +9,7 @@ Shared by both text and audio paths.
 import uuid
 from typing import Any
 
+from app.api.v4.entries.messages.create import create_messages_entry_internal
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio
 from app.socket.v5.internal.attempt.types import AttemptUserStartData
@@ -30,22 +31,11 @@ async def handle_user_received_start(data: dict[str, Any]) -> None:
 
     try:
         async with get_db_connection() as conn:
-            created_at = await conn.fetchval("SELECT NOW()")
-
-            # Create message shell (no content yet — that comes at complete)
-            message_id = await conn.fetchval(
-                """INSERT INTO messages_entry (run_id, role, created_at, updated_at)
-                VALUES ($1, 'user'::message_type, $2, $2)
-                RETURNING id""",
-                uuid.UUID(run_id),
-                created_at,
-            )
-
-            await conn.execute(
-                """INSERT INTO attempt_message_entry (id, chat_id)
-                VALUES ($1, $2)""",
-                message_id,
-                uuid.UUID(chat_id),
+            result = await create_messages_entry_internal(
+                conn,
+                run_id=uuid.UUID(run_id),
+                role="user",
+                chat_id=uuid.UUID(chat_id),
             )
 
         await internal_sio.emit(
@@ -53,8 +43,8 @@ async def handle_user_received_start(data: dict[str, Any]) -> None:
             AttemptUserStartData(
                 sid=sid,
                 chat_id=chat_id,
-                message_id=str(message_id),
-                created_at=created_at.isoformat() if created_at else "",
+                message_id=str(result.id),
+                created_at=result.created_at.isoformat() if result.created_at else "",
                 item_id=data.get("item_id"),
                 rooms=data.get("rooms"),
             ).model_dump(mode="json"),

@@ -13,34 +13,32 @@ inserted_text AS (
     WHERE NOT EXISTS (SELECT 1 FROM existing_text)
     RETURNING id
 ),
-link_upload AS (
+link_text_upload AS (
     INSERT INTO text_uploads_entry (text_id, upload_id)
     SELECT it.id, $3::uuid
     FROM inserted_text it
     RETURNING text_id AS id
 ),
-resolved_text AS (
-    SELECT id FROM existing_text
-    UNION ALL
-    SELECT id FROM inserted_text
-    LIMIT 1
-),
 new_message AS (
     INSERT INTO messages_entry (
         run_id,
         role,
-        text_id,
         created_at,
         updated_at
     )
-    SELECT
+    VALUES (
         $1::uuid,
         $2::message_type,
-        rt.id,
         NOW(),
         NOW()
-    FROM resolved_text rt
+    )
     RETURNING id
+),
+link_message_upload AS (
+    INSERT INTO message_uploads_entry (message_id, upload_id)
+    SELECT nm.id, $3::uuid
+    FROM new_message nm
+    RETURNING message_id AS id
 ),
 -- Mark as completed if requested (append-only)
 mark_completed AS (

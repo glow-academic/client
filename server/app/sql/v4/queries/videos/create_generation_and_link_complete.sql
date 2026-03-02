@@ -52,10 +52,15 @@ final_upload_id AS (
     SELECT COALESCE((SELECT upload_id FROM params), (SELECT new_upload_id FROM insert_upload LIMIT 1)) as upload_id
 ),
 insert_video_entry AS (
-    INSERT INTO videos_entry (upload_id, active, generated, mcp)
-    SELECT fi.upload_id, true, true, false
-    FROM final_upload_id fi
-    RETURNING id as video_entry_id, upload_id
+    INSERT INTO videos_entry (active, generated, mcp)
+    VALUES (true, true, false)
+    RETURNING id as video_entry_id
+),
+link_video_upload AS (
+    INSERT INTO video_uploads_entry (video_id, upload_id)
+    SELECT ive.video_entry_id, fi.upload_id
+    FROM insert_video_entry ive, final_upload_id fi
+    RETURNING video_id
 ),
 link_video AS (
     INSERT INTO videos_videos_connection (video_id, videos_id)

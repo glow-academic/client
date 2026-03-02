@@ -30,7 +30,8 @@ AS $$
     JOIN texts_resource tr ON tr.id = dr.text_id
     JOIN texts_texts_connection ttc ON ttc.texts_id = tr.id AND ttc.active = true
     JOIN texts_entry te ON te.id = ttc.text_id AND te.active = true
-    LEFT JOIN uploads_entry ue ON ue.id = te.upload_id
+    LEFT JOIN text_uploads_entry tue ON tue.text_id = te.id AND tue.active = true
+    LEFT JOIN uploads_entry ue ON ue.id = tue.upload_id
     WHERE dr.id = p_id
       AND dr.text_id IS NOT NULL;
 $$;

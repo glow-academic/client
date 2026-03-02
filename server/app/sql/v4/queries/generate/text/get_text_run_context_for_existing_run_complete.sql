@@ -459,7 +459,8 @@ upload_info AS (
     FROM params p
     JOIN messages_entry m ON m.run_id = p.run_id
     JOIN audios_entry ar ON ar.message_id = m.id AND ar.active = true
-    JOIN uploads_entry u ON u.id = ar.upload_id
+    JOIN audio_uploads_entry aue ON aue.audio_id = ar.id AND aue.active = true
+    JOIN uploads_entry u ON u.id = aue.upload_id
     LIMIT 1
 ),
 -- Context data with agent config

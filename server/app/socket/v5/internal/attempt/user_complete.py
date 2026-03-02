@@ -9,6 +9,12 @@ Shared by both text and audio paths.
 import uuid
 from typing import Any
 
+from app.api.v4.entries.attempt_content.create import (
+    create_attempt_content_entry_internal,
+)
+from app.api.v4.entries.messages_completions.create import (
+    create_messages_completions_entry_internal,
+)
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio
 from app.socket.v5.internal.attempt.types import AttemptUserCompleteData
@@ -35,6 +41,7 @@ async def handle_user_received_complete(data: dict[str, Any]) -> None:
     try:
         async with get_db_connection() as conn:
             # Find the open (uncompleted) user message for this chat + run
+            # Cross-table query across messages_entry + attempt_message_entry + messages_completions_entry
             row = await conn.fetchrow(
                 """SELECT me.id, me.created_at
                 FROM messages_entry me
@@ -62,12 +69,14 @@ async def handle_user_received_complete(data: dict[str, Any]) -> None:
             created_at = row["created_at"]
 
             # Write content
-            await conn.execute(
-                """INSERT INTO attempt_content_entry (message_id, content, persona_id)
-                VALUES ($1, $2, $3)""",
-                message_id,
-                content,
-                STUDENT_PERSONA_ID,
+            await create_attempt_content_entry_internal(
+                conn,
+                {
+                    "message_id": message_id,
+                    "content": content,
+                    "persona_id": STUDENT_PERSONA_ID,
+                },
+                run_id=uuid.UUID(run_id),
             )
 
             # Link audio upload if present (audios → audio_uploads → message_audios)
@@ -92,10 +101,9 @@ async def handle_user_received_complete(data: dict[str, Any]) -> None:
                 )
 
             # Mark message as complete
-            await conn.execute(
-                """INSERT INTO messages_completions_entry (message_id)
-                VALUES ($1)""",
-                message_id,
+            await create_messages_completions_entry_internal(
+                conn,
+                message_id=message_id,
             )
 
         await internal_sio.emit(

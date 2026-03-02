@@ -58,7 +58,7 @@ SELECT COALESCE(
             i.id,
             i.name,
             COALESCE(i.description, ''),
-            ie.upload_id,
+            iue.upload_id,
             COALESCE(i.generated, false)
         )::types.q_get_image_resource_v4_item
     ),
@@ -67,6 +67,7 @@ SELECT COALESCE(
 FROM images_resource i
 LEFT JOIN images_images_connection iic ON iic.images_id = i.id AND iic.active = true
 LEFT JOIN images_entry ie ON ie.id = iic.image_id AND ie.active = true
+LEFT JOIN image_uploads_entry iue ON iue.image_id = ie.id AND iue.active = true
 WHERE i.id = api_get_image_resource_v4.image_id
   AND i.active = true;
 $$;
