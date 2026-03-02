@@ -44,6 +44,7 @@ from app.api.v4.entries.grants import router as grants_router
 from app.api.v4.entries.groups import router as groups_router
 from app.api.v4.entries.health import router as health_router
 from app.api.v4.entries.home import router as home_router
+from app.api.v4.entries.home_chat import router as home_chat_router
 from app.api.v4.entries.home_training import router as home_training_router
 from app.api.v4.entries.images import router as images_router
 from app.api.v4.entries.logins import router as logins_router
@@ -58,6 +59,7 @@ from app.api.v4.entries.parameter_drafts import router as parameter_drafts_route
 from app.api.v4.entries.persona import router as persona_router
 from app.api.v4.entries.persona_drafts import router as persona_drafts_router
 from app.api.v4.entries.practice import router as practice_router
+from app.api.v4.entries.practice_chat import router as practice_chat_router
 from app.api.v4.entries.practice_training import router as practice_training_router
 from app.api.v4.entries.problems import router as problems_router
 from app.api.v4.entries.profile_drafts import router as profile_drafts_router
@@ -132,6 +134,7 @@ router.include_router(grants_router)
 router.include_router(groups_router)
 router.include_router(health_router)
 router.include_router(home_router)
+router.include_router(home_chat_router)
 router.include_router(home_training_router)
 router.include_router(images_router)
 router.include_router(logins_router)
@@ -144,6 +147,7 @@ router.include_router(parameter_drafts_router)
 router.include_router(persona_router)
 router.include_router(persona_drafts_router)
 router.include_router(practice_router)
+router.include_router(practice_chat_router)
 router.include_router(practice_training_router)
 router.include_router(problems_router)
 router.include_router(profile_drafts_router)

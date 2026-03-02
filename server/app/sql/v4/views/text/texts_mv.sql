@@ -7,7 +7,7 @@
 -- Purpose: Text entry metadata (content, content_hash)
 -- Section: TEXT (lean MV)
 --
--- Dependencies: texts_resource, texts_texts_connection, texts_entry
+-- Dependencies: texts_resource, texts_texts_connection, texts_entry, uploads_entry, uploads_uploads_connection, uploads_resource
 -- ============================================================================
 -- Step 1: Drop all indexes on texts_mv materialized view (if it exists)
 -- ============================================================================
@@ -40,12 +40,18 @@ CREATE MATERIALIZED VIEW texts_mv AS
 SELECT
     tr.id        AS texts_id,
     te.id        AS text_id,
+    ur.id        AS uploads_id,
+    ue.file_path,
+    ue.mime_type,
     te.content,
     te.content_hash,
     te.created_at
 FROM texts_resource tr
 JOIN texts_texts_connection ttc ON ttc.texts_id = tr.id AND ttc.active = true
 JOIN texts_entry te ON te.id = ttc.text_id AND te.active = true
+LEFT JOIN uploads_entry ue ON ue.id = te.upload_id AND ue.active = true
+LEFT JOIN uploads_uploads_connection uuc ON uuc.upload_id = ue.id AND uuc.active = true
+LEFT JOIN uploads_resource ur ON ur.id = uuc.uploads_id AND ur.active = true
 WHERE tr.active = true
 WITH NO DATA;
 
@@ -65,6 +71,9 @@ CREATE INDEX texts_mv_texts_id_idx
 
 CREATE INDEX texts_mv_text_id_idx
     ON texts_mv (text_id);
+
+CREATE INDEX texts_mv_uploads_id_idx
+    ON texts_mv (uploads_id);
 
 CREATE INDEX texts_mv_content_hash_idx
     ON texts_mv (content_hash);

@@ -7,7 +7,7 @@
 -- Purpose: Exposes tool_id (resource ID) — name resolved in hydration layer
 -- Section: CALL (lean MV - used by group detail artifact)
 --
--- Dependencies: calls_entry, uploads_entry, tools_calls_connection
+-- Dependencies: calls_entry, uploads_entry, uploads_uploads_connection, uploads_resource, tools_calls_connection
 -- ============================================================================
 -- Step 1: Drop all indexes on calls_mv materialized view (if it exists)
 -- ============================================================================
@@ -41,11 +41,14 @@ SELECT
     c.id AS call_id,
     c.run_id,
     c.created_at AS call_created_at,
+    ur.id AS uploads_id,
     ue.file_path,
     ue.mime_type,
     tcc.tools_id AS tool_id
 FROM calls_entry c
 LEFT JOIN uploads_entry ue ON ue.id = c.upload_id AND ue.active = true
+LEFT JOIN uploads_uploads_connection uuc ON uuc.upload_id = ue.id AND uuc.active = true
+LEFT JOIN uploads_resource ur ON ur.id = uuc.uploads_id AND ur.active = true
 LEFT JOIN tools_calls_connection tcc ON tcc.call_id = c.id
 WHERE c.run_id IS NOT NULL
 WITH NO DATA;
@@ -64,6 +67,10 @@ CREATE UNIQUE INDEX calls_mv_pk
 -- Run ID for filtering
 CREATE INDEX calls_mv_run_id_idx
     ON calls_mv (run_id);
+
+-- Upload ID for media resolution
+CREATE INDEX calls_mv_uploads_id_idx
+    ON calls_mv (uploads_id);
 
 -- Composite: run + created_at (common query pattern)
 CREATE INDEX calls_mv_run_created_at_idx

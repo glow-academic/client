@@ -24,6 +24,11 @@ from app.api.v4.resources.models.get import get_models_internal
 from app.api.v4.resources.prompts.get import get_prompts_internal
 from app.api.v4.resources.providers.get import get_providers_internal
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
+from app.infra.v4.generation.media_context import (
+    has_media_sentinels,
+    post_process_media_sentinels,
+    wrap_media_entries,
+)
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.generation_tracker import (
     init_generation,
@@ -678,6 +683,9 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
 
         jinja_context_base = _build_namespaced_context(artifact_results, entry_results)
 
+        # Wrap the 6 media entry types with MediaItem so .media is available
+        wrap_media_entries(jinja_context_base)
+
         # Step 9: Read all tools, enrich, and build createable set (shared)
         config_tools = getattr(result, "tools", None) or []
         all_tool_dicts = convert_tools_to_dict(config_tools)
@@ -893,7 +901,17 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
                     )
 
                 for m in rendered_developer_messages:
-                    messages.append({"role": "developer", "content": m})
+                    if has_media_sentinels(m):
+                        # Post-process media sentinels into multi-part content.
+                        # TODO: resolve agent_input_modalities from agent's
+                        # modality_ids → modalities_resource.modality names.
+                        # For now, pass None to allow all sentinels through.
+                        content_blocks = post_process_media_sentinels(
+                            m, agent_input_modalities=None
+                        )
+                        messages.append({"role": "developer", "content": content_blocks})
+                    else:
+                        messages.append({"role": "developer", "content": m})
                     await conn.fetchval(
                         create_message_sql,
                         run_id,

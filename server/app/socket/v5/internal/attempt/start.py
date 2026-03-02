@@ -17,13 +17,22 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
+from app.api.v4.auth.access import get_access_internal
 from app.api.v4.entries.attempt.create import create_attempt_entry_internal
 from app.api.v4.entries.attempt_home.create import create_attempt_home_entry_internal
 from app.api.v4.entries.attempt_practice.create import (
     create_attempt_practice_entry_internal,
 )
+from app.api.v4.entries.home.get import get_home_entries_internal
+from app.api.v4.entries.home_chat.search import search_home_chat_entries_internal
 from app.api.v4.entries.persona.create import create_persona_entry_internal
+from app.api.v4.entries.practice.get import get_practice_entries_internal
+from app.api.v4.entries.practice_chat.search import (
+    search_practice_chat_entries_internal,
+)
 from app.api.v4.entries.runs.create import create_runs_entry_internal
+from app.api.v4.resources.profile_personas.get import get_profile_personas_internal
+from app.api.v4.resources.simulations.get import get_simulations_internal
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.find_session_by_socket import find_session_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
@@ -70,96 +79,91 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
 
         async with get_db_connection() as conn:
             async with conn.transaction():
-                # --- Resolution queries (reads) ---
+                # --- Resolution via _internal() calls ---
 
-                # 1. Resolve profiles_resource_id
-                profiles_resource_id = await conn.fetchval(
-                    """SELECT pp.profiles_id
-                    FROM profile_profiles_junction pp
-                    WHERE pp.profile_id = $1 AND pp.active = true
-                    LIMIT 1""",
-                    profile_id,
+                # 1. Resolve profiles_resource_id via access internal
+                access = await get_access_internal(
+                    conn, profile_id, bypass_cache=True
                 )
+                profiles_resource_id = access.profiles_id
                 if not profiles_resource_id:
                     raise ValueError(
                         f"Profile resource not found for profile_id {profile_id}"
                     )
 
-                # 2. Resolve persona_id from parent's profile_personas_resource
+                # 2. Get parent entry data (persona_ids, simulation_ids)
+                parent_id = payload.practice_id if is_practice else payload.home_id
+                if not parent_id:
+                    raise ValueError("Either practice_id or home_id is required")
+
                 if is_practice:
-                    persona_id = await conn.fetchval(
-                        """SELECT ppr.persona_id
-                        FROM practice_profile_personas_connection hpp
-                        JOIN profile_personas_resource ppr
-                            ON ppr.id = hpp.profile_personas_id AND ppr.active = true
-                        WHERE hpp.practice_id = $1
-                          AND hpp.active = true
-                          AND ppr.profile_id = $2
-                        LIMIT 1""",
-                        payload.practice_id,
-                        profiles_resource_id,
+                    entries = await get_practice_entries_internal(
+                        conn, [parent_id], bypass_cache=True
                     )
                 else:
-                    persona_id = await conn.fetchval(
-                        """SELECT ppr.persona_id
-                        FROM home_profile_personas_connection hpp
-                        JOIN profile_personas_resource ppr
-                            ON ppr.id = hpp.profile_personas_id AND ppr.active = true
-                        WHERE hpp.home_id = $1
-                          AND hpp.active = true
-                          AND ppr.profile_id = $2
-                        LIMIT 1""",
-                        payload.home_id,
-                        profiles_resource_id,
+                    entries = await get_home_entries_internal(
+                        conn, [parent_id], bypass_cache=True
                     )
+
+                if not entries:
+                    raise ValueError(f"Parent entry not found: {parent_id}")
+                parent_entry = entries[0]
+
+                # 3. Resolve persona_id from parent's profile_personas
+                persona_ids = parent_entry.get("persona_ids") or []
+                if not persona_ids:
+                    raise ValueError("No profile personas found in parent")
+
+                profile_personas = await get_profile_personas_internal(
+                    conn,
+                    [uuid.UUID(pid) for pid in persona_ids],
+                    bypass_cache=True,
+                )
+
+                # Find the persona matching this profile
+                persona_id = None
+                for pp in profile_personas:
+                    if pp.profile_id == profiles_resource_id:
+                        persona_id = pp.persona_id
+                        break
 
                 if not persona_id:
-                    raise ValueError("No profile persona found in parent")
+                    raise ValueError("No profile persona found matching this profile")
 
-                # 3. Count chats from parent
+                # 4. Count chats from parent via search internal
                 if is_practice:
-                    num_chats = await conn.fetchval(
-                        """SELECT COUNT(*)::int
-                        FROM practice_chat_entry
-                        WHERE practice_id = $1 AND active = true""",
-                        payload.practice_id,
+                    chat_entries = await search_practice_chat_entries_internal(
+                        conn,
+                        practice_id=payload.practice_id,
+                        limit_count=1000,
+                        bypass_cache=True,
                     )
                 else:
-                    num_chats = await conn.fetchval(
-                        """SELECT COUNT(*)::int
-                        FROM home_chat_entry
-                        WHERE home_id = $1 AND active = true""",
-                        payload.home_id,
+                    chat_entries = await search_home_chat_entries_internal(
+                        conn,
+                        home_id=payload.home_id,
+                        limit_count=1000,
+                        bypass_cache=True,
                     )
-                num_chats = max(num_chats or 1, 1)
+                num_chats = max(len(chat_entries), 1)
 
-                # 4. Resolve simulation name/description from parent
-                if is_practice:
-                    sim_row = await conn.fetchrow(
-                        """SELECT sr.name, sr.description
-                        FROM practice_simulations_connection psc
-                        JOIN simulations_resource sr
-                            ON sr.id = psc.simulations_id AND sr.active = true
-                        WHERE psc.practice_id = $1 AND psc.active = true
-                        LIMIT 1""",
-                        payload.practice_id,
+                # 5. Resolve simulation name/description
+                simulation_ids = parent_entry.get("simulation_ids") or []
+                sim_name = None
+                sim_desc = None
+                if simulation_ids:
+                    simulations = await get_simulations_internal(
+                        conn,
+                        [uuid.UUID(sid_str) for sid_str in simulation_ids[:1]],
+                        bypass_cache=True,
                     )
-                else:
-                    sim_row = await conn.fetchrow(
-                        """SELECT sr.name, sr.description
-                        FROM home_simulations_connection hsc
-                        JOIN simulations_resource sr
-                            ON sr.id = hsc.simulations_id AND sr.active = true
-                        WHERE hsc.home_id = $1 AND hsc.active = true
-                        LIMIT 1""",
-                        payload.home_id,
-                    )
-                sim_name = sim_row["name"] if sim_row else None
-                sim_desc = sim_row["description"] if sim_row else None
+                    if simulations:
+                        sim_name = simulations[0].name
+                        sim_desc = simulations[0].description
 
                 # --- Mutations via _internal() calls ---
 
-                # 5. Create run for this group + link profile
+                # 6. Create run for this group + link profile
                 run_result = await create_runs_entry_internal(
                     conn,
                     session_id=session_id,
@@ -168,13 +172,13 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
                 )
                 run_id = run_result.id
 
-                # 6. Create persona entry + link to personas_resource
+                # 7. Create persona entry + link to personas_resource
                 persona_result = await create_persona_entry_internal(
                     conn,
                     {"run_id": str(run_id), "personas_id": str(persona_id)},
                 )
 
-                # 7. Create attempt entry + profiles connection
+                # 8. Create attempt entry + profiles connection
                 attempt_result = await create_attempt_entry_internal(
                     conn,
                     {
@@ -190,7 +194,7 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
                 )
                 attempt_id = attempt_result.id
 
-                # 8. Create parent bridge
+                # 9. Create parent bridge
                 if is_practice:
                     await create_attempt_practice_entry_internal(
                         conn,

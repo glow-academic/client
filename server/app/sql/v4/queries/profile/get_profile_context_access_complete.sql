@@ -488,6 +488,14 @@ artifact_agent_ids_data AS (
     ) as artifact_agent_ids
     FROM artifacts_with_agents awa
 ),
+profiles_id_data AS (
+    -- Resolve profiles_resource_id from profile_profiles_junction
+    SELECT ppj.profiles_id
+    FROM profile_profiles_junction ppj
+    WHERE ppj.profile_id = (SELECT profile_id FROM params)
+      AND ppj.active = true
+    LIMIT 1
+),
 actor_name_computed AS (
     SELECT
         (SELECT COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '')
@@ -515,6 +523,8 @@ SELECT
     ARRAY[]::text[] as available_sections,
     pd.artifacts as artifacts,
     (SELECT actor_name FROM actor_name_computed) as actor_name,
+    -- Profiles resource ID
+    (SELECT profiles_id FROM profiles_id_data) as profiles_id,
     -- Artifact agent IDs
     (SELECT artifact_agent_ids FROM artifact_agent_ids_data) as artifact_agent_ids
 FROM params
