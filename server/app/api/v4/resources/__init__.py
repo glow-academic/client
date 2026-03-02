@@ -13,6 +13,12 @@ router.include_router(agents_get_router)
 from app.api.v4.resources.agents.search import router as agents_search_router
 
 router.include_router(agents_search_router)
+# NOTE: systems are non-creatable; GET/Search endpoints for two-pass architecture
+from app.api.v4.resources.systems.get import router as systems_get_router
+from app.api.v4.resources.systems.search import router as systems_search_router
+
+router.include_router(systems_get_router)
+router.include_router(systems_search_router)
 # NOTE: analyses removed - converted to entry table (migration 305)
 from app.api.v4.resources.args.create import router as args_router
 from app.api.v4.resources.args.get import router as args_get_router

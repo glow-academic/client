@@ -63,21 +63,9 @@ BEGIN
 
     -- Link run to existing config_resource rows via agent configuration
     IF p_agents_resource_id IS NOT NULL THEN
-        INSERT INTO runs_configs_connection (run_id, config_id, created_at, active, generated, mcp)
-        SELECT v_run_id, ac.config_id, NOW(), true, false, false
-        FROM agent_configs_junction ac
-        WHERE ac.agent_id = p_agents_resource_id
-          AND ac.active = true
-        ON CONFLICT (run_id, config_id) DO NOTHING;
-
-        -- Backward-compat return field: choose one linked config_id
-        SELECT ac.config_id INTO v_config_id
-        FROM agent_configs_junction ac
-        WHERE ac.agent_id = p_agents_resource_id
-          AND ac.active = true
-        ORDER BY ac.created_at DESC
-        LIMIT 1;
-    END IF;
+        INSERT INTO runs_agents_connection (run_id, agents_id, created_at, active, generated, mcp)
+        VALUES (v_run_id, p_agents_resource_id, NOW(), true, false, false)
+        ON CONFLICT (run_id, agents_id) DO NOTHING;    END IF;
 
     INSERT INTO profiles_runs_connection (profiles_id, run_id)
     SELECT ppj.profiles_id, v_run_id

@@ -96,15 +96,15 @@ agent_departments_data AS (
     WHERE ad.active = true
     GROUP BY ad.agent_id
 ),
--- Active settings count per agent (via agent_configs_junction + runs_configs_connection)
+-- Active settings count per agent (via runs_agents_connection)
 agent_settings_data AS (
     SELECT
-        acj.agent_id,
-        COUNT(DISTINCT rcc.run_id)::bigint as active_settings_count
-    FROM agent_configs_junction acj
-    JOIN runs_configs_connection rcc ON rcc.config_id = acj.config_id AND rcc.active = true
-    WHERE acj.active = true
-    GROUP BY acj.agent_id
+        aaj.agent_id,
+        COUNT(DISTINCT rac.run_id)::bigint as active_settings_count
+    FROM agent_agents_junction aaj
+    JOIN runs_agents_connection rac ON rac.agents_id = aaj.agents_id AND rac.active = true
+    WHERE aaj.active = true
+    GROUP BY aaj.agent_id
 ),
 -- Tool IDs per agent (for filtering)
 agent_tools_data AS (
@@ -122,25 +122,17 @@ agent_data AS (
         a.id as agent_id,
         (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
         (SELECT d.description FROM agent_descriptions_junction ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1) as description,
-        -- Model from agent_configs_junction → config_resource.model_id
-        (SELECT cr.model_id FROM agent_configs_junction acj
-         JOIN config_resource cr ON cr.id = acj.config_id AND cr.active = true
-         WHERE acj.agent_id = a.id AND acj.active = true AND cr.model_id IS NOT NULL LIMIT 1) as model_id,
+        -- Model from agents_resource
+        (SELECT ar.model_id FROM agents_resource ar
+         WHERE ar.id = a.id AND ar.model_id IS NOT NULL LIMIT 1) as model_id,
         ''::text as role,
         a.updated_at,
         COALESCE(add_data.department_ids, NULL) as department_ids,
         COALESCE(asd.active_settings_count, 0) as active_settings_count,
         COALESCE(atd.tool_ids, ARRAY[]::uuid[]) as tool_ids,
-        -- Temperature from agent_configs_junction → config_resource → temperature_levels_resource
-        (SELECT tl.temperature FROM agent_configs_junction acj
-         JOIN config_resource cr ON cr.id = acj.config_id AND cr.active = true
-         JOIN temperature_levels_resource tl ON tl.id = cr.temperature_level_id AND tl.active = true
-         WHERE acj.agent_id = a.id AND acj.active = true AND cr.temperature_level_id IS NOT NULL LIMIT 1) as temperature,
-        -- Reasoning from agent_configs_junction → config_resource → reasoning_levels_resource
-        (SELECT rl.reasoning_level::text FROM agent_configs_junction acj
-         JOIN config_resource cr ON cr.id = acj.config_id AND cr.active = true
-         JOIN reasoning_levels_resource rl ON rl.id = cr.reasoning_level_id AND rl.active = true
-         WHERE acj.agent_id = a.id AND acj.active = true AND cr.reasoning_level_id IS NOT NULL LIMIT 1) as reasoning
+        -- Temperature and reasoning from agents_resource
+        (SELECT ar.temperature FROM agents_resource ar WHERE ar.id = a.id LIMIT 1) as temperature,
+        (SELECT ar.reasoning FROM agents_resource ar WHERE ar.id = a.id LIMIT 1) as reasoning
     FROM agent_artifact a
     LEFT JOIN agent_departments_data add_data ON add_data.agent_id = a.id
     LEFT JOIN agent_settings_data asd ON asd.agent_id = a.id

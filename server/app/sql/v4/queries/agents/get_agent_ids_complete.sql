@@ -74,7 +74,11 @@ description_resource_data AS (
 model_resource_data AS (
     SELECT
         COALESCE(
-            (SELECT cr.model_id FROM agent_configs_junction ac JOIN config_resource cr ON cr.id = ac.config_id WHERE ac.agent_id = (SELECT agent_id FROM params) AND ac.active = true AND cr.model_id IS NOT NULL LIMIT 1),
+            (SELECT ar.model_id
+             FROM agents_resource ar
+             WHERE ar.id = (SELECT agent_id FROM params)
+               AND ar.model_id IS NOT NULL
+             LIMIT 1),
             NULL::uuid
         ) as model_id
     FROM params
@@ -100,7 +104,11 @@ flag_resource_data AS (
 temperature_level_resource_data AS (
     SELECT
         COALESCE(
-            (SELECT cr.temperature_level_id FROM agent_configs_junction ac JOIN config_resource cr ON cr.id = ac.config_id WHERE ac.agent_id = (SELECT agent_id FROM params) AND ac.active = true AND cr.temperature_level_id IS NOT NULL LIMIT 1),
+            (SELECT tl.id
+             FROM agents_resource ar
+             JOIN temperature_levels_resource tl ON tl.temperature = ar.temperature AND tl.active = true
+             WHERE ar.id = (SELECT agent_id FROM params)
+             LIMIT 1),
             NULL::uuid
         ) as temperature_level_id
     FROM params
@@ -108,7 +116,11 @@ temperature_level_resource_data AS (
 reasoning_level_resource_data AS (
     SELECT
         COALESCE(
-            (SELECT cr.reasoning_level_id FROM agent_configs_junction ac JOIN config_resource cr ON cr.id = ac.config_id WHERE ac.agent_id = (SELECT agent_id FROM params) AND ac.active = true AND cr.reasoning_level_id IS NOT NULL LIMIT 1),
+            (SELECT rl.id
+             FROM agents_resource ar
+             JOIN reasoning_levels_resource rl ON rl.reasoning_level::text = ar.reasoning AND rl.active = true
+             WHERE ar.id = (SELECT agent_id FROM params)
+             LIMIT 1),
             NULL::uuid
         ) as reasoning_level_id
     FROM params
@@ -149,12 +161,11 @@ tool_ids_data AS (
 voice_ids_data AS (
     SELECT
         COALESCE(
-            (SELECT ARRAY_AGG(cr.voice_id ORDER BY ac.created_at)
-             FROM agent_configs_junction ac
-             JOIN config_resource cr ON cr.id = ac.config_id
-             WHERE ac.agent_id = (SELECT agent_id FROM params)
-               AND ac.active = true
-               AND cr.voice_id IS NOT NULL),
+            (SELECT ARRAY_AGG(v.id ORDER BY v.id)
+             FROM agents_resource ar
+             JOIN voices_resource v ON v.voice = ar.voice AND v.active = true
+             WHERE ar.id = (SELECT agent_id FROM params)
+               AND ar.voice IS NOT NULL),
             ARRAY[]::uuid[]
         ) as voice_ids
     FROM params

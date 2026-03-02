@@ -60,7 +60,17 @@ FROM (
       AND (api_search_agents_v4.quality IS NULL OR r.quality::text = api_search_agents_v4.quality)
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT agent OR EXISTS (SELECT 1 FROM agent_agents_junction j WHERE j.agents_id = r.id AND j.active = true))
-      AND (NOT setting OR EXISTS (SELECT 1 FROM setting_agents_junction j WHERE j.agents_id = r.id AND j.active = true))
+      AND (
+        NOT setting
+        OR EXISTS (
+            SELECT 1
+            FROM setting_systems_junction ssj
+            JOIN system_agents_junction saj ON saj.system_id = ssj.systems_id
+            WHERE saj.agents_id = r.id
+              AND ssj.active = true
+              AND saj.active = true
+        )
+      )
     ORDER BY r.name
     LIMIT limit_count
     OFFSET offset_count

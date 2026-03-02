@@ -38,30 +38,27 @@ DROP MATERIALIZED VIEW IF EXISTS runs_mv CASCADE;
 
 CREATE MATERIALIZED VIEW runs_mv AS
 WITH
--- Per run, collect distinct agent/model/provider IDs from runs_configs_connection + config_resource
-configs_agg AS (
+-- Per run, collect distinct agent/model/provider IDs from runs_agents_connection + agents_resource
+agents_agg AS (
     SELECT
-        rcc.run_id,
+        rac.run_id,
         COALESCE(
-            ARRAY_AGG(DISTINCT aaj.agent_id) FILTER (WHERE aaj.agent_id IS NOT NULL),
+            ARRAY_AGG(DISTINCT rac.agents_id) FILTER (WHERE rac.agents_id IS NOT NULL),
             ARRAY[]::uuid[]
         ) AS agent_ids,
         COALESCE(
-            ARRAY_AGG(DISTINCT cr.model_id) FILTER (WHERE cr.model_id IS NOT NULL),
+            ARRAY_AGG(DISTINCT ar.model_id) FILTER (WHERE ar.model_id IS NOT NULL),
             ARRAY[]::uuid[]
         ) AS model_ids,
         COALESCE(
             ARRAY_AGG(DISTINCT mr.provider_id) FILTER (WHERE mr.provider_id IS NOT NULL),
             ARRAY[]::uuid[]
         ) AS provider_ids
-    FROM runs_configs_connection rcc
-    JOIN config_resource cr ON cr.id = rcc.config_id AND cr.active = TRUE
-    -- Resolve agent: find agent_artifact that owns this config via agent_configs_junction
-    LEFT JOIN agent_configs_junction aaj ON aaj.config_id = cr.id AND aaj.active = TRUE
-    -- Resolve provider via models_resource.provider_id
-    LEFT JOIN models_resource mr ON mr.id = cr.model_id
-    WHERE rcc.active = TRUE
-    GROUP BY rcc.run_id
+    FROM runs_agents_connection rac
+    JOIN agents_resource ar ON ar.id = rac.agents_id AND ar.active = TRUE
+    LEFT JOIN models_resource mr ON mr.id = ar.model_id
+    WHERE rac.active = TRUE
+    GROUP BY rac.run_id
 ),
 -- Per pricing type, get (count, pricing_id) as separate CTEs
 pricing_input AS (
@@ -126,7 +123,7 @@ LEFT JOIN LATERAL (
     SELECT input_tokens, output_tokens, cached_input_tokens FROM tokens_entry
     WHERE run_id = r.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
 ) te ON true
-LEFT JOIN configs_agg ca ON ca.run_id = r.id
+LEFT JOIN agents_agg ca ON ca.run_id = r.id
 LEFT JOIN pricing_input pi ON pi.run_id = r.id
 LEFT JOIN pricing_output po ON po.run_id = r.id
 LEFT JOIN pricing_cached pc ON pc.run_id = r.id

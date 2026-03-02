@@ -70,7 +70,14 @@ selected_agent AS (
     FROM agent_artifact a
     CROSS JOIN params p
     WHERE a.id = p.agent_id
-      AND EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
+      AND EXISTS (
+          SELECT 1
+          FROM agent_flags_junction af
+          JOIN flags_resource f ON af.flag_id = f.id
+          WHERE af.agent_id = a.id
+            AND f.name = 'agent_active'
+            AND af.value = true
+      )
     LIMIT 1
 ),
 -- Get agent model output modalities (via config_resource)
@@ -78,9 +85,9 @@ agent_model_modalities AS (
     SELECT
         array_agg(mr.modality::text ORDER BY mr.modality) as output_modalities
     FROM agent_artifact a
-    JOIN agent_configs_junction ac ON ac.agent_id = a.id AND ac.active = true
-    JOIN config_resource cr ON cr.id = ac.config_id AND cr.model_id IS NOT NULL
-    JOIN model_modalities_junction mm ON mm.model_id = cr.model_id
+    JOIN agent_agents_junction aaj ON aaj.agent_id = a.id AND aaj.active = true
+    JOIN agents_resource ar ON ar.id = aaj.agents_id AND ar.active = true
+    JOIN model_modalities_junction mm ON mm.model_id = ar.model_id
     JOIN modalities_resource mr ON mr.id = mm.modality_id
     CROSS JOIN params p
     WHERE a.id = p.agent_id
@@ -135,6 +142,20 @@ link_run_to_profile AS (
     JOIN profile_profiles_junction ppj ON ppj.profile_id = p.profile_id
     CROSS JOIN create_run cr
     WHERE p.profile_id IS NOT NULL
+),
+link_run_to_agent AS (
+    INSERT INTO runs_agents_connection (run_id, agents_id, created_at, active, generated, mcp)
+    SELECT DISTINCT
+        cr.run_id,
+        aaj.agents_id,
+        NOW(),
+        true,
+        false,
+        false
+    FROM create_run cr
+    CROSS JOIN selected_agent sa
+    JOIN agent_agents_junction aaj ON aaj.agent_id = sa.agent_id AND aaj.active = true
+    ON CONFLICT (run_id, agents_id) DO NOTHING
 ),
 -- Dummy CTE to maintain compatibility (runs_entry now have group_id directly)
 link_group AS (

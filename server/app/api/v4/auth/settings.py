@@ -22,6 +22,7 @@ from app.api.v4.auth.types import (
 )
 from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.settings.get import get_settings_internal
+from app.api.v4.resources.systems.get import get_systems_internal
 from app.api.v4.resources.tools.get import get_tools_internal
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db, get_pool
@@ -57,6 +58,7 @@ async def get_auth_settings_internal(
         raise HTTPException(status_code=500, detail="Database pool not available")
 
     settings_id = access.settings_id
+    settings_system_ids = access.settings_system_ids or []
     settings_agent_ids = access.settings_agent_ids or []
 
     async def fetch_settings_theme():
@@ -84,13 +86,21 @@ async def get_auth_settings_internal(
         async with pool.acquire() as c:
             return await get_agents_internal(c, settings_agent_ids, bypass_cache)
 
+    async def fetch_systems():
+        if not settings_system_ids:
+            return []
+        async with pool.acquire() as c:
+            return await get_systems_internal(c, settings_system_ids, bypass_cache)
+
     (
         settings_theme,
         settings_item,
+        settings_systems,
         settings_agents,
     ) = await asyncio.gather(
         fetch_settings_theme(),
         fetch_settings(),
+        fetch_systems(),
         fetch_agents(),
     )
 
@@ -100,6 +110,7 @@ async def get_auth_settings_internal(
         return AuthSettingsInternalData(
             settings_id=settings_id,
             settings=None,
+            settings_systems=[],
             settings_agents=[],
             settings_tools=[],
             settings_theme=settings_theme,  # type: ignore[arg-type]
@@ -164,6 +175,7 @@ async def get_auth_settings_internal(
     return AuthSettingsInternalData(
         settings_id=settings_id,
         settings=settings_item,
+        settings_systems=settings_systems,
         settings_agents=settings_agents,
         settings_tools=settings_tools,
         settings_theme=settings_theme,
@@ -211,6 +223,7 @@ async def get_auth_settings(
             if data.settings_theme
             else None,
             tokens=data.settings_tokens,
+            systems=data.settings_systems,
             agents=data.settings_agents,
             tools=data.settings_tools,
             artifact_has_generate=data.artifact_has_generate,

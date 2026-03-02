@@ -62,6 +62,7 @@ RETURNS TABLE (
     department_ids uuid[],
     cohort_ids uuid[],
     settings_id uuid,
+    settings_system_ids uuid[],
     settings_agent_ids uuid[],
     draft_ids uuid[],
     -- Computed
@@ -242,12 +243,27 @@ draft_ids_data AS (
 ),
 settings_agent_ids_data AS (
     SELECT COALESCE(
-        ARRAY_AGG(sj.agents_id ORDER BY sj.created_at),
+        ARRAY_AGG(DISTINCT src.agents_id),
         ARRAY[]::uuid[]
     ) as settings_agent_ids
-    FROM setting_agents_junction sj
-    WHERE sj.setting_id = (SELECT settings_id FROM settings_resolution)
-      AND sj.active = true
+    FROM (
+        -- setting -> systems -> agents links
+        SELECT saj.agents_id
+        FROM setting_systems_junction ssj
+        JOIN system_agents_junction saj ON saj.system_id = ssj.systems_id
+        WHERE ssj.setting_id = (SELECT settings_id FROM settings_resolution)
+          AND ssj.active = true
+          AND saj.active = true
+    ) src
+),
+settings_system_ids_data AS (
+    SELECT COALESCE(
+        ARRAY_AGG(DISTINCT ssj.systems_id),
+        ARRAY[]::uuid[]
+    ) as settings_system_ids
+    FROM setting_systems_junction ssj
+    WHERE ssj.setting_id = (SELECT settings_id FROM settings_resolution)
+      AND ssj.active = true
 ),
 artifact_agent_ids_data AS (
     -- Check which artifacts have at least one qualifying agent via two paths:
@@ -490,6 +506,7 @@ SELECT
     (SELECT department_ids FROM department_ids_data) as department_ids,
     (SELECT cohort_ids FROM cohort_ids_data) as cohort_ids,
     (SELECT settings_id FROM settings_resolution) as settings_id,
+    (SELECT settings_system_ids FROM settings_system_ids_data) as settings_system_ids,
     (SELECT settings_agent_ids FROM settings_agent_ids_data) as settings_agent_ids,
     (SELECT draft_ids FROM draft_ids_data) as draft_ids,
     -- Computed

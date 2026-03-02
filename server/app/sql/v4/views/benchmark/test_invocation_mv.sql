@@ -64,16 +64,6 @@ groups_entry_links AS (
     WHERE ge.active = true
     GROUP BY ge.test_invocation_id
 ),
--- Runs config: config_ids from test_invocation_runs_entry → runs_configs_connection
-runs_config_links AS (
-    SELECT
-        re.test_invocation_id,
-        ARRAY_AGG(DISTINCT rcc.configs_id ORDER BY rcc.configs_id) FILTER (WHERE rcc.configs_id IS NOT NULL) AS run_config_ids
-    FROM test_invocation_runs_entry re
-    JOIN test_invocation_runs_configs_connection rcc ON rcc.test_invocation_runs_id = re.id AND rcc.active = true
-    WHERE re.active = true
-    GROUP BY re.test_invocation_id
-),
 -- Groups config: config_ids from test_invocation_groups_entry → groups_configs_connection
 groups_config_links AS (
     SELECT
@@ -174,7 +164,7 @@ SELECT
     -- Group IDs (from groups sub-entries)
     COALESCE(gel.group_ids, ARRAY[]::uuid[]) AS group_ids,
     -- Config IDs (from sub-entry config connections)
-    COALESCE(rcl.run_config_ids, ARRAY[]::uuid[]) AS run_config_ids,
+    ARRAY[]::uuid[] AS run_config_ids,
     COALESCE(gcl.group_config_ids, ARRAY[]::uuid[]) AS group_config_ids,
 
     -- Singular resource IDs (from bundle snapshot, remaining connections)
@@ -190,7 +180,6 @@ SELECT
 FROM test_invocation_entry i
 LEFT JOIN runs_entry_links rel ON rel.test_invocation_id = i.id
 LEFT JOIN groups_entry_links gel ON gel.test_invocation_id = i.id
-LEFT JOIN runs_config_links rcl ON rcl.test_invocation_id = i.id
 LEFT JOIN groups_config_links gcl ON gcl.test_invocation_id = i.id
 LEFT JOIN department_links dl ON dl.test_invocation_id = i.id
 LEFT JOIN latest_grade lg ON lg.invocation_id = i.id

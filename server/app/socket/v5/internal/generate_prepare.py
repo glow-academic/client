@@ -18,7 +18,10 @@ import copy
 import uuid
 from typing import Any
 
+from app.api.v4.resources.agents.get import get_agents_internal
 from app.api.v4.resources.instructions.get import get_instructions_internal
+from app.api.v4.resources.models.get import get_models_internal
+from app.api.v4.resources.providers.get import get_providers_internal
 from app.api.v4.resources.prompts.get import get_prompts_internal
 from app.infra.v4.generation import convert_tools_to_dict, render_developer_instructions
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
@@ -88,6 +91,7 @@ def _build_jinja_context(result: object) -> dict[str, Any]:
     artifacts_dict: dict[str, Any] = {}
     for key in (
         "agents",
+        "systems",
         "models",
         "providers",
         "tools",
@@ -137,6 +141,7 @@ def _dump_fetcher_result(result: object) -> dict[str, Any]:
     # Config-chain fields (flat on InternalResponseBase)
     for key in (
         "agents",
+        "systems",
         "models",
         "providers",
         "tools",
@@ -495,32 +500,85 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
             profile_id, artifact_id, payload.draft_id, pool
         )
 
-        # Step 6a: Extract config-chain lookup tables (needed for agent fallback)
+        # Step 6a: Resolve systems/agents at the final layer
+        config_systems = getattr(result, "systems", None) or []
         config_agents = getattr(result, "agents", None) or []
-        config_models = getattr(result, "models", None) or []
-        config_providers = getattr(result, "providers", None) or []
 
-        # Build lookup dicts for multi-agent resolution
-        agents_by_id = {a.id: a for a in config_agents if a.id}
-        models_by_id = {m.id: m for m in config_models if m.id}
-        providers_by_id = {p.id: p for p in config_providers if getattr(p, "id", None)}
+        # If fetcher provides systems, hydrate agents from those systems.
+        # If not, fall back to legacy pre-hydrated agents.
+        if config_systems:
+            system_agent_ids = {
+                aid
+                for s in config_systems
+                for aid in (getattr(s, "agent_ids", None) or [])
+                if aid
+            }
+            if system_agent_ids and pool:
+                async with pool.acquire() as c:
+                    config_agents = await get_agents_internal(
+                        c, list(system_agent_ids), bypass_cache
+                    )
 
         if not config_agents:
             await _emit_error(
                 sid,
-                "No agent configuration found. Check department settings.",
+                "No system/agent configuration found. Check department settings.",
                 artifact_type,
             )
             return
 
-        # Step 6b: Build agent_groups from resource_agent_ids
+        # Build lookup dicts from final-layer resolved resources
+        agents_by_id = {a.id: a for a in config_agents if a.id}
+        model_ids = list({a.model_id for a in config_agents if a.model_id})
+        config_models = []
+        if model_ids and pool:
+            async with pool.acquire() as c:
+                config_models = await get_models_internal(c, model_ids, bypass_cache)
+        models_by_id = {m.id: m for m in config_models if m.id}
+
+        provider_ids = list(
+            {
+                m.provider_id
+                for m in config_models
+                if getattr(m, "provider_id", None) is not None
+            }
+        )
+        config_providers = []
+        if provider_ids and pool:
+            async with pool.acquire() as c:
+                config_providers = await get_providers_internal(
+                    c, provider_ids, bypass_cache
+                )
+        providers_by_id = {p.id: p for p in config_providers if getattr(p, "id", None)}
+
+        # Step 6b: Build agent_groups from systems first, then legacy resource_agent_ids
+        resource_system_ids: dict[str, uuid.UUID] = getattr(
+            result, "resource_system_ids", {}
+        ) or {}
         resource_agent_ids: dict[str, uuid.UUID] = result.resource_agent_ids or {}
 
+        systems_by_id = {s.id: s for s in config_systems if s.id}
         agent_groups: dict[uuid.UUID, list[str]] = {}
-        for rt in resource_types:
-            aid = resource_agent_ids.get(rt)
-            if aid is not None:
-                agent_groups.setdefault(aid, []).append(rt)
+
+        if config_systems:
+            # Resolve resource type -> system -> agent.
+            default_system_id = next(iter(systems_by_id), None)
+            for rt in resource_types:
+                system_id = resource_system_ids.get(rt) or default_system_id
+                system = systems_by_id.get(system_id) if system_id else None
+                candidate_agent_ids = (getattr(system, "agent_ids", None) or []) if system else []
+                resolved_agent_id = next(
+                    (aid for aid in candidate_agent_ids if aid in agents_by_id), None
+                )
+                if resolved_agent_id is not None:
+                    agent_groups.setdefault(resolved_agent_id, []).append(rt)
+
+        # Legacy fallback path
+        if not agent_groups:
+            for rt in resource_types:
+                aid = resource_agent_ids.get(rt)
+                if aid is not None:
+                    agent_groups.setdefault(aid, []).append(rt)
 
         if not agent_groups:
             for _rt, aid in resource_agent_ids.items():
@@ -528,11 +586,10 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
                     agent_groups[aid] = resource_types
                     break
 
-        # Fallback: use first config_agent when no prior run config exists
-        if not agent_groups:
-            first_agent = config_agents[0]
-            if first_agent.id:
-                agent_groups[first_agent.id] = resource_types
+        # Final fallback: use first resolved agent
+        first_agent = config_agents[0]
+        if not agent_groups and first_agent.id:
+            agent_groups[first_agent.id] = resource_types
 
         agent_id: uuid.UUID | None = next(iter(agent_groups)) if agent_groups else None
 
@@ -619,20 +676,18 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
             if not pool:
                 raise RuntimeError("Database pool not initialized")
 
-            # Step 11: Link run -> existing config_resource rows via agent configs
-            first_agent = config_agents[0]
+            # Step 11: Link run -> selected agents (agent-native runtime linkage)
             agent_ids_for_run = [aid for aid in agent_groups if aid]
             if not agent_ids_for_run and first_agent.id:
                 agent_ids_for_run = [first_agent.id]
 
             if agent_ids_for_run:
                 await conn.execute(
-                    """INSERT INTO runs_configs_connection (run_id, config_id, created_at, active, generated, mcp)
-                    SELECT $1, ac.config_id, NOW(), true, false, false
-                    FROM agent_configs_junction ac
-                    WHERE ac.agent_id = ANY($2::uuid[])
-                      AND ac.active = true
-                    ON CONFLICT (run_id, config_id) DO NOTHING""",
+                    """INSERT INTO runs_agents_connection (run_id, agents_id, created_at, active, generated, mcp)
+                    SELECT $1, a.id, NOW(), true, false, false
+                    FROM agents_resource a
+                    WHERE a.id = ANY($2::uuid[])
+                    ON CONFLICT (run_id, agents_id) DO NOTHING""",
                     run_id,
                     agent_ids_for_run,
                 )

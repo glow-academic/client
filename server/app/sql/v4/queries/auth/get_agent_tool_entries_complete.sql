@@ -28,7 +28,7 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
--- Input agent_ids are agents_resource IDs (from setting_agents_junction).
+-- Input agent_ids are agents_resource IDs (resolved through settings -> systems -> agents).
 -- Bridge: agents_resource → agent_agents_junction → agent_artifact to traverse tool chain.
 -- Return the original agents_resource ID as agent_id (downstream expects resource IDs).
 SELECT

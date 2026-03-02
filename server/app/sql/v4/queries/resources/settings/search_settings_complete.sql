@@ -84,7 +84,18 @@ FROM (
       AND (search IS NULL OR search = '' OR LOWER(r.name) LIKE '%' || LOWER(search) || '%' OR LOWER(COALESCE(r.description, '')) LIKE '%' || LOWER(search) || '%')
       AND (exclude_ids IS NULL OR NOT (r.id = ANY(exclude_ids)))
       AND (COALESCE(array_length(department_ids, 1), 0) = 0 OR r.department_ids && department_ids)
-      AND (COALESCE(array_length(agent_ids, 1), 0) = 0 OR r.agent_ids && agent_ids)
+      AND (
+        COALESCE(array_length(agent_ids, 1), 0) = 0
+        OR EXISTS (
+            SELECT 1
+            FROM setting_systems_junction ssj
+            JOIN systems_resource sr ON sr.id = ssj.systems_id
+            WHERE ssj.setting_id = r.id
+              AND ssj.active = true
+              AND sr.active = true
+              AND sr.agent_ids && agent_ids
+        )
+      )
       AND (COALESCE(array_length(provider_key_ids, 1), 0) = 0 OR r.provider_key_ids && provider_key_ids)
       AND (COALESCE(array_length(auth_ids, 1), 0) = 0 OR r.auth_ids && auth_ids)
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)

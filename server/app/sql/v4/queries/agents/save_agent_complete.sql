@@ -131,7 +131,7 @@ BEGIN
         RAISE EXCEPTION 'Description resource not found: %', v_description_id;
     END IF;
 
-    IF v_model_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM model_artifact WHERE id = v_model_id) THEN
+    IF v_model_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM models_resource WHERE id = v_model_id) THEN
         RAISE EXCEPTION 'Model not found: %', v_model_id;
     END IF;
 

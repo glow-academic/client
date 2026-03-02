@@ -20,7 +20,6 @@ DROP MATERIALIZED VIEW IF EXISTS agent_drafts_mv CASCADE;
 CREATE MATERIALIZED VIEW agent_drafts_mv AS
 WITH draft_links AS (
     SELECT draft_id, 'agents'::text AS resource_type, agents_id AS resource_id FROM agent_drafts_agents_connection WHERE active = true
-    UNION ALL SELECT draft_id, 'configs'::text AS resource_type, configs_id AS resource_id FROM agent_drafts_configs_connection WHERE active = true
     UNION ALL SELECT draft_id, 'departments'::text AS resource_type, departments_id AS resource_id FROM agent_drafts_departments_connection WHERE active = true
     UNION ALL SELECT draft_id, 'descriptions'::text AS resource_type, descriptions_id AS resource_id FROM agent_drafts_descriptions_connection WHERE active = true
     UNION ALL SELECT draft_id, 'flags'::text AS resource_type, flags_id AS resource_id FROM agent_drafts_flags_connection WHERE active = true
@@ -37,7 +36,7 @@ SELECT
     d.active,
     d.group_id,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'agents'), ARRAY[]::uuid[]) AS agent_ids,
-    COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'configs'), ARRAY[]::uuid[]) AS config_ids,
+    ARRAY[]::uuid[] AS config_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'departments'), ARRAY[]::uuid[]) AS department_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'descriptions'), ARRAY[]::uuid[]) AS description_ids,
     COALESCE(array_agg(DISTINCT l.resource_id) FILTER (WHERE l.resource_type = 'flags'), ARRAY[]::uuid[]) AS flag_ids,

@@ -11,6 +11,7 @@ from app.sql.types import (
     QGetModelsV4Item,
     QGetProfilesV4Item,
     QGetProvidersV4Item,
+    QGetSystemsV4Item,
     QGetToolsV4Item,
 )
 
@@ -18,6 +19,7 @@ from app.sql.types import (
 class InternalResponseBase(BaseModel):
     """Base for all internal/websocket fetcher responses. Flat config chain."""
 
+    systems: list[QGetSystemsV4Item] | None = None
     agents: list[QGetAgentsV4Item] | None = None
     models: list[QGetModelsV4Item] | None = None
     providers: list[QGetProvidersV4Item] | None = None
@@ -26,6 +28,7 @@ class InternalResponseBase(BaseModel):
     args_outputs: list[QGetArgsOutputsV4Item] | None = None
     profile: list[QGetProfilesV4Item] | None = None
     params: BaseModel | None = None
+    resource_system_ids: dict[str, UUID | None] | None = None
     resource_agent_ids: dict[str, UUID | None] | None = None
     group_id: UUID | None = None
 

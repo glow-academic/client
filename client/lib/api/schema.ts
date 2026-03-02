@@ -3553,6 +3553,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/systems/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Systems
+         * @description Get systems resources by IDs.
+         */
+        post: operations["get_systems_api_v4_resources_systems_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/systems/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Systems
+         * @description Search systems resources.
+         */
+        post: operations["search_systems_api_v4_resources_systems_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/args": {
         parameters: {
             query?: never;
@@ -28972,6 +29012,8 @@ export interface components {
             /** Danger Threshold */
             danger_threshold?: number | null;
             tokens?: components["schemas"]["QGetProfileContextV4ThemeTokens"] | null;
+            /** Systems */
+            systems?: components["schemas"]["QGetSystemsV4Item"][] | null;
             /** Agents */
             agents?: components["schemas"]["QGetAgentsV4Item"][] | null;
             /** Tools */
@@ -31711,6 +31753,16 @@ export interface components {
              * @default []
              */
             items: components["schemas"]["QGetStandardsV4Item"][];
+        };
+        /** GetSystemsApiRequest */
+        GetSystemsApiRequest: {
+            /** Ids */
+            ids?: string[] | null;
+        };
+        /** GetSystemsApiResponse */
+        GetSystemsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetSystemsV4Item"][] | null;
         };
         /** GetTemperatureLevelsApiRequest */
         GetTemperatureLevelsApiRequest: {
@@ -40534,6 +40586,23 @@ export interface components {
             /** Points */
             points: number | null;
         };
+        /** QGetSystemsV4Item */
+        QGetSystemsV4Item: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Agent Ids */
+            agent_ids: string[] | null;
+            /** Active */
+            active: boolean | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetTemperatureLevelsV4Item */
         QGetTemperatureLevelsV4Item: {
             /** Id */
@@ -47850,6 +47919,37 @@ export interface components {
         SearchStandardsApiResponse: {
             /** Items */
             items?: components["schemas"]["QGetStandardsV4Item"][] | null;
+        };
+        /** SearchSystemsApiRequest */
+        SearchSystemsApiRequest: {
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit Count
+             * @default 20
+             */
+            limit_count: number | null;
+            /**
+             * Offset Count
+             * @default 0
+             */
+            offset_count: number | null;
+            /** Exclude Ids */
+            exclude_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Agent Ids */
+            agent_ids?: string[] | null;
+            /**
+             * Setting
+             * @default false
+             */
+            setting: boolean | null;
+        };
+        /** SearchSystemsApiResponse */
+        SearchSystemsApiResponse: {
+            /** Items */
+            items?: components["schemas"]["QGetSystemsV4Item"][] | null;
         };
         /** SearchTemperatureLevelsApiRequest */
         SearchTemperatureLevelsApiRequest: {
@@ -58015,6 +58115,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchAgentsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_systems_api_v4_resources_systems_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetSystemsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetSystemsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_systems_api_v4_resources_systems_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchSystemsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchSystemsApiResponse"];
                 };
             };
             /** @description Validation Error */

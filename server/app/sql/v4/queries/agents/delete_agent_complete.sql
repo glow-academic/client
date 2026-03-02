@@ -35,8 +35,8 @@ agent_info AS (
 usage_check AS (
     SELECT COUNT(*) as usage_count
     FROM params x
-    JOIN agent_configs_junction acj ON acj.agent_id = x.agent_id AND acj.active = true
-    JOIN runs_configs_connection rcc ON rcc.config_id = acj.config_id AND rcc.active = true
+    JOIN agent_agents_junction aaj ON aaj.agent_id = x.agent_id AND aaj.active = true
+    JOIN runs_agents_connection rac ON rac.agents_id = aaj.agents_id AND rac.active = true
 ),
 delete_result AS (
     DELETE FROM agent_artifact 

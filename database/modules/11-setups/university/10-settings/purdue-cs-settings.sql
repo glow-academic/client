@@ -27,50 +27,13 @@ INSERT INTO public.keys_resource (id, key_id, created_at, active, generated, mcp
 INSERT INTO public.provider_keys_resource (id, provider_id, key_id, created_at, active, generated, mcp, key, name, description) VALUES ('019c441a-0eb9-7665-a01c-a6fec156d716', '019bb2af-b2a7-7d85-a61a-0dc4fd93b3c6', '019bbdcb-6d52-7889-8484-ed84e9180139', '2025-12-07T20:37:05.145538+00:00', true, false, false, 'dummy-provider-key-value', 'OPENAI_API_KEY', 'OPENAI_API_KEY') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.keys_resource (id, key_id, created_at, active, generated, mcp, key, name, description) VALUES ('019bbdcb-6d52-7d32-803f-3f5c8c2a9af7', '019bbdcb-6d52-7d32-803f-3f5c8c2a9af7', '2026-02-15T02:02:12.274466+00:00', true, false, false, 'dummy-key-value', 'GEMINI_API_KEY', 'GEMINI_API_KEY') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.provider_keys_resource (id, provider_id, key_id, created_at, active, generated, mcp, key, name, description) VALUES ('019c441a-0eb9-7938-8d65-ccfc25d92856', '019bb2af-b2a8-7035-bbfd-664ba627bd44', '019bbdcb-6d52-7d32-803f-3f5c8c2a9af7', '2025-12-07T20:37:05.145538+00:00', true, false, false, 'dummy-provider-key-value', 'GEMINI_API_KEY', 'GEMINI_API_KEY') ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.settings_resource (created_at, active, generated, mcp, id, name, description, department_ids, agent_ids, provider_key_ids, auth_ids) VALUES ('2025-12-12T13:26:55.664826+00:00', true, false, false, '019bb25e-e615-7952-a7d4-4fdee85d18cc', 'University Settings', 'Department-specific settings for University', '{}', '{}', '{}', '{019bb25e-e5e2-74c2-aaf3-42c5403f26f9}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.settings_resource (created_at, active, generated, mcp, id, name, description, department_ids, system_ids, provider_key_ids, auth_ids) VALUES ('2025-12-12T13:26:55.664826+00:00', true, false, false, '019bb25e-e615-7952-a7d4-4fdee85d18cc', 'University Settings', 'Department-specific settings for University', '{}', '{}', '{}', '{019bb25e-e5e2-74c2-aaf3-42c5403f26f9}') ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- setting_artifact
 INSERT INTO public.setting_artifact (created_at, id, updated_at, generated, mcp) VALUES ('2025-12-12T13:26:55.664826+00:00', '019b3be4-3c61-76ff-befb-69b082df2acd', '2026-01-08T03:34:29.129680+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Junctions
--- setting_agents_junction
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019bb25e-e5f2-7e66-be40-89ff408bbce5', '2026-02-13T03:41:54.676147+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019bb25e-e5f2-7f73-abf4-164c630526b2', '2026-02-13T03:41:54.676147+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019bb25e-e5f2-7f9e-8027-3334ababb644', '2026-02-13T03:41:54.676147+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', 'aa000003-0000-0000-0000-000000000003', '2026-02-13T03:41:54.676147+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c5517-4670-7a06-8b57-8d054f851772', '2026-02-13T03:41:54.676147+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c5517-4672-7c5f-953f-8c064353f7d4', '2026-02-13T03:41:54.676147+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c5517-4673-71f7-a48c-9f4c24d00185', '2026-02-13T03:41:54.676147+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c5517-4673-73a7-967b-11d2389f9cc5', '2026-02-13T03:41:54.676147+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c5517-4673-74b4-991e-153c7b8a9174', '2026-02-13T03:41:54.676147+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c5517-4673-759e-81e6-40d247dea759', '2026-02-13T03:41:54.676147+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c5517-4673-762c-a096-0a35439ebf11', '2026-02-13T03:41:54.676147+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c5517-4673-76c3-aefe-14e93c1ec6f5', '2026-02-13T03:41:54.676147+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c5517-4673-775e-852f-114fee676a28', '2026-02-13T03:41:54.676147+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c5517-4673-7adc-a363-50b6559fc4ea', '2026-02-13T03:41:54.676147+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c82b8-5d91-7995-a6ef-94dcca1c92be', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c82b8-5d96-7acb-8649-4d4227ae7815', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c82b8-5d98-7674-8cd4-2ed7bdddf354', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c82b8-5d9a-78e6-9e8d-03b45dba7d6b', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c82b8-5d9b-7820-8ffe-93059a3e8f2f', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c82b8-5d9c-75f6-8468-7af07ed62ce7', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c82b8-5d9d-710d-ae51-3080db0b7b55', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c82b8-5d9d-7a85-8319-3a24981188b7', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c82b8-5d9e-75d2-9cf7-e0f91bb0fb38', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c82b8-5d9f-71af-a2ac-3bfc3d189410', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c82b8-5d9f-7c16-a38f-d1978b76c5c9', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c82b8-5da0-7643-85e9-141ecd4b1235', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c82b8-5da1-709c-ad48-dc0a2ec99a49', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c82b8-5da1-7a99-9f13-ab3e41542df1', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c82b8-5da2-74d6-ad4a-7c594c69f082', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c82b8-5da2-7ef3-b402-8117f8199299', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c82b8-5da3-7920-b0c5-40255a3f8dc2', '2026-02-22T00:20:46.593734+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019bb25e-e5f2-7f7a-ba83-2e756143cec4', '2026-02-12T21:41:54.676147+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019c5517-4673-7073-adf9-00c0bd4e21dc', '2026-02-12T21:41:54.676147+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', 'bb000003-0000-0000-0000-000000000003', '2026-02-12T21:41:54.676147+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '018f0005-0006-7000-8000-000000000001', '2026-02-26T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
-INSERT INTO public.setting_agents_junction (setting_id, agents_id, created_at, active, generated, mcp) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '018f0005-0006-7000-8000-000000000002', '2026-02-26T00:00:00.000000+00:00', true, false, false) ON CONFLICT (setting_id, agents_id) DO NOTHING;
 -- setting_auth_item_keys_junction
 INSERT INTO public.setting_auth_item_keys_junction (active, created_at, generated, mcp, setting_id, auth_item_keys_id) VALUES (true, '2026-02-13T19:50:33.702587+00:00', false, false, '019b3be4-3c61-76ff-befb-69b082df2acd', '019c48f5-3ea1-73ec-b373-2f842500c07c') ON CONFLICT (setting_id, auth_item_keys_id) DO NOTHING;
 INSERT INTO public.setting_auth_item_keys_junction (active, created_at, generated, mcp, setting_id, auth_item_keys_id) VALUES (true, '2026-02-13T19:50:33.702587+00:00', false, false, '019b3be4-3c61-76ff-befb-69b082df2acd', '019c48f5-3ea1-73fa-9f43-75d177c52b7f') ON CONFLICT (setting_id, auth_item_keys_id) DO NOTHING;
@@ -104,3 +67,65 @@ INSERT INTO public.setting_thresholds_junction (setting_id, threshold_id, type, 
 INSERT INTO public.setting_thresholds_junction (setting_id, threshold_id, type, created_at, generated, mcp, active) VALUES ('019b3be4-3c61-76ff-befb-69b082df2acd', '019b995b-5309-74df-991a-c28980b294f2', 'danger', '2025-12-12T13:26:55.664826+00:00', false, false, true) ON CONFLICT (setting_id, threshold_id, type) DO NOTHING;
 -- department_settings_junction (moved from department file — needs settings_resource to exist)
 INSERT INTO public.department_settings_junction (active, created_at, department_id, settings_id, generated, mcp) VALUES (true, '2025-12-12T13:26:55.664826+00:00', '019b3be4-3247-7cb0-bd74-9b2467b5e32d', '019bb25e-e615-7952-a7d4-4fdee85d18cc', false, false) ON CONFLICT (department_id, settings_id) DO NOTHING;
+
+-- systems_resource + system junctions (agent system grouping)
+WITH sys AS (
+    SELECT
+        '019b3be4-3c61-76ff-befb-69b082df2acd'::uuid AS setting_id,
+        (
+            substr(md5('019b3be4-3c61-76ff-befb-69b082df2acd:default-system'), 1, 8) || '-' ||
+            substr(md5('019b3be4-3c61-76ff-befb-69b082df2acd:default-system'), 9, 4) || '-' ||
+            substr(md5('019b3be4-3c61-76ff-befb-69b082df2acd:default-system'), 13, 4) || '-' ||
+            substr(md5('019b3be4-3c61-76ff-befb-69b082df2acd:default-system'), 17, 4) || '-' ||
+            substr(md5('019b3be4-3c61-76ff-befb-69b082df2acd:default-system'), 21, 12)
+        )::uuid AS system_id
+)
+INSERT INTO public.systems_resource (id, created_at, active, generated, mcp, name, description, department_ids, agent_ids)
+SELECT
+    sys.system_id,
+    NOW(),
+    true,
+    false,
+    false,
+    'Default System 019b3be4-3c61-76ff-befb-69b082df2acd',
+    'Seeded system for university settings',
+    ARRAY[]::uuid[],
+    ARRAY(
+        SELECT DISTINCT aaj.agents_id
+        FROM agent_agents_junction aaj
+        WHERE aaj.active = true
+        ORDER BY aaj.agents_id
+    )
+FROM sys
+ON CONFLICT (id) DO NOTHING;
+
+WITH sys AS (
+    SELECT
+        '019b3be4-3c61-76ff-befb-69b082df2acd'::uuid AS setting_id,
+        (
+            substr(md5('019b3be4-3c61-76ff-befb-69b082df2acd:default-system'), 1, 8) || '-' ||
+            substr(md5('019b3be4-3c61-76ff-befb-69b082df2acd:default-system'), 9, 4) || '-' ||
+            substr(md5('019b3be4-3c61-76ff-befb-69b082df2acd:default-system'), 13, 4) || '-' ||
+            substr(md5('019b3be4-3c61-76ff-befb-69b082df2acd:default-system'), 17, 4) || '-' ||
+            substr(md5('019b3be4-3c61-76ff-befb-69b082df2acd:default-system'), 21, 12)
+        )::uuid AS system_id
+)
+INSERT INTO public.setting_systems_junction (setting_id, systems_id, created_at, active, generated, mcp)
+SELECT sys.setting_id, sys.system_id, NOW(), true, false, false
+FROM sys
+ON CONFLICT (setting_id, systems_id) DO NOTHING;
+
+WITH sys AS (
+    SELECT (
+        substr(md5('019b3be4-3c61-76ff-befb-69b082df2acd:default-system'), 1, 8) || '-' ||
+        substr(md5('019b3be4-3c61-76ff-befb-69b082df2acd:default-system'), 9, 4) || '-' ||
+        substr(md5('019b3be4-3c61-76ff-befb-69b082df2acd:default-system'), 13, 4) || '-' ||
+        substr(md5('019b3be4-3c61-76ff-befb-69b082df2acd:default-system'), 17, 4) || '-' ||
+        substr(md5('019b3be4-3c61-76ff-befb-69b082df2acd:default-system'), 21, 12)
+    )::uuid AS system_id
+)
+INSERT INTO public.system_agents_junction (system_id, agents_id, created_at, active, generated, mcp)
+SELECT sys.system_id, aaj.agents_id, NOW(), true, false, false
+FROM sys
+JOIN agent_agents_junction aaj ON aaj.active = true
+ON CONFLICT (system_id, agents_id) DO NOTHING;

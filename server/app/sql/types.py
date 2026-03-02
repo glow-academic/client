@@ -20043,6 +20043,7 @@ class GetProfileContextAccessSqlRow(BaseModel):
     department_ids: list[UUID] | None = None
     cohort_ids: list[UUID] | None = None
     settings_id: UUID | None = None
+    settings_system_ids: list[UUID] | None = None
     settings_agent_ids: list[UUID] | None = None
     draft_ids: list[UUID] | None = None
     scoped_roles: list[str] | None = None
@@ -20067,6 +20068,7 @@ class GetProfileContextAccessApiResponse(BaseModel):
     department_ids: list[UUID] | None = None
     cohort_ids: list[UUID] | None = None
     settings_id: UUID | None = None
+    settings_system_ids: list[UUID] | None = None
     settings_agent_ids: list[UUID] | None = None
     draft_ids: list[UUID] | None = None
     scoped_roles: list[str] | None = None
@@ -29274,6 +29276,84 @@ class SearchStandardsApiRequest(BaseModel):
 class SearchStandardsApiResponse(BaseModel):
 
     items: list[QGetStandardsV4Item] | None = None
+
+
+
+# Generated from: get_systems
+
+class GetSystemsSqlParams(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.ids,
+        )
+
+class QGetSystemsV4Item(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    department_ids: list[UUID] | None
+    agent_ids: list[UUID] | None
+    active: bool | None
+    generated: bool | None
+
+class GetSystemsSqlRow(BaseModel):
+
+    items: list[QGetSystemsV4Item] | None = None
+
+class GetSystemsApiRequest(BaseModel):
+
+    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetSystemsApiResponse(BaseModel):
+
+    items: list[QGetSystemsV4Item] | None = None
+
+
+
+# Generated from: search_systems
+
+class SearchSystemsSqlParams(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    agent_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    setting: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.exclude_ids,
+            self.department_ids,
+            self.agent_ids,
+            self.setting,
+        )
+
+class SearchSystemsSqlRow(BaseModel):
+
+    items: list[QGetSystemsV4Item] | None = None
+
+class SearchSystemsApiRequest(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    agent_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    setting: bool | None = False
+
+class SearchSystemsApiResponse(BaseModel):
+
+    items: list[QGetSystemsV4Item] | None = None
 
 
 
@@ -40529,6 +40609,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchStandardsApiRequest",
         "SearchStandardsApiResponse",
     ),
+    "app/sql/v4/queries/resources/systems/get_systems_complete.sql": (
+        "GetSystemsSqlParams",
+        "GetSystemsSqlRow",
+        "GetSystemsApiRequest",
+        "GetSystemsApiResponse",
+    ),
+    "app/sql/v4/queries/resources/systems/search_systems_complete.sql": (
+        "SearchSystemsSqlParams",
+        "SearchSystemsSqlRow",
+        "SearchSystemsApiRequest",
+        "SearchSystemsApiResponse",
+    ),
     "app/sql/v4/queries/resources/temperature_levels/get_temperature_levels_complete.sql": (
         "GetTemperatureLevelsSqlParams",
         "GetTemperatureLevelsSqlRow",
@@ -45216,6 +45308,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/standards/search_standards_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/systems/get_systems_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/queries/resources/systems/search_systems_complete.sql"]
     ) -> SqlString: ...
 
     @overload

@@ -92,6 +92,13 @@ class RealtimeAudioAdapter(BaseAudioAdapter):
         # Build WebSocket URL from base_url (supports any provider)
         ws_base = base_url or DEFAULT_REALTIME_URL
         ws_url = f"{ws_base}?model={model}"
+        logger.info(
+            "Initializing Realtime session: group_id=%s model=%s base_url=%s voice=%s",
+            session.group_id,
+            model,
+            ws_base,
+            voice,
+        )
 
         # Connect to provider Realtime API
         headers = {

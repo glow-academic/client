@@ -222,7 +222,7 @@ merged_ids AS (
             ELSE (SELECT auth_item_key_ids FROM canonical_auth_item_keys)
         END as auth_item_key_ids
 ),
--- ========== CONFIG CHAIN (departments -> settings -> agents -> models -> providers) ==========
+-- ========== CONFIG CHAIN (departments -> settings -> systems -> agents -> models -> providers) ==========
 config_settings AS (
     SELECT DISTINCT unnest(dr.setting_ids) as setting_id
     FROM departments_resource dr
@@ -231,10 +231,16 @@ config_settings AS (
       AND dr.setting_ids IS NOT NULL
       AND dr.setting_ids != ARRAY[]::uuid[]
 ),
-config_settings_data AS (
+config_systems_data AS (
+    SELECT DISTINCT ssj.systems_id as system_id
+    FROM config_settings cs
+    JOIN setting_systems_junction ssj ON ssj.setting_id = cs.setting_id
+    WHERE ssj.active = true
+),
+config_systems_resource_data AS (
     SELECT sr.id, sr.agent_ids
-    FROM settings_resource sr
-    JOIN config_settings cs ON sr.id = cs.setting_id
+    FROM systems_resource sr
+    JOIN config_systems_data csd ON sr.id = csd.system_id
     WHERE sr.active = true
 ),
 config_agent_resource_ids_data AS (
@@ -243,9 +249,9 @@ config_agent_resource_ids_data AS (
         ARRAY[]::uuid[]
     ) as ids
     FROM (
-        SELECT unnest(csd.agent_ids) as agent_id
-        FROM config_settings_data csd
-        WHERE csd.agent_ids IS NOT NULL AND csd.agent_ids != ARRAY[]::uuid[]
+        SELECT unnest(csrd.agent_ids) as agent_id
+        FROM config_systems_resource_data csrd
+        WHERE csrd.agent_ids IS NOT NULL AND csrd.agent_ids != ARRAY[]::uuid[]
     ) sub
 ),
 config_model_resource_ids_data AS (

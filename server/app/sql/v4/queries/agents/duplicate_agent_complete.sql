@@ -266,18 +266,6 @@ link_agent_active_flag AS (
     ON CONFLICT (agent_id, flag_id) DO UPDATE SET
         value = false
 ),
--- Copy agent_configs_junction (replaces agent_models, agent_temperature_levels, agent_reasoning_levels, agent_voices)
-copy_configs AS (
-    INSERT INTO agent_configs_junction (agent_id, config_id, active, created_at)
-    SELECT
-        na.agent_id::uuid,
-        acj.config_id,
-        acj.active,
-        NOW()
-    FROM new_agent na
-    CROSS JOIN params x
-    JOIN agent_configs_junction acj ON acj.agent_id = x.agent_id AND acj.active = true
-),
 copy_departments AS (
     INSERT INTO agent_departments_junction (agent_id, department_id, active, created_at)
     SELECT 

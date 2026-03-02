@@ -21,6 +21,7 @@ from app.sql.types import (
     QGetDepartmentsV4Item,
     QGetProfileContextV4RoleResource,
     QGetProfileContextV4ThemeTokens,
+    QGetSystemsV4Item,
     QGetSettingsV4Item,
     QGetToolsV4Item,
 )
@@ -77,6 +78,7 @@ class AuthSettingsInternalData:
 
     settings_id: UUID | None
     settings: QGetSettingsV4Item | None
+    settings_systems: list[QGetSystemsV4Item]
     settings_agents: list[QGetAgentsV4Item]
     settings_tools: list[QGetToolsV4Item]
     settings_theme: GetSettingsThemeDataSqlRow
@@ -169,6 +171,7 @@ class GetAuthSettingsApiResponse(BaseModel):
     warning_threshold: int | None = None
     danger_threshold: int | None = None
     tokens: QGetProfileContextV4ThemeTokens | None = None
+    systems: list[QGetSystemsV4Item] | None = None
     agents: list[QGetAgentsV4Item] | None = None
     tools: list[QGetToolsV4Item] | None = None
     artifact_has_generate: dict[str, bool] | None = None
