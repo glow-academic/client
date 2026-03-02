@@ -40,10 +40,9 @@ SELECT
 FROM instructions_resource i
 WHERE i.active = true
   AND EXISTS (
-      SELECT 1 FROM config_resource cr
-      WHERE i.id = ANY(cr.instruction_ids)
-        AND cr.active = true
+      SELECT 1 FROM agents_resource ar
+      WHERE i.id = ANY(ar.instruction_ids)
+        AND ar.active = true
   )
 LIMIT 1
 $$;
-

@@ -295,10 +295,6 @@ INSERT INTO public.agent_agents_junction (agent_id, agents_id, active, created_a
 INSERT INTO public.agent_descriptions_junction (agent_id, description_id, created_at, generated, mcp, active) VALUES ('019b3be4-3112-7685-8967-a5488fadb090', '019b995c-8ea1-7cad-9f2d-378a5856d842', '2025-08-12T12:52:09.818852+00:00', false, false, true) ON CONFLICT (agent_id, description_id) DO NOTHING;
 -- agent_flags_junction
 INSERT INTO public.agent_flags_junction (agent_id, flag_id, value, created_at, generated, mcp, active) VALUES ('019b3be4-3112-7685-8967-a5488fadb090', '019be334-bfc4-76ac-80d3-c8ba7618bc7a', true, '2025-08-12T12:52:09.818852+00:00', false, false, true) ON CONFLICT (agent_id, flag_id) DO NOTHING;
--- config_resource (from agent_models_junction)
-INSERT INTO public.config_resource (id, model_id, prompt_id, instruction_ids, created_at, generated, mcp, active) VALUES ('56590f98-a813-5040-b1d8-a58333e6427c', '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019b3be4-36fe-7e85-ad55-bd71c027fb7b', ARRAY['019c0a2d-fc41-7ed9-a57b-b348734e1ea6'::uuid], '2025-08-12T12:52:09.818852+00:00', false, false, true) ON CONFLICT (id) DO NOTHING;
--- agent_configs_junction
-INSERT INTO public.agent_configs_junction (agent_id, config_id, created_at, generated, mcp, active) VALUES ('019b3be4-3112-7685-8967-a5488fadb090', '56590f98-a813-5040-b1d8-a58333e6427c', '2025-08-12T12:52:09.818852+00:00', false, false, true) ON CONFLICT (agent_id, config_id) DO NOTHING;
 -- agent_names_junction
 INSERT INTO public.agent_names_junction (agent_id, name_id, created_at, generated, mcp, active) VALUES ('019b3be4-3112-7685-8967-a5488fadb090', '019b995c-8ea0-7cef-9ca7-49400d8ff010', '2025-08-12T12:52:09.818852+00:00', false, false, true) ON CONFLICT (agent_id, name_id) DO NOTHING;
 -- agent_tools_junction

@@ -7081,120 +7081,6 @@ class SyncCohortEntriesApiResponse(BaseModel):
 
 
 
-# Generated from: create_config_entries
-
-class CreateConfigEntriesSqlParams(BaseModel):
-
-    call_id: UUID | None = None
-    mcp: bool | None = False
-    entry_data: Any | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.call_id,
-            self.mcp,
-            self.entry_data,
-        )
-
-class CreateConfigEntriesSqlRow(BaseModel):
-
-    id: UUID | None = None
-    already_exists: bool | None = None
-
-class CreateConfigEntriesApiRequest(BaseModel):
-
-    call_id: UUID | None = None
-    mcp: bool | None = False
-    entry_data: Any | None = None
-
-class CreateConfigEntriesApiResponse(BaseModel):
-
-    id: UUID | None = None
-    already_exists: bool | None = None
-
-
-
-# Generated from: get_config_entries
-
-class GetConfigEntriesSqlParams(BaseModel):
-
-    ids: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.ids,
-        )
-
-class QGetConfigEntriesV4Item(BaseModel):
-
-    config_id: UUID | None
-    prompt_id: UUID | None
-    instruction_ids: list[UUID] | None
-    tool_ids: list[UUID] | None
-    modality_ids: list[UUID] | None
-    rubric_id: UUID | None
-    model_id: UUID | None
-    temperature_level_id: UUID | None
-    reasoning_level_id: UUID | None
-    voice_id: UUID | None
-    quality_id: UUID | None
-    key_id: UUID | None
-    created_at: datetime | None
-
-class GetConfigEntriesSqlRow(BaseModel):
-
-    items: list[QGetConfigEntriesV4Item] | None = None
-
-class GetConfigEntriesApiRequest(BaseModel):
-
-    ids: list[UUID]
-
-class GetConfigEntriesApiResponse(BaseModel):
-
-    items: list[QGetConfigEntriesV4Item] | None = None
-
-
-
-# Generated from: search_config_entries
-
-class SearchConfigEntriesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    agents_id: UUID | None = None
-    models_id: UUID | None = None
-    providers_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.agents_id,
-            self.models_id,
-            self.providers_id,
-        )
-
-class SearchConfigEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class SearchConfigEntriesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    agents_id: UUID | None = None
-    models_id: UUID | None = None
-    providers_id: UUID | None = None
-
-class SearchConfigEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
 # Generated from: create_conversations_entries
 
 class CreateConversationsEntriesSqlParams(BaseModel):
@@ -22428,48 +22314,6 @@ class SearchConditionalParametersApiResponse(BaseModel):
 
 
 
-# Generated from: get_configs
-
-class GetConfigsSqlParams(BaseModel):
-
-    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.ids,
-        )
-
-class QGetConfigsV4Item(BaseModel):
-
-    id: UUID | None
-    prompt_id: UUID | None
-    instruction_ids: list[UUID] | None
-    tool_ids: list[UUID] | None
-    modality_ids: list[UUID] | None
-    model_id: UUID | None
-    temperature_level_id: UUID | None
-    reasoning_level_id: UUID | None
-    voice_id: UUID | None
-    quality_id: UUID | None
-    key_id: UUID | None
-    rubric_id: UUID | None
-    active: bool | None
-    generated: bool | None
-
-class GetConfigsSqlRow(BaseModel):
-
-    items: list[QGetConfigsV4Item] | None = None
-
-class GetConfigsApiRequest(BaseModel):
-
-    ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetConfigsApiResponse(BaseModel):
-
-    items: list[QGetConfigsV4Item] | None = None
-
-
-
 # Generated from: get_departments
 
 class GetDepartmentsSqlParams(BaseModel):
@@ -34870,47 +34714,6 @@ class GetTrainingConfigApiResponse(BaseModel):
 
 
 
-# Generated from: get_config_view
-
-class GetConfigViewSqlParams(BaseModel):
-
-    config_id_filter: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.config_id_filter,
-        )
-
-class QGetConfigViewV4Item(BaseModel):
-
-    config_id: UUID | None
-    prompt_id: UUID | None
-    instruction_ids: list[UUID] | None
-    tool_ids: list[UUID] | None
-    modality_ids: list[UUID] | None
-    rubric_id: UUID | None
-    model_id: UUID | None
-    temperature_level_id: UUID | None
-    reasoning_level_id: UUID | None
-    voice_id: UUID | None
-    quality_id: UUID | None
-    key_id: UUID | None
-    created_at: datetime | None
-
-class GetConfigViewSqlRow(BaseModel):
-
-    items: list[QGetConfigViewV4Item] | None = None
-
-class GetConfigViewApiRequest(BaseModel):
-
-    config_id_filter: UUID
-
-class GetConfigViewApiResponse(BaseModel):
-
-    items: list[QGetConfigViewV4Item] | None = None
-
-
-
 # Generated from: get_grant_list_view
 
 class GetGrantListViewSqlParams(BaseModel):
@@ -37176,24 +36979,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SyncCohortEntriesSqlRow",
         "SyncCohortEntriesApiRequest",
         "SyncCohortEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/config/create_config_entries_complete.sql": (
-        "CreateConfigEntriesSqlParams",
-        "CreateConfigEntriesSqlRow",
-        "CreateConfigEntriesApiRequest",
-        "CreateConfigEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/config/get_config_entries_complete.sql": (
-        "GetConfigEntriesSqlParams",
-        "GetConfigEntriesSqlRow",
-        "GetConfigEntriesApiRequest",
-        "GetConfigEntriesApiResponse",
-    ),
-    "app/sql/v4/queries/entries/config/search_config_entries_complete.sql": (
-        "SearchConfigEntriesSqlParams",
-        "SearchConfigEntriesSqlRow",
-        "SearchConfigEntriesApiRequest",
-        "SearchConfigEntriesApiResponse",
     ),
     "app/sql/v4/queries/entries/conversations/create_conversations_entries_complete.sql": (
         "CreateConversationsEntriesSqlParams",
@@ -39523,12 +39308,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchConditionalParametersApiRequest",
         "SearchConditionalParametersApiResponse",
     ),
-    "app/sql/v4/queries/resources/configs/get_configs_complete.sql": (
-        "GetConfigsSqlParams",
-        "GetConfigsSqlRow",
-        "GetConfigsApiRequest",
-        "GetConfigsApiResponse",
-    ),
     "app/sql/v4/queries/resources/departments/get_departments_complete.sql": (
         "GetDepartmentsSqlParams",
         "GetDepartmentsSqlRow",
@@ -41323,12 +41102,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetTrainingConfigApiRequest",
         "GetTrainingConfigApiResponse",
     ),
-    "app/sql/v4/queries/views/config/get_config_view_complete.sql": (
-        "GetConfigViewSqlParams",
-        "GetConfigViewSqlRow",
-        "GetConfigViewApiRequest",
-        "GetConfigViewApiResponse",
-    ),
     "app/sql/v4/queries/views/grant/list/get_grant_list_view_complete.sql": (
         "GetGrantListViewSqlParams",
         "GetGrantListViewSqlRow",
@@ -42448,21 +42221,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/entries/cohort_sync/sync_cohort_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/config/create_config_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/config/get_config_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/entries/config/search_config_entries_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -44407,11 +44165,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/resources/configs/get_configs_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/queries/resources/departments/get_departments_complete.sql"]
     ) -> SqlString: ...
 
@@ -45903,11 +45656,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/queries/views/chat/training_config/get_training_config_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/queries/views/config/get_config_view_complete.sql"]
     ) -> SqlString: ...
 
     @overload

@@ -286,9 +286,6 @@ from app.api.v4.resources.models.search import router as models_search_router
 
 router.include_router(models_get_router)
 router.include_router(models_search_router)
-from app.api.v4.resources.configs.get import router as configs_get_router
-
-router.include_router(configs_get_router)
 # NOTE: model_flags - non-creatable (migration 19)
 # GET/Search endpoints available for eval two-pass architecture
 from app.api.v4.resources.model_flags.get import router as model_flags_get_router

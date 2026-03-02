@@ -64,15 +64,25 @@ groups_entry_links AS (
     WHERE ge.active = true
     GROUP BY ge.test_invocation_id
 ),
--- Groups config: config_ids from test_invocation_groups_entry → groups_configs_connection
-groups_config_links AS (
+-- Groups agents: agent_ids from test_invocation_groups_entry → groups_agents_connection
+groups_agents_links AS (
     SELECT
         ge.test_invocation_id,
-        ARRAY_AGG(DISTINCT gcc.configs_id ORDER BY gcc.configs_id) FILTER (WHERE gcc.configs_id IS NOT NULL) AS group_config_ids
+        ARRAY_AGG(DISTINCT gac.agents_id ORDER BY gac.agents_id) FILTER (WHERE gac.agents_id IS NOT NULL) AS group_agent_ids
     FROM test_invocation_groups_entry ge
-    JOIN test_invocation_groups_configs_connection gcc ON gcc.test_invocation_groups_id = ge.id AND gcc.active = true
+    JOIN test_invocation_groups_agents_connection gac ON gac.test_invocation_groups_id = ge.id AND gac.active = true
     WHERE ge.active = true
     GROUP BY ge.test_invocation_id
+),
+-- Runs agents: agent_ids from test_invocation_runs_entry → runs_agents_connection
+runs_agents_links AS (
+    SELECT
+        re.test_invocation_id,
+        ARRAY_AGG(DISTINCT rac.agents_id ORDER BY rac.agents_id) FILTER (WHERE rac.agents_id IS NOT NULL) AS run_agent_ids
+    FROM test_invocation_runs_entry re
+    JOIN test_invocation_runs_agents_connection rac ON rac.test_invocation_runs_id = re.id AND rac.active = true
+    WHERE re.active = true
+    GROUP BY re.test_invocation_id
 ),
 -- Department links (from connection table, was direct FK)
 department_links AS (
@@ -99,7 +109,7 @@ latest_grade AS (
 -- Bundle snapshot: configured resource IDs from test_invocation_*
 -- Analogous to subbundle_snapshot in attempt_chat_mv
 -- Now only: models, voices, temperature_levels, reasoning_levels, keys
--- (prompts, instructions, tools moved to config_resource)
+-- (prompts, instructions, tools are resolved from agents_resource)
 -- ============================================================================
 bundle_snapshot AS (
     SELECT
@@ -163,9 +173,9 @@ SELECT
     COALESCE(rel.run_ids, ARRAY[]::uuid[]) AS run_ids,
     -- Group IDs (from groups sub-entries)
     COALESCE(gel.group_ids, ARRAY[]::uuid[]) AS group_ids,
-    -- Config IDs (from sub-entry config connections)
-    ARRAY[]::uuid[] AS run_config_ids,
-    COALESCE(gcl.group_config_ids, ARRAY[]::uuid[]) AS group_config_ids,
+    -- Agent IDs (from sub-entry agent connections)
+    COALESCE(ral.run_agent_ids, ARRAY[]::uuid[]) AS run_agent_ids,
+    COALESCE(gal.group_agent_ids, ARRAY[]::uuid[]) AS group_agent_ids,
 
     -- Singular resource IDs (from bundle snapshot, remaining connections)
     bs.model_id,
@@ -180,7 +190,8 @@ SELECT
 FROM test_invocation_entry i
 LEFT JOIN runs_entry_links rel ON rel.test_invocation_id = i.id
 LEFT JOIN groups_entry_links gel ON gel.test_invocation_id = i.id
-LEFT JOIN groups_config_links gcl ON gcl.test_invocation_id = i.id
+LEFT JOIN groups_agents_links gal ON gal.test_invocation_id = i.id
+LEFT JOIN runs_agents_links ral ON ral.test_invocation_id = i.id
 LEFT JOIN department_links dl ON dl.test_invocation_id = i.id
 LEFT JOIN latest_grade lg ON lg.invocation_id = i.id
 LEFT JOIN bundle_snapshot bs ON bs.test_invocation_id = i.id

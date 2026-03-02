@@ -80,7 +80,7 @@ selected_agent AS (
       )
     LIMIT 1
 ),
--- Get agent model output modalities (via config_resource)
+-- Get agent model output modalities (via agents_resource)
 agent_model_modalities AS (
     SELECT
         array_agg(mr.modality::text ORDER BY mr.modality) as output_modalities

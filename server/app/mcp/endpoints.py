@@ -452,7 +452,6 @@ _ALL_ENTRIES = [
     "calls",
     "certificates",
     "cohort_drafts",
-    "config",
     "conversations",
     "conversations_completions",
     "dashboard_insights",

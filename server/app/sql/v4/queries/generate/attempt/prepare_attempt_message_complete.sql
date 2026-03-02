@@ -1,4 +1,4 @@
--- Prepare attempt message: mutations only (run/config/messages creation)
+-- Prepare attempt message: mutations only (run/agent/messages creation)
 -- All data fetching is now done in Python from pre-fetched resources
 -- group_id and resolved resource IDs are passed directly
 
@@ -68,7 +68,7 @@ BEGIN
     RETURNING id INTO v_run_id;
 
 
-    -- Link run to existing config_resource rows via agent configuration
+    -- Link run to agent resources via runs_agents_connection
     IF p_agents_resource_id IS NOT NULL THEN
         INSERT INTO runs_agents_connection (run_id, agents_id, created_at, active, generated, mcp)
         VALUES (v_run_id, p_agents_resource_id, NOW(), true, false, false)

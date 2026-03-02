@@ -1,4 +1,4 @@
--- Prepare test grade: mutations only (run/config/grade creation)
+-- Prepare test grade: mutations only (run/agent/grade creation)
 -- All data fetching is now done in Python from pre-fetched resources
 -- group_id and invocation_id are resolved in Python and passed directly
 -- 1) Drop function first

@@ -184,10 +184,6 @@ INSERT INTO public.agent_agents_junction (agent_id, agents_id, active, created_a
 INSERT INTO public.agent_descriptions_junction (agent_id, description_id, created_at, generated, mcp, active) VALUES ('88888888-8888-8888-8888-888888888888', '019bcd1b-0ca6-789c-9a76-7890886df5e7', '2026-01-17T17:57:40.643852+00:00', false, false, true) ON CONFLICT (agent_id, description_id) DO NOTHING;
 -- agent_flags_junction
 INSERT INTO public.agent_flags_junction (agent_id, flag_id, value, created_at, generated, mcp, active) VALUES ('88888888-8888-8888-8888-888888888888', '019be334-bfc4-76ac-80d3-c8ba7618bc7a', true, '2026-01-17T17:57:40.643852+00:00', false, false, true) ON CONFLICT (agent_id, flag_id) DO NOTHING;
--- config_resource (from agent_models_junction)
-INSERT INTO public.config_resource (id, model_id, prompt_id, instruction_ids, created_at, generated, mcp, active) VALUES ('cad2aa51-c483-519f-b611-f4572d32cb4b', '019bb25e-e5ff-76f6-90d4-830670bb5d82', '88888888-9999-9999-9999-888888888888', ARRAY['019c2f13-4200-7c00-8000-000000000001'::uuid], '2026-01-17T17:57:40.643852+00:00', false, false, true) ON CONFLICT (id) DO NOTHING;
--- agent_configs_junction
-INSERT INTO public.agent_configs_junction (agent_id, config_id, created_at, generated, mcp, active) VALUES ('88888888-8888-8888-8888-888888888888', 'cad2aa51-c483-519f-b611-f4572d32cb4b', '2026-01-17T17:57:40.643852+00:00', false, false, true) ON CONFLICT (agent_id, config_id) DO NOTHING;
 -- agent_names_junction
 INSERT INTO public.agent_names_junction (agent_id, name_id, created_at, generated, mcp, active) VALUES ('88888888-8888-8888-8888-888888888888', '019bcd1b-0ca6-75a6-8b1c-c88ec47260b2', '2026-01-17T17:57:40.643852+00:00', false, false, true) ON CONFLICT (agent_id, name_id) DO NOTHING;
 -- agent_tools_junction

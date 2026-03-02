@@ -107,10 +107,6 @@ BEGIN
     REFRESH MATERIALIZED VIEW CONCURRENTLY metrics_mv;
     refreshed := array_append(refreshed, 'metrics_mv');
 
-    -- Config MV
-    REFRESH MATERIALIZED VIEW CONCURRENTLY config_mv;
-    refreshed := array_append(refreshed, 'config_mv');
-
     -- Get actor_name from profile_artifact using profile_names_junction junction table
     SELECT COALESCE(
         (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = api_refresh_all_v4.profile_id LIMIT 1),

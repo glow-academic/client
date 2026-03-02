@@ -42,7 +42,7 @@ BEGIN
     RETURNING id, runs_entry.created_at INTO v_run_id, v_created_at;
 
 
-    -- Link run to existing config_resource rows via agent configuration
+    -- Link run to agent resources via runs_agents_connection
     IF p_agents_resource_id IS NOT NULL THEN
         INSERT INTO runs_agents_connection (run_id, agents_id, created_at, active, generated, mcp)
         VALUES (v_run_id, p_agents_resource_id, NOW(), true, false, false)
