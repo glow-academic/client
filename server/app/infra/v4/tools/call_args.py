@@ -45,7 +45,17 @@ async def resolve_tool(
     cache_key = f"tool_info:{scope}:{operation}:{target}"
     cached = await get_cached(cache_key)
     if cached:
-        return cached
+        return ToolInfo(
+            tool_id=UUID(cached["tool_id"]),
+            args=[
+                ToolArgInfo(
+                    args_id=UUID(a["args_id"]),
+                    name=a["name"],
+                    field_type=a["field_type"],
+                )
+                for a in cached.get("args", [])
+            ],
+        )
 
     if scope not in ("entries", "resources", "artifacts"):
         return None
@@ -89,7 +99,18 @@ async def resolve_tool(
         ]
 
     tool_info = ToolInfo(tool_id=tool_id, args=args)
-    await set_cached(cache_key, tool_info, ttl=3600)
+    await set_cached(
+        cache_key,
+        {
+            "tool_id": str(tool_id),
+            "args": [
+                {"args_id": str(a.args_id), "name": a.name, "field_type": a.field_type}
+                for a in args
+            ],
+        },
+        ttl=3600,
+        tags=["tools"],
+    )
     return tool_info
 
 
