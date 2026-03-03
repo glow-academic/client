@@ -72,7 +72,7 @@ from app.v5.api.main.attempt.types import (
     TimerData,
     VideoEntry,
 )
-from app.v5.api.auth.settings import get_auth_settings_internal
+from app.auth.settings import get_auth_settings_internal
 from app.v5.api.entries.attempt.get import (
     get_attempt_chats_internal,
     get_attempt_messages_internal,

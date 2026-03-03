@@ -32,7 +32,7 @@ from app.v5.api.main.scenario.types import (
     ListScenarioApiSimulation,
     ListScenarioSqlRow,
 )
-from app.v5.api.auth.profile import get_auth_profile_internal
+from app.auth.profile import get_auth_profile_internal
 from app.v5.api.resources.cohorts.get import get_cohorts_internal
 from app.v5.api.resources.departments.get import get_departments_internal
 from app.v5.api.resources.fields.get import get_fields_internal

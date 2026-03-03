@@ -28,7 +28,7 @@ from app.v5.api.main.pricing.types import (
     PricingWebsocketResources,
 )
 from app.v5.api.main.types import FilterOption
-from app.v5.api.auth.settings import get_auth_settings_internal
+from app.auth.settings import get_auth_settings_internal
 from app.v5.api.entries.groups.get import get_group_list_view_internal
 from app.v5.api.entries.runs.search import (
     GetRunListViewResponse,

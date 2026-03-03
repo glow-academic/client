@@ -24,8 +24,8 @@ from app.v5.api.main.scenario.types import (
     SaveScenarioSqlParams,
     SaveScenarioSqlRow,
 )
-from app.v5.api.auth.profile import get_auth_profile_internal
-from app.v5.api.auth.settings import get_auth_settings_internal
+from app.auth.profile import get_auth_profile_internal
+from app.auth.settings import get_auth_settings_internal
 from app.v5.api.permissions import resolve_agents_for_artifact
 from app.v5.api.resources.descriptions.create import create_descriptions_internal
 from app.v5.api.resources.names.create import create_names_internal

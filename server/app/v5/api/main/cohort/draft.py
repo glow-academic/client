@@ -13,8 +13,8 @@ from app.v5.api.main.cohort.types import (
     PatchCohortDraftSqlParams,
     PatchCohortDraftSqlRow,
 )
-from app.v5.api.auth.profile import get_auth_profile_internal
-from app.v5.api.auth.settings import get_auth_settings_internal
+from app.auth.profile import get_auth_profile_internal
+from app.auth.settings import get_auth_settings_internal
 from app.v5.api.entries.cohort_drafts.refresh import refresh_cohort_drafts_internal
 from app.v5.api.permissions import resolve_agents_for_artifact
 from app.v5.api.resources.departments.link import link_departments_internal

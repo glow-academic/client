@@ -73,7 +73,7 @@ async def get_session_internal(
     endpoint and the websocket wrapper.
     """
     # 1. Settings-based agent resolution + config chain
-    from app.v5.api.auth.settings import get_auth_settings_internal
+    from app.auth.settings import get_auth_settings_internal
 
     async with pool.acquire() as settings_conn:
         settings_data = await get_auth_settings_internal(
@@ -107,7 +107,7 @@ async def get_session_internal(
             )
 
     # 2. Resolve actor context
-    from app.v5.api.auth.profile import get_auth_profile_internal
+    from app.auth.profile import get_auth_profile_internal
 
     async with pool.acquire() as context_conn:
         profile_ctx = await get_auth_profile_internal(

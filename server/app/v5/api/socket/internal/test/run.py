@@ -16,7 +16,7 @@ import uuid
 from typing import Any
 
 from app.utils.storage.file_writer import write_text_file
-from app.v5.infra.websocket.get_db_connection import get_db_connection
+from app.infra.websocket.get_db_connection import get_db_connection
 from app.globals import get_internal_sio
 from app.v5.api.socket.client.types import TestRunPayload
 from app.v5.api.socket.internal.test.types import TestErrorData

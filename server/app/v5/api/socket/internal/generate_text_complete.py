@@ -8,7 +8,7 @@ import uuid
 from typing import Any
 
 from app.utils.storage.file_writer import write_text_file
-from app.v5.infra.websocket.get_db_connection import get_db_connection
+from app.infra.websocket.get_db_connection import get_db_connection
 from app.globals import get_internal_sio
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql

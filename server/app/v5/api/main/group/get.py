@@ -29,7 +29,7 @@ from app.v5.api.main.group.types import (
     GroupWebsocketEntries,
     GroupWebsocketResources,
 )
-from app.v5.api.auth.settings import get_auth_settings_internal
+from app.auth.settings import get_auth_settings_internal
 from app.v5.api.entries.calls.get import get_call_list_view_internal
 from app.v5.api.entries.groups.get import get_group_list_view_internal
 from app.v5.api.entries.messages.search import get_message_list_entries_internal

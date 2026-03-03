@@ -23,7 +23,7 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from app.v5.api.auth.access import get_access_internal
+from app.auth.access import get_access_internal
 from app.v5.api.entries.attempt.get import get_attempt_entries_internal
 from app.v5.api.entries.attempt.refresh import refresh_attempt_internal
 from app.v5.api.entries.attempt_chat.create import create_attempt_chat_entry_internal
@@ -47,9 +47,9 @@ from app.v5.api.entries.practice_chat.search import (
     search_practice_chat_entries_internal,
 )
 from app.v5.api.entries.runs.create import create_runs_entry_internal
-from app.v5.infra.websocket.find_profile_by_socket import find_profile_by_socket
-from app.v5.infra.websocket.find_session_by_socket import find_session_by_socket
-from app.v5.infra.websocket.get_db_connection import get_db_connection
+from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.websocket.find_session_by_socket import find_session_by_socket
+from app.infra.websocket.get_db_connection import get_db_connection
 from app.globals import get_internal_sio
 from app.v5.api.socket.internal.attempt.helpers import emit_chat_generate
 from app.v5.api.socket.internal.attempt.types import (

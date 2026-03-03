@@ -22,8 +22,8 @@ from app.v5.api.main.auth.types import (
     SaveAuthSqlParams,
     SaveAuthSqlRow,
 )
-from app.v5.api.auth.profile import get_auth_profile_internal
-from app.v5.infra.auth.keycloak_sync import perform_keycloak_sync
+from app.auth.profile import get_auth_profile_internal
+from app.infra.auth.keycloak_sync import perform_keycloak_sync
 from app.utils.error.handle_route_error import handle_route_error
 from app.globals import get_db, get_pool
 from app.sql.types import (

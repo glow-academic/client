@@ -23,22 +23,22 @@ from app.v5.api.resources.instructions.get import get_instructions_internal
 from app.v5.api.resources.models.get import get_models_internal
 from app.v5.api.resources.prompts.get import get_prompts_internal
 from app.v5.api.resources.providers.get import get_providers_internal
-from app.v5.infra.generation import convert_tools_to_dict, render_developer_instructions
-from app.v5.infra.generation.media_context import (
+from app.infra.generation import convert_tools_to_dict, render_developer_instructions
+from app.infra.generation.media_context import (
     has_media_sentinels,
     post_process_media_sentinels,
     wrap_media_entries,
 )
 from app.utils.storage.file_writer import write_text_file
-from app.v5.infra.websocket.find_profile_by_socket import find_profile_by_socket
-from app.v5.infra.websocket.generation_tracker import (
+from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.websocket.generation_tracker import (
     init_generation,
     init_resource_progress,
 )
-from app.v5.infra.websocket.get_db_connection import get_db_connection
-from app.v5.infra.websocket.typed_emit import emit_to_internal
+from app.infra.websocket.get_db_connection import get_db_connection
+from app.infra.websocket.typed_emit import emit_to_internal
 from app.globals import get_internal_sio, get_pool
-from app.v5.registry.modalities import get_tool_output_modalities
+from app.registry.modalities import get_tool_output_modalities
 from app.v5.api.socket.client.registry import REGISTRY, ArtifactGenerateConfig
 from app.v5.api.socket.client.types import ArtifactTypeItem, EntryTypeItem, GeneratePayload
 from app.v5.api.socket.internal.generate_artifact import GenerateArtifactPayload
@@ -227,7 +227,7 @@ async def _fetch_entry_types(
 
     Only "get" operations produce context data.
     """
-    from app.v5.registry.operations import ENTRY_OPS, resolve_callable
+    from app.registry.operations import ENTRY_OPS, resolve_callable
 
     results: dict[str, dict[str, Any]] = {}
 

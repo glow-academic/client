@@ -15,7 +15,7 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.v5.api.main.home.types import ExportHomeApiResponse
-from app.v5.api.auth.profile import get_auth_profile_internal
+from app.auth.profile import get_auth_profile_internal
 from app.v5.api.entries.attempt_chat.get import get_chats_internal
 from app.v5.api.resources.cohorts.get import get_cohorts_internal
 from app.v5.api.resources.profiles.get import get_profiles_internal

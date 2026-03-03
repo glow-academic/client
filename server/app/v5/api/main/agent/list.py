@@ -23,7 +23,7 @@ from app.v5.api.main.agent.types import (
     ListAgentApiAgent,
     ListAgentApiResponse,
 )
-from app.v5.api.auth.profile import get_auth_profile_internal
+from app.auth.profile import get_auth_profile_internal
 from app.v5.api.resources.models.get import get_models_internal
 from app.v5.api.types import ListFilterSection
 from app.utils.error.handle_route_error import handle_route_error

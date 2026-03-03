@@ -25,7 +25,7 @@ from app.v5.api.main.persona.types import (
     ListPersonaApiPersona,
     ListPersonaApiResponse,
 )
-from app.v5.api.auth.profile import get_auth_profile_internal
+from app.auth.profile import get_auth_profile_internal
 from app.v5.api.resources.departments.get import get_departments_internal
 from app.v5.api.resources.fields.get import get_fields_internal
 from app.v5.api.resources.scenarios.get import get_scenarios_internal

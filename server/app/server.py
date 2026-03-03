@@ -141,8 +141,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
 
         # Start voice session reaper (cleans up idle sessions every 60s)
         async def _reap_stale_voice_sessions() -> None:
-            from app.v5.infra.websocket.audio_lifecycle import cleanup_audio_session
-            from app.v5.infra.websocket.session_store import get_stale_sessions
+            from app.infra.websocket.audio_lifecycle import cleanup_audio_session
+            from app.infra.websocket.session_store import get_stale_sessions
 
             while True:
                 try:

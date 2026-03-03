@@ -27,7 +27,7 @@ from app.v5.api.main.leaderboard.types import (
     LeaderboardWebsocketResources,
 )
 from app.v5.api.main.types import FilterOption
-from app.v5.api.auth.settings import get_auth_settings_internal
+from app.auth.settings import get_auth_settings_internal
 from app.v5.api.entries.attempt_chat.get import get_chats_internal
 from app.v5.api.entries.runs.search import (
     GetRunListViewResponse,

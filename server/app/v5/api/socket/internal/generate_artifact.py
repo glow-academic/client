@@ -16,16 +16,16 @@ from typing import Any, cast
 
 from pydantic import BaseModel
 
-from app.v5.infra.artifacts import (
+from app.infra.artifacts import (
     convert_tools_to_openai_format,
     convert_tools_to_responses_format,
     format_messages_for_litellm,
     stream_litellm_events,
 )
-from app.v5.infra.tools.tool_executor import execute_tool_call
-from app.v5.infra.websocket.find_profile_by_socket import find_profile_by_socket
-from app.v5.infra.websocket.get_db_connection import get_db_connection
-from app.v5.infra.websocket.tool_call_utils import (
+from app.infra.tools.tool_executor import execute_tool_call
+from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.websocket.get_db_connection import get_db_connection
+from app.infra.websocket.tool_call_utils import (
     build_tool_output_schemas,
     extract_template_var,
     parse_partial_json,
@@ -228,7 +228,7 @@ async def _execute_artifact_tool_inline(
     """
     import importlib
 
-    from app.v5.infra.generation.render_developer_instructions import (
+    from app.infra.generation.render_developer_instructions import (
         render_developer_instructions,
     )
     from app.v5.api.socket.client.registry import REGISTRY
@@ -639,7 +639,7 @@ async def _generate_artifact_impl(
                 return
 
             # AI-generated media via adapter
-            from app.v5.infra.websocket.media_lifecycle import get_media_adapter
+            from app.infra.websocket.media_lifecycle import get_media_adapter
 
             adapter = get_media_adapter()
             prompt = data.messages[-1]["content"] if data.messages else ""
@@ -680,8 +680,8 @@ async def _generate_artifact_impl(
             return
 
         if data.modality == "audio":
-            from app.v5.infra.websocket.audio_lifecycle import get_audio_adapter
-            from app.v5.infra.websocket.session_store import (
+            from app.infra.websocket.audio_lifecycle import get_audio_adapter
+            from app.infra.websocket.session_store import (
                 create_session,
                 remove_session,
             )

@@ -27,8 +27,8 @@ Events emitted:
 import json
 from typing import Any
 
-from app.v5.infra.websocket.session_store import get_session_by_group_id
-from app.v5.infra.websocket.tool_call_utils import (
+from app.infra.websocket.session_store import get_session_by_group_id
+from app.infra.websocket.tool_call_utils import (
     parse_partial_json,
     resolve_output_fields,
 )
@@ -39,7 +39,7 @@ class InternalBusAudioEmitter:
     """Concrete AudioEventEmitter that emits via the internal event bus.
 
     Satisfies the AudioEventEmitter protocol defined in
-    app.v5.infra.websocket.adapters.audio.base.
+    app.infra.websocket.adapters.audio.base.
     """
 
     def __init__(self) -> None:

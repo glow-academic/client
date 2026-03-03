@@ -18,7 +18,7 @@ from app.v5.api.main.simulation.types import (
     PatchSimulationDraftApiResponse,
     PatchSimulationDraftSqlParams,
 )
-from app.v5.api.auth.settings import get_auth_settings_internal
+from app.auth.settings import get_auth_settings_internal
 from app.v5.api.entries.simulation_drafts.refresh import (
     refresh_simulation_drafts_internal,
 )
@@ -160,7 +160,7 @@ async def patch_simulation_draft(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        from app.v5.api.auth.profile import get_auth_profile_internal
+        from app.auth.profile import get_auth_profile_internal
 
         pool = get_pool()
         if pool:

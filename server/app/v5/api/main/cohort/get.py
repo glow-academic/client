@@ -70,8 +70,8 @@ from app.v5.api.main.cohort.types import (
     GetCohortApiResponse,
     GetCohortWebsocketResponse,
 )
-from app.v5.api.auth.profile import get_auth_profile_internal
-from app.v5.api.auth.settings import get_auth_settings_internal
+from app.auth.profile import get_auth_profile_internal
+from app.auth.settings import get_auth_settings_internal
 from app.v5.api.entries.cohort_drafts.get import get_cohort_drafts_entries_internal
 from app.v5.api.entries.runs.search import get_run_list_entries_internal
 from app.v5.api.permissions import resolve_agents_for_artifact

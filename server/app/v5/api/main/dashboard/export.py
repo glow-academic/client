@@ -16,7 +16,7 @@ from app.v5.api.main.dashboard.types import (
     ExportDashboardApiRequest,
     ExportDashboardApiResponse,
 )
-from app.v5.api.auth.profile import get_auth_profile_internal
+from app.auth.profile import get_auth_profile_internal
 from app.v5.api.entries.attempt_chat.get import get_chats_internal
 from app.v5.api.resources.personas.get import get_personas_internal
 from app.v5.api.resources.profiles.get import get_profiles_internal

@@ -5,7 +5,7 @@ Handles: test_join — join a test room for real-time updates.
 
 from typing import Any
 
-from app.v5.infra.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.globals import get_internal_sio, sio
 from app.v5.api.socket.client.types import TestJoinPayload
 from app.utils.logging.db_logger import get_logger

@@ -7,8 +7,8 @@ to the internal layer. Cleanup is handled by the internal handler.
 import uuid as uuid_mod
 from typing import Any
 
-from app.v5.infra.websocket.get_db_connection import get_db_connection
-from app.v5.infra.websocket.session_store import get_session_by_chat_id
+from app.infra.websocket.get_db_connection import get_db_connection
+from app.infra.websocket.session_store import get_session_by_chat_id
 from app.globals import get_internal_sio, sio
 from app.utils.logging.db_logger import get_logger
 

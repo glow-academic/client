@@ -8,7 +8,7 @@ import asyncio
 import time
 from typing import Any
 
-from app.v5.infra.websocket.session_store import get_session_by_chat_id
+from app.infra.websocket.session_store import get_session_by_chat_id
 from app.globals import sio
 
 

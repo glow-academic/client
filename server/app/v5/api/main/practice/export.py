@@ -18,7 +18,7 @@ from app.v5.api.main.practice.types import (
     ExportPracticeApiRequest,
     ExportPracticeApiResponse,
 )
-from app.v5.api.auth.profile import get_auth_profile_internal
+from app.auth.profile import get_auth_profile_internal
 from app.v5.api.entries.attempt.get import ChatViewItem, get_attempt_chats_internal
 from app.v5.api.entries.attempt.search import get_attempt_list_internal
 from app.v5.api.resources.personas.get import get_personas_internal

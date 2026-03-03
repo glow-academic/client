@@ -16,8 +16,8 @@ from app.v5.api.main.scenario.types import (
     PatchScenarioDraftSqlParams,
     PatchScenarioDraftSqlRow,
 )
-from app.v5.api.auth.profile import get_auth_profile_internal
-from app.v5.api.auth.settings import get_auth_settings_internal
+from app.auth.profile import get_auth_profile_internal
+from app.auth.settings import get_auth_settings_internal
 from app.v5.api.entries.scenario_drafts.refresh import refresh_scenario_drafts_internal
 from app.v5.api.permissions import resolve_agents_for_artifact
 from app.v5.api.resources.departments.link import link_departments_internal

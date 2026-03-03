@@ -2,9 +2,9 @@
 
 from typing import Any
 
-from app.v5.infra.websocket.resolve_entry_type import resolve_entry_type
+from app.infra.websocket.resolve_entry_type import resolve_entry_type
 from app.globals import get_internal_sio, sio
-from app.v5.registry.entry_events import ENTRY_EVENTS
+from app.registry.entry_events import ENTRY_EVENTS
 
 internal_sio = get_internal_sio()
 

@@ -10,7 +10,7 @@ from app.v5.api.main.model.types import (
     DuplicateModelApiRequest,
     DuplicateModelApiResponse,
 )
-from app.v5.api.auth.profile import get_auth_profile_internal
+from app.auth.profile import get_auth_profile_internal
 from app.v5.api.resources.names.create import create_names_internal
 from app.utils.error.handle_route_error import handle_route_error
 from app.globals import get_db, get_pool

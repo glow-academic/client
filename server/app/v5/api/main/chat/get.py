@@ -43,7 +43,7 @@ from app.v5.api.main.chat.types import (
     GetChatStartWebsocketResponse,
     GetChatWebsocketResponse,
 )
-from app.v5.api.auth.settings import get_auth_settings_internal
+from app.auth.settings import get_auth_settings_internal
 from app.v5.api.entries.runs.search import get_run_list_entries_internal
 from app.v5.api.entries.training.get import get_training_view_internal
 from app.v5.api.entries.training_drafts.get import get_training_drafts_entries_internal

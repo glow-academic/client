@@ -54,7 +54,7 @@ async def delete_simulation(
             )
 
         # Lazy import to avoid circular import chain
-        from app.v5.api.auth.profile import get_auth_profile_internal
+        from app.auth.profile import get_auth_profile_internal
 
         # Fetch user context once for the whole batch
         pool = get_pool()

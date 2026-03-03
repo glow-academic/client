@@ -15,12 +15,12 @@ import uuid
 from typing import Any
 
 from app.utils.storage.file_writer import write_text_file
-from app.v5.infra.websocket.find_profile_by_socket import find_profile_by_socket
-from app.v5.infra.websocket.generation_tracker import (
+from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.websocket.generation_tracker import (
     cleanup_generation,
     record_agent_complete,
 )
-from app.v5.infra.websocket.get_db_connection import get_db_connection
+from app.infra.websocket.get_db_connection import get_db_connection
 from app.globals import get_internal_sio
 from app.v5.api.socket.internal.attempt.types import AttemptChatStartedData
 from app.v5.api.socket.internal.generation_save_registry import save_artifact

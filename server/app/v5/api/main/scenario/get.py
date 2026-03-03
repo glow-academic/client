@@ -75,8 +75,8 @@ from app.v5.api.main.scenario.types import (
     ScenarioWebsocketEntries,
     ScenarioWebsocketResources,
 )
-from app.v5.api.auth.profile import get_auth_profile_internal
-from app.v5.api.auth.settings import get_auth_settings_internal
+from app.auth.profile import get_auth_profile_internal
+from app.auth.settings import get_auth_settings_internal
 from app.v5.api.entries.runs.search import get_run_list_entries_internal
 from app.v5.api.entries.scenario_drafts.get import get_scenario_drafts_entries_internal
 from app.v5.api.permissions import resolve_agents_for_artifact

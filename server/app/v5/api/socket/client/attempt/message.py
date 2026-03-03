@@ -17,7 +17,7 @@ All attempt_* emits go to internal bus → internal/ handlers (DB) → server/ h
 import uuid
 from typing import Any
 
-from app.v5.api.auth.access import get_access_internal
+from app.auth.access import get_access_internal
 from app.v5.api.entries.attempt_chat.get import get_attempt_chat_entries_internal
 from app.v5.api.entries.attempt_message.refresh import refresh_attempt_message_internal
 from app.v5.api.entries.attempt_message_tree.create import (
@@ -29,8 +29,8 @@ from app.v5.api.entries.attempt_message_tree.refresh import (
 from app.v5.api.entries.messages.create import create_messages_entry_internal
 from app.v5.api.entries.messages.search import search_messages_entries_internal
 from app.v5.api.entries.runs.create import create_runs_entry_internal
-from app.v5.infra.websocket.find_profile_by_socket import find_profile_by_socket
-from app.v5.infra.websocket.get_db_connection import get_db_connection
+from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.websocket.get_db_connection import get_db_connection
 from app.globals import get_internal_sio, sio
 from app.v5.api.socket.client.types import AttemptMessagePayload
 from app.v5.api.socket.internal.attempt.types import (

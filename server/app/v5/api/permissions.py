@@ -18,7 +18,7 @@ from uuid import UUID
 from app.v5.api.types import CandidateAgent
 
 if TYPE_CHECKING:
-    from app.v5.api.auth.types import SettingsAgentToolEntry
+    from app.auth.types import SettingsAgentToolEntry
 
 
 def resolve_agents_for_artifact(

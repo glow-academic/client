@@ -24,7 +24,7 @@ from app.v5.api.main.cohort.types import (
     SaveCohortSqlParams,
     SaveCohortSqlRow,
 )
-from app.v5.api.auth.settings import get_auth_settings_internal
+from app.auth.settings import get_auth_settings_internal
 from app.v5.api.permissions import resolve_agents_for_artifact
 from app.v5.api.resources.cohorts.create import create_cohorts_internal
 from app.v5.api.resources.descriptions.create import create_descriptions_internal
@@ -328,7 +328,7 @@ async def save_cohort(
             )
 
         # Fetch user context once for the whole batch
-        from app.v5.api.auth.profile import get_auth_profile_internal
+        from app.auth.profile import get_auth_profile_internal
 
         pool = get_pool()
         if pool:

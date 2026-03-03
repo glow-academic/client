@@ -24,7 +24,7 @@ from app.v5.api.main.cohort.types import (
     ListCohortApiResponse,
     ListCohortApiSimulation,
 )
-from app.v5.api.auth.profile import get_auth_profile_internal
+from app.auth.profile import get_auth_profile_internal
 from app.v5.api.resources.departments.get import get_departments_internal
 from app.v5.api.resources.profiles.get import get_profiles_internal
 from app.v5.api.resources.simulations.get import get_simulations_internal

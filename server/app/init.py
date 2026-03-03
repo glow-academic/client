@@ -20,7 +20,7 @@ async def _compile_sql_types() -> tuple[bool, str]:
 
 @router.post("/init")
 async def init_system() -> JSONResponse:
-    from app.v5.infra.auth.keycloak_sync import perform_keycloak_sync
+    from app.infra.auth.keycloak_sync import perform_keycloak_sync
     from app.utils.logging.db_logger import get_logger
 
     logger = get_logger("app.main")

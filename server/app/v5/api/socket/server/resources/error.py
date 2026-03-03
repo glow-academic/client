@@ -2,9 +2,9 @@
 
 from typing import Any
 
-from app.v5.infra.websocket.resolve_resource_type import resolve_resource_type
+from app.infra.websocket.resolve_resource_type import resolve_resource_type
 from app.globals import get_internal_sio, sio
-from app.v5.registry.resource_events import RESOURCE_EVENTS
+from app.registry.resource_events import RESOURCE_EVENTS
 
 internal_sio = get_internal_sio()
 

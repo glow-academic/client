@@ -57,7 +57,7 @@ from app.v5.api.main.tool import router as tools_router
 # ============================================================================
 # Auth (not available to MCP)
 # ============================================================================
-from app.v5.api.auth import router as auth_router
+from app.auth import router as auth_router
 
 # ============================================================================
 # Docs

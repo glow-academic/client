@@ -28,7 +28,7 @@ from app.v5.api.main.session.types import (
     GetSessionListResponse,
     SessionListItem,
 )
-from app.v5.api.auth.settings import get_auth_settings_internal
+from app.auth.settings import get_auth_settings_internal
 from app.v5.api.entries.activity.get import get_activity_list_view_internal
 from app.v5.api.entries.activity.profile_summary import (
     get_profile_summary_view_internal,

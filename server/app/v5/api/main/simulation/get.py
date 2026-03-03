@@ -180,8 +180,8 @@ async def get_simulation_internal(
     a dataclass with all computed values.
     """
     # Lazy imports to avoid circular deps (simulation/__init__.py → auth → resources → simulation)
-    from app.v5.api.auth.profile import get_auth_profile_internal
-    from app.v5.api.auth.settings import get_auth_settings_internal
+    from app.auth.profile import get_auth_profile_internal
+    from app.auth.settings import get_auth_settings_internal
 
     pool = get_pool()
     if not pool:

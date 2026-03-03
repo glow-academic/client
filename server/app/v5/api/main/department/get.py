@@ -44,8 +44,8 @@ from app.v5.api.main.department.types import (
     GetDepartmentApiResponse,
     GetDepartmentWebsocketResponse,
 )
-from app.v5.api.auth.profile import get_auth_profile_internal
-from app.v5.api.auth.settings import get_auth_settings_internal
+from app.auth.profile import get_auth_profile_internal
+from app.auth.settings import get_auth_settings_internal
 from app.v5.api.entries.department_drafts.get import (
     get_department_drafts_entries_internal,
 )

@@ -12,7 +12,7 @@ from app.v5.api.main.persona.types import (
     DeletePersonaApiResponse,
     DeletePersonaResult,
 )
-from app.v5.api.auth.profile import get_auth_profile_internal
+from app.auth.profile import get_auth_profile_internal
 from app.utils.error.handle_route_error import handle_route_error
 from app.globals import get_db, get_pool
 from app.sql.types import (

@@ -8,7 +8,7 @@ marks the message complete.
 import uuid
 from typing import Any
 
-from app.v5.infra.websocket.session_store import get_session_by_group_id
+from app.infra.websocket.session_store import get_session_by_group_id
 from app.globals import AUDIO_FOLDER, get_internal_sio
 from app.v5.api.socket.internal.attempt.types import AttemptUserReceivedCompleteData
 from app.utils.logging.db_logger import get_logger
@@ -30,7 +30,7 @@ async def _save_user_speech_audio(audio: bytes) -> str | None:
         return None
 
     try:
-        from app.v5.infra.websocket.get_db_connection import get_db_connection
+        from app.infra.websocket.get_db_connection import get_db_connection
 
         # Write PCM16 bytes to disk as .wav-compatible raw audio
         file_uuid = uuid.uuid4()

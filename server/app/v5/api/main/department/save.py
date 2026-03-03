@@ -20,7 +20,7 @@ from app.v5.api.main.department.types import (
     SaveDepartmentSqlParams,
     SaveDepartmentSqlRow,
 )
-from app.v5.api.auth.profile import get_auth_profile_internal
+from app.auth.profile import get_auth_profile_internal
 from app.utils.error.handle_route_error import handle_route_error
 from app.globals import get_db, get_pool
 from app.sql.types import (
@@ -222,7 +222,7 @@ async def save_department(
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         # Trigger Keycloak sync for the department
-        from app.v5.infra.auth.keycloak_sync import perform_keycloak_sync
+        from app.infra.auth.keycloak_sync import perform_keycloak_sync
 
         await perform_keycloak_sync(department_id=str(result.department_id))
 

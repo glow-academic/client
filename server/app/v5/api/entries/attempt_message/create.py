@@ -14,7 +14,7 @@ from app.v5.api.entries.attempt_message.types import (
 )
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.storage.file_writer import write_text_file
-from app.v5.infra.tools.call_args import resolve_tool_for_entry
+from app.infra.tools.call_args import resolve_tool_for_entry
 from app.globals import get_db
 from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags

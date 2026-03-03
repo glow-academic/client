@@ -14,7 +14,7 @@ from app.v5.api.main.record.types import (
     RecordWebsocketEntries,
     RecordWebsocketResources,
 )
-from app.v5.api.auth.settings import get_auth_settings_internal
+from app.auth.settings import get_auth_settings_internal
 from app.v5.api.entries.runs.search import (
     GetRunListViewResponse,
     get_run_list_entries_internal,

@@ -14,7 +14,7 @@ from app.v5.api.main.persona.types import (
     ExportPersonaApiRequest,
     ExportPersonaApiResponse,
 )
-from app.v5.api.auth.profile import get_auth_profile_internal
+from app.auth.profile import get_auth_profile_internal
 from app.utils.error.handle_route_error import handle_route_error
 from app.globals import UPLOAD_FOLDER, get_db, get_pool
 from app.sql.types import (

@@ -10,8 +10,8 @@ Flow:
 import uuid
 from typing import Any
 
-from app.v5.infra.websocket.find_profile_by_socket import find_profile_by_socket
-from app.v5.infra.websocket.get_db_connection import get_db_connection
+from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.websocket.get_db_connection import get_db_connection
 from app.globals import get_internal_sio, sio
 from app.v5.api.socket.client.types import TestEndPayload
 from app.v5.api.socket.internal.test.types import TestErrorData, TestProceedData

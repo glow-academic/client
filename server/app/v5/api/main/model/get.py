@@ -70,8 +70,8 @@ from app.v5.api.main.model.types import (
     ModelWebsocketEntries,
     ModelWebsocketResources,
 )
-from app.v5.api.auth.profile import get_auth_profile_internal
-from app.v5.api.auth.settings import get_auth_settings_internal
+from app.auth.profile import get_auth_profile_internal
+from app.auth.settings import get_auth_settings_internal
 from app.v5.api.entries.model_drafts.get import get_model_drafts_entries_internal
 from app.v5.api.entries.runs.search import get_run_list_entries_internal
 from app.v5.api.permissions import has_tools_for_resource, resolve_agents_for_artifact

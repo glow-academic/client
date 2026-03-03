@@ -18,7 +18,7 @@ from app.v5.api.main.health.types import (
     HealthWebsocketEntries,
     HealthWebsocketResources,
 )
-from app.v5.api.auth.settings import get_auth_settings_internal
+from app.auth.settings import get_auth_settings_internal
 from app.v5.api.entries.health.get import get_health_list_view_internal
 from app.v5.api.entries.metrics.get import get_metric_list_view_internal
 from app.v5.api.entries.runs.search import (

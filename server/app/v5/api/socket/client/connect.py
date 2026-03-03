@@ -8,18 +8,18 @@ import uuid
 from datetime import UTC, datetime
 from typing import cast
 
-from app.v5.infra.websocket.add_guest_socket import add_guest_socket
-from app.v5.infra.websocket.decrement_guest_count import decrement_guest_count
-from app.v5.infra.websocket.find_chats_by_socket import find_chats_by_socket
-from app.v5.infra.websocket.find_profile_by_socket import find_profile_by_socket
-from app.v5.infra.websocket.get_db_connection import get_db_connection
-from app.v5.infra.websocket.get_socket_owner import get_socket_owner
-from app.v5.infra.websocket.increment_guest_count import increment_guest_count
-from app.v5.infra.websocket.is_guest_socket import is_guest_socket
-from app.v5.infra.websocket.remove_active_connection import remove_active_connection
-from app.v5.infra.websocket.remove_guest_socket import remove_guest_socket
-from app.v5.infra.websocket.remove_socket_owner import remove_socket_owner
-from app.v5.infra.websocket.set_socket_owner import set_socket_owner
+from app.infra.websocket.add_guest_socket import add_guest_socket
+from app.infra.websocket.decrement_guest_count import decrement_guest_count
+from app.infra.websocket.find_chats_by_socket import find_chats_by_socket
+from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.websocket.get_db_connection import get_db_connection
+from app.infra.websocket.get_socket_owner import get_socket_owner
+from app.infra.websocket.increment_guest_count import increment_guest_count
+from app.infra.websocket.is_guest_socket import is_guest_socket
+from app.infra.websocket.remove_active_connection import remove_active_connection
+from app.infra.websocket.remove_guest_socket import remove_guest_socket
+from app.infra.websocket.remove_socket_owner import remove_socket_owner
+from app.infra.websocket.set_socket_owner import set_socket_owner
 from app.globals import get_internal_sio, sio
 from app.sql.types import (
     UpdateProfileToActiveSqlParams,
@@ -196,8 +196,8 @@ async def disconnect(sid: str) -> None:
 
     # Voice session cleanup
     try:
-        from app.v5.infra.websocket.audio_lifecycle import cleanup_audio_session
-        from app.v5.infra.websocket.session_store import get_session_by_sid
+        from app.infra.websocket.audio_lifecycle import cleanup_audio_session
+        from app.infra.websocket.session_store import get_session_by_sid
 
         voice_session = get_session_by_sid(sid)
         if voice_session:

@@ -1023,7 +1023,7 @@ async def get_dashboard_websocket(
     Returns agent/model/provider chain + rate-limiting data (runs today, profile).
     This is separate from the metrics bundle — it's about LLM generation config.
     """
-    from app.v5.api.auth.settings import get_auth_settings_internal
+    from app.auth.settings import get_auth_settings_internal
     from app.v5.api.entries.runs.search import get_run_list_entries_internal
     from app.v5.api.permissions import resolve_agents_for_artifact
     from app.v5.api.resources.models.get import get_models_internal

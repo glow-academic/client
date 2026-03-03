@@ -23,8 +23,8 @@ from app.v5.api.main.persona.types import (
     SavePersonaSqlParams,
     SavePersonaSqlRow,
 )
-from app.v5.api.auth.profile import get_auth_profile_internal
-from app.v5.api.auth.settings import get_auth_settings_internal
+from app.auth.profile import get_auth_profile_internal
+from app.auth.settings import get_auth_settings_internal
 from app.v5.api.permissions import resolve_agents_for_artifact
 from app.v5.api.resources.colors.search import search_colors_internal
 from app.v5.api.resources.departments.search import search_departments_internal

@@ -9,8 +9,8 @@ and emits a secondary generate_artifact with the appropriate modality.
 import uuid
 from typing import Any, cast
 
-from app.v5.infra.websocket.find_profile_by_socket import find_profile_by_socket
-from app.v5.infra.websocket.get_db_connection import get_db_connection
+from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.websocket.get_db_connection import get_db_connection
 from app.globals import get_internal_sio
 from app.v5.api.socket.internal.generate_artifact import GenerateArtifactPayload
 from app.sql.types import GetAgentModelInfoSqlParams, GetAgentModelInfoSqlRow

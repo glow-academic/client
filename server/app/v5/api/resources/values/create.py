@@ -7,7 +7,7 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.utils.error.handle_route_error import handle_route_error
-from app.v5.infra.tools.call_args import record_call_args, resolve_tool
+from app.infra.tools.call_args import record_call_args, resolve_tool
 from app.globals import get_db
 from app.sql.types import (
     ValuesApiRequest,

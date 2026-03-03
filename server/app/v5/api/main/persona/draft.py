@@ -16,8 +16,8 @@ from app.v5.api.main.persona.types import (
     PatchPersonaDraftSqlParams,
     PatchPersonaDraftSqlRow,
 )
-from app.v5.api.auth.profile import get_auth_profile_internal
-from app.v5.api.auth.settings import get_auth_settings_internal
+from app.auth.profile import get_auth_profile_internal
+from app.auth.settings import get_auth_settings_internal
 from app.v5.api.entries.persona_drafts.refresh import refresh_persona_drafts_internal
 from app.v5.api.permissions import resolve_agents_for_artifact
 from app.v5.api.resources.colors.link import link_colors_internal

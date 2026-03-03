@@ -10,7 +10,7 @@ keeping the infra layer decoupled from the socket layer.
 
 from typing import Any
 
-from app.v5.infra.websocket.adapters.media.base import MediaResult
+from app.infra.websocket.adapters.media.base import MediaResult
 from app.globals import get_internal_sio
 
 
@@ -18,7 +18,7 @@ class InternalBusMediaEmitter:
     """Concrete MediaEventEmitter that emits via the internal event bus.
 
     Satisfies the MediaEventEmitter protocol defined in
-    app.v5.infra.websocket.adapters.media.base.
+    app.infra.websocket.adapters.media.base.
     """
 
     def __init__(self) -> None:

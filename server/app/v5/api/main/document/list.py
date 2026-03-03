@@ -23,7 +23,7 @@ from app.v5.api.main.document.types import (
     ListDocumentApiDocument,
     ListDocumentApiResponse,
 )
-from app.v5.api.auth.profile import get_auth_profile_internal
+from app.auth.profile import get_auth_profile_internal
 from app.v5.api.resources.uploads.get import get_uploads_internal
 from app.v5.api.types import ListFilterSection
 from app.utils.error.handle_route_error import handle_route_error

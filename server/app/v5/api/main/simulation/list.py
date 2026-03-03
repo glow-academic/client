@@ -123,7 +123,7 @@ async def get_simulation_list(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        from app.v5.api.auth.profile import get_auth_profile_internal
+        from app.auth.profile import get_auth_profile_internal
 
         pool = get_pool()
         if pool:

@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.v5.infra.websocket.get_db_connection import get_db_connection
+from app.infra.websocket.get_db_connection import get_db_connection
 from app.globals import get_internal_sio
 from app.v5.api.socket.client.types import TestGroupPayload
 from app.v5.api.socket.internal.test.types import TestErrorData

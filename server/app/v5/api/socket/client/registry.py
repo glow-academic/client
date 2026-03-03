@@ -138,7 +138,7 @@ async def _fetch_with_conn(
     """
     import importlib
 
-    from app.v5.infra.websocket.get_db_connection import get_db_connection
+    from app.infra.websocket.get_db_connection import get_db_connection
 
     mod = importlib.import_module(module_path)
     fn = getattr(mod, func_name)

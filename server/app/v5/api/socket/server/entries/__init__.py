@@ -5,7 +5,7 @@ from typing import Any
 
 from fastapi import APIRouter
 
-from app.v5.registry.entry_events import ENTRY_EVENTS
+from app.registry.entry_events import ENTRY_EVENTS
 
 from . import complete, error, progress, started  # noqa: F401
 

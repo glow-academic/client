@@ -32,7 +32,7 @@ from app.v5.api.main.invocation.types import (
     SuiteWebsocketEntries,
     SuiteWebsocketResources,
 )
-from app.v5.api.auth.settings import get_auth_settings_internal
+from app.auth.settings import get_auth_settings_internal
 from app.v5.api.entries.runs.search import get_run_list_entries_internal
 from app.v5.api.entries.suite.get import get_suite_view_internal
 from app.v5.api.permissions import resolve_agents_for_artifact
