@@ -42,7 +42,7 @@ from app.routes.v5.tools.entries.attempt_message_tree.create import (
 from app.routes.v5.tools.entries.attempt_message_tree.refresh import (
     refresh_attempt_message_tree_internal,
 )
-from app.routes.v5.tools.entries.messages.create import create_messages_entry_internal
+from app.routes.v5.tools.entries.messages.create import create_message
 from app.routes.v5.tools.entries.messages.search import search_messages_entries_internal
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.utils.cache.invalidate_tags import invalidate_tags
@@ -162,12 +162,16 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
 
         # Step 5: Create assistant placeholder + emit assistant_start
         async with get_db_connection() as conn:
-            assistant_result = await create_messages_entry_internal(
+            assistant_result = await create_message(
                 conn,
                 run_id=run_id,
                 role="assistant",
-                chat_id=chat_id,
             )
+            if chat_id is not None:
+                await conn.execute("""
+                    INSERT INTO attempt_message_entry (id, chat_id)
+                    VALUES ($1, $2)
+                """, assistant_result.id, chat_id)
             assistant_message_id = assistant_result.id
             created_at = assistant_result.created_at
 

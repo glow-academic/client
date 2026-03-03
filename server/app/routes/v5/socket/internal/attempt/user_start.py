@@ -12,7 +12,7 @@ from typing import Any
 from app.infra.globals import get_internal_sio
 from app.infra.websocket.get_db_connection import get_db_connection
 from app.routes.v5.socket.internal.attempt.types import AttemptUserStartData
-from app.routes.v5.tools.entries.messages.create import create_messages_entry_internal
+from app.routes.v5.tools.entries.messages.create import create_message
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -31,12 +31,15 @@ async def handle_user_received_start(data: dict[str, Any]) -> None:
 
     try:
         async with get_db_connection() as conn:
-            result = await create_messages_entry_internal(
+            result = await create_message(
                 conn,
                 run_id=uuid.UUID(run_id),
                 role="user",
-                chat_id=uuid.UUID(chat_id),
             )
+            await conn.execute("""
+                INSERT INTO attempt_message_entry (id, chat_id)
+                VALUES ($1, $2)
+            """, result.id, uuid.UUID(chat_id))
 
         await internal_sio.emit(
             "attempt_user_start",

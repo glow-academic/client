@@ -7,7 +7,7 @@
 
 CREATE TABLE public.messages_entry (
     id uuid DEFAULT uuidv7() NOT NULL,
-    run_id uuid,
+    run_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     role public.message_type NOT NULL,

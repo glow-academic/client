@@ -1,43 +1,26 @@
-"""messages/create internal — reusable data-access layer."""
+"""Messages CREATE — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.routes.v5.api.entries.messages.types import (
-    CreateMessagesEntryResponse,
-    CreateMessagesEntrySqlParams,
-    CreateMessagesEntrySqlRow,
-)
-from app.utils.sql_helper import execute_sql_typed
+from app.routes.v5.tools.entries.messages.types import CreateMessageResponse
 
-SQL_PATH = "app/sql/queries/entries/messages/create_messages_entries_complete.sql"
 
-async def create_messages_entry_internal(
+async def create_message(
     conn: asyncpg.Connection,
     run_id: UUID,
     role: str,
-    chat_id: UUID | None = None,
     mcp: bool = False,
-) -> CreateMessagesEntryResponse:
-    """Create a messages entry with optional attempt_message_entry link.
+) -> CreateMessageResponse:
+    """Create a messages entry."""
+    row = await conn.fetchrow("""
+        INSERT INTO messages_entry (run_id, role, created_at, updated_at, mcp, generated)
+        VALUES ($1, $2::message_type, NOW(), NOW(), $3, true)
+        RETURNING id, created_at
+    """, run_id, role, mcp)
 
-    If chat_id is provided, also inserts into attempt_message_entry.
-    """
-    params = CreateMessagesEntrySqlParams(
-        run_id=run_id,
-        role=role,
-        chat_id=chat_id,
-        mcp=mcp,
-    )
-
-    result = cast(
-        CreateMessagesEntrySqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    if not result or not result.id:
+    if row is None:
         raise ValueError("Failed to create messages entry")
 
-    return CreateMessagesEntryResponse.model_validate(result.model_dump())
+    return CreateMessageResponse(id=row["id"], created_at=row["created_at"])
