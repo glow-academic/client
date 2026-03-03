@@ -282,7 +282,7 @@ class AnalyticsFilterOption(BaseModel):
 
 
 class GetAnalyticsFiltersApiResponse(BaseModel):
-    """Response for POST /api/v5/auth/analytics."""
+    """Response for POST /auth/analytics."""
 
     fields: AnalyticsFilterFields
     department_options: list[AnalyticsFilterOption] = []

@@ -11,14 +11,14 @@ HEADERS = {**BYPASS_CACHE_HEADERS, "X-Profile-Id": TEST_SUPERADMIN_PROFILE_ID}
 
 
 class TestGroupMessages:
-    """Tests for POST /api/v5/auth/group endpoint."""
+    """Tests for POST /auth/group endpoint."""
 
     async def test_group_returns_200_with_valid_group_id(
         self, client: httpx.AsyncClient
     ) -> None:
         """GROUP endpoint returns 200 even when group doesn't exist (empty response)."""
         response = await client.post(
-            "/api/v5/auth/group",
+            "/auth/group",
             json={
                 "group_id": "00000000-0000-0000-0000-000000000000",
                 "page_limit": 10,
@@ -37,7 +37,7 @@ class TestGroupMessages:
     ) -> None:
         """GROUP endpoint returns the expected response shape."""
         response = await client.post(
-            "/api/v5/auth/group",
+            "/auth/group",
             json={
                 "group_id": "00000000-0000-0000-0000-000000000000",
             },
@@ -57,7 +57,7 @@ class TestGroupMessages:
     async def test_group_default_pagination(self, client: httpx.AsyncClient) -> None:
         """GROUP endpoint uses default pagination when not specified."""
         response = await client.post(
-            "/api/v5/auth/group",
+            "/auth/group",
             json={
                 "group_id": "00000000-0000-0000-0000-000000000000",
             },
@@ -69,7 +69,7 @@ class TestGroupMessages:
     async def test_group_validates_group_id(self, client: httpx.AsyncClient) -> None:
         """GROUP endpoint validates that group_id is a valid UUID."""
         response = await client.post(
-            "/api/v5/auth/group",
+            "/auth/group",
             json={
                 "group_id": "not-a-uuid",
             },
@@ -81,7 +81,7 @@ class TestGroupMessages:
     async def test_group_requires_group_id(self, client: httpx.AsyncClient) -> None:
         """GROUP endpoint requires group_id field."""
         response = await client.post(
-            "/api/v5/auth/group",
+            "/auth/group",
             json={},
             headers=HEADERS,
         )

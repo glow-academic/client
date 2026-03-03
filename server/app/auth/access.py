@@ -43,7 +43,7 @@ async def get_access_internal(
 
     # Cache lookup
     cache_key_val = cache_key(
-        "/api/v5/auth/access",
+        "/auth/access",
         {
             "profile_id": str(profile_id) if profile_id else None,
         },

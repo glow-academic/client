@@ -8,7 +8,7 @@ import type { AuthProfileResponse } from "@/app/(main)/layout-server";
 import { getAnalyticsFilters, getAuthProfile } from "@/app/(main)/layout-server";
 import type { OutputOf } from "@/lib/api/types";
 
-type AnalyticsFiltersOut = OutputOf<"/api/v5/auth/analytics", "post">;
+type AnalyticsFiltersOut = OutputOf<"/auth/analytics", "post">;
 
 export interface AnalyticsDefaults {
   startDate: string;

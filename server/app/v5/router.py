@@ -54,10 +54,6 @@ from app.v5.api.main.simulation import router as simulations_router
 from app.v5.api.main.test import router as test_artifact_router
 from app.v5.api.main.tool import router as tools_router
 
-# ============================================================================
-# Auth (not available to MCP)
-# ============================================================================
-from app.auth import router as auth_router
 
 # ============================================================================
 # Docs
@@ -144,11 +140,6 @@ router.include_router(resources_router)
 # Entries (CRUD layer on entry tables via MVs)
 # ============================================================================
 router.include_router(entries_router)
-
-# ============================================================================
-# Auth (not available to MCP)
-# ============================================================================
-router.include_router(auth_router)
 
 # ============================================================================
 # Docs

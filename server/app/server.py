@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 
 import socketio  # type: ignore
-from fastapi import FastAPI, Request, Response
+from fastapi import Depends, FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -281,6 +281,20 @@ fastapi_app.include_router(socket_v5_router)
 # ---------------------------------------------------------------------------
 # Routers — root-level (version-agnostic)
 # ---------------------------------------------------------------------------
+from app.auth import router as auth_router  # noqa: E402
+from app.utils.mcp.get_mcp import get_mcp  # noqa: E402
+from app.utils.profile.get_profile_id import get_profile_id  # noqa: E402
+from app.utils.session.get_session_id import get_session_id  # noqa: E402
+
+fastapi_app.include_router(
+    auth_router,
+    dependencies=[
+        Depends(get_profile_id),
+        Depends(get_session_id),
+        Depends(get_mcp),
+    ],
+)
+
 from app.default_idp import router as default_idp_router  # noqa: E402
 
 fastapi_app.include_router(default_idp_router)
