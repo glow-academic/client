@@ -55,8 +55,7 @@ def _filter_meta_commands(sql: str) -> str:
 def _concat_schema(schema_dir: Path) -> str:
     """Concatenate split schema files into a single SQL string.
 
-    Load order: extensions → enums → tables → indexes → foreign_keys.
-    Skips views/ and indexes/views/ (loaded by bootstrap_all_sql).
+    Load order: extensions → enums → tables → indexes → foreign_keys → views → view indexes.
     """
     parts: list[str] = []
 
@@ -213,6 +212,21 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
 
             pool = main_mod._db_pool
 
+            # Keycloak stubs — the real tables are created by Keycloak at startup,
+            # but the test DB never runs Keycloak.
+            async with pool.acquire() as conn:
+                await conn.execute("""
+                    CREATE SCHEMA IF NOT EXISTS keycloak;
+                    CREATE TABLE IF NOT EXISTS keycloak.org (
+                        id text PRIMARY KEY,
+                        alias text
+                    );
+                    CREATE TABLE IF NOT EXISTS keycloak.realm (
+                        name text PRIMARY KEY,
+                        ssl_required text
+                    );
+                """)
+
             schema_sql = _filter_meta_commands(_concat_schema(schema_dir))
             async with pool.acquire() as conn:
                 await conn.execute(schema_sql)
@@ -224,12 +238,17 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
                 await conn.execute(seed_sql)
             print("🗄️  Test seed data applied")
 
-            # Bootstrap SQL views + functions
-            from tests.bootstrap_sql import bootstrap_all_sql
-
+            # Refresh all unpopulated materialized views
+            # (MVs are created WITH NO DATA by schema load, need initial refresh)
             async with pool.acquire() as conn:
-                await bootstrap_all_sql(conn)
-            print("🗄️  SQL views and functions bootstrapped")
+                unpopulated = await conn.fetch(
+                    "SELECT matviewname FROM pg_matviews WHERE NOT ispopulated"
+                )
+                for row in unpopulated:
+                    await conn.execute(
+                        f'REFRESH MATERIALIZED VIEW "{row["matviewname"]}"'
+                    )
+            print("🗄️  Materialized views refreshed")
 
             # Close pool before saving template (terminates connections)
             await main_mod._db_pool.close()

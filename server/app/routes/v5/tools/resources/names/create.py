@@ -25,19 +25,21 @@ async def create_name(
             tool_id = tool_info.tool_id
 
     # Check if name already exists
-    existing = await conn.fetchval("""
+    existing = await conn.fetchrow("""
         SELECT id FROM names_resource WHERE name = $1 LIMIT 1
     """, name)
 
-    if existing is not None:
-        return CreateNameResponse(name_id=existing)
+    if existing:
+        return CreateNameResponse(name_id=existing["id"])
 
     # Insert new name
-    name_id = await conn.fetchval("""
+    row = await conn.fetchrow("""
         INSERT INTO names_resource (name, active, mcp, generated)
         VALUES ($1, true, $2, $2)
         RETURNING id
     """, name, mcp)
+
+    name_id = row["id"]
 
     # Create tracking records if tool_id and group_id provided
     call_id = None
