@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop stop-keycloak install-client restore-db migrate-db migrate-db-only migrate-db-all connect-db fresh-db bootstrap-keys build-test-seed typecheck-client build-client openapi-gen gen-client-types sql-compile sql-format watch-sql-types configure deploy deploy-clean
+.PHONY: help setup install clean format lint typecheck run test test-cov cleanup generate-tests generate-test-schema stop stop-keycloak install-client restore-db migrate-db migrate-db-only migrate-db-all connect-db fresh-db bootstrap-keys build-test-seed typecheck-client build-client openapi-gen gen-client-types sql-compile sql-format watch-sql-types configure deploy deploy-clean
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -128,48 +128,24 @@ generate-test-schema:
 	@cd database && yarn generate-test-schema
 	@echo "✅ Test schema generated at server/tests/test-schema.sql"
 
-# Test paths (DRY)
-UNIT_TEST_PATH = server/tests/v5/unit
-INTEGRATION_TEST_PATH = server/tests/v5/integration
-
-# Run unit tests
-test-unit: check-venv
-	@if [ -n "$(ARGS)" ]; then \
-		echo "Running unit tests on: $(ARGS)"; \
-		$(VENV_PYTHON) -m pytest $(ARGS) -v; \
-	else \
-		echo "Running unit tests..."; \
-		$(VENV_PYTHON) -m pytest $(UNIT_TEST_PATH) -v; \
-	fi
-
-# Run integration tests
-test-integration: check-venv
-	@if [ -n "$(ARGS)" ]; then \
-		echo "Running integration tests on: $(ARGS)"; \
-		$(VENV_PYTHON) -m pytest $(ARGS) -v; \
-	else \
-		echo "Running integration tests..."; \
-		$(VENV_PYTHON) -m pytest $(INTEGRATION_TEST_PATH) -v; \
-	fi
-
-# Run all tests (unit + integration)
+# Run all tests
 test: check-venv
 	@if [ -n "$(ARGS)" ]; then \
-		echo "Running pytest on specific file(s): $(ARGS)"; \
+		echo "Running tests: $(ARGS)"; \
 		$(VENV_PYTHON) -m pytest $(ARGS) -v; \
 	else \
-		$(MAKE) test-unit; \
-		$(MAKE) test-integration; \
+		echo "Running tests..."; \
+		$(VENV_PYTHON) -m pytest server/tests/ -v; \
 	fi
 
-# Run tests with coverage (unit + integration only, excludes e2e)
+# Run tests with coverage
 test-cov: check-venv
 	@if [ -n "$(ARGS)" ]; then \
-		echo "Running pytest with coverage on: $(ARGS)"; \
+		echo "Running tests with coverage: $(ARGS)"; \
 		COVERAGE_FILE=server/.coverage $(VENV_PYTHON) -m pytest $(ARGS) --cov=server/app --cov-report=term-missing --cov-report=html:server/htmlcov; \
 	else \
-		echo "Running unit and integration tests with coverage..."; \
-		COVERAGE_FILE=server/.coverage $(VENV_PYTHON) -m pytest $(UNIT_TEST_PATH) $(INTEGRATION_TEST_PATH) --cov=server/app --cov-report=term-missing --cov-report=html:server/htmlcov; \
+		echo "Running tests with coverage..."; \
+		COVERAGE_FILE=server/.coverage $(VENV_PYTHON) -m pytest server/tests/ --cov=server/app --cov-report=term-missing --cov-report=html:server/htmlcov; \
 	fi
 	@echo "✅ Coverage report generated at server/htmlcov/index.html"
 

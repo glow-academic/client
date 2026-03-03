@@ -38,7 +38,7 @@ os.environ["AUTH_SECRET"] = os.getenv(
 server_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(server_dir))
 
-from app.globals import close_db_pool, init_db_pool  # noqa: E402
+from app.infra.globals import close_db_pool, init_db_pool  # noqa: E402
 from app.utils.test_db import get_test_db_url  # noqa: E402
 
 # Store the test database URL for direct connections
@@ -169,7 +169,7 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
     print(f"🔑 Template hash: {db_hash}")
 
     # 3. Connect to admin DB and check for template
-    import app.main as main_mod
+    import app.infra.globals as globals_mod
 
     admin_conn = await asyncpg.connect(admin_url)
     try:
@@ -184,12 +184,12 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
             parsed = urlparse(base_url)
             clone_url = urlunparse(parsed._replace(path=f"/{clone_name}"))
 
-            if main_mod._db_pool:
-                await main_mod._db_pool.close()
-            main_mod._db_pool = await asyncpg.create_pool(
+            if globals_mod._db_pool:
+                await globals_mod._db_pool.close()
+            globals_mod._db_pool = await asyncpg.create_pool(
                 clone_url, min_size=1, max_size=5
             )
-            main_mod._test_db_url = clone_url
+            globals_mod._test_db_url = clone_url
             _test_db_url = clone_url
             print("✅ Cloned database ready (schema + seed + SQL skipped)")
         else:
@@ -204,13 +204,13 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
             parsed = urlparse(base_url)
             build_url = urlunparse(parsed._replace(path=f"/{build_db}"))
 
-            if main_mod._db_pool:
-                await main_mod._db_pool.close()
-            main_mod._db_pool = await asyncpg.create_pool(
+            if globals_mod._db_pool:
+                await globals_mod._db_pool.close()
+            globals_mod._db_pool = await asyncpg.create_pool(
                 build_url, min_size=1, max_size=5
             )
 
-            pool = main_mod._db_pool
+            pool = globals_mod._db_pool
 
             # Keycloak stubs — the real tables are created by Keycloak at startup,
             # but the test DB never runs Keycloak.
@@ -251,8 +251,8 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
             print("🗄️  Materialized views refreshed")
 
             # Close pool before saving template (terminates connections)
-            await main_mod._db_pool.close()
-            main_mod._db_pool = None
+            await globals_mod._db_pool.close()
+            globals_mod._db_pool = None
 
             # Save as template for next run
             await save_as_template(admin_conn, build_db, template_name)
@@ -265,10 +265,10 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
             await clone_from_template(admin_conn, template_name, clone_name)
             clone_url = urlunparse(parsed._replace(path=f"/{clone_name}"))
 
-            main_mod._db_pool = await asyncpg.create_pool(
+            globals_mod._db_pool = await asyncpg.create_pool(
                 clone_url, min_size=1, max_size=5
             )
-            main_mod._test_db_url = clone_url
+            globals_mod._test_db_url = clone_url
             _test_db_url = clone_url
     finally:
         await admin_conn.close()
@@ -319,8 +319,6 @@ async def conn() -> AsyncGenerator[asyncpg.Connection, None]:
 def pytest_configure(config: pytest.Config) -> None:
     """Configure pytest markers."""
     config.addinivalue_line("markers", "asyncio: mark test as async")
-    config.addinivalue_line("markers", "integration: mark test as integration test")
-    config.addinivalue_line("markers", "unit: mark test as unit test")
 
 
 pytest_plugins = ("pytest_asyncio",)
