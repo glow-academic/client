@@ -101,6 +101,21 @@ def _concat_schema(schema_dir: Path) -> str:
             for f in sorted(d.glob("*.sql")):
                 parts.append(f.read_text())
 
+    # Set search_path for views (they use unqualified table names)
+    parts.append("SET search_path = public;")
+
+    # Materialized views (pure CREATE ... WITH NO DATA)
+    views_dir = schema_dir / "views"
+    if views_dir.exists():
+        for f in sorted(views_dir.glob("*.sql")):
+            parts.append(f.read_text())
+
+    # MV indexes
+    idx_views_dir = schema_dir / "indexes" / "views"
+    if idx_views_dir.exists():
+        for f in sorted(idx_views_dir.glob("*.sql")):
+            parts.append(f.read_text())
+
     return "\n".join(parts)
 
 

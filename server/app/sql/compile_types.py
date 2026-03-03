@@ -191,7 +191,7 @@ async def _recover_from_transaction_abort(conn: asyncpg.Connection) -> bool:
 
 
 def _sort_sql_files(sql_file: Path, server_root: Path) -> tuple[int, str]:
-    """Sort SQL files with proper ordering for views and queries.
+    """Sort SQL files with proper ordering for query execution.
 
     Args:
         sql_file: Path to SQL file
@@ -200,23 +200,19 @@ def _sort_sql_files(sql_file: Path, server_root: Path) -> tuple[int, str]:
     Returns:
         Tuple of (priority, path) for sorting where lower priority = earlier execution.
 
-    View/MV Ordering:
-        All views/MVs are independent (no MV-to-MV dependencies), so they all get priority 0.
-
     Query Ordering:
         Priority 10: Analytics queries
         Priority 11: Analytics-dependent queries (dashboard, reports, etc.)
         Priority 12: Settings detail (before active settings due to type dependency)
         Priority 13: Active settings
         Priority 20: All other queries
+
+    Note: Materialized views are no longer compiled here — they live in
+    database/schema/views/ and are loaded as part of the schema.
     """
     sql_path = str(sql_file.relative_to(server_root))
 
-    # Handle views/ directory — all views/MVs are independent
-    if sql_path.startswith("app/sql/views/"):
-        return (0, sql_path)
-
-    # Other analytics routes come next
+    # Analytics routes come first
     if sql_path.startswith("app/sql/queries/analytics/"):
         return (10, sql_path)
 
@@ -281,12 +277,8 @@ async def execute_sql_file(
         # Check if it contains function definitions
         has_function = _detect_function_in_sql(sql_text)
 
-        # Always execute files in the views/ directory (DDL only, no function)
-        # Views must be executed before other files that depend on them
-        is_view_file = sql_path.startswith("app/sql/views/")
-
-        # Execute if it contains function definitions OR is a view file
-        if not has_function and not is_view_file:
+        # Execute only if it contains function definitions
+        if not has_function:
             return (
                 True,
                 f"Skipping {sql_path} (no function definition)",
@@ -1030,16 +1022,8 @@ async def generate_types_for_sql_file(
 
         # Skip introspection for DDL-only files (no function definitions)
         # These files are executed but don't need type generation
-        # Files in views/ are legitimate DDL and should not show warning
         sql_text = load_sql(sql_path)
         if not _detect_function_in_sql(sql_text):
-            # View files are legitimate DDL - execute them but don't show warning
-            if sql_path.startswith("app/sql/views/"):
-                return (
-                    True,
-                    f"Executed {sql_path} (view DDL only)",
-                    None,
-                )
             return (
                 True,
                 f"Skipping {sql_path} (no function definition - DDL only)",
@@ -1229,19 +1213,19 @@ async def compile_sql_types(
         print(f"🔍 Processing {len(sql_file_paths)} SQL file(s) in incremental mode")
     else:
         # Full mode: process all files
-        # Process app/sql/
+        # Process app/sql/ (excluding views/ — those now live in database/schema/views/)
         app_sql_dir = server_root / "app" / "sql"
         if app_sql_dir.exists():
-            sql_file_paths.extend(app_sql_dir.rglob("*.sql"))
+            for f in app_sql_dir.rglob("*.sql"):
+                # Skip legacy views directory — views are in database/schema/views/
+                if "/views/" in str(f.relative_to(app_sql_dir)):
+                    continue
+                sql_file_paths.append(f)
 
         # Process tests/sql/integration/ (all subdirectories)
         tests_sql_dir = server_root / "tests" / "sql" / "integration"
         if tests_sql_dir.exists():
             sql_file_paths.extend(tests_sql_dir.rglob("*.sql"))
-
-        # TEMPORARY: Exclude views/NEW/ directory (work in progress MVs)
-        # TODO: Remove this exclusion once the NEW MVs are ready
-        sql_file_paths = [f for f in sql_file_paths if "/views/NEW/" not in str(f)]
 
         if not sql_file_paths:
             return (
@@ -1333,17 +1317,16 @@ async def compile_sql_types(
                 # Switch to full mode by clearing sql_files and re-finding all files
                 sql_file_paths = []
                 incremental_mode = False
-                # Re-find all SQL files (full mode logic)
+                # Re-find all SQL files (full mode logic, excluding legacy views/)
                 app_sql_dir = server_root / "app" / "sql"
                 if app_sql_dir.exists():
-                    sql_file_paths.extend(app_sql_dir.rglob("*.sql"))
+                    for f in app_sql_dir.rglob("*.sql"):
+                        if "/views/" in str(f.relative_to(app_sql_dir)):
+                            continue
+                        sql_file_paths.append(f)
                 tests_sql_dir = server_root / "tests" / "sql" / "integration"
                 if tests_sql_dir.exists():
                     sql_file_paths.extend(tests_sql_dir.rglob("*.sql"))
-                # TEMPORARY: Exclude views/NEW/ directory (work in progress MVs)
-                sql_file_paths = [
-                    f for f in sql_file_paths if "/views/NEW/" not in str(f)
-                ]
                 if not sql_file_paths:
                     return (
                         True,

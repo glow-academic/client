@@ -125,7 +125,7 @@ ls database/migrate/ | sort -n | tail -1   # Find latest number
 make migrate-db                             # Apply migration
 ```
 
-**IMPORTANT: MVs are JIT compiled.** Materialized view definitions live in `server/app/sql/views/` and are compiled at runtime by `make sql-compile`. **Never** put MV CREATE/DROP/REFRESH statements in migration files. Migrations should only contain DDL for tables, indexes, constraints, and enum values. To change an MV, edit its source SQL file directly.
+**IMPORTANT: MVs are part of the schema.** Materialized view definitions live in `database/schema/views/` (pure `CREATE MATERIALIZED VIEW ... WITH NO DATA` format) with indexes in `database/schema/indexes/views/`. **Never** put MV CREATE/DROP/REFRESH statements in migration files. Migrations should only contain DDL for tables, indexes, constraints, and enum values. To change an MV, edit its source SQL file in `database/schema/views/` directly.
 
 ## Testing
 

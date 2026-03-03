@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 #
-# Concatenates database/schema/ files back into a single loadable SQL file
-# for backward compatibility (Docker, tests, psql -f).
+# Concatenates database/schema/ files back into a single loadable SQL file.
 #
 # Load order:
 #   1. extensions.sql
-#   2. enums/*.sql
-#   3. tables/ (artifacts, entries, resources, junctions, connections)
-#   4. indexes/ (same subfolder structure as tables/)
-#   5. foreign_keys/ (same subfolder structure)
-#
-# Does NOT include views/ or indexes/views/ — those are loaded by bootstrap_all_sql.
+#   2. functions.sql (prerequisite functions for table defaults)
+#   3. enums/*.sql
+#   4. tables/ (artifacts, entries, resources, junctions, connections)
+#   5. indexes/ (same subfolder structure as tables/)
+#   6. foreign_keys/ (same subfolder structure)
+#   7. views/*.sql (materialized views — pure CREATE ... WITH NO DATA)
+#   8. indexes/views/*.sql (MV indexes)
 #
 # Usage:
 #   bash database/scripts/concat_schema.sh [output_path]
@@ -76,6 +76,26 @@ TABLE_SUBFOLDERS="artifacts entries resources junctions connections"
             done
         fi
     done
+
+    # Set search_path for views (they use unqualified table names)
+    echo ""
+    echo "SET search_path = public;"
+
+    # Materialized views (pure CREATE ... WITH NO DATA)
+    if [ -d "$SCHEMA_DIR/views" ]; then
+        for f in $(find "$SCHEMA_DIR/views" -name '*.sql' | sort); do
+            echo ""
+            cat "$f"
+        done
+    fi
+
+    # MV indexes
+    if [ -d "$SCHEMA_DIR/indexes/views" ]; then
+        for f in $(find "$SCHEMA_DIR/indexes/views" -name '*.sql' | sort); do
+            echo ""
+            cat "$f"
+        done
+    fi
 } > "$OUTPUT"
 
 echo "Concatenated schema files → $OUTPUT ($(wc -c < "$OUTPUT" | tr -d ' ') bytes)"
