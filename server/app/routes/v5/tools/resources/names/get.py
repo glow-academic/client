@@ -8,9 +8,6 @@ from app.routes.v5.tools.resources.names.types import NameItem
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import load_sql
-
-SQL_PATH = "app/sql/queries/resources/names/get_names.sql"
 
 
 async def get_names(
@@ -33,8 +30,15 @@ async def get_names(
         if cached:
             return [NameItem.model_validate(item) for item in cached.get("items", [])]
 
-    sql = load_sql(SQL_PATH)
-    rows = await conn.fetch(sql, ids)
+    rows = await conn.fetch("""
+        SELECT id, name, COALESCE(generated, false) AS generated
+        FROM names_resource
+        WHERE id = ANY($1)
+          AND name IS NOT NULL
+          AND name != ''
+        ORDER BY array_position($1, id)
+    """, ids)
+
     items = [NameItem(id=r["id"], name=r["name"], generated=r["generated"]) for r in rows]
 
     await set_cached(
