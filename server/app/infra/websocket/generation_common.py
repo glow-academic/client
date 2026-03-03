@@ -7,7 +7,7 @@ from typing import Any
 
 from app.infra.generation import convert_tools_to_dict, render_developer_instructions
 from app.globals import get_internal_sio
-from app.v5.api.socket.types import GenerateErrorApiRequest
+from app.v5.socket.types import GenerateErrorApiRequest
 from app.utils.sql_helper import load_sql
 
 internal_sio = get_internal_sio()

@@ -274,7 +274,7 @@ from app.v5.router import router as api_v5_router  # noqa: E402
 
 fastapi_app.include_router(api_v5_router)
 
-from app.v5.api.socket import router as socket_v5_router  # noqa: E402
+from app.v5.socket import router as socket_v5_router  # noqa: E402
 
 fastapi_app.include_router(socket_v5_router)
 

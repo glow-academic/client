@@ -824,7 +824,7 @@ def _resolve_valid_types(
         return [], [], []
 
     try:
-        from app.v5.api.socket.client.registry import REGISTRY
+        from app.v5.socket.client.registry import REGISTRY
     except ImportError:
         return [], [], []
 

@@ -16,7 +16,7 @@ def get_media_adapter() -> LitellmMediaAdapter:
     """Get or create the media adapter singleton."""
     global _media_adapter
     if _media_adapter is None:
-        from app.v5.api.socket.internal.media_events import get_media_emitter
+        from app.v5.socket.internal.media_events import get_media_emitter
 
         _media_adapter = LitellmMediaAdapter(emitter=get_media_emitter())
     return _media_adapter
