@@ -31,16 +31,16 @@ Every source module MUST have a corresponding test file. The mapping is:
 ### Integration tests — one file per endpoint/handler
 
 ```
-server/app/v5/api/main/{artifact}/{endpoint}.py
+server/app/routes/v5/api/main/{artifact}/{endpoint}.py
   → server/tests/integration/api/v5/artifacts/{artifact}/test_{endpoint}.py
 
-server/app/v5/api/resources/{resource}/{endpoint}.py
+server/app/routes/v5/api/resources/{resource}/{endpoint}.py
   → server/tests/integration/api/v5/resources/{resource}/test_{endpoint}.py
 
-server/app/v5/api/views/{view}/{endpoint}.py
+server/app/routes/v5/api/views/{view}/{endpoint}.py
   → server/tests/integration/api/v5/views/{view}/test_{endpoint}.py
 
-server/app/v5/socket/artifacts/{artifact}/{handler}.py
+server/app/routes/v5/socket/artifacts/{artifact}/{handler}.py
   → server/tests/integration/socket/v5/artifacts/{artifact}/test_{handler}.py
 ```
 
@@ -49,10 +49,10 @@ server/app/v5/socket/artifacts/{artifact}/{handler}.py
 ### Unit tests — one file per logic module
 
 ```
-server/app/v5/api/main/{artifact}/permissions.py
+server/app/routes/v5/api/main/{artifact}/permissions.py
   → server/tests/unit/api/v5/artifacts/{artifact}/test_permissions.py
 
-server/app/v5/socket/artifacts/{artifact}/permissions.py
+server/app/routes/v5/socket/artifacts/{artifact}/permissions.py
   → server/tests/unit/socket/v5/artifacts/{artifact}/test_permissions.py
 
 server/app/utils/{module}.py

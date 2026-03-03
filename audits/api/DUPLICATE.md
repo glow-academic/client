@@ -10,12 +10,12 @@ The source of truth is the **persona** duplicate implementation. Every artifact 
 
 | Layer | Location | Purpose |
 |-------|----------|---------|
-| **Access Check SQL** | `server/app/v5/sql/queries/{artifact}s/check_{artifact}_duplicate_access_complete.sql` | Light access check |
-| **Duplicate SQL** | `server/app/v5/sql/queries/{artifact}s/duplicate_{artifact}_complete.sql` | Creates new artifact, links all junctions from source |
-| **Python Handler** | `server/app/v5/api/main/{artifact}/duplicate.py` | Permission check, name creation, transaction, audit |
-| **Permissions** | `server/app/v5/api/main/{artifact}/permissions.py` | `compute_can_duplicate()` — simple role check |
+| **Access Check SQL** | `server/app/sql/queries/{artifact}s/check_{artifact}_duplicate_access_complete.sql` | Light access check |
+| **Duplicate SQL** | `server/app/sql/queries/{artifact}s/duplicate_{artifact}_complete.sql` | Creates new artifact, links all junctions from source |
+| **Python Handler** | `server/app/routes/v5/api/main/{artifact}/duplicate.py` | Permission check, name creation, transaction, audit |
+| **Permissions** | `server/app/routes/v5/api/main/{artifact}/permissions.py` | `compute_can_duplicate()` — simple role check |
 
-Reference: `server/app/v5/api/main/persona/duplicate.py`, `duplicate_persona_complete.sql`
+Reference: `server/app/routes/v5/api/main/persona/duplicate.py`, `duplicate_persona_complete.sql`
 
 ---
 
@@ -42,13 +42,13 @@ actor_name = profile_ctx.access.actor_name
 
 See GET.md Rule 2 for the full profile/settings split pattern.
 
-Reference: `server/app/v5/api/main/persona/permissions.py`, `duplicate.py`
+Reference: `server/app/routes/v5/api/main/persona/permissions.py`, `duplicate.py`
 
 ### Rule 2: Light access check SQL
 
 Duplicate endpoints use a light access check SQL (`check_{artifact}_duplicate_access_complete.sql`) that validates the artifact exists and the user has basic access. This is the same SQL used by the draft endpoint.
 
-Reference: `server/app/v5/api/main/persona/duplicate.py`
+Reference: `server/app/routes/v5/api/main/persona/duplicate.py`
 
 ### Rule 3: Two-phase duplicate flow (Python + SQL)
 
@@ -143,7 +143,7 @@ async def duplicate_{artifact}(http_request: Request, body: Duplicate{Artifact}A
     })
 ```
 
-Reference: `server/app/v5/api/main/persona/duplicate.py`
+Reference: `server/app/routes/v5/api/main/persona/duplicate.py`
 
 ### Rule 11: SQL params include name_resource_id
 
@@ -183,7 +183,7 @@ Duplicate does NOT create tool call lineage (`runs_entry`, `calls_entry`, `tool_
 ### Audit 1: Duplicate endpoint existence
 
 ```bash
-for artifact_dir in server/app/v5/api/main/*/; do
+for artifact_dir in server/app/routes/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   [ ! -f "${artifact_dir}duplicate.py" ] && echo "MISSING DUPLICATE ENDPOINT: $artifact"
 done
@@ -194,10 +194,10 @@ done
 ### Audit 2: Access check SQL exists
 
 ```bash
-for artifact_dir in server/app/v5/api/main/*/; do
+for artifact_dir in server/app/routes/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   [ ! -f "${artifact_dir}duplicate.py" ] && continue
-  found=$(find server/app/v5/sql/queries/ -name "check_${artifact}_duplicate_access*" 2>/dev/null | head -1)
+  found=$(find server/app/sql/queries/ -name "check_${artifact}_duplicate_access*" 2>/dev/null | head -1)
   [ -z "$found" ] && echo "MISSING DUPLICATE ACCESS SQL: $artifact"
 done
 ```
@@ -207,10 +207,10 @@ done
 ### Audit 3: Duplicate SQL exists
 
 ```bash
-for artifact_dir in server/app/v5/api/main/*/; do
+for artifact_dir in server/app/routes/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   [ ! -f "${artifact_dir}duplicate.py" ] && continue
-  found=$(find server/app/v5/sql/queries/ -name "duplicate_${artifact}_complete*" 2>/dev/null | head -1)
+  found=$(find server/app/sql/queries/ -name "duplicate_${artifact}_complete*" 2>/dev/null | head -1)
   [ -z "$found" ] && echo "MISSING DUPLICATE SQL: $artifact"
 done
 ```
@@ -220,7 +220,7 @@ done
 ### Audit 4: Transaction usage
 
 ```bash
-for artifact_dir in server/app/v5/api/main/*/; do
+for artifact_dir in server/app/routes/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}duplicate.py"
   [ ! -f "$file" ] && continue
@@ -233,7 +233,7 @@ done
 ### Audit 5: Cache invalidation
 
 ```bash
-for artifact_dir in server/app/v5/api/main/*/; do
+for artifact_dir in server/app/routes/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}duplicate.py"
   [ ! -f "$file" ] && continue
@@ -246,7 +246,7 @@ done
 ### Audit 6: Audit context
 
 ```bash
-for artifact_dir in server/app/v5/api/main/*/; do
+for artifact_dir in server/app/routes/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}duplicate.py"
   [ ! -f "$file" ] && continue
@@ -259,7 +259,7 @@ done
 ### Audit 7: Permission function exists
 
 ```bash
-for artifact_dir in server/app/v5/api/main/*/; do
+for artifact_dir in server/app/routes/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}permissions.py"
   [ ! -f "$file" ] && continue
@@ -272,7 +272,7 @@ done
 ### Audit 8: SQL does not create resources
 
 ```bash
-for sql_file in server/app/v5/sql/queries/*/duplicate_*_complete.sql; do
+for sql_file in server/app/sql/queries/*/duplicate_*_complete.sql; do
   artifact=$(basename "$(dirname "$sql_file")")
   # Check for INSERT INTO *_resource (resource creation in SQL)
   grep -i "INSERT INTO.*_resource" "$sql_file" | grep -v "junction\|connection" | while read line; do
@@ -344,7 +344,7 @@ No SQL resource creation: {N}
 ## Important Notes
 
 1. **Do NOT fix anything.** This is a read-only audit. Report only.
-2. **The persona duplicate is the gold standard.** Reference: `server/app/v5/api/main/persona/duplicate.py`.
+2. **The persona duplicate is the gold standard.** Reference: `server/app/routes/v5/api/main/persona/duplicate.py`.
 3. **Known deviation**: The current persona implementation creates the name resource in SQL directly instead of Python. This should be corrected but is documented as a known gap.
 4. **Light access check**: Duplicate shares its access check SQL with the draft endpoint. Both use `check_{artifact}_duplicate_access_complete.sql`.
 5. **No tool tracking**: Unlike save and draft, duplicate does not create `runs_entry`, `calls_entry`, or `tool_calls_junction` records.

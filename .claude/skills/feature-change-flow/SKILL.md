@@ -20,22 +20,22 @@ Start at the lowest required layer and proceed forward from there:
 - Export schema with `make export-db schema`.
 
 ## 2. SQL queries
-- Update SQL in `server/app/v5/sql/queries/[resource]/[operation]_complete.sql`.
+- Update SQL in `server/app/sql/queries/[resource]/[operation]_complete.sql`.
 - Use composite types in `types` schema — never JSONB.
 - Use parameterized SQL (`$1`, `$2`) — no string interpolation.
 - **Run `make sql-compile`** to execute functions and regenerate `server/app/sql/types.py`.
 
 ## 3. Server views and resources
-- **Views** (`server/app/v5/api/views/`): Read layer querying MVs, declarative SQL filters, `*_internal()` functions.
-- **Resources** (`server/app/v5/api/resources/`): Reusable data-access with per-resource caching, `*_internal()` functions.
+- **Views** (`server/app/routes/v5/api/views/`): Read layer querying MVs, declarative SQL filters, `*_internal()` functions.
+- **Resources** (`server/app/routes/v5/api/resources/`): Reusable data-access with per-resource caching, `*_internal()` functions.
 - Use `execute_sql_typed()` for all SQL execution.
 
 ## 4. Server artifacts and socket
-- **Artifacts** (`server/app/v5/api/main/`): BFF aggregation — combines views + resources + permissions.
+- **Artifacts** (`server/app/routes/v5/api/main/`): BFF aggregation — combines views + resources + permissions.
   - Two-pass pattern: SQL for metadata (Pass 1), parallel `*_internal()` calls (Pass 2).
   - `permissions.py`: Pure Python business logic — no SQL.
   - Standard files: `types.py`, `permissions.py`, `get.py`, `list.py`, `save.py`, `delete.py`, `draft.py`.
-- **Socket** (`server/app/v5/socket/artifacts/`): AI generation handlers (generate, complete, progress, error).
+- **Socket** (`server/app/routes/v5/socket/artifacts/`): AI generation handlers (generate, complete, progress, error).
 
 ## 5. Client
 - Add server actions in `client/app/(main)/[resource]/page.tsx`.

@@ -57,12 +57,12 @@ These artifacts have the SAME split problem we just fixed: `compute_can_edit` us
 **Fix Plan:**
 | File | Change |
 |------|--------|
-| `server/app/v5/api/main/document/permissions.py` | Rename `total_scenario_links` → `active_scenario_count` in `compute_can_delete`. Add default guard (`if not document_department_ids and user_role != "superadmin": return False`) to both edit and delete |
-| `server/app/v5/api/main/document/list.py` | Pass `active_scenario_count` instead of `total_scenario_links` to `compute_can_delete` |
-| `server/app/v5/api/main/document/delete.py` | Pass `active_scenario_count` instead of `total_scenario_links` |
-| `server/app/v5/sql/queries/documents/get_documents_list_complete.sql` | Remove `total_scenario_links` from composite type and data CTE. Keep only `active_scenario_count` |
-| `server/app/v5/sql/queries/documents/check_document_delete_access_complete.sql` | Rename return field to `active_scenario_count`, add `WHERE sd.active = true` filter |
-| `server/app/v5/sql/queries/documents/get_document_access_complete.sql` | Remove `total_scenario_links` from return type, keep only `active_scenario_count` |
+| `server/app/routes/v5/api/main/document/permissions.py` | Rename `total_scenario_links` → `active_scenario_count` in `compute_can_delete`. Add default guard (`if not document_department_ids and user_role != "superadmin": return False`) to both edit and delete |
+| `server/app/routes/v5/api/main/document/list.py` | Pass `active_scenario_count` instead of `total_scenario_links` to `compute_can_delete` |
+| `server/app/routes/v5/api/main/document/delete.py` | Pass `active_scenario_count` instead of `total_scenario_links` |
+| `server/app/sql/queries/documents/get_documents_list_complete.sql` | Remove `total_scenario_links` from composite type and data CTE. Keep only `active_scenario_count` |
+| `server/app/sql/queries/documents/check_document_delete_access_complete.sql` | Rename return field to `active_scenario_count`, add `WHERE sd.active = true` filter |
+| `server/app/sql/queries/documents/get_document_access_complete.sql` | Remove `total_scenario_links` from return type, keep only `active_scenario_count` |
 
 **Decision needed:** Should documents have the default object guard? Currently they don't check departments in edit/delete at all. The `compute_can_create` does block non-superadmins from creating general documents.
 
@@ -85,11 +85,11 @@ These artifacts have the SAME split problem we just fixed: `compute_can_edit` us
 **Fix Plan:**
 | File | Change |
 |------|--------|
-| `server/app/v5/api/main/parameter/permissions.py` | Rename `total_scenario_links` → `active_scenario_count` in `compute_can_delete`. Fix type hint to `list[str] \| list[UUID] \| None` |
-| `server/app/v5/api/main/parameter/list.py` | Pass `active_scenario_count` instead of `total_scenario_links` |
-| `server/app/v5/api/main/parameter/delete.py` | Pass `active_scenario_count` instead of `total_scenario_links` |
-| `server/app/v5/sql/queries/parameters/get_parameters_list_complete.sql` | Remove `total_scenario_links` / `parameter_all_scenario_links` CTE. Keep only `active_scenario_count` |
-| `server/app/v5/sql/queries/parameters/check_parameter_delete_access_complete.sql` | Rename to `active_scenario_count`, add active filter |
+| `server/app/routes/v5/api/main/parameter/permissions.py` | Rename `total_scenario_links` → `active_scenario_count` in `compute_can_delete`. Fix type hint to `list[str] \| list[UUID] \| None` |
+| `server/app/routes/v5/api/main/parameter/list.py` | Pass `active_scenario_count` instead of `total_scenario_links` |
+| `server/app/routes/v5/api/main/parameter/delete.py` | Pass `active_scenario_count` instead of `total_scenario_links` |
+| `server/app/sql/queries/parameters/get_parameters_list_complete.sql` | Remove `total_scenario_links` / `parameter_all_scenario_links` CTE. Keep only `active_scenario_count` |
+| `server/app/sql/queries/parameters/check_parameter_delete_access_complete.sql` | Rename to `active_scenario_count`, add active filter |
 
 ---
 
@@ -109,11 +109,11 @@ These artifacts have the SAME split problem we just fixed: `compute_can_edit` us
 **Fix Plan:**
 | File | Change |
 |------|--------|
-| `server/app/v5/api/main/rubric/permissions.py` | Rename `total_simulation_links` → `active_simulation_count` in `compute_can_delete`. Fix type hint |
-| `server/app/v5/api/main/rubric/list.py` | Pass `active_simulation_count` instead of `total_simulation_links` |
-| `server/app/v5/api/main/rubric/delete.py` | Pass `active_simulation_count` instead of `total_simulation_links` |
-| `server/app/v5/sql/queries/rubric/get_rubrics_list_complete.sql` | Remove `total_simulation_links` / `rubric_all_simulation_links` CTE. Keep only `active_simulation_count` |
-| `server/app/v5/sql/queries/rubrics/check_rubric_delete_access_complete.sql` | Rename to `active_simulation_count`, add active filter |
+| `server/app/routes/v5/api/main/rubric/permissions.py` | Rename `total_simulation_links` → `active_simulation_count` in `compute_can_delete`. Fix type hint |
+| `server/app/routes/v5/api/main/rubric/list.py` | Pass `active_simulation_count` instead of `total_simulation_links` |
+| `server/app/routes/v5/api/main/rubric/delete.py` | Pass `active_simulation_count` instead of `total_simulation_links` |
+| `server/app/sql/queries/rubric/get_rubrics_list_complete.sql` | Remove `total_simulation_links` / `rubric_all_simulation_links` CTE. Keep only `active_simulation_count` |
+| `server/app/sql/queries/rubrics/check_rubric_delete_access_complete.sql` | Rename to `active_simulation_count`, add active filter |
 
 ---
 
@@ -141,8 +141,8 @@ These artifacts use a different permission model. Their "blocked by" is not pare
 **Fix Plan:**
 | File | Change |
 |------|--------|
-| `server/app/v5/api/main/profile/permissions.py` | Rename `total_cohort_links` → `active_cohort_count`. Update docstring |
-| `server/app/v5/api/main/profile/list.py` | Pass `active_cohort_count` instead of `total_cohort_links` |
+| `server/app/routes/v5/api/main/profile/permissions.py` | Rename `total_cohort_links` → `active_cohort_count`. Update docstring |
+| `server/app/routes/v5/api/main/profile/list.py` | Pass `active_cohort_count` instead of `total_cohort_links` |
 | SQL (list) | Verify the cohort count filters by `active = true` |
 
 **Decision needed:** Does profile need the default object guard? Profiles are user accounts, not content objects. The concept of "default profile with no departments" doesn't map cleanly.
@@ -166,9 +166,9 @@ These artifacts use a different permission model. Their "blocked by" is not pare
 **Fix Plan:**
 | File | Change |
 |------|--------|
-| `server/app/v5/api/main/model/permissions.py` | Rename `total_persona_links` → `active_persona_count` in `compute_can_delete`. Consider: should `agents_usage_count` also filter active-only? |
-| `server/app/v5/api/main/model/list.py` | Wire up `active_persona_count` from SQL (currently hardcoded to 0!) |
-| `server/app/v5/api/main/model/delete.py` | Pass `active_persona_count` instead of `total_persona_links` |
+| `server/app/routes/v5/api/main/model/permissions.py` | Rename `total_persona_links` → `active_persona_count` in `compute_can_delete`. Consider: should `agents_usage_count` also filter active-only? |
+| `server/app/routes/v5/api/main/model/list.py` | Wire up `active_persona_count` from SQL (currently hardcoded to 0!) |
+| `server/app/routes/v5/api/main/model/delete.py` | Pass `active_persona_count` instead of `total_persona_links` |
 | SQL files | Add active filter to persona link count, possibly add persona count to list query |
 
 **Decision needed:** Should the agent usage check also be unified (active agents only)? Should edit also block on agent usage?
@@ -191,8 +191,8 @@ These artifacts use a different permission model. Their "blocked by" is not pare
 **Fix Plan:**
 | File | Change |
 |------|--------|
-| `server/app/v5/api/main/provider/permissions.py` | Remove unused `model_usage_count` param from `compute_can_edit` to avoid confusion. Verify `model_usage_count` counts active-only |
-| `server/app/v5/api/main/provider/list.py` | Remove `model_usage_count` from edit call if param is removed |
+| `server/app/routes/v5/api/main/provider/permissions.py` | Remove unused `model_usage_count` param from `compute_can_edit` to avoid confusion. Verify `model_usage_count` counts active-only |
+| `server/app/routes/v5/api/main/provider/list.py` | Remove `model_usage_count` from edit call if param is removed |
 | SQL files | Verify model count filters by `active = true` |
 
 **Decision needed:** Should edit also block on model usage? Or is the Cohort-like pattern (edit=role, delete=usage) intentional for providers?
@@ -220,7 +220,7 @@ These artifacts either don't have parent-link-based permissions or use fundament
 **Fix Plan:**
 | File | Change |
 |------|--------|
-| `server/app/v5/api/main/department/permissions.py` | Unify param names. Verify active-only counting |
+| `server/app/routes/v5/api/main/department/permissions.py` | Unify param names. Verify active-only counting |
 | SQL files | Verify usage counts filter by `active = true` |
 
 ---
@@ -240,7 +240,7 @@ These artifacts either don't have parent-link-based permissions or use fundament
 **Fix Plan:**
 | File | Change |
 |------|--------|
-| `server/app/v5/api/main/field/permissions.py` | Rename `total_parameter_links` → `active_parameter_count`. Verify active-only |
+| `server/app/routes/v5/api/main/field/permissions.py` | Rename `total_parameter_links` → `active_parameter_count`. Verify active-only |
 | SQL files | Add `WHERE active = true` to parameter link count if missing |
 
 ---
@@ -259,7 +259,7 @@ These artifacts either don't have parent-link-based permissions or use fundament
 **Fix Plan:**
 | File | Change |
 |------|--------|
-| `server/app/v5/api/main/tool/permissions.py` | Rename `usage_count` → `active_usage_count` in `compute_can_delete` |
+| `server/app/routes/v5/api/main/tool/permissions.py` | Rename `usage_count` → `active_usage_count` in `compute_can_delete` |
 | SQL files | Verify/add active filter in delete usage count |
 
 ---
@@ -281,7 +281,7 @@ These artifacts either don't have parent-link-based permissions or use fundament
 **Fix Plan:**
 | File | Change |
 |------|--------|
-| `server/app/v5/api/main/agent/permissions.py` | Rename `usage_count` → `active_usage_count` in `compute_can_delete`. Add explicit default guard |
+| `server/app/routes/v5/api/main/agent/permissions.py` | Rename `usage_count` → `active_usage_count` in `compute_can_delete`. Add explicit default guard |
 | SQL files | Verify/add active filter in delete usage count |
 
 ---

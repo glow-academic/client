@@ -9,20 +9,45 @@ make test         # Run server tests (unit + integration)
 make help         # Show all commands
 ```
 
+## Server Directory Structure
+
+```
+server/app/
+  main.py              — Entry point
+  server.py            — App factory, middleware, router mounting
+
+  infra/               — Business logic, domain tools (globals, agents, websocket, generation, tools)
+  sql/                 — SQL queries, types, compilation
+  registry/            — Artifact/entry/resource registries
+  utils/               — Pure helpers (cache, logging, encryption)
+
+  routes/              — ALL HTTP/socket routes
+    v5/                — Versioned API + socket
+      api/             — entries, main (artifacts), resources, views
+      socket/          — client, internal, server
+    auth/              — /auth/* (session, profile, settings, drafts)
+    default_idp/       — /default-idp/*
+    mcp/               — MCP server
+    metrics/           — /metrics/*
+    uploads/           — /uploads/*
+    health.py          — /health
+    init.py            — /init
+```
+
 ## Architecture: Three-Layer BFF
 
 | Layer | Location | Purpose |
 |-------|----------|---------|
-| **Views** | `server/app/v5/api/views/` | Read layer — queries MVs with declarative SQL filters, `*_internal()` |
-| **Resources** | `server/app/v5/api/resources/` | Cached data-access functions, `*_internal()` for reuse |
-| **Artifacts** | `server/app/v5/api/main/` | BFF aggregation — views + resources + permissions |
-| **Socket** | `server/app/v5/socket/artifacts/` | WebSocket AI generation (generate, complete, progress, error) |
+| **Views** | `server/app/routes/v5/api/views/` | Read layer — queries MVs with declarative SQL filters, `*_internal()` |
+| **Resources** | `server/app/routes/v5/api/resources/` | Cached data-access functions, `*_internal()` for reuse |
+| **Artifacts** | `server/app/routes/v5/api/main/` | BFF aggregation — views + resources + permissions |
+| **Socket** | `server/app/routes/v5/socket/` | WebSocket AI generation (generate, complete, progress, error) |
 | **Permissions** | `*/permissions.py` per artifact | Pure Python business logic — no SQL |
 
 ## Type Flow
 
 ```
-SQL files (server/app/v5/sql/queries/)
+SQL files (server/app/sql/queries/)
     ↓ make sql-compile
 server/app/sql/types.py (*SqlParams, *SqlRow)
     ↓ make openapi-gen
@@ -36,15 +61,15 @@ client/lib/api/schema.ts → InputOf / OutputOf
 ## File Locations
 
 ```
-server/app/v5/sql/queries/[resource]/       — SQL files (one per route)
-server/app/v5/api/main/[resource]/     — Artifact endpoints
-server/app/v5/api/resources/[resource]/     — Resource endpoints
-server/app/v5/api/views/[domain]/           — View endpoints
-server/app/v5/socket/artifacts/[resource]/  — Socket handlers
-server/tests/integration/api/v5/[resource]/ — Integration tests
-server/tests/e2e/                           — E2E Playwright tests
-client/app/(main)/[resource]/page.tsx       — Server actions
-client/components/[resource]/               — UI components
+server/app/sql/queries/[resource]/                — SQL files (one per route)
+server/app/routes/v5/api/main/[resource]/         — Artifact endpoints
+server/app/routes/v5/api/resources/[resource]/    — Resource endpoints
+server/app/routes/v5/api/views/[domain]/          — View endpoints
+server/app/routes/v5/socket/                      — Socket handlers
+server/tests/integration/api/v5/[resource]/       — Integration tests
+server/tests/e2e/                                 — E2E Playwright tests
+client/app/(main)/[resource]/page.tsx             — Server actions
+client/components/[resource]/                     — UI components
 ```
 
 ## Key Patterns
@@ -100,7 +125,7 @@ ls database/migrate/ | sort -n | tail -1   # Find latest number
 make migrate-db                             # Apply migration
 ```
 
-**IMPORTANT: MVs are JIT compiled.** Materialized view definitions live in `server/app/v5/sql/views/` and are compiled at runtime by `make sql-compile`. **Never** put MV CREATE/DROP/REFRESH statements in migration files. Migrations should only contain DDL for tables, indexes, constraints, and enum values. To change an MV, edit its source SQL file directly.
+**IMPORTANT: MVs are JIT compiled.** Materialized view definitions live in `server/app/sql/views/` and are compiled at runtime by `make sql-compile`. **Never** put MV CREATE/DROP/REFRESH statements in migration files. Migrations should only contain DDL for tables, indexes, constraints, and enum values. To change an MV, edit its source SQL file directly.
 
 ## Testing
 

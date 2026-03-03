@@ -20,11 +20,11 @@ profiles_audits_connection: profiles_id, audit_id, created_at, generated, mcp, a
 
 | File | Purpose |
 |------|---------|
-| `server/app/v5/infra/activity/audit.py` | `audit_activity()` dependency + `audit_set()` helper |
-| `server/app/v5/infra/activity/logger.py` | HTTP activity logger (called by middleware) |
-| `server/app/v5/infra/activity/websocket_logger.py` | WebSocket activity logger |
-| `server/app/v5/infra/activity/insert.py` | DB insert for HTTP audits |
-| `server/app/v5/infra/activity/insert_websocket.py` | DB insert for WebSocket audits |
+| `server/app/infra/activity/audit.py` | `audit_activity()` dependency + `audit_set()` helper |
+| `server/app/infra/activity/logger.py` | HTTP activity logger (called by middleware) |
+| `server/app/infra/activity/websocket_logger.py` | WebSocket activity logger |
+| `server/app/infra/activity/insert.py` | DB insert for HTTP audits |
+| `server/app/infra/activity/insert_websocket.py` | DB insert for WebSocket audits |
 
 ---
 
@@ -136,7 +136,7 @@ WebSocket audit logging must never break the handler. Always wrap in `try/except
 
 ### Generation handlers — use the chokepoint
 
-All domain generation handlers (agent, simulation, persona, etc.) emit to a single internal `generate_artifact` event in `server/app/v5/socket/artifacts/generate.py`. Audit logging is already added at this chokepoint — individual generation handlers do NOT need their own audit calls.
+All domain generation handlers (agent, simulation, persona, etc.) emit to a single internal `generate_artifact` event in `server/app/routes/v5/socket/artifacts/generate.py`. Audit logging is already added at this chokepoint — individual generation handlers do NOT need their own audit calls.
 
 The chokepoint logs: `{{ actor.name }} started {{ artifact_type }} generation ({{ resource_type }})`.
 

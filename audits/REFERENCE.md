@@ -44,7 +44,7 @@ Every artifact has exactly three presentation functions that share one internal 
 ### Reference: Persona Implementation
 
 ```
-server/app/v5/api/main/persona/get.py
+server/app/routes/v5/api/main/persona/get.py
   get_persona_internal()    — lines 114-788
   get_persona_websocket()   — lines 791-879
   get_persona_client()      — lines 882-983
@@ -143,7 +143,7 @@ The generation socket handler follows this exact flow. The client emits **`resou
 ### Reference Flow
 
 ```
-server/app/v5/socket/artifacts/persona/generate.py
+server/app/routes/v5/socket/artifacts/persona/generate.py
   _persona_generate_impl()  — lines 92-527
 ```
 
@@ -308,7 +308,7 @@ Reference: `generate.py:78-89`
 
 ## 5. Completion Handler (complete.py)
 
-Reference: `server/app/v5/socket/artifacts/persona/complete.py`
+Reference: `server/app/routes/v5/socket/artifacts/persona/complete.py`
 
 ### Flow
 
@@ -416,7 +416,7 @@ Reference: `types.py:408-431`
 
 ## 7. Permissions & Constants
 
-Reference: `server/app/v5/api/main/persona/permissions.py`
+Reference: `server/app/routes/v5/api/main/persona/permissions.py`
 
 ### Resource Set Constants
 
@@ -444,7 +444,7 @@ Reference: `permissions.py:366-383`
 
 The materialized view `mv_config` provides inference configuration for generation.
 
-Reference: `server/app/v5/sql/views/config/mv_config.sql`, `server/app/v5/api/views/config/`
+Reference: `server/app/sql/views/config/mv_config.sql`, `server/app/routes/v5/api/views/config/`
 
 ### Fields
 
@@ -794,8 +794,8 @@ Architecture notes:
 - Step grouping: `basic` (names, descriptions, flags, departments), `provider` (values, providers), `features` (modalities, temperature_levels, pricing, reasoning_levels, qualities, voices)
 - Modalities are unified (no separate input/output arrays) — direction is tracked via `is_input` boolean on `modalities_resource`, not via junction table `type` column
 - Endpoints and keys were removed from model (moved to provider artifact per migration 406)
-- Handcrafted types in `server/app/v5/api/main/model/types.py`
-- Permissions in `server/app/v5/api/main/model/permissions.py`
+- Handcrafted types in `server/app/routes/v5/api/main/model/types.py`
+- Permissions in `server/app/routes/v5/api/main/model/permissions.py`
 
 Known deviations from gold standard (acceptable for now, migration deferred):
 - `generate.py` uses shared SQL (`get_generation_run_context_and_create_run_complete.sql` + `get_text_run_context_for_existing_run_complete.sql`) instead of artifact-specific prepare SQL
@@ -1307,7 +1307,7 @@ Save endpoints must keep denormalized arrays in sync:
 ### Reference Implementation
 
 ```
-server/app/v5/sql/queries/personas/get_personas_list_complete.sql
+server/app/sql/queries/personas/get_personas_list_complete.sql
 ```
 
 Tables touched: `persona_artifact`, `persona_*_junction` (7 junctions), `names_resource`, `descriptions_resource`, `colors_resource`, `icons_resource`, `flags_resource`, `departments_resource`, `parameter_fields_resource`, `fields_resource`, `personas_resource`, `scenarios_resource`

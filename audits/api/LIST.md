@@ -10,11 +10,11 @@ The source of truth is the **persona** list implementation. Every artifact list 
 
 | Layer | Location | Purpose |
 |-------|----------|---------|
-| **SQL** | `server/app/v5/sql/queries/{artifact}s/get_{artifact}s_list_complete.sql` | Resource-first query: artifact table + own junctions + resource tables only |
-| **Python** | `server/app/v5/api/main/{artifact}/list.py` | Hydration, search filtering, permission computation, caching |
-| **Permissions** | `server/app/v5/api/main/{artifact}/permissions.py` | Pure Python per-item permission computation |
+| **SQL** | `server/app/sql/queries/{artifact}s/get_{artifact}s_list_complete.sql` | Resource-first query: artifact table + own junctions + resource tables only |
+| **Python** | `server/app/routes/v5/api/main/{artifact}/list.py` | Hydration, search filtering, permission computation, caching |
+| **Permissions** | `server/app/routes/v5/api/main/{artifact}/permissions.py` | Pure Python per-item permission computation |
 
-Reference: `server/app/v5/api/main/persona/list.py`, `server/app/v5/sql/queries/personas/get_personas_list_complete.sql`
+Reference: `server/app/routes/v5/api/main/persona/list.py`, `server/app/sql/queries/personas/get_personas_list_complete.sql`
 
 ---
 
@@ -42,7 +42,7 @@ Tables NOT ALLOWED:
   view_persona_edit_state, scenario_personas_junction
 ```
 
-Reference: `server/app/v5/sql/queries/personas/get_personas_list_complete.sql`
+Reference: `server/app/sql/queries/personas/get_personas_list_complete.sql`
 
 ### Rule 2: Above-facing filters use denormalized arrays
 
@@ -97,7 +97,7 @@ After receiving option IDs from SQL, Python hydrates names by calling cached res
 )
 ```
 
-Reference: `server/app/v5/api/main/persona/list.py`
+Reference: `server/app/routes/v5/api/main/persona/list.py`
 
 ### Rule 7: Python applies search filtering
 
@@ -125,7 +125,7 @@ for item in items:
     )
 ```
 
-Reference: `server/app/v5/api/main/persona/list.py`, `permissions.py`
+Reference: `server/app/routes/v5/api/main/persona/list.py`, `permissions.py`
 
 ### Rule 9: User context from `get_auth_profile_internal()`
 
@@ -146,7 +146,7 @@ if cached:
     return JSONResponse(content=cached, headers={"X-Cache-Hit": "true", "X-Cache-Tags": ...})
 ```
 
-Reference: `server/app/v5/api/main/persona/list.py`
+Reference: `server/app/routes/v5/api/main/persona/list.py`
 
 ### Rule 11: Pagination support
 
@@ -159,7 +159,7 @@ List endpoints must support pagination via:
 
 The list response uses standardized `ListFilterSection` types for each filter dimension. Each section contains filter options, echoed `selected_ids`, and echoed `search` from the request.
 
-**Shared filter types** (from `server/app/v5/types.py`):
+**Shared filter types** (from `server/app/routes/v5/types.py`):
 
 ```python
 class ListFilterOption(BaseModel):
@@ -186,7 +186,7 @@ class ListPersonasApiResponse(BaseModel):
 
 Each filter dimension echoes back `selected_ids` and `search` from the request, enabling the client to confirm which filters are active. Options contain hydrated `id`, `name`, and `count`.
 
-Reference: `server/app/v5/types.py`, `server/app/v5/api/main/persona/types.py`
+Reference: `server/app/routes/v5/types.py`, `server/app/routes/v5/api/main/persona/types.py`
 
 ---
 
@@ -206,7 +206,7 @@ Reference: `server/app/v5/types.py`, `server/app/v5/api/main/persona/types.py`
 ### Audit 1: List endpoint existence
 
 ```bash
-for artifact_dir in server/app/v5/api/main/*/; do
+for artifact_dir in server/app/routes/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   [ ! -f "${artifact_dir}list.py" ] && echo "MISSING LIST ENDPOINT: $artifact"
 done
@@ -217,7 +217,7 @@ done
 ### Audit 2: SQL only touches own tables
 
 ```bash
-for sql_file in server/app/v5/sql/queries/*/get_*_list_complete.sql; do
+for sql_file in server/app/sql/queries/*/get_*_list_complete.sql; do
   artifact=$(basename "$(dirname "$sql_file")")
   # Check for cross-entity artifact table joins
   grep -iE "JOIN\s+\w+_artifact" "$sql_file" | grep -v "${artifact}_artifact" | while read line; do
@@ -231,7 +231,7 @@ done
 ### Audit 3: No legacy view usage
 
 ```bash
-for sql_file in server/app/v5/sql/queries/*/get_*_list_complete.sql; do
+for sql_file in server/app/sql/queries/*/get_*_list_complete.sql; do
   artifact=$(basename "$(dirname "$sql_file")")
   grep -i "view_.*_edit_state" "$sql_file" && echo "LEGACY VIEW: $artifact ($sql_file)"
 done
@@ -242,7 +242,7 @@ done
 ### Audit 4: Python hydration pattern
 
 ```bash
-for artifact_dir in server/app/v5/api/main/*/; do
+for artifact_dir in server/app/routes/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}list.py"
   [ ! -f "$file" ] && continue
@@ -256,7 +256,7 @@ done
 ### Audit 5: Permission computation in Python
 
 ```bash
-for artifact_dir in server/app/v5/api/main/*/; do
+for artifact_dir in server/app/routes/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}list.py"
   [ ! -f "$file" ] && continue
@@ -273,7 +273,7 @@ done
 ### Audit 6: Caching implementation
 
 ```bash
-for artifact_dir in server/app/v5/api/main/*/; do
+for artifact_dir in server/app/routes/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}list.py"
   [ ! -f "$file" ] && continue
@@ -290,7 +290,7 @@ done
 ### Audit 7: Auth profile internal usage
 
 ```bash
-for artifact_dir in server/app/v5/api/main/*/; do
+for artifact_dir in server/app/routes/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}list.py"
   [ ! -f "$file" ] && continue
@@ -359,7 +359,7 @@ Caching: {N}
 ## Important Notes
 
 1. **Do NOT fix anything.** This is a read-only audit. Report only.
-2. **The persona list is the gold standard.** Reference: `server/app/v5/api/main/persona/list.py`.
+2. **The persona list is the gold standard.** Reference: `server/app/routes/v5/api/main/persona/list.py`.
 3. **Denormalization responsibility**: Save endpoints must keep denormalized arrays in sync. If `scenarios_resource.persona_ids` is stale, that's a save endpoint bug, not a list endpoint bug.
 4. **Filter dimensions are artifact-specific**. Persona uses scenarios/fields/departments. Other artifacts define their own 3 dimensions.
 5. **Delete permission counts are for UI only**. The actual delete endpoint has its own independent access check SQL.

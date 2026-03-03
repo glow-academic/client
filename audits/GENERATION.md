@@ -10,8 +10,8 @@ Generation is split into two layers with a strict boundary:
 
 | Layer | Location | Responsibility |
 |-------|----------|----------------|
-| **Domain Handlers** | `server/app/v5/socket/artifacts/{domain}/generate.py` | Business logic: validation, agent resolution, run creation, message building, config hydration. Emits `generate_artifact` events. |
-| **Token Factory** | `server/app/v5/socket/artifacts/generate.py` | Pure AI: receives a single `GenerateArtifactPayload`, streams model outputs, executes tools, emits progress/complete/error events. No database mutations. No domain knowledge. |
+| **Domain Handlers** | `server/app/routes/v5/socket/artifacts/{domain}/generate.py` | Business logic: validation, agent resolution, run creation, message building, config hydration. Emits `generate_artifact` events. |
+| **Token Factory** | `server/app/routes/v5/socket/artifacts/generate.py` | Pure AI: receives a single `GenerateArtifactPayload`, streams model outputs, executes tools, emits progress/complete/error events. No database mutations. No domain knowledge. |
 
 The token factory is domain-agnostic. It does not know about personas, simulations, or any specific resource type. It receives pre-rendered messages, a fully resolved `llm_config`, and optional tools. It streams tokens and emits socket events.
 
@@ -160,10 +160,10 @@ The client receives multiple streams of events for a multi-agent generation. It 
 
 ### Rule 11: Resource events flow through per-resource socket handlers
 
-The token factory emits internal events (`generate_call_start`, `generate_call_progress`, `generate_call_complete`, `generate_call_error`) on the internal socket bus. The resource dispatcher (`server/app/v5/socket/resources/dispatcher.py`) routes these events by `resource_type` to per-resource handler modules:
+The token factory emits internal events (`generate_call_start`, `generate_call_progress`, `generate_call_complete`, `generate_call_error`) on the internal socket bus. The resource dispatcher (`server/app/routes/v5/socket/resources/dispatcher.py`) routes these events by `resource_type` to per-resource handler modules:
 
 ```
-server/app/v5/socket/resources/{resource}/
+server/app/routes/v5/socket/resources/{resource}/
   __init__.py     — OpenAPI POST endpoints for schema generation
   types.py        — Per-resource Pydantic event models
   start.py        — handle_start() → emits {resource}_generation_started
@@ -190,16 +190,16 @@ The `save` flag is threaded through: client payload → domain handler → `gene
 ## File Locations
 
 ```
-server/app/v5/socket/artifacts/generate.py              — Token factory (DO NOT add domain logic here)
-server/app/v5/socket/artifacts/{domain}/generate.py      — Domain handlers (orchestration lives here)
-server/app/v5/socket/artifacts/{domain}/complete.py      — Artifact completion handler (run_complete, text_complete)
-server/app/v5/socket/artifacts/{domain}/progress.py      — Artifact progress handler (percentage tracking)
-server/app/v5/socket/artifacts/{domain}/types.py         — Domain-specific payload types
-server/app/v5/socket/artifacts/types.py                  — Shared event types (error, progress, complete)
-server/app/v5/socket/resources/dispatcher.py             — Resource event dispatcher (routes by resource_type)
-server/app/v5/socket/resources/{resource}/               — Per-resource handlers (start, progress, complete, error)
-server/app/v5/api/main/{domain}/get.py              — get_{domain}_websocket() (pre-fetches resources)
-server/app/v5/api/main/{domain}/types.py            — Websocket response types (resource_agent_ids, resources)
+server/app/routes/v5/socket/artifacts/generate.py              — Token factory (DO NOT add domain logic here)
+server/app/routes/v5/socket/artifacts/{domain}/generate.py      — Domain handlers (orchestration lives here)
+server/app/routes/v5/socket/artifacts/{domain}/complete.py      — Artifact completion handler (run_complete, text_complete)
+server/app/routes/v5/socket/artifacts/{domain}/progress.py      — Artifact progress handler (percentage tracking)
+server/app/routes/v5/socket/artifacts/{domain}/types.py         — Domain-specific payload types
+server/app/routes/v5/socket/artifacts/types.py                  — Shared event types (error, progress, complete)
+server/app/routes/v5/socket/resources/dispatcher.py             — Resource event dispatcher (routes by resource_type)
+server/app/routes/v5/socket/resources/{resource}/               — Per-resource handlers (start, progress, complete, error)
+server/app/routes/v5/api/main/{domain}/get.py              — get_{domain}_websocket() (pre-fetches resources)
+server/app/routes/v5/api/main/{domain}/types.py            — Websocket response types (resource_agent_ids, resources)
 ```
 
 ---

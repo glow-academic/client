@@ -19,7 +19,7 @@ API v5 endpoints follow the agents-style architecture pattern, which uses:
 
 **⚠️ CRITICAL: One SQL File Per Route, No Inline SQL**
 
-- **One SQL file per API route**: Each route has exactly one SQL file in `server/app/v5/sql/[resource]/[operation]_complete.sql`
+- **One SQL file per API route**: Each route has exactly one SQL file in `server/app/sql/[resource]/[operation]_complete.sql`
 - **No inline SQL**: All SQL must be in the `.sql` file, never embedded as strings in Python code
 - **Function-based**: SQL files define PostgreSQL functions, not raw queries
 - **File naming**: Pattern `[operation]_[resource]_complete.sql` (e.g., `get_agent_detail_complete.sql`, `create_agent_complete.sql`)
@@ -238,12 +238,12 @@ The `make sql-format` command includes `check_enum_comparisons.py` which validat
 **Example Structure:**
 
 ```
-server/app/v5/api/main/agent/
+server/app/routes/v5/api/main/agent/
 ├── list.py          # Route handler
 ├── get.py           # Route handler
 └── draft.py         # Route handler
 
-server/app/v5/sql/queries/agents/
+server/app/sql/queries/agents/
 ├── get_agents_list_complete.sql    # One SQL file per route
 ├── get_agent_complete.sql          # One SQL file per route
 └── patch_agent_draft_complete.sql  # One SQL file per route
@@ -581,7 +581,7 @@ class Patch{Resource}DraftApiResponse(BaseModel):
 
 ### Implementation Pattern
 
-**Route Handler** (`server/app/v5/{resource}/draft.py`):
+**Route Handler** (`server/app/routes/v5/{resource}/draft.py`):
 ```python
 @router.patch(
     "/draft",
@@ -667,7 +667,7 @@ async def patch_{resource}_draft(
         )
 ```
 
-**SQL Function** (`server/app/v5/sql/{resource}/patch_{resource}_draft_complete.sql`):
+**SQL Function** (`server/app/sql/{resource}/patch_{resource}_draft_complete.sql`):
 ```sql
 -- Patch {resource} draft (create if not exists, patch if exists)
 BEGIN;
@@ -792,11 +792,11 @@ audit_set(
 
 ### Reference Implementation
 
-See `server/app/v5/api/main/persona/draft.py` and `server/app/v5/sql/queries/personas/patch_persona_draft_complete.sql` as the reference implementation.
+See `server/app/routes/v5/api/main/persona/draft.py` and `server/app/sql/queries/personas/patch_persona_draft_complete.sql` as the reference implementation.
 
 ## Reference Implementation
 
-See `server/app/v5/api/main/agent/list.py` and `server/app/v5/sql/queries/agents/get_agents_list_complete.sql` as the reference implementation.
+See `server/app/routes/v5/api/main/agent/list.py` and `server/app/sql/queries/agents/get_agents_list_complete.sql` as the reference implementation.
 
 ## MCP Documentation Pattern
 
@@ -807,7 +807,7 @@ See `server/app/v5/api/main/agent/list.py` and `server/app/v5/sql/queries/agents
 Each artifact should have a `docs.py` file alongside its API route files:
 
 ```
-server/app/v5/api/main/persona/
+server/app/routes/v5/api/main/persona/
 ├── get.py
 ├── save.py
 ├── list.py
@@ -823,7 +823,7 @@ server/app/v5/api/main/persona/
 
 **Example**:
 ```python
-# server/app/v5/api/main/persona/docs.py
+# server/app/routes/v5/api/main/persona/docs.py
 def get_personas_docs() -> dict[str, Any]:
     """Get comprehensive documentation for the personas artifact."""
     return {
@@ -854,9 +854,9 @@ The documentation dictionary should include:
 The MCP server imports artifact docs from API routes:
 
 ```python
-# server/app/mcp/endpoints.py
+# server/app/routes/mcp/endpoints.py
 try:
-    from app.v5.main.persona.docs import get_personas_docs
+    from app.routes.v5.api.main.persona.docs import get_personas_docs
     ARTIFACT_DOCS["personas"] = get_personas_docs
 except ImportError:
     pass
@@ -864,10 +864,10 @@ except ImportError:
 
 ### Root GLOW Documentation
 
-General GLOW information lives in `server/app/mcp/docs.py`:
+General GLOW information lives in `server/app/routes/mcp/docs.py`:
 
 ```python
-# server/app/mcp/docs.py
+# server/app/routes/mcp/docs.py
 def get_glow_docs() -> dict[str, Any]:
     """Get general GLOW documentation."""
     return {

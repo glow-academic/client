@@ -11,26 +11,26 @@ The API has three main layers, each with a distinct responsibility:
 
 | Layer | Location | Purpose |
 |-------|----------|---------|
-| **Views** | `server/app/v5/api/views/` | Read layer — queries MVs with declarative SQL filters, exposes `*_internal()` functions |
-| **Resources** | `server/app/v5/api/resources/` | Reusable data-access functions with per-resource caching, exposes `*_internal()` |
-| **Artifacts** | `server/app/v5/api/main/` | BFF aggregation — combines views + resources + permissions into client-ready bundles |
+| **Views** | `server/app/routes/v5/api/views/` | Read layer — queries MVs with declarative SQL filters, exposes `*_internal()` functions |
+| **Resources** | `server/app/routes/v5/api/resources/` | Reusable data-access functions with per-resource caching, exposes `*_internal()` |
+| **Artifacts** | `server/app/routes/v5/api/main/` | BFF aggregation — combines views + resources + permissions into client-ready bundles |
 
 Supporting layers:
 
 | Layer | Location | Purpose |
 |-------|----------|---------|
-| **Socket** | `server/app/v5/socket/artifacts/` | WebSocket event handlers for AI generation (generate, complete, progress, error) |
+| **Socket** | `server/app/routes/v5/socket/artifacts/` | WebSocket event handlers for AI generation (generate, complete, progress, error) |
 | **Permissions** | `*/permissions.py` per artifact | Pure Python business logic — no SQL, uses data from artifact layer |
-| **Infrastructure** | `server/app/v5/infra/` | SQL compilation, activity audit, error handling, caching |
+| **Infrastructure** | `server/app/infra/` | SQL compilation, activity audit, error handling, caching |
 
 ## File Locations
 
 ```
-server/app/v5/sql/queries/[resource]/     — SQL files (one per route)
-server/app/v5/api/main/[resource]/   — Artifact endpoints (persona, dashboard, etc.)
-server/app/v5/api/resources/[resource]/   — Resource endpoints (personas, colors, etc.)
-server/app/v5/api/views/[domain]/         — View endpoints (analytics, simulation, etc.)
-server/app/v5/socket/artifacts/[resource]/ — Socket handlers (generate, complete, etc.)
+server/app/sql/queries/[resource]/     — SQL files (one per route)
+server/app/routes/v5/api/main/[resource]/   — Artifact endpoints (persona, dashboard, etc.)
+server/app/routes/v5/api/resources/[resource]/   — Resource endpoints (personas, colors, etc.)
+server/app/routes/v5/api/views/[domain]/         — View endpoints (analytics, simulation, etc.)
+server/app/routes/v5/socket/artifacts/[resource]/ — Socket handlers (generate, complete, etc.)
 server/tests/integration/api/v5/[resource]/ — Integration tests
 server/tests/e2e/                          — E2E Playwright tests
 ```
@@ -38,7 +38,7 @@ server/tests/e2e/                          — E2E Playwright tests
 ## Type Flow: SQL to TypeScript
 
 ```
-SQL files (server/app/v5/sql/queries/)
+SQL files (server/app/sql/queries/)
     ↓ make sql-compile (executes functions in DB, introspects, generates types)
 server/app/sql/types.py (*SqlParams, *SqlRow, *ApiRequest, *ApiResponse)
     ↓ make openapi-gen

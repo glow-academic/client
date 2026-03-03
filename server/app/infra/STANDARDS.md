@@ -25,7 +25,7 @@ Infrastructure utilities are categorized into three types:
 
 **⚠️ CRITICAL: One SQL File Per Function, No Inline SQL**
 
-- **One SQL file per infra function**: Each database operation has exactly one SQL file in `server/app/v5/sql/queries/infrastructure/[category]/[operation]_complete.sql`
+- **One SQL file per infra function**: Each database operation has exactly one SQL file in `server/app/sql/queries/infrastructure/[category]/[operation]_complete.sql`
 - **No inline SQL**: All SQL must be in the `.sql` file, never embedded as strings in Python code
 - **Function-based**: SQL files define PostgreSQL functions, not raw queries
 - **File naming**: Pattern `infrastructure_{category}_{operation}_complete.sql` (e.g., `infrastructure_activity_profile_exists_complete.sql`)
@@ -107,7 +107,7 @@ Infrastructure utilities that interact with Redis should follow these patterns:
 ```python
 """Get the active run ID for a chat from Redis."""
 
-from app.main import get_redis_client
+from app.infra.globals import get_redis_client
 
 async def get_active_run(chat_id: str) -> str | None:
     """Get the active run ID for a chat from Redis."""
@@ -143,7 +143,7 @@ from contextlib import asynccontextmanager
 
 import asyncpg
 
-from app.main import get_pool
+from app.infra.globals import get_pool
 
 @asynccontextmanager
 async def get_db_connection() -> AsyncGenerator[asyncpg.Connection, None]:
@@ -165,14 +165,14 @@ async def get_db_connection() -> AsyncGenerator[asyncpg.Connection, None]:
 **Example Structure:**
 
 ```
-server/app/v5/infra/activity/
+server/app/infra/activity/
 ├── profile_exists.py          # Python function
 └── insert.py                  # Python function
 
-server/app/v5/sql/queries/infrastructure/activity/
+server/app/sql/queries/infrastructure/activity/
 └── get_profile_name_for_logging_complete.sql    # One SQL file per function
 
-server/app/v5/sql/queries/infrastructure/
+server/app/sql/queries/infrastructure/
 ├── infrastructure_activity_profile_exists_complete.sql    # One SQL file per function
 └── infrastructure_activity_insert_complete.sql            # One SQL file per function
 ```
@@ -238,9 +238,9 @@ from app.sql.types import (
     InfrastructureActivityProfileExistsSqlParams,
     InfrastructureActivityProfileExistsSqlRow,
 )
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/v5/sql/queries/infrastructure/infrastructure_activity_profile_exists_complete.sql"
+SQL_PATH = "app/sql/queries/infrastructure/infrastructure_activity_profile_exists_complete.sql"
 
 
 async def profile_exists(profile_id: str, conn: asyncpg.Connection) -> bool:
@@ -271,7 +271,7 @@ async def profile_exists(profile_id: str, conn: asyncpg.Connection) -> bool:
 
 ```python
 # ❌ BAD: Raw SQL with load_sql()
-sql = load_sql("app/v5/sql/queries/infrastructure/infrastructure_activity_profile_exists_complete.sql")
+sql = load_sql("app/sql/queries/infrastructure/infrastructure_activity_profile_exists_complete.sql")
 result = await conn.fetchval(sql, profile_id)
 
 # ✅ GOOD: PostgreSQL function with execute_sql_typed()
@@ -364,7 +364,7 @@ ARRAY_AGG(
 
 ## Reference Implementation
 
-See `server/app/v5/infra/activity/profile_exists.py` and `server/app/v5/sql/queries/infrastructure/infrastructure_activity_profile_exists_complete.sql` as the reference implementation for database operations.
+See `server/app/infra/activity/profile_exists.py` and `server/app/sql/queries/infrastructure/infrastructure_activity_profile_exists_complete.sql` as the reference implementation for database operations.
 
 ## Benefits
 

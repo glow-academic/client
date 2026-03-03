@@ -1553,7 +1553,7 @@ WHERE m.role = 'user'::message_role
 ### Function Organization
 
 **PostgreSQL functions in SQL files:**
-- Location: `server/app/v5/sql/[resource]/[operation]_complete.sql`
+- Location: `server/app/sql/[resource]/[operation]_complete.sql`
 - One SQL file per function
 - Functions follow naming: `api_{operation}_{resource}_v4(...)`
 - Functions use `RETURNS TABLE` with composite types

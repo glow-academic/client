@@ -1,6 +1,6 @@
 # Views Audit — Materialized View Integrity Check
 
-You are a views auditor for the GLOW project. Your job is to verify that all materialized views (MVs) in `server/app/v5/sql/views/` follow the canonical rules defined below. You do NOT fix anything. You REPORT errors, inconsistencies, and violations.
+You are a views auditor for the GLOW project. Your job is to verify that all materialized views (MVs) in `server/app/sql/views/` follow the canonical rules defined below. You do NOT fix anything. You REPORT errors, inconsistencies, and violations.
 
 Run each audit step in order. For each step, inspect the SQL files and compare against the rules. Collect all errors into a final report at the end.
 
@@ -18,9 +18,9 @@ psql postgresql://myuser:mypassword@localhost:5432/mydb
 
 | Type | Naming Convention | Location | Purpose |
 |------|------------------|----------|---------|
-| **Materialized View** | `mv_{domain}_{name}` | `server/app/v5/sql/views/{domain}/` | Pre-computed read-side aggregations, refreshed on demand |
-| **Union View** | `view_{entity}_entry` | `server/app/v5/sql/views/shared/` | Consolidate domain-specific entry tables into unified entry views |
-| **Draft MV** | `mv_draft_{artifact}` | `server/app/v5/sql/views/drafts/` | Per-artifact draft state snapshots |
+| **Materialized View** | `mv_{domain}_{name}` | `server/app/sql/views/{domain}/` | Pre-computed read-side aggregations, refreshed on demand |
+| **Union View** | `view_{entity}_entry` | `server/app/sql/views/shared/` | Consolidate domain-specific entry tables into unified entry views |
+| **Draft MV** | `mv_draft_{artifact}` | `server/app/sql/views/drafts/` | Per-artifact draft state snapshots |
 
 ---
 
@@ -58,7 +58,7 @@ A materialized view MUST NOT read from another materialized view. Each MV querie
 |-----------|---------|
 | File name | `mv_{domain}_{name}.sql` |
 | MV name inside SQL | `mv_{domain}_{name}` |
-| Domain folder | `server/app/v5/sql/views/{domain}/` |
+| Domain folder | `server/app/sql/views/{domain}/` |
 
 No `z_` prefixes, no `_complete` suffixes, no numbered prefixes (like `00_`). The file name must match the MV name exactly.
 
@@ -143,7 +143,7 @@ CREATE OR REPLACE VIEW view_{entity}_entry AS
 ```
 
 These are permitted because they provide a stable read interface across domains without materialization overhead. They must:
-- Live in `server/app/v5/sql/views/shared/`
+- Live in `server/app/sql/views/shared/`
 - Only reference `*_entry` tables
 - Use `UNION ALL` (not `UNION`)
 - Follow naming: `view_{entity}_entry`
@@ -166,7 +166,7 @@ No prerequisites. No ordering. No dependent refreshes. This means:
 ## Folder Structure
 
 ```
-server/app/v5/sql/views/
+server/app/sql/views/
 ├── activity/
 │   ├── mv_activity_audits.sql
 │   ├── mv_activity_daily.sql
@@ -280,13 +280,13 @@ This section documents known violations as of the initial audit. Each should be 
 ## Type Flow: MV to API
 
 ```
-MV SQL (server/app/v5/sql/views/{domain}/)
+MV SQL (server/app/sql/views/{domain}/)
     ↓ REFRESH MATERIALIZED VIEW CONCURRENTLY
 PostgreSQL materialized view
     ↓ conn.fetch() or execute_sql_typed()
-Python Views Layer (server/app/v5/api/views/{domain}/)
+Python Views Layer (server/app/routes/v5/api/views/{domain}/)
     ↓ _internal() functions return typed responses
-Python Artifacts Layer (server/app/v5/api/main/{resource}/)
+Python Artifacts Layer (server/app/routes/v5/api/main/{resource}/)
     ↓ hydrates IDs via resource _internal() functions
 API Response → Client
 ```

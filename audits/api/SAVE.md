@@ -10,13 +10,13 @@ The source of truth is the **persona** save implementation. Every artifact save 
 
 | Layer | Location | Purpose |
 |-------|----------|---------|
-| **Request Types** | `server/app/v5/api/main/{artifact}/types.py` | Nested resource action payloads with `to_tuple()` + `from_request()` |
-| **Access Check SQL** | `server/app/v5/sql/queries/{artifact}s/check_{artifact}_save_access_complete.sql` | Pre-save permission data |
-| **Save SQL** | `server/app/v5/sql/queries/{artifact}s/save_{artifact}_complete.sql` | Junction linker — receives resource IDs, links via junctions |
-| **Python Handler** | `server/app/v5/api/main/{artifact}/save.py` | Permission check, resource creation, transaction, cache invalidation |
-| **Permissions** | `server/app/v5/api/main/{artifact}/permissions.py` | `compute_can_save()`, `compute_can_create()` |
+| **Request Types** | `server/app/routes/v5/api/main/{artifact}/types.py` | Nested resource action payloads with `to_tuple()` + `from_request()` |
+| **Access Check SQL** | `server/app/sql/queries/{artifact}s/check_{artifact}_save_access_complete.sql` | Pre-save permission data |
+| **Save SQL** | `server/app/sql/queries/{artifact}s/save_{artifact}_complete.sql` | Junction linker — receives resource IDs, links via junctions |
+| **Python Handler** | `server/app/routes/v5/api/main/{artifact}/save.py` | Permission check, resource creation, transaction, cache invalidation |
+| **Permissions** | `server/app/routes/v5/api/main/{artifact}/permissions.py` | `compute_can_save()`, `compute_can_create()` |
 
-Reference: `server/app/v5/api/main/persona/save.py`, `persona/types.py`
+Reference: `server/app/routes/v5/api/main/persona/save.py`, `persona/types.py`
 
 ---
 
@@ -31,7 +31,7 @@ Save is a single endpoint that handles both create and update:
 
 There are no separate `/create` and `/update` endpoints at the artifact level.
 
-Reference: `server/app/v5/api/main/persona/save.py`
+Reference: `server/app/routes/v5/api/main/persona/save.py`
 
 ### Rule 2: Flat resource ID parameters
 
@@ -52,7 +52,7 @@ class Save{Artifact}ApiRequest(BaseModel):
 
 The client sends only resource IDs. No `group_id` (server-resolved), no tool IDs (server-resolved). ALL resources must be present in the save request — `None` means no resource selected.
 
-Reference: `server/app/v5/api/main/persona/types.py`
+Reference: `server/app/routes/v5/api/main/persona/types.py`
 
 ### Rule 3: Server-resolved tool call tracking
 
@@ -84,7 +84,7 @@ def to_tuple(self) -> tuple:
     )
 ```
 
-Reference: `server/app/v5/api/main/persona/types.py`
+Reference: `server/app/routes/v5/api/main/persona/types.py`
 
 ### Rule 5: `from_request()` class method
 
@@ -110,7 +110,7 @@ def from_request(
     )
 ```
 
-Reference: `server/app/v5/api/main/persona/types.py`
+Reference: `server/app/routes/v5/api/main/persona/types.py`
 
 ### Rule 6: Two-phase permission check
 
@@ -130,7 +130,7 @@ else:
     can_create = compute_can_create(user_role)
 ```
 
-Reference: `server/app/v5/api/main/persona/save.py`, `check_persona_save_access_complete.sql`
+Reference: `server/app/routes/v5/api/main/persona/save.py`, `check_persona_save_access_complete.sql`
 
 ### Rule 7: Flat UUID parameters in SQL functions
 
@@ -166,7 +166,7 @@ async with pool.acquire() as conn:
         # save SQL
 ```
 
-Reference: `server/app/v5/api/main/persona/save.py`
+Reference: `server/app/routes/v5/api/main/persona/save.py`
 
 ### Rule 9: SQL junction workflow (deactivate-then-upsert)
 
@@ -204,7 +204,7 @@ Save SQL is purely a linker — it receives resource IDs and links them via junc
 
 This keeps the SQL function simple (just IDs in, junctions out) while ensuring resources go through the proper creation layer with caching.
 
-Reference: `server/app/v5/api/main/persona/save.py`
+Reference: `server/app/routes/v5/api/main/persona/save.py`
 
 ### Rule 12: Cache invalidation after commit
 
@@ -216,7 +216,7 @@ await invalidate_tags(["{artifact}s"])
 
 This must happen AFTER the transaction commits, not inside it.
 
-Reference: `server/app/v5/api/main/persona/save.py`
+Reference: `server/app/routes/v5/api/main/persona/save.py`
 
 ### Rule 13: Audit context
 
@@ -229,7 +229,7 @@ async def save_{artifact}(http_request: Request, body: Save{Artifact}ApiRequest)
     audit_set({"actor": {"name": actor_name}, "{artifact}": {"name": artifact_name}})
 ```
 
-Reference: `server/app/v5/api/main/persona/save.py`
+Reference: `server/app/routes/v5/api/main/persona/save.py`
 
 ### Rule 14: User context from `get_auth_profile_internal()`
 
@@ -244,7 +244,7 @@ user_role = profile_ctx.access.role
 user_department_ids = [d.department_id for d in profile_ctx.departments if d.department_id]
 ```
 
-Reference: `server/app/v5/api/main/persona/save.py`
+Reference: `server/app/routes/v5/api/main/persona/save.py`
 
 ### Rule 15: Server-side `group_id` resolution
 
@@ -275,7 +275,7 @@ This prevents the client from associating a save with an arbitrary group.
 ### Audit 1: Save endpoint existence
 
 ```bash
-for artifact_dir in server/app/v5/api/main/*/; do
+for artifact_dir in server/app/routes/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   [ ! -f "${artifact_dir}save.py" ] && echo "MISSING SAVE ENDPOINT: $artifact"
 done
@@ -286,7 +286,7 @@ done
 ### Audit 2: Flat resource ID parameters in save request
 
 ```bash
-for artifact_dir in server/app/v5/api/main/*/; do
+for artifact_dir in server/app/routes/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}types.py"
   [ ! -f "$file" ] && continue
@@ -303,7 +303,7 @@ done
 ### Audit 3: `to_tuple()` method
 
 ```bash
-for artifact_dir in server/app/v5/api/main/*/; do
+for artifact_dir in server/app/routes/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}types.py"
   [ ! -f "$file" ] && continue
@@ -317,7 +317,7 @@ done
 ### Audit 4: Transaction usage
 
 ```bash
-for artifact_dir in server/app/v5/api/main/*/; do
+for artifact_dir in server/app/routes/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}save.py"
   [ ! -f "$file" ] && continue
@@ -330,7 +330,7 @@ done
 ### Audit 5: Cache invalidation
 
 ```bash
-for artifact_dir in server/app/v5/api/main/*/; do
+for artifact_dir in server/app/routes/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}save.py"
   [ ! -f "$file" ] && continue
@@ -343,10 +343,10 @@ done
 ### Audit 6: Access check SQL exists
 
 ```bash
-for artifact_dir in server/app/v5/api/main/*/; do
+for artifact_dir in server/app/routes/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   [ ! -f "${artifact_dir}save.py" ] && continue
-  found=$(find server/app/v5/sql/queries/ -name "check_${artifact}_save_access*" 2>/dev/null | head -1)
+  found=$(find server/app/sql/queries/ -name "check_${artifact}_save_access*" 2>/dev/null | head -1)
   [ -z "$found" ] && echo "MISSING ACCESS CHECK SQL: $artifact"
 done
 ```
@@ -356,7 +356,7 @@ done
 ### Audit 7: Audit context
 
 ```bash
-for artifact_dir in server/app/v5/api/main/*/; do
+for artifact_dir in server/app/routes/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}save.py"
   [ ! -f "$file" ] && continue
@@ -369,7 +369,7 @@ done
 ### Audit 8: Flat UUID parameters in save SQL
 
 ```bash
-for sql_file in server/app/v5/sql/queries/*/save_*_complete.sql; do
+for sql_file in server/app/sql/queries/*/save_*_complete.sql; do
   artifact=$(basename "$(dirname "$sql_file")")
   # Check for legacy composite types
   grep -q "resource_action\|multi_resource_action" "$sql_file" && echo "LEGACY COMPOSITES: $artifact ($sql_file)"
@@ -439,7 +439,7 @@ SQL composites: {N}
 ## Important Notes
 
 1. **Do NOT fix anything.** This is a read-only audit. Report only.
-2. **The persona save is the gold standard.** Reference: `server/app/v5/api/main/persona/save.py`.
+2. **The persona save is the gold standard.** Reference: `server/app/routes/v5/api/main/persona/save.py`.
 3. **No composite types needed**: Save SQL receives flat UUID parameters. The previous `types.{artifact}_resource_action` composites are replaced by flat parameters.
 4. **PostgreSQL reserved words**: If a resource name is a reserved word (e.g., `values`), it must be quoted in SQL function parameters.
 5. **External call ID format**: `'{artifact}_save_{resource}_' || v_call_id::text` for tool call tracking.
