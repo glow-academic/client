@@ -14330,8 +14330,8 @@ class IGetTextRunContextAndCreateRunV4Tool(BaseModel):
     id: UUID | None
     name: str | None
     description: str | None
-    tool_type: str | None
-    agent_role: str | None
+    resource: str | None
+    artifact: str | None
     arguments: Any | None
     argument_descriptions: Any | None
     argument_defaults: Any | None
@@ -16004,69 +16004,6 @@ class PrepareSimulationGenerationApiResponse(BaseModel):
 
 
 
-# Generated from: get_generation_run_context_and_create_run
-
-class IPersonaResourceV4(BaseModel):
-
-    resource_type: str | None
-    resource_ids: list[UUID] | None
-
-class GetGenerationRunContextAndCreateRunSqlParams(BaseModel):
-
-    agent_id: UUID
-    profile_id: UUID
-    message_ids: list[UUID] | None = None
-    department_id: UUID | None = None
-    group_id: UUID | None = None
-    developer_instructions: list[str] | None = None
-    user_instructions: list[str] | None = None
-    resources: list[IPersonaResourceV4] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        # Convert resources composite array to tuples for asyncpg
-        resources_tuples = [
-            (conn.resource_type, conn.resource_ids)
-            for conn in (self.resources or [])
-        ]
-        return (
-            self.agent_id,
-            self.profile_id,
-            self.message_ids,
-            self.department_id,
-            self.group_id,
-            self.developer_instructions,
-            self.user_instructions,
-            resources_tuples,
-        )
-
-class GetGenerationRunContextAndCreateRunSqlRow(BaseModel):
-
-    run_id: str | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-    message_ids: list[UUID] | None = None
-    output_modalities: list[str] | None = None
-
-class GetGenerationRunContextAndCreateRunApiRequest(BaseModel):
-
-    agent_id: UUID
-    message_ids: list[UUID] | None = None
-    department_id: UUID | None = None
-    group_id: UUID | None = None
-    developer_instructions: list[str] | None = None
-    user_instructions: list[str] | None = None
-    resources: list[IPersonaResourceV4] | None = None
-
-class GetGenerationRunContextAndCreateRunApiResponse(BaseModel):
-
-    run_id: str | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-    message_ids: list[UUID] | None = None
-    output_modalities: list[str] | None = None
-
-
-
 # Generated from: prepare_suite_generation
 
 class PrepareSuiteGenerationSqlParams(BaseModel):
@@ -16388,94 +16325,6 @@ class StartTestApiRequest(BaseModel):
 class StartTestApiResponse(BaseModel):
 
     items: list[QStartTestV4Result] | None = None
-
-
-
-# Generated from: get_text_run_context_for_existing_run
-
-class GetTextRunContextForExistingRunSqlParams(BaseModel):
-
-    run_id: UUID
-    agent_id: UUID
-    message_ids: list[UUID] | None = None
-    group_id: UUID | None = None
-    resources: list[IPersonaResourceV4] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        # Convert resources composite array to tuples for asyncpg
-        resources_tuples = [
-            (conn.resource_type, conn.resource_ids)
-            for conn in (self.resources or [])
-        ]
-        return (
-            self.run_id,
-            self.agent_id,
-            self.message_ids,
-            self.group_id,
-            resources_tuples,
-        )
-
-class GetTextRunContextForExistingRunSqlRow(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    agent_role: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: datetime | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-    developer_instruction_templates: list[str] | None = None
-    context: Any | None = None
-    department_name: str | None = None
-    upload_id: UUID | None = None
-    file_path: str | None = None
-    mime_type: str | None = None
-
-class GetTextRunContextForExistingRunApiRequest(BaseModel):
-
-    run_id: UUID
-    agent_id: UUID
-    message_ids: list[UUID] | None = None
-    group_id: UUID | None = None
-    resources: list[IPersonaResourceV4] | None = None
-
-class GetTextRunContextForExistingRunApiResponse(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    agent_role: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: datetime | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-    developer_instruction_templates: list[str] | None = None
-    context: Any | None = None
-    department_name: str | None = None
-    upload_id: UUID | None = None
-    file_path: str | None = None
-    mime_type: str | None = None
 
 
 
@@ -19727,6 +19576,436 @@ class SavePersonaApiRequest(BaseModel):
     active_value: bool | None = True
 
 class SavePersonaApiResponse(BaseModel):
+
+    persona_id: UUID | None = None
+
+
+
+# Generated from: tools_delete_persona
+
+class ToolsDeletePersonaSqlParams(BaseModel):
+
+    persona_id: UUID
+    profile_id: UUID
+    soft: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.persona_id,
+            self.profile_id,
+            self.soft,
+        )
+
+class ToolsDeletePersonaSqlRow(BaseModel):
+
+    usage_count: int | None = None
+    name: str | None = None
+    deleted: bool | None = None
+
+class ToolsDeletePersonaApiRequest(BaseModel):
+
+    persona_id: UUID
+    soft: bool | None = False
+
+class ToolsDeletePersonaApiResponse(BaseModel):
+
+    usage_count: int | None = None
+    name: str | None = None
+    deleted: bool | None = None
+
+
+
+# Generated from: tools_duplicate_persona
+
+class ToolsDuplicatePersonaSqlParams(BaseModel):
+
+    persona_id: UUID
+    profile_id: UUID
+    name_resource_id: UUID | None = None
+    active_value: bool | None = True
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.persona_id,
+            self.profile_id,
+            self.name_resource_id,
+            self.active_value,
+        )
+
+class ToolsDuplicatePersonaSqlRow(BaseModel):
+
+    new_persona_id: UUID | None = None
+    original_name: str | None = None
+
+class ToolsDuplicatePersonaApiRequest(BaseModel):
+
+    persona_id: UUID
+    name_resource_id: UUID | None = None
+    active_value: bool | None = True
+
+class ToolsDuplicatePersonaApiResponse(BaseModel):
+
+    new_persona_id: UUID | None = None
+    original_name: str | None = None
+
+
+
+# Generated from: tools_export_personas
+
+class ToolsExportPersonasSqlParams(BaseModel):
+
+    profile_id: UUID
+    search: str | None = None
+    scenario_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    filter_department_ids: list[UUID] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.search,
+            self.scenario_ids,
+            self.field_ids,
+            self.filter_department_ids,
+        )
+
+class QToolsExportPersonasV4Row(BaseModel):
+
+    persona_id: UUID | None
+    name_id: UUID | None
+    name: str | None
+    description_id: UUID | None
+    description: str | None
+    color_id: UUID | None
+    color: str | None
+    icon_id: UUID | None
+    icon: str | None
+    instructions_id: UUID | None
+    instructions: str | None
+    is_inactive: bool | None
+    department_ids: list[UUID] | None
+    departments: list[str] | None
+    example_ids: list[UUID] | None
+    examples: list[str] | None
+    parameter_field_ids: list[UUID] | None
+    parameter_fields: list[str] | None
+    voice_ids: list[UUID] | None
+    voices: list[str] | None
+
+class ToolsExportPersonasSqlRow(BaseModel):
+
+    rows: list[QToolsExportPersonasV4Row] | None = None
+
+class ToolsExportPersonasApiRequest(BaseModel):
+
+    search: str | None = None
+    scenario_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    filter_department_ids: list[UUID] | None = None
+
+class ToolsExportPersonasApiResponse(BaseModel):
+
+    rows: list[QToolsExportPersonasV4Row] | None = None
+
+
+
+# Generated from: tools_get_persona
+
+class ToolsGetPersonaSqlParams(BaseModel):
+
+    profile_id: UUID
+    persona_id: UUID | None = None
+    draft_id: UUID | None = None
+    group_id: UUID | None = None
+    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.persona_id,
+            self.draft_id,
+            self.group_id,
+            self.user_department_ids,
+        )
+
+class ToolsGetPersonaSqlRow(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    example_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
+
+class ToolsGetPersonaApiRequest(BaseModel):
+
+    persona_id: UUID | None = None
+    draft_id: UUID | None = None
+    group_id: UUID | None = None
+    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class ToolsGetPersonaApiResponse(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    example_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
+
+
+
+# Generated from: tools_get_persona_docs
+
+class ToolsGetPersonaDocsSqlParams(BaseModel):
+
+    p_entity_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_entity_id,
+        )
+
+class ToolsGetPersonaDocsSqlRow(BaseModel):
+
+    name_id: UUID | None = None
+
+class ToolsGetPersonaDocsApiRequest(BaseModel):
+
+    p_entity_id: UUID | None = None
+
+class ToolsGetPersonaDocsApiResponse(BaseModel):
+
+    name_id: UUID | None = None
+
+
+
+# Generated from: tools_get_personas_list
+
+class ToolsGetPersonasListSqlParams(BaseModel):
+
+    profile_id: UUID
+    search: str | None = None
+    scenario_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    filter_department_ids: list[UUID] | None = None
+    scenario_search: str | None = None
+    field_search: str | None = None
+    department_search: str | None = None
+    page_size: int | None = 12
+    page_offset: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.search,
+            self.scenario_ids,
+            self.field_ids,
+            self.filter_department_ids,
+            self.scenario_search,
+            self.field_search,
+            self.department_search,
+            self.page_size,
+            self.page_offset,
+        )
+
+class QToolsListPersonasV4OptionId(BaseModel):
+
+    id: UUID | None
+    count: int | None
+
+
+
+
+class QToolsListPersonasV4Persona(BaseModel):
+
+    persona_id: UUID | None
+    name: str | None
+    description: str | None
+    color: str | None
+    icon: str | None
+    department_ids: list[str] | None
+    scenario_ids: list[UUID] | None
+    field_ids: list[UUID] | None
+    is_inactive: bool | None
+    generated: bool | None
+    mcp: bool | None
+    num_scenarios: int | None
+    num_profiles: int | None
+    active_scenario_count: int | None
+    updated_at: datetime | None
+
+class ToolsGetPersonasListSqlRow(BaseModel):
+
+    personas: list[QToolsListPersonasV4Persona] | None = None
+    scenario_option_ids: list[QToolsListPersonasV4OptionId] | None = None
+    field_option_ids: list[QToolsListPersonasV4OptionId] | None = None
+    department_option_ids: list[QToolsListPersonasV4OptionId] | None = None
+    total_count: int | None = None
+
+class ToolsGetPersonasListApiRequest(BaseModel):
+
+    search: str | None = None
+    scenario_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    filter_department_ids: list[UUID] | None = None
+    scenario_search: str | None = None
+    field_search: str | None = None
+    department_search: str | None = None
+    page_size: int | None = 12
+    page_offset: int | None = 0
+
+class ToolsGetPersonasListApiResponse(BaseModel):
+
+    personas: list[QToolsListPersonasV4Persona] | None = None
+    scenario_option_ids: list[QToolsListPersonasV4OptionId] | None = None
+    field_option_ids: list[QToolsListPersonasV4OptionId] | None = None
+    department_option_ids: list[QToolsListPersonasV4OptionId] | None = None
+    total_count: int | None = None
+
+
+
+# Generated from: tools_patch_persona_draft
+
+class ToolsPatchPersonaDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    group_id: UUID | None = None
+    names: PersonaResourceAction | None = None
+    descriptions: PersonaResourceAction | None = None
+    colors: PersonaResourceAction | None = None
+    icons: PersonaResourceAction | None = None
+    instructions: PersonaResourceAction | None = None
+    flags: PersonaResourceAction | None = None
+    departments: PersonaMultiResourceAction | None = None
+    parameter_fields: PersonaMultiResourceAction | None = None
+    examples: PersonaMultiResourceAction | None = None
+    parameters: PersonaMultiResourceAction | None = None
+    voices: PersonaMultiResourceAction | None = None
+    expected_version: int | None = 0
+    active_value: bool | None = True
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.group_id,
+            self.names,
+            self.descriptions,
+            self.colors,
+            self.icons,
+            self.instructions,
+            self.flags,
+            self.departments,
+            self.parameter_fields,
+            self.examples,
+            self.parameters,
+            self.voices,
+            self.expected_version,
+            self.active_value,
+        )
+
+class ToolsPatchPersonaDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class ToolsPatchPersonaDraftApiRequest(BaseModel):
+
+    input_draft_id: UUID | None = None
+    group_id: UUID | None = None
+    names: PersonaResourceAction | None = None
+    descriptions: PersonaResourceAction | None = None
+    colors: PersonaResourceAction | None = None
+    icons: PersonaResourceAction | None = None
+    instructions: PersonaResourceAction | None = None
+    flags: PersonaResourceAction | None = None
+    departments: PersonaMultiResourceAction | None = None
+    parameter_fields: PersonaMultiResourceAction | None = None
+    examples: PersonaMultiResourceAction | None = None
+    parameters: PersonaMultiResourceAction | None = None
+    voices: PersonaMultiResourceAction | None = None
+    expected_version: int | None = 0
+    active_value: bool | None = True
+
+class ToolsPatchPersonaDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+
+
+# Generated from: tools_save_persona
+
+class ToolsSavePersonaSqlParams(BaseModel):
+
+    profile_id: UUID
+    input_persona_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    example_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
+    personas_resource_id: UUID | None = None
+    active_value: bool | None = True
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.input_persona_id,
+            self.name_id,
+            self.description_id,
+            self.color_id,
+            self.icon_id,
+            self.instructions_id,
+            self.active_flag_id,
+            self.department_ids,
+            self.parameter_field_ids,
+            self.example_ids,
+            self.voice_ids,
+            self.personas_resource_id,
+            self.active_value,
+        )
+
+class ToolsSavePersonaSqlRow(BaseModel):
+
+    persona_id: UUID | None = None
+
+class ToolsSavePersonaApiRequest(BaseModel):
+
+    input_persona_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    example_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
+    personas_resource_id: UUID | None = None
+    active_value: bool | None = True
+
+class ToolsSavePersonaApiResponse(BaseModel):
 
     persona_id: UUID | None = None
 
@@ -32295,99 +32574,6 @@ class DuplicateSettingApiResponse(BaseModel):
 
 
 
-# Generated from: get_active_settings
-
-class GetActiveSettingsSqlParams(BaseModel):
-
-    profile_id: str
-    department_id: str | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.department_id,
-        )
-
-class QGetSettingsDetailV4AuthItem(BaseModel):
-
-    auth_item_id: UUID | None
-    name: str | None
-    description: str | None
-    encrypted: bool | None
-
-class QGetSettingsDetailV4Auth(BaseModel):
-
-    auth_id: UUID | None
-    name: str | None
-    description: str | None
-    slug: str | None
-    active: bool | None
-    auth_items: list[QGetSettingsDetailV4AuthItem] | None
-
-class GetActiveSettingsSqlRow(BaseModel):
-
-    settings_id: UUID | None = None
-    created_at: datetime | None = None
-    active: bool | None = None
-    name: str | None = None
-    description: str | None = None
-    primary_color: str | None = None
-    accent: str | None = None
-    background: str | None = None
-    surface: str | None = None
-    success: str | None = None
-    warning: str | None = None
-    error: str | None = None
-    sidebar_background: str | None = None
-    sidebar_primary: str | None = None
-    chart1: str | None = None
-    chart2: str | None = None
-    chart3: str | None = None
-    chart4: str | None = None
-    chart5: str | None = None
-    guest_login_enabled: bool | None = None
-    success_threshold: int | None = None
-    warning_threshold: int | None = None
-    danger_threshold: int | None = None
-    auth_ids: list[str] | None = None
-    auths: list[QGetSettingsDetailV4Auth] | None = None
-    provider_key_ids: list[UUID] | None = None
-
-class GetActiveSettingsApiRequest(BaseModel):
-
-    department_id: str | None = None
-
-class GetActiveSettingsApiResponse(BaseModel):
-
-    settings_id: UUID | None = None
-    created_at: datetime | None = None
-    active: bool | None = None
-    name: str | None = None
-    description: str | None = None
-    primary_color: str | None = None
-    accent: str | None = None
-    background: str | None = None
-    surface: str | None = None
-    success: str | None = None
-    warning: str | None = None
-    error: str | None = None
-    sidebar_background: str | None = None
-    sidebar_primary: str | None = None
-    chart1: str | None = None
-    chart2: str | None = None
-    chart3: str | None = None
-    chart4: str | None = None
-    chart5: str | None = None
-    guest_login_enabled: bool | None = None
-    success_threshold: int | None = None
-    warning_threshold: int | None = None
-    danger_threshold: int | None = None
-    auth_ids: list[str] | None = None
-    auths: list[QGetSettingsDetailV4Auth] | None = None
-    provider_key_ids: list[UUID] | None = None
-
-
-
 # Generated from: get_setting_access
 
 class GetSettingAccessSqlParams(BaseModel):
@@ -34634,1900 +34820,6 @@ class CreateGenerationAndLinkApiRequest(BaseModel):
 class CreateGenerationAndLinkApiResponse(BaseModel):
 
     generation_id: UUID | None = None
-
-
-
-# Generated from: get_activity_list_view
-
-class GetActivityListViewSqlParams(BaseModel):
-
-    profile_id_filter: UUID | None = None
-    session_id_filter: UUID | None = None
-    date_from: date | None = None
-    date_to: date | None = None
-    page_limit_val: int | None = 10000
-    page_offset_val: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id_filter,
-            self.session_id_filter,
-            self.date_from,
-            self.date_to,
-            self.page_limit_val,
-            self.page_offset_val,
-        )
-
-class QGetActivityListViewV4Item(BaseModel):
-
-    activity_id: UUID | None
-    profile_id: UUID | None
-    session_id: UUID | None
-    last_active: datetime | None
-    created_at: datetime | None
-
-class GetActivityListViewSqlRow(BaseModel):
-
-    items: list[QGetActivityListViewV4Item] | None = None
-    total_count: int | None = None
-
-class GetActivityListViewApiRequest(BaseModel):
-
-    profile_id_filter: UUID | None = None
-    session_id_filter: UUID | None = None
-    date_from: date | None = None
-    date_to: date | None = None
-    page_limit_val: int | None = 10000
-    page_offset_val: int | None = 0
-
-class GetActivityListViewApiResponse(BaseModel):
-
-    items: list[QGetActivityListViewV4Item] | None = None
-    total_count: int | None = None
-
-
-
-# Generated from: get_profile_summary_view
-
-class GetProfileSummaryViewSqlParams(BaseModel):
-
-    profile_id_filter: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id_filter,
-        )
-
-class QGetProfileSummaryViewV4Item(BaseModel):
-
-    profile_id: UUID | None
-    sessions_count: int | None
-    logins_count: int | None
-    grants_count: int | None
-    problems_count: int | None
-    activity_count: int | None
-
-class GetProfileSummaryViewSqlRow(BaseModel):
-
-    items: list[QGetProfileSummaryViewV4Item] | None = None
-
-class GetProfileSummaryViewApiRequest(BaseModel):
-
-    profile_id_filter: UUID | None = None
-
-class GetProfileSummaryViewApiResponse(BaseModel):
-
-    items: list[QGetProfileSummaryViewV4Item] | None = None
-
-
-
-# Generated from: get_attempt_list_view
-
-class GetAttemptListViewSqlParams(BaseModel):
-
-    attempt_ids: list[UUID] | None = None
-    profile_id_filter: UUID | None = None
-    simulation_id_filter: UUID | None = None
-    practice_filter: bool | None = None
-    is_archived_filter: bool | None = False
-    cohort_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    scenario_ids_filter: list[UUID] | None = None
-    infinite_mode_filter: bool | None = None
-    date_from: datetime
-    date_to: datetime
-    sort_by_field: str | None = None
-    sort_order_field: str | None = None
-    page_limit_val: int | None = 50
-    page_offset_val: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.attempt_ids,
-            self.profile_id_filter,
-            self.simulation_id_filter,
-            self.practice_filter,
-            self.is_archived_filter,
-            self.cohort_ids,
-            self.department_ids,
-            self.scenario_ids_filter,
-            self.infinite_mode_filter,
-            self.date_from,
-            self.date_to,
-            self.sort_by_field,
-            self.sort_order_field,
-            self.page_limit_val,
-            self.page_offset_val,
-        )
-
-class QGetAttemptListViewV4Item(BaseModel):
-
-    attempt_id: UUID | None
-    simulation_id: UUID | None
-    profile_id: UUID | None
-    cohort_id: UUID | None
-    department_id: UUID | None
-    practice: bool | None
-    infinite_mode: bool | None
-    created_at: datetime | None
-    is_archived: bool | None
-    scenario_ids: list[UUID] | None
-
-
-
-
-class QGetAttemptListViewV4Option(BaseModel):
-
-    value: str | None
-    label: str | None
-    count: int | None
-
-class GetAttemptListViewSqlRow(BaseModel):
-
-    items: list[QGetAttemptListViewV4Item] | None = None
-    total_count: int | None = None
-    simulation_options: list[QGetAttemptListViewV4Option] | None = None
-    scenario_options: list[QGetAttemptListViewV4Option] | None = None
-    profile_options: list[QGetAttemptListViewV4Option] | None = None
-
-class GetAttemptListViewApiRequest(BaseModel):
-
-    attempt_ids: list[UUID] | None = None
-    profile_id_filter: UUID | None = None
-    simulation_id_filter: UUID | None = None
-    practice_filter: bool | None = None
-    is_archived_filter: bool | None = False
-    cohort_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    scenario_ids_filter: list[UUID] | None = None
-    infinite_mode_filter: bool | None = None
-    date_from: datetime
-    date_to: datetime
-    sort_by_field: str | None = None
-    sort_order_field: str | None = None
-    page_limit_val: int | None = 50
-    page_offset_val: int | None = 0
-
-class GetAttemptListViewApiResponse(BaseModel):
-
-    items: list[QGetAttemptListViewV4Item] | None = None
-    total_count: int | None = None
-    simulation_options: list[QGetAttemptListViewV4Option] | None = None
-    scenario_options: list[QGetAttemptListViewV4Option] | None = None
-    profile_options: list[QGetAttemptListViewV4Option] | None = None
-
-
-
-# Generated from: get_attempt_messages_view
-
-class GetAttemptMessagesViewSqlParams(BaseModel):
-
-    attempt_id_filter: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.attempt_id_filter,
-        )
-
-class QGetAttemptMessagesViewV4Item(BaseModel):
-
-    message_id: UUID | None
-    chat_id: UUID | None
-    attempt_id: UUID | None
-    type: str | None
-    created_at: datetime | None
-    completed: bool | None
-    runs_id: UUID | None
-    history_file_path: str | None
-    audio_id: UUID | None
-    parent_message_id: UUID | None
-    sibling_index: int | None
-    sibling_count: int | None
-
-class GetAttemptMessagesViewSqlRow(BaseModel):
-
-    items: list[QGetAttemptMessagesViewV4Item] | None = None
-
-class GetAttemptMessagesViewApiRequest(BaseModel):
-
-    attempt_id_filter: UUID
-
-class GetAttemptMessagesViewApiResponse(BaseModel):
-
-    items: list[QGetAttemptMessagesViewV4Item] | None = None
-
-
-
-# Generated from: get_test_invocation_view
-
-class GetTestInvocationViewSqlParams(BaseModel):
-
-    test_id_filter: UUID | None = None
-    invocation_ids_filter: list[UUID] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.test_id_filter,
-            self.invocation_ids_filter,
-        )
-
-class QGetTestInvocationViewV4Item(BaseModel):
-
-    invocation_id: UUID | None
-    test_id: UUID | None
-    group_id: UUID | None
-    invocation_created_at: datetime | None
-    invocation_title: str | None
-    use_custom: bool | None
-    position: int | None
-    invocation_completed: bool | None
-    grade_id: UUID | None
-    grade_score: int | None
-    grade_passed: bool | None
-    grade_time_taken: int | None
-    rubric_id: UUID | None
-    department_ids: list[UUID] | None
-    run_ids: list[UUID] | None
-    group_ids: list[UUID] | None
-    run_agent_ids: list[UUID] | None
-    group_agent_ids: list[UUID] | None
-    model_id: UUID | None
-    voice_id: UUID | None
-    temperature_level_id: UUID | None
-    reasoning_level_id: UUID | None
-    key_id: UUID | None
-    historical_run_ids: list[UUID] | None
-
-class GetTestInvocationViewSqlRow(BaseModel):
-
-    items: list[QGetTestInvocationViewV4Item] | None = None
-
-class GetTestInvocationViewApiRequest(BaseModel):
-
-    test_id_filter: UUID | None = None
-    invocation_ids_filter: list[UUID] | None = None
-
-class GetTestInvocationViewApiResponse(BaseModel):
-
-    items: list[QGetTestInvocationViewV4Item] | None = None
-
-
-
-# Generated from: get_call_list_view
-
-class GetCallListViewSqlParams(BaseModel):
-
-    run_id_filter: UUID | None = None
-    run_ids: list[UUID] | None = None
-    page_limit_val: int | None = 10000
-    page_offset_val: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.run_id_filter,
-            self.run_ids,
-            self.page_limit_val,
-            self.page_offset_val,
-        )
-
-class QGetCallListViewV4Item(BaseModel):
-
-    call_id: UUID | None
-    run_id: UUID | None
-    call_created_at: datetime | None
-    file_path: str | None
-    mime_type: str | None
-    tool_id: UUID | None
-
-class GetCallListViewSqlRow(BaseModel):
-
-    items: list[QGetCallListViewV4Item] | None = None
-    total_count: int | None = None
-
-class GetCallListViewApiRequest(BaseModel):
-
-    run_id_filter: UUID | None = None
-    run_ids: list[UUID] | None = None
-    page_limit_val: int | None = 10000
-    page_offset_val: int | None = 0
-
-class GetCallListViewApiResponse(BaseModel):
-
-    items: list[QGetCallListViewV4Item] | None = None
-    total_count: int | None = None
-
-
-
-# Generated from: get_chat_view
-
-class GetChatViewSqlParams(BaseModel):
-
-    profile_id_filter: UUID | None = None
-    cohort_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
-    scenario_ids: list[UUID] | None = None
-    rubric_ids: list[UUID] | None = None
-    attempt_id_filter: UUID | None = None
-    attempt_type_filter: str | None = None
-    is_archived_filter: bool | None = False
-    date_from: date | None = None
-    date_to: date | None = None
-    sort_by: str | None = None
-    sort_order: str | None = None
-    page_limit: int | None = 10000
-    page_offset: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id_filter,
-            self.cohort_ids,
-            self.department_ids,
-            self.simulation_ids,
-            self.scenario_ids,
-            self.rubric_ids,
-            self.attempt_id_filter,
-            self.attempt_type_filter,
-            self.is_archived_filter,
-            self.date_from,
-            self.date_to,
-            self.sort_by,
-            self.sort_order,
-            self.page_limit,
-            self.page_offset,
-        )
-
-class PersonaRef(BaseModel):
-
-    personas_id: UUID | None
-    personas_entry_id: UUID | None
-
-class QGetChatViewV4Item(BaseModel):
-
-    chat_id: UUID | None
-    attempt_id: UUID | None
-    group_id: UUID | None
-    attempt_chat_id: UUID | None
-    profile_id: UUID | None
-    cohort_id: UUID | None
-    department_id: UUID | None
-    simulation_id: UUID | None
-    scenario_id: UUID | None
-    rubric_id: UUID | None
-    grade_score: int | None
-    grade_total_points: int | None
-    grade_pass_points: int | None
-    grade_passed: bool | None
-    grade_time_taken: int | None
-    completed: bool | None
-    attempt_number: int | None
-    chat_created_at: datetime | None
-    attempt_date: str | None
-    attempt_type: str | None
-    is_archived: bool | None
-    infinite_mode: bool | None
-    persona_refs: list[PersonaRef] | None
-
-
-
-
-class QGetChatViewV4Option(BaseModel):
-
-    value: str | None
-    label: str | None
-    count: int | None
-
-class GetChatViewSqlRow(BaseModel):
-
-    items: list[QGetChatViewV4Item] | None = None
-    total_count: int | None = None
-    simulation_options: list[QGetChatViewV4Option] | None = None
-    cohort_options: list[QGetChatViewV4Option] | None = None
-    department_options: list[QGetChatViewV4Option] | None = None
-    scenario_options: list[QGetChatViewV4Option] | None = None
-    persona_options: list[QGetChatViewV4Option] | None = None
-
-class GetChatViewApiRequest(BaseModel):
-
-    profile_id_filter: UUID | None = None
-    cohort_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
-    scenario_ids: list[UUID] | None = None
-    rubric_ids: list[UUID] | None = None
-    attempt_id_filter: UUID | None = None
-    attempt_type_filter: str | None = None
-    is_archived_filter: bool | None = False
-    date_from: date | None = None
-    date_to: date | None = None
-    sort_by: str | None = None
-    sort_order: str | None = None
-    page_limit: int | None = 10000
-    page_offset: int | None = 0
-
-class GetChatViewApiResponse(BaseModel):
-
-    items: list[QGetChatViewV4Item] | None = None
-    total_count: int | None = None
-    simulation_options: list[QGetChatViewV4Option] | None = None
-    cohort_options: list[QGetChatViewV4Option] | None = None
-    department_options: list[QGetChatViewV4Option] | None = None
-    scenario_options: list[QGetChatViewV4Option] | None = None
-    persona_options: list[QGetChatViewV4Option] | None = None
-
-
-
-# Generated from: get_message_stats
-
-class GetMessageStatsSqlParams(BaseModel):
-
-    chat_ids: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.chat_ids,
-        )
-
-class QGetMessageStatsV4Item(BaseModel):
-
-    chat_id: UUID | None
-    num_messages_total: int | None
-    avg_response_sec: float | None
-
-class GetMessageStatsSqlRow(BaseModel):
-
-    items: list[QGetMessageStatsV4Item] | None = None
-
-class GetMessageStatsApiRequest(BaseModel):
-
-    chat_ids: list[UUID]
-
-class GetMessageStatsApiResponse(BaseModel):
-
-    items: list[QGetMessageStatsV4Item] | None = None
-
-
-
-# Generated from: get_rubric_scores
-
-class GetRubricScoresSqlParams(BaseModel):
-
-    profile_id_filter: UUID | None = None
-    cohort_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
-    rubric_ids: list[UUID] | None = None
-    attempt_type_filter: str | None = None
-    is_archived_filter: bool | None = False
-    date_from: date | None = None
-    date_to: date | None = None
-    page_limit: int | None = 50000
-    page_offset: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id_filter,
-            self.cohort_ids,
-            self.department_ids,
-            self.simulation_ids,
-            self.rubric_ids,
-            self.attempt_type_filter,
-            self.is_archived_filter,
-            self.date_from,
-            self.date_to,
-            self.page_limit,
-            self.page_offset,
-        )
-
-class QGetRubricScoresV4Item(BaseModel):
-
-    chat_id: UUID | None
-    standard_group_id: UUID | None
-    rubric_id: UUID | None
-    score_percent: float | None
-    simulation_id: UUID | None
-    profile_id: UUID | None
-    cohort_id: UUID | None
-    department_id: UUID | None
-    attempt_date: str | None
-    attempt_type: str | None
-    is_archived: bool | None
-
-
-
-
-class QGetRubricScoresV4Option(BaseModel):
-
-    value: str | None
-    label: str | None
-    count: int | None
-
-class GetRubricScoresSqlRow(BaseModel):
-
-    items: list[QGetRubricScoresV4Item] | None = None
-    total_count: int | None = None
-    rubric_options: list[QGetRubricScoresV4Option] | None = None
-    department_options: list[QGetRubricScoresV4Option] | None = None
-    simulation_options: list[QGetRubricScoresV4Option] | None = None
-    standard_group_options: list[QGetRubricScoresV4Option] | None = None
-
-class GetRubricScoresApiRequest(BaseModel):
-
-    profile_id_filter: UUID | None = None
-    cohort_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
-    rubric_ids: list[UUID] | None = None
-    attempt_type_filter: str | None = None
-    is_archived_filter: bool | None = False
-    date_from: date | None = None
-    date_to: date | None = None
-    page_limit: int | None = 50000
-    page_offset: int | None = 0
-
-class GetRubricScoresApiResponse(BaseModel):
-
-    items: list[QGetRubricScoresV4Item] | None = None
-    total_count: int | None = None
-    rubric_options: list[QGetRubricScoresV4Option] | None = None
-    department_options: list[QGetRubricScoresV4Option] | None = None
-    simulation_options: list[QGetRubricScoresV4Option] | None = None
-    standard_group_options: list[QGetRubricScoresV4Option] | None = None
-
-
-
-# Generated from: get_training_config
-
-class GetTrainingConfigSqlParams(BaseModel):
-
-    attempt_chat_ids: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.attempt_chat_ids,
-        )
-
-class QGetTrainingConfigV4Item(BaseModel):
-
-    attempt_chat_id: UUID | None
-    copy_paste_allowed: bool | None
-    text_enabled: bool | None
-    audio_enabled: bool | None
-    hints_enabled: bool | None
-    show_images: bool | None
-    show_objectives: bool | None
-    show_problem_statement: bool | None
-    time_limit_seconds: int | None
-    negative: bool | None
-    scenario_id: UUID | None
-    rubric_id: UUID | None
-    problem_statement_id: UUID | None
-    persona_ids: list[UUID] | None
-    objective_ids: list[UUID] | None
-    question_ids: list[UUID] | None
-    option_ids: list[UUID] | None
-    image_ids: list[UUID] | None
-    video_ids: list[UUID] | None
-    document_ids: list[UUID] | None
-    standard_group_ids: list[UUID] | None
-    standard_ids: list[UUID] | None
-
-class GetTrainingConfigSqlRow(BaseModel):
-
-    items: list[QGetTrainingConfigV4Item] | None = None
-
-class GetTrainingConfigApiRequest(BaseModel):
-
-    attempt_chat_ids: list[UUID]
-
-class GetTrainingConfigApiResponse(BaseModel):
-
-    items: list[QGetTrainingConfigV4Item] | None = None
-
-
-
-# Generated from: get_grant_list_view
-
-class GetGrantListViewSqlParams(BaseModel):
-
-    grantor_id_filter: UUID | None = None
-    emulated_id_filter: UUID | None = None
-    page_limit_val: int | None = 10000
-    page_offset_val: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.grantor_id_filter,
-            self.emulated_id_filter,
-            self.page_limit_val,
-            self.page_offset_val,
-        )
-
-class QGetGrantListViewV4Item(BaseModel):
-
-    grant_id: UUID | None
-    grantor_id: UUID | None
-    emulation_id: UUID | None
-    emulated_id: UUID | None
-    grant_session_id: UUID | None
-    emulation_session_id: UUID | None
-    expires_at: datetime | None
-    used_at: datetime | None
-    revoked_at: datetime | None
-    created_at: datetime | None
-
-class GetGrantListViewSqlRow(BaseModel):
-
-    items: list[QGetGrantListViewV4Item] | None = None
-    total_count: int | None = None
-
-class GetGrantListViewApiRequest(BaseModel):
-
-    grantor_id_filter: UUID | None = None
-    emulated_id_filter: UUID | None = None
-    page_limit_val: int | None = 10000
-    page_offset_val: int | None = 0
-
-class GetGrantListViewApiResponse(BaseModel):
-
-    items: list[QGetGrantListViewV4Item] | None = None
-    total_count: int | None = None
-
-
-
-# Generated from: get_group_list_view
-
-class GetGroupListViewSqlParams(BaseModel):
-
-    group_ids: list[UUID] | None = None
-    session_id_filter: UUID | None = None
-    session_ids: list[UUID] | None = None
-    date_from: datetime
-    date_to: datetime
-    sort_by_field: str | None = None
-    sort_order_field: str | None = None
-    page_limit_val: int | None = 50
-    page_offset_val: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.group_ids,
-            self.session_id_filter,
-            self.session_ids,
-            self.date_from,
-            self.date_to,
-            self.sort_by_field,
-            self.sort_order_field,
-            self.page_limit_val,
-            self.page_offset_val,
-        )
-
-class QGetGroupListViewV4Item(BaseModel):
-
-    group_id: UUID | None
-    session_id: UUID | None
-    group_created_at: datetime | None
-    trace_id: str | None
-    group_name: str | None
-    active: bool | None
-
-class GetGroupListViewSqlRow(BaseModel):
-
-    items: list[QGetGroupListViewV4Item] | None = None
-    total_count: int | None = None
-
-class GetGroupListViewApiRequest(BaseModel):
-
-    group_ids: list[UUID] | None = None
-    session_id_filter: UUID | None = None
-    session_ids: list[UUID] | None = None
-    date_from: datetime
-    date_to: datetime
-    sort_by_field: str | None = None
-    sort_order_field: str | None = None
-    page_limit_val: int | None = 50
-    page_offset_val: int | None = 0
-
-class GetGroupListViewApiResponse(BaseModel):
-
-    items: list[QGetGroupListViewV4Item] | None = None
-    total_count: int | None = None
-
-
-
-# Generated from: get_health_list_view
-
-class GetHealthListViewSqlParams(BaseModel):
-
-    service_filter: str | None = None
-    date_from: datetime
-    date_to: datetime
-    sort_order_field: str | None = None
-    page_limit_val: int | None = 1000
-    page_offset_val: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.service_filter,
-            self.date_from,
-            self.date_to,
-            self.sort_order_field,
-            self.page_limit_val,
-            self.page_offset_val,
-        )
-
-class QGetHealthListViewV4Item(BaseModel):
-
-    date_hour: datetime | None
-    service: str | None
-    check_count: int | None
-    ok_count: int | None
-    fail_count: int | None
-    uptime_percent: float | None
-    avg_latency_ms: float | None
-    min_latency_ms: float | None
-    max_latency_ms: float | None
-    latest_ok: bool | None
-    latest_error: str | None
-
-class GetHealthListViewSqlRow(BaseModel):
-
-    items: list[QGetHealthListViewV4Item] | None = None
-    total_count: int | None = None
-
-class GetHealthListViewApiRequest(BaseModel):
-
-    service_filter: str | None = None
-    date_from: datetime
-    date_to: datetime
-    sort_order_field: str | None = None
-    page_limit_val: int | None = 1000
-    page_offset_val: int | None = 0
-
-class GetHealthListViewApiResponse(BaseModel):
-
-    items: list[QGetHealthListViewV4Item] | None = None
-    total_count: int | None = None
-
-
-
-# Generated from: get_home_context_view
-
-class GetHomeContextViewSqlParams(BaseModel):
-
-    profile_id_filter: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id_filter,
-        )
-
-class QGetHomeContextViewV4Item(BaseModel):
-
-    simulation_id: UUID | None
-    chat_entry_ids: list[UUID] | None
-    scenario_ids: list[UUID] | None
-    cohort_ids: list[UUID] | None
-    home_ids: list[UUID] | None
-
-class GetHomeContextViewSqlRow(BaseModel):
-
-    items: list[QGetHomeContextViewV4Item] | None = None
-
-class GetHomeContextViewApiRequest(BaseModel):
-
-    profile_id_filter: UUID
-
-class GetHomeContextViewApiResponse(BaseModel):
-
-    items: list[QGetHomeContextViewV4Item] | None = None
-
-
-
-# Generated from: get_login_list_view
-
-class GetLoginListViewSqlParams(BaseModel):
-
-    profile_id_filter: UUID | None = None
-    active_filter: bool | None = None
-    date_from: datetime
-    date_to: datetime
-    sort_order_field: str | None = None
-    page_limit_val: int | None = 50
-    page_offset_val: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id_filter,
-            self.active_filter,
-            self.date_from,
-            self.date_to,
-            self.sort_order_field,
-            self.page_limit_val,
-            self.page_offset_val,
-        )
-
-class QGetLoginListViewV4Item(BaseModel):
-
-    login_id: UUID | None
-    profile_id: UUID | None
-    session_id: UUID | None
-    last_login: datetime | None
-    login_created_at: datetime | None
-    active: bool | None
-    generated: bool | None
-    mcp: bool | None
-
-class GetLoginListViewSqlRow(BaseModel):
-
-    items: list[QGetLoginListViewV4Item] | None = None
-    total_count: int | None = None
-
-class GetLoginListViewApiRequest(BaseModel):
-
-    profile_id_filter: UUID | None = None
-    active_filter: bool | None = None
-    date_from: datetime
-    date_to: datetime
-    sort_order_field: str | None = None
-    page_limit_val: int | None = 50
-    page_offset_val: int | None = 0
-
-class GetLoginListViewApiResponse(BaseModel):
-
-    items: list[QGetLoginListViewV4Item] | None = None
-    total_count: int | None = None
-
-
-
-# Generated from: get_message_list_view
-
-class GetMessageListViewSqlParams(BaseModel):
-
-    run_id_filter: UUID | None = None
-    run_ids: list[UUID] | None = None
-    page_limit_val: int | None = 10000
-    page_offset_val: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.run_id_filter,
-            self.run_ids,
-            self.page_limit_val,
-            self.page_offset_val,
-        )
-
-class QGetMessageListViewV4Item(BaseModel):
-
-    message_id: UUID | None
-    run_id: UUID | None
-    role: str | None
-    message_created_at: datetime | None
-    text_upload_ids: list[UUID] | None
-    audio_upload_ids: list[UUID] | None
-    image_upload_ids: list[UUID] | None
-    video_upload_ids: list[UUID] | None
-    file_upload_ids: list[UUID] | None
-    call_upload_ids: list[UUID] | None
-
-class GetMessageListViewSqlRow(BaseModel):
-
-    items: list[QGetMessageListViewV4Item] | None = None
-    total_count: int | None = None
-
-class GetMessageListViewApiRequest(BaseModel):
-
-    run_id_filter: UUID | None = None
-    run_ids: list[UUID] | None = None
-    page_limit_val: int | None = 10000
-    page_offset_val: int | None = 0
-
-class GetMessageListViewApiResponse(BaseModel):
-
-    items: list[QGetMessageListViewV4Item] | None = None
-    total_count: int | None = None
-
-
-
-# Generated from: get_metric_list_view
-
-class GetMetricListViewSqlParams(BaseModel):
-
-    date_from: datetime
-    date_to: datetime
-    sort_order_field: str | None = None
-    page_limit_val: int | None = 1000
-    page_offset_val: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.date_from,
-            self.date_to,
-            self.sort_order_field,
-            self.page_limit_val,
-            self.page_offset_val,
-        )
-
-class QGetMetricListViewV4Item(BaseModel):
-
-    date_hour: datetime | None
-    sample_count: int | None
-    avg_cpu_percent: float | None
-    min_cpu_percent: float | None
-    max_cpu_percent: float | None
-    avg_latency_ms: float | None
-    min_latency_ms: float | None
-    max_latency_ms: float | None
-    avg_memory_bytes: int | None
-    min_memory_bytes: int | None
-    max_memory_bytes: int | None
-    max_requests_total: int | None
-    max_errors_total: int | None
-
-class GetMetricListViewSqlRow(BaseModel):
-
-    items: list[QGetMetricListViewV4Item] | None = None
-    total_count: int | None = None
-
-class GetMetricListViewApiRequest(BaseModel):
-
-    date_from: datetime
-    date_to: datetime
-    sort_order_field: str | None = None
-    page_limit_val: int | None = 1000
-    page_offset_val: int | None = 0
-
-class GetMetricListViewApiResponse(BaseModel):
-
-    items: list[QGetMetricListViewV4Item] | None = None
-    total_count: int | None = None
-
-
-
-# Generated from: get_practice_context_view
-
-class GetPracticeContextViewSqlParams(BaseModel):
-
-    profile_id_filter: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id_filter,
-        )
-
-class QGetPracticeContextViewV4Item(BaseModel):
-
-    simulation_id: UUID | None
-    chat_entry_ids: list[UUID] | None
-    scenario_ids: list[UUID] | None
-    cohort_ids: list[UUID] | None
-    practice_ids: list[UUID] | None
-    rubric_ids: list[UUID] | None
-    scenario_time_limit_ids: list[UUID] | None
-
-class GetPracticeContextViewSqlRow(BaseModel):
-
-    items: list[QGetPracticeContextViewV4Item] | None = None
-
-class GetPracticeContextViewApiRequest(BaseModel):
-
-    profile_id_filter: UUID
-
-class GetPracticeContextViewApiResponse(BaseModel):
-
-    items: list[QGetPracticeContextViewV4Item] | None = None
-
-
-
-# Generated from: get_problem_list_view
-
-class GetProblemListViewSqlParams(BaseModel):
-
-    profile_id_filter: UUID | None = None
-    resolved_filter: bool | None = None
-    date_from: datetime
-    date_to: datetime
-    sort_order_field: str | None = None
-    page_limit_val: int | None = 50
-    page_offset_val: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id_filter,
-            self.resolved_filter,
-            self.date_from,
-            self.date_to,
-            self.sort_order_field,
-            self.page_limit_val,
-            self.page_offset_val,
-        )
-
-class QGetProblemListViewV4Item(BaseModel):
-
-    problem_id: UUID | None
-    type: str | None
-    message: str | None
-    resolved: bool | None
-    session_id: UUID | None
-    problem_created_at: datetime | None
-    problem_updated_at: datetime | None
-    profile_id: UUID | None
-
-class GetProblemListViewSqlRow(BaseModel):
-
-    items: list[QGetProblemListViewV4Item] | None = None
-    total_count: int | None = None
-
-class GetProblemListViewApiRequest(BaseModel):
-
-    profile_id_filter: UUID | None = None
-    resolved_filter: bool | None = None
-    date_from: datetime
-    date_to: datetime
-    sort_order_field: str | None = None
-    page_limit_val: int | None = 50
-    page_offset_val: int | None = 0
-
-class GetProblemListViewApiResponse(BaseModel):
-
-    items: list[QGetProblemListViewV4Item] | None = None
-    total_count: int | None = None
-
-
-
-# Generated from: get_run_list_view
-
-class GetRunListViewSqlParams(BaseModel):
-
-    group_id_filter: UUID | None = None
-    group_ids: list[UUID] | None = None
-    date_from: datetime
-    date_to: datetime
-    sort_by_field: str | None = None
-    sort_order_field: str | None = None
-    page_limit_val: int | None = 50
-    page_offset_val: int | None = 0
-    profile_id_filter: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.group_id_filter,
-            self.group_ids,
-            self.date_from,
-            self.date_to,
-            self.sort_by_field,
-            self.sort_order_field,
-            self.page_limit_val,
-            self.page_offset_val,
-            self.profile_id_filter,
-        )
-
-class QGetRunListViewV4Item(BaseModel):
-
-    run_id: UUID | None
-    group_id: UUID | None
-    input_tokens: int | None
-    output_tokens: int | None
-    cached_input_tokens: int | None
-    run_created_at: datetime | None
-    agent_ids: list[UUID] | None
-    model_ids: list[UUID] | None
-    provider_ids: list[UUID] | None
-    input_pricing_count: int | None
-    input_pricing_pricing_id: UUID | None
-    output_pricing_count: int | None
-    output_pricing_pricing_id: UUID | None
-    cached_pricing_count: int | None
-    cached_pricing_pricing_id: UUID | None
-    debug_info: list[str] | None
-
-class GetRunListViewSqlRow(BaseModel):
-
-    items: list[QGetRunListViewV4Item] | None = None
-    total_count: int | None = None
-
-class GetRunListViewApiRequest(BaseModel):
-
-    group_id_filter: UUID | None = None
-    group_ids: list[UUID] | None = None
-    date_from: datetime
-    date_to: datetime
-    sort_by_field: str | None = None
-    sort_order_field: str | None = None
-    page_limit_val: int | None = 50
-    page_offset_val: int | None = 0
-    profile_id_filter: UUID | None = None
-
-class GetRunListViewApiResponse(BaseModel):
-
-    items: list[QGetRunListViewV4Item] | None = None
-    total_count: int | None = None
-
-
-
-# Generated from: get_session_counts_view
-
-class GetSessionCountsViewSqlParams(BaseModel):
-
-    session_ids_filter: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.session_ids_filter,
-        )
-
-class QGetSessionCountsViewV4Item(BaseModel):
-
-    session_id: UUID | None
-    chat_count: int | None
-    attempt_count: int | None
-    message_count: int | None
-    problem_count: int | None
-
-class GetSessionCountsViewSqlRow(BaseModel):
-
-    items: list[QGetSessionCountsViewV4Item] | None = None
-
-class GetSessionCountsViewApiRequest(BaseModel):
-
-    session_ids_filter: list[UUID]
-
-class GetSessionCountsViewApiResponse(BaseModel):
-
-    items: list[QGetSessionCountsViewV4Item] | None = None
-
-
-
-# Generated from: get_session_list_view
-
-class GetSessionListViewSqlParams(BaseModel):
-
-    session_ids: list[UUID] | None = None
-    profile_id_filter: UUID | None = None
-    profile_ids_filter: list[UUID] | None = None
-    active_filter: bool | None = None
-    date_from: datetime
-    date_to: datetime
-    sort_by_field: str | None = None
-    sort_order_field: str | None = None
-    page_limit_val: int | None = 50
-    page_offset_val: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.session_ids,
-            self.profile_id_filter,
-            self.profile_ids_filter,
-            self.active_filter,
-            self.date_from,
-            self.date_to,
-            self.sort_by_field,
-            self.sort_order_field,
-            self.page_limit_val,
-            self.page_offset_val,
-        )
-
-class QGetSessionListViewV4Item(BaseModel):
-
-    session_id: UUID | None
-    profile_id: UUID | None
-    session_created_at: datetime | None
-    active: bool | None
-
-class GetSessionListViewSqlRow(BaseModel):
-
-    items: list[QGetSessionListViewV4Item] | None = None
-    total_count: int | None = None
-
-class GetSessionListViewApiRequest(BaseModel):
-
-    session_ids: list[UUID] | None = None
-    profile_id_filter: UUID | None = None
-    profile_ids_filter: list[UUID] | None = None
-    active_filter: bool | None = None
-    date_from: datetime
-    date_to: datetime
-    sort_by_field: str | None = None
-    sort_order_field: str | None = None
-    page_limit_val: int | None = 50
-    page_offset_val: int | None = 0
-
-class GetSessionListViewApiResponse(BaseModel):
-
-    items: list[QGetSessionListViewV4Item] | None = None
-    total_count: int | None = None
-
-
-
-# Generated from: get_session_timeline_view
-
-class GetSessionTimelineViewSqlParams(BaseModel):
-
-    session_id_filter: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.session_id_filter,
-        )
-
-class QGetSessionTimelineViewV4Item(BaseModel):
-
-    event_type: str | None
-    entity_id: UUID | None
-    entity_name: str | None
-    created_at: datetime | None
-    extra_1: str | None
-    extra_2: str | None
-
-class GetSessionTimelineViewSqlRow(BaseModel):
-
-    items: list[QGetSessionTimelineViewV4Item] | None = None
-
-class GetSessionTimelineViewApiRequest(BaseModel):
-
-    session_id_filter: UUID
-
-class GetSessionTimelineViewApiResponse(BaseModel):
-
-    items: list[QGetSessionTimelineViewV4Item] | None = None
-
-
-
-# Generated from: get_simulation_analyses_view
-
-class GetSimulationAnalysesViewSqlParams(BaseModel):
-
-    grade_ids_filter: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.grade_ids_filter,
-        )
-
-class QGetSimulationAnalysesViewV4Item(BaseModel):
-
-    analysis_id: UUID | None
-    grade_id: UUID | None
-    content: str | None
-    created_at: datetime | None
-
-class GetSimulationAnalysesViewSqlRow(BaseModel):
-
-    items: list[QGetSimulationAnalysesViewV4Item] | None = None
-
-class GetSimulationAnalysesViewApiRequest(BaseModel):
-
-    grade_ids_filter: list[UUID]
-
-class GetSimulationAnalysesViewApiResponse(BaseModel):
-
-    items: list[QGetSimulationAnalysesViewV4Item] | None = None
-
-
-
-# Generated from: get_simulation_benchmark_feedbacks_view
-
-class GetSimulationBenchmarkFeedbacksViewSqlParams(BaseModel):
-
-    grade_ids_filter: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.grade_ids_filter,
-        )
-
-class QGetBenchmarkFeedbacksViewV4Item(BaseModel):
-
-    feedback_id: UUID | None
-    grade_id: UUID | None
-    total: int | None
-    feedback: str | None
-    total_points: int | None
-    pass_points: int | None
-    created_at: datetime | None
-
-class GetSimulationBenchmarkFeedbacksViewSqlRow(BaseModel):
-
-    items: list[QGetBenchmarkFeedbacksViewV4Item] | None = None
-
-class GetSimulationBenchmarkFeedbacksViewApiRequest(BaseModel):
-
-    grade_ids_filter: list[UUID]
-
-class GetSimulationBenchmarkFeedbacksViewApiResponse(BaseModel):
-
-    items: list[QGetBenchmarkFeedbacksViewV4Item] | None = None
-
-
-
-# Generated from: get_simulation_contents_view
-
-class GetSimulationContentsViewSqlParams(BaseModel):
-
-    message_ids_filter: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.message_ids_filter,
-        )
-
-class QGetSimulationContentsViewV4Item(BaseModel):
-
-    content_id: UUID | None
-    message_id: UUID | None
-    content: str | None
-    persona_id: UUID | None
-    idx: int | None
-    created_at: datetime | None
-
-class GetSimulationContentsViewSqlRow(BaseModel):
-
-    items: list[QGetSimulationContentsViewV4Item] | None = None
-
-class GetSimulationContentsViewApiRequest(BaseModel):
-
-    message_ids_filter: list[UUID]
-
-class GetSimulationContentsViewApiResponse(BaseModel):
-
-    items: list[QGetSimulationContentsViewV4Item] | None = None
-
-
-
-# Generated from: get_simulation_feedbacks_view
-
-class GetSimulationFeedbacksViewSqlParams(BaseModel):
-
-    grade_ids_filter: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.grade_ids_filter,
-        )
-
-class QGetSimulationFeedbacksViewV4Item(BaseModel):
-
-    feedback_id: UUID | None
-    grade_id: UUID | None
-    standard_id: UUID | None
-    total: float | None
-    feedback: str | None
-    created_at: datetime | None
-
-class GetSimulationFeedbacksViewSqlRow(BaseModel):
-
-    items: list[QGetSimulationFeedbacksViewV4Item] | None = None
-
-class GetSimulationFeedbacksViewApiRequest(BaseModel):
-
-    grade_ids_filter: list[UUID]
-
-class GetSimulationFeedbacksViewApiResponse(BaseModel):
-
-    items: list[QGetSimulationFeedbacksViewV4Item] | None = None
-
-
-
-# Generated from: get_simulation_grades_view
-
-class GetSimulationGradesViewSqlParams(BaseModel):
-
-    chat_ids_filter: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.chat_ids_filter,
-        )
-
-class QGetAttemptGradeViewV4Item(BaseModel):
-
-    grade_id: UUID | None
-    chat_id: UUID | None
-    score: float | None
-    passed: bool | None
-    time_taken: int | None
-    total_points: int | None
-    pass_points: int | None
-    rubric_id: UUID | None
-    created_at: datetime | None
-
-class GetSimulationGradesViewSqlRow(BaseModel):
-
-    items: list[QGetAttemptGradeViewV4Item] | None = None
-
-class GetSimulationGradesViewApiRequest(BaseModel):
-
-    chat_ids_filter: list[UUID]
-
-class GetSimulationGradesViewApiResponse(BaseModel):
-
-    items: list[QGetAttemptGradeViewV4Item] | None = None
-
-
-
-# Generated from: get_simulation_highlights_view
-
-class GetSimulationHighlightsViewSqlParams(BaseModel):
-
-    strength_ids_filter: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.strength_ids_filter,
-        )
-
-class QGetSimulationHighlightsViewV4Item(BaseModel):
-
-    highlight_id: UUID | None
-    strength_id: UUID | None
-    section: str | None
-    idx: int | None
-    created_at: datetime | None
-
-class GetSimulationHighlightsViewSqlRow(BaseModel):
-
-    items: list[QGetSimulationHighlightsViewV4Item] | None = None
-
-class GetSimulationHighlightsViewApiRequest(BaseModel):
-
-    strength_ids_filter: list[UUID]
-
-class GetSimulationHighlightsViewApiResponse(BaseModel):
-
-    items: list[QGetSimulationHighlightsViewV4Item] | None = None
-
-
-
-# Generated from: get_simulation_hints_view
-
-class GetSimulationHintsViewSqlParams(BaseModel):
-
-    message_ids_filter: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.message_ids_filter,
-        )
-
-class QGetSimulationHintsViewV4Item(BaseModel):
-
-    hint_id: UUID | None
-    message_id: UUID | None
-    hint: str | None
-    idx: int | None
-    created_at: datetime | None
-
-class GetSimulationHintsViewSqlRow(BaseModel):
-
-    items: list[QGetSimulationHintsViewV4Item] | None = None
-
-class GetSimulationHintsViewApiRequest(BaseModel):
-
-    message_ids_filter: list[UUID]
-
-class GetSimulationHintsViewApiResponse(BaseModel):
-
-    items: list[QGetSimulationHintsViewV4Item] | None = None
-
-
-
-# Generated from: get_simulation_improvements_view
-
-class GetSimulationImprovementsViewSqlParams(BaseModel):
-
-    message_ids_filter: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.message_ids_filter,
-        )
-
-class QGetSimulationImprovementsViewV4Item(BaseModel):
-
-    improvement_id: UUID | None
-    message_id: UUID | None
-    name: str | None
-    description: str | None
-    created_at: datetime | None
-
-class GetSimulationImprovementsViewSqlRow(BaseModel):
-
-    items: list[QGetSimulationImprovementsViewV4Item] | None = None
-
-class GetSimulationImprovementsViewApiRequest(BaseModel):
-
-    message_ids_filter: list[UUID]
-
-class GetSimulationImprovementsViewApiResponse(BaseModel):
-
-    items: list[QGetSimulationImprovementsViewV4Item] | None = None
-
-
-
-# Generated from: get_simulation_message_tree_view
-
-class GetSimulationMessageTreeViewSqlParams(BaseModel):
-
-    message_ids_filter: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.message_ids_filter,
-        )
-
-class QGetSimulationMessageTreeViewV4Item(BaseModel):
-
-    message_id: UUID | None
-    branch_path: list[UUID] | None
-    depth: int | None
-
-class GetSimulationMessageTreeViewSqlRow(BaseModel):
-
-    items: list[QGetSimulationMessageTreeViewV4Item] | None = None
-
-class GetSimulationMessageTreeViewApiRequest(BaseModel):
-
-    message_ids_filter: list[UUID]
-
-class GetSimulationMessageTreeViewApiResponse(BaseModel):
-
-    items: list[QGetSimulationMessageTreeViewV4Item] | None = None
-
-
-
-# Generated from: get_simulation_messages_view
-
-class GetSimulationMessagesViewSqlParams(BaseModel):
-
-    attempt_id_filter: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.attempt_id_filter,
-        )
-
-class QGetSimulationMessagesViewV4Item(BaseModel):
-
-    message_id: UUID | None
-    chat_id: UUID | None
-    attempt_id: UUID | None
-    type: str | None
-    created_at: datetime | None
-    completed: bool | None
-    runs_id: UUID | None
-    text_id: UUID | None
-    audio_id: UUID | None
-    history_file_path: str | None
-
-class GetSimulationMessagesViewSqlRow(BaseModel):
-
-    items: list[QGetSimulationMessagesViewV4Item] | None = None
-
-class GetSimulationMessagesViewApiRequest(BaseModel):
-
-    attempt_id_filter: UUID
-
-class GetSimulationMessagesViewApiResponse(BaseModel):
-
-    items: list[QGetSimulationMessagesViewV4Item] | None = None
-
-
-
-# Generated from: get_simulation_replacements_view
-
-class GetSimulationReplacementsViewSqlParams(BaseModel):
-
-    improvement_ids_filter: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.improvement_ids_filter,
-        )
-
-class QGetSimulationReplacementsViewV4Item(BaseModel):
-
-    replacement_id: UUID | None
-    improvement_id: UUID | None
-    section: str | None
-    replace_text: str | None
-    idx: int | None
-    created_at: datetime | None
-
-class GetSimulationReplacementsViewSqlRow(BaseModel):
-
-    items: list[QGetSimulationReplacementsViewV4Item] | None = None
-
-class GetSimulationReplacementsViewApiRequest(BaseModel):
-
-    improvement_ids_filter: list[UUID]
-
-class GetSimulationReplacementsViewApiResponse(BaseModel):
-
-    items: list[QGetSimulationReplacementsViewV4Item] | None = None
-
-
-
-# Generated from: get_simulation_responses_view
-
-class GetSimulationResponsesViewSqlParams(BaseModel):
-
-    chat_ids_filter: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.chat_ids_filter,
-        )
-
-class QGetSimulationResponsesViewV4Item(BaseModel):
-
-    response_id: UUID | None
-    chat_id: UUID | None
-    question_id: UUID | None
-    option_id: UUID | None
-    created_at: datetime | None
-
-class GetSimulationResponsesViewSqlRow(BaseModel):
-
-    items: list[QGetSimulationResponsesViewV4Item] | None = None
-
-class GetSimulationResponsesViewApiRequest(BaseModel):
-
-    chat_ids_filter: list[UUID]
-
-class GetSimulationResponsesViewApiResponse(BaseModel):
-
-    items: list[QGetSimulationResponsesViewV4Item] | None = None
-
-
-
-# Generated from: get_simulation_strengths_view
-
-class GetSimulationStrengthsViewSqlParams(BaseModel):
-
-    message_ids_filter: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.message_ids_filter,
-        )
-
-class QGetSimulationStrengthsViewV4Item(BaseModel):
-
-    strength_id: UUID | None
-    message_id: UUID | None
-    name: str | None
-    description: str | None
-    created_at: datetime | None
-
-class GetSimulationStrengthsViewSqlRow(BaseModel):
-
-    items: list[QGetSimulationStrengthsViewV4Item] | None = None
-
-class GetSimulationStrengthsViewApiRequest(BaseModel):
-
-    message_ids_filter: list[UUID]
-
-class GetSimulationStrengthsViewApiResponse(BaseModel):
-
-    items: list[QGetSimulationStrengthsViewV4Item] | None = None
-
-
-
-# Generated from: get_test_list_view
-
-class GetTestListViewSqlParams(BaseModel):
-
-    test_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    eval_ids: list[UUID] | None = None
-    is_archived_filter: bool | None = None
-    date_from: datetime
-    date_to: datetime
-    search_text: str | None = None
-    sort_by_field: str | None = None
-    sort_order_field: str | None = None
-    page_limit_val: int | None = 50
-    page_offset_val: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.test_ids,
-            self.department_ids,
-            self.eval_ids,
-            self.is_archived_filter,
-            self.date_from,
-            self.date_to,
-            self.search_text,
-            self.sort_by_field,
-            self.sort_order_field,
-            self.page_limit_val,
-            self.page_offset_val,
-        )
-
-class QGetTestListViewV4Item(BaseModel):
-
-    test_id: UUID | None
-    eval_id: UUID | None
-    profile_id: UUID | None
-    benchmark_id: UUID | None
-    department_ids: list[UUID] | None
-    test_name: str | None
-    test_description: str | None
-    num_invocations: int | None
-    num_invocations_completed: int | None
-    infinite_mode: bool | None
-    archived: bool | None
-    test_created_at: datetime | None
-
-
-
-
-class QGetTestListViewV4Option(BaseModel):
-
-    value: str | None
-    label: str | None
-    count: int | None
-
-class GetTestListViewSqlRow(BaseModel):
-
-    items: list[QGetTestListViewV4Item] | None = None
-    total_count: int | None = None
-    eval_options: list[QGetTestListViewV4Option] | None = None
-
-class GetTestListViewApiRequest(BaseModel):
-
-    test_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    eval_ids: list[UUID] | None = None
-    is_archived_filter: bool | None = None
-    date_from: datetime
-    date_to: datetime
-    search_text: str | None = None
-    sort_by_field: str | None = None
-    sort_order_field: str | None = None
-    page_limit_val: int | None = 50
-    page_offset_val: int | None = 0
-
-class GetTestListViewApiResponse(BaseModel):
-
-    items: list[QGetTestListViewV4Item] | None = None
-    total_count: int | None = None
-    eval_options: list[QGetTestListViewV4Option] | None = None
-
-
-
-# Generated from: get_chat_view
-
-
-# Generated from: get_training_view
-
-class GetTrainingViewSqlParams(BaseModel):
-
-    profile_id_filter: UUID
-    chat_entry_id_filter: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id_filter,
-            self.chat_entry_id_filter,
-        )
-
-class GetTrainingViewSqlRow(BaseModel):
-
-    profile_has_access: bool | None = None
-    chat_entry_id: UUID | None = None
-    parent_id: UUID | None = None
-    scenario_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
-    document_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    question_ids: list[UUID] | None = None
-    option_ids: list[UUID] | None = None
-    video_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
-    problem_statement_ids: list[UUID] | None = None
-    objective_ids: list[UUID] | None = None
-    flag_ids: list[UUID] | None = None
-    name_ids: list[UUID] | None = None
-    description_ids: list[UUID] | None = None
-    video_enabled: bool | None = None
-    problem_statement_enabled: bool | None = None
-    objectives_enabled: bool | None = None
-    images_enabled: bool | None = None
-    questions_enabled: bool | None = None
-
-class GetTrainingViewApiRequest(BaseModel):
-
-    profile_id_filter: UUID
-    chat_entry_id_filter: UUID
-
-class GetTrainingViewApiResponse(BaseModel):
-
-    profile_has_access: bool | None = None
-    chat_entry_id: UUID | None = None
-    parent_id: UUID | None = None
-    scenario_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
-    document_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    question_ids: list[UUID] | None = None
-    option_ids: list[UUID] | None = None
-    video_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
-    problem_statement_ids: list[UUID] | None = None
-    objective_ids: list[UUID] | None = None
-    flag_ids: list[UUID] | None = None
-    name_ids: list[UUID] | None = None
-    description_ids: list[UUID] | None = None
-    video_enabled: bool | None = None
-    problem_statement_enabled: bool | None = None
-    objectives_enabled: bool | None = None
-    images_enabled: bool | None = None
-    questions_enabled: bool | None = None
-
-
-
-# Generated from: get_upload_list_view
-
-class GetUploadListViewSqlParams(BaseModel):
-
-    uploads_id_filter: UUID | None = None
-    page_limit_val: int | None = 10000
-    page_offset_val: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.uploads_id_filter,
-            self.page_limit_val,
-            self.page_offset_val,
-        )
-
-class QGetUploadListViewV4Item(BaseModel):
-
-    uploads_id: UUID | None
-    upload_id: UUID | None
-    file_path: str | None
-    mime_type: str | None
-    size: int | None
-    created_at: datetime | None
-
-class GetUploadListViewSqlRow(BaseModel):
-
-    items: list[QGetUploadListViewV4Item] | None = None
-    total_count: int | None = None
-
-class GetUploadListViewApiRequest(BaseModel):
-
-    uploads_id_filter: UUID | None = None
-    page_limit_val: int | None = 10000
-    page_offset_val: int | None = 0
-
-class GetUploadListViewApiResponse(BaseModel):
-
-    items: list[QGetUploadListViewV4Item] | None = None
-    total_count: int | None = None
 
 
 
@@ -39033,12 +37325,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareSimulationGenerationApiRequest",
         "PrepareSimulationGenerationApiResponse",
     ),
-    "app/sql/queries/generate/start/get_generation_run_context_and_create_run_complete.sql": (
-        "GetGenerationRunContextAndCreateRunSqlParams",
-        "GetGenerationRunContextAndCreateRunSqlRow",
-        "GetGenerationRunContextAndCreateRunApiRequest",
-        "GetGenerationRunContextAndCreateRunApiResponse",
-    ),
     "app/sql/queries/generate/suite/prepare_suite_generation_complete.sql": (
         "PrepareSuiteGenerationSqlParams",
         "PrepareSuiteGenerationSqlRow",
@@ -39092,12 +37378,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "StartTestSqlRow",
         "StartTestApiRequest",
         "StartTestApiResponse",
-    ),
-    "app/sql/queries/generate/text/get_text_run_context_for_existing_run_complete.sql": (
-        "GetTextRunContextForExistingRunSqlParams",
-        "GetTextRunContextForExistingRunSqlRow",
-        "GetTextRunContextForExistingRunApiRequest",
-        "GetTextRunContextForExistingRunApiResponse",
     ),
     "app/sql/queries/generate/tool/prepare_tool_generation_complete.sql": (
         "PrepareToolGenerationSqlParams",
@@ -39584,6 +37864,54 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SavePersonaSqlRow",
         "SavePersonaApiRequest",
         "SavePersonaApiResponse",
+    ),
+    "app/sql/queries/personas/tools_delete_persona_complete.sql": (
+        "ToolsDeletePersonaSqlParams",
+        "ToolsDeletePersonaSqlRow",
+        "ToolsDeletePersonaApiRequest",
+        "ToolsDeletePersonaApiResponse",
+    ),
+    "app/sql/queries/personas/tools_duplicate_persona_complete.sql": (
+        "ToolsDuplicatePersonaSqlParams",
+        "ToolsDuplicatePersonaSqlRow",
+        "ToolsDuplicatePersonaApiRequest",
+        "ToolsDuplicatePersonaApiResponse",
+    ),
+    "app/sql/queries/personas/tools_export_personas_complete.sql": (
+        "ToolsExportPersonasSqlParams",
+        "ToolsExportPersonasSqlRow",
+        "ToolsExportPersonasApiRequest",
+        "ToolsExportPersonasApiResponse",
+    ),
+    "app/sql/queries/personas/tools_get_persona_complete.sql": (
+        "ToolsGetPersonaSqlParams",
+        "ToolsGetPersonaSqlRow",
+        "ToolsGetPersonaApiRequest",
+        "ToolsGetPersonaApiResponse",
+    ),
+    "app/sql/queries/personas/tools_get_persona_docs_complete.sql": (
+        "ToolsGetPersonaDocsSqlParams",
+        "ToolsGetPersonaDocsSqlRow",
+        "ToolsGetPersonaDocsApiRequest",
+        "ToolsGetPersonaDocsApiResponse",
+    ),
+    "app/sql/queries/personas/tools_get_personas_list_complete.sql": (
+        "ToolsGetPersonasListSqlParams",
+        "ToolsGetPersonasListSqlRow",
+        "ToolsGetPersonasListApiRequest",
+        "ToolsGetPersonasListApiResponse",
+    ),
+    "app/sql/queries/personas/tools_patch_persona_draft_complete.sql": (
+        "ToolsPatchPersonaDraftSqlParams",
+        "ToolsPatchPersonaDraftSqlRow",
+        "ToolsPatchPersonaDraftApiRequest",
+        "ToolsPatchPersonaDraftApiResponse",
+    ),
+    "app/sql/queries/personas/tools_save_persona_complete.sql": (
+        "ToolsSavePersonaSqlParams",
+        "ToolsSavePersonaSqlRow",
+        "ToolsSavePersonaApiRequest",
+        "ToolsSavePersonaApiResponse",
     ),
     "app/sql/queries/personas/validate_persona_resource_error_complete.sql": (
         "ValidatePersonaResourceErrorSqlParams",
@@ -41421,12 +39749,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateSettingApiRequest",
         "DuplicateSettingApiResponse",
     ),
-    "app/sql/queries/settings/get_active_settings_complete.sql": (
-        "GetActiveSettingsSqlParams",
-        "GetActiveSettingsSqlRow",
-        "GetActiveSettingsApiRequest",
-        "GetActiveSettingsApiResponse",
-    ),
     "app/sql/queries/settings/get_setting_access_complete.sql": (
         "GetSettingAccessSqlParams",
         "GetSettingAccessSqlRow",
@@ -41720,246 +40042,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateGenerationAndLinkSqlRow",
         "CreateGenerationAndLinkApiRequest",
         "CreateGenerationAndLinkApiResponse",
-    ),
-    "app/sql/queries/views/activity/list/get_activity_list_view_complete.sql": (
-        "GetActivityListViewSqlParams",
-        "GetActivityListViewSqlRow",
-        "GetActivityListViewApiRequest",
-        "GetActivityListViewApiResponse",
-    ),
-    "app/sql/queries/views/activity/profile_summary/get_profile_summary_view_complete.sql": (
-        "GetProfileSummaryViewSqlParams",
-        "GetProfileSummaryViewSqlRow",
-        "GetProfileSummaryViewApiRequest",
-        "GetProfileSummaryViewApiResponse",
-    ),
-    "app/sql/queries/views/attempt/list/get_attempt_list_view_complete.sql": (
-        "GetAttemptListViewSqlParams",
-        "GetAttemptListViewSqlRow",
-        "GetAttemptListViewApiRequest",
-        "GetAttemptListViewApiResponse",
-    ),
-    "app/sql/queries/views/attempt/messages/get_attempt_messages_view_complete.sql": (
-        "GetAttemptMessagesViewSqlParams",
-        "GetAttemptMessagesViewSqlRow",
-        "GetAttemptMessagesViewApiRequest",
-        "GetAttemptMessagesViewApiResponse",
-    ),
-    "app/sql/queries/views/benchmark/invocations/get_test_invocation_view_complete.sql": (
-        "GetTestInvocationViewSqlParams",
-        "GetTestInvocationViewSqlRow",
-        "GetTestInvocationViewApiRequest",
-        "GetTestInvocationViewApiResponse",
-    ),
-    "app/sql/queries/views/call/list/get_call_list_view_complete.sql": (
-        "GetCallListViewSqlParams",
-        "GetCallListViewSqlRow",
-        "GetCallListViewApiRequest",
-        "GetCallListViewApiResponse",
-    ),
-    "app/sql/queries/views/chat/get_chat_view_complete.sql": (
-        "GetChatViewSqlParams",
-        "GetChatViewSqlRow",
-        "GetChatViewApiRequest",
-        "GetChatViewApiResponse",
-    ),
-    "app/sql/queries/views/chat/message_stats/get_message_stats_complete.sql": (
-        "GetMessageStatsSqlParams",
-        "GetMessageStatsSqlRow",
-        "GetMessageStatsApiRequest",
-        "GetMessageStatsApiResponse",
-    ),
-    "app/sql/queries/views/chat/rubric_scores/get_rubric_scores_complete.sql": (
-        "GetRubricScoresSqlParams",
-        "GetRubricScoresSqlRow",
-        "GetRubricScoresApiRequest",
-        "GetRubricScoresApiResponse",
-    ),
-    "app/sql/queries/views/chat/training_config/get_training_config_complete.sql": (
-        "GetTrainingConfigSqlParams",
-        "GetTrainingConfigSqlRow",
-        "GetTrainingConfigApiRequest",
-        "GetTrainingConfigApiResponse",
-    ),
-    "app/sql/queries/views/grant/list/get_grant_list_view_complete.sql": (
-        "GetGrantListViewSqlParams",
-        "GetGrantListViewSqlRow",
-        "GetGrantListViewApiRequest",
-        "GetGrantListViewApiResponse",
-    ),
-    "app/sql/queries/views/group/list/get_group_list_view_complete.sql": (
-        "GetGroupListViewSqlParams",
-        "GetGroupListViewSqlRow",
-        "GetGroupListViewApiRequest",
-        "GetGroupListViewApiResponse",
-    ),
-    "app/sql/queries/views/health/list/get_health_list_view_complete.sql": (
-        "GetHealthListViewSqlParams",
-        "GetHealthListViewSqlRow",
-        "GetHealthListViewApiRequest",
-        "GetHealthListViewApiResponse",
-    ),
-    "app/sql/queries/views/home/context/get_home_context_view_complete.sql": (
-        "GetHomeContextViewSqlParams",
-        "GetHomeContextViewSqlRow",
-        "GetHomeContextViewApiRequest",
-        "GetHomeContextViewApiResponse",
-    ),
-    "app/sql/queries/views/login/list/get_login_list_view_complete.sql": (
-        "GetLoginListViewSqlParams",
-        "GetLoginListViewSqlRow",
-        "GetLoginListViewApiRequest",
-        "GetLoginListViewApiResponse",
-    ),
-    "app/sql/queries/views/message/list/get_message_list_view_complete.sql": (
-        "GetMessageListViewSqlParams",
-        "GetMessageListViewSqlRow",
-        "GetMessageListViewApiRequest",
-        "GetMessageListViewApiResponse",
-    ),
-    "app/sql/queries/views/metric/list/get_metric_list_view_complete.sql": (
-        "GetMetricListViewSqlParams",
-        "GetMetricListViewSqlRow",
-        "GetMetricListViewApiRequest",
-        "GetMetricListViewApiResponse",
-    ),
-    "app/sql/queries/views/practice/context/get_practice_context_view_complete.sql": (
-        "GetPracticeContextViewSqlParams",
-        "GetPracticeContextViewSqlRow",
-        "GetPracticeContextViewApiRequest",
-        "GetPracticeContextViewApiResponse",
-    ),
-    "app/sql/queries/views/problem/list/get_problem_list_view_complete.sql": (
-        "GetProblemListViewSqlParams",
-        "GetProblemListViewSqlRow",
-        "GetProblemListViewApiRequest",
-        "GetProblemListViewApiResponse",
-    ),
-    "app/sql/queries/views/run/list/get_run_list_view_complete.sql": (
-        "GetRunListViewSqlParams",
-        "GetRunListViewSqlRow",
-        "GetRunListViewApiRequest",
-        "GetRunListViewApiResponse",
-    ),
-    "app/sql/queries/views/session/counts/get_session_counts_view_complete.sql": (
-        "GetSessionCountsViewSqlParams",
-        "GetSessionCountsViewSqlRow",
-        "GetSessionCountsViewApiRequest",
-        "GetSessionCountsViewApiResponse",
-    ),
-    "app/sql/queries/views/session/list/get_session_list_view_complete.sql": (
-        "GetSessionListViewSqlParams",
-        "GetSessionListViewSqlRow",
-        "GetSessionListViewApiRequest",
-        "GetSessionListViewApiResponse",
-    ),
-    "app/sql/queries/views/session/timeline/get_session_timeline_view_complete.sql": (
-        "GetSessionTimelineViewSqlParams",
-        "GetSessionTimelineViewSqlRow",
-        "GetSessionTimelineViewApiRequest",
-        "GetSessionTimelineViewApiResponse",
-    ),
-    "app/sql/queries/views/simulation/analyses/get_simulation_analyses_view_complete.sql": (
-        "GetSimulationAnalysesViewSqlParams",
-        "GetSimulationAnalysesViewSqlRow",
-        "GetSimulationAnalysesViewApiRequest",
-        "GetSimulationAnalysesViewApiResponse",
-    ),
-    "app/sql/queries/views/simulation/benchmark_feedbacks/get_simulation_benchmark_feedbacks_view_complete.sql": (
-        "GetSimulationBenchmarkFeedbacksViewSqlParams",
-        "GetSimulationBenchmarkFeedbacksViewSqlRow",
-        "GetSimulationBenchmarkFeedbacksViewApiRequest",
-        "GetSimulationBenchmarkFeedbacksViewApiResponse",
-    ),
-    "app/sql/queries/views/simulation/contents/get_simulation_contents_view_complete.sql": (
-        "GetSimulationContentsViewSqlParams",
-        "GetSimulationContentsViewSqlRow",
-        "GetSimulationContentsViewApiRequest",
-        "GetSimulationContentsViewApiResponse",
-    ),
-    "app/sql/queries/views/simulation/feedbacks/get_simulation_feedbacks_view_complete.sql": (
-        "GetSimulationFeedbacksViewSqlParams",
-        "GetSimulationFeedbacksViewSqlRow",
-        "GetSimulationFeedbacksViewApiRequest",
-        "GetSimulationFeedbacksViewApiResponse",
-    ),
-    "app/sql/queries/views/simulation/grades/get_simulation_grades_view_complete.sql": (
-        "GetSimulationGradesViewSqlParams",
-        "GetSimulationGradesViewSqlRow",
-        "GetSimulationGradesViewApiRequest",
-        "GetSimulationGradesViewApiResponse",
-    ),
-    "app/sql/queries/views/simulation/highlights/get_simulation_highlights_view_complete.sql": (
-        "GetSimulationHighlightsViewSqlParams",
-        "GetSimulationHighlightsViewSqlRow",
-        "GetSimulationHighlightsViewApiRequest",
-        "GetSimulationHighlightsViewApiResponse",
-    ),
-    "app/sql/queries/views/simulation/hints/get_simulation_hints_view_complete.sql": (
-        "GetSimulationHintsViewSqlParams",
-        "GetSimulationHintsViewSqlRow",
-        "GetSimulationHintsViewApiRequest",
-        "GetSimulationHintsViewApiResponse",
-    ),
-    "app/sql/queries/views/simulation/improvements/get_simulation_improvements_view_complete.sql": (
-        "GetSimulationImprovementsViewSqlParams",
-        "GetSimulationImprovementsViewSqlRow",
-        "GetSimulationImprovementsViewApiRequest",
-        "GetSimulationImprovementsViewApiResponse",
-    ),
-    "app/sql/queries/views/simulation/message_tree/get_simulation_message_tree_view_complete.sql": (
-        "GetSimulationMessageTreeViewSqlParams",
-        "GetSimulationMessageTreeViewSqlRow",
-        "GetSimulationMessageTreeViewApiRequest",
-        "GetSimulationMessageTreeViewApiResponse",
-    ),
-    "app/sql/queries/views/simulation/messages/get_simulation_messages_view_complete.sql": (
-        "GetSimulationMessagesViewSqlParams",
-        "GetSimulationMessagesViewSqlRow",
-        "GetSimulationMessagesViewApiRequest",
-        "GetSimulationMessagesViewApiResponse",
-    ),
-    "app/sql/queries/views/simulation/replacements/get_simulation_replacements_view_complete.sql": (
-        "GetSimulationReplacementsViewSqlParams",
-        "GetSimulationReplacementsViewSqlRow",
-        "GetSimulationReplacementsViewApiRequest",
-        "GetSimulationReplacementsViewApiResponse",
-    ),
-    "app/sql/queries/views/simulation/responses/get_simulation_responses_view_complete.sql": (
-        "GetSimulationResponsesViewSqlParams",
-        "GetSimulationResponsesViewSqlRow",
-        "GetSimulationResponsesViewApiRequest",
-        "GetSimulationResponsesViewApiResponse",
-    ),
-    "app/sql/queries/views/simulation/strengths/get_simulation_strengths_view_complete.sql": (
-        "GetSimulationStrengthsViewSqlParams",
-        "GetSimulationStrengthsViewSqlRow",
-        "GetSimulationStrengthsViewApiRequest",
-        "GetSimulationStrengthsViewApiResponse",
-    ),
-    "app/sql/queries/views/test/list/get_test_list_view_complete.sql": (
-        "GetTestListViewSqlParams",
-        "GetTestListViewSqlRow",
-        "GetTestListViewApiRequest",
-        "GetTestListViewApiResponse",
-    ),
-    "app/sql/queries/views/training/bundle/get_chat_view_complete.sql": (
-        "GetChatViewSqlParams",
-        "GetChatViewSqlRow",
-        "GetChatViewApiRequest",
-        "GetChatViewApiResponse",
-    ),
-    "app/sql/queries/views/training/bundle/get_training_view_complete.sql": (
-        "GetTrainingViewSqlParams",
-        "GetTrainingViewSqlRow",
-        "GetTrainingViewApiRequest",
-        "GetTrainingViewApiResponse",
-    ),
-    "app/sql/queries/views/upload/list/get_upload_list_view_complete.sql": (
-        "GetUploadListViewSqlParams",
-        "GetUploadListViewSqlRow",
-        "GetUploadListViewApiRequest",
-        "GetUploadListViewApiResponse",
     ),
 }
 
@@ -44105,11 +42187,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/generate/start/get_generation_run_context_and_create_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/generate/suite/prepare_suite_generation_complete.sql"]
     ) -> SqlString: ...
 
@@ -44151,11 +42228,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/generate/test/start_test_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -44561,6 +42633,46 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/personas/save_persona_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/queries/personas/tools_delete_persona_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/queries/personas/tools_duplicate_persona_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/queries/personas/tools_export_personas_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/queries/personas/tools_get_persona_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/queries/personas/tools_get_persona_docs_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/queries/personas/tools_get_personas_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/queries/personas/tools_patch_persona_draft_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/queries/personas/tools_save_persona_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -46095,11 +44207,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/settings/get_active_settings_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/settings/get_setting_access_complete.sql"]
     ) -> SqlString: ...
 
@@ -46341,206 +44448,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/videos/create_generation_and_link_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/activity/list/get_activity_list_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/activity/profile_summary/get_profile_summary_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/attempt/list/get_attempt_list_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/attempt/messages/get_attempt_messages_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/benchmark/invocations/get_test_invocation_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/call/list/get_call_list_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/chat/get_chat_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/chat/message_stats/get_message_stats_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/chat/rubric_scores/get_rubric_scores_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/chat/training_config/get_training_config_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/grant/list/get_grant_list_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/group/list/get_group_list_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/health/list/get_health_list_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/home/context/get_home_context_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/login/list/get_login_list_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/message/list/get_message_list_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/metric/list/get_metric_list_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/practice/context/get_practice_context_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/problem/list/get_problem_list_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/run/list/get_run_list_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/session/counts/get_session_counts_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/session/list/get_session_list_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/session/timeline/get_session_timeline_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/simulation/analyses/get_simulation_analyses_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/simulation/benchmark_feedbacks/get_simulation_benchmark_feedbacks_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/simulation/contents/get_simulation_contents_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/simulation/feedbacks/get_simulation_feedbacks_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/simulation/grades/get_simulation_grades_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/simulation/highlights/get_simulation_highlights_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/simulation/hints/get_simulation_hints_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/simulation/improvements/get_simulation_improvements_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/simulation/message_tree/get_simulation_message_tree_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/simulation/messages/get_simulation_messages_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/simulation/replacements/get_simulation_replacements_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/simulation/responses/get_simulation_responses_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/simulation/strengths/get_simulation_strengths_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/test/list/get_test_list_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/training/bundle/get_chat_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/training/bundle/get_training_view_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/views/upload/list/get_upload_list_view_complete.sql"]
     ) -> SqlString: ...
 
     @overload

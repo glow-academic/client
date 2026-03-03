@@ -1,0 +1,255 @@
+-- Tools layer: Get personas list with scenario details
+-- Independent copy of get_personas_list_complete.sql for tools layer evolution
+-- Resource-first: only touches persona_artifact + persona's own junctions + resource tables
+
+-- Drop function
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN
+        SELECT oidvectortypes(proargtypes) as sig
+        FROM pg_proc
+        WHERE proname = 'tools_list_personas_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS tools_list_personas_v4(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- Drop types WITHOUT CASCADE
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN
+        SELECT typname
+        FROM pg_type
+        WHERE typname LIKE 'q_tools_list_personas_v4_%'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+    END LOOP;
+END $$;
+
+-- Recreate types
+CREATE TYPE types.q_tools_list_personas_v4_persona AS (
+    persona_id uuid,
+    name text,
+    description text,
+    color text,
+    icon text,
+    department_ids text[],
+    scenario_ids uuid[],
+    field_ids uuid[],
+    is_inactive boolean,
+    generated boolean,
+    mcp boolean,
+    num_scenarios int,
+    num_profiles int,
+    active_scenario_count int,
+    updated_at timestamptz
+);
+
+CREATE TYPE types.q_tools_list_personas_v4_option_id AS (
+    id uuid,
+    count bigint
+);
+
+-- Recreate function
+CREATE OR REPLACE FUNCTION tools_list_personas_v4(
+    profile_id uuid,
+    search text DEFAULT NULL,
+    scenario_ids uuid[] DEFAULT NULL,
+    field_ids uuid[] DEFAULT NULL,
+    filter_department_ids uuid[] DEFAULT NULL,
+    scenario_search text DEFAULT NULL,
+    field_search text DEFAULT NULL,
+    department_search text DEFAULT NULL,
+    page_size int DEFAULT 12,
+    page_offset int DEFAULT 0
+)
+RETURNS TABLE (
+    personas types.q_tools_list_personas_v4_persona[],
+    scenario_option_ids types.q_tools_list_personas_v4_option_id[],
+    field_option_ids types.q_tools_list_personas_v4_option_id[],
+    department_option_ids types.q_tools_list_personas_v4_option_id[],
+    total_count bigint
+)
+LANGUAGE sql
+STABLE
+AS $$
+WITH params AS (
+    SELECT profile_id AS profile_id
+),
+user_departments AS (
+    SELECT department_id
+    FROM params x
+    JOIN profile_departments_junction ON profile_departments_junction.profile_id = x.profile_id AND profile_departments_junction.active = true
+),
+-- Scenario linkage via denormalized scenarios_resource.persona_ids
+persona_scenarios AS (
+    SELECT
+        ppj.persona_id,
+        ARRAY_AGG(DISTINCT sr.id) as scenario_ids,
+        COUNT(DISTINCT sr.id)::int as num_scenarios
+    FROM persona_personas_junction ppj
+    JOIN personas_resource pr ON pr.id = ppj.personas_id
+    JOIN scenarios_resource sr ON pr.id = ANY(sr.persona_ids)
+    GROUP BY ppj.persona_id
+),
+persona_departments_data AS (
+    SELECT
+        pd.persona_id,
+        ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at) as department_ids
+    FROM persona_departments_junction pd
+    GROUP BY pd.persona_id
+),
+-- Field linkage via parameter_fields_resource.field_id → fields_resource.id
+persona_fields_data AS (
+    SELECT
+        ppfj.persona_id,
+        ARRAY_AGG(DISTINCT fr.id) as field_ids
+    FROM persona_parameter_fields_junction ppfj
+    JOIN parameter_fields_resource pfr ON pfr.id = ppfj.parameter_field_id
+    JOIN fields_resource fr ON fr.id = pfr.field_id
+    WHERE ppfj.active = true
+    GROUP BY ppfj.persona_id
+),
+-- Cohort count via persona → personas_resource → profile_personas_resource → cohorts_resource.profile_persona_ids
+persona_cohorts AS (
+    SELECT
+        ppj.persona_id,
+        COUNT(DISTINCT cr.id)::int as num_profiles
+    FROM persona_personas_junction ppj
+    JOIN personas_resource pr ON pr.id = ppj.personas_id
+    JOIN profile_personas_resource ppr ON ppr.persona_id = pr.id AND ppr.active = true
+    JOIN cohorts_resource cr ON ppr.id = ANY(cr.profile_persona_ids) AND cr.active = true
+    GROUP BY ppj.persona_id
+),
+persona_data_base AS (
+    SELECT
+        p.id as persona_id,
+        (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as persona_name,
+        (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1) as description,
+        (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) as color,
+        (SELECT i.value FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1) as icon,
+        EXISTS (SELECT 1 FROM persona_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.type = 'persona_active' AND pf.value = TRUE) as active,
+        p.updated_at,
+        COALESCE(pdd.department_ids, NULL) as department_ids,
+        COALESCE(ps.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
+        COALESCE(pfd.field_ids, ARRAY[]::uuid[]) as field_ids,
+        COALESCE(ps.num_scenarios, 0) as num_scenarios,
+        COALESCE(pc.num_profiles, 0) as num_profiles,
+        COALESCE(ps.num_scenarios, 0) as active_scenario_count,
+        p.generated,
+        p.mcp
+    FROM persona_artifact p
+    LEFT JOIN persona_scenarios ps ON ps.persona_id = p.id
+    LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
+    LEFT JOIN persona_fields_data pfd ON pfd.persona_id = p.id
+    LEFT JOIN persona_cohorts pc ON pc.persona_id = p.id
+    LEFT JOIN persona_departments_junction pd ON pd.persona_id = p.id AND pd.department_id IN (SELECT department_id FROM user_departments)
+    WHERE p.active = true
+    GROUP BY p.id,
+        (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
+        (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1),
+        (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1),
+        (SELECT i.value FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1),
+        EXISTS (SELECT 1 FROM persona_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.type = 'persona_active' AND pf.value = TRUE),
+        p.updated_at,
+        pdd.department_ids, ps.scenario_ids, pfd.field_ids, ps.num_scenarios, pc.num_profiles, p.generated, p.mcp
+    HAVING COUNT(pd.persona_id) > 0 OR NOT EXISTS (
+        SELECT 1 FROM persona_departments_junction pd2 WHERE pd2.persona_id = p.id
+    )
+),
+persona_data AS (
+    SELECT pdb.*
+    FROM persona_data_base pdb
+),
+-- Apply server-side filters
+filtered_personas AS (
+    SELECT pd.*
+    FROM persona_data pd
+    WHERE
+        (search IS NULL OR LOWER(pd.persona_name) LIKE '%' || LOWER(search) || '%' OR LOWER(pd.description) LIKE '%' || LOWER(search) || '%')
+        AND (tools_list_personas_v4.scenario_ids IS NULL OR pd.scenario_ids && tools_list_personas_v4.scenario_ids)
+        AND (tools_list_personas_v4.field_ids IS NULL OR pd.field_ids && tools_list_personas_v4.field_ids)
+        AND (filter_department_ids IS NULL OR pd.department_ids && filter_department_ids::text[])
+),
+-- Count total filtered results (before pagination)
+filtered_count AS (
+    SELECT COUNT(*)::bigint as total_count FROM filtered_personas
+),
+-- Paginate filtered results
+paginated_personas AS (
+    SELECT fp.*
+    FROM filtered_personas fp
+    ORDER BY fp.updated_at DESC NULLS LAST
+    LIMIT page_size OFFSET page_offset
+),
+-- Filter option IDs with counts
+all_scenario_ids AS (
+    SELECT DISTINCT unnest(scenario_ids) as scenario_id
+    FROM persona_data
+),
+scenario_option_data AS (
+    SELECT
+        sr.id,
+        (SELECT COUNT(*) FROM persona_data pd WHERE sr.id = ANY(pd.scenario_ids)) as count
+    FROM scenarios_resource sr
+    WHERE sr.id IN (SELECT scenario_id FROM all_scenario_ids)
+),
+assigned_field_ids AS (
+    SELECT DISTINCT unnest(field_ids) as field_id
+    FROM persona_data
+    WHERE field_ids IS NOT NULL AND array_length(field_ids, 1) > 0
+),
+field_option_data AS (
+    SELECT
+        fr.id,
+        (SELECT COUNT(*) FROM persona_data pd WHERE fr.id = ANY(pd.field_ids)) as count
+    FROM fields_resource fr
+    WHERE fr.id IN (SELECT field_id FROM assigned_field_ids)
+),
+department_option_data AS (
+    SELECT
+        dr.id,
+        (SELECT COUNT(*) FROM persona_data) as count
+    FROM departments_resource dr
+    WHERE dr.id IN (SELECT department_id FROM user_departments)
+)
+SELECT
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (pd.persona_id, pd.persona_name, pd.description, pd.color, pd.icon,
+             pd.department_ids, pd.scenario_ids, pd.field_ids,
+             NOT pd.active, pd.generated, pd.mcp, pd.num_scenarios, pd.num_profiles,
+             pd.active_scenario_count,
+             pd.updated_at
+            )::types.q_tools_list_personas_v4_persona
+            ORDER BY pd.updated_at DESC NULLS LAST
+        ) FROM paginated_personas pd),
+        '{}'::types.q_tools_list_personas_v4_persona[]
+    ) as personas,
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (sod.id, sod.count)::types.q_tools_list_personas_v4_option_id
+        ) FROM scenario_option_data sod),
+        '{}'::types.q_tools_list_personas_v4_option_id[]
+    ) as scenario_option_ids,
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (fod.id, fod.count)::types.q_tools_list_personas_v4_option_id
+        ) FROM field_option_data fod),
+        '{}'::types.q_tools_list_personas_v4_option_id[]
+    ) as field_option_ids,
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (dod.id, dod.count)::types.q_tools_list_personas_v4_option_id
+        ) FROM department_option_data dod),
+        '{}'::types.q_tools_list_personas_v4_option_id[]
+    ) as department_option_ids,
+    (SELECT total_count FROM filtered_count) as total_count
+FROM params
+$$;
