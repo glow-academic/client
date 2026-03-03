@@ -1,0 +1,75 @@
+"""qualities/search internal — reusable data-access layer."""
+
+from typing import cast
+from uuid import UUID
+
+import asyncpg  # type: ignore
+
+from app.sql.types import (
+    QGetQualitiesV4Item,
+    SearchQualitiesSqlParams,
+    SearchQualitiesSqlRow,
+)
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
+
+SQL_PATH = "app/sql/queries/resources/qualities/search_qualities_complete.sql"
+
+async def search_qualities_internal(
+    conn: asyncpg.Connection,
+    search: str | None = None,
+    limit_count: int | None = 20,
+    offset_count: int | None = 0,
+    exclude_ids: list[UUID] | None = None,
+    bypass_cache: bool = False,
+    *,
+    model: bool = False,
+) -> list[QGetQualitiesV4Item]:
+    """Internal function to search qualities."""
+    if limit_count is not None and limit_count <= 0:
+        return []
+
+    tags = ["resources", "qualities"]
+    cache_key_val = cache_key(
+        "/api/v5/resources/qualities/search",
+        {
+            "search": search,
+            "limit_count": limit_count,
+            "offset_count": offset_count,
+            "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "model": model,
+        },
+    )
+
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            return [
+                QGetQualitiesV4Item.model_validate(item)
+                for item in cached.get("items", [])
+            ]
+
+    params = SearchQualitiesSqlParams(
+        search=search,
+        limit_count=limit_count,
+        offset_count=offset_count,
+        exclude_ids=exclude_ids or [],
+        model=model,
+    )
+    result = cast(
+        SearchQualitiesSqlRow,
+        await execute_sql_typed(conn, SQL_PATH, params=params),
+    )
+
+    items: list[QGetQualitiesV4Item] = result.items if result and result.items else []
+
+    await set_cached(
+        cache_key_val,
+        {"items": [item.model_dump(mode="json") for item in items]},
+        ttl=60,
+        tags=tags,
+    )
+
+    return items

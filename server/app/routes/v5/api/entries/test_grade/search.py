@@ -1,90 +1,23 @@
 """Test Grade entry SEARCH endpoint."""
 
-from typing import Annotated, cast
-from uuid import UUID
+from typing import Annotated
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.utils.error.handle_route_error import handle_route_error
 from app.infra.globals import get_db
+from app.routes.v5.tools.entries.test_grade.search import (
+    SQL_PATH,
+    search_test_grade_entries_internal,
+)
 from app.sql.types import (
     SearchTestGradeEntriesApiRequest,
     SearchTestGradeEntriesApiResponse,
-    SearchTestGradeEntriesSqlParams,
-    SearchTestGradeEntriesSqlRow,
     load_sql_query,
 )
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = (
-    "app/sql/queries/entries/test_grade/search_test_grade_entries_complete.sql"
-)
+from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
-
-
-async def search_test_grade_entries_internal(
-    conn: asyncpg.Connection,
-    search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
-    invocation_id: UUID | None = None,
-    run_id: UUID | None = None,
-    rubric_grade_agent_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to search test_grade entries."""
-    if limit_count is not None and limit_count <= 0:
-        return []
-
-    tags = ["entries", "test_grade"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/test_grade/search",
-        {
-            "search": search,
-            "limit_count": limit_count,
-            "offset_count": offset_count,
-            "invocation_id": str(invocation_id) if invocation_id else None,
-            "run_id": str(run_id) if run_id else None,
-            "rubric_grade_agent_id": str(rubric_grade_agent_id)
-            if rubric_grade_agent_id
-            else None,
-        },
-    )
-
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val)
-        if cached:
-            return list(cached.get("items", []))
-
-    params = SearchTestGradeEntriesSqlParams(
-        search=search,
-        limit_count=limit_count,
-        offset_count=offset_count,
-        invocation_id=invocation_id,
-        run_id=run_id,
-        rubric_grade_agent_id=rubric_grade_agent_id,
-    )
-    result = cast(
-        SearchTestGradeEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-    )
-
-    return items
-
 
 @router.post(
     "/test_grade/search",

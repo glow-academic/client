@@ -64,7 +64,7 @@ class GetHealthWebsocketResponse(InternalResponseBase):
     resources: HealthWebsocketResources
 
 
-from app.routes.v5.api.entries.runs.search import GetRunListViewResponse  # noqa: E402
+from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
 
 HealthWebsocketEntries.model_rebuild()
 HealthWebsocketResources.model_rebuild()

@@ -19,6 +19,7 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db, get_pool
 from app.routes.v5.api.main.test.permissions import compute_test_status
 from app.routes.v5.api.main.test.types import (
     GetTestArtifactRequest,
@@ -31,24 +32,21 @@ from app.routes.v5.api.main.test.types import (
     TestStatusSummary,
     TestWebsocketResources,
 )
-from app.routes.v5.api.entries.test.search import get_test_list_internal
-from app.routes.v5.api.entries.test_invocation.get import (
-    get_test_invocation_internal,
-)
-from app.routes.v5.api.resources.agents.get import get_agents_internal
-from app.routes.v5.api.resources.args.get import get_args_internal
-from app.routes.v5.api.resources.args_outputs.get import get_args_outputs_internal
-from app.routes.v5.api.resources.evals.get import get_evals_internal
-from app.routes.v5.api.resources.models.get import get_models_internal
+from app.routes.v5.tools.entries.test.search import get_test_list_internal
+from app.routes.v5.tools.entries.test_invocation.get import get_test_invocation_internal
+from app.routes.v5.tools.resources.agents.get import get_agents_internal
+from app.routes.v5.tools.resources.args.get import get_args_internal
+from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
+from app.routes.v5.tools.resources.evals.get import get_evals_internal
+from app.routes.v5.tools.resources.models.get import get_models_internal
 from app.routes.v5.tools.resources.names.get import get_names_internal
-from app.routes.v5.api.resources.providers.get import get_providers_internal
-from app.routes.v5.api.resources.rubrics.get import get_rubrics_batch_internal
-from app.routes.v5.api.resources.tools.get import get_tools_internal
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db, get_pool
+from app.routes.v5.tools.resources.providers.get import get_providers_internal
+from app.routes.v5.tools.resources.rubrics.get import get_rubrics_batch_internal
+from app.routes.v5.tools.resources.tools.get import get_tools_internal
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
+from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
@@ -501,8 +499,8 @@ async def get_test_websocket(
     """
     from datetime import UTC, datetime
 
-    from app.routes.v5.api.entries.runs.search import get_run_list_entries_internal
-    from app.routes.v5.api.resources.profiles.get import get_profiles_internal
+    from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
+    from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
 
     data = await get_test_internal(
         conn=conn,

@@ -16,6 +16,9 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db, get_pool
+from app.routes.auth.profile import get_auth_profile_internal
+from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.setting.permissions import (
     SETTING_RESOURCES,
     compute_auth_item_keys_required,
@@ -65,39 +68,43 @@ from app.routes.v5.api.main.setting.types import (
     SettingWebsocketEntries,
     SettingWebsocketResources,
 )
-from app.routes.auth.profile import get_auth_profile_internal
-from app.routes.auth.settings import get_auth_settings_internal
-from app.routes.v5.api.entries.runs.search import get_run_list_entries_internal
-from app.routes.v5.api.entries.setting_drafts.get import get_setting_drafts_entries_internal
 from app.routes.v5.api.permissions import resolve_agents_for_artifact
-from app.routes.v5.api.resources.agents.get import get_agents_internal
-from app.routes.v5.api.resources.args.get import get_args_internal
-from app.routes.v5.api.resources.args_outputs.get import get_args_outputs_internal
-from app.routes.v5.api.resources.auth_item_keys.get import get_auth_item_keys_internal
-from app.routes.v5.api.resources.auth_item_keys.search import search_auth_item_keys_internal
-from app.routes.v5.api.resources.auths.get import get_auths_internal
-from app.routes.v5.api.resources.auths.search import search_auths_internal
-from app.routes.v5.api.resources.colors.get import get_colors_internal
-from app.routes.v5.api.resources.colors.search import search_colors_internal
-from app.routes.v5.api.resources.departments.get import get_departments_internal
-from app.routes.v5.api.resources.departments.search import search_departments_internal
-from app.routes.v5.api.resources.descriptions.get import get_descriptions_internal
-from app.routes.v5.api.resources.descriptions.search import search_descriptions_internal
-from app.routes.v5.api.resources.flags.get import get_flags_internal
-from app.routes.v5.api.resources.flags.search import search_flags_internal
-from app.routes.v5.api.resources.models.get import get_models_internal
+from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
+from app.routes.v5.tools.entries.setting_drafts.get import (
+    get_setting_drafts_entries_internal,
+)
+from app.routes.v5.tools.resources.agents.get import get_agents_internal
+from app.routes.v5.tools.resources.args.get import get_args_internal
+from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
+from app.routes.v5.tools.resources.auth_item_keys.get import get_auth_item_keys_internal
+from app.routes.v5.tools.resources.auth_item_keys.search import (
+    search_auth_item_keys_internal,
+)
+from app.routes.v5.tools.resources.auths.get import get_auths_internal
+from app.routes.v5.tools.resources.auths.search import search_auths_internal
+from app.routes.v5.tools.resources.colors.get import get_colors_internal
+from app.routes.v5.tools.resources.colors.search import search_colors_internal
+from app.routes.v5.tools.resources.departments.get import get_departments_internal
+from app.routes.v5.tools.resources.departments.search import search_departments_internal
+from app.routes.v5.tools.resources.descriptions.get import get_descriptions_internal
+from app.routes.v5.tools.resources.descriptions.search import (
+    search_descriptions_internal,
+)
+from app.routes.v5.tools.resources.flags.get import get_flags_internal
+from app.routes.v5.tools.resources.flags.search import search_flags_internal
+from app.routes.v5.tools.resources.models.get import get_models_internal
 from app.routes.v5.tools.resources.names.get import get_names_internal
 from app.routes.v5.tools.resources.names.search import search_names_internal
-from app.routes.v5.api.resources.profiles.get import get_profiles_internal
-from app.routes.v5.api.resources.profiles.search import search_profiles_internal
-from app.routes.v5.api.resources.provider_keys.get import get_provider_keys_internal
-from app.routes.v5.api.resources.provider_keys.search import search_provider_keys_internal
-from app.routes.v5.api.resources.providers.get import get_providers_internal
-from app.routes.v5.api.resources.roles.get import get_roles_internal
-from app.routes.v5.api.resources.roles.search import search_roles_internal
-from app.routes.v5.api.resources.tools.get import get_tools_internal
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db, get_pool
+from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.profiles.search import search_profiles_internal
+from app.routes.v5.tools.resources.provider_keys.get import get_provider_keys_internal
+from app.routes.v5.tools.resources.provider_keys.search import (
+    search_provider_keys_internal,
+)
+from app.routes.v5.tools.resources.providers.get import get_providers_internal
+from app.routes.v5.tools.resources.roles.get import get_roles_internal
+from app.routes.v5.tools.resources.roles.search import search_roles_internal
+from app.routes.v5.tools.resources.tools.get import get_tools_internal
 from app.sql.types import (
     GetSettingAccessSqlParams,
     GetSettingAccessSqlRow,
@@ -105,6 +112,7 @@ from app.sql.types import (
     GetSettingIdsSqlRow,
     load_sql_query,
 )
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import execute_sql_typed
 
 # SQL paths

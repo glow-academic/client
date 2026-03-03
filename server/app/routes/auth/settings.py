@@ -20,10 +20,10 @@ from app.routes.auth.types import (
     GetAuthSettingsApiResponse,
     SettingsAgentToolEntry,
 )
-from app.routes.v5.api.resources.agents.get import get_agents_internal
-from app.routes.v5.api.resources.settings.get import get_settings_internal
-from app.routes.v5.api.resources.systems.get import get_systems_internal
-from app.routes.v5.api.resources.tools.get import get_tools_internal
+from app.routes.v5.tools.resources.agents.get import get_agents_internal
+from app.routes.v5.tools.resources.settings.get import get_settings_internal
+from app.routes.v5.tools.resources.systems.get import get_systems_internal
+from app.routes.v5.tools.resources.tools.get import get_tools_internal
 from app.utils.error.handle_route_error import handle_route_error
 from app.infra.globals import get_db, get_pool
 from app.sql.types import (

@@ -13,9 +13,11 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.routes.v5.api.main.types import InternalResponseBase
-from app.routes.v5.api.entries.attempt.get import AttemptMessageViewItem as MessageViewItem
-from app.routes.v5.api.entries.attempt.get import ChatViewItem
-from app.routes.v5.api.entries.runs.search import GetRunListViewResponse
+from app.routes.v5.tools.entries.attempt.get import (
+    AttemptMessageViewItem as MessageViewItem,
+)
+from app.routes.v5.tools.entries.attempt.get import ChatViewItem
+from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetModelsV4Item,

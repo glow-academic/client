@@ -7,11 +7,12 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.utils.error.handle_route_error import handle_route_error
 from app.infra.globals import get_db
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/resources/link_questions_complete.sql"
+from app.routes.v5.tools.resources.questions.link import (
+    LinkQuestionsSqlParams,
+    link_questions_internal,
+)
+from app.utils.error.handle_route_error import handle_route_error
 
 
 class LinkQuestionsApiRequest(BaseModel):
@@ -19,52 +20,11 @@ class LinkQuestionsApiRequest(BaseModel):
     group_id: UUID
     tool_id: UUID
 
-
 class LinkQuestionsApiResponse(BaseModel):
     success: bool = True
     questions_id: UUID | None = None
 
-
-class LinkQuestionsSqlParams(BaseModel):
-    resource_id: UUID
-    group_id: UUID
-    tool_id: UUID
-
-    def to_tuple(self) -> tuple:
-        return (self.resource_id, self.group_id, self.tool_id)
-
-
-class LinkQuestionsSqlRow(BaseModel):
-    questions_id: UUID | None = None
-
-
-async def link_questions_internal(
-    conn: asyncpg.Connection,
-    resource_id: UUID,
-    group_id: UUID,
-    tool_id: UUID,
-) -> UUID:
-    """Record tool call tracking for linking an existing questions resource.
-
-    Can be called directly from other routes (e.g. socket handlers, artifact saves)
-    without HTTP overhead. Uses the same SQL as the HTTP endpoint.
-    """
-    params = LinkQuestionsSqlParams(
-        resource_id=resource_id,
-        group_id=group_id,
-        tool_id=tool_id,
-    )
-    result = await execute_sql_typed(conn, SQL_PATH, params=params)
-    result_row = LinkQuestionsSqlRow.model_validate(
-        result.model_dump() if hasattr(result, "model_dump") else result
-    )
-    if not result_row.questions_id:
-        raise ValueError(f"Failed to link questions: {resource_id}")
-    return result_row.questions_id
-
-
 router = APIRouter()
-
 
 @router.post(
     "/questions/link",

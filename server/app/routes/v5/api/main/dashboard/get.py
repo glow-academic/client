@@ -15,6 +15,7 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db, get_pool
 from app.routes.v5.api.main.chat.permissions import (
     compute_pass_pct,
     compute_score_status,
@@ -54,19 +55,23 @@ from app.routes.v5.api.main.types import (
     HistoryItem,
     HistoryResponse,
 )
-from app.routes.v5.api.entries.attempt.get import ChatViewItem, get_attempt_chats_internal
-from app.routes.v5.api.entries.attempt.search import get_attempt_list_internal
-from app.routes.v5.api.entries.runs.search import GetRunListViewResponse
-from app.routes.v5.api.resources.documents.get import get_documents_internal
-from app.routes.v5.api.resources.fields.get import get_fields_internal
-from app.routes.v5.api.resources.parameter_fields.get import get_parameter_fields_internal
-from app.routes.v5.api.resources.parameters.get import get_parameters_internal
-from app.routes.v5.api.resources.personas.get import get_personas_internal
-from app.routes.v5.api.resources.profiles.get import get_profiles_internal
-from app.routes.v5.api.resources.scenarios.get import get_scenarios_internal
-from app.routes.v5.api.resources.simulations.get import get_simulations_internal
+from app.routes.v5.tools.entries.attempt.get import (
+    ChatViewItem,
+    get_attempt_chats_internal,
+)
+from app.routes.v5.tools.entries.attempt.search import get_attempt_list_internal
+from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
+from app.routes.v5.tools.resources.documents.get import get_documents_internal
+from app.routes.v5.tools.resources.fields.get import get_fields_internal
+from app.routes.v5.tools.resources.parameter_fields.get import (
+    get_parameter_fields_internal,
+)
+from app.routes.v5.tools.resources.parameters.get import get_parameters_internal
+from app.routes.v5.tools.resources.personas.get import get_personas_internal
+from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
+from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
 from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db, get_pool
 
 router = APIRouter()
 
@@ -1024,10 +1029,10 @@ async def get_dashboard_websocket(
     This is separate from the metrics bundle — it's about LLM generation config.
     """
     from app.routes.auth.settings import get_auth_settings_internal
-    from app.routes.v5.api.entries.runs.search import get_run_list_entries_internal
     from app.routes.v5.api.permissions import resolve_agents_for_artifact
-    from app.routes.v5.api.resources.models.get import get_models_internal
-    from app.routes.v5.api.resources.providers.get import get_providers_internal
+    from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
+    from app.routes.v5.tools.resources.models.get import get_models_internal
+    from app.routes.v5.tools.resources.providers.get import get_providers_internal
 
     # 1. Fetch settings-based agent config
     async with pool.acquire() as conn:
@@ -1102,8 +1107,10 @@ async def get_dashboard_websocket(
                 all_args_output_ids.extend(tool.args_output_ids)
 
         if all_args_ids or all_args_output_ids:
-            from app.routes.v5.api.resources.args.get import get_args_internal
-            from app.routes.v5.api.resources.args_outputs.get import get_args_outputs_internal
+            from app.routes.v5.tools.resources.args.get import get_args_internal
+            from app.routes.v5.tools.resources.args_outputs.get import (
+                get_args_outputs_internal,
+            )
 
             async def _fetch_args():
                 if not all_args_ids:

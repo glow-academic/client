@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 from app.routes.v5.api.main.group.types import GetGroupListResponse
 from app.routes.v5.api.main.types import FilterOption, InternalResponseBase
-from app.routes.v5.api.entries.runs.search import GetRunListViewResponse, RunViewItem
+from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse, RunViewItem
 
 
 class PricingDailyItem(BaseModel):

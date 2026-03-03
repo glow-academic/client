@@ -8,23 +8,23 @@ from uuid import UUID
 
 import asyncpg
 
+from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.record.types import (
     GetRecordApiRequest,
     GetRecordWebsocketResponse,
     RecordWebsocketEntries,
     RecordWebsocketResources,
 )
-from app.routes.auth.settings import get_auth_settings_internal
-from app.routes.v5.api.entries.runs.search import (
+from app.routes.v5.api.permissions import resolve_agents_for_artifact
+from app.routes.v5.tools.entries.runs.search import (
     GetRunListViewResponse,
     get_run_list_entries_internal,
 )
-from app.routes.v5.api.permissions import resolve_agents_for_artifact
-from app.routes.v5.api.resources.args.get import get_args_internal
-from app.routes.v5.api.resources.args_outputs.get import get_args_outputs_internal
-from app.routes.v5.api.resources.models.get import get_models_internal
-from app.routes.v5.api.resources.profiles.get import get_profiles_internal
-from app.routes.v5.api.resources.providers.get import get_providers_internal
+from app.routes.v5.tools.resources.args.get import get_args_internal
+from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
+from app.routes.v5.tools.resources.models.get import get_models_internal
+from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.providers.get import get_providers_internal
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetModelsV4Item,

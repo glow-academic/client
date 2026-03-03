@@ -6,8 +6,8 @@ for injection into a running voice session.
 
 from typing import Any
 
-from app.infra.websocket.session_store import get_session_by_chat_id
 from app.infra.globals import sio
+from app.infra.websocket.session_store import get_session_by_chat_id
 
 
 @sio.event  # type: ignore

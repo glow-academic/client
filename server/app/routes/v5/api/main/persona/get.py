@@ -17,6 +17,9 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db, get_pool
+from app.routes.auth.profile import get_auth_profile_internal
+from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.persona.permissions import (
     PERSONA_RESOURCES,
     compute_can_edit,
@@ -68,45 +71,52 @@ from app.routes.v5.api.main.persona.types import (
     PersonaWebsocketEntries,
     PersonaWebsocketResources,
 )
-from app.routes.auth.profile import get_auth_profile_internal
-from app.routes.auth.settings import get_auth_settings_internal
-from app.routes.v5.api.entries.persona_drafts.get import get_persona_drafts_entries_internal
-from app.routes.v5.api.entries.runs.search import get_run_list_entries_internal
-from app.routes.v5.api.permissions import has_tools_for_resource, resolve_agents_for_artifact
-from app.routes.v5.api.resources.agents.get import get_agents_internal
-from app.routes.v5.api.resources.args.get import get_args_internal
-from app.routes.v5.api.resources.args_outputs.get import get_args_outputs_internal
-from app.routes.v5.api.resources.colors.get import get_colors_internal
-from app.routes.v5.api.resources.colors.search import search_colors_internal
-from app.routes.v5.api.resources.departments.get import get_departments_internal
-from app.routes.v5.api.resources.departments.search import search_departments_internal
-from app.routes.v5.api.resources.descriptions.get import get_descriptions_internal
-from app.routes.v5.api.resources.descriptions.search import search_descriptions_internal
-from app.routes.v5.api.resources.examples.get import get_examples_internal
-from app.routes.v5.api.resources.examples.search import search_examples_internal
-from app.routes.v5.api.resources.fields.search import search_fields_internal
-from app.routes.v5.api.resources.flags.get import get_flags_internal
-from app.routes.v5.api.resources.flags.search import search_flags_internal
-from app.routes.v5.api.resources.icons.get import get_icons_internal
-from app.routes.v5.api.resources.icons.search import search_icons_internal
-from app.routes.v5.api.resources.instructions.get import get_instructions_internal
-from app.routes.v5.api.resources.instructions.search import search_instructions_internal
-from app.routes.v5.api.resources.models.get import get_models_internal
+from app.routes.v5.api.permissions import (
+    has_tools_for_resource,
+    resolve_agents_for_artifact,
+)
+from app.routes.v5.tools.entries.persona_drafts.get import (
+    get_persona_drafts_entries_internal,
+)
+from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
+from app.routes.v5.tools.resources.agents.get import get_agents_internal
+from app.routes.v5.tools.resources.args.get import get_args_internal
+from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
+from app.routes.v5.tools.resources.colors.get import get_colors_internal
+from app.routes.v5.tools.resources.colors.search import search_colors_internal
+from app.routes.v5.tools.resources.departments.get import get_departments_internal
+from app.routes.v5.tools.resources.departments.search import search_departments_internal
+from app.routes.v5.tools.resources.descriptions.get import get_descriptions_internal
+from app.routes.v5.tools.resources.descriptions.search import (
+    search_descriptions_internal,
+)
+from app.routes.v5.tools.resources.examples.get import get_examples_internal
+from app.routes.v5.tools.resources.examples.search import search_examples_internal
+from app.routes.v5.tools.resources.fields.search import search_fields_internal
+from app.routes.v5.tools.resources.flags.get import get_flags_internal
+from app.routes.v5.tools.resources.flags.search import search_flags_internal
+from app.routes.v5.tools.resources.icons.get import get_icons_internal
+from app.routes.v5.tools.resources.icons.search import search_icons_internal
+from app.routes.v5.tools.resources.instructions.get import get_instructions_internal
+from app.routes.v5.tools.resources.instructions.search import (
+    search_instructions_internal,
+)
+from app.routes.v5.tools.resources.models.get import get_models_internal
 from app.routes.v5.tools.resources.names.get import get_names_internal
 from app.routes.v5.tools.resources.names.search import search_names_internal
-from app.routes.v5.api.resources.parameter_fields.get import get_parameter_fields_internal
-from app.routes.v5.api.resources.parameter_fields.search import (
+from app.routes.v5.tools.resources.parameter_fields.get import (
+    get_parameter_fields_internal,
+)
+from app.routes.v5.tools.resources.parameter_fields.search import (
     search_parameter_fields_internal,
 )
-from app.routes.v5.api.resources.parameters.get import get_parameters_internal
-from app.routes.v5.api.resources.parameters.search import search_parameters_internal
-from app.routes.v5.api.resources.profiles.get import get_profiles_internal
-from app.routes.v5.api.resources.providers.get import get_providers_internal
-from app.routes.v5.api.resources.tools.get import get_tools_internal
-from app.routes.v5.api.resources.voices.get import get_voices_internal
-from app.routes.v5.api.resources.voices.search import search_voices_internal
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db, get_pool
+from app.routes.v5.tools.resources.parameters.get import get_parameters_internal
+from app.routes.v5.tools.resources.parameters.search import search_parameters_internal
+from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.providers.get import get_providers_internal
+from app.routes.v5.tools.resources.tools.get import get_tools_internal
+from app.routes.v5.tools.resources.voices.get import get_voices_internal
+from app.routes.v5.tools.resources.voices.search import search_voices_internal
 from app.sql.types import (
     GetPersonaAccessSqlParams,
     GetPersonaAccessSqlRow,
@@ -115,6 +125,7 @@ from app.sql.types import (
     QGetParameterFieldsV4Item,
     load_sql_query,
 )
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import execute_sql_typed
 
 # SQL paths

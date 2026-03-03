@@ -7,9 +7,9 @@ and records the mute event in the database.
 import uuid as uuid_mod
 from typing import Any
 
+from app.infra.globals import sio
 from app.infra.websocket.get_db_connection import get_db_connection
 from app.infra.websocket.session_store import get_session_by_chat_id
-from app.infra.globals import sio
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

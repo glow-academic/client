@@ -18,6 +18,9 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db, get_pool
+from app.routes.auth.profile import get_auth_profile_internal
+from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.agent.permissions import (
     AGENT_BASIC_RESOURCES,
     AGENT_RESOURCES,
@@ -69,46 +72,53 @@ from app.routes.v5.api.main.agent.types import (
     GetAgentApiResponse,
     GetAgentWebsocketResponse,
 )
-from app.routes.auth.profile import get_auth_profile_internal
-from app.routes.auth.settings import get_auth_settings_internal
-from app.routes.v5.api.entries.agent_drafts.get import get_agent_drafts_entries_internal
-from app.routes.v5.api.entries.runs.search import get_run_list_entries_internal
-from app.routes.v5.api.permissions import has_tools_for_resource, resolve_agents_for_artifact
-from app.routes.v5.api.resources.agents.get import get_agents_internal
-from app.routes.v5.api.resources.args.get import get_args_internal
-from app.routes.v5.api.resources.args_outputs.get import get_args_outputs_internal
-from app.routes.v5.api.resources.departments.get import get_departments_internal
-from app.routes.v5.api.resources.departments.search import search_departments_internal
-from app.routes.v5.api.resources.descriptions.get import get_descriptions_internal
-from app.routes.v5.api.resources.descriptions.search import search_descriptions_internal
-from app.routes.v5.api.resources.flags.get import get_flags_internal
-from app.routes.v5.api.resources.flags.search import search_flags_internal
-from app.routes.v5.api.resources.instructions.get import get_instructions_internal
-from app.routes.v5.api.resources.instructions.search import search_instructions_internal
-from app.routes.v5.api.resources.models.get import get_models_internal
-from app.routes.v5.api.resources.models.search import search_models_internal
+from app.routes.v5.api.permissions import (
+    has_tools_for_resource,
+    resolve_agents_for_artifact,
+)
+from app.routes.v5.tools.entries.agent_drafts.get import (
+    get_agent_drafts_entries_internal,
+)
+from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
+from app.routes.v5.tools.resources.agents.get import get_agents_internal
+from app.routes.v5.tools.resources.args.get import get_args_internal
+from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
+from app.routes.v5.tools.resources.departments.get import get_departments_internal
+from app.routes.v5.tools.resources.departments.search import search_departments_internal
+from app.routes.v5.tools.resources.descriptions.get import get_descriptions_internal
+from app.routes.v5.tools.resources.descriptions.search import (
+    search_descriptions_internal,
+)
+from app.routes.v5.tools.resources.flags.get import get_flags_internal
+from app.routes.v5.tools.resources.flags.search import search_flags_internal
+from app.routes.v5.tools.resources.instructions.get import get_instructions_internal
+from app.routes.v5.tools.resources.instructions.search import (
+    search_instructions_internal,
+)
+from app.routes.v5.tools.resources.models.get import get_models_internal
+from app.routes.v5.tools.resources.models.search import search_models_internal
 from app.routes.v5.tools.resources.names.get import get_names_internal
 from app.routes.v5.tools.resources.names.search import search_names_internal
-from app.routes.v5.api.resources.profiles.get import get_profiles_internal
-from app.routes.v5.api.resources.prompts.get import get_prompts_internal
-from app.routes.v5.api.resources.prompts.search import search_prompts_internal
-from app.routes.v5.api.resources.providers.get import get_providers_internal
-from app.routes.v5.api.resources.reasoning_levels.get import get_reasoning_levels_internal
-from app.routes.v5.api.resources.reasoning_levels.search import (
+from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.prompts.get import get_prompts_internal
+from app.routes.v5.tools.resources.prompts.search import search_prompts_internal
+from app.routes.v5.tools.resources.providers.get import get_providers_internal
+from app.routes.v5.tools.resources.reasoning_levels.get import (
+    get_reasoning_levels_internal,
+)
+from app.routes.v5.tools.resources.reasoning_levels.search import (
     search_reasoning_levels_internal,
 )
-from app.routes.v5.api.resources.temperature_levels.get import (
+from app.routes.v5.tools.resources.temperature_levels.get import (
     get_temperature_levels_internal,
 )
-from app.routes.v5.api.resources.temperature_levels.search import (
+from app.routes.v5.tools.resources.temperature_levels.search import (
     search_temperature_levels_internal,
 )
-from app.routes.v5.api.resources.tools.get import get_tools_internal
-from app.routes.v5.api.resources.tools.search import search_tools_internal
-from app.routes.v5.api.resources.voices.get import get_voices_internal
-from app.routes.v5.api.resources.voices.search import search_voices_internal
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db, get_pool
+from app.routes.v5.tools.resources.tools.get import get_tools_internal
+from app.routes.v5.tools.resources.tools.search import search_tools_internal
+from app.routes.v5.tools.resources.voices.get import get_voices_internal
+from app.routes.v5.tools.resources.voices.search import search_voices_internal
 from app.sql.types import (
     GetAgentAccessSqlParams,
     GetAgentAccessSqlRow,
@@ -118,6 +128,7 @@ from app.sql.types import (
     QGetProvidersV4Item,
     load_sql_query,
 )
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import execute_sql_typed
 
 # SQL paths

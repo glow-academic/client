@@ -18,9 +18,9 @@ from app.routes.auth.route_permissions import (
     compute_available_sections,
 )
 from app.routes.auth.types import AuthProfileInternalData, GetAuthProfileApiResponse
-from app.routes.v5.api.resources.cohorts.get import get_cohorts_internal
-from app.routes.v5.api.resources.departments.get import get_departments_internal
-from app.routes.v5.api.resources.roles.get import get_roles_internal
+from app.routes.v5.tools.resources.cohorts.get import get_cohorts_internal
+from app.routes.v5.tools.resources.departments.get import get_departments_internal
+from app.routes.v5.tools.resources.roles.get import get_roles_internal
 from app.utils.error.handle_route_error import handle_route_error
 from app.infra.sessions.get import get_session_internal
 from app.infra.globals import get_db, get_pool

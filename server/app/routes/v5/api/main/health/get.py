@@ -9,6 +9,8 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db, get_pool
+from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.health.types import (
     GetHealthApiRequest,
     GetHealthWebsocketResponse,
@@ -18,21 +20,18 @@ from app.routes.v5.api.main.health.types import (
     HealthWebsocketEntries,
     HealthWebsocketResources,
 )
-from app.routes.auth.settings import get_auth_settings_internal
-from app.routes.v5.api.entries.health.get import get_health_list_view_internal
-from app.routes.v5.api.entries.metrics.get import get_metric_list_view_internal
-from app.routes.v5.api.entries.runs.search import (
+from app.routes.v5.api.permissions import resolve_agents_for_artifact
+from app.routes.v5.tools.entries.health.get import get_health_list_view_internal
+from app.routes.v5.tools.entries.metrics.get import get_metric_list_view_internal
+from app.routes.v5.tools.entries.runs.search import (
     GetRunListViewResponse,
     get_run_list_entries_internal,
 )
-from app.routes.v5.api.permissions import resolve_agents_for_artifact
-from app.routes.v5.api.resources.args.get import get_args_internal
-from app.routes.v5.api.resources.args_outputs.get import get_args_outputs_internal
-from app.routes.v5.api.resources.models.get import get_models_internal
-from app.routes.v5.api.resources.profiles.get import get_profiles_internal
-from app.routes.v5.api.resources.providers.get import get_providers_internal
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db, get_pool
+from app.routes.v5.tools.resources.args.get import get_args_internal
+from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
+from app.routes.v5.tools.resources.models.get import get_models_internal
+from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.providers.get import get_providers_internal
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetModelsV4Item,
@@ -40,6 +39,7 @@ from app.sql.types import (
     QGetProvidersV4Item,
     QGetToolsV4Item,
 )
+from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 

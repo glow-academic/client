@@ -9,6 +9,9 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db, get_pool
+from app.routes.auth.profile import get_auth_profile_internal
+from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.persona.permissions import (
     PERSONA_RESOURCES,
     compute_can_create,
@@ -23,30 +26,31 @@ from app.routes.v5.api.main.persona.types import (
     SavePersonaSqlParams,
     SavePersonaSqlRow,
 )
-from app.routes.auth.profile import get_auth_profile_internal
-from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.permissions import resolve_agents_for_artifact
-from app.routes.v5.api.resources.colors.search import search_colors_internal
-from app.routes.v5.api.resources.departments.search import search_departments_internal
-from app.routes.v5.api.resources.descriptions.create import create_descriptions_internal
-from app.routes.v5.api.resources.examples.create import create_examples_internal
-from app.routes.v5.api.resources.flags.search import search_flags_internal
-from app.routes.v5.api.resources.icons.search import search_icons_internal
-from app.routes.v5.api.resources.instructions.create import create_instructions_internal
+from app.routes.v5.tools.resources.colors.search import search_colors_internal
+from app.routes.v5.tools.resources.departments.search import search_departments_internal
+from app.routes.v5.tools.resources.descriptions.create import (
+    create_descriptions_internal,
+)
+from app.routes.v5.tools.resources.examples.create import create_examples_internal
+from app.routes.v5.tools.resources.flags.search import search_flags_internal
+from app.routes.v5.tools.resources.icons.search import search_icons_internal
+from app.routes.v5.tools.resources.instructions.create import (
+    create_instructions_internal,
+)
 from app.routes.v5.tools.resources.names.create import create_names_internal
-from app.routes.v5.api.resources.parameter_fields.search import (
+from app.routes.v5.tools.resources.parameter_fields.search import (
     search_parameter_fields_internal,
 )
-from app.routes.v5.api.resources.personas.create import create_personas_internal
-from app.routes.v5.api.resources.voices.search import search_voices_internal
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db, get_pool
+from app.routes.v5.tools.resources.personas.create import create_personas_internal
+from app.routes.v5.tools.resources.voices.search import search_voices_internal
 from app.sql.types import (
     CheckPersonaSaveAccessSqlParams,
     CheckPersonaSaveAccessSqlRow,
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
 

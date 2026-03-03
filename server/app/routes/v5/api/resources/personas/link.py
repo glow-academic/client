@@ -7,11 +7,12 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.utils.error.handle_route_error import handle_route_error
 from app.infra.globals import get_db
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/resources/link_personas_complete.sql"
+from app.routes.v5.tools.resources.personas.link import (
+    LinkPersonasSqlParams,
+    link_personas_internal,
+)
+from app.utils.error.handle_route_error import handle_route_error
 
 
 class LinkPersonasApiRequest(BaseModel):
@@ -19,52 +20,11 @@ class LinkPersonasApiRequest(BaseModel):
     group_id: UUID
     tool_id: UUID
 
-
 class LinkPersonasApiResponse(BaseModel):
     success: bool = True
     personas_id: UUID | None = None
 
-
-class LinkPersonasSqlParams(BaseModel):
-    resource_id: UUID
-    group_id: UUID
-    tool_id: UUID
-
-    def to_tuple(self) -> tuple:
-        return (self.resource_id, self.group_id, self.tool_id)
-
-
-class LinkPersonasSqlRow(BaseModel):
-    personas_id: UUID | None = None
-
-
-async def link_personas_internal(
-    conn: asyncpg.Connection,
-    resource_id: UUID,
-    group_id: UUID,
-    tool_id: UUID,
-) -> UUID:
-    """Record tool call tracking for linking an existing personas resource.
-
-    Can be called directly from other routes (e.g. socket handlers, artifact saves)
-    without HTTP overhead. Uses the same SQL as the HTTP endpoint.
-    """
-    params = LinkPersonasSqlParams(
-        resource_id=resource_id,
-        group_id=group_id,
-        tool_id=tool_id,
-    )
-    result = await execute_sql_typed(conn, SQL_PATH, params=params)
-    result_row = LinkPersonasSqlRow.model_validate(
-        result.model_dump() if hasattr(result, "model_dump") else result
-    )
-    if not result_row.personas_id:
-        raise ValueError(f"Failed to link personas: {resource_id}")
-    return result_row.personas_id
-
-
 router = APIRouter()
-
 
 @router.post(
     "/personas/link",

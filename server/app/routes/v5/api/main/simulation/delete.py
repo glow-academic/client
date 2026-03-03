@@ -5,14 +5,13 @@ from typing import Annotated, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db, get_pool
 from app.routes.v5.api.main.simulation.permissions import compute_can_delete
 from app.routes.v5.api.main.simulation.types import (
     DeleteSimulationApiRequest,
     DeleteSimulationApiResponse,
     DeleteSimulationResult,
 )
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db, get_pool
 from app.sql.types import (
     CheckSimulationDeleteAccessSqlParams,
     CheckSimulationDeleteAccessSqlRow,
@@ -21,6 +20,7 @@ from app.sql.types import (
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import execute_sql_typed
 
 # SQL paths

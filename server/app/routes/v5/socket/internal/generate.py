@@ -17,9 +17,9 @@ emitting "generate_prepare" — the session is already live.
 import uuid
 from typing import Any
 
+from app.infra.globals import get_internal_sio, get_pool
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.session_store import get_session_by_group_id, rotate_run_id
-from app.infra.globals import get_internal_sio, get_pool
 from app.routes.v5.socket.client.registry import REGISTRY
 from app.routes.v5.socket.client.types import GeneratePayload
 from app.routes.v5.socket.types import GenerateErrorApiRequest

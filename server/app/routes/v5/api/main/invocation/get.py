@@ -14,6 +14,8 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, HTTPException, Request
 
+from app.infra.globals import get_pool
+from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.invocation.types import (
     BaseSuiteSection,
     GetInvocationApiRequest,
@@ -32,25 +34,27 @@ from app.routes.v5.api.main.invocation.types import (
     SuiteWebsocketEntries,
     SuiteWebsocketResources,
 )
-from app.routes.auth.settings import get_auth_settings_internal
-from app.routes.v5.api.entries.runs.search import get_run_list_entries_internal
-from app.routes.v5.api.entries.suite.get import get_suite_view_internal
 from app.routes.v5.api.permissions import resolve_agents_for_artifact
-from app.routes.v5.api.resources.args.get import get_args_internal
-from app.routes.v5.api.resources.args_outputs.get import get_args_outputs_internal
-from app.routes.v5.api.resources.departments.get import get_departments_internal
-from app.routes.v5.api.resources.instructions.get import get_instructions_internal
-from app.routes.v5.api.resources.keys.get import get_keys_internal
-from app.routes.v5.api.resources.models.get import get_models_internal
-from app.routes.v5.api.resources.profiles.get import get_profiles_internal
-from app.routes.v5.api.resources.prompts.get import get_prompts_internal
-from app.routes.v5.api.resources.providers.get import get_providers_internal
-from app.routes.v5.api.resources.reasoning_levels.get import get_reasoning_levels_internal
-from app.routes.v5.api.resources.temperature_levels.get import get_temperature_levels_internal
-from app.routes.v5.api.resources.tools.get import get_tools_internal
-from app.routes.v5.api.resources.voices.get import get_voices_internal
+from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
+from app.routes.v5.tools.entries.suite.get import get_suite_view_internal
+from app.routes.v5.tools.resources.args.get import get_args_internal
+from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
+from app.routes.v5.tools.resources.departments.get import get_departments_internal
+from app.routes.v5.tools.resources.instructions.get import get_instructions_internal
+from app.routes.v5.tools.resources.keys.get import get_keys_internal
+from app.routes.v5.tools.resources.models.get import get_models_internal
+from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.prompts.get import get_prompts_internal
+from app.routes.v5.tools.resources.providers.get import get_providers_internal
+from app.routes.v5.tools.resources.reasoning_levels.get import (
+    get_reasoning_levels_internal,
+)
+from app.routes.v5.tools.resources.temperature_levels.get import (
+    get_temperature_levels_internal,
+)
+from app.routes.v5.tools.resources.tools.get import get_tools_internal
+from app.routes.v5.tools.resources.voices.get import get_voices_internal
 from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_pool
 
 router = APIRouter()
 
@@ -149,7 +153,9 @@ async def get_invocation_internal(
     bypass_cache: bool = False,
 ) -> SuiteInternalData:
     """Shared IDs-first + hydration internal fetch for benchmark bundle artifact."""
-    from app.routes.v5.api.entries.suite_drafts.get import get_suite_drafts_entries_internal
+    from app.routes.v5.tools.entries.suite_drafts.get import (
+        get_suite_drafts_entries_internal,
+    )
     from app.sql.types import QGetSuiteDraftsEntriesV4Item
 
     # 1. Fetch MV view data (all 9 ID arrays)

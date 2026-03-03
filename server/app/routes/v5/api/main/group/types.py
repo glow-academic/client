@@ -176,10 +176,7 @@ class GetGroupWebsocketResponse(InternalResponseBase):
     resources: GroupWebsocketResources
 
 
-from app.routes.v5.api.entries.runs.search import (  # noqa: E402
-    GetRunListViewResponse,
-    RunViewItem,
-)
+from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse, RunViewItem
 from app.sql.types import (  # noqa: E402
     GetCallListViewSqlRow,
     GetGroupListViewSqlRow,

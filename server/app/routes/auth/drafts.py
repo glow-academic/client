@@ -10,30 +10,24 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.routes.auth.route_permissions import compute_page_metadata
 from app.routes.auth.types import GetDraftsApiResponse, QGetProfileContextV4Draft
-from app.routes.v5.api.entries.agent_drafts.get import get_agent_drafts_entries_internal
-from app.routes.v5.api.entries.auth_drafts.get import get_auth_drafts_entries_internal
-from app.routes.v5.api.entries.cohort_drafts.get import get_cohort_drafts_entries_internal
-from app.routes.v5.api.entries.department_drafts.get import (
-    get_department_drafts_entries_internal,
-)
-from app.routes.v5.api.entries.document_drafts.get import get_document_drafts_entries_internal
-from app.routes.v5.api.entries.eval_drafts.get import get_eval_drafts_entries_internal
-from app.routes.v5.api.entries.field_drafts.get import get_field_drafts_entries_internal
-from app.routes.v5.api.entries.model_drafts.get import get_model_drafts_entries_internal
-from app.routes.v5.api.entries.parameter_drafts.get import (
-    get_parameter_drafts_entries_internal,
-)
-from app.routes.v5.api.entries.persona_drafts.get import get_persona_drafts_entries_internal
-from app.routes.v5.api.entries.profile_drafts.get import get_profile_drafts_entries_internal
-from app.routes.v5.api.entries.provider_drafts.get import get_provider_drafts_entries_internal
-from app.routes.v5.api.entries.rubric_drafts.get import get_rubric_drafts_entries_internal
-from app.routes.v5.api.entries.scenario_drafts.get import get_scenario_drafts_entries_internal
-from app.routes.v5.api.entries.setting_drafts.get import get_setting_drafts_entries_internal
-from app.routes.v5.api.entries.simulation_drafts.get import (
-    get_simulation_drafts_entries_internal,
-)
-from app.routes.v5.api.entries.tool_drafts.get import get_tool_drafts_entries_internal
-from app.routes.v5.api.entries.training_drafts.get import get_training_drafts_entries_internal
+from app.routes.v5.tools.entries.agent_drafts.get import get_agent_drafts_entries_internal
+from app.routes.v5.tools.entries.auth_drafts.get import get_auth_drafts_entries_internal
+from app.routes.v5.tools.entries.cohort_drafts.get import get_cohort_drafts_entries_internal
+from app.routes.v5.tools.entries.department_drafts.get import get_department_drafts_entries_internal
+from app.routes.v5.tools.entries.document_drafts.get import get_document_drafts_entries_internal
+from app.routes.v5.tools.entries.eval_drafts.get import get_eval_drafts_entries_internal
+from app.routes.v5.tools.entries.field_drafts.get import get_field_drafts_entries_internal
+from app.routes.v5.tools.entries.model_drafts.get import get_model_drafts_entries_internal
+from app.routes.v5.tools.entries.parameter_drafts.get import get_parameter_drafts_entries_internal
+from app.routes.v5.tools.entries.persona_drafts.get import get_persona_drafts_entries_internal
+from app.routes.v5.tools.entries.profile_drafts.get import get_profile_drafts_entries_internal
+from app.routes.v5.tools.entries.provider_drafts.get import get_provider_drafts_entries_internal
+from app.routes.v5.tools.entries.rubric_drafts.get import get_rubric_drafts_entries_internal
+from app.routes.v5.tools.entries.scenario_drafts.get import get_scenario_drafts_entries_internal
+from app.routes.v5.tools.entries.setting_drafts.get import get_setting_drafts_entries_internal
+from app.routes.v5.tools.entries.simulation_drafts.get import get_simulation_drafts_entries_internal
+from app.routes.v5.tools.entries.tool_drafts.get import get_tool_drafts_entries_internal
+from app.routes.v5.tools.entries.training_drafts.get import get_training_drafts_entries_internal
 from app.utils.error.handle_route_error import handle_route_error
 from app.infra.globals import get_db, get_pool
 

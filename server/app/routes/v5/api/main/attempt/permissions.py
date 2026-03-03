@@ -15,7 +15,7 @@ if TYPE_CHECKING:
         AvailableContinuationOptions,
         ChatData,
     )
-    from app.routes.v5.api.entries.attempt.get import ChatViewItem
+    from app.routes.v5.tools.entries.attempt.get import ChatViewItem
 
 # Default styling for user messages
 DEFAULT_USER_COLOR = "#6366f1"  # Indigo

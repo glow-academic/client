@@ -9,6 +9,8 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db, get_pool
+from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.cohort.permissions import (
     COHORT_RESOURCES,
     compute_can_create,
@@ -24,19 +26,19 @@ from app.routes.v5.api.main.cohort.types import (
     SaveCohortSqlParams,
     SaveCohortSqlRow,
 )
-from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.permissions import resolve_agents_for_artifact
-from app.routes.v5.api.resources.cohorts.create import create_cohorts_internal
-from app.routes.v5.api.resources.descriptions.create import create_descriptions_internal
+from app.routes.v5.tools.resources.cohorts.create import create_cohorts_internal
+from app.routes.v5.tools.resources.descriptions.create import (
+    create_descriptions_internal,
+)
 from app.routes.v5.tools.resources.names.create import create_names_internal
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db, get_pool
 from app.sql.types import (
     GetCohortAccessSqlParams,
     GetCohortAccessSqlRow,
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
 
@@ -187,7 +189,7 @@ async def _resolve_cohort_values(
     # --- Match-by-name resolution for value fields (CSV import) ---
 
     if item.is_inactive is not None and item.flag_id is None:
-        from app.routes.v5.api.resources.flags.search import search_flags_internal
+        from app.routes.v5.tools.resources.flags.search import search_flags_internal
 
         all_flags = await search_flags_internal(
             conn,
@@ -210,7 +212,7 @@ async def _resolve_cohort_values(
             )
 
     if item.departments is not None and item.department_ids is None:
-        from app.routes.v5.api.resources.departments.search import (
+        from app.routes.v5.tools.resources.departments.search import (
             search_departments_internal,
         )
 
@@ -238,7 +240,7 @@ async def _resolve_cohort_values(
             item.department_ids = resolved_ids
 
     if item.simulations is not None and item.simulation_ids is None:
-        from app.routes.v5.api.resources.simulations.search import (
+        from app.routes.v5.tools.resources.simulations.search import (
             search_simulations_internal,
         )
 
@@ -266,7 +268,7 @@ async def _resolve_cohort_values(
             item.simulation_ids = resolved_ids
 
     if item.profiles is not None and item.profile_ids is None:
-        from app.routes.v5.api.resources.profiles.search import (
+        from app.routes.v5.tools.resources.profiles.search import (
             search_profiles_internal,
         )
 

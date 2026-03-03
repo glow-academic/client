@@ -10,6 +10,8 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db, get_pool
+from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main._shared.pricing import compute_costs_from_runs
 from app.routes.v5.api.main.activity.types import (
     ActivityInternalData,
@@ -28,31 +30,26 @@ from app.routes.v5.api.main.session.types import (
     GetSessionListResponse,
     SessionListItem,
 )
-from app.routes.auth.settings import get_auth_settings_internal
-from app.routes.v5.api.entries.activity.get import get_activity_list_view_internal
-from app.routes.v5.api.entries.activity.profile_summary import (
+from app.routes.v5.api.permissions import resolve_agents_for_artifact
+from app.routes.v5.tools.entries.activity.get import get_activity_list_view_internal
+from app.routes.v5.tools.entries.activity.profile_summary import (
     get_profile_summary_view_internal,
 )
-from app.routes.v5.api.entries.grants.get import get_grant_list_view_internal
-from app.routes.v5.api.entries.groups.get import get_group_list_view_internal
-from app.routes.v5.api.entries.logins.get import get_login_list_view_internal
-from app.routes.v5.api.entries.problems.get import get_problem_list_view_internal
-from app.routes.v5.api.entries.runs.search import (
-    get_run_list_entries_internal,
-)
-from app.routes.v5.api.entries.sessions.get import (
+from app.routes.v5.tools.entries.grants.get import get_grant_list_view_internal
+from app.routes.v5.tools.entries.groups.get import get_group_list_view_internal
+from app.routes.v5.tools.entries.logins.get import get_login_list_view_internal
+from app.routes.v5.tools.entries.problems.get import get_problem_list_view_internal
+from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
+from app.routes.v5.tools.entries.sessions.get import (
     get_session_counts_view_internal,
     get_session_list_view_internal,
 )
-from app.routes.v5.api.permissions import resolve_agents_for_artifact
-from app.routes.v5.api.resources.args.get import get_args_internal
-from app.routes.v5.api.resources.args_outputs.get import get_args_outputs_internal
-from app.routes.v5.api.resources.models.get import get_models_internal
+from app.routes.v5.tools.resources.args.get import get_args_internal
+from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
+from app.routes.v5.tools.resources.models.get import get_models_internal
 from app.routes.v5.tools.resources.names.get import get_names_internal
-from app.routes.v5.api.resources.profiles.get import get_profiles_internal
-from app.routes.v5.api.resources.providers.get import get_providers_internal
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db, get_pool
+from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.providers.get import get_providers_internal
 from app.sql.types import (
     GetActivityListViewSqlRow,
     GetGrantListViewSqlRow,
@@ -65,6 +62,7 @@ from app.sql.types import (
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
+from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 

@@ -3,8 +3,12 @@
 from fastapi import APIRouter
 
 from app.routes.v5.api.entries.attempt_message_tree.get import router as get_router
-from app.routes.v5.api.entries.attempt_message_tree.refresh import router as refresh_router
-from app.routes.v5.api.entries.attempt_message_tree.search import router as search_router
+from app.routes.v5.api.entries.attempt_message_tree.refresh import (
+    router as refresh_router,
+)
+from app.routes.v5.api.entries.attempt_message_tree.search import (
+    router as search_router,
+)
 
 router = APIRouter()
 router.include_router(get_router)

@@ -1,34 +1,15 @@
 """Refresh for problems materialized view."""
 
-import time
 from typing import Annotated
 
 import asyncpg
 from fastapi import APIRouter, Depends, Request, Response
 
-from app.utils.error.handle_route_error import handle_route_error
 from app.infra.globals import get_db
-from app.utils.cache.invalidate_tags import invalidate_tags
-
-MV_NAME = "problems_mv"
+from app.routes.v5.tools.entries.problems.refresh import refresh_problems_internal
+from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
-
-
-async def refresh_problems_internal(
-    conn: asyncpg.Connection,
-) -> dict:
-    """Refresh problems_mv concurrently."""
-    start_time = time.time()
-    await conn.execute(f"REFRESH MATERIALIZED VIEW CONCURRENTLY {MV_NAME}")
-    duration_ms = int((time.time() - start_time) * 1000)
-    await invalidate_tags(["entries", "problems"])
-    return {
-        "success": True,
-        "duration_ms": duration_ms,
-        "message": f"Refreshed {MV_NAME} in {duration_ms}ms",
-    }
-
 
 @router.post("/problems/refresh")
 async def refresh_problems(

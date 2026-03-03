@@ -6,7 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.routes.v5.api.main.types import FilterOption, InternalResponseBase
-from app.routes.v5.api.entries.runs.search import GetRunListViewResponse
+from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
 
 
 class LeaderboardRequest(BaseModel):

@@ -1,80 +1,23 @@
 """AttemptImprovement entry CREATE endpoint."""
 
-from typing import Annotated, cast
-from uuid import UUID
+from typing import Annotated
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db
 from app.routes.v5.api.entries.attempt_improvement.types import (
     CreateAttemptImprovementEntryRequest,
     CreateAttemptImprovementEntryResponse,
-    CreateAttemptImprovementEntrySqlParams,
-    CreateAttemptImprovementEntrySqlRow,
 )
-from app.utils.error.handle_route_error import handle_route_error
-from app.utils.storage.file_writer import write_text_file
-from app.infra.tools.call_args import resolve_tool_for_entry
-from app.infra.globals import get_db
+from app.routes.v5.tools.entries.attempt_improvement.create import (
+    SQL_PATH,
+    create_attempt_improvement_entry_internal,
+)
 from app.sql.types import load_sql_query
-from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/entries/attempt_improvement/create_attempt_improvement_entries_complete.sql"
-
-ENTRY_TYPE = "improvements"
+from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
-
-
-async def create_attempt_improvement_entry_internal(
-    conn: asyncpg.Connection,
-    request_dict: dict,
-    mcp: bool = False,
-    run_id: UUID | None = None,
-    tool_id: UUID | None = None,
-) -> CreateAttemptImprovementEntryResponse:
-    """Internal function to create attempt_improvement entry.
-
-    Internal callers can pass run_id and tool_id directly.
-    If not provided, tool is resolved from settings via operation + entry type.
-    """
-    tags = ["entries", "attempt_improvement"]
-
-    # Resolve tool if not provided
-    tool_info = None
-    if tool_id is None:
-        tool_info = await resolve_tool_for_entry(conn, "create", ENTRY_TYPE)
-        if tool_info:
-            tool_id = tool_info.tool_id
-
-    async with conn.transaction():
-        request_dict["mcp"] = mcp
-        request_dict["upload_id"] = await write_text_file(
-            conn, None, "Created attempt improvement entry"
-        )
-        request_dict["tool_id"] = tool_id
-        if run_id is not None:
-            request_dict["run_id"] = run_id
-
-        params = CreateAttemptImprovementEntrySqlParams(**request_dict)
-
-        result = cast(
-            CreateAttemptImprovementEntrySqlRow,
-            await execute_sql_typed(conn, SQL_PATH, params=params),
-        )
-
-        if not result or not result.entry_id:
-            raise ValueError("Failed to create attempt_improvement entry")
-
-    await invalidate_tags(tags)
-
-    return CreateAttemptImprovementEntryResponse(
-        id=result.entry_id,
-        call_id=result.entry_call_id,
-        message_id=result.entry_message_id,
-    )
-
 
 @router.post(
     "/attempt-improvement/create", response_model=CreateAttemptImprovementEntryResponse

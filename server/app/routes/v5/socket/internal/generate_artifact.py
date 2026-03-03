@@ -22,6 +22,7 @@ from app.infra.artifacts import (
     format_messages_for_litellm,
     stream_litellm_events,
 )
+from app.infra.globals import get_internal_sio
 from app.infra.tools.tool_executor import execute_tool_call
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.get_db_connection import get_db_connection
@@ -31,7 +32,6 @@ from app.infra.websocket.tool_call_utils import (
     parse_partial_json,
     resolve_output_fields,
 )
-from app.infra.globals import get_internal_sio
 from app.routes.v5.socket.types import GenerateErrorApiRequest
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 

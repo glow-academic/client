@@ -6,34 +6,41 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.routes.v5.api.main.cohort.permissions import COHORT_RESOURCES, compute_can_draft
+from app.infra.globals import get_db, get_pool
+from app.routes.auth.profile import get_auth_profile_internal
+from app.routes.auth.settings import get_auth_settings_internal
+from app.routes.v5.api.main.cohort.permissions import (
+    COHORT_RESOURCES,
+    compute_can_draft,
+)
 from app.routes.v5.api.main.cohort.types import (
     PatchCohortDraftApiRequest,
     PatchCohortDraftApiResponse,
     PatchCohortDraftSqlParams,
     PatchCohortDraftSqlRow,
 )
-from app.routes.auth.profile import get_auth_profile_internal
-from app.routes.auth.settings import get_auth_settings_internal
-from app.routes.v5.api.entries.cohort_drafts.refresh import refresh_cohort_drafts_internal
 from app.routes.v5.api.permissions import resolve_agents_for_artifact
-from app.routes.v5.api.resources.departments.link import link_departments_internal
-from app.routes.v5.api.resources.descriptions.link import link_descriptions_internal
-from app.routes.v5.api.resources.flags.link import link_flags_internal
+from app.routes.v5.tools.entries.cohort_drafts.refresh import (
+    refresh_cohort_drafts_internal,
+)
+from app.routes.v5.tools.resources.departments.link import link_departments_internal
+from app.routes.v5.tools.resources.descriptions.link import link_descriptions_internal
+from app.routes.v5.tools.resources.flags.link import link_flags_internal
 from app.routes.v5.tools.resources.names.link import link_names_internal
-from app.routes.v5.api.resources.profile_personas.link import link_profile_personas_internal
-from app.routes.v5.api.resources.profiles.link import link_profiles_internal
-from app.routes.v5.api.resources.simulation_availability.link import (
+from app.routes.v5.tools.resources.profile_personas.link import (
+    link_profile_personas_internal,
+)
+from app.routes.v5.tools.resources.profiles.link import link_profiles_internal
+from app.routes.v5.tools.resources.simulation_availability.link import (
     link_simulation_availability_internal,
 )
-from app.routes.v5.api.resources.simulation_positions.link import (
+from app.routes.v5.tools.resources.simulation_positions.link import (
     link_simulation_positions_internal,
 )
-from app.routes.v5.api.resources.simulations.link import link_simulations_internal
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db, get_pool
+from app.routes.v5.tools.resources.simulations.link import link_simulations_internal
 from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
 

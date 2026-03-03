@@ -7,11 +7,12 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.utils.error.handle_route_error import handle_route_error
 from app.infra.globals import get_db
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/resources/link_scenario_flags_complete.sql"
+from app.routes.v5.tools.resources.scenario_flags.link import (
+    LinkScenarioFlagsSqlParams,
+    link_scenario_flags_internal,
+)
+from app.utils.error.handle_route_error import handle_route_error
 
 
 class LinkScenarioFlagsApiRequest(BaseModel):
@@ -19,52 +20,11 @@ class LinkScenarioFlagsApiRequest(BaseModel):
     group_id: UUID
     tool_id: UUID
 
-
 class LinkScenarioFlagsApiResponse(BaseModel):
     success: bool = True
     scenario_flags_id: UUID | None = None
 
-
-class LinkScenarioFlagsSqlParams(BaseModel):
-    resource_id: UUID
-    group_id: UUID
-    tool_id: UUID
-
-    def to_tuple(self) -> tuple:
-        return (self.resource_id, self.group_id, self.tool_id)
-
-
-class LinkScenarioFlagsSqlRow(BaseModel):
-    scenario_flags_id: UUID | None = None
-
-
-async def link_scenario_flags_internal(
-    conn: asyncpg.Connection,
-    resource_id: UUID,
-    group_id: UUID,
-    tool_id: UUID,
-) -> UUID:
-    """Record tool call tracking for linking an existing scenario_flags resource.
-
-    Can be called directly from other routes (e.g. socket handlers, artifact saves)
-    without HTTP overhead. Uses the same SQL as the HTTP endpoint.
-    """
-    params = LinkScenarioFlagsSqlParams(
-        resource_id=resource_id,
-        group_id=group_id,
-        tool_id=tool_id,
-    )
-    result = await execute_sql_typed(conn, SQL_PATH, params=params)
-    result_row = LinkScenarioFlagsSqlRow.model_validate(
-        result.model_dump() if hasattr(result, "model_dump") else result
-    )
-    if not result_row.scenario_flags_id:
-        raise ValueError(f"Failed to link scenario_flags: {resource_id}")
-    return result_row.scenario_flags_id
-
-
 router = APIRouter()
-
 
 @router.post(
     "/scenario_flags/link",

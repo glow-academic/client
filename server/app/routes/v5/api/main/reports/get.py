@@ -9,6 +9,8 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db, get_pool
+from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.reports.permissions import build_reports_sections_v2
 from app.routes.v5.api.main.reports.types import (
     GetReportsWebsocketResponse,
@@ -25,23 +27,20 @@ from app.routes.v5.api.main.reports.types import (
     ReportsWebsocketResources,
 )
 from app.routes.v5.api.main.types import FilterOption
-from app.routes.auth.settings import get_auth_settings_internal
-from app.routes.v5.api.entries.attempt_chat.get import get_chats_internal
-from app.routes.v5.api.entries.runs.search import (
+from app.routes.v5.api.permissions import resolve_agents_for_artifact
+from app.routes.v5.tools.entries.attempt_chat.get import get_chats_internal
+from app.routes.v5.tools.entries.runs.search import (
     GetRunListViewResponse,
     get_run_list_entries_internal,
 )
-from app.routes.v5.api.permissions import resolve_agents_for_artifact
-from app.routes.v5.api.resources.args.get import get_args_internal
-from app.routes.v5.api.resources.args_outputs.get import get_args_outputs_internal
-from app.routes.v5.api.resources.cohorts.get import get_cohorts_internal
-from app.routes.v5.api.resources.models.get import get_models_internal
-from app.routes.v5.api.resources.profiles.get import get_profiles_internal
-from app.routes.v5.api.resources.providers.get import get_providers_internal
-from app.routes.v5.api.resources.scenarios.get import get_scenarios_internal
-from app.routes.v5.api.resources.simulations.get import get_simulations_internal
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db, get_pool
+from app.routes.v5.tools.resources.args.get import get_args_internal
+from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
+from app.routes.v5.tools.resources.cohorts.get import get_cohorts_internal
+from app.routes.v5.tools.resources.models.get import get_models_internal
+from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.providers.get import get_providers_internal
+from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
+from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
 from app.sql.types import (
     GetActiveSettingsSqlParams,
     GetActiveSettingsSqlRow,
@@ -51,6 +50,7 @@ from app.sql.types import (
     QGetProvidersV4Item,
     QGetToolsV4Item,
 )
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import execute_sql_typed
 
 router = APIRouter()

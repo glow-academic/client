@@ -9,8 +9,8 @@ for storing question responses need to be implemented with proper schema.
 import uuid
 from typing import Any
 
-from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.globals import get_internal_sio, sio
+from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.routes.v5.socket.client.types import AttemptResponsePayload
 from app.routes.v5.socket.internal.attempt.types import (
     AttemptErrorData,

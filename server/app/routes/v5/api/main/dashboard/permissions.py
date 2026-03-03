@@ -14,7 +14,7 @@ from app.routes.v5.api.main.dashboard.types import (
     DashboardPrimaryMetrics,
     DashboardSecondaryMetrics,
 )
-from app.routes.v5.api.entries.attempt_chat.get import ChatItem
+from app.routes.v5.tools.entries.attempt_chat.get import ChatItem
 
 # Compat aliases for old type annotations — all now use ChatItem
 ProfileFactsItem = ChatItem

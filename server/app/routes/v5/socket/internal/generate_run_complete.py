@@ -14,14 +14,13 @@ Steps:
 import uuid
 from typing import Any
 
-from app.utils.storage.file_writer import write_text_file
+from app.infra.globals import get_internal_sio
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.generation_tracker import (
     cleanup_generation,
     record_agent_complete,
 )
 from app.infra.websocket.get_db_connection import get_db_connection
-from app.infra.globals import get_internal_sio
 from app.routes.v5.socket.internal.attempt.types import AttemptChatStartedData
 from app.routes.v5.socket.internal.generation_save_registry import save_artifact
 from app.routes.v5.socket.internal.generation_types import (
@@ -31,6 +30,7 @@ from app.routes.v5.socket.internal.generation_types import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
+from app.utils.storage.file_writer import write_text_file
 
 logger = get_logger(__name__)
 

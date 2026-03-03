@@ -5,18 +5,18 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db
 from app.routes.v5.api.main.document.types import (
     PatchDocumentDraftApiRequest,
     PatchDocumentDraftApiResponse,
     PatchDocumentDraftSqlParams,
 )
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db
 from app.sql.types import (
     PatchDocumentDraftSqlRow,
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/documents/patch_document_draft_complete.sql"

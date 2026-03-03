@@ -1,78 +1,21 @@
 """Examples GET endpoint - v4 API following DHH principles."""
 
-from typing import Annotated, cast
-from uuid import UUID
+from typing import Annotated
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.utils.error.handle_route_error import handle_route_error
 from app.infra.globals import get_db
+from app.routes.v5.tools.resources.examples.get import SQL_PATH, get_examples_internal
 from app.sql.types import (
     GetExamplesApiRequest,
     GetExamplesApiResponse,
-    GetExamplesSqlParams,
-    GetExamplesSqlRow,
-    QGetExamplesV4Item,
     load_sql_query,
 )
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
+from app.utils.error.handle_route_error import handle_route_error
 
 # Load SQL with types at module level
-SQL_PATH = "app/sql/queries/resources/examples/get_examples_complete.sql"
-
 router = APIRouter()
-
-
-async def get_examples_internal(
-    conn: asyncpg.Connection,
-    ids: list[UUID],
-    bypass_cache: bool = False,
-) -> list[QGetExamplesV4Item]:
-    """Internal function to fetch examples by IDs.
-
-    Can be called directly from other routes without HTTP overhead.
-    """
-    if not ids:
-        return []
-
-    tags = ["resources", "examples"]
-    cache_key_val = cache_key(
-        "/api/v5/resources/examples/get",
-        {"ids": [str(id) for id in ids]},
-    )
-
-    # Try cache (unless bypassed)
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val)
-        if cached:
-            return [
-                QGetExamplesV4Item.model_validate(item)
-                for item in cached.get("items", [])
-            ]
-
-    # Execute SQL
-    params = GetExamplesSqlParams(ids=ids)
-    result = cast(
-        GetExamplesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[QGetExamplesV4Item] = result.items if result and result.items else []
-
-    # Cache result
-    await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=tags,
-    )
-
-    return items
-
 
 @router.post(
     "/examples/get",

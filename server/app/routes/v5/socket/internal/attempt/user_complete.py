@@ -9,15 +9,15 @@ Shared by both text and audio paths.
 import uuid
 from typing import Any
 
-from app.routes.v5.api.entries.attempt_content.create import (
+from app.infra.globals import get_internal_sio
+from app.infra.websocket.get_db_connection import get_db_connection
+from app.routes.v5.socket.internal.attempt.types import AttemptUserCompleteData
+from app.routes.v5.tools.entries.attempt_content.create import (
     create_attempt_content_entry_internal,
 )
-from app.routes.v5.api.entries.messages_completions.create import (
+from app.routes.v5.tools.entries.messages_completions.create import (
     create_messages_completions_entry_internal,
 )
-from app.infra.websocket.get_db_connection import get_db_connection
-from app.infra.globals import get_internal_sio
-from app.routes.v5.socket.internal.attempt.types import AttemptUserCompleteData
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

@@ -12,6 +12,8 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db, get_pool
+from app.routes.auth.profile import get_auth_profile_internal
 from app.routes.v5.api.main.chat.get import get_chat_internal
 from app.routes.v5.api.main.chat.permissions import (
     compute_completion_pct,
@@ -42,35 +44,38 @@ from app.routes.v5.api.main.types import (
     HistoryItem,
     HistoryResponse,
 )
-from app.routes.auth.profile import get_auth_profile_internal
-from app.routes.v5.api.entries.attempt.get import ChatViewItem, get_attempt_chats_internal
-from app.routes.v5.api.entries.attempt.search import get_attempt_list_internal
-from app.routes.v5.api.entries.attempt_chat.get import (
+from app.routes.v5.tools.entries.attempt.get import (
+    ChatViewItem,
+    get_attempt_chats_internal,
+)
+from app.routes.v5.tools.entries.attempt.search import get_attempt_list_internal
+from app.routes.v5.tools.entries.attempt_chat.get import (
     ChatItem,
     GetChatsResponse,
     get_chats_internal,
 )
-from app.routes.v5.api.entries.home.get import get_home_context_view_internal
-from app.routes.v5.api.entries.runs.search import get_run_list_entries_internal
-from app.routes.v5.api.resources.args.get import get_args_internal
-from app.routes.v5.api.resources.args_outputs.get import get_args_outputs_internal
-from app.routes.v5.api.resources.cohorts.get import get_cohorts_internal
-from app.routes.v5.api.resources.personas.get import get_personas_internal
-from app.routes.v5.api.resources.profiles.get import get_profiles_internal
-from app.routes.v5.api.resources.rubrics.get import get_rubrics_internal
-from app.routes.v5.api.resources.scenario_time_limits.get import (
+from app.routes.v5.tools.entries.home.get import get_home_context_view_internal
+from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
+from app.routes.v5.tools.resources.args.get import get_args_internal
+from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
+from app.routes.v5.tools.resources.cohorts.get import get_cohorts_internal
+from app.routes.v5.tools.resources.personas.get import get_personas_internal
+from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.rubrics.get import get_rubrics_internal
+from app.routes.v5.tools.resources.scenario_time_limits.get import (
     get_scenario_time_limits_internal,
 )
-from app.routes.v5.api.resources.scenarios.get import get_scenarios_internal
-from app.routes.v5.api.resources.simulations.get import get_simulations_internal
-from app.routes.v5.api.resources.standard_groups.get import get_standard_groups_internal
-from app.routes.v5.api.resources.standards.search import search_standards_internal
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db, get_pool
+from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
+from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
+from app.routes.v5.tools.resources.standard_groups.get import (
+    get_standard_groups_internal,
+)
+from app.routes.v5.tools.resources.standards.search import search_standards_internal
 from app.sql.types import GetHomeContextViewSqlRow
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
+from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 

@@ -15,6 +15,8 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, HTTPException, Request
 
+from app.infra.globals import get_pool
+from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.chat.permissions import (
     CHAT_BUNDLE_RESOURCES,
     compute_bundle_section_show,
@@ -43,37 +45,39 @@ from app.routes.v5.api.main.chat.types import (
     GetChatStartWebsocketResponse,
     GetChatWebsocketResponse,
 )
-from app.routes.auth.settings import get_auth_settings_internal
-from app.routes.v5.api.entries.runs.search import get_run_list_entries_internal
-from app.routes.v5.api.entries.training.get import get_training_view_internal
-from app.routes.v5.api.entries.training_drafts.get import get_training_drafts_entries_internal
 from app.routes.v5.api.permissions import resolve_agents_for_artifact
-from app.routes.v5.api.resources.args.get import get_args_internal
-from app.routes.v5.api.resources.args_outputs.get import get_args_outputs_internal
-from app.routes.v5.api.resources.departments.get import get_departments_internal
-from app.routes.v5.api.resources.documents.get import get_documents_internal
-from app.routes.v5.api.resources.images.get import get_images_internal
-from app.routes.v5.api.resources.models.get import get_models_internal
-from app.routes.v5.api.resources.objectives.get import get_objectives_internal
-from app.routes.v5.api.resources.options.get import get_options_internal
-from app.routes.v5.api.resources.parameter_fields.get import get_parameter_fields_internal
-from app.routes.v5.api.resources.parameters.get import get_parameters_internal
-from app.routes.v5.api.resources.personas.get import get_personas_internal
-from app.routes.v5.api.resources.problem_statements.get import (
+from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
+from app.routes.v5.tools.entries.training.get import get_training_view_internal
+from app.routes.v5.tools.entries.training_drafts.get import (
+    get_training_drafts_entries_internal,
+)
+from app.routes.v5.tools.resources.args.get import get_args_internal
+from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
+from app.routes.v5.tools.resources.departments.get import get_departments_internal
+from app.routes.v5.tools.resources.documents.get import get_documents_internal
+from app.routes.v5.tools.resources.images.get import get_images_internal
+from app.routes.v5.tools.resources.models.get import get_models_internal
+from app.routes.v5.tools.resources.objectives.get import get_objectives_internal
+from app.routes.v5.tools.resources.options.get import get_options_internal
+from app.routes.v5.tools.resources.parameter_fields.get import (
+    get_parameter_fields_internal,
+)
+from app.routes.v5.tools.resources.parameters.get import get_parameters_internal
+from app.routes.v5.tools.resources.personas.get import get_personas_internal
+from app.routes.v5.tools.resources.problem_statements.get import (
     get_problem_statements_internal,
 )
-from app.routes.v5.api.resources.profiles.get import get_profiles_internal
-from app.routes.v5.api.resources.providers.get import get_providers_internal
-from app.routes.v5.api.resources.questions.get import get_questions_internal
-from app.routes.v5.api.resources.scenarios.get import get_scenarios_internal
-from app.routes.v5.api.resources.videos.get import get_videos_internal
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_pool
+from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.providers.get import get_providers_internal
+from app.routes.v5.tools.resources.questions.get import get_questions_internal
+from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
+from app.routes.v5.tools.resources.videos.get import get_videos_internal
 from app.sql.types import (
     GetTrainingStartContextSqlParams,
     GetTrainingStartContextSqlRow,
     QGetTrainingDraftsEntriesV4Item,
 )
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import execute_sql_typed
 
 router = APIRouter()
@@ -436,7 +440,7 @@ async def get_chat_internal(
     # 10. Resolve simulation name
     simulation_name: str | None = None
     if simulation_id:
-        from app.routes.v5.api.resources.simulations.get import (
+        from app.routes.v5.tools.resources.simulations.get import (
             get_simulations_internal,
         )
 

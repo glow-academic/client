@@ -1,51 +1,23 @@
 """Responses entry CREATE endpoint."""
 
-from typing import Annotated, cast
+from typing import Annotated
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.utils.error.handle_route_error import handle_route_error
 from app.infra.globals import get_db
+from app.routes.v5.tools.entries.responses.create import (
+    SQL_PATH,
+    create_responses_entry_internal,
+)
 from app.sql.types import (
     CreateResponsesEntriesApiRequest,
     CreateResponsesEntriesApiResponse,
-    CreateResponsesEntriesSqlParams,
-    CreateResponsesEntriesSqlRow,
     load_sql_query,
 )
-from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/entries/responses/create_responses_entries_complete.sql"
+from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
-
-
-async def create_responses_entry_internal(
-    conn: asyncpg.Connection,
-    request_dict: dict,
-    mcp: bool = False,
-) -> CreateResponsesEntriesApiResponse:
-    """Internal function to create responses entry."""
-    tags = ["entries", "responses"]
-
-    async with conn.transaction():
-        request_dict["mcp"] = mcp
-        params = CreateResponsesEntriesSqlParams(**request_dict)
-
-        result = cast(
-            CreateResponsesEntriesSqlRow,
-            await execute_sql_typed(conn, SQL_PATH, params=params),
-        )
-
-        if not result or not result.id:
-            raise ValueError("Failed to create responses entry")
-
-    await invalidate_tags(tags)
-
-    return CreateResponsesEntriesApiResponse.model_validate(result.model_dump())
-
 
 @router.post("/responses/create", response_model=CreateResponsesEntriesApiResponse)
 async def create_responses_entry(

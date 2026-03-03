@@ -23,34 +23,11 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from app.routes.auth.access import get_access_internal
-from app.routes.v5.api.entries.attempt.get import get_attempt_entries_internal
-from app.routes.v5.api.entries.attempt.refresh import refresh_attempt_internal
-from app.routes.v5.api.entries.attempt_chat.create import create_attempt_chat_entry_internal
-from app.routes.v5.api.entries.attempt_chat.refresh import refresh_attempt_chat_internal
-from app.routes.v5.api.entries.attempt_chat_bridge.create import (
-    create_attempt_chat_bridge_entry_internal,
-)
-from app.routes.v5.api.entries.attempt_chat_bridge.search import (
-    search_attempt_chat_bridge_entries_internal,
-)
-from app.routes.v5.api.entries.attempt_completion.create import (
-    create_attempt_completion_entry_internal,
-)
-from app.routes.v5.api.entries.attempt_home.search import search_attempt_home_entries_internal
-from app.routes.v5.api.entries.attempt_practice.search import (
-    search_attempt_practice_entries_internal,
-)
-from app.routes.v5.api.entries.chat.get import get_chat_entries_internal
-from app.routes.v5.api.entries.home_chat.search import search_home_chat_entries_internal
-from app.routes.v5.api.entries.practice_chat.search import (
-    search_practice_chat_entries_internal,
-)
-from app.routes.v5.api.entries.runs.create import create_runs_entry_internal
+from app.infra.globals import get_internal_sio
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.infra.websocket.get_db_connection import get_db_connection
-from app.infra.globals import get_internal_sio
+from app.routes.auth.access import get_access_internal
 from app.routes.v5.socket.internal.attempt.helpers import emit_chat_generate
 from app.routes.v5.socket.internal.attempt.types import (
     AttemptChatStartedData,
@@ -59,6 +36,37 @@ from app.routes.v5.socket.internal.attempt.types import (
     AttemptProceedData,
     AttemptStartedData,
 )
+from app.routes.v5.tools.entries.attempt.get import get_attempt_entries_internal
+from app.routes.v5.tools.entries.attempt.refresh import refresh_attempt_internal
+from app.routes.v5.tools.entries.attempt_chat.create import (
+    create_attempt_chat_entry_internal,
+)
+from app.routes.v5.tools.entries.attempt_chat.refresh import (
+    refresh_attempt_chat_internal,
+)
+from app.routes.v5.tools.entries.attempt_chat_bridge.create import (
+    create_attempt_chat_bridge_entry_internal,
+)
+from app.routes.v5.tools.entries.attempt_chat_bridge.search import (
+    search_attempt_chat_bridge_entries_internal,
+)
+from app.routes.v5.tools.entries.attempt_completion.create import (
+    create_attempt_completion_entry_internal,
+)
+from app.routes.v5.tools.entries.attempt_home.search import (
+    search_attempt_home_entries_internal,
+)
+from app.routes.v5.tools.entries.attempt_practice.search import (
+    search_attempt_practice_entries_internal,
+)
+from app.routes.v5.tools.entries.chat.get import get_chat_entries_internal
+from app.routes.v5.tools.entries.home_chat.search import (
+    search_home_chat_entries_internal,
+)
+from app.routes.v5.tools.entries.practice_chat.search import (
+    search_practice_chat_entries_internal,
+)
+from app.routes.v5.tools.entries.runs.create import create_runs_entry_internal
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

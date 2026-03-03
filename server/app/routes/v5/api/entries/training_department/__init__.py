@@ -3,7 +3,9 @@
 from fastapi import APIRouter
 
 from app.routes.v5.api.entries.training_department.get import router as get_router
-from app.routes.v5.api.entries.training_department.refresh import router as refresh_router
+from app.routes.v5.api.entries.training_department.refresh import (
+    router as refresh_router,
+)
 from app.routes.v5.api.entries.training_department.search import router as search_router
 
 router = APIRouter()

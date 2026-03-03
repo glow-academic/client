@@ -9,6 +9,8 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db, get_pool
+from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.simulation.permissions import (
     SIMULATION_RESOURCES,
     compute_can_create,
@@ -24,19 +26,19 @@ from app.routes.v5.api.main.simulation.types import (
     SaveSimulationSqlParams,
     SaveSimulationSqlRow,
 )
-from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.permissions import resolve_agents_for_artifact
-from app.routes.v5.api.resources.descriptions.create import create_descriptions_internal
+from app.routes.v5.tools.resources.descriptions.create import (
+    create_descriptions_internal,
+)
 from app.routes.v5.tools.resources.names.create import create_names_internal
-from app.routes.v5.api.resources.simulations.create import create_simulations_internal
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db, get_pool
+from app.routes.v5.tools.resources.simulations.create import create_simulations_internal
 from app.sql.types import (
     CheckSimulationSaveAccessSqlParams,
     CheckSimulationSaveAccessSqlRow,
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
 
@@ -169,7 +171,7 @@ async def _resolve_simulation_values(
     # --- Match-by-name resolution for value fields (CSV import) ---
 
     if item.is_inactive is not None and item.flag_ids is None:
-        from app.routes.v5.api.resources.flags.search import search_flags_internal
+        from app.routes.v5.tools.resources.flags.search import search_flags_internal
 
         all_flags = await search_flags_internal(
             conn,
@@ -190,7 +192,7 @@ async def _resolve_simulation_values(
             )
 
     if item.is_practice is not None and item.flag_ids is None:
-        from app.routes.v5.api.resources.flags.search import search_flags_internal
+        from app.routes.v5.tools.resources.flags.search import search_flags_internal
 
         all_flags = await search_flags_internal(
             conn,
@@ -212,7 +214,7 @@ async def _resolve_simulation_values(
             )
 
     if item.departments is not None and item.department_ids is None:
-        from app.routes.v5.api.resources.departments.search import (
+        from app.routes.v5.tools.resources.departments.search import (
             search_departments_internal,
         )
 
@@ -240,7 +242,7 @@ async def _resolve_simulation_values(
             item.department_ids = resolved_ids
 
     if item.scenarios is not None and item.scenario_ids is None:
-        from app.routes.v5.api.resources.scenarios.search import (
+        from app.routes.v5.tools.resources.scenarios.search import (
             search_scenarios_internal,
         )
 

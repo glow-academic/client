@@ -11,6 +11,8 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db, get_pool
+from app.routes.auth.profile import get_auth_profile_internal
 from app.routes.v5.api.main.cohort.permissions import (
     compute_can_delete,
     compute_can_duplicate,
@@ -24,13 +26,10 @@ from app.routes.v5.api.main.cohort.types import (
     ListCohortApiResponse,
     ListCohortApiSimulation,
 )
-from app.routes.auth.profile import get_auth_profile_internal
-from app.routes.v5.api.resources.departments.get import get_departments_internal
-from app.routes.v5.api.resources.profiles.get import get_profiles_internal
-from app.routes.v5.api.resources.simulations.get import get_simulations_internal
 from app.routes.v5.api.types import ListFilterSection
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db, get_pool
+from app.routes.v5.tools.resources.departments.get import get_departments_internal
+from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
 from app.sql.types import (
     GetCohortsListApiRequest,
     GetCohortsListSqlParams,
@@ -39,6 +38,7 @@ from app.sql.types import (
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import execute_sql_typed
 
 COHORT_IMPORT_FIELDS: list[dict] = [

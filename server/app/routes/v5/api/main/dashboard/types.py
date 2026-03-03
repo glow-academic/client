@@ -10,7 +10,7 @@ from app.routes.v5.api.main.types import (
     HistoryResponse,
     InternalResponseBase,
 )
-from app.routes.v5.api.entries.runs.search import GetRunListViewResponse
+from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
 
 # ============================================================================
 # Request

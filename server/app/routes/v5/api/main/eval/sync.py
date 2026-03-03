@@ -60,12 +60,14 @@ async def sync_benchmark_entries(
     2. Group sub-resources by model_id
     3. Build composite tuples and call SQL function
     """
-    from app.routes.v5.api.resources.model_flags.get import get_model_flags_internal
-    from app.routes.v5.api.resources.model_positions.get import (
+    from app.infra.globals import get_pool
+    from app.routes.v5.tools.resources.model_flags.get import get_model_flags_internal
+    from app.routes.v5.tools.resources.model_positions.get import (
         get_model_positions_internal,
     )
-    from app.routes.v5.api.resources.model_rubrics.get import get_model_rubrics_internal
-    from app.infra.globals import get_pool
+    from app.routes.v5.tools.resources.model_rubrics.get import (
+        get_model_rubrics_internal,
+    )
 
     if not model_ids:
         return 0

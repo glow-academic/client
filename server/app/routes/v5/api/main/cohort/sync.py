@@ -81,27 +81,29 @@ async def sync_cohort_entries(
     2. Parallel fetch all sub-resources
     3. Build composite tuples and call SQL function
     """
-    from app.routes.v5.api.resources.rubrics.get import get_rubrics_internal
-    from app.routes.v5.api.resources.scenario_flags.get import get_scenario_flags_internal
-    from app.routes.v5.api.resources.scenario_positions.get import (
+    from app.infra.globals import get_pool
+    from app.routes.v5.tools.resources.rubrics.get import get_rubrics_internal
+    from app.routes.v5.tools.resources.scenario_flags.get import (
+        get_scenario_flags_internal,
+    )
+    from app.routes.v5.tools.resources.scenario_positions.get import (
         get_scenario_positions_internal,
     )
-    from app.routes.v5.api.resources.scenario_rubrics.get import (
+    from app.routes.v5.tools.resources.scenario_rubrics.get import (
         get_scenario_rubrics_internal,
     )
-    from app.routes.v5.api.resources.scenario_time_limits.get import (
+    from app.routes.v5.tools.resources.scenario_time_limits.get import (
         get_scenario_time_limits_internal,
     )
-    from app.routes.v5.api.resources.scenarios.get import get_scenarios_internal
-    from app.routes.v5.api.resources.simulation_availability.get import (
+    from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
+    from app.routes.v5.tools.resources.simulation_availability.get import (
         get_simulation_availability_internal,
     )
-    from app.routes.v5.api.resources.simulation_positions.get import (
+    from app.routes.v5.tools.resources.simulation_positions.get import (
         get_simulation_positions_internal,
     )
-    from app.routes.v5.api.resources.simulations.get import get_simulations_internal
-    from app.routes.v5.api.resources.standards.search import search_standards_internal
-    from app.infra.globals import get_pool
+    from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
+    from app.routes.v5.tools.resources.standards.search import search_standards_internal
 
     if not simulation_ids:
         return 0

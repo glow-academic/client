@@ -2,12 +2,16 @@
 
 from fastapi import APIRouter
 
-from app.routes.v5.api.entries.conversations_completions.create import router as create_router
+from app.routes.v5.api.entries.conversations_completions.create import (
+    router as create_router,
+)
 from app.routes.v5.api.entries.conversations_completions.get import router as get_router
 from app.routes.v5.api.entries.conversations_completions.refresh import (
     router as refresh_router,
 )
-from app.routes.v5.api.entries.conversations_completions.search import router as search_router
+from app.routes.v5.api.entries.conversations_completions.search import (
+    router as search_router,
+)
 
 router = APIRouter()
 router.include_router(get_router)

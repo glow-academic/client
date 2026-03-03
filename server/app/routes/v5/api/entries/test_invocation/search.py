@@ -1,116 +1,23 @@
 """Test Invocation entry SEARCH endpoint."""
 
-from typing import Annotated, cast
-from uuid import UUID
+from typing import Annotated
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.utils.error.handle_route_error import handle_route_error
 from app.infra.globals import get_db
+from app.routes.v5.tools.entries.test_invocation.search import (
+    SQL_PATH,
+    search_test_invocation_entries_internal,
+)
 from app.sql.types import (
     SearchTestInvocationEntriesApiRequest,
     SearchTestInvocationEntriesApiResponse,
-    SearchTestInvocationEntriesSqlParams,
-    SearchTestInvocationEntriesSqlRow,
     load_sql_query,
 )
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/entries/test_invocation/search_test_invocation_entries_complete.sql"
+from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
-
-
-async def search_test_invocation_entries_internal(
-    conn: asyncpg.Connection,
-    search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
-    test_id: UUID | None = None,
-    group_id: UUID | None = None,
-    suite_department_id: UUID | None = None,
-    grade_id: UUID | None = None,
-    rubric_id: UUID | None = None,
-    model_id: UUID | None = None,
-    prompt_id: UUID | None = None,
-    voice_id: UUID | None = None,
-    temperature_level_id: UUID | None = None,
-    reasoning_level_id: UUID | None = None,
-    key_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to search test_invocation entries."""
-    if limit_count is not None and limit_count <= 0:
-        return []
-
-    tags = ["entries", "test_invocation"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/test_invocation/search",
-        {
-            "search": search,
-            "limit_count": limit_count,
-            "offset_count": offset_count,
-            "test_id": str(test_id) if test_id else None,
-            "group_id": str(group_id) if group_id else None,
-            "suite_department_id": str(suite_department_id)
-            if suite_department_id
-            else None,
-            "grade_id": str(grade_id) if grade_id else None,
-            "rubric_id": str(rubric_id) if rubric_id else None,
-            "model_id": str(model_id) if model_id else None,
-            "prompt_id": str(prompt_id) if prompt_id else None,
-            "voice_id": str(voice_id) if voice_id else None,
-            "temperature_level_id": str(temperature_level_id)
-            if temperature_level_id
-            else None,
-            "reasoning_level_id": str(reasoning_level_id)
-            if reasoning_level_id
-            else None,
-            "key_id": str(key_id) if key_id else None,
-        },
-    )
-
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val)
-        if cached:
-            return list(cached.get("items", []))
-
-    params = SearchTestInvocationEntriesSqlParams(
-        search=search,
-        limit_count=limit_count,
-        offset_count=offset_count,
-        test_id=test_id,
-        group_id=group_id,
-        suite_department_id=suite_department_id,
-        grade_id=grade_id,
-        rubric_id=rubric_id,
-        model_id=model_id,
-        prompt_id=prompt_id,
-        voice_id=voice_id,
-        temperature_level_id=temperature_level_id,
-        reasoning_level_id=reasoning_level_id,
-        key_id=key_id,
-    )
-    result = cast(
-        SearchTestInvocationEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-    )
-
-    return items
-
 
 @router.post(
     "/test_invocation/search",

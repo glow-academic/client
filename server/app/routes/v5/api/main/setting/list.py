@@ -5,6 +5,8 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db, get_pool
+from app.routes.auth.profile import get_auth_profile_internal
 from app.routes.v5.api.main.setting.permissions import (
     compute_can_delete,
     compute_can_duplicate,
@@ -15,9 +17,6 @@ from app.routes.v5.api.main.setting.types import (
     ListSettingApiResponse,
     ListSettingApiSetting,
 )
-from app.routes.auth.profile import get_auth_profile_internal
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db, get_pool
 from app.sql.types import (
     GetSettingsListApiRequest,
     GetSettingsListSqlParams,
@@ -27,6 +26,7 @@ from app.sql.types import (
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used

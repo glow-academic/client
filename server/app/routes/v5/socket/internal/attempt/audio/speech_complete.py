@@ -8,8 +8,8 @@ marks the message complete.
 import uuid
 from typing import Any
 
-from app.infra.websocket.session_store import get_session_by_group_id
 from app.infra.globals import AUDIO_FOLDER, get_internal_sio
+from app.infra.websocket.session_store import get_session_by_group_id
 from app.routes.v5.socket.internal.attempt.types import AttemptUserReceivedCompleteData
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql

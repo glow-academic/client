@@ -5,8 +5,8 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends
 
-from app.routes.v5.tools.resources.names.get import get_names_internal
 from app.infra.globals import get_db
+from app.routes.v5.tools.resources.names.get import get_names_internal
 from app.sql.types import GetRubricDocsSqlParams, GetRubricDocsSqlRow
 from app.utils.docs_helper import (
     ArtifactDocsConfig,

@@ -1,0 +1,89 @@
+"""parameter_fields/search internal — reusable data-access layer."""
+
+from typing import cast
+from uuid import UUID
+
+import asyncpg  # type: ignore
+
+from app.sql.types import (
+    QGetParameterFieldsV4Item,
+    SearchParameterFieldsSqlParams,
+    SearchParameterFieldsSqlRow,
+)
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
+
+SQL_PATH = (
+    "app/sql/queries/resources/parameter_fields/search_parameter_fields_complete.sql"
+)
+
+async def search_parameter_fields_internal(
+    conn: asyncpg.Connection,
+    parameter_ids: list[UUID],
+    field_ids: list[UUID] | None = None,
+    conditional_parameter_ids: list[UUID] | None = None,
+    bypass_cache: bool = False,
+    *,
+    document: bool = False,
+    persona: bool = False,
+    scenario: bool = False,
+) -> list[QGetParameterFieldsV4Item]:
+    """Internal function to search parameter fields by parameter IDs.
+
+    Returns all available parameter_fields for the given parameters.
+    If parameter_ids is empty, returns fields for ALL persona parameters (for upfront loading).
+    Can be called directly from other routes without HTTP overhead.
+    """
+    tags = ["resources", "parameter_fields"]
+    cache_key_val = cache_key(
+        "/api/v5/resources/parameter_fields/search",
+        {
+            "parameter_ids": [str(id) for id in parameter_ids],
+            "field_ids": sorted(str(i) for i in (field_ids or [])),
+            "conditional_parameter_ids": sorted(
+                str(i) for i in (conditional_parameter_ids or [])
+            ),
+            "document": document,
+            "persona": persona,
+            "scenario": scenario,
+        },
+    )
+
+    # Try cache (unless bypassed)
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            return [
+                QGetParameterFieldsV4Item.model_validate(item)
+                for item in cached.get("items", [])
+            ]
+
+    # Execute SQL
+    params = SearchParameterFieldsSqlParams(
+        p_parameter_ids=parameter_ids or [],
+        p_field_ids=field_ids or [],
+        p_conditional_parameter_ids=conditional_parameter_ids or [],
+        document=document,
+        persona=persona,
+        scenario=scenario,
+    )
+    result = cast(
+        SearchParameterFieldsSqlRow,
+        await execute_sql_typed(conn, SQL_PATH, params=params),
+    )
+
+    items: list[QGetParameterFieldsV4Item] = (
+        result.items if result and result.items else []
+    )
+
+    # Cache result
+    await set_cached(
+        cache_key_val,
+        {"items": [item.model_dump(mode="json") for item in items]},
+        ttl=60,
+        tags=tags,
+    )
+
+    return items

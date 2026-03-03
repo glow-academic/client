@@ -17,6 +17,7 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db, get_pool
 from app.routes.v5.api.main.simulation.permissions import (
     SIMULATION_RESOURCES,
     compute_can_edit,
@@ -67,46 +68,54 @@ from app.routes.v5.api.main.simulation.types import (
     SimulationWebsocketEntries,
     SimulationWebsocketResources,
 )
-from app.routes.v5.api.entries.runs.search import get_run_list_entries_internal
-from app.routes.v5.api.entries.simulation_drafts.get import (
+from app.routes.v5.api.permissions import (
+    has_tools_for_resource,
+    resolve_agents_for_artifact,
+)
+from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
+from app.routes.v5.tools.entries.simulation_drafts.get import (
     get_simulation_drafts_entries_internal,
 )
-from app.routes.v5.api.permissions import has_tools_for_resource, resolve_agents_for_artifact
-from app.routes.v5.api.resources.agents.get import get_agents_internal
-from app.routes.v5.api.resources.args.get import get_args_internal
-from app.routes.v5.api.resources.args_outputs.get import get_args_outputs_internal
-from app.routes.v5.api.resources.departments.get import get_departments_internal
-from app.routes.v5.api.resources.departments.search import search_departments_internal
-from app.routes.v5.api.resources.descriptions.get import get_descriptions_internal
-from app.routes.v5.api.resources.descriptions.search import search_descriptions_internal
-from app.routes.v5.api.resources.flags.get import get_flags_internal
-from app.routes.v5.api.resources.flags.search import search_flags_internal
-from app.routes.v5.api.resources.models.get import get_models_internal
+from app.routes.v5.tools.resources.agents.get import get_agents_internal
+from app.routes.v5.tools.resources.args.get import get_args_internal
+from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
+from app.routes.v5.tools.resources.departments.get import get_departments_internal
+from app.routes.v5.tools.resources.departments.search import search_departments_internal
+from app.routes.v5.tools.resources.descriptions.get import get_descriptions_internal
+from app.routes.v5.tools.resources.descriptions.search import (
+    search_descriptions_internal,
+)
+from app.routes.v5.tools.resources.flags.get import get_flags_internal
+from app.routes.v5.tools.resources.flags.search import search_flags_internal
+from app.routes.v5.tools.resources.models.get import get_models_internal
 from app.routes.v5.tools.resources.names.get import get_names_internal
 from app.routes.v5.tools.resources.names.search import search_names_internal
-from app.routes.v5.api.resources.profiles.get import get_profiles_internal
-from app.routes.v5.api.resources.providers.get import get_providers_internal
-from app.routes.v5.api.resources.rubrics.get import get_rubrics_internal
-from app.routes.v5.api.resources.scenario_flags.get import get_scenario_flags_internal
-from app.routes.v5.api.resources.scenario_positions.get import get_scenario_positions_internal
-from app.routes.v5.api.resources.scenario_positions.search import (
+from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.providers.get import get_providers_internal
+from app.routes.v5.tools.resources.rubrics.get import get_rubrics_internal
+from app.routes.v5.tools.resources.scenario_flags.get import get_scenario_flags_internal
+from app.routes.v5.tools.resources.scenario_positions.get import (
+    get_scenario_positions_internal,
+)
+from app.routes.v5.tools.resources.scenario_positions.search import (
     search_scenario_positions_internal,
 )
-from app.routes.v5.api.resources.scenario_rubrics.get import get_scenario_rubrics_internal
-from app.routes.v5.api.resources.scenario_rubrics.search import (
+from app.routes.v5.tools.resources.scenario_rubrics.get import (
+    get_scenario_rubrics_internal,
+)
+from app.routes.v5.tools.resources.scenario_rubrics.search import (
     search_scenario_rubrics_internal,
 )
-from app.routes.v5.api.resources.scenario_time_limits.get import (
+from app.routes.v5.tools.resources.scenario_time_limits.get import (
     get_scenario_time_limits_internal,
 )
-from app.routes.v5.api.resources.scenario_time_limits.search import (
+from app.routes.v5.tools.resources.scenario_time_limits.search import (
     search_scenario_time_limits_internal,
 )
-from app.routes.v5.api.resources.scenarios.search import search_scenarios_internal
-from app.routes.v5.api.resources.tools.get import get_tools_internal
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db, get_pool
+from app.routes.v5.tools.resources.scenarios.search import search_scenarios_internal
+from app.routes.v5.tools.resources.tools.get import get_tools_internal
 from app.sql.types import QGetScenarioFlagsV4Item, load_sql_query
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import execute_sql_typed
 
 # SQL paths for two-pass architecture
@@ -393,7 +402,7 @@ async def get_simulation_internal(
             return (selected, suggestions)
 
     async def fetch_scenarios():
-        from app.routes.v5.api.resources.scenarios.get import get_scenarios_internal
+        from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
 
         async with pool.acquire() as c:
             selected = await get_scenarios_internal(c, scenario_ids, bypass_cache)

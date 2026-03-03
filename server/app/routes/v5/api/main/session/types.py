@@ -143,7 +143,7 @@ class GetSessionWebsocketResponse(InternalResponseBase):
     resources: SessionWebsocketResources
 
 
-from app.routes.v5.api.entries.runs.search import GetRunListViewResponse  # noqa: E402
+from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
 from app.sql.types import (  # noqa: E402
     GetGroupListViewSqlRow,
     GetSessionListViewSqlRow,

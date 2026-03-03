@@ -6,6 +6,9 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db, get_pool
+from app.routes.auth.profile import get_auth_profile_internal
+from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.scenario.permissions import (
     SCENARIO_RESOURCES,
     compute_can_draft,
@@ -16,29 +19,30 @@ from app.routes.v5.api.main.scenario.types import (
     PatchScenarioDraftSqlParams,
     PatchScenarioDraftSqlRow,
 )
-from app.routes.auth.profile import get_auth_profile_internal
-from app.routes.auth.settings import get_auth_settings_internal
-from app.routes.v5.api.entries.scenario_drafts.refresh import refresh_scenario_drafts_internal
 from app.routes.v5.api.permissions import resolve_agents_for_artifact
-from app.routes.v5.api.resources.departments.link import link_departments_internal
-from app.routes.v5.api.resources.descriptions.link import link_descriptions_internal
-from app.routes.v5.api.resources.documents.link import link_documents_internal
-from app.routes.v5.api.resources.flags.link import link_flags_internal
-from app.routes.v5.api.resources.images.link import link_images_internal
+from app.routes.v5.tools.entries.scenario_drafts.refresh import (
+    refresh_scenario_drafts_internal,
+)
+from app.routes.v5.tools.resources.departments.link import link_departments_internal
+from app.routes.v5.tools.resources.descriptions.link import link_descriptions_internal
+from app.routes.v5.tools.resources.documents.link import link_documents_internal
+from app.routes.v5.tools.resources.flags.link import link_flags_internal
+from app.routes.v5.tools.resources.images.link import link_images_internal
 from app.routes.v5.tools.resources.names.link import link_names_internal
-from app.routes.v5.api.resources.objectives.link import link_objectives_internal
-from app.routes.v5.api.resources.options.link import link_options_internal
-from app.routes.v5.api.resources.parameter_fields.link import link_parameter_fields_internal
-from app.routes.v5.api.resources.personas.link import link_personas_internal
-from app.routes.v5.api.resources.problem_statements.link import (
+from app.routes.v5.tools.resources.objectives.link import link_objectives_internal
+from app.routes.v5.tools.resources.options.link import link_options_internal
+from app.routes.v5.tools.resources.parameter_fields.link import (
+    link_parameter_fields_internal,
+)
+from app.routes.v5.tools.resources.personas.link import link_personas_internal
+from app.routes.v5.tools.resources.problem_statements.link import (
     link_problem_statements_internal,
 )
-from app.routes.v5.api.resources.questions.link import link_questions_internal
-from app.routes.v5.api.resources.videos.link import link_videos_internal
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db, get_pool
+from app.routes.v5.tools.resources.questions.link import link_questions_internal
+from app.routes.v5.tools.resources.videos.link import link_videos_internal
 from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
 

@@ -9,6 +9,9 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db, get_pool
+from app.routes.auth.profile import get_auth_profile_internal
+from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.scenario.permissions import (
     SCENARIO_RESOURCES,
     compute_can_create,
@@ -24,20 +27,19 @@ from app.routes.v5.api.main.scenario.types import (
     SaveScenarioSqlParams,
     SaveScenarioSqlRow,
 )
-from app.routes.auth.profile import get_auth_profile_internal
-from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.permissions import resolve_agents_for_artifact
-from app.routes.v5.api.resources.descriptions.create import create_descriptions_internal
+from app.routes.v5.tools.resources.descriptions.create import (
+    create_descriptions_internal,
+)
 from app.routes.v5.tools.resources.names.create import create_names_internal
-from app.routes.v5.api.resources.scenarios.create import create_scenarios_internal
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db, get_pool
+from app.routes.v5.tools.resources.scenarios.create import create_scenarios_internal
 from app.sql.types import (
     GetScenarioAccessSqlParams,
     GetScenarioAccessSqlRow,
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
 
@@ -178,7 +180,7 @@ async def _resolve_scenario_values(
         )
 
     if item.problem_statement is not None and item.problem_statement_id is None:
-        from app.routes.v5.api.resources.problem_statements.create import (
+        from app.routes.v5.tools.resources.problem_statements.create import (
             create_problem_statements_internal,
         )
 
@@ -189,7 +191,7 @@ async def _resolve_scenario_values(
     # --- Match-by-name resolution for multi-select fields (CSV import) ---
 
     if item.active_flag is not None and item.active_flag_id is None:
-        from app.routes.v5.api.resources.flags.search import search_flags_internal
+        from app.routes.v5.tools.resources.flags.search import search_flags_internal
 
         all_flags = await search_flags_internal(
             conn,
@@ -210,7 +212,9 @@ async def _resolve_scenario_values(
             )
 
     if item.departments is not None and item.department_ids is None:
-        from app.routes.v5.api.resources.departments.search import search_departments_internal
+        from app.routes.v5.tools.resources.departments.search import (
+            search_departments_internal,
+        )
 
         all_depts = await search_departments_internal(
             conn, search=None, limit_count=1000, scenario=True
@@ -236,7 +240,9 @@ async def _resolve_scenario_values(
             item.department_ids = resolved_ids
 
     if item.personas is not None and item.persona_ids is None:
-        from app.routes.v5.api.resources.personas.search import search_personas_internal
+        from app.routes.v5.tools.resources.personas.search import (
+            search_personas_internal,
+        )
 
         all_personas = await search_personas_internal(
             conn, search=None, limit_count=1000, scenario=True
@@ -262,7 +268,9 @@ async def _resolve_scenario_values(
             item.persona_ids = resolved_ids
 
     if item.documents is not None and item.document_ids is None:
-        from app.routes.v5.api.resources.documents.search import search_documents_internal
+        from app.routes.v5.tools.resources.documents.search import (
+            search_documents_internal,
+        )
 
         all_docs = await search_documents_internal(
             conn, search=None, limit_count=1000, scenario=True
@@ -286,7 +294,7 @@ async def _resolve_scenario_values(
             item.document_ids = resolved_ids
 
     if item.parameter_fields is not None and item.parameter_field_ids is None:
-        from app.routes.v5.api.resources.parameter_fields.search import (
+        from app.routes.v5.tools.resources.parameter_fields.search import (
             search_parameter_fields_internal,
         )
 
@@ -310,7 +318,9 @@ async def _resolve_scenario_values(
             item.parameter_field_ids = resolved_ids
 
     if item.objectives is not None and item.objective_ids is None:
-        from app.routes.v5.api.resources.objectives.search import search_objectives_internal
+        from app.routes.v5.tools.resources.objectives.search import (
+            search_objectives_internal,
+        )
 
         all_objectives = await search_objectives_internal(
             conn, search=None, limit_count=1000, scenario=True
@@ -336,7 +346,7 @@ async def _resolve_scenario_values(
             item.objective_ids = resolved_ids
 
     if item.images is not None and item.image_ids is None:
-        from app.routes.v5.api.resources.images.search import search_images_internal
+        from app.routes.v5.tools.resources.images.search import search_images_internal
 
         all_images = await search_images_internal(
             conn, search=None, limit_count=1000, scenario=True
@@ -360,7 +370,7 @@ async def _resolve_scenario_values(
             item.image_ids = resolved_ids
 
     if item.videos is not None and item.video_ids is None:
-        from app.routes.v5.api.resources.videos.search import search_videos_internal
+        from app.routes.v5.tools.resources.videos.search import search_videos_internal
 
         all_videos = await search_videos_internal(
             conn, search=None, limit_count=1000, scenario=True
@@ -384,7 +394,9 @@ async def _resolve_scenario_values(
             item.video_ids = resolved_ids
 
     if item.questions is not None and item.question_ids is None:
-        from app.routes.v5.api.resources.questions.search import search_questions_internal
+        from app.routes.v5.tools.resources.questions.search import (
+            search_questions_internal,
+        )
 
         all_questions = await search_questions_internal(
             conn, search=None, limit_count=1000, scenario=True
@@ -410,7 +422,7 @@ async def _resolve_scenario_values(
             item.question_ids = resolved_ids
 
     if item.options is not None and item.option_ids is None:
-        from app.routes.v5.api.resources.options.search import search_options_internal
+        from app.routes.v5.tools.resources.options.search import search_options_internal
 
         all_options = await search_options_internal(
             conn, search=None, limit_count=1000, scenario=True

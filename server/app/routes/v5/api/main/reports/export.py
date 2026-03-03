@@ -10,9 +10,8 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.routes.auth.profile import get_auth_profile_internal
-from app.utils.error.handle_route_error import handle_route_error
 from app.infra.globals import get_db, get_pool
+from app.routes.auth.profile import get_auth_profile_internal
 from app.sql.types import (
     GetPerSimulationMetricsSqlParams,
     GetPerSimulationMetricsSqlRow,
@@ -22,6 +21,7 @@ from app.sql.types import (
     GetReportsBundleSqlRow,
     load_sql_query,
 )
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
 

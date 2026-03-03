@@ -1,71 +1,20 @@
 """Qualities GET endpoint - v4 API following DHH principles."""
 
-from typing import Annotated, cast
-from uuid import UUID
+from typing import Annotated
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.utils.error.handle_route_error import handle_route_error
 from app.infra.globals import get_db
+from app.routes.v5.tools.resources.qualities.get import SQL_PATH, get_qualities_internal
 from app.sql.types import (
     GetQualitiesApiRequest,
     GetQualitiesApiResponse,
-    GetQualitiesSqlParams,
-    GetQualitiesSqlRow,
-    QGetQualitiesV4Item,
     load_sql_query,
 )
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/resources/qualities/get_qualities_complete.sql"
+from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
-
-
-async def get_qualities_internal(
-    conn: asyncpg.Connection,
-    ids: list[UUID],
-    bypass_cache: bool = False,
-) -> list[QGetQualitiesV4Item]:
-    """Internal function to fetch qualities by IDs."""
-    if not ids:
-        return []
-
-    tags = ["resources", "qualities"]
-    cache_key_val = cache_key(
-        "/api/v5/resources/qualities/get",
-        {"ids": [str(id) for id in ids]},
-    )
-
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val)
-        if cached:
-            return [
-                QGetQualitiesV4Item.model_validate(item)
-                for item in cached.get("items", [])
-            ]
-
-    params = GetQualitiesSqlParams(ids=ids)
-    result = cast(
-        GetQualitiesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[QGetQualitiesV4Item] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=tags,
-    )
-
-    return items
-
 
 @router.post(
     "/qualities/get",

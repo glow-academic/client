@@ -8,8 +8,8 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.routes.v5.api.main.types import InternalResponseBase
-from app.routes.v5.api.entries.runs.search import GetRunListViewResponse
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
+from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
 from app.sql.types import (
     QGetAgentDraftsEntriesV4Item,
     QGetDepartmentsV4Item,

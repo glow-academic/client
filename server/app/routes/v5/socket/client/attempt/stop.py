@@ -8,12 +8,15 @@ Dual cancel (in-process + Redis) → SQL mutation → emit stopped.
 import uuid
 from typing import Any, cast
 
+from app.infra.globals import get_internal_sio, sio
 from app.infra.websocket.cancel_active_result import cancel_active_result
 from app.infra.websocket.cancel_active_run import cancel_active_run
 from app.infra.websocket.get_db_connection import get_db_connection
-from app.infra.globals import get_internal_sio, sio
 from app.routes.v5.socket.client.types import AttemptStopPayload
-from app.routes.v5.socket.internal.attempt.types import AttemptErrorData, AttemptStoppedData
+from app.routes.v5.socket.internal.attempt.types import (
+    AttemptErrorData,
+    AttemptStoppedData,
+)
 from app.sql.types import SimulationTextStopRunSqlParams, SimulationTextStopRunSqlRow
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed

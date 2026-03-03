@@ -3,30 +3,22 @@
 Provides get endpoint for fetching scenario rubrics by resource IDs.
 """
 
-from typing import Annotated, Any, cast
-from uuid import UUID
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.utils.error.handle_route_error import handle_route_error
 from app.infra.globals import get_db
+from app.routes.v5.tools.resources.scenario_rubrics.get import (
+    SQL_PATH,
+    get_scenario_rubrics_internal,
+)
 from app.sql.types import (
     GetScenarioRubricsApiRequest,
     GetScenarioRubricsApiResponse,
-    GetScenarioRubricsSqlParams,
-    GetScenarioRubricsSqlRow,
-    QGetScenarioRubricsV4Item,
     load_sql_query,
 )
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = (
-    "app/sql/queries/resources/scenario_rubrics/get_scenario_rubrics_complete.sql"
-)
+from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
@@ -34,70 +26,9 @@ router = APIRouter()
 # Internal Function
 # =============================================================================
 
-
-async def get_scenario_rubrics_internal(
-    conn: asyncpg.Connection,
-    ids: list[UUID],
-    bypass_cache: bool = False,
-) -> list[QGetScenarioRubricsV4Item]:
-    """Internal function for parallel fetching from artifact endpoint.
-
-    Args:
-        conn: Database connection
-        ids: List of scenario rubric resource IDs
-        bypass_cache: Whether to bypass cache
-
-    Returns:
-        List of scenario rubric items
-    """
-    if not ids:
-        return []
-
-    # Generate cache key
-    cache_key_val = cache_key(
-        "scenario_rubrics/get",
-        {
-            "ids": sorted([str(id) for id in ids]),
-        },
-    )
-
-    # Try cache (unless bypassed)
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val)
-        if cached:
-            return [
-                QGetScenarioRubricsV4Item.model_validate(item)
-                for item in cached.get("data", [])
-            ]
-
-    # Execute SQL
-    params = GetScenarioRubricsSqlParams(ids=ids)
-    result = cast(
-        GetScenarioRubricsSqlRow,
-        await execute_sql_typed(
-            conn,
-            SQL_PATH,
-            params=params,
-        ),
-    )
-
-    items = result.items or []
-
-    # Cache response
-    await set_cached(
-        cache_key_val,
-        {"data": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=["scenario_rubrics"],
-    )
-
-    return items
-
-
 # =============================================================================
 # HTTP Endpoint
 # =============================================================================
-
 
 @router.post(
     "/scenario_rubrics/get",

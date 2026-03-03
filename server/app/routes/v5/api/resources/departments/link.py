@@ -7,11 +7,12 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.utils.error.handle_route_error import handle_route_error
 from app.infra.globals import get_db
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/resources/link_departments_complete.sql"
+from app.routes.v5.tools.resources.departments.link import (
+    LinkDepartmentsSqlParams,
+    link_departments_internal,
+)
+from app.utils.error.handle_route_error import handle_route_error
 
 
 class LinkDepartmentsApiRequest(BaseModel):
@@ -19,52 +20,11 @@ class LinkDepartmentsApiRequest(BaseModel):
     group_id: UUID
     tool_id: UUID
 
-
 class LinkDepartmentsApiResponse(BaseModel):
     success: bool = True
     department_id: UUID | None = None
 
-
-class LinkDepartmentsSqlParams(BaseModel):
-    resource_id: UUID
-    group_id: UUID
-    tool_id: UUID
-
-    def to_tuple(self) -> tuple:
-        return (self.resource_id, self.group_id, self.tool_id)
-
-
-class LinkDepartmentsSqlRow(BaseModel):
-    department_id: UUID | None = None
-
-
-async def link_departments_internal(
-    conn: asyncpg.Connection,
-    resource_id: UUID,
-    group_id: UUID,
-    tool_id: UUID,
-) -> UUID:
-    """Record tool call tracking for linking an existing department resource.
-
-    Can be called directly from other routes (e.g. socket handlers, artifact saves)
-    without HTTP overhead. Uses the same SQL as the HTTP endpoint.
-    """
-    params = LinkDepartmentsSqlParams(
-        resource_id=resource_id,
-        group_id=group_id,
-        tool_id=tool_id,
-    )
-    result = await execute_sql_typed(conn, SQL_PATH, params=params)
-    result_row = LinkDepartmentsSqlRow.model_validate(
-        result.model_dump() if hasattr(result, "model_dump") else result
-    )
-    if not result_row.department_id:
-        raise ValueError(f"Failed to link department: {resource_id}")
-    return result_row.department_id
-
-
 router = APIRouter()
-
 
 @router.post(
     "/departments/link",

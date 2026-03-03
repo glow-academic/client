@@ -10,6 +10,7 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db, get_pool
 from app.routes.v5.api.main.simulation.permissions import (
     compute_can_delete,
     compute_can_duplicate,
@@ -24,8 +25,6 @@ from app.routes.v5.api.main.simulation.types import (
     QGetScenariosV4Item,
 )
 from app.routes.v5.api.types import ListFilterSection
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db, get_pool
 from app.sql.types import (
     GetSimulationsListApiRequest,
     GetSimulationsListSqlParams,
@@ -34,6 +33,7 @@ from app.sql.types import (
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import execute_sql_typed
 
 SIMULATION_IMPORT_FIELDS: list[dict] = [
@@ -172,7 +172,7 @@ async def get_simulation_list(
         # 2. Fetch scenarios via cached resource function
         # Deferred import to avoid circular import:
         # resources/scenarios/get → artifacts/simulation/types → __init__ → list → resources/scenarios/get
-        from app.routes.v5.api.resources.scenarios.get import get_scenarios_internal
+        from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
 
         scenarios_data: list[QGetScenariosV4Item] = []
         if scenario_id_set:
@@ -190,7 +190,7 @@ async def get_simulation_list(
                 persona_id_set.add(pid)
 
         # 4. Fetch personas via cached resource function
-        from app.routes.v5.api.resources.personas.get import get_personas_internal
+        from app.routes.v5.tools.resources.personas.get import get_personas_internal
 
         persona_map: dict[UUID, str] = {}
         if persona_id_set:

@@ -5,8 +5,8 @@ Streams user speech transcription increments through the shared internal handler
 
 from typing import Any
 
-from app.infra.websocket.session_store import get_session_by_group_id
 from app.infra.globals import get_internal_sio
+from app.infra.websocket.session_store import get_session_by_group_id
 from app.routes.v5.socket.internal.attempt.types import AttemptUserReceivedProgressData
 
 internal_sio = get_internal_sio()

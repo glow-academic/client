@@ -16,6 +16,15 @@ See `AGENTS.md` for overall architecture principles.
 # ============================================================================
 from fastapi import APIRouter, Depends
 
+# ============================================================================
+# Docs
+# ============================================================================
+from app.routes.v5.api.docs import router as docs_router
+
+# ============================================================================
+# Entries (CRUD layer on entry tables via MVs)
+# ============================================================================
+from app.routes.v5.api.entries import router as entries_router
 from app.routes.v5.api.main.activity import router as activity_artifact_router
 
 # ============================================================================
@@ -54,22 +63,10 @@ from app.routes.v5.api.main.simulation import router as simulations_router
 from app.routes.v5.api.main.test import router as test_artifact_router
 from app.routes.v5.api.main.tool import router as tools_router
 
-
-# ============================================================================
-# Docs
-# ============================================================================
-from app.routes.v5.api.docs import router as docs_router
-
-# ============================================================================
-# Entries (CRUD layer on entry tables via MVs)
-# ============================================================================
-from app.routes.v5.api.entries import router as entries_router
-
 # ============================================================================
 # Resources
 # ============================================================================
 from app.routes.v5.api.resources import router as resources_router
-
 from app.utils.mcp.get_mcp import get_mcp
 from app.utils.profile.get_profile_id import get_profile_id
 from app.utils.session.get_session_id import get_session_id

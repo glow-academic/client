@@ -6,6 +6,9 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db, get_pool
+from app.routes.auth.profile import get_auth_profile_internal
+from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.persona.permissions import (
     PERSONA_RESOURCES,
     compute_can_draft,
@@ -16,23 +19,24 @@ from app.routes.v5.api.main.persona.types import (
     PatchPersonaDraftSqlParams,
     PatchPersonaDraftSqlRow,
 )
-from app.routes.auth.profile import get_auth_profile_internal
-from app.routes.auth.settings import get_auth_settings_internal
-from app.routes.v5.api.entries.persona_drafts.refresh import refresh_persona_drafts_internal
 from app.routes.v5.api.permissions import resolve_agents_for_artifact
-from app.routes.v5.api.resources.colors.link import link_colors_internal
-from app.routes.v5.api.resources.departments.link import link_departments_internal
-from app.routes.v5.api.resources.descriptions.link import link_descriptions_internal
-from app.routes.v5.api.resources.examples.link import link_examples_internal
-from app.routes.v5.api.resources.flags.link import link_flags_internal
-from app.routes.v5.api.resources.icons.link import link_icons_internal
-from app.routes.v5.api.resources.instructions.link import link_instructions_internal
+from app.routes.v5.tools.entries.persona_drafts.refresh import (
+    refresh_persona_drafts_internal,
+)
+from app.routes.v5.tools.resources.colors.link import link_colors_internal
+from app.routes.v5.tools.resources.departments.link import link_departments_internal
+from app.routes.v5.tools.resources.descriptions.link import link_descriptions_internal
+from app.routes.v5.tools.resources.examples.link import link_examples_internal
+from app.routes.v5.tools.resources.flags.link import link_flags_internal
+from app.routes.v5.tools.resources.icons.link import link_icons_internal
+from app.routes.v5.tools.resources.instructions.link import link_instructions_internal
 from app.routes.v5.tools.resources.names.link import link_names_internal
-from app.routes.v5.api.resources.parameter_fields.link import link_parameter_fields_internal
-from app.routes.v5.api.resources.voices.link import link_voices_internal
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db, get_pool
+from app.routes.v5.tools.resources.parameter_fields.link import (
+    link_parameter_fields_internal,
+)
+from app.routes.v5.tools.resources.voices.link import link_voices_internal
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
 

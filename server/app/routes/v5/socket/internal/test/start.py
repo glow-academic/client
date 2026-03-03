@@ -12,8 +12,8 @@ from __future__ import annotations
 import uuid
 from typing import Any, cast
 
-from app.infra.websocket.get_db_connection import get_db_connection
 from app.infra.globals import get_internal_sio
+from app.infra.websocket.get_db_connection import get_db_connection
 from app.routes.v5.socket.client.types import TestStartPayload
 from app.routes.v5.socket.internal.test.types import (
     TestErrorData,

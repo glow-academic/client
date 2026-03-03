@@ -7,6 +7,9 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db, get_pool
+from app.routes.auth.profile import get_auth_profile_internal
+from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.tool.permissions import (
     TOOL_RESOURCES,
     compute_args_outputs_required,
@@ -41,30 +44,35 @@ from app.routes.v5.api.main.tool.types import (
     ToolWebsocketEntries,
     ToolWebsocketResources,
 )
-from app.routes.auth.profile import get_auth_profile_internal
-from app.routes.auth.settings import get_auth_settings_internal
-from app.routes.v5.api.entries.runs.search import get_run_list_entries_internal
-from app.routes.v5.api.entries.tool_drafts.get import get_tool_drafts_entries_internal
-from app.routes.v5.api.permissions import has_tools_for_resource, resolve_agents_for_artifact
-from app.routes.v5.api.resources.agents.get import get_agents_internal
-from app.routes.v5.api.resources.arg_positions.get import get_arg_positions_internal
-from app.routes.v5.api.resources.arg_positions.search import search_arg_positions_internal
-from app.routes.v5.api.resources.args.get import get_args_internal
-from app.routes.v5.api.resources.args.search import search_args_internal
-from app.routes.v5.api.resources.args_outputs.get import get_args_outputs_internal
-from app.routes.v5.api.resources.args_outputs.search import search_args_outputs_internal
-from app.routes.v5.api.resources.descriptions.get import get_descriptions_internal
-from app.routes.v5.api.resources.descriptions.search import search_descriptions_internal
-from app.routes.v5.api.resources.flags.get import get_flags_internal
-from app.routes.v5.api.resources.flags.search import search_flags_internal
-from app.routes.v5.api.resources.models.get import get_models_internal
+from app.routes.v5.api.permissions import (
+    has_tools_for_resource,
+    resolve_agents_for_artifact,
+)
+from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
+from app.routes.v5.tools.entries.tool_drafts.get import get_tool_drafts_entries_internal
+from app.routes.v5.tools.resources.agents.get import get_agents_internal
+from app.routes.v5.tools.resources.arg_positions.get import get_arg_positions_internal
+from app.routes.v5.tools.resources.arg_positions.search import (
+    search_arg_positions_internal,
+)
+from app.routes.v5.tools.resources.args.get import get_args_internal
+from app.routes.v5.tools.resources.args.search import search_args_internal
+from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
+from app.routes.v5.tools.resources.args_outputs.search import (
+    search_args_outputs_internal,
+)
+from app.routes.v5.tools.resources.descriptions.get import get_descriptions_internal
+from app.routes.v5.tools.resources.descriptions.search import (
+    search_descriptions_internal,
+)
+from app.routes.v5.tools.resources.flags.get import get_flags_internal
+from app.routes.v5.tools.resources.flags.search import search_flags_internal
+from app.routes.v5.tools.resources.models.get import get_models_internal
 from app.routes.v5.tools.resources.names.get import get_names_internal
 from app.routes.v5.tools.resources.names.search import search_names_internal
-from app.routes.v5.api.resources.profiles.get import get_profiles_internal
-from app.routes.v5.api.resources.providers.get import get_providers_internal
-from app.routes.v5.api.resources.tools.get import get_tools_internal
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db, get_pool
+from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.providers.get import get_providers_internal
+from app.routes.v5.tools.resources.tools.get import get_tools_internal
 from app.sql.types import (
     GetToolAccessSqlParams,
     GetToolAccessSqlRow,
@@ -72,6 +80,7 @@ from app.sql.types import (
     GetToolIdsSqlRow,
     load_sql_query,
 )
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import execute_sql_typed
 
 QUERY1_SQL_PATH = "app/sql/queries/tools/get_tool_access_complete.sql"

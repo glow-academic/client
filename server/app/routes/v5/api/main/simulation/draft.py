@@ -9,6 +9,8 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db, get_pool
+from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.simulation.permissions import (
     SIMULATION_RESOURCES,
     compute_can_draft,
@@ -18,31 +20,33 @@ from app.routes.v5.api.main.simulation.types import (
     PatchSimulationDraftApiResponse,
     PatchSimulationDraftSqlParams,
 )
-from app.routes.auth.settings import get_auth_settings_internal
-from app.routes.v5.api.entries.simulation_drafts.refresh import (
+from app.routes.v5.api.permissions import resolve_agents_for_artifact
+from app.routes.v5.tools.entries.simulation_drafts.refresh import (
     refresh_simulation_drafts_internal,
 )
-from app.routes.v5.api.permissions import resolve_agents_for_artifact
-from app.routes.v5.api.resources.departments.link import link_departments_internal
-from app.routes.v5.api.resources.descriptions.link import link_descriptions_internal
-from app.routes.v5.api.resources.flags.link import link_flags_internal
+from app.routes.v5.tools.resources.departments.link import link_departments_internal
+from app.routes.v5.tools.resources.descriptions.link import link_descriptions_internal
+from app.routes.v5.tools.resources.flags.link import link_flags_internal
 from app.routes.v5.tools.resources.names.link import link_names_internal
-from app.routes.v5.api.resources.scenario_flags.link import link_scenario_flags_internal
-from app.routes.v5.api.resources.scenario_positions.link import (
+from app.routes.v5.tools.resources.scenario_flags.link import (
+    link_scenario_flags_internal,
+)
+from app.routes.v5.tools.resources.scenario_positions.link import (
     link_scenario_positions_internal,
 )
-from app.routes.v5.api.resources.scenario_rubrics.link import link_scenario_rubrics_internal
-from app.routes.v5.api.resources.scenario_time_limits.link import (
+from app.routes.v5.tools.resources.scenario_rubrics.link import (
+    link_scenario_rubrics_internal,
+)
+from app.routes.v5.tools.resources.scenario_time_limits.link import (
     link_scenario_time_limits_internal,
 )
-from app.routes.v5.api.resources.scenarios.link import link_scenarios_internal
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db, get_pool
+from app.routes.v5.tools.resources.scenarios.link import link_scenarios_internal
 from app.sql.types import (
     PatchSimulationDraftSqlRow,
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed
 

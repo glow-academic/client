@@ -8,6 +8,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import cast
 
+from app.infra.globals import get_internal_sio, sio
 from app.infra.websocket.add_guest_socket import add_guest_socket
 from app.infra.websocket.decrement_guest_count import decrement_guest_count
 from app.infra.websocket.find_chats_by_socket import find_chats_by_socket
@@ -20,7 +21,6 @@ from app.infra.websocket.remove_active_connection import remove_active_connectio
 from app.infra.websocket.remove_guest_socket import remove_guest_socket
 from app.infra.websocket.remove_socket_owner import remove_socket_owner
 from app.infra.websocket.set_socket_owner import set_socket_owner
-from app.infra.globals import get_internal_sio, sio
 from app.sql.types import (
     UpdateProfileToActiveSqlParams,
     UpdateProfileToActiveSqlRow,
