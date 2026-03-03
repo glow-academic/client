@@ -28,7 +28,7 @@ from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.permissions import resolve_agents_for_artifact
 from app.routes.v5.api.resources.cohorts.create import create_cohorts_internal
 from app.routes.v5.api.resources.descriptions.create import create_descriptions_internal
-from app.routes.v5.api.resources.names.create import create_names_internal
+from app.routes.v5.tools.resources.names.create import create_names_internal
 from app.utils.error.handle_route_error import handle_route_error
 from app.infra.globals import get_db, get_pool
 from app.sql.types import (

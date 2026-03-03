@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.routes.v5.api.main.cohort.permissions import compute_can_duplicate
 from app.routes.auth.profile import get_auth_profile_internal
-from app.routes.v5.api.resources.names.create import create_names_internal
+from app.routes.v5.tools.resources.names.create import create_names_internal
 from app.utils.error.handle_route_error import handle_route_error
 from app.infra.globals import get_db, get_pool
 from app.sql.types import (

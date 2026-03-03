@@ -20,7 +20,7 @@ from app.routes.v5.api.permissions import resolve_agents_for_artifact
 from app.routes.v5.api.resources.departments.link import link_departments_internal
 from app.routes.v5.api.resources.descriptions.link import link_descriptions_internal
 from app.routes.v5.api.resources.flags.link import link_flags_internal
-from app.routes.v5.api.resources.names.link import link_names_internal
+from app.routes.v5.tools.resources.names.link import link_names_internal
 from app.routes.v5.api.resources.profile_personas.link import link_profile_personas_internal
 from app.routes.v5.api.resources.profiles.link import link_profiles_internal
 from app.routes.v5.api.resources.simulation_availability.link import (

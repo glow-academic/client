@@ -85,8 +85,8 @@ from app.routes.v5.api.resources.descriptions.search import search_descriptions_
 from app.routes.v5.api.resources.flags.get import get_flags_internal
 from app.routes.v5.api.resources.flags.search import search_flags_internal
 from app.routes.v5.api.resources.models.get import get_models_internal
-from app.routes.v5.api.resources.names.get import get_names_internal
-from app.routes.v5.api.resources.names.search import search_names_internal
+from app.routes.v5.tools.resources.names.get import get_names_internal
+from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.api.resources.personas.search import search_personas_internal
 from app.routes.v5.api.resources.profile_personas.get import get_profile_personas_internal
 from app.routes.v5.api.resources.profiles.get import get_profiles_internal

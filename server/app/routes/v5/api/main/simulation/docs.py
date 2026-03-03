@@ -6,7 +6,7 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends
 
 from app.routes.v5.api.main.simulation import permissions
-from app.routes.v5.api.resources.names.get import get_names_internal
+from app.routes.v5.tools.resources.names.get import get_names_internal
 from app.infra.globals import get_db
 from app.sql.types import GetSimulationDocsSqlParams, GetSimulationDocsSqlRow
 from app.utils.docs_helper import (

@@ -94,8 +94,8 @@ from app.routes.v5.api.resources.flags.get import get_flags_internal
 from app.routes.v5.api.resources.flags.search import search_flags_internal
 from app.routes.v5.api.resources.images.get import get_images_internal
 from app.routes.v5.api.resources.images.search import search_images_internal
-from app.routes.v5.api.resources.names.get import get_names_internal
-from app.routes.v5.api.resources.names.search import search_names_internal
+from app.routes.v5.tools.resources.names.get import get_names_internal
+from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.api.resources.objectives.get import get_objectives_internal
 from app.routes.v5.api.resources.options.get import get_options_internal
 from app.routes.v5.api.resources.options.search import search_options_internal

@@ -92,8 +92,8 @@ from app.routes.v5.api.resources.icons.search import search_icons_internal
 from app.routes.v5.api.resources.instructions.get import get_instructions_internal
 from app.routes.v5.api.resources.instructions.search import search_instructions_internal
 from app.routes.v5.api.resources.models.get import get_models_internal
-from app.routes.v5.api.resources.names.get import get_names_internal
-from app.routes.v5.api.resources.names.search import search_names_internal
+from app.routes.v5.tools.resources.names.get import get_names_internal
+from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.api.resources.parameter_fields.get import get_parameter_fields_internal
 from app.routes.v5.api.resources.parameter_fields.search import (
     search_parameter_fields_internal,

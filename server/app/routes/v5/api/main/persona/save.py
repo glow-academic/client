@@ -33,7 +33,7 @@ from app.routes.v5.api.resources.examples.create import create_examples_internal
 from app.routes.v5.api.resources.flags.search import search_flags_internal
 from app.routes.v5.api.resources.icons.search import search_icons_internal
 from app.routes.v5.api.resources.instructions.create import create_instructions_internal
-from app.routes.v5.api.resources.names.create import create_names_internal
+from app.routes.v5.tools.resources.names.create import create_names_internal
 from app.routes.v5.api.resources.parameter_fields.search import (
     search_parameter_fields_internal,
 )

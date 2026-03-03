@@ -25,7 +25,7 @@ from app.routes.v5.api.resources.descriptions.link import link_descriptions_inte
 from app.routes.v5.api.resources.documents.link import link_documents_internal
 from app.routes.v5.api.resources.flags.link import link_flags_internal
 from app.routes.v5.api.resources.images.link import link_images_internal
-from app.routes.v5.api.resources.names.link import link_names_internal
+from app.routes.v5.tools.resources.names.link import link_names_internal
 from app.routes.v5.api.resources.objectives.link import link_objectives_internal
 from app.routes.v5.api.resources.options.link import link_options_internal
 from app.routes.v5.api.resources.parameter_fields.link import link_parameter_fields_internal

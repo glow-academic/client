@@ -27,7 +27,7 @@ from app.routes.v5.api.resources.examples.link import link_examples_internal
 from app.routes.v5.api.resources.flags.link import link_flags_internal
 from app.routes.v5.api.resources.icons.link import link_icons_internal
 from app.routes.v5.api.resources.instructions.link import link_instructions_internal
-from app.routes.v5.api.resources.names.link import link_names_internal
+from app.routes.v5.tools.resources.names.link import link_names_internal
 from app.routes.v5.api.resources.parameter_fields.link import link_parameter_fields_internal
 from app.routes.v5.api.resources.voices.link import link_voices_internal
 from app.utils.error.handle_route_error import handle_route_error
