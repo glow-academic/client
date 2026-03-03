@@ -15,7 +15,7 @@ from app.routes.v5.api.main.scenario.types import (
     DuplicateScenarioApiRequest,
     DuplicateScenarioApiResponse,
 )
-from app.routes.v5.tools.resources.names.create import create_names_internal
+from app.routes.v5.tools.resources.names.create import create_name
 from app.sql.types import (
     CheckScenarioDuplicateAccessSqlParams,
     CheckScenarioDuplicateAccessSqlRow,
@@ -123,7 +123,7 @@ async def duplicate_scenario(
         # Phase 1: Python creates name resource
         original_name = access_result.scenario_name or "Unknown"
         new_name = f"{original_name} Copy"
-        name_resource_id = await create_names_internal(conn, new_name)
+        name_resource_id = (await create_name(conn, new_name)).name_id
 
         # Phase 2: SQL creates artifact + links junctions (inside transaction)
         async with conn.transaction():

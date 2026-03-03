@@ -13,7 +13,7 @@ from app.routes.v5.api.main.persona.types import (
     DuplicatePersonaApiRequest,
     DuplicatePersonaApiResponse,
 )
-from app.routes.v5.tools.resources.names.create import create_names_internal
+from app.routes.v5.tools.resources.names.create import create_name
 from app.sql.types import (
     CheckPersonaDuplicateAccessSqlParams,
     CheckPersonaDuplicateAccessSqlRow,
@@ -141,7 +141,7 @@ async def duplicate_persona(
         # Phase 1: Python creates name resource (Rule 4: Python creates, not SQL)
         original_name = access_result.original_name or "Unknown"
         new_name = f"{original_name} Copy"
-        name_resource_id = await create_names_internal(conn, new_name)
+        name_resource_id = (await create_name(conn, new_name)).name_id
 
         async with conn.transaction():
             # Phase 2: SQL creates artifact + links junctions

@@ -22,3 +22,12 @@ class GetNamesRequest(BaseModel):
 
 class GetNamesResponse(BaseModel):
     items: list[NameItem] = Field(default_factory=list)
+
+
+class CreateNameRequest(BaseModel):
+    name: str
+
+
+class CreateNameResponse(BaseModel):
+    name_id: UUID
+    call_id: UUID | None = None

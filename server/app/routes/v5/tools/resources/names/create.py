@@ -1,54 +1,52 @@
-"""Names CREATE internal — reusable data-access layer."""
+"""Names CREATE — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
 from app.infra.tools.call_args import record_call_args, resolve_tool
-from app.sql.types import (
-    NamesSqlParams,
-    NamesSqlRow,
-)
+from app.routes.v5.tools.resources.names.types import CreateNameResponse
 from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import load_sql
 
-SQL_PATH = "app/sql/queries/resources/names_complete.sql"
+FIND_SQL = "app/sql/queries/resources/names/find_name.sql"
+INSERT_SQL = "app/sql/queries/resources/names/insert_name.sql"
+TRACKING_SQL = "app/sql/queries/resources/names/insert_name_tracking.sql"
 
 
-async def create_names_internal(
+async def create_name(
     conn: asyncpg.Connection,
     name: str,
     mcp: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
-) -> UUID:
-    """Create a name resource and return its ID.
-
-    Can be called directly from other routes (e.g. duplicate endpoints, save, draft)
-    without HTTP overhead. When group_id is provided, creates run/call/tool tracking
-    records. Tool is auto-resolved if tool_id is not provided.
-    """
-    # Resolve tool if not provided (canonical — matches entry pattern)
+) -> CreateNameResponse:
+    """Create a name resource (get-or-create). Returns name_id and optional call_id."""
+    # Resolve tool if not provided
     tool_info = None
     if tool_id is None:
         tool_info = await resolve_tool(conn, "create", "names", scope="resources")
         if tool_info:
             tool_id = tool_info.tool_id
 
-    params = NamesSqlParams(name=name, mcp=mcp, group_id=group_id, tool_id=tool_id)
-    result = cast(
-        NamesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-    if not result or not result.name_id:
-        raise ValueError(f"Failed to create name: {name}")
+    # Check if name already exists
+    existing = await conn.fetchval(load_sql(FIND_SQL), name)
+    if existing is not None:
+        return CreateNameResponse(name_id=existing)
 
-    # Record arg values (canonical — matches entry pattern)
+    # Insert new name
+    name_id = await conn.fetchval(load_sql(INSERT_SQL), name, mcp)
+
+    # Create tracking records if tool_id and group_id provided
+    call_id = None
+    if tool_id is not None and group_id is not None:
+        call_id = await conn.fetchval(load_sql(TRACKING_SQL), group_id, tool_id, name_id)
+
+    # Record arg values
     if tool_info is None and tool_id is not None:
         tool_info = await resolve_tool(conn, "create", "names", scope="resources")
-    if tool_info and result.call_id is not None:
-        await record_call_args(conn, result.call_id, tool_info, {"name": name}, mcp)
+    if tool_info and call_id is not None:
+        await record_call_args(conn, call_id, tool_info, {"name": name}, mcp)
 
     await invalidate_tags(["resources", "names"])
-    return result.name_id
+    return CreateNameResponse(name_id=name_id, call_id=call_id)

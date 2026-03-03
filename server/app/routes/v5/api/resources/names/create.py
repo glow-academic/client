@@ -1,41 +1,29 @@
-"""names endpoint - v4 API following DHH principles."""
+"""Names CREATE endpoint — v5 API."""
 
-from typing import Annotated, Any, cast
+from typing import Annotated
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import get_db
-from app.routes.v5.tools.resources.names.create import SQL_PATH
-from app.sql.types import (
-    NamesApiRequest,
-    NamesApiResponse,
-    NamesSqlParams,
-    NamesSqlRow,
-    load_sql_query,
-)
-from app.utils.cache.invalidate_tags import invalidate_tags
+from app.routes.v5.tools.resources.names.create import create_name
+from app.routes.v5.tools.resources.names.types import CreateNameRequest, CreateNameResponse
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import execute_sql_typed
 
 router = APIRouter()
 
 
-@router.post("/names", response_model=NamesApiResponse)
-async def create_names(
-    request: NamesApiRequest,
+@router.post("/names", response_model=CreateNameResponse)
+async def create_names_endpoint(
+    request: CreateNameRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> NamesApiResponse:
+) -> CreateNameResponse:
     """Create names resource (always INSERT)."""
     tags = ["resources", "names"]
 
-    sql_query = load_sql_query(SQL_PATH)
-    sql_params: tuple[Any, ...] | None = None
-
     try:
-        # Get profile_id from header (set by router-level dependency)
         profile_id = http_request.state.profile_id
         if not profile_id:
             raise HTTPException(
@@ -43,39 +31,13 @@ async def create_names(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        mcp = getattr(http_request.state, "mcp", False) or False
+
         async with conn.transaction():
-            # Get mcp flag from header (set by router-level dependency)
-            mcp = getattr(http_request.state, "mcp", False) or False
+            result = await create_name(conn, name=request.name, mcp=mcp)
 
-            # Convert API request to SQL params (use double star pattern)
-            # Frontend sends snake_case (name) - auto-generated types match SQL function signature
-            # Add mcp from header (not in request body)
-            request_dict = request.model_dump()
-            request_dict["mcp"] = mcp
-            params = NamesSqlParams(**request_dict)
-            sql_params = params.to_tuple()
-
-            # Execute SQL with typed helper - automatically detects and calls function if present
-            result = cast(
-                NamesSqlRow,
-                await execute_sql_typed(
-                    conn,
-                    SQL_PATH,
-                    params=params,
-                ),
-            )
-
-            if not result or not result.name_id:
-                raise ValueError("Failed to create names")
-
-        # Convert SQL result to API response (auto-generated types)
-        api_response = NamesApiResponse.model_validate(result.model_dump())
-
-        # Invalidate cache after mutation
-        await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-
-        return api_response
+        return result
     except HTTPException:
         raise
     except ValueError as e:
@@ -85,7 +47,7 @@ async def create_names(
             error=e,
             route_path=http_request.url.path,
             operation="create_names",
-            sql_query=sql_query,
-            sql_params=sql_params,
+            sql_query=None,
+            sql_params=None,
             request=http_request,
         )

@@ -38,7 +38,7 @@ from app.routes.v5.tools.resources.icons.search import search_icons_internal
 from app.routes.v5.tools.resources.instructions.create import (
     create_instructions_internal,
 )
-from app.routes.v5.tools.resources.names.create import create_names_internal
+from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.parameter_fields.search import (
     search_parameter_fields_internal,
 )
@@ -211,9 +211,9 @@ async def _resolve_persona_values(
     # --- Create resources (always create new) ---
 
     if item.name is not None and item.name_id is None:
-        item.name_id = await create_names_internal(
+        item.name_id = (await create_name(
             conn, item.name, **_tool_args("names")
-        )
+        )).name_id
 
     if item.description is not None and item.description_id is None:
         item.description_id = await create_descriptions_internal(

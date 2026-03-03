@@ -4,14 +4,14 @@ import pytest
 from uuid import UUID
 
 from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.names.create import create_names_internal
+from app.routes.v5.tools.resources.names.create import create_name
 
 pytestmark = pytest.mark.asyncio
 
 
 async def test_returns_items_for_valid_ids(conn):
-    id_1 = await create_names_internal(conn, name="Alice")
-    id_2 = await create_names_internal(conn, name="Bob")
+    id_1 = (await create_name(conn, name="Alice")).name_id
+    id_2 = (await create_name(conn, name="Bob")).name_id
 
     items = await get_names(conn, [id_1, id_2])
 
@@ -32,7 +32,7 @@ async def test_returns_empty_for_nonexistent_id(conn):
 
 
 async def test_items_have_expected_fields(conn):
-    name_id = await create_names_internal(conn, name="Alice")
+    name_id = (await create_name(conn, name="Alice")).name_id
     items = await get_names(conn, [name_id])
 
     assert len(items) == 1
@@ -41,8 +41,8 @@ async def test_items_have_expected_fields(conn):
 
 
 async def test_does_not_return_other_items(conn):
-    target_id = await create_names_internal(conn, name="Target")
-    await create_names_internal(conn, name="Other")
+    target_id = (await create_name(conn, name="Target")).name_id
+    (await create_name(conn, name="Other"))
 
     items = await get_names(conn, [target_id])
 

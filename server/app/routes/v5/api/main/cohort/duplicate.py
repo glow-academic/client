@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.infra.globals import get_db, get_pool
 from app.routes.auth.profile import get_auth_profile_internal
 from app.routes.v5.api.main.cohort.permissions import compute_can_duplicate
-from app.routes.v5.tools.resources.names.create import create_names_internal
+from app.routes.v5.tools.resources.names.create import create_name
 from app.sql.types import (
     CheckCohortDuplicateAccessSqlParams,
     CheckCohortDuplicateAccessSqlRow,
@@ -105,7 +105,7 @@ async def duplicate_cohort(
         # Phase 1: Python creates name resource
         original_name = access_result.original_name or "Unknown"
         new_name = f"{original_name} Copy"
-        name_resource_id = await create_names_internal(conn, new_name)
+        name_resource_id = (await create_name(conn, new_name)).name_id
 
         # Phase 2: SQL creates artifact + links junctions (inside transaction)
         async with conn.transaction():

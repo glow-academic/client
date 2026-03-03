@@ -13,7 +13,7 @@ from app.routes.v5.api.main.simulation.permissions import (
     compute_can_duplicate,
     has_access,
 )
-from app.routes.v5.tools.resources.names.create import create_names_internal
+from app.routes.v5.tools.resources.names.create import create_name
 from app.sql.types import (
     CheckSimulationDuplicateAccessSqlParams,
     CheckSimulationDuplicateAccessSqlRow,
@@ -124,7 +124,7 @@ async def duplicate_simulation(
         # Phase 1: Python creates name resource
         original_name = getattr(access_result, "simulation_name", None) or "Unknown"
         new_name = f"{original_name} Copy"
-        name_resource_id = await create_names_internal(conn, new_name)
+        name_resource_id = (await create_name(conn, new_name)).name_id
 
         # Phase 2: SQL creates artifact + links junctions (inside transaction)
         async with conn.transaction():

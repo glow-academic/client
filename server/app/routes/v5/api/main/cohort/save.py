@@ -31,7 +31,7 @@ from app.routes.v5.tools.resources.cohorts.create import create_cohorts_internal
 from app.routes.v5.tools.resources.descriptions.create import (
     create_descriptions_internal,
 )
-from app.routes.v5.tools.resources.names.create import create_names_internal
+from app.routes.v5.tools.resources.names.create import create_name
 from app.sql.types import (
     GetCohortAccessSqlParams,
     GetCohortAccessSqlRow,
@@ -177,9 +177,9 @@ async def _resolve_cohort_values(
     # --- Create resources (always create new) ---
 
     if item.name is not None and item.name_id is None:
-        item.name_id = await create_names_internal(
+        item.name_id = (await create_name(
             conn, item.name, **_tool_args("names")
-        )
+        )).name_id
 
     if item.description is not None and item.description_id is None:
         item.description_id = await create_descriptions_internal(
