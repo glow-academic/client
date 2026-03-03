@@ -180,10 +180,11 @@ selected_agent AS (
 create_group AS (
     INSERT INTO groups_entry (created_at, updated_at, session_id)
     SELECT NOW(), NOW(), (
-        SELECT id FROM sessions_entry
-        WHERE sessions_entry.profile_id = p_profile_id
-          AND sessions_entry.active = true
-        ORDER BY created_at DESC
+        SELECT s.id FROM sessions_entry s
+        JOIN profiles_sessions_connection psc ON psc.session_id = s.id
+        WHERE psc.profiles_id = p_profile_id
+          AND s.active = true
+        ORDER BY s.created_at DESC
         LIMIT 1
     )
     FROM params p

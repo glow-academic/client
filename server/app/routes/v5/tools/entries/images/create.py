@@ -1,36 +1,26 @@
-"""images/create internal — reusable data-access layer."""
+"""Images CREATE — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.routes.v5.api.entries.images.types import (
-    CreateImagesEntryResponse,
-    CreateImagesEntrySqlParams,
-    CreateImagesEntrySqlRow,
-)
-from app.utils.sql_helper import execute_sql_typed
+from app.routes.v5.tools.entries.images.types import CreateImageResponse
 
-SQL_PATH = "app/sql/queries/entries/images/create_images_entries_complete.sql"
 
-async def create_images_entry_internal(
+async def create_image(
     conn: asyncpg.Connection,
     session_id: UUID,
     message_id: UUID | None = None,
     mcp: bool = False,
-) -> CreateImagesEntryResponse:
-    """Create a images entry. Internal only — no HTTP route."""
-    params = CreateImagesEntrySqlParams(
-        session_id=session_id, message_id=message_id, mcp=mcp
-    )
+) -> CreateImageResponse:
+    """Create an images entry."""
+    image_id = await conn.fetchval("""
+        INSERT INTO images_entry (session_id, message_id, mcp, generated)
+        VALUES ($1, $2, $3, true)
+        RETURNING id
+    """, session_id, message_id, mcp)
 
-    result = cast(
-        CreateImagesEntrySqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    if not result or not result.id:
+    if image_id is None:
         raise ValueError("Failed to create images entry")
 
-    return CreateImagesEntryResponse.model_validate(result.model_dump())
+    return CreateImageResponse(id=image_id)

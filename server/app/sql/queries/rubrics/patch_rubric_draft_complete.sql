@@ -158,11 +158,11 @@ BEGIN
                 NOW(),
                 NOW(),
                 (
-                    SELECT id
-                    FROM sessions_entry
-                    WHERE sessions_entry.profile_id = v_profile_id
-                      AND sessions_entry.active = true
-                    ORDER BY created_at DESC
+                    SELECT s.id
+                    FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id
+                    WHERE psc.profiles_id = v_profile_id
+                      AND s.active = true
+                    ORDER BY s.created_at DESC
                     LIMIT 1
                 )
             )
@@ -401,11 +401,11 @@ BEGIN
             NOW(),
             NOW(),
             (
-                SELECT id
-                FROM sessions_entry
-                WHERE sessions_entry.profile_id = v_profile_id
-                  AND sessions_entry.active = true
-                ORDER BY created_at DESC
+                SELECT s.id
+                FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id
+                WHERE psc.profiles_id = v_profile_id
+                  AND s.active = true
+                ORDER BY s.created_at DESC
                 LIMIT 1
             )
         )

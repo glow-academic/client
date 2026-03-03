@@ -251,14 +251,23 @@ dept_insert AS (
 deactivate_old_sessions AS (
     UPDATE sessions_entry
     SET active = false
-    WHERE profile_id = (SELECT id FROM profile_upsert)
+    WHERE id IN (
+        SELECT psc.session_id
+        FROM profiles_sessions_connection psc
+        WHERE psc.profiles_id = (SELECT id FROM profile_upsert)
+    )
       AND active = true
 ),
 new_session AS (
-    INSERT INTO sessions_entry (profile_id, active)
-    SELECT id, true
-    FROM profile_upsert
+    INSERT INTO sessions_entry (active)
+    VALUES (true)
     RETURNING id AS session_id
+),
+link_new_session AS (
+    INSERT INTO profiles_sessions_connection (profiles_id, session_id)
+    SELECT pu.id, ns.session_id
+    FROM profile_upsert pu
+    CROSS JOIN new_session ns
 )
 SELECT
     pu.id as profile_id,

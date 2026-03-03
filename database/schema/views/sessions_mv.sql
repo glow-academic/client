@@ -15,7 +15,7 @@ SELECT
     s.id AS session_id,
 
     -- Profile ID (for permission checks and filtering)
-    s.profile_id,
+    psc.profiles_id AS profile_id,
 
     -- Timestamps
     s.created_at AS session_created_at,
@@ -24,4 +24,5 @@ SELECT
     s.active
 
 FROM sessions_entry s
+JOIN profiles_sessions_connection psc ON psc.session_id = s.id
 WITH NO DATA;

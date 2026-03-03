@@ -48,7 +48,7 @@ BEGIN
 
     IF v_group_id IS NULL THEN
         INSERT INTO groups_entry (created_at, updated_at, session_id)
-        VALUES (NOW(), NOW(), (SELECT id FROM sessions_entry WHERE sessions_entry.profile_id = p_profile_id AND sessions_entry.active = true ORDER BY created_at DESC LIMIT 1))
+        VALUES (NOW(), NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profiles_id = p_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1))
         RETURNING id, groups_entry.trace_id INTO v_group_id, v_trace_id;
     END IF;
 

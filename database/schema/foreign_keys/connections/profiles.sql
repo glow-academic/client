@@ -118,3 +118,21 @@ ALTER TABLE ONLY public.profiles_runs_connection
 
 
 --
+
+-- Name: profiles_sessions_connection profiles_sessions_connection_profiles_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.profiles_sessions_connection
+    ADD CONSTRAINT profiles_sessions_connection_profiles_id_fkey FOREIGN KEY (profiles_id) REFERENCES public.profiles_resource(id) ON DELETE CASCADE;
+
+
+--
+
+-- Name: profiles_sessions_connection profiles_sessions_connection_session_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.profiles_sessions_connection
+    ADD CONSTRAINT profiles_sessions_connection_session_id_fkey FOREIGN KEY (session_id) REFERENCES public.sessions_entry(id) ON DELETE CASCADE;
+
+
+--

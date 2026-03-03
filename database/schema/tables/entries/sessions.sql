@@ -8,9 +8,10 @@
 CREATE TABLE public.sessions_entry (
     id uuid DEFAULT uuidv7() NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    profile_id uuid NOT NULL,
     active boolean DEFAULT true NOT NULL,
-    session_id uuid
+    session_id uuid,
+    mcp boolean DEFAULT false NOT NULL,
+    generated boolean DEFAULT false NOT NULL
 );
 
 

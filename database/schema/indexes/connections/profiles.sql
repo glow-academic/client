@@ -17,3 +17,19 @@ CREATE INDEX profiles_calls_connection_id_idx ON public.profiles_calls_connectio
 
 
 --
+
+-- Name: profiles_sessions_connection_profiles_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX profiles_sessions_connection_profiles_id_idx ON public.profiles_sessions_connection USING btree (profiles_id);
+
+
+--
+
+-- Name: profiles_sessions_connection_session_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX profiles_sessions_connection_session_id_idx ON public.profiles_sessions_connection USING btree (session_id);
+
+
+--
