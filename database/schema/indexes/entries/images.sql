@@ -33,11 +33,3 @@ CREATE INDEX images_entry_created_at_idx ON public.images_entry USING btree (cre
 
 
 --
-
--- Name: images_entry_message_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX images_entry_message_id_idx ON public.images_entry USING btree (message_id) WHERE (message_id IS NOT NULL);
-
-
---

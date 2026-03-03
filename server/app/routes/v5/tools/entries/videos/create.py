@@ -1,40 +1,26 @@
-"""videos/create internal — reusable data-access layer."""
+"""Videos CREATE — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.routes.v5.api.entries.videos.types import (
-    CreateVideosEntryResponse,
-    CreateVideosEntrySqlParams,
-    CreateVideosEntrySqlRow,
-)
-from app.utils.sql_helper import execute_sql_typed
+from app.routes.v5.tools.entries.videos.types import CreateVideoResponse
 
-SQL_PATH = "app/sql/queries/entries/videos/create_videos_entries_complete.sql"
 
-async def create_videos_entry_internal(
+async def create_video(
     conn: asyncpg.Connection,
     session_id: UUID,
-    message_id: UUID | None = None,
     length_seconds: int = 0,
     mcp: bool = False,
-) -> CreateVideosEntryResponse:
-    """Create a videos entry. Internal only — no HTTP route."""
-    params = CreateVideosEntrySqlParams(
-        session_id=session_id,
-        message_id=message_id,
-        length_seconds=length_seconds,
-        mcp=mcp,
-    )
+) -> CreateVideoResponse:
+    """Create a videos entry."""
+    video_id = await conn.fetchval("""
+        INSERT INTO videos_entry (session_id, length_seconds, mcp, generated)
+        VALUES ($1, $2, $3, true)
+        RETURNING id
+    """, session_id, length_seconds, mcp)
 
-    result = cast(
-        CreateVideosEntrySqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    if not result or not result.id:
+    if video_id is None:
         raise ValueError("Failed to create videos entry")
 
-    return CreateVideosEntryResponse.model_validate(result.model_dump())
+    return CreateVideoResponse(id=video_id)

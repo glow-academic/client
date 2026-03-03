@@ -12,11 +12,13 @@
 
 CREATE MATERIALIZED VIEW attempt_message_mv AS
 WITH
--- Audio entry ID per message
+-- Audio entry ID per message (via uploads)
 audio_agg AS (
-    SELECT ae.message_id, ae.id AS audio_id
+    SELECT mue.message_id, ae.id AS audio_id
     FROM audios_entry ae
-    WHERE ae.active = true AND ae.message_id IS NOT NULL
+    JOIN audio_uploads_entry aue ON aue.audio_id = ae.id AND aue.active = true
+    JOIN message_uploads_entry mue ON mue.upload_id = aue.upload_id AND mue.active = true
+    WHERE ae.active = true
 ),
 -- Get runs_id (resource) for each run_id (entry)
 runs_resource_agg AS (

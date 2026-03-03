@@ -33,11 +33,3 @@ CREATE INDEX videos_entry_created_at_idx ON public.videos_entry USING btree (cre
 
 
 --
-
--- Name: videos_entry_message_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX videos_entry_message_id_idx ON public.videos_entry USING btree (message_id) WHERE (message_id IS NOT NULL);
-
-
---

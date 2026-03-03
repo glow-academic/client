@@ -11,7 +11,6 @@ CREATE TABLE public.videos_entry (
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
-    message_id uuid,
     length_seconds integer DEFAULT 0 NOT NULL,
     session_id uuid
 );

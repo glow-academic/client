@@ -11,7 +11,6 @@ CREATE TABLE public.audios_entry (
     active boolean DEFAULT true CONSTRAINT audios_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT audios_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT audios_mcp_not_null NOT NULL,
-    message_id uuid,
     length_seconds integer DEFAULT 0 NOT NULL,
     session_id uuid
 );

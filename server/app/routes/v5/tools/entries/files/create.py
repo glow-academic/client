@@ -1,36 +1,25 @@
-"""files/create internal — reusable data-access layer."""
+"""Files CREATE — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.routes.v5.api.entries.files.types import (
-    CreateFilesEntryResponse,
-    CreateFilesEntrySqlParams,
-    CreateFilesEntrySqlRow,
-)
-from app.utils.sql_helper import execute_sql_typed
+from app.routes.v5.tools.entries.files.types import CreateFileResponse
 
-SQL_PATH = "app/sql/queries/entries/files/create_files_entries_complete.sql"
 
-async def create_files_entry_internal(
+async def create_file(
     conn: asyncpg.Connection,
     session_id: UUID,
     mcp: bool = False,
-) -> CreateFilesEntryResponse:
-    """Create a files entry. Internal only — no HTTP route."""
-    params = CreateFilesEntrySqlParams(
-        session_id=session_id,
-        mcp=mcp,
-    )
+) -> CreateFileResponse:
+    """Create a files entry."""
+    file_id = await conn.fetchval("""
+        INSERT INTO files_entry (session_id, mcp, generated)
+        VALUES ($1, $2, true)
+        RETURNING id
+    """, session_id, mcp)
 
-    result = cast(
-        CreateFilesEntrySqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    if not result or not result.id:
+    if file_id is None:
         raise ValueError("Failed to create files entry")
 
-    return CreateFilesEntryResponse.model_validate(result.model_dump())
+    return CreateFileResponse(id=file_id)

@@ -11,7 +11,6 @@ CREATE TABLE public.images_entry (
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
-    message_id uuid,
     session_id uuid
 );
 

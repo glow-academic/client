@@ -1,40 +1,26 @@
-"""audios/create internal — reusable data-access layer."""
+"""Audios CREATE — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.routes.v5.api.entries.audios.types import (
-    CreateAudiosEntryResponse,
-    CreateAudiosEntrySqlParams,
-    CreateAudiosEntrySqlRow,
-)
-from app.utils.sql_helper import execute_sql_typed
+from app.routes.v5.tools.entries.audios.types import CreateAudioResponse
 
-SQL_PATH = "app/sql/queries/entries/audios/create_audios_entries_complete.sql"
 
-async def create_audios_entry_internal(
+async def create_audio(
     conn: asyncpg.Connection,
     session_id: UUID,
-    message_id: UUID | None = None,
     length_seconds: int = 0,
     mcp: bool = False,
-) -> CreateAudiosEntryResponse:
-    """Create a audios entry. Internal only — no HTTP route."""
-    params = CreateAudiosEntrySqlParams(
-        session_id=session_id,
-        message_id=message_id,
-        length_seconds=length_seconds,
-        mcp=mcp,
-    )
+) -> CreateAudioResponse:
+    """Create an audios entry."""
+    audio_id = await conn.fetchval("""
+        INSERT INTO audios_entry (session_id, length_seconds, mcp, generated)
+        VALUES ($1, $2, $3, true)
+        RETURNING id
+    """, session_id, length_seconds, mcp)
 
-    result = cast(
-        CreateAudiosEntrySqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    if not result or not result.id:
+    if audio_id is None:
         raise ValueError("Failed to create audios entry")
 
-    return CreateAudiosEntryResponse.model_validate(result.model_dump())
+    return CreateAudioResponse(id=audio_id)

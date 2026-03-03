@@ -18,14 +18,6 @@ CREATE INDEX audios_created_at_idx ON public.audios_entry USING btree (created_a
 
 --
 
--- Name: audios_entry_message_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX audios_entry_message_id_idx ON public.audios_entry USING btree (message_id);
-
-
---
-
 -- Name: idx_audios_entry_session_id; Type: INDEX; Schema: public; Owner: -
 --
 
