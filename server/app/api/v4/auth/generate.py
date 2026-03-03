@@ -10,8 +10,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from app.api.v4.auth.types import GetGroupMessagesApiResponse, GroupMessageItem
-from app.main import get_db
 from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
 from app.sql.types import GetAuthGroupMessagesSqlParams, GetAuthGroupMessagesSqlRow
 from app.utils.sql_helper import execute_sql_typed
 
@@ -58,7 +58,24 @@ async def get_group_messages(
                 message_created_at=m.message_created_at.isoformat()
                 if m.message_created_at
                 else None,
-                contents=m.contents,
+                text_upload_ids=[str(u) for u in m.text_upload_ids]
+                if m.text_upload_ids
+                else None,
+                audio_upload_ids=[str(u) for u in m.audio_upload_ids]
+                if m.audio_upload_ids
+                else None,
+                image_upload_ids=[str(u) for u in m.image_upload_ids]
+                if m.image_upload_ids
+                else None,
+                video_upload_ids=[str(u) for u in m.video_upload_ids]
+                if m.video_upload_ids
+                else None,
+                file_upload_ids=[str(u) for u in m.file_upload_ids]
+                if m.file_upload_ids
+                else None,
+                call_upload_ids=[str(u) for u in m.call_upload_ids]
+                if m.call_upload_ids
+                else None,
             )
             for m in (item.messages or [])
         ]

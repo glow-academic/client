@@ -4,13 +4,49 @@ import { Button } from "@/components/ui/button";
 import type { GroupMessage } from "@/hooks/use-generation-panel";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface MessageTimelineProps {
   messages: GroupMessage[];
   totalCount: number;
   isLoading: boolean;
   onLoadMore: () => void;
+}
+
+/** Fetch text content for a single upload ID via the download proxy. */
+async function fetchTextContent(uploadId: string): Promise<string> {
+  const res = await fetch(`/api/uploads/${uploadId}/download`);
+  if (!res.ok) return "";
+  return res.text();
+}
+
+/** Hook: resolve text_upload_ids → displayable strings for each message. */
+function useTextContents(messages: GroupMessage[]) {
+  const [contentMap, setContentMap] = useState<Record<string, string[]>>({});
+  const fetchedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const toFetch: { messageId: string; uploadIds: string[] }[] = [];
+
+    for (const msg of messages) {
+      const mid = msg.message_id;
+      if (!mid || fetchedRef.current.has(mid)) continue;
+      const ids = msg.text_upload_ids;
+      if (!ids || ids.length === 0) continue;
+      toFetch.push({ messageId: mid, uploadIds: ids });
+      fetchedRef.current.add(mid);
+    }
+
+    if (toFetch.length === 0) return;
+
+    for (const { messageId, uploadIds } of toFetch) {
+      Promise.all(uploadIds.map(fetchTextContent)).then((texts) => {
+        setContentMap((prev) => ({ ...prev, [messageId]: texts }));
+      });
+    }
+  }, [messages]);
+
+  return contentMap;
 }
 
 export function MessageTimeline({
@@ -21,6 +57,7 @@ export function MessageTimeline({
 }: MessageTimelineProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const prevLengthRef = useRef(messages.length);
+  const textContents = useTextContents(messages);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -52,7 +89,12 @@ export function MessageTimeline({
 
       {messages.map((msg, i) => {
         const isUser = msg.role === "user";
-        const content = msg.contents?.join("\n") ?? "";
+        const texts = msg.message_id
+          ? textContents[msg.message_id]
+          : undefined;
+        const content = texts?.join("\n") ?? "";
+        const isLoadingContent =
+          !texts && (msg.text_upload_ids?.length ?? 0) > 0;
         const time = msg.message_created_at
           ? new Date(msg.message_created_at).toLocaleTimeString([], {
               hour: "2-digit",
@@ -73,7 +115,11 @@ export function MessageTimeline({
                   : "bg-muted text-foreground"
               )}
             >
-              <p className="whitespace-pre-wrap break-words">{content}</p>
+              {isLoadingContent ? (
+                <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+              ) : (
+                <p className="whitespace-pre-wrap break-words">{content}</p>
+              )}
               {time && (
                 <p className="mt-1 text-[10px] text-muted-foreground">{time}</p>
               )}

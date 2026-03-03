@@ -24,7 +24,12 @@ export interface GroupMessage {
   run_id: string | null;
   role: string | null;
   message_created_at: string | null;
-  contents: string[] | null;
+  text_upload_ids: string[] | null;
+  audio_upload_ids: string[] | null;
+  image_upload_ids: string[] | null;
+  video_upload_ids: string[] | null;
+  file_upload_ids: string[] | null;
+  call_upload_ids: string[] | null;
 }
 
 const PANEL_COOKIE = "glow_ai_panel";

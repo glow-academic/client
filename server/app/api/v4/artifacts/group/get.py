@@ -21,7 +21,6 @@ from app.api.v4.artifacts.group.types import (
     GetGroupDetailResponse,
     GetGroupWebsocketResponse,
     GroupDetailCallItem,
-    GroupDetailContentItem,
     GroupDetailMessageItem,
     GroupDetailResourceItem,
     GroupDetailRunItem,
@@ -361,25 +360,17 @@ async def get_group(
             conn, data.runs_result.items, bypass_cache
         )
 
-        # Build call_id → CallViewItem lookup
-        call_lookup = {c.call_id: c for c in data.calls_result.items}
-
-        # Track linked call IDs
-        linked_call_ids: set[UUID] = set()
-        for msg in data.messages_result.items:
-            linked_call_ids.update(msg.call_ids)
-
         # Group messages by run_id (already ordered by role precedence + created_at from SQL)
         run_messages: dict[UUID, list] = defaultdict(list)
         for msg in data.messages_result.items:
             if msg.run_id:
                 run_messages[msg.run_id].append(msg)
 
-        # Identify orphan calls per run (calls not linked to any message)
-        orphan_calls_by_run: dict[UUID, list] = defaultdict(list)
+        # Group calls by run_id (calls are linked to messages via call_upload_ids now)
+        calls_by_run: dict[UUID, list] = defaultdict(list)
         for call in data.calls_result.items:
-            if call.call_id not in linked_call_ids and call.run_id:
-                orphan_calls_by_run[call.run_id].append(call)
+            if call.run_id:
+                calls_by_run[call.run_id].append(call)
 
         # Collect IDs for hydration
         all_model_ids: set[UUID] = set()
@@ -429,40 +420,23 @@ async def get_group(
             # Build messages
             messages: list[GroupDetailMessageItem] = []
             for msg in run_messages.get(run_id, []):
-                msg_calls: list[GroupDetailCallItem] = []
-                for call_id in msg.call_ids:
-                    call = call_lookup.get(call_id)
-                    if call:
-                        msg_calls.append(
-                            GroupDetailCallItem(
-                                id=call.call_id,
-                                template_name=tool_name_map.get(call.tool_id)
-                                if call.tool_id
-                                else None,
-                                file_path=call.file_path,
-                                created_at=call.call_created_at,
-                            )
-                        )
-
-                contents = [
-                    GroupDetailContentItem(content=c) for c in (msg.contents or [])
-                ]
-                if not contents:
-                    contents = [GroupDetailContentItem(content=None)]
-
                 messages.append(
                     GroupDetailMessageItem(
                         id=msg.message_id,
                         role=msg.role,
-                        contents=contents,
-                        calls=msg_calls,
+                        text_upload_ids=list(msg.text_upload_ids or []),
+                        audio_upload_ids=list(msg.audio_upload_ids or []),
+                        image_upload_ids=list(msg.image_upload_ids or []),
+                        video_upload_ids=list(msg.video_upload_ids or []),
+                        file_upload_ids=list(msg.file_upload_ids or []),
+                        call_upload_ids=list(msg.call_upload_ids or []),
                     )
                 )
 
-            # Attach orphan calls to the last message
-            orphan_calls = orphan_calls_by_run.get(run_id, [])
-            if orphan_calls and messages:
-                for call in orphan_calls:
+            # Attach calls to the last message of the run
+            run_calls = calls_by_run.get(run_id, [])
+            if run_calls and messages:
+                for call in run_calls:
                     messages[-1].calls.append(
                         GroupDetailCallItem(
                             id=call.call_id,

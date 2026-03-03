@@ -233,7 +233,12 @@ class GroupMessageItem(BaseModel):
     run_id: str | None = None
     role: str | None = None
     message_created_at: str | None = None
-    contents: list[str] | None = None
+    text_upload_ids: list[str] | None = None
+    audio_upload_ids: list[str] | None = None
+    image_upload_ids: list[str] | None = None
+    video_upload_ids: list[str] | None = None
+    file_upload_ids: list[str] | None = None
+    call_upload_ids: list[str] | None = None
 
 
 class GetGroupMessagesApiResponse(BaseModel):

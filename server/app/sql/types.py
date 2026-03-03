@@ -2030,7 +2030,12 @@ class QGetAuthGroupMessagesV4Message(BaseModel):
     run_id: UUID | None
     role: str | None
     message_created_at: datetime | None
-    contents: list[str] | None
+    text_upload_ids: list[UUID] | None
+    audio_upload_ids: list[UUID] | None
+    image_upload_ids: list[UUID] | None
+    video_upload_ids: list[UUID] | None
+    file_upload_ids: list[UUID] | None
+    call_upload_ids: list[UUID] | None
 
 class QGetAuthGroupMessagesV4Item(BaseModel):
 
@@ -35518,8 +35523,12 @@ class QGetMessageListViewV4Item(BaseModel):
     run_id: UUID | None
     role: str | None
     message_created_at: datetime | None
-    contents: list[str] | None
-    call_ids: list[UUID] | None
+    text_upload_ids: list[UUID] | None
+    audio_upload_ids: list[UUID] | None
+    image_upload_ids: list[UUID] | None
+    video_upload_ids: list[UUID] | None
+    file_upload_ids: list[UUID] | None
+    call_upload_ids: list[UUID] | None
 
 class GetMessageListViewSqlRow(BaseModel):
 

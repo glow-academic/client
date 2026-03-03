@@ -70,12 +70,6 @@ class GetGroupListResponse(BaseModel):
 # ---- Group Detail types ----
 
 
-class GroupDetailContentItem(BaseModel):
-    """Single content block in a message."""
-
-    content: str | None = None
-
-
 class GroupDetailCallItem(BaseModel):
     """A tool/function call made during the run."""
 
@@ -86,11 +80,16 @@ class GroupDetailCallItem(BaseModel):
 
 
 class GroupDetailMessageItem(BaseModel):
-    """A message with contents."""
+    """A message with upload IDs by media type."""
 
     id: UUID | None = None
     role: str | None = None
-    contents: list[GroupDetailContentItem] = Field(default_factory=list)
+    text_upload_ids: list[UUID] = Field(default_factory=list)
+    audio_upload_ids: list[UUID] = Field(default_factory=list)
+    image_upload_ids: list[UUID] = Field(default_factory=list)
+    video_upload_ids: list[UUID] = Field(default_factory=list)
+    file_upload_ids: list[UUID] = Field(default_factory=list)
+    call_upload_ids: list[UUID] = Field(default_factory=list)
     calls: list[GroupDetailCallItem] = Field(default_factory=list)
 
 

@@ -34,8 +34,12 @@ BEGIN
             'run_id', m.run_id,
             'role', m.role,
             'message_created_at', m.message_created_at,
-            'contents', m.contents,
-            'call_ids', m.call_ids
+            'text_upload_ids', m.text_upload_ids,
+            'audio_upload_ids', m.audio_upload_ids,
+            'image_upload_ids', m.image_upload_ids,
+            'video_upload_ids', m.video_upload_ids,
+            'file_upload_ids', m.file_upload_ids,
+            'call_upload_ids', m.call_upload_ids
         ) AS row_data
         FROM messages_mv m
         WHERE true

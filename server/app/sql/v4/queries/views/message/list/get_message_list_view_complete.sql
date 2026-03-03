@@ -8,7 +8,7 @@
 -- - Ordering (by run_id, role precedence, then created_at)
 -- - Pagination
 --
--- Note: Returns pre-aggregated contents and call_ids from messages_mv.
+-- Note: Returns pre-aggregated upload IDs by media type from messages_mv.
 -- ============================================================================
 
 -- ============================================================================
@@ -56,8 +56,12 @@ CREATE TYPE types.q_get_message_list_view_v4_item AS (
     run_id uuid,
     role text,
     message_created_at timestamptz,
-    contents text[],
-    call_ids uuid[]
+    text_upload_ids uuid[],
+    audio_upload_ids uuid[],
+    image_upload_ids uuid[],
+    video_upload_ids uuid[],
+    file_upload_ids uuid[],
+    call_upload_ids uuid[]
 );
 
 -- ============================================================================
@@ -112,8 +116,12 @@ AS $$
                     run_id,
                     role,
                     message_created_at,
-                    contents,
-                    call_ids
+                    text_upload_ids,
+                    audio_upload_ids,
+                    image_upload_ids,
+                    video_upload_ids,
+                    file_upload_ids,
+                    call_upload_ids
                 )::types.q_get_message_list_view_v4_item
                 ORDER BY
                     run_id,

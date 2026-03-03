@@ -32552,24 +32552,26 @@ export interface components {
             created_at: string;
         };
         /**
-         * GroupDetailContentItem
-         * @description Single content block in a message.
-         */
-        GroupDetailContentItem: {
-            /** Content */
-            content?: string | null;
-        };
-        /**
          * GroupDetailMessageItem
-         * @description A message with contents.
+         * @description A message with upload IDs by media type.
          */
         GroupDetailMessageItem: {
             /** Id */
             id?: string | null;
             /** Role */
             role?: string | null;
-            /** Contents */
-            contents?: components["schemas"]["GroupDetailContentItem"][];
+            /** Text Upload Ids */
+            text_upload_ids?: string[];
+            /** Audio Upload Ids */
+            audio_upload_ids?: string[];
+            /** Image Upload Ids */
+            image_upload_ids?: string[];
+            /** Video Upload Ids */
+            video_upload_ids?: string[];
+            /** File Upload Ids */
+            file_upload_ids?: string[];
+            /** Call Upload Ids */
+            call_upload_ids?: string[];
             /** Calls */
             calls?: components["schemas"]["GroupDetailCallItem"][];
         };
@@ -32721,8 +32723,18 @@ export interface components {
             role?: string | null;
             /** Message Created At */
             message_created_at?: string | null;
-            /** Contents */
-            contents?: string[] | null;
+            /** Text Upload Ids */
+            text_upload_ids?: string[] | null;
+            /** Audio Upload Ids */
+            audio_upload_ids?: string[] | null;
+            /** Image Upload Ids */
+            image_upload_ids?: string[] | null;
+            /** Video Upload Ids */
+            video_upload_ids?: string[] | null;
+            /** File Upload Ids */
+            file_upload_ids?: string[] | null;
+            /** Call Upload Ids */
+            call_upload_ids?: string[] | null;
         };
         /** GroupPositionsGenerationEvent */
         GroupPositionsGenerationEvent: {
