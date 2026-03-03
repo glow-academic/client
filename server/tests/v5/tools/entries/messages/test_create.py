@@ -3,6 +3,7 @@
 import pytest
 
 from app.routes.v5.tools.entries.messages.create import create_message
+from app.routes.v5.tools.entries.messages.get import get_message
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
 from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
@@ -27,22 +28,19 @@ async def test_message_exists_in_table(conn):
     run = await _run(conn)
     result = await create_message(conn, run_id=run.id, role="assistant")
 
-    row = await conn.fetchrow("""
-        SELECT id, run_id, role, active FROM messages_entry WHERE id = $1
-    """, result.id)
+    message = await get_message(conn, result.id)
 
-    assert row is not None
-    assert row["run_id"] == run.id
-    assert str(row["role"]) == "assistant"
-    assert row["active"] is True
+    assert message is not None
+    assert message.run_id == run.id
+    assert message.role == "assistant"
+    assert message.active is True
 
 
 async def test_passes_mcp_flag(conn):
     run = await _run(conn)
     result = await create_message(conn, run_id=run.id, role="user", mcp=True)
 
-    row = await conn.fetchrow("""
-        SELECT mcp FROM messages_entry WHERE id = $1
-    """, result.id)
+    message = await get_message(conn, result.id)
 
-    assert row["mcp"] is True
+    assert message is not None
+    assert message.mcp is True

@@ -7,3 +7,12 @@ from pydantic import BaseModel
 
 class CreateVideoResponse(BaseModel):
     id: UUID
+
+
+class GetVideoResponse(BaseModel):
+    id: UUID
+    session_id: UUID | None
+    length_seconds: int
+    active: bool
+    mcp: bool
+    generated: bool

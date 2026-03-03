@@ -1,178 +1,41 @@
-"""sessions/get internal — reusable data-access layer."""
+"""Sessions GET — reusable data-access layer."""
 
-from datetime import datetime
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    GetSessionCountsViewSqlParams,
-    GetSessionCountsViewSqlRow,
-    GetSessionListViewSqlRow,
-    GetSessionsEntriesSqlParams,
-    GetSessionsEntriesSqlRow,
-    QGetSessionCountsViewV4Item,
-)
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
+from app.routes.v5.tools.entries.sessions.types import GetSessionResponse
 
-SQL_PATH = "app/sql/queries/entries/sessions/get_sessions_entries_complete.sql"
 
-VIEW_SQL_PATH = (
-    "app/sql/queries/views/session/list/get_session_list_view_complete.sql"
-)
-
-COUNTS_SQL_PATH = (
-    "app/sql/queries/views/session/counts/get_session_counts_view_complete.sql"
-)
-
-async def get_sessions_entries_internal(
+async def get_session(
     conn: asyncpg.Connection,
-    ids: list[UUID],
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to fetch sessions entries by IDs."""
-    if not ids:
-        return []
+    session_id: UUID,
+    profile: bool = False,
+) -> GetSessionResponse | None:
+    """Get a sessions entry by ID, optionally including the linked profile."""
+    if profile:
+        row = await conn.fetchrow("""
+            SELECT s.id, s.session_id, s.active, s.mcp, s.generated,
+                   psc.profiles_id
+            FROM sessions_entry s
+            LEFT JOIN profiles_sessions_connection psc ON psc.session_id = s.id
+            WHERE s.id = $1
+        """, session_id)
+    else:
+        row = await conn.fetchrow("""
+            SELECT id, session_id, active, mcp, generated
+            FROM sessions_entry
+            WHERE id = $1
+        """, session_id)
 
-    tags = ["entries", "sessions"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/sessions/get",
-        {"ids": [str(id) for id in ids]},
+    if row is None:
+        return None
+
+    return GetSessionResponse(
+        id=row["id"],
+        session_id=row["session_id"],
+        active=row["active"],
+        mcp=row["mcp"],
+        generated=row["generated"],
+        profiles_id=row["profiles_id"] if profile else None,
     )
-
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val)
-        if cached:
-            return list(cached.get("items", []))
-
-    params = GetSessionsEntriesSqlParams(ids=ids)
-    result = cast(
-        GetSessionsEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-    )
-
-    return items
-
-async def get_session_list_view_internal(
-    conn: asyncpg.Connection,
-    session_ids: list[UUID] | None = None,
-    profile_id_filter: UUID | None = None,
-    profile_ids_filter: list[UUID] | None = None,
-    active_filter: bool | None = None,
-    date_from: datetime | None = None,
-    date_to: datetime | None = None,
-    sort_by: str = "date",
-    sort_order: str = "desc",
-    page_limit: int = 50,
-    page_offset: int = 0,
-    bypass_cache: bool = False,
-) -> GetSessionListViewSqlRow:
-    """Internal function for fetching sessions data from MV."""
-    from app.sql.types import GetSessionListViewSqlParams
-
-    cache_key_val = cache_key(
-        "views/session/list/get",
-        {
-            "session_ids": [str(s) for s in session_ids] if session_ids else None,
-            "profile_id_filter": str(profile_id_filter) if profile_id_filter else None,
-            "profile_ids_filter": [str(p) for p in profile_ids_filter]
-            if profile_ids_filter
-            else None,
-            "active_filter": active_filter,
-            "date_from": date_from.isoformat() if date_from else None,
-            "date_to": date_to.isoformat() if date_to else None,
-            "sort_by": sort_by,
-            "sort_order": sort_order,
-            "page_limit": page_limit,
-            "page_offset": page_offset,
-        },
-    )
-
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val)
-        if cached:
-            return GetSessionListViewSqlRow.model_validate(cached)
-
-    params = GetSessionListViewSqlParams(
-        session_ids=session_ids,
-        profile_id_filter=profile_id_filter,
-        profile_ids_filter=profile_ids_filter,
-        active_filter=active_filter,
-        date_from=date_from or datetime.min,
-        date_to=date_to or datetime.max,
-        sort_by_field=sort_by,
-        sort_order_field=sort_order,
-        page_limit_val=page_limit,
-        page_offset_val=page_offset,
-    )
-
-    result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
-
-    response = GetSessionListViewSqlRow(
-        items=list(result.items) if result and result.items else [],
-        total_count=result.total_count or 0 if result else 0,
-    )
-
-    await set_cached(
-        cache_key_val,
-        response.model_dump(mode="json"),
-        ttl=60,
-        tags=["views", "session", "list"],
-    )
-
-    return response
-
-async def get_session_counts_view_internal(
-    conn: asyncpg.Connection,
-    session_ids: list[UUID],
-    bypass_cache: bool = False,
-) -> dict[UUID, QGetSessionCountsViewV4Item]:
-    """Fetch chat/attempt/message/problem counts for a batch of session IDs."""
-    if not session_ids:
-        return {}
-
-    cache_key_val = cache_key(
-        "views/session/counts/get",
-        {"session_ids": [str(s) for s in session_ids]},
-    )
-
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val)
-        if cached:
-            items = [
-                QGetSessionCountsViewV4Item.model_validate(i)
-                for i in cached.get("items", [])
-            ]
-            return {item.session_id: item for item in items if item.session_id}
-
-    params = GetSessionCountsViewSqlParams(session_ids_filter=session_ids)
-    result = cast(
-        GetSessionCountsViewSqlRow,
-        await execute_sql_typed(conn, COUNTS_SQL_PATH, params=params),
-    )
-
-    items: list[QGetSessionCountsViewV4Item] = (
-        list(result.items) if result and result.items else []
-    )
-
-    await set_cached(
-        cache_key_val,
-        {"items": [i.model_dump(mode="json") for i in items]},
-        ttl=60,
-        tags=["views", "session", "counts"],
-    )
-
-    return {item.session_id: item for item in items if item.session_id}

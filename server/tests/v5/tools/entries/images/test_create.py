@@ -3,6 +3,7 @@
 import pytest
 
 from app.routes.v5.tools.entries.images.create import create_image
+from app.routes.v5.tools.entries.images.get import get_image
 from app.routes.v5.tools.entries.sessions.create import create_session
 from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 
@@ -24,21 +25,18 @@ async def test_image_exists_in_table(conn):
     session = await _session(conn)
     result = await create_image(conn, session_id=session.id)
 
-    row = await conn.fetchrow("""
-        SELECT id, session_id, active FROM images_entry WHERE id = $1
-    """, result.id)
+    image = await get_image(conn, result.id)
 
-    assert row is not None
-    assert row["session_id"] == session.id
-    assert row["active"] is True
+    assert image is not None
+    assert image.session_id == session.id
+    assert image.active is True
 
 
 async def test_passes_mcp_flag(conn):
     session = await _session(conn)
     result = await create_image(conn, session_id=session.id, mcp=True)
 
-    row = await conn.fetchrow("""
-        SELECT mcp FROM images_entry WHERE id = $1
-    """, result.id)
+    image = await get_image(conn, result.id)
 
-    assert row["mcp"] is True
+    assert image is not None
+    assert image.mcp is True

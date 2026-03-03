@@ -7,3 +7,11 @@ from pydantic import BaseModel
 
 class CreateImageResponse(BaseModel):
     id: UUID
+
+
+class GetImageResponse(BaseModel):
+    id: UUID
+    session_id: UUID | None
+    active: bool
+    mcp: bool
+    generated: bool
