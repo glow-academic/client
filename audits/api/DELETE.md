@@ -10,12 +10,12 @@ The source of truth is the **persona** delete implementation. Every artifact del
 
 | Layer | Location | Purpose |
 |-------|----------|---------|
-| **Access Check SQL** | `server/app/sql/v4/queries/{artifact}s/check_{artifact}_delete_access_complete.sql` | Pre-delete permission data: department_ids + usage counts |
-| **Delete SQL** | `server/app/sql/v4/queries/{artifact}s/delete_{artifact}_complete.sql` | Deletes artifact row; CASCADE handles junction cleanup |
-| **Python Handler** | `server/app/api/v4/artifacts/{artifact}/delete.py` | Permission check, usage validation, transaction, audit |
-| **Permissions** | `server/app/api/v4/artifacts/{artifact}/permissions.py` | `compute_can_delete()` |
+| **Access Check SQL** | `server/app/v5/sql/queries/{artifact}s/check_{artifact}_delete_access_complete.sql` | Pre-delete permission data: department_ids + usage counts |
+| **Delete SQL** | `server/app/v5/sql/queries/{artifact}s/delete_{artifact}_complete.sql` | Deletes artifact row; CASCADE handles junction cleanup |
+| **Python Handler** | `server/app/v5/api/main/{artifact}/delete.py` | Permission check, usage validation, transaction, audit |
+| **Permissions** | `server/app/v5/api/main/{artifact}/permissions.py` | `compute_can_delete()` |
 
-Reference: `server/app/api/v4/artifacts/persona/delete.py`, `persona/permissions.py`
+Reference: `server/app/v5/api/main/persona/delete.py`, `persona/permissions.py`
 
 ---
 
@@ -40,7 +40,7 @@ Delete endpoints must perform a two-phase permission check:
 2. **Python phase**: Call `compute_can_delete(user_role, artifact_department_ids, total_usage_links)` with the SQL results + user context
 
 ```python
-from app.api.v4.auth.profile import get_auth_profile_internal
+from app.v5.auth.profile import get_auth_profile_internal
 
 # User context via cached auth profile internal
 profile_ctx = await get_auth_profile_internal(conn, profile_id, bypass_cache=False)
@@ -60,7 +60,7 @@ if not can_delete:
 
 User context must come from `get_auth_profile_internal()`, not the monolithic `get_profile_context_internal()`. See GET.md Rule 2 for the full profile/settings split pattern.
 
-Reference: `server/app/api/v4/artifacts/persona/delete.py`, `permissions.py`
+Reference: `server/app/v5/api/main/persona/delete.py`, `permissions.py`
 
 ### Rule 3: Usage check counts ACTIVE links only
 
@@ -85,7 +85,7 @@ if access.active_scenario_count > 0:
     raise ValueError(f"Cannot delete: {artifact} is used by {access.active_scenario_count} active scenarios")
 ```
 
-Reference: `server/app/api/v4/artifacts/persona/delete.py`
+Reference: `server/app/v5/api/main/persona/delete.py`
 
 ### Rule 5: Delete SQL returns metadata
 
@@ -122,7 +122,7 @@ def compute_can_delete(user_role, artifact_department_ids, active_parent_count):
     return user_role in ("admin", "superadmin")
 ```
 
-Reference: `server/app/api/v4/artifacts/persona/permissions.py`
+Reference: `server/app/v5/api/main/persona/permissions.py`
 
 ### Rule 7: Transaction wrapper
 
@@ -159,7 +159,7 @@ async def delete_{artifact}(http_request: Request, body: Delete{Artifact}ApiRequ
     })
 ```
 
-Reference: `server/app/api/v4/artifacts/persona/delete.py`
+Reference: `server/app/v5/api/main/persona/delete.py`
 
 ### Rule 10: Simple request shape
 
@@ -189,7 +189,7 @@ class Delete{Artifact}ApiRequest(BaseModel):
 ### Audit 1: Delete endpoint existence
 
 ```bash
-for artifact_dir in server/app/api/v4/artifacts/*/; do
+for artifact_dir in server/app/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   [ ! -f "${artifact_dir}delete.py" ] && echo "MISSING DELETE ENDPOINT: $artifact"
 done
@@ -200,10 +200,10 @@ done
 ### Audit 2: Access check SQL exists
 
 ```bash
-for artifact_dir in server/app/api/v4/artifacts/*/; do
+for artifact_dir in server/app/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   [ ! -f "${artifact_dir}delete.py" ] && continue
-  found=$(find server/app/sql/v4/queries/ -name "check_${artifact}_delete_access*" 2>/dev/null | head -1)
+  found=$(find server/app/v5/sql/queries/ -name "check_${artifact}_delete_access*" 2>/dev/null | head -1)
   [ -z "$found" ] && echo "MISSING DELETE ACCESS SQL: $artifact"
 done
 ```
@@ -213,10 +213,10 @@ done
 ### Audit 3: Delete SQL exists
 
 ```bash
-for artifact_dir in server/app/api/v4/artifacts/*/; do
+for artifact_dir in server/app/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   [ ! -f "${artifact_dir}delete.py" ] && continue
-  found=$(find server/app/sql/v4/queries/ -name "delete_${artifact}_complete*" 2>/dev/null | head -1)
+  found=$(find server/app/v5/sql/queries/ -name "delete_${artifact}_complete*" 2>/dev/null | head -1)
   [ -z "$found" ] && echo "MISSING DELETE SQL: $artifact"
 done
 ```
@@ -226,7 +226,7 @@ done
 ### Audit 4: Transaction usage
 
 ```bash
-for artifact_dir in server/app/api/v4/artifacts/*/; do
+for artifact_dir in server/app/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}delete.py"
   [ ! -f "$file" ] && continue
@@ -239,7 +239,7 @@ done
 ### Audit 5: Cache invalidation
 
 ```bash
-for artifact_dir in server/app/api/v4/artifacts/*/; do
+for artifact_dir in server/app/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}delete.py"
   [ ! -f "$file" ] && continue
@@ -252,7 +252,7 @@ done
 ### Audit 6: Audit context
 
 ```bash
-for artifact_dir in server/app/api/v4/artifacts/*/; do
+for artifact_dir in server/app/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}delete.py"
   [ ! -f "$file" ] && continue
@@ -265,7 +265,7 @@ done
 ### Audit 7: Permission function exists
 
 ```bash
-for artifact_dir in server/app/api/v4/artifacts/*/; do
+for artifact_dir in server/app/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}permissions.py"
   [ ! -f "$file" ] && continue
@@ -278,7 +278,7 @@ done
 ### Audit 8: Delete SQL does not manually delete junctions
 
 ```bash
-for sql_file in server/app/sql/v4/queries/*/delete_*_complete.sql; do
+for sql_file in server/app/v5/sql/queries/*/delete_*_complete.sql; do
   artifact=$(basename "$(dirname "$sql_file")")
   # Check for manual junction deletion (should rely on CASCADE)
   grep -i "DELETE FROM.*junction" "$sql_file" && echo "MANUAL JUNCTION DELETE: $artifact ($sql_file)"
@@ -348,7 +348,7 @@ CASCADE-only cleanup: {N}
 ## Important Notes
 
 1. **Do NOT fix anything.** This is a read-only audit. Report only.
-2. **The persona delete is the gold standard.** Reference: `server/app/api/v4/artifacts/persona/delete.py`.
+2. **The persona delete is the gold standard.** Reference: `server/app/v5/api/main/persona/delete.py`.
 3. **CASCADE is the rule.** Delete SQL must not manually clean up junctions. If CASCADE is not set up on junction FKs, that's a migration/schema bug, not a delete endpoint bug (report it separately via the RELATION audit).
 4. **Usage counts are ACTIVE-only.** Only `active = true` junction rows block deletion. This is the unified permission model — same check for edit and delete.
 5. **Default artifacts**: Artifacts with no department associations are system defaults and require superadmin to delete.

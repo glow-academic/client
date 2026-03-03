@@ -14,17 +14,17 @@ import type { Metadata } from "next";
 import { loadCohortsListSearchParams } from "@/lib/search-params/cohorts";
 
 /** ---- Strong types from OpenAPI ---- */
-type CohortsListOut = OutputOf<"/api/v4/artifacts/cohorts/list", "post">;
-type DuplicateCohortIn = InputOf<"/api/v4/artifacts/cohorts/duplicate", "post">;
-type DuplicateCohortOut = OutputOf<"/api/v4/artifacts/cohorts/duplicate", "post">;
-type DeleteCohortIn = InputOf<"/api/v4/artifacts/cohorts/delete", "post">;
-type DeleteCohortOut = OutputOf<"/api/v4/artifacts/cohorts/delete", "post">;
-type SaveCohortIn = InputOf<"/api/v4/artifacts/cohorts/save", "post">;
-type SaveCohortOut = OutputOf<"/api/v4/artifacts/cohorts/save", "post">;
-type SearchFlagsIn = InputOf<"/api/v4/resources/flags/search", "post">;
-type SearchFlagsOut = NonNullable<OutputOf<"/api/v4/resources/flags/search", "post">["items"]>;
-type ParseCsvIn = InputOf<"/api/v4/uploads/csv", "post">;
-type ParseCsvOut = OutputOf<"/api/v4/uploads/csv", "post">;
+type CohortsListOut = OutputOf<"/api/v5/artifacts/cohorts/list", "post">;
+type DuplicateCohortIn = InputOf<"/api/v5/artifacts/cohorts/duplicate", "post">;
+type DuplicateCohortOut = OutputOf<"/api/v5/artifacts/cohorts/duplicate", "post">;
+type DeleteCohortIn = InputOf<"/api/v5/artifacts/cohorts/delete", "post">;
+type DeleteCohortOut = OutputOf<"/api/v5/artifacts/cohorts/delete", "post">;
+type SaveCohortIn = InputOf<"/api/v5/artifacts/cohorts/save", "post">;
+type SaveCohortOut = OutputOf<"/api/v5/artifacts/cohorts/save", "post">;
+type SearchFlagsIn = InputOf<"/api/v5/resources/flags/search", "post">;
+type SearchFlagsOut = NonNullable<OutputOf<"/api/v5/resources/flags/search", "post">["items"]>;
+type ParseCsvIn = InputOf<"/api/v5/uploads/csv", "post">;
+type ParseCsvOut = OutputOf<"/api/v5/uploads/csv", "post">;
 
 /** ---- Body type for cohorts list request ---- */
 type CohortsListBody = {
@@ -93,8 +93,8 @@ async function parseCsv(input: ParseCsvIn): Promise<ParseCsvOut> {
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/cohorts/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/cohorts/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/cohorts/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/cohorts/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/cohorts/docs", input);

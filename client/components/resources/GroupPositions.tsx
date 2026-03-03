@@ -24,11 +24,11 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 
 type FlushResult = { group_positions_id: string | null } | void;
 
-type CreateDraftGroupPositionsIn = InputOf<"/api/v4/resources/group_positions", "post">;
-type CreateDraftGroupPositionsOut = OutputOf<"/api/v4/resources/group_positions", "post">;
+type CreateDraftGroupPositionsIn = InputOf<"/api/v5/resources/group_positions", "post">;
+type CreateDraftGroupPositionsOut = OutputOf<"/api/v5/resources/group_positions", "post">;
 
 // Derive resource item type from the GET endpoint response
-type GroupPositionsGetResponse = OutputOf<"/api/v4/resources/group_positions/get", "post">;
+type GroupPositionsGetResponse = OutputOf<"/api/v5/resources/group_positions/get", "post">;
 export type GroupPositionResourceItem = NonNullable<GroupPositionsGetResponse["items"]>[number];
 
 export interface GroupPositionItem {

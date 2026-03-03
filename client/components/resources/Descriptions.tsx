@@ -24,18 +24,18 @@ import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftDescriptionsIn = InputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
-type LinkDescriptionsIn = InputOf<"/api/v4/resources/descriptions/link", "post">;
-type LinkDescriptionsOut = OutputOf<"/api/v4/resources/descriptions/link", "post">;
+type LinkDescriptionsIn = InputOf<"/api/v5/resources/descriptions/link", "post">;
+type LinkDescriptionsOut = OutputOf<"/api/v5/resources/descriptions/link", "post">;
 
 // Derive resource item type from the GET endpoint response
-type DescriptionsGetResponse = OutputOf<"/api/v4/resources/descriptions/get", "post">;
+type DescriptionsGetResponse = OutputOf<"/api/v5/resources/descriptions/get", "post">;
 export type DescriptionResourceItem = NonNullable<DescriptionsGetResponse["items"]>[number];
 
 // Word-based diff types and utilities

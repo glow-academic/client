@@ -35,22 +35,22 @@ import {
 } from "@/lib/resources/action-builders";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
-type SaveFieldIn = InputOf<"/api/v4/artifacts/fields/save", "post">;
-type SaveFieldOut = OutputOf<"/api/v4/artifacts/fields/save", "post">;
-type PatchFieldDraftIn = InputOf<"/api/v4/artifacts/fields/draft", "patch">;
-type PatchFieldDraftOut = OutputOf<"/api/v4/artifacts/fields/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type SaveFieldIn = InputOf<"/api/v5/artifacts/fields/save", "post">;
+type SaveFieldOut = OutputOf<"/api/v5/artifacts/fields/save", "post">;
+type PatchFieldDraftIn = InputOf<"/api/v5/artifacts/fields/draft", "patch">;
+type PatchFieldDraftOut = OutputOf<"/api/v5/artifacts/fields/draft", "patch">;
+type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 
-type FieldData = OutputOf<"/api/v4/artifacts/fields/get", "post">;
+type FieldData = OutputOf<"/api/v5/artifacts/fields/get", "post">;
 
 type FieldResourceType =
   | "names"

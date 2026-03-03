@@ -16,7 +16,7 @@ import { Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // Derive resource item type from the GET endpoint response
-type AuthItemKeysGetResponse = OutputOf<"/api/v4/resources/auth_item_keys/get", "post">;
+type AuthItemKeysGetResponse = OutputOf<"/api/v5/resources/auth_item_keys/get", "post">;
 export type AuthItemKeysResourceItem = NonNullable<AuthItemKeysGetResponse["items"]>[number];
 
 type AuthOption = {

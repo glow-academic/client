@@ -24,18 +24,18 @@ import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 
 type CreateDraftInstructionsIn = InputOf<
-  "/api/v4/resources/instructions",
+  "/api/v5/resources/instructions",
   "post"
 >;
 type CreateDraftInstructionsOut = OutputOf<
-  "/api/v4/resources/instructions",
+  "/api/v5/resources/instructions",
   "post"
 >;
-type LinkInstructionsIn = InputOf<"/api/v4/resources/instructions/link", "post">;
-type LinkInstructionsOut = OutputOf<"/api/v4/resources/instructions/link", "post">;
+type LinkInstructionsIn = InputOf<"/api/v5/resources/instructions/link", "post">;
+type LinkInstructionsOut = OutputOf<"/api/v5/resources/instructions/link", "post">;
 
 // Derive resource item type from the GET endpoint response
-type InstructionsGetResponse = OutputOf<"/api/v4/resources/instructions/get", "post">;
+type InstructionsGetResponse = OutputOf<"/api/v5/resources/instructions/get", "post">;
 export type InstructionResourceItem = NonNullable<InstructionsGetResponse["items"]>[number];
 
 // Word-based diff types and utilities

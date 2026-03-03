@@ -12,26 +12,26 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type ProfilesListIn = InputOf<"/api/v4/artifacts/profiles/list", "post">;
-type ProfilesListOut = OutputOf<"/api/v4/artifacts/profiles/list", "post">;
-type DeleteProfileIn = InputOf<"/api/v4/artifacts/profiles/delete", "post">;
-type DeleteProfileOut = OutputOf<"/api/v4/artifacts/profiles/delete", "post">;
-type BulkDeleteProfileIn = InputOf<"/api/v4/artifacts/profiles/bulk/delete", "post">;
-type BulkDeleteProfileOut = OutputOf<"/api/v4/artifacts/profiles/bulk/delete", "post">;
+type ProfilesListIn = InputOf<"/api/v5/artifacts/profiles/list", "post">;
+type ProfilesListOut = OutputOf<"/api/v5/artifacts/profiles/list", "post">;
+type DeleteProfileIn = InputOf<"/api/v5/artifacts/profiles/delete", "post">;
+type DeleteProfileOut = OutputOf<"/api/v5/artifacts/profiles/delete", "post">;
+type BulkDeleteProfileIn = InputOf<"/api/v5/artifacts/profiles/bulk/delete", "post">;
+type BulkDeleteProfileOut = OutputOf<"/api/v5/artifacts/profiles/bulk/delete", "post">;
 // profile/update doesn't exist - use profiles/save instead
-// type UpdateStaffIn = InputOf<"/api/v4/profile/update", "post">;
-// type UpdateStaffOut = OutputOf<"/api/v4/profile/update", "post">;
-type BulkUpdateProfileIn = InputOf<"/api/v4/artifacts/profiles/bulk/save", "post">;
-type BulkUpdateProfileOut = OutputOf<"/api/v4/artifacts/profiles/bulk/save", "post">;
-type SearchProfileIn = InputOf<"/api/v4/artifacts/profiles/bulk/search", "post">;
-type SearchProfileOut = OutputOf<"/api/v4/artifacts/profiles/bulk/search", "post">;
+// type UpdateStaffIn = InputOf<"/api/v5/profile/update", "post">;
+// type UpdateStaffOut = OutputOf<"/api/v5/profile/update", "post">;
+type BulkUpdateProfileIn = InputOf<"/api/v5/artifacts/profiles/bulk/save", "post">;
+type BulkUpdateProfileOut = OutputOf<"/api/v5/artifacts/profiles/bulk/save", "post">;
+type SearchProfileIn = InputOf<"/api/v5/artifacts/profiles/bulk/search", "post">;
+type SearchProfileOut = OutputOf<"/api/v5/artifacts/profiles/bulk/search", "post">;
 // Use profiles/get with null target_profile_id to get create profile data
-type GetProfileIn = InputOf<"/api/v4/artifacts/profiles/get", "post">;
-type GetProfileOut = OutputOf<"/api/v4/artifacts/profiles/get", "post">;
-type ProcessCSVIn = InputOf<"/api/v4/artifacts/profiles/bulk/process", "post">;
-type ProcessCSVOut = OutputOf<"/api/v4/artifacts/profiles/bulk/process", "post">;
-type BulkCreateOrUpdateProfileIn = InputOf<"/api/v4/artifacts/profiles/bulk/save", "post">;
-type BulkCreateOrUpdateProfileOut = OutputOf<"/api/v4/artifacts/profiles/bulk/save", "post">;
+type GetProfileIn = InputOf<"/api/v5/artifacts/profiles/get", "post">;
+type GetProfileOut = OutputOf<"/api/v5/artifacts/profiles/get", "post">;
+type ProcessCSVIn = InputOf<"/api/v5/artifacts/profiles/bulk/process", "post">;
+type ProcessCSVOut = OutputOf<"/api/v5/artifacts/profiles/bulk/process", "post">;
+type BulkCreateOrUpdateProfileIn = InputOf<"/api/v5/artifacts/profiles/bulk/save", "post">;
+type BulkCreateOrUpdateProfileOut = OutputOf<"/api/v5/artifacts/profiles/bulk/save", "post">;
 /** ---- Derived types from server responses ---- */
 type ProfileListItem = NonNullable<ProfilesListOut["profiles"]>[number];
 type SearchProfileItem = NonNullable<SearchProfileOut["profiles"]>[number];
@@ -97,8 +97,8 @@ async function bulkCreateOrUpdateProfile(
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/profiles/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/profiles/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/profiles/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/profiles/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/profiles/docs", input);

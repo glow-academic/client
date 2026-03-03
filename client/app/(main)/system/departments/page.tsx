@@ -11,11 +11,11 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type DepartmentsListOut = OutputOf<"/api/v4/artifacts/departments/list", "post">;
-type DuplicateDepartmentIn = InputOf<"/api/v4/artifacts/departments/duplicate", "post">;
-type DuplicateDepartmentOut = OutputOf<"/api/v4/artifacts/departments/duplicate", "post">;
-type DeleteDepartmentIn = InputOf<"/api/v4/artifacts/departments/delete", "post">;
-type DeleteDepartmentOut = OutputOf<"/api/v4/artifacts/departments/delete", "post">;
+type DepartmentsListOut = OutputOf<"/api/v5/artifacts/departments/list", "post">;
+type DuplicateDepartmentIn = InputOf<"/api/v5/artifacts/departments/duplicate", "post">;
+type DuplicateDepartmentOut = OutputOf<"/api/v5/artifacts/departments/duplicate", "post">;
+type DeleteDepartmentIn = InputOf<"/api/v5/artifacts/departments/delete", "post">;
+type DeleteDepartmentOut = OutputOf<"/api/v5/artifacts/departments/delete", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -55,8 +55,8 @@ async function deleteDepartment(
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/departments/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/departments/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/departments/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/departments/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/departments/docs", input);

@@ -12,7 +12,7 @@ import ScenarioPerformance from "./footer/ScenarioPerformance";
 import ScenarioSimulationPerformance from "./footer/ScenarioSimulationPerformance";
 import ScenarioStats from "./footer/ScenarioStats";
 
-export type FooterOut = OutputOf<"/api/v4/artifacts/dashboard/get", "post">;
+export type FooterOut = OutputOf<"/api/v5/artifacts/dashboard/get", "post">;
 
 function validateStatus(
   status: string | null | undefined,

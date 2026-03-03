@@ -22,7 +22,7 @@ import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 // Derive resource item type from the GET endpoint response
-type GroupRubricGetResponse = OutputOf<"/api/v4/resources/group_rubrics/get", "post">;
+type GroupRubricGetResponse = OutputOf<"/api/v5/resources/group_rubrics/get", "post">;
 export type GroupRubricResourceItem = NonNullable<GroupRubricGetResponse["items"]>[number];
 
 export interface GroupRubricOption {

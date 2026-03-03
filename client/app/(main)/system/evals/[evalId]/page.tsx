@@ -13,12 +13,12 @@ import type { Metadata } from "next";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetEvalIn = InputOf<"/api/v4/artifacts/evals/get", "post">;
-type GetEvalOut = OutputOf<"/api/v4/artifacts/evals/get", "post">;
-type SaveEvalIn = InputOf<"/api/v4/artifacts/evals/save", "post">;
-type SaveEvalOut = OutputOf<"/api/v4/artifacts/evals/save", "post">;
-type PatchEvalDraftIn = InputOf<"/api/v4/artifacts/evals/draft", "patch">;
-type PatchEvalDraftOut = OutputOf<"/api/v4/artifacts/evals/draft", "patch">;
+type GetEvalIn = InputOf<"/api/v5/artifacts/evals/get", "post">;
+type GetEvalOut = OutputOf<"/api/v5/artifacts/evals/get", "post">;
+type SaveEvalIn = InputOf<"/api/v5/artifacts/evals/save", "post">;
+type SaveEvalOut = OutputOf<"/api/v5/artifacts/evals/save", "post">;
+type PatchEvalDraftIn = InputOf<"/api/v5/artifacts/evals/draft", "patch">;
+type PatchEvalDraftOut = OutputOf<"/api/v5/artifacts/evals/draft", "patch">;
 // Note: Run/stop eval functionality moved to websocket events (evals_start, evals_stop)
 
 /** ---- Direct fetch for eval detail ---- */
@@ -32,8 +32,8 @@ const getEvalDetail = async (input: GetEvalIn): Promise<GetEvalOut> => {
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/evals/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/evals/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/evals/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/evals/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/evals/docs", input);

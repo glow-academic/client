@@ -13,11 +13,11 @@ import type { Metadata } from "next";
 import { loadModelsSearchParams } from "@/lib/search-params/models";
 
 /** ---- Strong types from OpenAPI ---- */
-type ModelsListOut = OutputOf<"/api/v4/artifacts/models/list", "post">;
-type DuplicateModelIn = InputOf<"/api/v4/artifacts/models/duplicate", "post">;
-type DuplicateModelOut = OutputOf<"/api/v4/artifacts/models/duplicate", "post">;
-type DeleteModelIn = InputOf<"/api/v4/artifacts/models/delete", "post">;
-type DeleteModelOut = OutputOf<"/api/v4/artifacts/models/delete", "post">;
+type ModelsListOut = OutputOf<"/api/v5/artifacts/models/list", "post">;
+type DuplicateModelIn = InputOf<"/api/v5/artifacts/models/duplicate", "post">;
+type DuplicateModelOut = OutputOf<"/api/v5/artifacts/models/duplicate", "post">;
+type DeleteModelIn = InputOf<"/api/v5/artifacts/models/delete", "post">;
+type DeleteModelOut = OutputOf<"/api/v5/artifacts/models/delete", "post">;
 
 /** ---- Body type for models list request ---- */
 type ModelsListBody = {
@@ -68,8 +68,8 @@ async function deleteModel(input: DeleteModelIn): Promise<DeleteModelOut> {
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/models/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/models/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/models/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/models/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/models/docs", input);

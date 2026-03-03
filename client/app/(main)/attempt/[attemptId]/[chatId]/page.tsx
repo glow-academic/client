@@ -12,15 +12,15 @@ import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetChatBundleOut = OutputOf<
-  "/api/v4/artifacts/chat/get",
+  "/api/v5/artifacts/chat/get",
   "post"
 >;
 type PatchChatDraftIn = InputOf<
-  "/api/v4/artifacts/chat/draft",
+  "/api/v5/artifacts/chat/draft",
   "patch"
 >;
 type PatchChatDraftOut = OutputOf<
-  "/api/v4/artifacts/chat/draft",
+  "/api/v5/artifacts/chat/draft",
   "patch"
 >;
 

@@ -22,11 +22,11 @@ import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
-type CreateDraftProtocolsIn = InputOf<"/api/v4/resources/protocols", "post">;
-type CreateDraftProtocolsOut = OutputOf<"/api/v4/resources/protocols", "post">;
+type CreateDraftProtocolsIn = InputOf<"/api/v5/resources/protocols", "post">;
+type CreateDraftProtocolsOut = OutputOf<"/api/v5/resources/protocols", "post">;
 
 // Derive resource item type from the GET endpoint response
-type ProtocolsGetResponse = OutputOf<"/api/v4/resources/protocols/get", "post">;
+type ProtocolsGetResponse = OutputOf<"/api/v5/resources/protocols/get", "post">;
 export type ProtocolResourceItem = NonNullable<ProtocolsGetResponse["items"]>[number];
 
 export interface ProtocolItem {

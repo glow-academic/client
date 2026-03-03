@@ -14,29 +14,29 @@ import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetDocumentIn = InputOf<"/api/v4/artifacts/documents/get", "post">;
-type GetDocumentOut = OutputOf<"/api/v4/artifacts/documents/get", "post">;
+type GetDocumentIn = InputOf<"/api/v5/artifacts/documents/get", "post">;
+type GetDocumentOut = OutputOf<"/api/v5/artifacts/documents/get", "post">;
 export type DocumentDetailOut = GetDocumentOut;
-type SaveDocumentIn = InputOf<"/api/v4/artifacts/documents/save", "post">;
-type SaveDocumentOut = OutputOf<"/api/v4/artifacts/documents/save", "post">;
-type PatchDocumentDraftIn = InputOf<"/api/v4/artifacts/documents/draft", "patch">;
-type PatchDocumentDraftOut = OutputOf<"/api/v4/artifacts/documents/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type SaveDocumentIn = InputOf<"/api/v5/artifacts/documents/save", "post">;
+type SaveDocumentOut = OutputOf<"/api/v5/artifacts/documents/save", "post">;
+type PatchDocumentDraftIn = InputOf<"/api/v5/artifacts/documents/draft", "patch">;
+type PatchDocumentDraftOut = OutputOf<"/api/v5/artifacts/documents/draft", "patch">;
+type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
-type CreateDraftUploadsIn = InputOf<"/api/v4/resources/uploads", "post">;
-type CreateDraftUploadsOut = OutputOf<"/api/v4/resources/uploads", "post">;
-type CreateDraftImagesIn = InputOf<"/api/v4/resources/images", "post">;
-type CreateDraftImagesOut = OutputOf<"/api/v4/resources/images", "post">;
-type CreateDraftTextsIn = InputOf<"/api/v4/resources/texts", "post">;
-type CreateDraftTextsOut = OutputOf<"/api/v4/resources/texts", "post">;
+type CreateDraftUploadsIn = InputOf<"/api/v5/resources/uploads", "post">;
+type CreateDraftUploadsOut = OutputOf<"/api/v5/resources/uploads", "post">;
+type CreateDraftImagesIn = InputOf<"/api/v5/resources/images", "post">;
+type CreateDraftImagesOut = OutputOf<"/api/v5/resources/images", "post">;
+type CreateDraftTextsIn = InputOf<"/api/v5/resources/texts", "post">;
+type CreateDraftTextsOut = OutputOf<"/api/v5/resources/texts", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -53,8 +53,8 @@ const getDocumentDefault = async (
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/documents/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/documents/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/documents/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/documents/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/documents/docs", input);

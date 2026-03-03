@@ -19,8 +19,8 @@ import type { Metadata } from "next";
 import { loadPracticeSearchParams } from "@/lib/search-params/practice";
 
 /** ---- Strong types from OpenAPI ---- */
-type PracticeIn = InputOf<"/api/v4/artifacts/practice/get", "post">;
-type PracticeOut = OutputOf<"/api/v4/artifacts/practice/get", "post">;
+type PracticeIn = InputOf<"/api/v5/artifacts/practice/get", "post">;
+type PracticeOut = OutputOf<"/api/v5/artifacts/practice/get", "post">;
 type PracticeHistoryOut = NonNullable<PracticeOut["history"]>;
 
 /** ---- Direct fetch for practice data (cards + embedded history) ---- */

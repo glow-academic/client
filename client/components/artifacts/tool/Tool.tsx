@@ -35,16 +35,16 @@ import { Check } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type SaveToolIn = InputOf<"/api/v4/artifacts/tools/save", "post">;
-type SaveToolOut = OutputOf<"/api/v4/artifacts/tools/save", "post">;
-type CreateDraftArgsIn = InputOf<"/api/v4/resources/args", "post">;
-type CreateDraftArgsOut = OutputOf<"/api/v4/resources/args", "post">;
+type SaveToolIn = InputOf<"/api/v5/artifacts/tools/save", "post">;
+type SaveToolOut = OutputOf<"/api/v5/artifacts/tools/save", "post">;
+type CreateDraftArgsIn = InputOf<"/api/v5/resources/args", "post">;
+type CreateDraftArgsOut = OutputOf<"/api/v5/resources/args", "post">;
 type CreateDraftArgsOutputsIn = InputOf<
-  "/api/v4/resources/args_outputs",
+  "/api/v5/resources/args_outputs",
   "post"
 >;
 type CreateDraftArgsOutputsOut = OutputOf<
-  "/api/v4/resources/args_outputs",
+  "/api/v5/resources/args_outputs",
   "post"
 >;
 type CreateDraftArgPositionsIn = {
@@ -60,10 +60,10 @@ type CreateDraftArgPositionsIn = {
 type CreateDraftArgPositionsOut = {
   id?: string | null;
 };
-type PatchToolDraftIn = InputOf<"/api/v4/artifacts/tools/draft", "patch">;
-type PatchToolDraftOut = OutputOf<"/api/v4/artifacts/tools/draft", "patch">;
+type PatchToolDraftIn = InputOf<"/api/v5/artifacts/tools/draft", "patch">;
+type PatchToolDraftOut = OutputOf<"/api/v5/artifacts/tools/draft", "patch">;
 
-type ToolData = OutputOf<"/api/v4/artifacts/tools/get", "post">;
+type ToolData = OutputOf<"/api/v5/artifacts/tools/get", "post">;
 type ToolDataWithArgPositions = ToolData & {
   arg_positions?: {
     current?: Array<{

@@ -11,7 +11,7 @@ export async function POST(
     const body = await request.json().catch(() => ({}));
 
     const response = await fetch(
-      `${INTERNAL_HTTP_BASE}/api/v4/uploads/${upload_id}/finalize`,
+      `${INTERNAL_HTTP_BASE}/api/v5/uploads/${upload_id}/finalize`,
       {
         method: "POST",
         headers: {

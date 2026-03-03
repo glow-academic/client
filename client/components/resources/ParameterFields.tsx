@@ -23,16 +23,16 @@ import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftParameterFieldsIn = InputOf<
-  "/api/v4/resources/parameter_fields",
+  "/api/v5/resources/parameter_fields",
   "post"
 >;
 type CreateDraftParameterFieldsOut = OutputOf<
-  "/api/v4/resources/parameter_fields",
+  "/api/v5/resources/parameter_fields",
   "post"
 >;
 
 // Derive resource item type from the GET endpoint response
-type ParameterFieldGetResponse = OutputOf<"/api/v4/resources/parameter_fields/get", "post">;
+type ParameterFieldGetResponse = OutputOf<"/api/v5/resources/parameter_fields/get", "post">;
 export type ParameterFieldResourceItem = NonNullable<ParameterFieldGetResponse["items"]>[number];
 
 export interface ParameterFieldsProps {

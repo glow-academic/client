@@ -23,11 +23,11 @@ import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 // Link types for tool call tracking
-type LinkProfilesIn = InputOf<"/api/v4/resources/profiles/link", "post">;
-type LinkProfilesOut = OutputOf<"/api/v4/resources/profiles/link", "post">;
+type LinkProfilesIn = InputOf<"/api/v5/resources/profiles/link", "post">;
+type LinkProfilesOut = OutputOf<"/api/v5/resources/profiles/link", "post">;
 
 // Derive resource item type from the GET endpoint response
-type ProfileGetResponse = OutputOf<"/api/v4/resources/profiles/get", "post">;
+type ProfileGetResponse = OutputOf<"/api/v5/resources/profiles/get", "post">;
 export type ProfileResourceItem = NonNullable<ProfileGetResponse["items"]>[number];
 
 export interface ProfilesItem {

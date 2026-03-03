@@ -48,9 +48,9 @@ import { InputOf, OutputOf } from "@/lib/api/types";
 import { api } from "@/lib/api/client";
 
 // 1. Type aliases derived from OpenAPI
-type ListOut = OutputOf<"/api/v4/artifacts/agents/list", "post">;
-type DuplicateIn = InputOf<"/api/v4/artifacts/agents/duplicate", "post">;
-type DuplicateOut = OutputOf<"/api/v4/artifacts/agents/duplicate", "post">;
+type ListOut = OutputOf<"/api/v5/artifacts/agents/list", "post">;
+type DuplicateIn = InputOf<"/api/v5/artifacts/agents/duplicate", "post">;
+type DuplicateOut = OutputOf<"/api/v5/artifacts/agents/duplicate", "post">;
 
 // 2. Server actions using derived types
 async function duplicateAgent(input: DuplicateIn): Promise<DuplicateOut> {
@@ -71,7 +71,7 @@ Every `page.tsx` file that makes API calls must define type aliases using `Input
 
 **Correct:**
 ```typescript
-type AgentsListOut = OutputOf<"/api/v4/artifacts/agents/list", "post">;
+type AgentsListOut = OutputOf<"/api/v5/artifacts/agents/list", "post">;
 ```
 
 **Incorrect:**
@@ -134,7 +134,7 @@ Files must not define `type` or `interface` declarations that replicate the shap
 
 **Correct:**
 ```typescript
-type AgentsListOut = OutputOf<"/api/v4/artifacts/agents/list", "post">;
+type AgentsListOut = OutputOf<"/api/v5/artifacts/agents/list", "post">;
 type AgentItem = AgentsListOut["items"][number];
 ```
 

@@ -34,17 +34,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 // Link types for tool call tracking
-type LinkQuestionsIn = InputOf<"/api/v4/resources/questions/link", "post">;
-type LinkQuestionsOut = OutputOf<"/api/v4/resources/questions/link", "post">;
+type LinkQuestionsIn = InputOf<"/api/v5/resources/questions/link", "post">;
+type LinkQuestionsOut = OutputOf<"/api/v5/resources/questions/link", "post">;
 
-type CreateDraftQuestionsIn = InputOf<"/api/v4/resources/questions", "post">;
+type CreateDraftQuestionsIn = InputOf<"/api/v5/resources/questions", "post">;
 type CreateDraftQuestionsOut = OutputOf<
-  "/api/v4/resources/questions",
+  "/api/v5/resources/questions",
   "post"
 >;
 
 // Derive resource item type from the GET endpoint response
-type QuestionsGetResponse = OutputOf<"/api/v4/resources/questions/get", "post">;
+type QuestionsGetResponse = OutputOf<"/api/v5/resources/questions/get", "post">;
 export type QuestionsResourceItem = NonNullable<QuestionsGetResponse["items"]>[number];
 
 export interface QuestionsProps {

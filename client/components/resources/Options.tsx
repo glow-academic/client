@@ -32,14 +32,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { QuestionsResourceItem } from "./Questions";
 
-type CreateDraftOptionsIn = InputOf<"/api/v4/resources/options", "post">;
-type CreateDraftOptionsOut = OutputOf<"/api/v4/resources/options", "post">;
+type CreateDraftOptionsIn = InputOf<"/api/v5/resources/options", "post">;
+type CreateDraftOptionsOut = OutputOf<"/api/v5/resources/options", "post">;
 
-type LinkOptionsIn = InputOf<"/api/v4/resources/options/link", "post">;
-type LinkOptionsOut = OutputOf<"/api/v4/resources/options/link", "post">;
+type LinkOptionsIn = InputOf<"/api/v5/resources/options/link", "post">;
+type LinkOptionsOut = OutputOf<"/api/v5/resources/options/link", "post">;
 
 // Derive resource item type from the GET endpoint response
-type OptionsGetResponse = OutputOf<"/api/v4/resources/options/get", "post">;
+type OptionsGetResponse = OutputOf<"/api/v5/resources/options/get", "post">;
 export type OptionResourceItem = NonNullable<
   OptionsGetResponse["items"]
 >[number];

@@ -44,52 +44,52 @@ import type { ResourceType } from "@/lib/resources/types";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type SaveSimulationIn = InputOf<"/api/v4/artifacts/simulations/save", "post">;
-type SaveSimulationOut = OutputOf<"/api/v4/artifacts/simulations/save", "post">;
-type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type SaveSimulationIn = InputOf<"/api/v5/artifacts/simulations/save", "post">;
+type SaveSimulationOut = OutputOf<"/api/v5/artifacts/simulations/save", "post">;
+type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftScenarioPositionsIn = InputOf<
-  "/api/v4/resources/scenario_positions",
+  "/api/v5/resources/scenario_positions",
   "post"
 >;
 type CreateDraftScenarioPositionsOut = OutputOf<
-  "/api/v4/resources/scenario_positions",
+  "/api/v5/resources/scenario_positions",
   "post"
 >;
 type CreateDraftScenarioRubricsIn = InputOf<
-  "/api/v4/resources/scenario_rubrics",
+  "/api/v5/resources/scenario_rubrics",
   "post"
 >;
 type CreateDraftScenarioRubricsOut = OutputOf<
-  "/api/v4/resources/scenario_rubrics",
+  "/api/v5/resources/scenario_rubrics",
   "post"
 >;
 type CreateDraftScenarioTimeLimitsIn = InputOf<
-  "/api/v4/resources/scenario_time_limits",
+  "/api/v5/resources/scenario_time_limits",
   "post"
 >;
 type CreateDraftScenarioTimeLimitsOut = OutputOf<
-  "/api/v4/resources/scenario_time_limits",
+  "/api/v5/resources/scenario_time_limits",
   "post"
 >;
 type PatchSimulationDraftIn = InputOf<
-  "/api/v4/artifacts/simulations/draft",
+  "/api/v5/artifacts/simulations/draft",
   "patch"
 >;
 type PatchSimulationDraftOut = OutputOf<
-  "/api/v4/artifacts/simulations/draft",
+  "/api/v5/artifacts/simulations/draft",
   "patch"
 >;
 
-type SimulationData = OutputOf<"/api/v4/artifacts/simulations/get", "post">;
+type SimulationData = OutputOf<"/api/v5/artifacts/simulations/get", "post">;
 type SimulationResourceType =
   | ResourceType
   | "scenario_time_limits";

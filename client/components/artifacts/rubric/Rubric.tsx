@@ -37,31 +37,31 @@ import {
 } from "@/lib/resources/action-builders";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
-type SaveRubricIn = InputOf<"/api/v4/artifacts/rubrics/save", "post">;
-type SaveRubricOut = OutputOf<"/api/v4/artifacts/rubrics/save", "post">;
-type PatchRubricDraftIn = InputOf<"/api/v4/artifacts/rubrics/draft", "patch">;
-type PatchRubricDraftOut = OutputOf<"/api/v4/artifacts/rubrics/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type SaveRubricIn = InputOf<"/api/v5/artifacts/rubrics/save", "post">;
+type SaveRubricOut = OutputOf<"/api/v5/artifacts/rubrics/save", "post">;
+type PatchRubricDraftIn = InputOf<"/api/v5/artifacts/rubrics/draft", "patch">;
+type PatchRubricDraftOut = OutputOf<"/api/v5/artifacts/rubrics/draft", "patch">;
+type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
-type CreateDraftPointsIn = InputOf<"/api/v4/resources/points", "post">;
-type CreateDraftPointsOut = OutputOf<"/api/v4/resources/points", "post">;
+type CreateDraftPointsIn = InputOf<"/api/v5/resources/points", "post">;
+type CreateDraftPointsOut = OutputOf<"/api/v5/resources/points", "post">;
 type CreateDraftStandardGroupsIn = InputOf<
-  "/api/v4/resources/standard_groups",
+  "/api/v5/resources/standard_groups",
   "post"
 >;
 type CreateDraftStandardGroupsOut = OutputOf<
-  "/api/v4/resources/standard_groups",
+  "/api/v5/resources/standard_groups",
   "post"
 >;
-type RubricData = OutputOf<"/api/v4/artifacts/rubrics/get", "post">;
+type RubricData = OutputOf<"/api/v5/artifacts/rubrics/get", "post">;
 type RubricResourceType =
   | "names"
   | "descriptions"

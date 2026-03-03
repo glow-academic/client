@@ -23,7 +23,7 @@ import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 // Derive resource item type from the GET endpoint response
-type ReasoningLevelsGetResponse = OutputOf<"/api/v4/resources/reasoning_levels/get", "post">;
+type ReasoningLevelsGetResponse = OutputOf<"/api/v5/resources/reasoning_levels/get", "post">;
 export type ReasoningLevelResourceItem = NonNullable<ReasoningLevelsGetResponse["items"]>[number];
 
 export interface ReasoningLevelItem {

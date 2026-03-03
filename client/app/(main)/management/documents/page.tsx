@@ -12,10 +12,10 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type DocumentsListIn = InputOf<"/api/v4/artifacts/documents/list", "post">;
-type DocumentsListOut = OutputOf<"/api/v4/artifacts/documents/list", "post">;
-type DeleteDocumentIn = InputOf<"/api/v4/artifacts/documents/delete", "post">;
-type DeleteDocumentOut = OutputOf<"/api/v4/artifacts/documents/delete", "post">;
+type DocumentsListIn = InputOf<"/api/v5/artifacts/documents/list", "post">;
+type DocumentsListOut = OutputOf<"/api/v5/artifacts/documents/list", "post">;
+type DeleteDocumentIn = InputOf<"/api/v5/artifacts/documents/delete", "post">;
+type DeleteDocumentOut = OutputOf<"/api/v5/artifacts/documents/delete", "post">;
 // GenerateTemplate types removed - now using WebSocket
 type GenerateTemplateIn = never;
 type GenerateTemplateOut = never;
@@ -52,8 +52,8 @@ async function deleteDocument(
 // generateTemplate removed - component now uses WebSocket directly
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/documents/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/documents/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/documents/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/documents/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/documents/docs", input);

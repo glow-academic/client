@@ -13,58 +13,58 @@ import type { Metadata } from "next";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetCohortIn = InputOf<"/api/v4/artifacts/cohorts/get", "post">;
-type GetCohortOut = OutputOf<"/api/v4/artifacts/cohorts/get", "post">;
-type SaveCohortIn = InputOf<"/api/v4/artifacts/cohorts/save", "post">;
-type SaveCohortOut = OutputOf<"/api/v4/artifacts/cohorts/save", "post">;
-type PatchCohortDraftIn = InputOf<"/api/v4/artifacts/cohorts/draft", "patch">;
-type PatchCohortDraftOut = OutputOf<"/api/v4/artifacts/cohorts/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type GetCohortIn = InputOf<"/api/v5/artifacts/cohorts/get", "post">;
+type GetCohortOut = OutputOf<"/api/v5/artifacts/cohorts/get", "post">;
+type SaveCohortIn = InputOf<"/api/v5/artifacts/cohorts/save", "post">;
+type SaveCohortOut = OutputOf<"/api/v5/artifacts/cohorts/save", "post">;
+type PatchCohortDraftIn = InputOf<"/api/v5/artifacts/cohorts/draft", "patch">;
+type PatchCohortDraftOut = OutputOf<"/api/v5/artifacts/cohorts/draft", "patch">;
+type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftSimulationPositionsIn = InputOf<
-  "/api/v4/resources/simulation_positions",
+  "/api/v5/resources/simulation_positions",
   "post"
 >;
 type CreateDraftSimulationPositionsOut = OutputOf<
-  "/api/v4/resources/simulation_positions",
+  "/api/v5/resources/simulation_positions",
   "post"
 >;
 type CreateDraftProfilePersonasIn = InputOf<
-  "/api/v4/resources/profile_personas",
+  "/api/v5/resources/profile_personas",
   "post"
 >;
 type CreateDraftProfilePersonasOut = OutputOf<
-  "/api/v4/resources/profile_personas",
+  "/api/v5/resources/profile_personas",
   "post"
 >;
 
 // Link types for tool call tracking
-type LinkNamesIn = InputOf<"/api/v4/resources/names/link", "post">;
-type LinkNamesOut = OutputOf<"/api/v4/resources/names/link", "post">;
-type LinkDescriptionsIn = InputOf<"/api/v4/resources/descriptions/link", "post">;
-type LinkDescriptionsOut = OutputOf<"/api/v4/resources/descriptions/link", "post">;
-type LinkFlagsIn = InputOf<"/api/v4/resources/flags/link", "post">;
-type LinkFlagsOut = OutputOf<"/api/v4/resources/flags/link", "post">;
-type LinkDepartmentsIn = InputOf<"/api/v4/resources/departments/link", "post">;
-type LinkDepartmentsOut = OutputOf<"/api/v4/resources/departments/link", "post">;
-type LinkSimulationsIn = InputOf<"/api/v4/resources/simulations/link", "post">;
-type LinkSimulationsOut = OutputOf<"/api/v4/resources/simulations/link", "post">;
-type LinkSimulationPositionsIn = InputOf<"/api/v4/resources/simulation_positions/link", "post">;
-type LinkSimulationPositionsOut = OutputOf<"/api/v4/resources/simulation_positions/link", "post">;
-type LinkSimulationAvailabilityIn = InputOf<"/api/v4/resources/simulation_availability/link", "post">;
-type LinkSimulationAvailabilityOut = OutputOf<"/api/v4/resources/simulation_availability/link", "post">;
-type LinkProfilesIn = InputOf<"/api/v4/resources/profiles/link", "post">;
-type LinkProfilesOut = OutputOf<"/api/v4/resources/profiles/link", "post">;
-type LinkProfilePersonasIn = InputOf<"/api/v4/resources/profile_personas/link", "post">;
-type LinkProfilePersonasOut = OutputOf<"/api/v4/resources/profile_personas/link", "post">;
+type LinkNamesIn = InputOf<"/api/v5/resources/names/link", "post">;
+type LinkNamesOut = OutputOf<"/api/v5/resources/names/link", "post">;
+type LinkDescriptionsIn = InputOf<"/api/v5/resources/descriptions/link", "post">;
+type LinkDescriptionsOut = OutputOf<"/api/v5/resources/descriptions/link", "post">;
+type LinkFlagsIn = InputOf<"/api/v5/resources/flags/link", "post">;
+type LinkFlagsOut = OutputOf<"/api/v5/resources/flags/link", "post">;
+type LinkDepartmentsIn = InputOf<"/api/v5/resources/departments/link", "post">;
+type LinkDepartmentsOut = OutputOf<"/api/v5/resources/departments/link", "post">;
+type LinkSimulationsIn = InputOf<"/api/v5/resources/simulations/link", "post">;
+type LinkSimulationsOut = OutputOf<"/api/v5/resources/simulations/link", "post">;
+type LinkSimulationPositionsIn = InputOf<"/api/v5/resources/simulation_positions/link", "post">;
+type LinkSimulationPositionsOut = OutputOf<"/api/v5/resources/simulation_positions/link", "post">;
+type LinkSimulationAvailabilityIn = InputOf<"/api/v5/resources/simulation_availability/link", "post">;
+type LinkSimulationAvailabilityOut = OutputOf<"/api/v5/resources/simulation_availability/link", "post">;
+type LinkProfilesIn = InputOf<"/api/v5/resources/profiles/link", "post">;
+type LinkProfilesOut = OutputOf<"/api/v5/resources/profiles/link", "post">;
+type LinkProfilePersonasIn = InputOf<"/api/v5/resources/profile_personas/link", "post">;
+type LinkProfilePersonasOut = OutputOf<"/api/v5/resources/profile_personas/link", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -173,8 +173,8 @@ async function linkProfilePersonas(input: LinkProfilePersonasIn): Promise<LinkPr
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/cohorts/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/cohorts/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/cohorts/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/cohorts/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/cohorts/docs", input);

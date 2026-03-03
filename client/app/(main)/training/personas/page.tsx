@@ -14,21 +14,21 @@ import type { Metadata } from "next";
 import { loadPersonasSearchParams } from "@/lib/search-params/personas";
 
 /** ---- Strong types from OpenAPI ---- */
-type PersonasListOut = OutputOf<"/api/v4/artifacts/personas/list", "post">;
-type DuplicatePersonaIn = InputOf<"/api/v4/artifacts/personas/duplicate", "post">;
-type DuplicatePersonaOut = OutputOf<"/api/v4/artifacts/personas/duplicate", "post">;
-type DeletePersonaIn = InputOf<"/api/v4/artifacts/personas/delete", "post">;
-type DeletePersonaOut = OutputOf<"/api/v4/artifacts/personas/delete", "post">;
-type SavePersonaIn = InputOf<"/api/v4/artifacts/personas/save", "post">;
-type SavePersonaOut = OutputOf<"/api/v4/artifacts/personas/save", "post">;
-type SearchColorsIn = InputOf<"/api/v4/resources/colors/search", "post">;
-type SearchColorsOut = NonNullable<OutputOf<"/api/v4/resources/colors/search", "post">["items"]>;
-type SearchIconsIn = InputOf<"/api/v4/resources/icons/search", "post">;
-type SearchIconsOut = NonNullable<OutputOf<"/api/v4/resources/icons/search", "post">["items"]>;
-type SearchVoicesIn = InputOf<"/api/v4/resources/voices/search", "post">;
-type SearchVoicesOut = NonNullable<OutputOf<"/api/v4/resources/voices/search", "post">["items"]>;
-type ParseCsvIn = InputOf<"/api/v4/uploads/csv", "post">;
-type ParseCsvOut = OutputOf<"/api/v4/uploads/csv", "post">;
+type PersonasListOut = OutputOf<"/api/v5/artifacts/personas/list", "post">;
+type DuplicatePersonaIn = InputOf<"/api/v5/artifacts/personas/duplicate", "post">;
+type DuplicatePersonaOut = OutputOf<"/api/v5/artifacts/personas/duplicate", "post">;
+type DeletePersonaIn = InputOf<"/api/v5/artifacts/personas/delete", "post">;
+type DeletePersonaOut = OutputOf<"/api/v5/artifacts/personas/delete", "post">;
+type SavePersonaIn = InputOf<"/api/v5/artifacts/personas/save", "post">;
+type SavePersonaOut = OutputOf<"/api/v5/artifacts/personas/save", "post">;
+type SearchColorsIn = InputOf<"/api/v5/resources/colors/search", "post">;
+type SearchColorsOut = NonNullable<OutputOf<"/api/v5/resources/colors/search", "post">["items"]>;
+type SearchIconsIn = InputOf<"/api/v5/resources/icons/search", "post">;
+type SearchIconsOut = NonNullable<OutputOf<"/api/v5/resources/icons/search", "post">["items"]>;
+type SearchVoicesIn = InputOf<"/api/v5/resources/voices/search", "post">;
+type SearchVoicesOut = NonNullable<OutputOf<"/api/v5/resources/voices/search", "post">["items"]>;
+type ParseCsvIn = InputOf<"/api/v5/uploads/csv", "post">;
+type ParseCsvOut = OutputOf<"/api/v5/uploads/csv", "post">;
 
 /** ---- Body type for personas list request ---- */
 type PersonasListBody = {
@@ -115,8 +115,8 @@ async function parseCsv(input: ParseCsvIn): Promise<ParseCsvOut> {
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/personas/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/personas/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/personas/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/personas/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/personas/docs", input);

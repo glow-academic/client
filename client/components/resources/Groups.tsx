@@ -23,7 +23,7 @@ import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 // Derive resource item type from the GET endpoint response
-type GroupGetResponse = OutputOf<"/api/v4/resources/groups/get", "post">;
+type GroupGetResponse = OutputOf<"/api/v5/resources/groups/get", "post">;
 export type GroupResourceItem = NonNullable<GroupGetResponse["items"]>[number];
 
 export interface GroupItem {

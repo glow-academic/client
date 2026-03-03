@@ -20,8 +20,8 @@ import { Suspense } from "react";
 import { loadReportsSearchParams } from "@/lib/search-params/reports";
 
 /** ---- Strong types from OpenAPI ---- */
-type ReportsIn = InputOf<"/api/v4/artifacts/reports/get", "post">;
-type ReportsOut = OutputOf<"/api/v4/artifacts/reports/get", "post">;
+type ReportsIn = InputOf<"/api/v5/artifacts/reports/get", "post">;
+type ReportsOut = OutputOf<"/api/v5/artifacts/reports/get", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Reports responses exceed Next.js 2MB cache limit (~3.2MB).
@@ -42,8 +42,8 @@ const getReports = async (input: ReportsIn): Promise<ReportsOut> => {
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/reports/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/reports/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/reports/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/reports/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/reports/docs", input);

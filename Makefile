@@ -129,9 +129,9 @@ generate-test-schema:
 	@echo "✅ Test schema generated at server/tests/test-schema.sql"
 
 # Test paths (DRY)
-UNIT_TEST_PATH = server/tests/unit
-INTEGRATION_TEST_PATH = server/tests/integration
-E2E_TEST_PATH = server/tests/e2e
+UNIT_TEST_PATH = server/tests/v5/unit
+INTEGRATION_TEST_PATH = server/tests/v5/integration
+E2E_TEST_PATH = server/tests/v5/e2e
 
 # Run unit tests
 test-unit: check-venv
@@ -277,7 +277,7 @@ run: check-venv
 		(docker logs --tail 0 -f glow-keycloak 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;34m[KEYCLOAK]\033[0m %s' "$$line")"; done) & \
 	fi; \
 	(cd server && redis-server --port $(REDIS_PORT) --dir . --dbfilename dump.rdb 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;31m[REDIS]\033[0m %s' "$$line")"; done) & \
-	(cd server && ( $(PWD)/$(VENV_PYTHON) -m uvicorn app.main:app --reload --host 0.0.0.0 --port $(SERVER_PORT) --reload-exclude server/openapi.json --reload-exclude 'app/sql/types.py' --reload-exclude 'tests/sql/types.py') 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;32m[SERVER]\033[0m %s' "$$line")"; done) & \
+	(cd server && ( $(PWD)/$(VENV_PYTHON) -m uvicorn app.main:app --reload --host 0.0.0.0 --port $(SERVER_PORT) --reload-exclude server/openapi.json --reload-exclude 'app/sql/types.py' --reload-exclude 'tests/v5/sql/types.py') 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;32m[SERVER]\033[0m %s' "$$line")"; done) & \
 	(cd client && yarn watch:openapi 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;36m[OPENAPI]\033[0m %s' "$$line")"; done) & \
 	(cd client && yarn watch:sql-types 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;36m[SQL-TYPES]\033[0m %s' "$$line")"; done) & \
 	(cd client && APP_PREFIX=$${APP_PREFIX:-}; KEYCLOAK_PUBLIC_URL=http://localhost:8080/auth NEXT_PUBLIC_KEYCLOAK_URL=http://localhost:8080/auth NODE_OPTIONS='--dns-result-order=ipv4first' yarn dev 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;35m[CLIENT]\033[0m %s' "$$line")"; done) & \
@@ -387,7 +387,7 @@ sql-compile: check-venv
 	 DB_NAME="$${DB_NAME:-mydb}" \
 	 DB_HOST="$${DB_HOST:-localhost}" \
 	 DB_PORT="$${DB_PORT:-5432}" \
-	 $(VENV_PYTHON) -c "import asyncio; from app.infra.v4.sql.compile_types import compile_sql_types; exit(0 if asyncio.run(compile_sql_types())[0] else 1)"
+	 $(VENV_PYTHON) -c "import asyncio; from app.v5.infra.sql.compile_types import compile_sql_types; exit(0 if asyncio.run(compile_sql_types())[0] else 1)"
 	@echo "✅ SQL compilation complete"
 
 # Generate registry files from DB introspection + filesystem scanning
@@ -416,7 +416,7 @@ registry-validate: check-venv
 sql-compile-incremental: check-venv
 	@if [ -z "$(FILE)" ]; then \
 		echo "❌ FILE variable required for incremental compilation"; \
-		echo "Usage: make sql-compile-incremental FILE=app/sql/v4/queries/personas/patch_persona_draft_complete.sql"; \
+		echo "Usage: make sql-compile-incremental FILE=app/v5/sql/queries/personas/patch_persona_draft_complete.sql"; \
 		exit 1; \
 	fi
 	@echo "Compiling SQL file incrementally: $(FILE)..."
@@ -428,7 +428,7 @@ sql-compile-incremental: check-venv
 	 DB_NAME="$${DB_NAME:-mydb}" \
 	 DB_HOST="$${DB_HOST:-localhost}" \
 	 DB_PORT="$${DB_PORT:-5432}" \
-	 $(VENV_PYTHON) -c "import asyncio, sys; from app.infra.v4.sql.compile_types import compile_sql_types; exit(0 if asyncio.run(compile_sql_types(sql_files=[sys.argv[1]]))[0] else 1)" "$(FILE)"
+	 $(VENV_PYTHON) -c "import asyncio, sys; from app.v5.infra.sql.compile_types import compile_sql_types; exit(0 if asyncio.run(compile_sql_types(sql_files=[sys.argv[1]]))[0] else 1)" "$(FILE)"
 	@curl -sfX POST http://localhost:$(SERVER_PORT)/schema-changed >/dev/null 2>&1 || true
 
 # Watch SQL files and regenerate types on change

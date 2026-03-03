@@ -23,11 +23,11 @@ import { useResourceAi } from "@/hooks/use-resource-ai";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
-type LinkIconsIn = InputOf<"/api/v4/resources/icons/link", "post">;
-type LinkIconsOut = OutputOf<"/api/v4/resources/icons/link", "post">;
+type LinkIconsIn = InputOf<"/api/v5/resources/icons/link", "post">;
+type LinkIconsOut = OutputOf<"/api/v5/resources/icons/link", "post">;
 
 // Derive resource item type from the GET endpoint response
-type IconGetResponse = OutputOf<"/api/v4/resources/icons/get", "post">;
+type IconGetResponse = OutputOf<"/api/v5/resources/icons/get", "post">;
 export type IconResourceItem = NonNullable<IconGetResponse["items"]>[number];
 
 export interface IconItem {

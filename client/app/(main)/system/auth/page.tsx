@@ -9,11 +9,11 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type AuthListOut = OutputOf<"/api/v4/artifacts/auths/list", "post">;
-type DuplicateAuthIn = InputOf<"/api/v4/artifacts/auths/duplicate", "post">;
-type DuplicateAuthOut = OutputOf<"/api/v4/artifacts/auths/duplicate", "post">;
-type DeleteAuthIn = InputOf<"/api/v4/artifacts/auths/delete", "post">;
-type DeleteAuthOut = OutputOf<"/api/v4/artifacts/auths/delete", "post">;
+type AuthListOut = OutputOf<"/api/v5/artifacts/auths/list", "post">;
+type DuplicateAuthIn = InputOf<"/api/v5/artifacts/auths/duplicate", "post">;
+type DuplicateAuthOut = OutputOf<"/api/v5/artifacts/auths/duplicate", "post">;
+type DeleteAuthIn = InputOf<"/api/v5/artifacts/auths/delete", "post">;
+type DeleteAuthOut = OutputOf<"/api/v5/artifacts/auths/delete", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -53,8 +53,8 @@ async function deleteAuth(input: DeleteAuthIn): Promise<DeleteAuthOut> {
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/auths/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/auths/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/auths/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/auths/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/auths/docs", input);

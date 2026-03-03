@@ -31,17 +31,17 @@ Every source module MUST have a corresponding test file. The mapping is:
 ### Integration tests — one file per endpoint/handler
 
 ```
-server/app/api/v4/artifacts/{artifact}/{endpoint}.py
-  → server/tests/integration/api/v4/artifacts/{artifact}/test_{endpoint}.py
+server/app/v5/api/main/{artifact}/{endpoint}.py
+  → server/tests/integration/api/v5/artifacts/{artifact}/test_{endpoint}.py
 
-server/app/api/v4/resources/{resource}/{endpoint}.py
-  → server/tests/integration/api/v4/resources/{resource}/test_{endpoint}.py
+server/app/v5/api/resources/{resource}/{endpoint}.py
+  → server/tests/integration/api/v5/resources/{resource}/test_{endpoint}.py
 
-server/app/api/v4/views/{view}/{endpoint}.py
-  → server/tests/integration/api/v4/views/{view}/test_{endpoint}.py
+server/app/v5/api/views/{view}/{endpoint}.py
+  → server/tests/integration/api/v5/views/{view}/test_{endpoint}.py
 
-server/app/socket/v4/artifacts/{artifact}/{handler}.py
-  → server/tests/integration/socket/v4/artifacts/{artifact}/test_{handler}.py
+server/app/v5/socket/artifacts/{artifact}/{handler}.py
+  → server/tests/integration/socket/v5/artifacts/{artifact}/test_{handler}.py
 ```
 
 **Excluded from integration stubs:** `__init__.py`, `docs.py`, `permissions.py`, `types.py`
@@ -49,11 +49,11 @@ server/app/socket/v4/artifacts/{artifact}/{handler}.py
 ### Unit tests — one file per logic module
 
 ```
-server/app/api/v4/artifacts/{artifact}/permissions.py
-  → server/tests/unit/api/v4/artifacts/{artifact}/test_permissions.py
+server/app/v5/api/main/{artifact}/permissions.py
+  → server/tests/unit/api/v5/artifacts/{artifact}/test_permissions.py
 
-server/app/socket/v4/artifacts/{artifact}/permissions.py
-  → server/tests/unit/socket/v4/artifacts/{artifact}/test_permissions.py
+server/app/v5/socket/artifacts/{artifact}/permissions.py
+  → server/tests/unit/socket/v5/artifacts/{artifact}/test_permissions.py
 
 server/app/utils/{module}.py
   → server/tests/unit/test_{module}.py
@@ -65,7 +65,7 @@ server/app/utils/{dir}/{module}.py
 ### E2E tests — one file per artifact
 
 ```
-server/tests/e2e/v4/test_{artifact}.py
+server/tests/e2e/v5/test_{artifact}.py
 ```
 
 Each E2E file covers the full CRUD lifecycle for one artifact.
@@ -88,14 +88,14 @@ All database queries in integration tests MUST use `execute_sql_typed()` with a 
 
 **SQL test helper location:**
 ```
-server/tests/sql/v4/integration/queries/{layer}/{domain}/test_{name}_v4_complete.sql
+server/tests/sql/v5/integration/queries/{layer}/{domain}/test_{name}_v4_complete.sql
 ```
 
 **Correct:**
 ```python
 result = await execute_sql_typed(
     conn=db,
-    sql_path="tests/sql/v4/integration/queries/api/profile/test_create_test_profile_v4_complete.sql",
+    sql_path="tests/sql/v5/integration/queries/api/profile/test_create_test_profile_v4_complete.sql",
     params=CreateTestProfileSqlParams(
         profile_first_name="Test",
         profile_last_name="User",
@@ -137,7 +137,7 @@ async def test_insert_activity_success(self, db: asyncpg.Connection) -> None:
     # Act
     await insert_activity(
         message="Test activity message",
-        endpoint="/api/v4/test",
+        endpoint="/api/v5/test",
         profile_id=str(profile_id),
         error=False,
         conn=db,
@@ -188,7 +188,7 @@ class TestComputeCanEdit:
 **Correct — tests observable DB state:**
 ```python
 # Act
-await insert_activity(message="Test", endpoint="/api/v4/test", profile_id=str(pid), error=False, conn=db)
+await insert_activity(message="Test", endpoint="/api/v5/test", profile_id=str(pid), error=False, conn=db)
 
 # Assert — verify by reading back, not by checking SQL was called
 activity = await execute_sql_typed(conn=db, sql_path="tests/sql/.../test_get_activity.sql", ...)
@@ -306,7 +306,7 @@ Each E2E test file covers one artifact and follows a 9-step lifecycle:
 **Cleanup:** Use `try/finally` with API-based deletion of all created IDs.
 
 **Audit step:**
-1. Verify each artifact has exactly one E2E file: `server/tests/e2e/v4/test_{artifact}.py`.
+1. Verify each artifact has exactly one E2E file: `server/tests/e2e/v5/test_{artifact}.py`.
 2. Verify the test function is named `test_{artifact}_lifecycle`.
 3. Check that cleanup uses `try/finally` with ID tracking.
 4. Report artifacts missing E2E coverage.
@@ -383,14 +383,14 @@ rg -n 'COMMIT|conn\.reset|pool\.' tests/integration/ --glob '*.py'
 | `tests/conftest.py` | session | `initialize_test_db` (Testcontainers PostgreSQL + seed data) |
 | `tests/conftest.py` | function | `db` (per-test connection with auto-rollback transaction) |
 | `tests/integration/conftest.py` | session | Mock agents library, FastAPI `client` with dependency override |
-| `tests/integration/socket/v4/conftest.py` | function | Mock Socket.IO, patched `sio` instance and `get_db_connection` |
+| `tests/integration/socket/v5/conftest.py` | function | Mock Socket.IO, patched `sio` instance and `get_db_connection` |
 | `tests/e2e/conftest.py` | function | Playwright `page`, `context`, signed test headers |
-| `tests/e2e/v4/conftest.py` | — | `post_json()`, `resolve_profile_ids()`, `generate_unique_name()` |
+| `tests/e2e/v5/conftest.py` | — | `post_json()`, `resolve_profile_ids()`, `generate_unique_name()` |
 
 ### Test SQL helpers
 
 ```
-server/tests/sql/v4/integration/queries/
+server/tests/sql/v5/integration/queries/
   api/{domain}/test_{name}_v4_complete.sql     — Arrange/Assert helpers for API tests
   infra/{domain}/test_{name}_v4_complete.sql   — Arrange/Assert helpers for infra tests
   socket/{domain}/test_{name}_v4_complete.sql  — Arrange/Assert helpers for socket tests

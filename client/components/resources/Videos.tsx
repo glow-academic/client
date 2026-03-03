@@ -27,14 +27,14 @@ import * as tus from "tus-js-client";
 import { v4 as uuidv4 } from "uuid";
 
 // Link types for tool call tracking
-type LinkVideosIn = InputOf<"/api/v4/resources/videos/link", "post">;
-type LinkVideosOut = OutputOf<"/api/v4/resources/videos/link", "post">;
+type LinkVideosIn = InputOf<"/api/v5/resources/videos/link", "post">;
+type LinkVideosOut = OutputOf<"/api/v5/resources/videos/link", "post">;
 
-type CreateDraftVideosIn = InputOf<"/api/v4/resources/videos", "post">;
-type CreateDraftVideosOut = OutputOf<"/api/v4/resources/videos", "post">;
+type CreateDraftVideosIn = InputOf<"/api/v5/resources/videos", "post">;
+type CreateDraftVideosOut = OutputOf<"/api/v5/resources/videos", "post">;
 
 // Derive resource item type from the GET endpoint response
-type VideoGetResponse = OutputOf<"/api/v4/resources/videos/get", "post">;
+type VideoGetResponse = OutputOf<"/api/v5/resources/videos/get", "post">;
 export type VideoResourceItem = NonNullable<VideoGetResponse["items"]>[number];
 
 export interface VideoItem {

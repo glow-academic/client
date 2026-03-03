@@ -23,19 +23,19 @@ import { Check, Clock, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftScenarioTimeLimitsIn = InputOf<
-  "/api/v4/resources/scenario_time_limits",
+  "/api/v5/resources/scenario_time_limits",
   "post"
 >;
 type CreateDraftScenarioTimeLimitsOut = OutputOf<
-  "/api/v4/resources/scenario_time_limits",
+  "/api/v5/resources/scenario_time_limits",
   "post"
 >;
-type LinkScenarioTimeLimitsIn = InputOf<"/api/v4/resources/scenario_time_limits/link", "post">;
-type LinkScenarioTimeLimitsOut = OutputOf<"/api/v4/resources/scenario_time_limits/link", "post">;
+type LinkScenarioTimeLimitsIn = InputOf<"/api/v5/resources/scenario_time_limits/link", "post">;
+type LinkScenarioTimeLimitsOut = OutputOf<"/api/v5/resources/scenario_time_limits/link", "post">;
 
 // Derive resource item type from the GET endpoint response
 type ScenarioTimeLimitGetResponse = OutputOf<
-  "/api/v4/resources/scenario_time_limits/get",
+  "/api/v5/resources/scenario_time_limits/get",
   "post"
 >;
 export type ScenarioTimeLimitResourceItem = NonNullable<

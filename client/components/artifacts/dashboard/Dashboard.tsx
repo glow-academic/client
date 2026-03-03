@@ -11,7 +11,7 @@ import DashboardPrimary from "./DashboardPrimary";
 import DashboardSecondary from "./DashboardSecondary";
 import DashboardFooter from "./DashboardFooter";
 import SimulationHistory from "@/components/common/SimulationHistory";
-type DashboardOut = OutputOf<"/api/v4/artifacts/dashboard/get", "post">;
+type DashboardOut = OutputOf<"/api/v5/artifacts/dashboard/get", "post">;
 type DashboardHistoryOut = NonNullable<DashboardOut["history"]>;
 
 export interface DashboardProps {

@@ -12,51 +12,51 @@ import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetSettingIn = InputOf<"/api/v4/artifacts/settings/get", "post">;
-type GetSettingOut = OutputOf<"/api/v4/artifacts/settings/get", "post">;
-type SaveSettingIn = InputOf<"/api/v4/artifacts/settings/save", "post">;
-type SaveSettingOut = OutputOf<"/api/v4/artifacts/settings/save", "post">;
-type PatchSettingDraftIn = InputOf<"/api/v4/artifacts/settings/draft", "patch">;
-type PatchSettingDraftOut = OutputOf<"/api/v4/artifacts/settings/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type GetSettingIn = InputOf<"/api/v5/artifacts/settings/get", "post">;
+type GetSettingOut = OutputOf<"/api/v5/artifacts/settings/get", "post">;
+type SaveSettingIn = InputOf<"/api/v5/artifacts/settings/save", "post">;
+type SaveSettingOut = OutputOf<"/api/v5/artifacts/settings/save", "post">;
+type PatchSettingDraftIn = InputOf<"/api/v5/artifacts/settings/draft", "patch">;
+type PatchSettingDraftOut = OutputOf<"/api/v5/artifacts/settings/draft", "patch">;
+type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
-type CreateDraftColorsIn = InputOf<"/api/v4/resources/colors", "post">;
-type CreateDraftColorsOut = OutputOf<"/api/v4/resources/colors", "post">;
-type CreateProviderKeysIn = InputOf<"/api/v4/resources/provider_keys", "post">;
+type CreateDraftColorsIn = InputOf<"/api/v5/resources/colors", "post">;
+type CreateDraftColorsOut = OutputOf<"/api/v5/resources/colors", "post">;
+type CreateProviderKeysIn = InputOf<"/api/v5/resources/provider_keys", "post">;
 type CreateProviderKeysOut = OutputOf<
-  "/api/v4/resources/provider_keys",
+  "/api/v5/resources/provider_keys",
   "post"
 >;
 type GetProviderKeysIn = InputOf<
-  "/api/v4/resources/provider_keys/get",
+  "/api/v5/resources/provider_keys/get",
   "post"
 >;
 type GetProviderKeysOut = OutputOf<
-  "/api/v4/resources/provider_keys/get",
+  "/api/v5/resources/provider_keys/get",
   "post"
 >;
 type CreateAuthItemKeysIn = InputOf<
-  "/api/v4/resources/auth_item_keys",
+  "/api/v5/resources/auth_item_keys",
   "post"
 >;
 type CreateAuthItemKeysOut = OutputOf<
-  "/api/v4/resources/auth_item_keys",
+  "/api/v5/resources/auth_item_keys",
   "post"
 >;
 type GetAuthItemKeysIn = InputOf<
-  "/api/v4/resources/auth_item_keys/get",
+  "/api/v5/resources/auth_item_keys/get",
   "post"
 >;
 type GetAuthItemKeysOut = OutputOf<
-  "/api/v4/resources/auth_item_keys/get",
+  "/api/v5/resources/auth_item_keys/get",
   "post"
 >;
 
@@ -73,8 +73,8 @@ const getSetting = async (input: GetSettingIn): Promise<GetSettingOut> => {
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/settings/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/settings/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/settings/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/settings/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/settings/docs", input);

@@ -472,7 +472,7 @@ async def expire_all_connections() -> None:
     if _db_pool:
         await _db_pool.expire_connections()
         # Clear JIT cache so functions are re-created with updated types
-        from app.utils.sql_helper import _jit_created_functions
+        from app.v5.utils.sql_helper import _jit_created_functions
 
         _jit_created_functions.clear()
         print("🔄 All pooled connections expired (schema change detected)")
@@ -574,7 +574,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             pass
 
         # Initialize metrics collector
-        from app.infra.v4.metrics.collector import initialize_metrics  # noqa: E402
+        from app.v5.infra.metrics.collector import initialize_metrics  # noqa: E402
 
         if pool:
             await initialize_metrics(pool, redis_client)
@@ -584,7 +584,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             )
 
         # Import MCP server for lifespan management
-        from app.mcp import mcp_server as artifacts_resources_mcp_server  # noqa: E402
+        from app.v5.mcp import mcp_server as artifacts_resources_mcp_server  # noqa: E402
 
         # Add MCP server session manager to lifespan
         await stack.enter_async_context(
@@ -596,7 +596,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             title=app.title,
             version="0.1.0",
             routes=app.routes,
-            description="Auto-generated OpenAPI schema from FastAPI v4 API",
+            description="Auto-generated OpenAPI schema from FastAPI v5 API",
         )
 
         # Add x-cache-tags extension to each operation based on tags
@@ -617,8 +617,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
 
         # Start voice session reaper (cleans up idle sessions every 60s)
         async def _reap_stale_voice_sessions() -> None:
-            from app.infra.v4.websocket.audio_lifecycle import cleanup_audio_session
-            from app.infra.v4.websocket.session_store import get_stale_sessions
+            from app.v5.infra.websocket.audio_lifecycle import cleanup_audio_session
+            from app.v5.infra.websocket.session_store import get_stale_sessions
 
             while True:
                 try:
@@ -679,8 +679,8 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: Any) -> Response:
         """Process request and log to database."""
-        from app.infra.v4.metrics.collector import record_error, record_request
-        from app.utils.logging.db_logger import get_logger, set_profile_id
+        from app.v5.infra.metrics.collector import record_error, record_request
+        from app.v5.utils.logging.db_logger import get_logger, set_profile_id
 
         logger = get_logger(__name__)
         start_time = time.perf_counter()
@@ -763,26 +763,26 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
 fastapi_app.add_middleware(DBLoggingMiddleware)
 
 # Add MCP OAuth middleware (before mounting MCP server)
-from app.mcp.oauth import McpOAuthMiddleware  # noqa: E402
+from app.v5.mcp.oauth import McpOAuthMiddleware  # noqa: E402
 
 fastapi_app.add_middleware(McpOAuthMiddleware)
 
 # Include routers
 
-# Include API v4 router (DHH-style)
-from app.api.v4.router import router as api_v4_router  # noqa: E402
+# Include API v5 router (DHH-style)
+from app.v5.router import router as api_v5_router  # noqa: E402
 
-fastapi_app.include_router(api_v4_router)
+fastapi_app.include_router(api_v5_router)
 
 # Include socket v5 unified layer
-from app.socket.v5 import router as socket_v5_router  # noqa: E402
+from app.v5.socket import router as socket_v5_router  # noqa: E402
 
 fastapi_app.include_router(socket_v5_router)
 
 # Root-level endpoints (must be registered before MCP mount to avoid route interception)
 
 # Default-IdP OIDC endpoints (infrastructure-level, not versioned)
-from app.infra.v4.auth.default_idp import router as default_idp_router  # noqa: E402
+from app.v5.infra.auth.default_idp import router as default_idp_router  # noqa: E402
 
 fastapi_app.include_router(default_idp_router)  # /default-idp/... (OIDC endpoints)
 
@@ -853,8 +853,8 @@ async def health_services() -> JSONResponse:
     Returns per-service status + latencies.
     Automatically logs health checks to database when called by notify service.
     """
-    from app.infra.v4.health import run_service_checks
-    from app.infra.v4.metrics.collector import log_health_checks
+    from app.v5.infra.health import run_service_checks
+    from app.v5.infra.metrics.collector import log_health_checks
 
     checks = await run_service_checks()
 
@@ -894,7 +894,7 @@ async def metrics_snapshot() -> JSONResponse:
     Called by notify service to log metrics snapshot.
     No leader election needed since notify service is single instance.
     """
-    from app.infra.v4.metrics.collector import log_metrics_snapshot
+    from app.v5.infra.metrics.collector import log_metrics_snapshot
 
     try:
         await log_metrics_snapshot()
@@ -905,7 +905,7 @@ async def metrics_snapshot() -> JSONResponse:
             }
         )
     except Exception as e:
-        from app.utils.logging.db_logger import get_logger
+        from app.v5.utils.logging.db_logger import get_logger
 
         logger = get_logger("app.main")
         logger.error(f"Error logging metrics snapshot: {e}")
@@ -932,7 +932,7 @@ async def _compile_sql_types() -> tuple[bool, str]:
         Tuple of (success, message)
     """
     try:
-        from app.infra.v4.sql.compile_types import compile_sql_types
+        from app.v5.infra.sql.compile_types import compile_sql_types
 
         success, message = await compile_sql_types()
         return success, message
@@ -962,8 +962,8 @@ async def init_system() -> JSONResponse:
 
     No authentication required - internal service-to-service call.
     """
-    from app.infra.v4.auth.keycloak_sync import perform_keycloak_sync
-    from app.utils.logging.db_logger import get_logger
+    from app.v5.infra.auth.keycloak_sync import perform_keycloak_sync
+    from app.v5.utils.logging.db_logger import get_logger
 
     logger = get_logger("app.main")
 
@@ -1030,7 +1030,7 @@ async def init_system() -> JSONResponse:
 
 
 # Mount artifacts/resources MCP server
-from app.mcp import mcp_server as artifacts_resources_mcp_server  # noqa: E402
+from app.v5.mcp import mcp_server as artifacts_resources_mcp_server  # noqa: E402
 
 # FastMCP's Host header validation is now configured via TransportSecuritySettings
 # in app/mcp/__init__.py, so we don't need middleware to modify Host headers

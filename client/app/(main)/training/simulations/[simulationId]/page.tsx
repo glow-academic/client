@@ -15,47 +15,47 @@ import { createLoader, parseAsString } from "nuqs/server";
 import { resolveGroupId } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetSimulationIn = InputOf<"/api/v4/artifacts/simulations/get", "post">;
-type GetSimulationOut = OutputOf<"/api/v4/artifacts/simulations/get", "post">;
-type SaveSimulationIn = InputOf<"/api/v4/artifacts/simulations/save", "post">;
-type SaveSimulationOut = OutputOf<"/api/v4/artifacts/simulations/save", "post">;
-type PatchSimulationDraftIn = InputOf<"/api/v4/artifacts/simulations/draft", "patch">;
-type PatchSimulationDraftOut = OutputOf<"/api/v4/artifacts/simulations/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type GetSimulationIn = InputOf<"/api/v5/artifacts/simulations/get", "post">;
+type GetSimulationOut = OutputOf<"/api/v5/artifacts/simulations/get", "post">;
+type SaveSimulationIn = InputOf<"/api/v5/artifacts/simulations/save", "post">;
+type SaveSimulationOut = OutputOf<"/api/v5/artifacts/simulations/save", "post">;
+type PatchSimulationDraftIn = InputOf<"/api/v5/artifacts/simulations/draft", "patch">;
+type PatchSimulationDraftOut = OutputOf<"/api/v5/artifacts/simulations/draft", "patch">;
+type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftScenarioFlagsAction = NonNullable<
   ScenarioFlagsProps["createScenarioFlagsAction"]
 >;
 type CreateDraftScenarioPositionsIn = InputOf<
-  "/api/v4/resources/scenario_positions",
+  "/api/v5/resources/scenario_positions",
   "post"
 >;
 type CreateDraftScenarioPositionsOut = OutputOf<
-  "/api/v4/resources/scenario_positions",
+  "/api/v5/resources/scenario_positions",
   "post"
 >;
 type CreateDraftScenarioRubricsIn = InputOf<
-  "/api/v4/resources/scenario_rubrics",
+  "/api/v5/resources/scenario_rubrics",
   "post"
 >;
 type CreateDraftScenarioRubricsOut = OutputOf<
-  "/api/v4/resources/scenario_rubrics",
+  "/api/v5/resources/scenario_rubrics",
   "post"
 >;
 type CreateDraftScenarioTimeLimitsIn = InputOf<
-  "/api/v4/resources/scenario_time_limits",
+  "/api/v5/resources/scenario_time_limits",
   "post"
 >;
 type CreateDraftScenarioTimeLimitsOut = OutputOf<
-  "/api/v4/resources/scenario_time_limits",
+  "/api/v5/resources/scenario_time_limits",
   "post"
 >;
 
@@ -97,8 +97,8 @@ const getSimulation = async (
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/simulations/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/simulations/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/simulations/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/simulations/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/simulations/docs", input);

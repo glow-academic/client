@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function OPTIONS(request: NextRequest) {
   try {
     const response = await fetch(
-      `${INTERNAL_HTTP_BASE}/api/v4/uploads/discover`,
+      `${INTERNAL_HTTP_BASE}/api/v5/uploads/discover`,
       {
         method: "OPTIONS",
         headers: {
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
         : null;
 
     const response = await fetch(
-      `${INTERNAL_HTTP_BASE}/api/v4/uploads/create`,
+      `${INTERNAL_HTTP_BASE}/api/v5/uploads/create`,
       {
         method: "POST",
         headers: tusHeaders,

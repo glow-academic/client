@@ -21,11 +21,11 @@ import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type LinkExamplesIn = InputOf<"/api/v4/resources/examples/link", "post">;
-type LinkExamplesOut = OutputOf<"/api/v4/resources/examples/link", "post">;
+type LinkExamplesIn = InputOf<"/api/v5/resources/examples/link", "post">;
+type LinkExamplesOut = OutputOf<"/api/v5/resources/examples/link", "post">;
 
 // Derive resource item type from the GET endpoint response
-type ExampleGetResponse = OutputOf<"/api/v4/resources/examples/get", "post">;
+type ExampleGetResponse = OutputOf<"/api/v5/resources/examples/get", "post">;
 export type ExampleResourceItem = NonNullable<ExampleGetResponse["items"]>[number];
 
 export interface ExamplesProps {

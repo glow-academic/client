@@ -13,11 +13,11 @@ import type { Metadata } from "next";
 import { loadAgentsSearchParams } from "@/lib/search-params/agents";
 
 /** ---- Strong types from OpenAPI ---- */
-type AgentsListOut = OutputOf<"/api/v4/artifacts/agents/list", "post">;
-type DuplicateAgentIn = InputOf<"/api/v4/artifacts/agents/duplicate", "post">;
-type DuplicateAgentOut = OutputOf<"/api/v4/artifacts/agents/duplicate", "post">;
-type DeleteAgentIn = InputOf<"/api/v4/artifacts/agents/delete", "post">;
-type DeleteAgentOut = OutputOf<"/api/v4/artifacts/agents/delete", "post">;
+type AgentsListOut = OutputOf<"/api/v5/artifacts/agents/list", "post">;
+type DuplicateAgentIn = InputOf<"/api/v5/artifacts/agents/duplicate", "post">;
+type DuplicateAgentOut = OutputOf<"/api/v5/artifacts/agents/duplicate", "post">;
+type DeleteAgentIn = InputOf<"/api/v5/artifacts/agents/delete", "post">;
+type DeleteAgentOut = OutputOf<"/api/v5/artifacts/agents/delete", "post">;
 
 /** ---- Body type for agents list request ---- */
 type AgentsListBody = {
@@ -68,8 +68,8 @@ async function deleteAgent(input: DeleteAgentIn): Promise<DeleteAgentOut> {
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/agents/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/agents/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/agents/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/agents/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/agents/docs", input);

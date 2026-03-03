@@ -19,8 +19,8 @@ import type { Metadata } from "next";
 import { loadHomeSearchParams } from "@/lib/search-params/home";
 
 /** ---- Strong types from OpenAPI ---- */
-type HomeIn = InputOf<"/api/v4/artifacts/home/get", "post">;
-type HomeOut = OutputOf<"/api/v4/artifacts/home/get", "post">;
+type HomeIn = InputOf<"/api/v5/artifacts/home/get", "post">;
+type HomeOut = OutputOf<"/api/v5/artifacts/home/get", "post">;
 type HomeHistoryOut = NonNullable<HomeOut["history"]>;
 
 /** ---- Direct fetch for home data (cards + embedded history) ---- */

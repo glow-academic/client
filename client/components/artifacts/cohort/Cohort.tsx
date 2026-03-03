@@ -52,46 +52,46 @@ import type { ResourceType } from "@/lib/resources/types";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type SaveCohortIn = InputOf<"/api/v4/artifacts/cohorts/save", "post">;
-type SaveCohortOut = OutputOf<"/api/v4/artifacts/cohorts/save", "post">;
-type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type SaveCohortIn = InputOf<"/api/v5/artifacts/cohorts/save", "post">;
+type SaveCohortOut = OutputOf<"/api/v5/artifacts/cohorts/save", "post">;
+type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftSimulationPositionsIn = InputOf<
-  "/api/v4/resources/simulation_positions",
+  "/api/v5/resources/simulation_positions",
   "post"
 >;
 type CreateDraftSimulationPositionsOut = OutputOf<
-  "/api/v4/resources/simulation_positions",
+  "/api/v5/resources/simulation_positions",
   "post"
 >;
 type CreateDraftSimulationAvailabilityIn = InputOf<
-  "/api/v4/resources/simulation_availability",
+  "/api/v5/resources/simulation_availability",
   "post"
 >;
 type CreateDraftSimulationAvailabilityOut = OutputOf<
-  "/api/v4/resources/simulation_availability",
+  "/api/v5/resources/simulation_availability",
   "post"
 >;
 type CreateDraftProfilePersonasIn = InputOf<
-  "/api/v4/resources/profile_personas",
+  "/api/v5/resources/profile_personas",
   "post"
 >;
 type CreateDraftProfilePersonasOut = OutputOf<
-  "/api/v4/resources/profile_personas",
+  "/api/v5/resources/profile_personas",
   "post"
 >;
-type PatchCohortDraftIn = InputOf<"/api/v4/artifacts/cohorts/draft", "patch">;
-type PatchCohortDraftOut = OutputOf<"/api/v4/artifacts/cohorts/draft", "patch">;
+type PatchCohortDraftIn = InputOf<"/api/v5/artifacts/cohorts/draft", "patch">;
+type PatchCohortDraftOut = OutputOf<"/api/v5/artifacts/cohorts/draft", "patch">;
 
-type CohortData = OutputOf<"/api/v4/artifacts/cohorts/get", "post">;
+type CohortData = OutputOf<"/api/v5/artifacts/cohorts/get", "post">;
 
 // Type for flush results - each resource returns its created ID(s)
 type FlushResult = {

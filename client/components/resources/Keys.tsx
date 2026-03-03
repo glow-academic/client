@@ -21,11 +21,11 @@ import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
-type CreateDraftKeysIn = InputOf<"/api/v4/resources/keys", "post">;
-type CreateDraftKeysOut = OutputOf<"/api/v4/resources/keys", "post">;
+type CreateDraftKeysIn = InputOf<"/api/v5/resources/keys", "post">;
+type CreateDraftKeysOut = OutputOf<"/api/v5/resources/keys", "post">;
 
 // Derive resource item type from the GET endpoint response
-type KeyGetResponse = OutputOf<"/api/v4/resources/keys/get", "post">;
+type KeyGetResponse = OutputOf<"/api/v5/resources/keys/get", "post">;
 export type KeyResourceItem = NonNullable<KeyGetResponse["items"]>[number];
 
 export interface KeyItem {

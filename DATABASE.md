@@ -1204,7 +1204,7 @@ Composite types provide **strongly typed nested structures** for API/WebSocket r
 
 ### Versioning
 
-**Always include version in type names** (e.g., `v4`) for future compatibility and migration support.
+**Always include version in type names** (e.g., `v5`) for future compatibility and migration support.
 
 ### Type Preservation
 
@@ -1553,7 +1553,7 @@ WHERE m.role = 'user'::message_role
 ### Function Organization
 
 **PostgreSQL functions in SQL files:**
-- Location: `server/app/sql/v4/[resource]/[operation]_complete.sql`
+- Location: `server/app/v5/sql/[resource]/[operation]_complete.sql`
 - One SQL file per function
 - Functions follow naming: `api_{operation}_{resource}_v4(...)`
 - Functions use `RETURNS TABLE` with composite types

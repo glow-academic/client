@@ -12,27 +12,27 @@ import { createLoader, parseAsString } from "nuqs/server";
 import { resolveGroupId } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetProviderIn = InputOf<"/api/v4/artifacts/providers/get", "post">;
-type GetProviderOut = OutputOf<"/api/v4/artifacts/providers/get", "post">;
+type GetProviderIn = InputOf<"/api/v5/artifacts/providers/get", "post">;
+type GetProviderOut = OutputOf<"/api/v5/artifacts/providers/get", "post">;
 
-type SaveProviderIn = InputOf<"/api/v4/artifacts/providers/save", "post">;
-type SaveProviderOut = OutputOf<"/api/v4/artifacts/providers/save", "post">;
-type PatchProviderDraftIn = InputOf<"/api/v4/artifacts/providers/draft", "patch">;
-type PatchProviderDraftOut = OutputOf<"/api/v4/artifacts/providers/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type SaveProviderIn = InputOf<"/api/v5/artifacts/providers/save", "post">;
+type SaveProviderOut = OutputOf<"/api/v5/artifacts/providers/save", "post">;
+type PatchProviderDraftIn = InputOf<"/api/v5/artifacts/providers/draft", "patch">;
+type PatchProviderDraftOut = OutputOf<"/api/v5/artifacts/providers/draft", "patch">;
+type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
-type CreateDraftValuesIn = InputOf<"/api/v4/resources/values", "post">;
-type CreateDraftValuesOut = OutputOf<"/api/v4/resources/values", "post">;
-type CreateDraftEndpointsIn = InputOf<"/api/v4/resources/endpoints", "post">;
-type CreateDraftEndpointsOut = OutputOf<"/api/v4/resources/endpoints", "post">;
+type CreateDraftValuesIn = InputOf<"/api/v5/resources/values", "post">;
+type CreateDraftValuesOut = OutputOf<"/api/v5/resources/values", "post">;
+type CreateDraftEndpointsIn = InputOf<"/api/v5/resources/endpoints", "post">;
+type CreateDraftEndpointsOut = OutputOf<"/api/v5/resources/endpoints", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -50,8 +50,8 @@ const getProvider = async (
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/providers/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/providers/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/providers/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/providers/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/providers/docs", input);

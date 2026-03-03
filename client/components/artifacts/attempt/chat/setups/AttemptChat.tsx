@@ -69,7 +69,7 @@ type AttemptResources = {
 };
 
 /** Attempt data from server - strongly typed from OpenAPI */
-type AttemptData = OutputOf<"/api/v4/artifacts/attempt/get", "post"> & {
+type AttemptData = OutputOf<"/api/v5/artifacts/attempt/get", "post"> & {
   resources?: AttemptResources;
 };
 

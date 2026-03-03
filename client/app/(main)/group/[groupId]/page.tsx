@@ -13,8 +13,8 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type PricingGroupDetailIn = InputOf<"/api/v4/artifacts/group/get", "post">;
-type PricingGroupDetailOut = OutputOf<"/api/v4/artifacts/group/get", "post">;
+type PricingGroupDetailIn = InputOf<"/api/v5/artifacts/group/get", "post">;
+type PricingGroupDetailOut = OutputOf<"/api/v5/artifacts/group/get", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ---- */
 const getPricingGroupDetail = async (
@@ -33,8 +33,8 @@ const getPricingGroupDetail = async (
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/pricing/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/pricing/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/pricing/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/pricing/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/pricing/docs", input);

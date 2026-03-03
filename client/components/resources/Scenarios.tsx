@@ -22,13 +22,13 @@ import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
-type CreateDraftScenariosIn = InputOf<"/api/v4/resources/scenarios", "post">;
-type CreateDraftScenariosOut = OutputOf<"/api/v4/resources/scenarios", "post">;
-type LinkScenariosIn = InputOf<"/api/v4/resources/scenarios/link", "post">;
-type LinkScenariosOut = OutputOf<"/api/v4/resources/scenarios/link", "post">;
+type CreateDraftScenariosIn = InputOf<"/api/v5/resources/scenarios", "post">;
+type CreateDraftScenariosOut = OutputOf<"/api/v5/resources/scenarios", "post">;
+type LinkScenariosIn = InputOf<"/api/v5/resources/scenarios/link", "post">;
+type LinkScenariosOut = OutputOf<"/api/v5/resources/scenarios/link", "post">;
 
 // Derive resource item type from the GET endpoint response
-type ScenariosGetResponse = OutputOf<"/api/v4/resources/scenarios/get", "post">;
+type ScenariosGetResponse = OutputOf<"/api/v5/resources/scenarios/get", "post">;
 export type ScenarioResourceItem = NonNullable<ScenariosGetResponse["items"]>[number];
 
 export interface ScenarioItem {

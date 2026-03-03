@@ -17,8 +17,8 @@ import { cache } from "react";
 import { loadHealthSearchParams } from "@/lib/search-params/health";
 
 /** ---- Strong types from OpenAPI ---- */
-type HealthBundleIn = InputOf<"/api/v4/artifacts/health/get", "post">;
-type HealthBundleOut = OutputOf<"/api/v4/artifacts/health/get", "post">;
+type HealthBundleIn = InputOf<"/api/v5/artifacts/health/get", "post">;
+type HealthBundleOut = OutputOf<"/api/v5/artifacts/health/get", "post">;
 
 /** ---- Cached fetch used by page (prevents duplicate requests) ---- */
 const getHealthBundle = cache(

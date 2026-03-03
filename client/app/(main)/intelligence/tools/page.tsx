@@ -11,12 +11,12 @@ import type { Metadata } from "next";
 import { loadToolsSearchParams } from "@/lib/search-params/tools";
 
 /** ---- Strong types from OpenAPI ---- */
-type ToolsListIn = InputOf<"/api/v4/artifacts/tools/list", "post">;
-type ToolsListOut = OutputOf<"/api/v4/artifacts/tools/list", "post">;
-type DeleteToolIn = InputOf<"/api/v4/artifacts/tools/delete", "post">;
-type DeleteToolOut = OutputOf<"/api/v4/artifacts/tools/delete", "post">;
-type DuplicateToolIn = InputOf<"/api/v4/artifacts/tools/duplicate", "post">;
-type DuplicateToolOut = OutputOf<"/api/v4/artifacts/tools/duplicate", "post">;
+type ToolsListIn = InputOf<"/api/v5/artifacts/tools/list", "post">;
+type ToolsListOut = OutputOf<"/api/v5/artifacts/tools/list", "post">;
+type DeleteToolIn = InputOf<"/api/v5/artifacts/tools/delete", "post">;
+type DeleteToolOut = OutputOf<"/api/v5/artifacts/tools/delete", "post">;
+type DuplicateToolIn = InputOf<"/api/v5/artifacts/tools/duplicate", "post">;
+type DuplicateToolOut = OutputOf<"/api/v5/artifacts/tools/duplicate", "post">;
 
 /** ---- Body type for tools list request ---- */
 type ToolsListBody = {
@@ -67,8 +67,8 @@ async function duplicateTool(
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/tools/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/tools/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/tools/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/tools/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/tools/docs", input);

@@ -13,13 +13,13 @@ import type { Metadata } from "next";
 import { loadRubricsSearchParams } from "@/lib/search-params/rubrics";
 
 /** ---- Strong types from OpenAPI ---- */
-type RubricsListOut = OutputOf<"/api/v4/artifacts/rubrics/list", "post">;
-type DuplicateRubricIn = InputOf<"/api/v4/artifacts/rubrics/duplicate", "post">;
-type DuplicateRubricOut = OutputOf<"/api/v4/artifacts/rubrics/duplicate", "post">;
-type DeleteRubricIn = InputOf<"/api/v4/artifacts/rubrics/delete", "post">;
-type DeleteRubricOut = OutputOf<"/api/v4/artifacts/rubrics/delete", "post">;
-type SaveRubricIn = InputOf<"/api/v4/artifacts/rubrics/save", "post">;
-type SaveRubricOut = OutputOf<"/api/v4/artifacts/rubrics/save", "post">;
+type RubricsListOut = OutputOf<"/api/v5/artifacts/rubrics/list", "post">;
+type DuplicateRubricIn = InputOf<"/api/v5/artifacts/rubrics/duplicate", "post">;
+type DuplicateRubricOut = OutputOf<"/api/v5/artifacts/rubrics/duplicate", "post">;
+type DeleteRubricIn = InputOf<"/api/v5/artifacts/rubrics/delete", "post">;
+type DeleteRubricOut = OutputOf<"/api/v5/artifacts/rubrics/delete", "post">;
+type SaveRubricIn = InputOf<"/api/v5/artifacts/rubrics/save", "post">;
+type SaveRubricOut = OutputOf<"/api/v5/artifacts/rubrics/save", "post">;
 
 /** ---- Body type for rubrics list request ---- */
 type RubricsListBody = {
@@ -79,8 +79,8 @@ export async function saveRubric(input: SaveRubricIn): Promise<SaveRubricOut> {
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/rubrics/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/rubrics/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/rubrics/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/rubrics/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/rubrics/docs", input);

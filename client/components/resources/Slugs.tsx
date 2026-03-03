@@ -22,11 +22,11 @@ import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
-type CreateDraftSlugsIn = InputOf<"/api/v4/resources/slugs", "post">;
-type CreateDraftSlugsOut = OutputOf<"/api/v4/resources/slugs", "post">;
+type CreateDraftSlugsIn = InputOf<"/api/v5/resources/slugs", "post">;
+type CreateDraftSlugsOut = OutputOf<"/api/v5/resources/slugs", "post">;
 
 // Derive resource item type from the GET endpoint response
-type SlugsGetResponse = OutputOf<"/api/v4/resources/slugs/get", "post">;
+type SlugsGetResponse = OutputOf<"/api/v5/resources/slugs/get", "post">;
 export type SlugResourceItem = NonNullable<SlugsGetResponse["items"]>[number];
 
 export interface SlugItem {

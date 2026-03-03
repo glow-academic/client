@@ -30,16 +30,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type GetChatBundleOut = OutputOf<
-  "/api/v4/artifacts/chat/get",
+  "/api/v5/artifacts/chat/get",
   "post"
 >;
 export type ChatBundleData = GetChatBundleOut;
 type PatchChatBundleDraftIn = InputOf<
-  "/api/v4/artifacts/chat/draft",
+  "/api/v5/artifacts/chat/draft",
   "patch"
 >;
 type PatchChatBundleDraftOut = OutputOf<
-  "/api/v4/artifacts/chat/draft",
+  "/api/v5/artifacts/chat/draft",
   "patch"
 >;
 

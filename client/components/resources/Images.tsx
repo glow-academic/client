@@ -28,14 +28,14 @@ import * as tus from "tus-js-client";
 import { v4 as uuidv4 } from "uuid";
 
 // Link types for tool call tracking
-type LinkImagesIn = InputOf<"/api/v4/resources/images/link", "post">;
-type LinkImagesOut = OutputOf<"/api/v4/resources/images/link", "post">;
+type LinkImagesIn = InputOf<"/api/v5/resources/images/link", "post">;
+type LinkImagesOut = OutputOf<"/api/v5/resources/images/link", "post">;
 
-type CreateDraftImagesIn = InputOf<"/api/v4/resources/images", "post">;
-type CreateDraftImagesOut = OutputOf<"/api/v4/resources/images", "post">;
+type CreateDraftImagesIn = InputOf<"/api/v5/resources/images", "post">;
+type CreateDraftImagesOut = OutputOf<"/api/v5/resources/images", "post">;
 
 // Derive resource item type from the GET endpoint response
-type ImageGetResponse = OutputOf<"/api/v4/resources/images/get", "post">;
+type ImageGetResponse = OutputOf<"/api/v5/resources/images/get", "post">;
 export type ImageResourceItem = NonNullable<ImageGetResponse["item"]>;
 
 export interface ImageItem {

@@ -14,17 +14,17 @@ import type { Metadata } from "next";
 import { loadScenariosListSearchParams } from "@/lib/search-params/scenarios-list";
 
 /** ---- Strong types from OpenAPI ---- */
-type ScenariosListOut = OutputOf<"/api/v4/artifacts/scenarios/list", "post">;
-type DuplicateScenarioIn = InputOf<"/api/v4/artifacts/scenarios/duplicate", "post">;
-type DuplicateScenarioOut = OutputOf<"/api/v4/artifacts/scenarios/duplicate", "post">;
-type DeleteScenarioIn = InputOf<"/api/v4/artifacts/scenarios/delete", "post">;
-type DeleteScenarioOut = OutputOf<"/api/v4/artifacts/scenarios/delete", "post">;
-type SaveScenarioIn = InputOf<"/api/v4/artifacts/scenarios/save", "post">;
-type SaveScenarioOut = OutputOf<"/api/v4/artifacts/scenarios/save", "post">;
-type SearchFlagsIn = InputOf<"/api/v4/resources/flags/search", "post">;
-type SearchFlagsOut = NonNullable<OutputOf<"/api/v4/resources/flags/search", "post">["items"]>;
-type ParseCsvIn = InputOf<"/api/v4/uploads/csv", "post">;
-type ParseCsvOut = OutputOf<"/api/v4/uploads/csv", "post">;
+type ScenariosListOut = OutputOf<"/api/v5/artifacts/scenarios/list", "post">;
+type DuplicateScenarioIn = InputOf<"/api/v5/artifacts/scenarios/duplicate", "post">;
+type DuplicateScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/duplicate", "post">;
+type DeleteScenarioIn = InputOf<"/api/v5/artifacts/scenarios/delete", "post">;
+type DeleteScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/delete", "post">;
+type SaveScenarioIn = InputOf<"/api/v5/artifacts/scenarios/save", "post">;
+type SaveScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/save", "post">;
+type SearchFlagsIn = InputOf<"/api/v5/resources/flags/search", "post">;
+type SearchFlagsOut = NonNullable<OutputOf<"/api/v5/resources/flags/search", "post">["items"]>;
+type ParseCsvIn = InputOf<"/api/v5/uploads/csv", "post">;
+type ParseCsvOut = OutputOf<"/api/v5/uploads/csv", "post">;
 
 /** ---- Body type for scenarios list request ---- */
 type ScenariosListBody = {
@@ -97,8 +97,8 @@ async function parseCsv(input: ParseCsvIn): Promise<ParseCsvOut> {
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/scenarios/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/scenarios/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/scenarios/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/scenarios/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/scenarios/docs", input);

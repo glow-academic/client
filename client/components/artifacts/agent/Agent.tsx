@@ -69,10 +69,10 @@ import type {
 import type { InputOf, OutputOf } from "@/lib/api/types";
 
 // Resource creation action types
-type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
-type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
-type CreateDraftPromptsIn = InputOf<"/api/v4/resources/prompts", "post">;
-type CreateDraftPromptsOut = OutputOf<"/api/v4/resources/prompts", "post">;
+type CreateDraftVoicesIn = InputOf<"/api/v5/resources/voices", "post">;
+type CreateDraftVoicesOut = OutputOf<"/api/v5/resources/voices", "post">;
+type CreateDraftPromptsIn = InputOf<"/api/v5/resources/prompts", "post">;
+type CreateDraftPromptsOut = OutputOf<"/api/v5/resources/prompts", "post">;
 
 type FlushResult = {
   prompt_id?: string | null;

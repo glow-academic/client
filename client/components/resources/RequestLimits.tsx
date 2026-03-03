@@ -24,16 +24,16 @@ import { Check, Infinity, Loader2, Plus, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftRequestLimitsIn = InputOf<
-  "/api/v4/resources/request_limits",
+  "/api/v5/resources/request_limits",
   "post"
 >;
 type CreateDraftRequestLimitsOut = OutputOf<
-  "/api/v4/resources/request_limits",
+  "/api/v5/resources/request_limits",
   "post"
 >;
 
 // Derive resource item type from the GET endpoint response
-type RequestLimitsGetResponse = OutputOf<"/api/v4/resources/request_limits/get", "post">;
+type RequestLimitsGetResponse = OutputOf<"/api/v5/resources/request_limits/get", "post">;
 export type RequestLimitsResourceItem = NonNullable<RequestLimitsGetResponse["items"]>[number];
 
 export interface RequestLimitItem {

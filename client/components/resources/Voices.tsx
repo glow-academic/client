@@ -24,13 +24,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type FlushResult = { voice_ids: string[] } | void;
 
-type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
-type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
-type LinkVoicesIn = InputOf<"/api/v4/resources/voices/link", "post">;
-type LinkVoicesOut = OutputOf<"/api/v4/resources/voices/link", "post">;
+type CreateDraftVoicesIn = InputOf<"/api/v5/resources/voices", "post">;
+type CreateDraftVoicesOut = OutputOf<"/api/v5/resources/voices", "post">;
+type LinkVoicesIn = InputOf<"/api/v5/resources/voices/link", "post">;
+type LinkVoicesOut = OutputOf<"/api/v5/resources/voices/link", "post">;
 
 // Derive resource item type from the GET endpoint response
-type VoicesGetResponse = OutputOf<"/api/v4/resources/voices/get", "post">;
+type VoicesGetResponse = OutputOf<"/api/v5/resources/voices/get", "post">;
 export type VoiceResourceItem = NonNullable<VoicesGetResponse["items"]>[number];
 
 export interface VoiceItem {

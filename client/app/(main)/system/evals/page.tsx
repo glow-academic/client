@@ -13,9 +13,9 @@ import type { Metadata } from "next";
 import { loadEvalsSearchParams } from "@/lib/search-params/evals";
 
 /** ---- Strong types from OpenAPI ---- */
-type EvalsListOut = OutputOf<"/api/v4/artifacts/evals/list", "post">;
-type DeleteEvalIn = InputOf<"/api/v4/artifacts/evals/delete", "post">;
-type DeleteEvalOut = OutputOf<"/api/v4/artifacts/evals/delete", "post">;
+type EvalsListOut = OutputOf<"/api/v5/artifacts/evals/list", "post">;
+type DeleteEvalIn = InputOf<"/api/v5/artifacts/evals/delete", "post">;
+type DeleteEvalOut = OutputOf<"/api/v5/artifacts/evals/delete", "post">;
 
 /** ---- Body type for evals list request ---- */
 type EvalsListBody = {
@@ -51,8 +51,8 @@ async function deleteEval(input: DeleteEvalIn): Promise<DeleteEvalOut> {
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/evals/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/evals/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/evals/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/evals/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/evals/docs", input);

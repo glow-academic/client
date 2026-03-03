@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from app.registry.manual import ARTIFACT_ROLES, ROUTE_TO_ARTIFACT
+from app.v5.registry.manual import ARTIFACT_ROLES, ROUTE_TO_ARTIFACT
 
 
 def _scan_client_routes(client_dir: Path) -> list[str]:

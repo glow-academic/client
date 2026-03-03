@@ -23,7 +23,7 @@ import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 // Derive resource item type from the GET endpoint response
-type SettingGetResponse = OutputOf<"/api/v4/resources/settings/get", "post">;
+type SettingGetResponse = OutputOf<"/api/v5/resources/settings/get", "post">;
 export type SettingResourceItem = NonNullable<SettingGetResponse["items"]>[number];
 
 export interface SettingItem {

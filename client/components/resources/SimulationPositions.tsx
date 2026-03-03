@@ -29,12 +29,12 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // Link types for tool call tracking
-type LinkSimulationPositionsIn = InputOf<"/api/v4/resources/simulation_positions/link", "post">;
-type LinkSimulationPositionsOut = OutputOf<"/api/v4/resources/simulation_positions/link", "post">;
+type LinkSimulationPositionsIn = InputOf<"/api/v5/resources/simulation_positions/link", "post">;
+type LinkSimulationPositionsOut = OutputOf<"/api/v5/resources/simulation_positions/link", "post">;
 
 // Derive resource item type from the GET endpoint response
 type SimulationPositionGetResponse = OutputOf<
-  "/api/v4/resources/simulation_positions/get",
+  "/api/v5/resources/simulation_positions/get",
   "post"
 >;
 export type SimulationPositionResourceItem = NonNullable<

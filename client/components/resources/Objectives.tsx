@@ -24,17 +24,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 // Link types for tool call tracking
-type LinkObjectivesIn = InputOf<"/api/v4/resources/objectives/link", "post">;
-type LinkObjectivesOut = OutputOf<"/api/v4/resources/objectives/link", "post">;
+type LinkObjectivesIn = InputOf<"/api/v5/resources/objectives/link", "post">;
+type LinkObjectivesOut = OutputOf<"/api/v5/resources/objectives/link", "post">;
 
-type CreateDraftObjectivesIn = InputOf<"/api/v4/resources/objectives", "post">;
+type CreateDraftObjectivesIn = InputOf<"/api/v5/resources/objectives", "post">;
 type CreateDraftObjectivesOut = OutputOf<
-  "/api/v4/resources/objectives",
+  "/api/v5/resources/objectives",
   "post"
 >;
 
 // Derive resource item type from the GET endpoint response
-type ObjectiveGetResponse = OutputOf<"/api/v4/resources/objectives/get", "post">;
+type ObjectiveGetResponse = OutputOf<"/api/v5/resources/objectives/get", "post">;
 export type ObjectiveResourceItem = NonNullable<ObjectiveGetResponse["item"]>;
 
 // ObjectiveInputWithAutocomplete component (ghost tab autocomplete)

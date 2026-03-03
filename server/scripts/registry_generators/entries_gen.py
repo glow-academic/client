@@ -8,7 +8,7 @@ import sys
 # Add server directory to path so we can import manual.py
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from app.registry.manual import ENTRY_TABLE_TO_KEY
+from app.v5.registry.manual import ENTRY_TABLE_TO_KEY
 
 from .db import get_connection, query_rows
 from .type_map import SYSTEM_COLUMNS, pg_type_to_registry

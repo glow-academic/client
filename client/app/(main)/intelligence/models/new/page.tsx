@@ -13,28 +13,28 @@ import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetModelIn = InputOf<"/api/v4/artifacts/models/get", "post">;
-type GetModelOut = OutputOf<"/api/v4/artifacts/models/get", "post">;
-type SaveModelIn = InputOf<"/api/v4/artifacts/models/save", "post">;
-type SaveModelOut = OutputOf<"/api/v4/artifacts/models/save", "post">;
-type PatchModelDraftIn = InputOf<"/api/v4/artifacts/models/draft", "patch">;
-type PatchModelDraftOut = OutputOf<"/api/v4/artifacts/models/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type GetModelIn = InputOf<"/api/v5/artifacts/models/get", "post">;
+type GetModelOut = OutputOf<"/api/v5/artifacts/models/get", "post">;
+type SaveModelIn = InputOf<"/api/v5/artifacts/models/save", "post">;
+type SaveModelOut = OutputOf<"/api/v5/artifacts/models/save", "post">;
+type PatchModelDraftIn = InputOf<"/api/v5/artifacts/models/draft", "patch">;
+type PatchModelDraftOut = OutputOf<"/api/v5/artifacts/models/draft", "patch">;
+type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
-type CreateDraftValuesIn = InputOf<"/api/v4/resources/values", "post">;
-type CreateDraftValuesOut = OutputOf<"/api/v4/resources/values", "post">;
-type CreateDraftPricingIn = InputOf<"/api/v4/resources/pricing", "post">;
-type CreateDraftPricingOut = OutputOf<"/api/v4/resources/pricing", "post">;
-type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
-type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
+type CreateDraftValuesIn = InputOf<"/api/v5/resources/values", "post">;
+type CreateDraftValuesOut = OutputOf<"/api/v5/resources/values", "post">;
+type CreateDraftPricingIn = InputOf<"/api/v5/resources/pricing", "post">;
+type CreateDraftPricingOut = OutputOf<"/api/v5/resources/pricing", "post">;
+type CreateDraftVoicesIn = InputOf<"/api/v5/resources/voices", "post">;
+type CreateDraftVoicesOut = OutputOf<"/api/v5/resources/voices", "post">;
 
 /** ---- Direct fetch for default model data (provider mapping for picker) ---- */
 const getModelDetailDefault = async (
@@ -50,8 +50,8 @@ const getModelDetailDefault = async (
 
 /** ---- Metadata ---- */
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/models/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/models/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/models/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/models/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/models/docs", input);

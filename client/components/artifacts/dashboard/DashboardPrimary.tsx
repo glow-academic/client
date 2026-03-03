@@ -11,7 +11,7 @@ import RubricHeatmap from "./primary/RubricHeatmap";
 import RubricTrend from "./primary/RubricTrend";
 import SkillPerformance from "./primary/SkillPerformance";
 
-export type PrimaryOut = OutputOf<"/api/v4/artifacts/dashboard/get", "post">;
+export type PrimaryOut = OutputOf<"/api/v5/artifacts/dashboard/get", "post">;
 
 function validateStatus(
   status: string | null | undefined,

@@ -23,11 +23,11 @@ import { Check, FileText, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-type CreateDraftTextsIn = InputOf<"/api/v4/resources/texts", "post">;
-type CreateDraftTextsOut = OutputOf<"/api/v4/resources/texts", "post">;
+type CreateDraftTextsIn = InputOf<"/api/v5/resources/texts", "post">;
+type CreateDraftTextsOut = OutputOf<"/api/v5/resources/texts", "post">;
 
 // Derive resource item type from the GET endpoint response
-type TextGetResponse = OutputOf<"/api/v4/resources/texts/get", "post">;
+type TextGetResponse = OutputOf<"/api/v5/resources/texts/get", "post">;
 export type TextResourceItem = NonNullable<TextGetResponse["items"]>[number];
 
 export interface TextItem {

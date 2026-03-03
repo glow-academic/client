@@ -43,7 +43,7 @@ server_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(server_dir))
 
 from app.main import close_db_pool, init_db_pool  # noqa: E402
-from app.utils.test_db import get_test_db_url  # noqa: E402
+from app.v5.utils.test_db import get_test_db_url  # noqa: E402
 
 # Store the test database URL for direct connections
 _test_db_url: str | None = None
@@ -92,7 +92,7 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
     if base_url is None:
         raise RuntimeError("Test database URL not available")
 
-    from app.utils.template_db import (
+    from app.v5.utils.template_db import (
         cleanup_old_templates,
         clone_from_template,
         compute_db_hash,

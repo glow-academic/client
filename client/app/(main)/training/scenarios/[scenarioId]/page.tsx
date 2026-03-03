@@ -19,46 +19,46 @@ import {
 import { resolveGroupId } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetScenarioIn = InputOf<"/api/v4/artifacts/scenarios/get", "post">;
-type GetScenarioOut = OutputOf<"/api/v4/artifacts/scenarios/get", "post">;
-type SaveScenarioIn = InputOf<"/api/v4/artifacts/scenarios/save", "post">;
-type SaveScenarioOut = OutputOf<"/api/v4/artifacts/scenarios/save", "post">;
-type PatchScenarioDraftIn = InputOf<"/api/v4/artifacts/scenarios/draft", "patch">;
-type PatchScenarioDraftOut = OutputOf<"/api/v4/artifacts/scenarios/draft", "patch">;
+type GetScenarioIn = InputOf<"/api/v5/artifacts/scenarios/get", "post">;
+type GetScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/get", "post">;
+type SaveScenarioIn = InputOf<"/api/v5/artifacts/scenarios/save", "post">;
+type SaveScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/save", "post">;
+type PatchScenarioDraftIn = InputOf<"/api/v5/artifacts/scenarios/draft", "patch">;
+type PatchScenarioDraftOut = OutputOf<"/api/v5/artifacts/scenarios/draft", "patch">;
 // Resource creation types
-type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftProblemStatementsIn = InputOf<
-  "/api/v4/resources/problem_statements",
+  "/api/v5/resources/problem_statements",
   "post"
 >;
 type CreateDraftProblemStatementsOut = OutputOf<
-  "/api/v4/resources/problem_statements",
+  "/api/v5/resources/problem_statements",
   "post"
 >;
-type CreateDraftObjectivesIn = InputOf<"/api/v4/resources/objectives", "post">;
+type CreateDraftObjectivesIn = InputOf<"/api/v5/resources/objectives", "post">;
 type CreateDraftObjectivesOut = OutputOf<
-  "/api/v4/resources/objectives",
+  "/api/v5/resources/objectives",
   "post"
 >;
-type CreateDraftQuestionsIn = InputOf<"/api/v4/resources/questions", "post">;
-type CreateDraftQuestionsOut = OutputOf<"/api/v4/resources/questions", "post">;
-type CreateDraftImagesIn = InputOf<"/api/v4/resources/images", "post">;
-type CreateDraftImagesOut = OutputOf<"/api/v4/resources/images", "post">;
-type CreateDraftVideosIn = InputOf<"/api/v4/resources/videos", "post">;
-type CreateDraftVideosOut = OutputOf<"/api/v4/resources/videos", "post">;
-type CreateDraftParameterFieldsIn = InputOf<"/api/v4/resources/parameter_fields", "post">;
-type CreateDraftParameterFieldsOut = OutputOf<"/api/v4/resources/parameter_fields", "post">;
-type CreateDraftOptionsIn = InputOf<"/api/v4/resources/options", "post">;
-type CreateDraftOptionsOut = OutputOf<"/api/v4/resources/options", "post">;
+type CreateDraftQuestionsIn = InputOf<"/api/v5/resources/questions", "post">;
+type CreateDraftQuestionsOut = OutputOf<"/api/v5/resources/questions", "post">;
+type CreateDraftImagesIn = InputOf<"/api/v5/resources/images", "post">;
+type CreateDraftImagesOut = OutputOf<"/api/v5/resources/images", "post">;
+type CreateDraftVideosIn = InputOf<"/api/v5/resources/videos", "post">;
+type CreateDraftVideosOut = OutputOf<"/api/v5/resources/videos", "post">;
+type CreateDraftParameterFieldsIn = InputOf<"/api/v5/resources/parameter_fields", "post">;
+type CreateDraftParameterFieldsOut = OutputOf<"/api/v5/resources/parameter_fields", "post">;
+type CreateDraftOptionsIn = InputOf<"/api/v5/resources/options", "post">;
+type CreateDraftOptionsOut = OutputOf<"/api/v5/resources/options", "post">;
 // GenerateAIScenario types - using WebSocket event types
 type GenerateAIScenarioIn = {
   departmentId: string;
@@ -194,8 +194,8 @@ const getScenario = async (
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/scenarios/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/scenarios/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/scenarios/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/scenarios/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/scenarios/docs", input);

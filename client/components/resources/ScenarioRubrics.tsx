@@ -22,19 +22,19 @@ import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftScenarioRubricsIn = InputOf<
-  "/api/v4/resources/scenario_rubrics",
+  "/api/v5/resources/scenario_rubrics",
   "post"
 >;
 type CreateDraftScenarioRubricsOut = OutputOf<
-  "/api/v4/resources/scenario_rubrics",
+  "/api/v5/resources/scenario_rubrics",
   "post"
 >;
-type LinkScenarioRubricsIn = InputOf<"/api/v4/resources/scenario_rubrics/link", "post">;
-type LinkScenarioRubricsOut = OutputOf<"/api/v4/resources/scenario_rubrics/link", "post">;
+type LinkScenarioRubricsIn = InputOf<"/api/v5/resources/scenario_rubrics/link", "post">;
+type LinkScenarioRubricsOut = OutputOf<"/api/v5/resources/scenario_rubrics/link", "post">;
 
 // Derive resource item type from the GET endpoint response
 type ScenarioRubricGetResponse = OutputOf<
-  "/api/v4/resources/scenario_rubrics/get",
+  "/api/v5/resources/scenario_rubrics/get",
   "post"
 >;
 export type ScenarioRubricResourceItem = NonNullable<

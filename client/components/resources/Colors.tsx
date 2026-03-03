@@ -24,13 +24,13 @@ import { useResourceAi } from "@/hooks/use-resource-ai";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type CreateDraftColorsIn = InputOf<"/api/v4/resources/colors", "post">;
-type CreateDraftColorsOut = OutputOf<"/api/v4/resources/colors", "post">;
-type LinkColorsIn = InputOf<"/api/v4/resources/colors/link", "post">;
-type LinkColorsOut = OutputOf<"/api/v4/resources/colors/link", "post">;
+type CreateDraftColorsIn = InputOf<"/api/v5/resources/colors", "post">;
+type CreateDraftColorsOut = OutputOf<"/api/v5/resources/colors", "post">;
+type LinkColorsIn = InputOf<"/api/v5/resources/colors/link", "post">;
+type LinkColorsOut = OutputOf<"/api/v5/resources/colors/link", "post">;
 
 // Derive resource item type from the GET endpoint response
-type ColorsGetResponse = OutputOf<"/api/v4/resources/colors/get", "post">;
+type ColorsGetResponse = OutputOf<"/api/v5/resources/colors/get", "post">;
 export type ColorResourceItem = NonNullable<ColorsGetResponse["items"]>[number];
 
 export interface ColorItem {

@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     const response = await fetch(
-      `${INTERNAL_HTTP_BASE}/api/v4/resources/documents/html`,
+      `${INTERNAL_HTTP_BASE}/api/v5/resources/documents/html`,
       {
         method: "POST",
         headers: {

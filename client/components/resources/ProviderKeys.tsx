@@ -16,7 +16,7 @@ import { Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // Derive resource item type from the GET endpoint response
-type ProviderKeysGetResponse = OutputOf<"/api/v4/resources/provider_keys/get", "post">;
+type ProviderKeysGetResponse = OutputOf<"/api/v5/resources/provider_keys/get", "post">;
 export type ProviderKeysResourceItem = NonNullable<ProviderKeysGetResponse["items"]>[number];
 
 type ProviderOption = {

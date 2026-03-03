@@ -23,11 +23,11 @@ import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type CreateDraftPointsIn = InputOf<"/api/v4/resources/points", "post">;
-type CreateDraftPointsOut = OutputOf<"/api/v4/resources/points", "post">;
+type CreateDraftPointsIn = InputOf<"/api/v5/resources/points", "post">;
+type CreateDraftPointsOut = OutputOf<"/api/v5/resources/points", "post">;
 
 // Derive resource item type from the GET endpoint response
-type PointsGetResponse = OutputOf<"/api/v4/resources/points/get", "post">;
+type PointsGetResponse = OutputOf<"/api/v5/resources/points/get", "post">;
 export type PointsResourceItem = NonNullable<PointsGetResponse["items"]>[number];
 
 export interface PointsProps {

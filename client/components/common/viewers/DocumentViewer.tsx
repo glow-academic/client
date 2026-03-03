@@ -11,7 +11,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
 // Use server type from documents list API
-type DocumentsListOut = OutputOf<"/api/v4/artifacts/documents/list", "post">;
+type DocumentsListOut = OutputOf<"/api/v5/artifacts/documents/list", "post">;
 export type DocumentItem = NonNullable<DocumentsListOut["documents"]>[number];
 
 export interface DocumentViewerProps {

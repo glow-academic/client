@@ -11,9 +11,9 @@ import type { Metadata } from "next";
 import { loadProvidersSearchParams } from "@/lib/search-params/providers";
 
 /** ---- Strong types from OpenAPI ---- */
-type ProvidersListOut = OutputOf<"/api/v4/artifacts/providers/list", "post">;
-type DeleteProviderIn = InputOf<"/api/v4/artifacts/providers/delete", "post">;
-type DeleteProviderOut = OutputOf<"/api/v4/artifacts/providers/delete", "post">;
+type ProvidersListOut = OutputOf<"/api/v5/artifacts/providers/list", "post">;
+type DeleteProviderIn = InputOf<"/api/v5/artifacts/providers/delete", "post">;
+type DeleteProviderOut = OutputOf<"/api/v5/artifacts/providers/delete", "post">;
 
 /** ---- Body type for providers list request ---- */
 type ProvidersListBody = {
@@ -60,8 +60,8 @@ async function deleteProvider(
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/providers/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/providers/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/providers/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/providers/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/providers/docs", input);

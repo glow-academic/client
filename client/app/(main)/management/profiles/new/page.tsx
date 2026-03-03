@@ -14,24 +14,24 @@ import { createLoader, parseAsString } from "nuqs/server";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetProfileIn = InputOf<"/api/v4/artifacts/profiles/get", "post">;
-type GetProfileOut = OutputOf<"/api/v4/artifacts/profiles/get", "post">;
-type SaveProfileIn = InputOf<"/api/v4/artifacts/profiles/save", "post">;
-type SaveProfileOut = OutputOf<"/api/v4/artifacts/profiles/save", "post">;
-type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
-type CreateDraftEmailsIn = InputOf<"/api/v4/resources/emails", "post">;
-type CreateDraftEmailsOut = OutputOf<"/api/v4/resources/emails", "post">;
+type GetProfileIn = InputOf<"/api/v5/artifacts/profiles/get", "post">;
+type GetProfileOut = OutputOf<"/api/v5/artifacts/profiles/get", "post">;
+type SaveProfileIn = InputOf<"/api/v5/artifacts/profiles/save", "post">;
+type SaveProfileOut = OutputOf<"/api/v5/artifacts/profiles/save", "post">;
+type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
+type CreateDraftEmailsIn = InputOf<"/api/v5/resources/emails", "post">;
+type CreateDraftEmailsOut = OutputOf<"/api/v5/resources/emails", "post">;
 type CreateDraftRequestLimitsIn = InputOf<
-  "/api/v4/resources/request_limits",
+  "/api/v5/resources/request_limits",
   "post"
 >;
 type CreateDraftRequestLimitsOut = OutputOf<
-  "/api/v4/resources/request_limits",
+  "/api/v5/resources/request_limits",
   "post"
 >;
-type PatchProfileDraftIn = InputOf<"/api/v4/artifacts/profiles/draft", "patch">;
-type PatchProfileDraftOut = OutputOf<"/api/v4/artifacts/profiles/draft", "patch">;
+type PatchProfileDraftIn = InputOf<"/api/v5/artifacts/profiles/draft", "patch">;
+type PatchProfileDraftOut = OutputOf<"/api/v5/artifacts/profiles/draft", "patch">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getProfileDefault = cache(
@@ -87,8 +87,8 @@ async function patchProfileDraft(
 
 /** ---- Metadata ---- */
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/profiles/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/profiles/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/profiles/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/profiles/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/profiles/docs", input);

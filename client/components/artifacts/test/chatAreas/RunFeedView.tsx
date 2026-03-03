@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-type TestArtifactOut = OutputOf<"/api/v4/artifacts/test/get", "post">;
+type TestArtifactOut = OutputOf<"/api/v5/artifacts/test/get", "post">;
 type RunItem = NonNullable<TestArtifactOut["runs"]>[number];
 
 export interface RunFeedViewProps {

@@ -16,7 +16,7 @@ import StagnationRate from "./header/StagnationRate";
 import TimeSpent from "./header/TimeSpent";
 import TotalAttempts from "./header/TotalAttempts";
 
-export type HeaderOut = OutputOf<"/api/v4/artifacts/dashboard/get", "post">;
+export type HeaderOut = OutputOf<"/api/v5/artifacts/dashboard/get", "post">;
 
 function validateStatus(
   status: string | null | undefined,

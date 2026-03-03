@@ -23,7 +23,7 @@ import { Check, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // Derive resource item type from the GET endpoint response
-type RoleRoutesGetResponse = OutputOf<"/api/v4/resources/role_routes/get", "post">;
+type RoleRoutesGetResponse = OutputOf<"/api/v5/resources/role_routes/get", "post">;
 export type RoleRoutesResourceItem = NonNullable<RoleRoutesGetResponse["items"]>[number];
 
 export interface RoleRoutesProps {

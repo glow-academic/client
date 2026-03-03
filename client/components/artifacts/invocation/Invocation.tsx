@@ -18,16 +18,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type GetBenchmarkBundleOut = OutputOf<
-  "/api/v4/artifacts/invocation/get",
+  "/api/v5/artifacts/invocation/get",
   "post"
 >;
 export type InvocationData = GetBenchmarkBundleOut;
 type PatchBenchmarkBundleDraftIn = InputOf<
-  "/api/v4/artifacts/invocation/draft",
+  "/api/v5/artifacts/invocation/draft",
   "patch"
 >;
 type PatchBenchmarkBundleDraftOut = OutputOf<
-  "/api/v4/artifacts/invocation/draft",
+  "/api/v5/artifacts/invocation/draft",
   "patch"
 >;
 

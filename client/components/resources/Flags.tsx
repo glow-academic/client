@@ -25,11 +25,11 @@ import { getIconComponent } from "@/utils/icons";
 import { Check, Loader2, Power, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
-type LinkFlagsIn = InputOf<"/api/v4/resources/flags/link", "post">;
-type LinkFlagsOut = OutputOf<"/api/v4/resources/flags/link", "post">;
+type LinkFlagsIn = InputOf<"/api/v5/resources/flags/link", "post">;
+type LinkFlagsOut = OutputOf<"/api/v5/resources/flags/link", "post">;
 
 // Derive resource item type from the GET endpoint response
-type FlagGetResponse = OutputOf<"/api/v4/resources/flags/get", "post">;
+type FlagGetResponse = OutputOf<"/api/v5/resources/flags/get", "post">;
 export type FlagResourceItem = NonNullable<FlagGetResponse["items"]>[number];
 
 export interface FlagConfig {

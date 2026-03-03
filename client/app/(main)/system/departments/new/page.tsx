@@ -14,22 +14,22 @@ import { createLoader, parseAsString } from "nuqs/server";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetDepartmentIn = InputOf<"/api/v4/artifacts/departments/get", "post">;
-type GetDepartmentOut = OutputOf<"/api/v4/artifacts/departments/get", "post">;
+type GetDepartmentIn = InputOf<"/api/v5/artifacts/departments/get", "post">;
+type GetDepartmentOut = OutputOf<"/api/v5/artifacts/departments/get", "post">;
 
-type SaveDepartmentIn = InputOf<"/api/v4/artifacts/departments/save", "post">;
-type SaveDepartmentOut = OutputOf<"/api/v4/artifacts/departments/save", "post">;
+type SaveDepartmentIn = InputOf<"/api/v5/artifacts/departments/save", "post">;
+type SaveDepartmentOut = OutputOf<"/api/v5/artifacts/departments/save", "post">;
 
-type PatchDepartmentDraftIn = InputOf<"/api/v4/artifacts/departments/draft", "patch">;
-type PatchDepartmentDraftOut = OutputOf<"/api/v4/artifacts/departments/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type PatchDepartmentDraftIn = InputOf<"/api/v5/artifacts/departments/draft", "patch">;
+type PatchDepartmentDraftOut = OutputOf<"/api/v5/artifacts/departments/draft", "patch">;
+type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 
@@ -79,8 +79,8 @@ async function patchDepartmentDraft(
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/departments/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/departments/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/departments/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/departments/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/departments/docs", input);

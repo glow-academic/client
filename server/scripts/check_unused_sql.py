@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check for unused SQL files in the codebase.
 
-Finds all SQL files in server/app/sql/v4/ and checks if they're referenced
+Finds all SQL files in server/app/v5/sql/ and checks if they're referenced
 via load_sql() calls in Python files.
 """
 
@@ -33,8 +33,8 @@ def sql_file_to_load_path(sql_file: Path) -> str:
     """Convert SQL file path to load_sql() format.
 
     Example:
-        server/app/sql/v4/queries/reports/reports_bundle.sql ->
-        app/sql/v4/queries/reports/reports_bundle.sql
+        server/app/v5/sql/queries/reports/reports_bundle.sql ->
+        app/v5/sql/queries/reports/reports_bundle.sql
     """
     # Get relative path from server directory
     relative = sql_file.relative_to(server_dir)
@@ -146,7 +146,7 @@ def get_types_registry_paths() -> set[str]:
     try:
         content = types_file.read_text(encoding="utf-8")
 
-        # Pattern to match registry entries: "app/sql/v4/...": (
+        # Pattern to match registry entries: "app/v5/sql/...": (
         # This matches the _registry dictionary entries
         registry_pattern = re.compile(
             r'["\'](app/sql/' + VERSION + r'/[^"\']+)["\']\s*:'
@@ -168,7 +168,7 @@ def group_by_directory(
     """Group unused files by their resource directory."""
     grouped = defaultdict(list)
     for load_path, file_path in unused_files:
-        # Extract resource directory (e.g., "reports" from "app/sql/v4/queries/reports/reports_bundle.sql")
+        # Extract resource directory (e.g., "reports" from "app/v5/sql/queries/reports/reports_bundle.sql")
         parts = load_path.split("/")
         if len(parts) >= 5 and parts[3] in ("queries", "views"):
             resource = parts[4] if parts[3] == "queries" else parts[3]

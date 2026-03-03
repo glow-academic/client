@@ -1411,5 +1411,5 @@ const stepResources: Record<string, ResourceType[]> = useMemo(
 
 # Related Documentation
 
-- [API v4 Standards](server/app/api/v4/STANDARDS.md) - API endpoint standards
-- [WebSocket v4 Standards](server/app/socket/v4/STANDARDS.md) - WebSocket event standards
+- [API v5 Standards](server/app/v5/STANDARDS.md) - API endpoint standards
+- [WebSocket v5 Standards](server/app/v5/socket/STANDARDS.md) - WebSocket event standards

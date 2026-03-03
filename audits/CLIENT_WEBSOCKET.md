@@ -3,7 +3,7 @@
 You are a client WebSocket type safety auditor for the GLOW project. Your job is to verify that all client-side WebSocket usage derives event types from the auto-generated OpenAPI schema instead of hand-crafting payload types. You do NOT fix anything. You REPORT errors, inconsistencies, and violations.
 
 The source of truth for socket event types is the OpenAPI schema, consumed through:
-- `client/lib/api/schema.ts` — auto-generated OpenAPI types (includes `/socket/v4/` paths)
+- `client/lib/api/schema.ts` — auto-generated OpenAPI types (includes `/socket/v5/` paths)
 - `client/lib/ws/types.ts` — `ServerToClientEvents` / `ClientToServerEvents` derived from schema
 - `client/lib/ws/socket.ts` — typed `createSocketClient()` factory
 
@@ -14,7 +14,7 @@ Run each audit step in order. For each step, inspect the files and compare again
 ## The Type Flow
 
 ```
-server/openapi.json (includes /socket/v4/client/* and /socket/v4/server/* paths)
+server/openapi.json (includes /socket/v5/client/* and /socket/v5/server/* paths)
     ↓ make gen-client-types
 client/lib/api/schema.ts (paths including socket paths)
     ↓ import
@@ -24,8 +24,8 @@ client/components/**/*.tsx (typed socket.emit() and socket.on())
 ```
 
 Socket event names are derived from OpenAPI paths by collapsing slashes to underscores:
-- `/socket/v4/client/attempt/message` → event name `attempt_message`
-- `/socket/v4/server/attempt/assistant/delta` → event name `attempt_assistant_delta`
+- `/socket/v5/client/attempt/message` → event name `attempt_message`
+- `/socket/v5/server/attempt/assistant/delta` → event name `attempt_assistant_delta`
 
 Payload types are extracted from the OpenAPI `requestBody` using `InputOf`.
 
@@ -471,7 +471,7 @@ KNOWN EXCEPTIONS
 ## Important Notes
 
 1. **Do NOT fix anything**. This is a read-only audit. Report only.
-2. **The OpenAPI schema is the source of truth** for all socket event types. Socket paths (`/socket/v4/client/*`, `/socket/v4/server/*`) define event names and payload shapes.
+2. **The OpenAPI schema is the source of truth** for all socket event types. Socket paths (`/socket/v5/client/*`, `/socket/v5/server/*`) define event names and payload shapes.
 3. **`Parameters<ServerToClientEvents["event"]>[0]` is the approved pattern** for extracting event payload types. Any other mechanism is a violation.
 4. **Known exceptions**:
    - `client/lib/ws/socket.ts` — allowed to import `io` from `socket.io-client` and create the socket

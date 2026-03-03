@@ -33,28 +33,28 @@ import type { ResourceType } from "@/lib/resources/types";
 import type { Parser } from "nuqs";
 import { parseAsString } from "nuqs";
 
-type SaveProviderIn = InputOf<"/api/v4/artifacts/providers/save", "post">;
-type SaveProviderOut = OutputOf<"/api/v4/artifacts/providers/save", "post">;
-type PatchProviderDraftIn = InputOf<"/api/v4/artifacts/providers/draft", "patch">;
+type SaveProviderIn = InputOf<"/api/v5/artifacts/providers/save", "post">;
+type SaveProviderOut = OutputOf<"/api/v5/artifacts/providers/save", "post">;
+type PatchProviderDraftIn = InputOf<"/api/v5/artifacts/providers/draft", "patch">;
 type PatchProviderDraftOut = OutputOf<
-  "/api/v4/artifacts/providers/draft",
+  "/api/v5/artifacts/providers/draft",
   "patch"
 >;
-type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
-type CreateDraftValuesIn = InputOf<"/api/v4/resources/values", "post">;
-type CreateDraftValuesOut = OutputOf<"/api/v4/resources/values", "post">;
-type CreateDraftEndpointsIn = InputOf<"/api/v4/resources/endpoints", "post">;
-type CreateDraftEndpointsOut = OutputOf<"/api/v4/resources/endpoints", "post">;
-type ProviderData = OutputOf<"/api/v4/artifacts/providers/get", "post">;
+type CreateDraftValuesIn = InputOf<"/api/v5/resources/values", "post">;
+type CreateDraftValuesOut = OutputOf<"/api/v5/resources/values", "post">;
+type CreateDraftEndpointsIn = InputOf<"/api/v5/resources/endpoints", "post">;
+type CreateDraftEndpointsOut = OutputOf<"/api/v5/resources/endpoints", "post">;
+type ProviderData = OutputOf<"/api/v5/artifacts/providers/get", "post">;
 
 type ProviderFormState = {
   name_id: string | null;

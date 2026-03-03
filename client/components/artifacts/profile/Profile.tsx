@@ -54,14 +54,14 @@ import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
-type PatchProfileDraftIn = InputOf<"/api/v4/artifacts/profiles/draft", "patch">;
+type PatchProfileDraftIn = InputOf<"/api/v5/artifacts/profiles/draft", "patch">;
 type PatchProfileDraftOut = {
   draft_id?: string | null;
   new_version?: number | null;
 };
 
-type SaveProfileIn = InputOf<"/api/v4/artifacts/profiles/save", "post">;
-type SaveProfileOut = OutputOf<"/api/v4/artifacts/profiles/save", "post">;
+type SaveProfileIn = InputOf<"/api/v5/artifacts/profiles/save", "post">;
+type SaveProfileOut = OutputOf<"/api/v5/artifacts/profiles/save", "post">;
 type CreateDraftNamesIn = Parameters<NonNullable<NamesProps["createNamesAction"]>>[0];
 type CreateDraftNamesOut = Awaited<
   ReturnType<NonNullable<NamesProps["createNamesAction"]>>
@@ -88,7 +88,7 @@ type EmailItem = NonNullable<EmailsProps["emails"]>[number];
 type EmailResource = NonNullable<EmailsProps["email_resources"]>[number];
 type RoleItem = NonNullable<RolesProps["roles"]>[number];
 
-type ProfileDetailData = OutputOf<"/api/v4/artifacts/profiles/get", "post"> &
+type ProfileDetailData = OutputOf<"/api/v5/artifacts/profiles/get", "post"> &
   Record<string, unknown> & {
   group_id?: string | null;
   draft_version?: number | null;

@@ -14,7 +14,7 @@ The source of truth is the **persona** artifact implementation. Every artifact m
 | **Websocket** | `get_{artifact}_websocket()` | Thin wrapper — reshapes internal data into flat resources + draft view + tools | Socket handler (`generate.py`) |
 | **Client** | `get_{artifact}_client()` | Full BFF — sections with show/required/suggestions/ai_generate flags | HTTP endpoint |
 
-Reference: `server/app/api/v4/artifacts/persona/get.py`
+Reference: `server/app/v5/api/main/persona/get.py`
 
 ---
 
@@ -36,7 +36,7 @@ Reference: `server/app/api/v4/artifacts/persona/get.py`
 
 No additional SQL queries in the internal function beyond Q1 and Q2.
 
-Reference: `server/app/api/v4/artifacts/persona/get.py:140-253`
+Reference: `server/app/v5/api/main/persona/get.py:140-253`
 
 ### Rule 2: User context comes from `get_auth_profile_internal()`
 
@@ -50,7 +50,7 @@ The auth layer is split into two cached internal functions:
 Both rely on individually-cached resource internals (`get_access_internal()`, `get_departments_internal()`, etc.), so repeated calls within the same request window are cheap.
 
 ```python
-from app.api.v4.auth.profile import get_auth_profile_internal
+from app.v5.auth.profile import get_auth_profile_internal
 
 profile_ctx = await get_auth_profile_internal(conn, profile_id, bypass_cache)
 user_role = profile_ctx.access.role
@@ -60,7 +60,7 @@ user_department_ids = [d.department_id for d in profile_ctx.departments if d.dep
 
 Mutation endpoints (save, delete, duplicate, draft) follow the same pattern — they call `get_auth_profile_internal()` for identity/permissions, never the full context.
 
-Reference: `server/app/api/v4/auth/profile.py`, `server/app/api/v4/artifacts/persona/get.py:146-159`
+Reference: `server/app/v5/api/auth/profile.py`, `server/app/v5/api/main/persona/get.py:146-159`
 
 ### Rule 3: Draft values override canonical junction values
 
@@ -72,15 +72,15 @@ When a `draft_id` is provided, draft resource IDs override the canonical junctio
 name_resource_id = draft_name_id or canonical_name_id
 ```
 
-Reference: `server/app/api/v4/artifacts/persona/get.py:226-248`
+Reference: `server/app/v5/api/main/persona/get.py:226-248`
 
 ### Rule 4: Agent resolution happens in Python
 
 For the 4 main artifacts (persona, scenario, simulation, cohort), agent resolution uses `resolve_agents_for_artifact()` with `settings_data.agent_tool_entries` from `get_auth_settings_internal()`. This replaces the previous `select_agents_for_artifact()` + `CandidateAgent` pattern.
 
 ```python
-from app.api.v4.auth.settings import get_auth_settings_internal
-from app.api.v4.permissions import resolve_agents_for_artifact
+from app.v5.auth.settings import get_auth_settings_internal
+from app.v5.permissions import resolve_agents_for_artifact
 
 settings_data = await get_auth_settings_internal(conn, profile_id, bypass_cache)
 agent_ids, create_tool_ids, link_tool_ids = resolve_agents_for_artifact(
@@ -90,7 +90,7 @@ agent_ids, create_tool_ids, link_tool_ids = resolve_agents_for_artifact(
 
 For the remaining 13 artifacts, the legacy pattern using `select_agents_for_artifact()` with `CandidateAgent.from_sql_rows()` (from Q2 SQL) is still used.
 
-Reference: `server/app/api/v4/permissions.py`, `server/app/api/v4/artifacts/persona/get.py`
+Reference: `server/app/v5/permissions.py`, `server/app/v5/api/main/persona/get.py`
 
 ### Rule 5: Tool ID map built from agent resolution
 
@@ -101,7 +101,7 @@ After agent resolution, tool ID maps are returned directly by `resolve_agents_fo
 
 The server uses these maps to resolve tool IDs for save/draft tracking — the client does not send tool IDs.
 
-Reference: `server/app/api/v4/artifacts/persona/get.py`
+Reference: `server/app/v5/api/main/persona/get.py`
 
 ### Rule 6: Pass 2 uses parallel fetch via `asyncio.gather()`
 
@@ -126,7 +126,7 @@ All resources are deduped via `_dedupe_by_id()`.
 )
 ```
 
-Reference: `server/app/api/v4/artifacts/persona/get.py:344-580`
+Reference: `server/app/v5/api/main/persona/get.py:344-580`
 
 ### Rule 7: Flag enrichment via `derive_flag_key_and_label()`
 
@@ -141,7 +141,7 @@ flag_config = PersonaFlagConfig(
 )
 ```
 
-Reference: `server/app/api/v4/artifacts/persona/get.py:671-685`, `permissions.py:394-402`
+Reference: `server/app/v5/api/main/persona/get.py:671-685`, `permissions.py:394-402`
 
 ### Rule 8: Internal function returns a `@dataclass`
 
@@ -169,7 +169,7 @@ class PersonaInternalData:
     # ... etc
 ```
 
-Reference: `server/app/api/v4/artifacts/persona/types.py:225-268`
+Reference: `server/app/v5/api/main/persona/types.py:225-268`
 
 ### Rule 9: Client response is section-first
 
@@ -183,7 +183,7 @@ Reference: `server/app/api/v4/artifacts/persona/types.py:225-268`
 
 Single-select sections have `resource` (singular) + `resources` (list). Multi-select sections have `current` (list) + `resources` (list).
 
-Reference: `server/app/api/v4/artifacts/persona/get.py`, `types.py`
+Reference: `server/app/v5/api/main/persona/get.py`, `types.py`
 
 ### Rule 10: Websocket response has exactly 4 top-level fields
 
@@ -202,7 +202,7 @@ class GetPersonaWebsocketResponse(BaseModel):
     group_id: UUID | None = None
 ```
 
-Reference: `server/app/api/v4/artifacts/persona/types.py:185-196`
+Reference: `server/app/v5/api/main/persona/types.py:185-196`
 
 ### Rule 11: Websocket function is a thin wrapper
 
@@ -213,7 +213,7 @@ Reference: `server/app/api/v4/artifacts/persona/types.py:185-196`
 3. Extract selected resources from `data.resources_payload.current` (internal-only source)
 4. Get enriched flags by matching `flag_option_id`
 
-Reference: `server/app/api/v4/artifacts/persona/get.py:806-894`
+Reference: `server/app/v5/api/main/persona/get.py:806-894`
 
 ### Rule 12: Permissions are pure Python in `permissions.py`
 
@@ -225,13 +225,13 @@ Permission computation must be in `permissions.py` with these functions:
 
 These are pure Python functions with no SQL calls.
 
-Reference: `server/app/api/v4/artifacts/persona/permissions.py`
+Reference: `server/app/v5/api/main/persona/permissions.py`
 
 ### Rule 13: Caching with `get_cached` / `set_cached`
 
 The HTTP endpoint must use `get_cached()` / `set_cached()` with appropriate cache tags. Cache key must include all input parameters.
 
-Reference: `server/app/api/v4/artifacts/persona/get.py:1013-1090`
+Reference: `server/app/v5/api/main/persona/get.py:1013-1090`
 
 ---
 
@@ -268,7 +268,7 @@ await internal_sio.emit("generate_artifact", {
 })
 ```
 
-Reference: `server/app/socket/v4/artifacts/persona/generate.py:92-527`
+Reference: `server/app/v5/socket/artifacts/persona/generate.py:92-527`
 
 ### Rule 15: Jinja context is flat resources + views
 
@@ -284,7 +284,7 @@ jinja_context["views"] = {
 
 Templates access: `{{ names[0].name }}`, `{{ views.config.tool_ids }}`, `{{ views.draft_{artifact}.name_ids }}`.
 
-Reference: `server/app/socket/v4/artifacts/persona/generate.py:411-436`
+Reference: `server/app/v5/socket/artifacts/persona/generate.py:411-436`
 
 ---
 
@@ -309,7 +309,7 @@ if resource_type == "names":
 # ... repeat for all resources
 ```
 
-Reference: `server/app/socket/v4/artifacts/persona/complete.py:36-174`
+Reference: `server/app/v5/socket/artifacts/persona/complete.py:36-174`
 
 ---
 
@@ -332,7 +332,7 @@ Reference: `server/app/socket/v4/artifacts/persona/complete.py:36-174`
 ### Audit 1: Three-layer function existence
 
 ```bash
-for artifact_dir in server/app/api/v4/artifacts/*/; do
+for artifact_dir in server/app/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   [ ! -f "${artifact_dir}get.py" ] && continue
   file="${artifact_dir}get.py"
@@ -349,7 +349,7 @@ done
 ### Audit 2: Two-pass SQL in internal function
 
 ```bash
-for artifact_dir in server/app/api/v4/artifacts/*/; do
+for artifact_dir in server/app/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}get.py"
   [ ! -f "$file" ] && continue
@@ -367,7 +367,7 @@ done
 ### Audit 3: Websocket response shape
 
 ```bash
-for artifact_dir in server/app/api/v4/artifacts/*/; do
+for artifact_dir in server/app/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}types.py"
   [ ! -f "$file" ] && continue
@@ -386,7 +386,7 @@ done
 ### Audit 4: No legacy domain_ids in websocket contracts
 
 ```bash
-grep -rl "domain_ids\|domain_id\|agent_type" server/app/api/v4/artifacts/*/types.py | while read f; do
+grep -rl "domain_ids\|domain_id\|agent_type" server/app/v5/api/main/*/types.py | while read f; do
   artifact=$(basename "$(dirname "$f")")
   echo "LEGACY FIELD IN TYPES: $artifact ($f)"
 done
@@ -397,7 +397,7 @@ done
 ### Audit 5: Socket handler uses resource_types (not domain_ids)
 
 ```bash
-for artifact_dir in server/app/socket/v4/artifacts/*/; do
+for artifact_dir in server/app/v5/socket/artifacts/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}generate.py"
   [ ! -f "$file" ] && continue
@@ -410,7 +410,7 @@ done
 ### Audit 6: Permission functions exist
 
 ```bash
-for artifact_dir in server/app/api/v4/artifacts/*/; do
+for artifact_dir in server/app/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}permissions.py"
   [ ! -f "$file" ] && continue
@@ -426,7 +426,7 @@ done
 ### Audit 7: Completion handler hydrates via `*_internal()`
 
 ```bash
-for artifact_dir in server/app/socket/v4/artifacts/*/; do
+for artifact_dir in server/app/v5/socket/artifacts/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}complete.py"
   [ ! -f "$file" ] && continue
@@ -439,7 +439,7 @@ done
 ### Audit 8: No `resources.current` in websocket response types
 
 ```bash
-grep -n "class.*WebsocketResources" server/app/api/v4/artifacts/*/types.py | while read line; do
+grep -n "class.*WebsocketResources" server/app/v5/api/main/*/types.py | while read line; do
   file=$(echo "$line" | cut -d: -f1)
   grep -A 30 "class.*WebsocketResources" "$file" | grep -q "current" && echo "LEGACY current FIELD: $file"
 done
@@ -450,7 +450,7 @@ done
 ### Audit 9: Config resources in websocket response
 
 ```bash
-for artifact_dir in server/app/api/v4/artifacts/*/; do
+for artifact_dir in server/app/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}types.py"
   [ ! -f "$file" ] && continue
@@ -526,7 +526,7 @@ Completion handler compliant: {N}
 ## Important Notes
 
 1. **Do NOT fix anything.** This is a read-only audit. Report only.
-2. **The persona artifact is the gold standard.** All patterns reference `server/app/api/v4/artifacts/persona/`.
+2. **The persona artifact is the gold standard.** All patterns reference `server/app/v5/api/main/persona/`.
 3. **Known deviations**: Some artifacts may use shared SQL (`get_generation_run_context_and_create_run_complete.sql`) instead of artifact-specific prepare SQL. This is acceptable if documented.
 4. **Socket handlers**: Both client-facing (`@sio.event`) and internal bus (`@internal_sio.on`) handlers should follow the same flow.
 5. **Config chain**: For the 4 main artifacts, the config chain is resolved via `get_auth_settings_internal()` in Python (cached per-request). For other artifacts, it is resolved in Q2 SQL. No additional SQL hops needed in socket handlers.

@@ -47,31 +47,31 @@ import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
 // Eval endpoints
-type SaveEvalIn = InputOf<"/api/v4/artifacts/evals/save", "post">;
-type SaveEvalOut = OutputOf<"/api/v4/artifacts/evals/save", "post">;
-type PatchEvalDraftIn = InputOf<"/api/v4/artifacts/evals/draft", "patch">;
-type PatchEvalDraftOut = OutputOf<"/api/v4/artifacts/evals/draft", "patch">;
-type EvalData = OutputOf<"/api/v4/artifacts/evals/get", "post">;
+type SaveEvalIn = InputOf<"/api/v5/artifacts/evals/save", "post">;
+type SaveEvalOut = OutputOf<"/api/v5/artifacts/evals/save", "post">;
+type PatchEvalDraftIn = InputOf<"/api/v5/artifacts/evals/draft", "patch">;
+type PatchEvalDraftOut = OutputOf<"/api/v5/artifacts/evals/draft", "patch">;
+type EvalData = OutputOf<"/api/v5/artifacts/evals/get", "post">;
 
 // Resource creation endpoints
-type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
-type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
-type CreateDraftAgentsIn = InputOf<"/api/v4/resources/agents", "post">;
-type CreateDraftAgentsOut = OutputOf<"/api/v4/resources/agents", "post">;
-type CreateDraftRunsIn = InputOf<"/api/v4/resources/runs", "post">;
-type CreateDraftRunsOut = OutputOf<"/api/v4/resources/runs", "post">;
-type CreateDraftGroupsIn = InputOf<"/api/v4/resources/groups", "post">;
-type CreateDraftGroupsOut = OutputOf<"/api/v4/resources/groups", "post">;
+type CreateDraftFlagsIn = InputOf<"/api/v5/resources/flags", "post">;
+type CreateDraftFlagsOut = OutputOf<"/api/v5/resources/flags", "post">;
+type CreateDraftAgentsIn = InputOf<"/api/v5/resources/agents", "post">;
+type CreateDraftAgentsOut = OutputOf<"/api/v5/resources/agents", "post">;
+type CreateDraftRunsIn = InputOf<"/api/v5/resources/runs", "post">;
+type CreateDraftRunsOut = OutputOf<"/api/v5/resources/runs", "post">;
+type CreateDraftGroupsIn = InputOf<"/api/v5/resources/groups", "post">;
+type CreateDraftGroupsOut = OutputOf<"/api/v5/resources/groups", "post">;
 
 export interface EvalProps {
   evalId?: string;

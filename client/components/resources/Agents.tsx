@@ -22,11 +22,11 @@ import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
-type CreateDraftAgentsIn = InputOf<"/api/v4/resources/agents", "post">;
-type CreateDraftAgentsOut = OutputOf<"/api/v4/resources/agents", "post">;
+type CreateDraftAgentsIn = InputOf<"/api/v5/resources/agents", "post">;
+type CreateDraftAgentsOut = OutputOf<"/api/v5/resources/agents", "post">;
 
 // Derive resource item type from the GET endpoint response
-type AgentsGetResponse = OutputOf<"/api/v4/resources/agents/get", "post">;
+type AgentsGetResponse = OutputOf<"/api/v5/resources/agents/get", "post">;
 export type AgentResourceItem = NonNullable<AgentsGetResponse["items"]>[number];
 
 export interface AgentItem {

@@ -7,7 +7,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from app.registry.manual import ENTRY_TABLE_TO_KEY
+from app.v5.registry.manual import ENTRY_TABLE_TO_KEY
 
 from .db import get_connection, query_rows
 

@@ -1,6 +1,6 @@
 # Resource Audit — Endpoint & Component Integrity Check
 
-You are a resource auditor for the GLOW project. Your job is to verify that all resource API endpoints (`server/app/api/v4/resources/`) and all resource UI components (`client/components/resources/`) follow the canonical rules defined below. You do NOT fix anything. You REPORT errors, inconsistencies, and missing pieces.
+You are a resource auditor for the GLOW project. Your job is to verify that all resource API endpoints (`server/app/v5/api/resources/`) and all resource UI components (`client/components/resources/`) follow the canonical rules defined below. You do NOT fix anything. You REPORT errors, inconsistencies, and missing pieces.
 
 The source of truth for which resources exist is the `resource_type` enum in the database (78 values). Every resource must have a matching API endpoint folder AND a matching frontend component. No more, no less.
 
@@ -19,9 +19,9 @@ psql postgresql://myuser:mypassword@localhost:5432/mydb
 | Layer | Location | Purpose |
 |-------|----------|---------|
 | **Database** | `{resource}_resource` tables | Source of truth — one table per resource type |
-| **API Endpoints** | `server/app/api/v4/resources/{resource}/` | Cached data-access: get, search, create, docs |
+| **API Endpoints** | `server/app/v5/api/resources/{resource}/` | Cached data-access: get, search, create, docs |
 | **UI Components** | `client/components/resources/{Resource}.tsx` | Standardized form components with AI generation, draft, autosave |
-| **SQL Queries** | `server/app/sql/v4/queries/resources/{resource}/` | One SQL file per endpoint operation |
+| **SQL Queries** | `server/app/v5/sql/queries/resources/{resource}/` | One SQL file per endpoint operation |
 
 ---
 
@@ -29,7 +29,7 @@ psql postgresql://myuser:mypassword@localhost:5432/mydb
 
 ### Rule 1: One API folder per resource type — no more, no less
 
-Every value in the `resource_type` enum must have a corresponding folder at `server/app/api/v4/resources/{resource}/`. Conversely, no API folder should exist for a name that is NOT in the `resource_type` enum.
+Every value in the `resource_type` enum must have a corresponding folder at `server/app/v5/api/resources/{resource}/`. Conversely, no API folder should exist for a name that is NOT in the `resource_type` enum.
 
 **Naming**: The API folder name must exactly match the enum value (e.g., enum `names` → folder `names/`). Mismatches like `setting_role_routes/` for enum value `role_routes` are errors.
 
@@ -63,7 +63,7 @@ All resource API folders must contain `docs.py` with a `ResourceDocsConfig` defi
 
 Resource endpoints must NOT take `domain_id` as a parameter. The `domain_id` pattern is legacy. The only exception is the `domains` resource itself.
 
-Resource SQL queries (`server/app/sql/v4/queries/resources/{resource}/`) must NOT filter by `domain_id`.
+Resource SQL queries (`server/app/v5/sql/queries/resources/{resource}/`) must NOT filter by `domain_id`.
 
 ### Rule 6: Resource SQL — allowed tables per operation
 
@@ -203,7 +203,7 @@ Instead, derive the item type from the resource's GET endpoint using `OutputOf`:
 ```typescript
 import type { OutputOf } from "@/lib/api/types";
 
-type {Resource}GetResponse = OutputOf<"/api/v4/resources/{resource}/get", "post">;
+type {Resource}GetResponse = OutputOf<"/api/v5/resources/{resource}/get", "post">;
 export type {Resource}ResourceItem = NonNullable<{Resource}GetResponse["items"]>[number];
 ```
 
@@ -221,10 +221,10 @@ drift risk and is always a subset of the real type.
 
 ### Rule 18: Every AI-generated resource must have a socket handler module
 
-Resources that participate in AI generation must have a socket handler module at `server/app/socket/v4/resources/{resource}/` with 6 files:
+Resources that participate in AI generation must have a socket handler module at `server/app/v5/socket/resources/{resource}/` with 6 files:
 
 ```
-server/app/socket/v4/resources/{resource}/
+server/app/v5/socket/resources/{resource}/
   __init__.py     — server_router with OpenAPI POST endpoints (4 endpoints)
   types.py        — Per-resource Pydantic event models (complete event with typed fields)
   start.py        — handle_start() → emits {resource}_generation_started
@@ -252,7 +252,7 @@ event.name = tool_result.get("name")
 
 ### Rule 20: Socket handler modules must be registered in the dispatcher
 
-Every per-resource socket handler module must be imported and registered in the dispatcher (`server/app/socket/v4/resources/dispatcher.py`) handler dicts:
+Every per-resource socket handler module must be imported and registered in the dispatcher (`server/app/v5/socket/resources/dispatcher.py`) handler dicts:
 
 - `START_HANDLERS["{resource}"]` → `{resource}_start.handle_start`
 - `PROGRESS_HANDLERS["{resource}"]` → `{resource}_progress.handle_progress`
@@ -293,7 +293,7 @@ Then check the filesystem:
 
 ```bash
 # List all API resource folders
-ls -d server/app/api/v4/resources/*/ | xargs -I{} basename {} | grep -v __pycache__ | sort
+ls -d server/app/v5/api/resources/*/ | xargs -I{} basename {} | grep -v __pycache__ | sort
 ```
 
 **Expected**: Every enum value has a matching folder. Report any enum values without folders and any folders without enum values.
@@ -305,7 +305,7 @@ ls -d server/app/api/v4/resources/*/ | xargs -I{} basename {} | grep -v __pycach
 # Folder name must EXACTLY match enum value
 comm -3 \
   <(psql postgresql://myuser:mypassword@localhost:5432/mydb -t -A -c "SELECT e.enumlabel FROM pg_type t JOIN pg_enum e ON e.enumtypid = t.oid WHERE t.typname = 'resource_type' ORDER BY e.enumlabel") \
-  <(ls -d server/app/api/v4/resources/*/ | xargs -I{} basename {} | grep -v __pycache__ | sort)
+  <(ls -d server/app/v5/api/resources/*/ | xargs -I{} basename {} | grep -v __pycache__ | sort)
 ```
 
 **Expected**: No mismatches. `setting_role_routes` vs `role_routes` is a known naming error.
@@ -314,14 +314,14 @@ comm -3 \
 
 ```bash
 # Resources missing get.py
-for dir in server/app/api/v4/resources/*/; do
+for dir in server/app/v5/api/resources/*/; do
   name=$(basename "$dir")
   [ "$name" = "__pycache__" ] && continue
   [ ! -f "$dir/get.py" ] && echo "MISSING get.py: $name"
 done
 
 # Resources missing search.py
-for dir in server/app/api/v4/resources/*/; do
+for dir in server/app/v5/api/resources/*/; do
   name=$(basename "$dir")
   [ "$name" = "__pycache__" ] && continue
   [ ! -f "$dir/search.py" ] && echo "MISSING search.py: $name"
@@ -341,7 +341,7 @@ SELECT DISTINCT resource FROM resource_outputs_relation WHERE creatable = true O
 # For each creatable resource, check create.py exists
 for resource in $(psql postgresql://myuser:mypassword@localhost:5432/mydb -t -A -c \
   "SELECT DISTINCT resource FROM resource_outputs_relation WHERE creatable = true ORDER BY resource"); do
-  [ ! -f "server/app/api/v4/resources/$resource/create.py" ] && echo "MISSING create.py: $resource"
+  [ ! -f "server/app/v5/api/resources/$resource/create.py" ] && echo "MISSING create.py: $resource"
 done
 ```
 
@@ -351,7 +351,7 @@ done
 
 ```bash
 # Get non-creatable resources (in enum but NOT in creatable list)
-for dir in server/app/api/v4/resources/*/; do
+for dir in server/app/v5/api/resources/*/; do
   name=$(basename "$dir")
   [ "$name" = "__pycache__" ] && continue
   [ -f "$dir/create.py" ] || continue
@@ -366,7 +366,7 @@ done
 ### Audit 6: Resources missing `docs.py`
 
 ```bash
-for dir in server/app/api/v4/resources/*/; do
+for dir in server/app/v5/api/resources/*/; do
   name=$(basename "$dir")
   [ "$name" = "__pycache__" ] && continue
   [ ! -f "$dir/docs.py" ] && echo "MISSING docs.py: $name"
@@ -379,10 +379,10 @@ done
 
 ```bash
 # Check SQL query files for domain_id parameter usage
-grep -rl "domain_id" server/app/sql/v4/queries/resources/ --include="*.sql" | grep -v "/domains/"
+grep -rl "domain_id" server/app/v5/sql/queries/resources/ --include="*.sql" | grep -v "/domains/"
 
 # Check Python endpoint files for domain_id
-grep -rl "domain_id" server/app/api/v4/resources/ --include="*.py" | grep -v "/domains/"
+grep -rl "domain_id" server/app/v5/api/resources/ --include="*.py" | grep -v "/domains/"
 ```
 
 **Expected**: Empty (except domains resource). Any other usage is legacy.
@@ -392,7 +392,7 @@ grep -rl "domain_id" server/app/api/v4/resources/ --include="*.py" | grep -v "/d
 ```bash
 # Check GET/SEARCH SQL (in subdirectories) for disallowed tables
 echo "=== GET/SEARCH SQL ==="
-for resource_dir in server/app/sql/v4/queries/resources/*/; do
+for resource_dir in server/app/v5/sql/queries/resources/*/; do
   resource=$(basename "$resource_dir")
   for sql_file in "$resource_dir"*.sql; do
     [ -f "$sql_file" ] || continue
@@ -412,7 +412,7 @@ done
 
 # Check CREATE SQL (in root resources/) for disallowed lookups
 echo "=== CREATE SQL ==="
-for sql_file in server/app/sql/v4/queries/resources/*_complete.sql; do
+for sql_file in server/app/v5/sql/queries/resources/*_complete.sql; do
   [ -f "$sql_file" ] || continue
   resource=$(basename "$sql_file" _complete.sql)
   # Disallowed: agent_tools_junction, tools_resource, tool_tools_junction, tool_artifact, resource_tools_relation, agent_flags_junction
@@ -427,17 +427,17 @@ done
 
 ```bash
 # get.py without get_cached
-for f in server/app/api/v4/resources/*/get.py; do
+for f in server/app/v5/api/resources/*/get.py; do
   grep -qL "get_cached" "$f" 2>/dev/null && echo "MISSING CACHE: $f"
 done
 
 # search.py without get_cached
-for f in server/app/api/v4/resources/*/search.py; do
+for f in server/app/v5/api/resources/*/search.py; do
   grep -qL "get_cached" "$f" 2>/dev/null && echo "MISSING CACHE: $f"
 done
 
 # create.py without invalidate_tags
-for f in server/app/api/v4/resources/*/create.py; do
+for f in server/app/v5/api/resources/*/create.py; do
   grep -qL "invalidate_tags" "$f" 2>/dev/null && echo "MISSING INVALIDATION: $f"
 done
 ```
@@ -625,7 +625,7 @@ ORDER BY p.proname;
 
 ```bash
 # Check which AI-generated resources have socket handler modules
-for resource_dir in server/app/socket/v4/resources/*/; do
+for resource_dir in server/app/v5/socket/resources/*/; do
   resource=$(basename "$resource_dir")
   [ "$resource" = "__pycache__" ] && continue
   missing=""
@@ -644,8 +644,8 @@ done
 
 ```bash
 # Check that every resource socket module is registered in the dispatcher
-dispatcher="server/app/socket/v4/resources/dispatcher.py"
-for resource_dir in server/app/socket/v4/resources/*/; do
+dispatcher="server/app/v5/socket/resources/dispatcher.py"
+for resource_dir in server/app/v5/socket/resources/*/; do
   resource=$(basename "$resource_dir")
   [ "$resource" = "__pycache__" ] && continue
   grep -q "\"$resource\"" "$dispatcher" || echo "NOT REGISTERED IN DISPATCHER: $resource"

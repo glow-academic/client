@@ -11,11 +11,11 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type FieldsListOut = OutputOf<"/api/v4/artifacts/fields/list", "post">;
-type DuplicateFieldIn = InputOf<"/api/v4/artifacts/fields/duplicate", "post">;
-type DuplicateFieldOut = OutputOf<"/api/v4/artifacts/fields/duplicate", "post">;
-type DeleteFieldIn = InputOf<"/api/v4/artifacts/fields/delete", "post">;
-type DeleteFieldOut = OutputOf<"/api/v4/artifacts/fields/delete", "post">;
+type FieldsListOut = OutputOf<"/api/v5/artifacts/fields/list", "post">;
+type DuplicateFieldIn = InputOf<"/api/v5/artifacts/fields/duplicate", "post">;
+type DuplicateFieldOut = OutputOf<"/api/v5/artifacts/fields/duplicate", "post">;
+type DeleteFieldIn = InputOf<"/api/v5/artifacts/fields/delete", "post">;
+type DeleteFieldOut = OutputOf<"/api/v5/artifacts/fields/delete", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ---- */
 const getFieldsList = async (): Promise<FieldsListOut> => {
@@ -48,8 +48,8 @@ async function deleteField(input: DeleteFieldIn): Promise<DeleteFieldOut> {
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/fields/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/fields/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/fields/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/fields/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/fields/docs", input);

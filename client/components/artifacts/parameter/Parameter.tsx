@@ -34,28 +34,28 @@ import {
 import type { ResourceType } from "@/lib/resources/types";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
-type SaveParameterIn = InputOf<"/api/v4/artifacts/parameters/save", "post">;
-type SaveParameterOut = OutputOf<"/api/v4/artifacts/parameters/save", "post">;
+type SaveParameterIn = InputOf<"/api/v5/artifacts/parameters/save", "post">;
+type SaveParameterOut = OutputOf<"/api/v5/artifacts/parameters/save", "post">;
 type PatchParameterDraftIn = InputOf<
-  "/api/v4/artifacts/parameters/draft",
+  "/api/v5/artifacts/parameters/draft",
   "patch"
 >;
 type PatchParameterDraftOut = OutputOf<
-  "/api/v4/artifacts/parameters/draft",
+  "/api/v5/artifacts/parameters/draft",
   "patch"
 >;
-type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 
-type ParameterData = OutputOf<"/api/v4/artifacts/parameters/get", "post">;
+type ParameterData = OutputOf<"/api/v5/artifacts/parameters/get", "post">;
 
 type ParameterFormState = {
   name_id: string | null;

@@ -43,24 +43,24 @@ import { Loader2, Sparkles } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type SaveSettingIn = InputOf<"/api/v4/artifacts/settings/save", "post">;
-type SaveSettingOut = OutputOf<"/api/v4/artifacts/settings/save", "post">;
-type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type SaveSettingIn = InputOf<"/api/v5/artifacts/settings/save", "post">;
+type SaveSettingOut = OutputOf<"/api/v5/artifacts/settings/save", "post">;
+type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
-type CreateDraftColorsIn = InputOf<"/api/v4/resources/colors", "post">;
-type CreateDraftColorsOut = OutputOf<"/api/v4/resources/colors", "post">;
-type PatchSettingDraftIn = InputOf<"/api/v4/artifacts/settings/draft", "patch">;
-type PatchSettingDraftOut = OutputOf<"/api/v4/artifacts/settings/draft", "patch">;
+type CreateDraftColorsIn = InputOf<"/api/v5/resources/colors", "post">;
+type CreateDraftColorsOut = OutputOf<"/api/v5/resources/colors", "post">;
+type PatchSettingDraftIn = InputOf<"/api/v5/artifacts/settings/draft", "patch">;
+type PatchSettingDraftOut = OutputOf<"/api/v5/artifacts/settings/draft", "patch">;
 
-type SettingData = OutputOf<"/api/v4/artifacts/settings/get", "post">;
+type SettingData = OutputOf<"/api/v5/artifacts/settings/get", "post">;
 
 export interface SettingProps {
   settingId?: string;

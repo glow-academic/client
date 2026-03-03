@@ -94,34 +94,34 @@ const DOCUMENT_RESOURCES: ResourceConfig[] = [
 ];
 
 // Types defined inline using InputOf/OutputOf
-type SaveDocumentIn = InputOf<"/api/v4/artifacts/documents/save", "post">;
-type SaveDocumentOut = OutputOf<"/api/v4/artifacts/documents/save", "post">;
-type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type SaveDocumentIn = InputOf<"/api/v5/artifacts/documents/save", "post">;
+type SaveDocumentOut = OutputOf<"/api/v5/artifacts/documents/save", "post">;
+type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
-type CreateDraftUploadsIn = InputOf<"/api/v4/resources/uploads", "post">;
-type CreateDraftUploadsOut = OutputOf<"/api/v4/resources/uploads", "post">;
-type CreateDraftImagesIn = InputOf<"/api/v4/resources/images", "post">;
-type CreateDraftImagesOut = OutputOf<"/api/v4/resources/images", "post">;
-type CreateDraftTextsIn = InputOf<"/api/v4/resources/texts", "post">;
-type CreateDraftTextsOut = OutputOf<"/api/v4/resources/texts", "post">;
+type CreateDraftUploadsIn = InputOf<"/api/v5/resources/uploads", "post">;
+type CreateDraftUploadsOut = OutputOf<"/api/v5/resources/uploads", "post">;
+type CreateDraftImagesIn = InputOf<"/api/v5/resources/images", "post">;
+type CreateDraftImagesOut = OutputOf<"/api/v5/resources/images", "post">;
+type CreateDraftTextsIn = InputOf<"/api/v5/resources/texts", "post">;
+type CreateDraftTextsOut = OutputOf<"/api/v5/resources/texts", "post">;
 type PatchDocumentDraftIn = InputOf<
-  "/api/v4/artifacts/documents/draft",
+  "/api/v5/artifacts/documents/draft",
   "patch"
 >;
 type PatchDocumentDraftOut = OutputOf<
-  "/api/v4/artifacts/documents/draft",
+  "/api/v5/artifacts/documents/draft",
   "patch"
 >;
 
-type DocumentData = OutputOf<"/api/v4/artifacts/documents/get", "post">;
+type DocumentData = OutputOf<"/api/v5/artifacts/documents/get", "post">;
 
 export interface DocumentProps {
   documentId?: string;

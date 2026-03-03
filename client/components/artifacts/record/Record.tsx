@@ -8,7 +8,7 @@ import DashboardSecondary from "@/components/artifacts/dashboard/DashboardSecond
 import DashboardFooter from "@/components/artifacts/dashboard/DashboardFooter";
 import SimulationHistory from "@/components/common/SimulationHistory";
 import ProfileHeader from "@/components/artifacts/reports/ProfileHeader";
-type DashboardOut = OutputOf<"/api/v4/artifacts/dashboard/get", "post">;
+type DashboardOut = OutputOf<"/api/v5/artifacts/dashboard/get", "post">;
 type ReportHistoryOut = NonNullable<DashboardOut["history"]>;
 
 export interface RecordProps {

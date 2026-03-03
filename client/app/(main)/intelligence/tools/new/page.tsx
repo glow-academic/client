@@ -11,28 +11,28 @@ import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetToolIn = InputOf<"/api/v4/artifacts/tools/get", "post">;
-type GetToolOut = OutputOf<"/api/v4/artifacts/tools/get", "post">;
-type SaveToolIn = InputOf<"/api/v4/artifacts/tools/save", "post">;
-type SaveToolOut = OutputOf<"/api/v4/artifacts/tools/save", "post">;
-type PatchToolDraftIn = InputOf<"/api/v4/artifacts/tools/draft", "patch">;
-type PatchToolDraftOut = OutputOf<"/api/v4/artifacts/tools/draft", "patch">;
-type CreateDraftArgsIn = InputOf<"/api/v4/resources/args", "post">;
-type CreateDraftArgsOut = OutputOf<"/api/v4/resources/args", "post">;
+type GetToolIn = InputOf<"/api/v5/artifacts/tools/get", "post">;
+type GetToolOut = OutputOf<"/api/v5/artifacts/tools/get", "post">;
+type SaveToolIn = InputOf<"/api/v5/artifacts/tools/save", "post">;
+type SaveToolOut = OutputOf<"/api/v5/artifacts/tools/save", "post">;
+type PatchToolDraftIn = InputOf<"/api/v5/artifacts/tools/draft", "patch">;
+type PatchToolDraftOut = OutputOf<"/api/v5/artifacts/tools/draft", "patch">;
+type CreateDraftArgsIn = InputOf<"/api/v5/resources/args", "post">;
+type CreateDraftArgsOut = OutputOf<"/api/v5/resources/args", "post">;
 type CreateDraftArgsOutputsIn = InputOf<
-  "/api/v4/resources/args_outputs",
+  "/api/v5/resources/args_outputs",
   "post"
 >;
 type CreateDraftArgsOutputsOut = OutputOf<
-  "/api/v4/resources/args_outputs",
+  "/api/v5/resources/args_outputs",
   "post"
 >;
 type CreateDraftArgPositionsIn = InputOf<
-  "/api/v4/resources/arg_positions",
+  "/api/v5/resources/arg_positions",
   "post"
 >;
 type CreateDraftArgPositionsOut = OutputOf<
-  "/api/v4/resources/arg_positions",
+  "/api/v5/resources/arg_positions",
   "post"
 >;
 
@@ -50,8 +50,8 @@ const getToolDefault = async (input: GetToolIn): Promise<GetToolOut> => {
 
 /** ---- Metadata ---- */
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/tools/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/tools/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/tools/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/tools/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/tools/docs", input);

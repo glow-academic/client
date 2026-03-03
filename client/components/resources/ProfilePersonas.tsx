@@ -28,21 +28,21 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 
 // Link types for tool call tracking
-type LinkProfilePersonasIn = InputOf<"/api/v4/resources/profile_personas/link", "post">;
-type LinkProfilePersonasOut = OutputOf<"/api/v4/resources/profile_personas/link", "post">;
+type LinkProfilePersonasIn = InputOf<"/api/v5/resources/profile_personas/link", "post">;
+type LinkProfilePersonasOut = OutputOf<"/api/v5/resources/profile_personas/link", "post">;
 
 type CreateDraftProfilePersonasIn = InputOf<
-  "/api/v4/resources/profile_personas",
+  "/api/v5/resources/profile_personas",
   "post"
 >;
 type CreateDraftProfilePersonasOut = OutputOf<
-  "/api/v4/resources/profile_personas",
+  "/api/v5/resources/profile_personas",
   "post"
 >;
 
 // Derive resource item type from the GET endpoint response
 type ProfilePersonasGetResponse = OutputOf<
-  "/api/v4/resources/profile_personas/get",
+  "/api/v5/resources/profile_personas/get",
   "post"
 >;
 export type ProfilePersonasResourceItem = NonNullable<

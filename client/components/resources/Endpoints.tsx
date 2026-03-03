@@ -22,11 +22,11 @@ import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type CreateDraftEndpointsIn = InputOf<"/api/v4/resources/endpoints", "post">;
-type CreateDraftEndpointsOut = OutputOf<"/api/v4/resources/endpoints", "post">;
+type CreateDraftEndpointsIn = InputOf<"/api/v5/resources/endpoints", "post">;
+type CreateDraftEndpointsOut = OutputOf<"/api/v5/resources/endpoints", "post">;
 
 // Derive resource item type from the GET endpoint response
-type EndpointGetResponse = OutputOf<"/api/v4/resources/endpoints/get", "post">;
+type EndpointGetResponse = OutputOf<"/api/v5/resources/endpoints/get", "post">;
 export type EndpointResourceItem = NonNullable<EndpointGetResponse["items"]>[number];
 
 export interface EndpointsProps {

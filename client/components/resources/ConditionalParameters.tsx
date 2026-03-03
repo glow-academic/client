@@ -23,7 +23,7 @@ import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 // Derive resource item type from the GET endpoint response
-type ConditionalParametersGetResponse = OutputOf<"/api/v4/resources/conditional_parameters/get", "post">;
+type ConditionalParametersGetResponse = OutputOf<"/api/v5/resources/conditional_parameters/get", "post">;
 export type ConditionalParametersResourceItem = NonNullable<ConditionalParametersGetResponse["items"]>[number];
 
 export interface ConditionalParameterItem {

@@ -24,7 +24,7 @@ import { useCallback, useEffect, useMemo } from "react";
 
 // Derive resource item type from the GET endpoint response
 type ParameterGetResponse = OutputOf<
-  "/api/v4/resources/parameters/get",
+  "/api/v5/resources/parameters/get",
   "post"
 >;
 export type ParameterResourceItem = NonNullable<

@@ -29,11 +29,11 @@ import { v4 as uuidv4 } from "uuid";
 
 type FlushResult = { uploads_id: string | null } | void;
 
-type CreateDraftUploadsIn = InputOf<"/api/v4/resources/uploads", "post">;
-type CreateDraftUploadsOut = OutputOf<"/api/v4/resources/uploads", "post">;
+type CreateDraftUploadsIn = InputOf<"/api/v5/resources/uploads", "post">;
+type CreateDraftUploadsOut = OutputOf<"/api/v5/resources/uploads", "post">;
 
 // Derive resource item type from the GET endpoint response
-type UploadGetResponse = OutputOf<"/api/v4/resources/uploads/get", "post">;
+type UploadGetResponse = OutputOf<"/api/v5/resources/uploads/get", "post">;
 export type UploadResourceItem = NonNullable<UploadGetResponse["items"]>[number];
 
 export interface UploadsProps {

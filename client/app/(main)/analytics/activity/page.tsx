@@ -17,8 +17,8 @@ import type { Metadata } from "next";
 import { loadActivitySearchParams } from "@/lib/search-params/activity";
 
 /** ---- Strong types from OpenAPI ---- */
-type ActivityBundleIn = InputOf<"/api/v4/artifacts/activity/get", "post">;
-type ActivityBundleOut = OutputOf<"/api/v4/artifacts/activity/get", "post">;
+type ActivityBundleIn = InputOf<"/api/v5/artifacts/activity/get", "post">;
+type ActivityBundleOut = OutputOf<"/api/v5/artifacts/activity/get", "post">;
 type ActivityListOut = NonNullable<ActivityBundleOut["history"]>;
 
 export type ActivityOut = {
@@ -43,8 +43,8 @@ const getActivityBundle = async (
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/activity/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/activity/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/activity/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/activity/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/activity/docs", input);

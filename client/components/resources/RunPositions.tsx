@@ -24,11 +24,11 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 
 type FlushResult = { run_positions_id: string | null } | void;
 
-type CreateDraftRunPositionsIn = InputOf<"/api/v4/resources/run_positions", "post">;
-type CreateDraftRunPositionsOut = OutputOf<"/api/v4/resources/run_positions", "post">;
+type CreateDraftRunPositionsIn = InputOf<"/api/v5/resources/run_positions", "post">;
+type CreateDraftRunPositionsOut = OutputOf<"/api/v5/resources/run_positions", "post">;
 
 // Derive resource item type from the GET endpoint response
-type RunPositionsGetResponse = OutputOf<"/api/v4/resources/run_positions/get", "post">;
+type RunPositionsGetResponse = OutputOf<"/api/v5/resources/run_positions/get", "post">;
 export type RunPositionsResourceItem = NonNullable<RunPositionsGetResponse["items"]>[number];
 
 export interface RunPositionItem {

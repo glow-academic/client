@@ -23,11 +23,11 @@ import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 // Link types for tool call tracking
-type LinkSimulationsIn = InputOf<"/api/v4/resources/simulations/link", "post">;
-type LinkSimulationsOut = OutputOf<"/api/v4/resources/simulations/link", "post">;
+type LinkSimulationsIn = InputOf<"/api/v5/resources/simulations/link", "post">;
+type LinkSimulationsOut = OutputOf<"/api/v5/resources/simulations/link", "post">;
 
 // Derive resource item type from the GET endpoint response
-type SimulationGetResponse = OutputOf<"/api/v4/resources/simulations/get", "post">;
+type SimulationGetResponse = OutputOf<"/api/v5/resources/simulations/get", "post">;
 export type SimulationResourceItem = NonNullable<SimulationGetResponse["items"]>[number];
 
 export interface SimulationItem {

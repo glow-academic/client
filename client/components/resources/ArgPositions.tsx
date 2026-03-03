@@ -8,7 +8,7 @@ import { ArrowDown, ArrowUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 // Derive resource item type from the GET endpoint response
-type ArgPositionsGetResponse = OutputOf<"/api/v4/resources/arg_positions/get", "post">;
+type ArgPositionsGetResponse = OutputOf<"/api/v5/resources/arg_positions/get", "post">;
 export type ArgPositionResourceItem = NonNullable<ArgPositionsGetResponse["items"]>[number];
 
 type CreateDraftArgPositionsIn = {

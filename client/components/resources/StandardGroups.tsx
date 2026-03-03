@@ -25,16 +25,16 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 type FlushResult = { standard_group_ids: string[] } | void;
 
 type CreateDraftStandardGroupsIn = InputOf<
-  "/api/v4/resources/standard_groups",
+  "/api/v5/resources/standard_groups",
   "post"
 >;
 type CreateDraftStandardGroupsOut = OutputOf<
-  "/api/v4/resources/standard_groups",
+  "/api/v5/resources/standard_groups",
   "post"
 >;
 
 // Derive resource item type from the GET endpoint response
-type StandardGroupGetResponse = OutputOf<"/api/v4/resources/standard_groups/get", "post">;
+type StandardGroupGetResponse = OutputOf<"/api/v5/resources/standard_groups/get", "post">;
 export type StandardGroupResourceItem = NonNullable<StandardGroupGetResponse["items"]>[number];
 
 export interface StandardGroupItem {

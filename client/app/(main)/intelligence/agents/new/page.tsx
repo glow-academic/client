@@ -13,14 +13,14 @@ import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetAgentIn = InputOf<"/api/v4/artifacts/agents/get", "post">;
-type GetAgentOut = OutputOf<"/api/v4/artifacts/agents/get", "post">;
-type SaveAgentIn = InputOf<"/api/v4/artifacts/agents/save", "post">;
-type SaveAgentOut = OutputOf<"/api/v4/artifacts/agents/save", "post">;
-type PatchAgentDraftIn = InputOf<"/api/v4/artifacts/agents/draft", "patch">;
-type PatchAgentDraftOut = OutputOf<"/api/v4/artifacts/agents/draft", "patch">;
-type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
-type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
+type GetAgentIn = InputOf<"/api/v5/artifacts/agents/get", "post">;
+type GetAgentOut = OutputOf<"/api/v5/artifacts/agents/get", "post">;
+type SaveAgentIn = InputOf<"/api/v5/artifacts/agents/save", "post">;
+type SaveAgentOut = OutputOf<"/api/v5/artifacts/agents/save", "post">;
+type PatchAgentDraftIn = InputOf<"/api/v5/artifacts/agents/draft", "patch">;
+type PatchAgentDraftOut = OutputOf<"/api/v5/artifacts/agents/draft", "patch">;
+type CreateDraftVoicesIn = InputOf<"/api/v5/resources/voices", "post">;
+type CreateDraftVoicesOut = OutputOf<"/api/v5/resources/voices", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -55,8 +55,8 @@ async function createDraftVoices(input: CreateDraftVoicesIn): Promise<CreateDraf
   return api.post("/resources/voices", input);
 }
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/agents/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/agents/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/agents/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/agents/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/agents/docs", input);

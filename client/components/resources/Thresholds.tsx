@@ -23,7 +23,7 @@ import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 // Derive resource item type from the GET endpoint response
-type ThresholdsGetResponse = OutputOf<"/api/v4/resources/thresholds/get", "post">;
+type ThresholdsGetResponse = OutputOf<"/api/v5/resources/thresholds/get", "post">;
 export type ThresholdResourceItem = NonNullable<ThresholdsGetResponse["items"]>[number];
 
 export interface ThresholdItem {

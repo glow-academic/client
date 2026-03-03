@@ -44,7 +44,7 @@ Every artifact has exactly three presentation functions that share one internal 
 ### Reference: Persona Implementation
 
 ```
-server/app/api/v4/artifacts/persona/get.py
+server/app/v5/api/main/persona/get.py
   get_persona_internal()    — lines 114-788
   get_persona_websocket()   — lines 791-879
   get_persona_client()      — lines 882-983
@@ -143,7 +143,7 @@ The generation socket handler follows this exact flow. The client emits **`resou
 ### Reference Flow
 
 ```
-server/app/socket/v4/artifacts/persona/generate.py
+server/app/v5/socket/artifacts/persona/generate.py
   _persona_generate_impl()  — lines 92-527
 ```
 
@@ -308,7 +308,7 @@ Reference: `generate.py:78-89`
 
 ## 5. Completion Handler (complete.py)
 
-Reference: `server/app/socket/v4/artifacts/persona/complete.py`
+Reference: `server/app/v5/socket/artifacts/persona/complete.py`
 
 ### Flow
 
@@ -416,7 +416,7 @@ Reference: `types.py:408-431`
 
 ## 7. Permissions & Constants
 
-Reference: `server/app/api/v4/artifacts/persona/permissions.py`
+Reference: `server/app/v5/api/main/persona/permissions.py`
 
 ### Resource Set Constants
 
@@ -444,7 +444,7 @@ Reference: `permissions.py:366-383`
 
 The materialized view `mv_config` provides inference configuration for generation.
 
-Reference: `server/app/sql/v4/views/config/mv_config.sql`, `server/app/api/v4/views/config/`
+Reference: `server/app/v5/sql/views/config/mv_config.sql`, `server/app/v5/api/views/config/`
 
 ### Fields
 
@@ -639,7 +639,7 @@ For any artifact endpoint, check each of these against the gold standard:
 - [ ] Websocket response never returns top-level `current` or nested `resources.current`
 - [ ] `get_{artifact}_client()` wraps `internal()` and builds sections with `_section_common()` helper
 
-### Socket Handler (`socket/v4/artifacts/{artifact}/generate.py`)
+### Socket Handler (`socket/v5/artifacts/{artifact}/generate.py`)
 
 - [ ] Client emits `resource_types: list[str]` — NOT domain_ids or agent_type
 - [ ] Calls `get_{artifact}_websocket()` to get pre-fetched resources
@@ -653,7 +653,7 @@ For any artifact endpoint, check each of these against the gold standard:
 - [ ] Persists messages to DB before emitting to `generate_artifact`
 - [ ] No legacy `agent_type` string routing
 
-### Completion Handler (`socket/v4/artifacts/{artifact}/complete.py`)
+### Completion Handler (`socket/v5/artifacts/{artifact}/complete.py`)
 
 - [ ] Filters by `artifact_type`
 - [ ] Dispatches by `event_type` (text_complete, run_complete, tool_call_complete)
@@ -716,8 +716,8 @@ The profile artifact should follow the same contract rules as persona/scenario:
   - do not require `draft_id` as the primary save contract
   - server may patch/create draft internally before final save SQL
 - Client save action should be fully typed:
-  - `InputOf<"/api/v4/artifacts/profiles/save", "post">`
-  - `OutputOf<"/api/v4/artifacts/profiles/save", "post">`
+  - `InputOf<"/api/v5/artifacts/profiles/save", "post">`
+  - `OutputOf<"/api/v5/artifacts/profiles/save", "post">`
   - do not use temporary unsafe wrappers once schema is regenerated
 - Draft endpoint must use nested resource actions (persona-style):
   - request body sections: `names`, `flags`, `request_limits`, `departments`, `emails`, `cohorts`
@@ -776,7 +776,7 @@ Resource layer notes:
 - Images: full resource layer exists (`get_images_internal`, `search_images_internal`, `QGetImagesV4Item`)
 - Texts: full resource layer exists (`get_texts_internal`, `search_texts_internal`, `QGetTextsV4Item`)
 - Both use `RETURNS TABLE (items composite[])` with `ARRAY_AGG` + `COALESCE` pattern for asyncpg compatibility
-- Both have create endpoints: `POST /api/v4/resources/images`, `POST /api/v4/resources/texts`
+- Both have create endpoints: `POST /api/v5/resources/images`, `POST /api/v5/resources/texts`
 
 ### Model Parity Rules (Persona-Style)
 
@@ -794,8 +794,8 @@ Architecture notes:
 - Step grouping: `basic` (names, descriptions, flags, departments), `provider` (values, providers), `features` (modalities, temperature_levels, pricing, reasoning_levels, qualities, voices)
 - Modalities are unified (no separate input/output arrays) — direction is tracked via `is_input` boolean on `modalities_resource`, not via junction table `type` column
 - Endpoints and keys were removed from model (moved to provider artifact per migration 406)
-- Handcrafted types in `server/app/api/v4/artifacts/model/types.py`
-- Permissions in `server/app/api/v4/artifacts/model/permissions.py`
+- Handcrafted types in `server/app/v5/api/main/model/types.py`
+- Permissions in `server/app/v5/api/main/model/permissions.py`
 
 Known deviations from gold standard (acceptable for now, migration deferred):
 - `generate.py` uses shared SQL (`get_generation_run_context_and_create_run_complete.sql` + `get_text_run_context_for_existing_run_complete.sql`) instead of artifact-specific prepare SQL
@@ -991,7 +991,7 @@ Frontend notes:
   - `useArtifactGeneration` + `useGenerationModal` + `StepCardAiButton`
   - `buildResourceActions` / `computeEffectiveFormState` / `checkHasResourceIds`
 - Rubric pages and metadata should read section fields directly (`names.resource`, `descriptions.resource`), never `resources.current`.
-- Do not wire rubric to `/api/v4/resources/departments` create routes; departments in rubric are selected/linked resources only.
+- Do not wire rubric to `/api/v5/resources/departments` create routes; departments in rubric are selected/linked resources only.
 
 ### Field Parity Rules (Persona-Style)
 
@@ -1051,8 +1051,8 @@ Audit hygiene:
 
 ### Auth Artifact Parity Rules (Persona-Style)
 
-`/api/v4/auth/*` is a separate auth/session surface and is not part of this migration.
-This section applies to artifact auth management (`/api/v4/artifacts/auths/*`, `auth_generate`, and `client/components/auth/Auth.tsx`).
+`/api/v5/auth/*` is a separate auth/session surface and is not part of this migration.
+This section applies to artifact auth management (`/api/v5/artifacts/auths/*`, `auth_generate`, and `client/components/auth/Auth.tsx`).
 
 Architecture notes:
 - API `get` response is section-first only:
@@ -1209,19 +1209,19 @@ Hard migration rules:
   - `provider_key_ids`
   - `key_ids` (maps to `auth_keys` section action in save/draft payload)
   - `role_route_ids`
-- `flags` and `departments` are selection-only/non-creatable in v4 resources:
-  - do not call `POST /api/v4/resources/flags`
-  - do not call `POST /api/v4/resources/departments`
+- `flags` and `departments` are selection-only/non-creatable in v5 resources:
+  - do not call `POST /api/v5/resources/flags`
+  - do not call `POST /api/v5/resources/departments`
 
 Settings resource endpoint families (required):
 - `provider_keys`
-  - `POST /api/v4/resources/provider_keys`
-  - `POST /api/v4/resources/provider_keys/get`
-  - `POST /api/v4/resources/provider_keys/search`
+  - `POST /api/v5/resources/provider_keys`
+  - `POST /api/v5/resources/provider_keys/get`
+  - `POST /api/v5/resources/provider_keys/search`
 - `auth_keys`
-  - `POST /api/v4/resources/auth_keys`
-  - `POST /api/v4/resources/auth_keys/get`
-  - `POST /api/v4/resources/auth_keys/search`
+  - `POST /api/v5/resources/auth_keys`
+  - `POST /api/v5/resources/auth_keys/get`
+  - `POST /api/v5/resources/auth_keys/search`
 
 Frontend implementation note:
 - `auth_keys` creation requires `(auth_id, key_id)` pair semantics.
@@ -1307,7 +1307,7 @@ Save endpoints must keep denormalized arrays in sync:
 ### Reference Implementation
 
 ```
-server/app/sql/v4/queries/personas/get_personas_list_complete.sql
+server/app/v5/sql/queries/personas/get_personas_list_complete.sql
 ```
 
 Tables touched: `persona_artifact`, `persona_*_junction` (7 junctions), `names_resource`, `descriptions_resource`, `colors_resource`, `icons_resource`, `flags_resource`, `departments_resource`, `parameter_fields_resource`, `fields_resource`, `personas_resource`, `scenarios_resource`

@@ -22,21 +22,21 @@ import { Calendar, Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // Link types for tool call tracking
-type LinkSimulationAvailabilityIn = InputOf<"/api/v4/resources/simulation_availability/link", "post">;
-type LinkSimulationAvailabilityOut = OutputOf<"/api/v4/resources/simulation_availability/link", "post">;
+type LinkSimulationAvailabilityIn = InputOf<"/api/v5/resources/simulation_availability/link", "post">;
+type LinkSimulationAvailabilityOut = OutputOf<"/api/v5/resources/simulation_availability/link", "post">;
 
 type CreateDraftSimulationAvailabilityIn = InputOf<
-  "/api/v4/resources/simulation_availability",
+  "/api/v5/resources/simulation_availability",
   "post"
 >;
 type CreateDraftSimulationAvailabilityOut = OutputOf<
-  "/api/v4/resources/simulation_availability",
+  "/api/v5/resources/simulation_availability",
   "post"
 >;
 
 // Derive resource item type from the GET endpoint response
 type SimulationAvailabilityGetResponse = OutputOf<
-  "/api/v4/resources/simulation_availability/get",
+  "/api/v5/resources/simulation_availability/get",
   "post"
 >;
 export type SimulationAvailabilityResourceItem = NonNullable<

@@ -45,11 +45,11 @@ const generateGradientFromHex = (hexColor: string): string => {
 };
 
 // Link types for tool call tracking
-type LinkPersonasIn = InputOf<"/api/v4/resources/personas/link", "post">;
-type LinkPersonasOut = OutputOf<"/api/v4/resources/personas/link", "post">;
+type LinkPersonasIn = InputOf<"/api/v5/resources/personas/link", "post">;
+type LinkPersonasOut = OutputOf<"/api/v5/resources/personas/link", "post">;
 
 // Derive resource item type from the GET endpoint response
-type PersonaGetResponse = OutputOf<"/api/v4/resources/personas/get", "post">;
+type PersonaGetResponse = OutputOf<"/api/v5/resources/personas/get", "post">;
 export type PersonaResourceItem = NonNullable<PersonaGetResponse["items"]>[number];
 
 export interface PersonaItem {

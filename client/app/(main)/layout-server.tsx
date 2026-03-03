@@ -10,19 +10,19 @@ import { headers } from "next/headers";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type AuthProfileIn = InputOf<"/api/v4/auth/profile", "post">;
-type AuthProfileOut = OutputOf<"/api/v4/auth/profile", "post">;
-type AuthSettingsIn = InputOf<"/api/v4/auth/settings", "post">;
-type AuthSettingsOut = OutputOf<"/api/v4/auth/settings", "post">;
-type AuthPageIn = InputOf<"/api/v4/auth/page", "post">;
-type AuthPageOut = OutputOf<"/api/v4/auth/page", "post">;
-type DraftsIn = InputOf<"/api/v4/auth/drafts", "post">;
-type DraftsOut = OutputOf<"/api/v4/auth/drafts", "post">;
-type AnalyticsFiltersOut = OutputOf<"/api/v4/auth/analytics", "post">;
-type CreateEmulationGrantIn = InputOf<"/api/v4/auth/emulate", "post">;
-type CreateEmulationGrantOut = OutputOf<"/api/v4/auth/emulate", "post">;
-type CreateFeedbackIn = InputOf<"/api/v4/artifacts/activity/problem", "post">;
-type CreateFeedbackOut = OutputOf<"/api/v4/artifacts/activity/problem", "post">;
+type AuthProfileIn = InputOf<"/api/v5/auth/profile", "post">;
+type AuthProfileOut = OutputOf<"/api/v5/auth/profile", "post">;
+type AuthSettingsIn = InputOf<"/api/v5/auth/settings", "post">;
+type AuthSettingsOut = OutputOf<"/api/v5/auth/settings", "post">;
+type AuthPageIn = InputOf<"/api/v5/auth/page", "post">;
+type AuthPageOut = OutputOf<"/api/v5/auth/page", "post">;
+type DraftsIn = InputOf<"/api/v5/auth/drafts", "post">;
+type DraftsOut = OutputOf<"/api/v5/auth/drafts", "post">;
+type AnalyticsFiltersOut = OutputOf<"/api/v5/auth/analytics", "post">;
+type CreateEmulationGrantIn = InputOf<"/api/v5/auth/emulate", "post">;
+type CreateEmulationGrantOut = OutputOf<"/api/v5/auth/emulate", "post">;
+type CreateFeedbackIn = InputOf<"/api/v5/artifacts/activity/problem", "post">;
+type CreateFeedbackOut = OutputOf<"/api/v5/artifacts/activity/problem", "post">;
 /** Page-specific refresh endpoint mapping */
 const REFRESH_ENDPOINT_MAP: Record<string, string> = {
   chat: "/artifacts/chat/refresh",
@@ -34,11 +34,11 @@ const REFRESH_ENDPOINT_MAP: Record<string, string> = {
   activity: "/artifacts/activity/refresh",
   health: "/artifacts/health/refresh",
 };
-type AttemptFullIn = InputOf<"/api/v4/artifacts/attempt/get", "post">;
-type AttemptFullOut = OutputOf<"/api/v4/artifacts/attempt/get", "post">;
-type SearchSimulatableProfilesIn = InputOf<"/api/v4/auth/simulatable", "post">;
+type AttemptFullIn = InputOf<"/api/v5/artifacts/attempt/get", "post">;
+type AttemptFullOut = OutputOf<"/api/v5/artifacts/attempt/get", "post">;
+type SearchSimulatableProfilesIn = InputOf<"/api/v5/auth/simulatable", "post">;
 type SearchSimulatableProfilesOut = OutputOf<
-  "/api/v4/auth/simulatable",
+  "/api/v5/auth/simulatable",
   "post"
 >;
 /** ---- Auth response type aliases ---- */
@@ -93,7 +93,7 @@ export const getAnalyticsFilters = cache(
       const extraHeaders = await buildAuthHeaders();
       return await api.post(
         "/auth/analytics",
-        { body: {} } as InputOf<"/api/v4/auth/analytics", "post">,
+        { body: {} } as InputOf<"/api/v5/auth/analytics", "post">,
         { headers: extraHeaders }
       );
     } catch {
@@ -103,8 +103,8 @@ export const getAnalyticsFilters = cache(
 );
 
 /** ---- Resolve group_id (cached per request) ---- */
-type ResolveGroupIn = InputOf<"/api/v4/auth/group", "post">;
-type ResolveGroupOut = OutputOf<"/api/v4/auth/group", "post">;
+type ResolveGroupIn = InputOf<"/api/v5/auth/group", "post">;
+type ResolveGroupOut = OutputOf<"/api/v5/auth/group", "post">;
 
 export const resolveGroupId = cache(
   async (params: {
@@ -130,8 +130,8 @@ export const resolveGroupId = cache(
 );
 
 /** ---- Generate messages server action ---- */
-type GenerateMessagesIn = InputOf<"/api/v4/auth/generate", "post">;
-type GenerateMessagesOut = OutputOf<"/api/v4/auth/generate", "post">;
+type GenerateMessagesIn = InputOf<"/api/v5/auth/generate", "post">;
+type GenerateMessagesOut = OutputOf<"/api/v5/auth/generate", "post">;
 
 export async function getGenerateMessages(
   input: GenerateMessagesIn

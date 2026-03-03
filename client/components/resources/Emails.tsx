@@ -31,11 +31,11 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type CreateDraftEmailsIn = InputOf<"/api/v4/resources/emails", "post">;
-type CreateDraftEmailsOut = OutputOf<"/api/v4/resources/emails", "post">;
+type CreateDraftEmailsIn = InputOf<"/api/v5/resources/emails", "post">;
+type CreateDraftEmailsOut = OutputOf<"/api/v5/resources/emails", "post">;
 
 // Derive resource item type from the GET endpoint response
-type EmailGetResponse = OutputOf<"/api/v4/resources/emails/get", "post">;
+type EmailGetResponse = OutputOf<"/api/v5/resources/emails/get", "post">;
 export type EmailResourceItem = NonNullable<EmailGetResponse["items"]>[number];
 
 export interface EmailItem {

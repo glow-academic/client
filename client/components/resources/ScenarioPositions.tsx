@@ -30,19 +30,19 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftScenarioPositionsIn = InputOf<
-  "/api/v4/resources/scenario_positions",
+  "/api/v5/resources/scenario_positions",
   "post"
 >;
 type CreateDraftScenarioPositionsOut = OutputOf<
-  "/api/v4/resources/scenario_positions",
+  "/api/v5/resources/scenario_positions",
   "post"
 >;
-type LinkScenarioPositionsIn = InputOf<"/api/v4/resources/scenario_positions/link", "post">;
-type LinkScenarioPositionsOut = OutputOf<"/api/v4/resources/scenario_positions/link", "post">;
+type LinkScenarioPositionsIn = InputOf<"/api/v5/resources/scenario_positions/link", "post">;
+type LinkScenarioPositionsOut = OutputOf<"/api/v5/resources/scenario_positions/link", "post">;
 
 // Derive resource item type from the GET endpoint response
 type ScenarioPositionGetResponse = OutputOf<
-  "/api/v4/resources/scenario_positions/get",
+  "/api/v5/resources/scenario_positions/get",
   "post"
 >;
 export type ScenarioPositionResourceItem = NonNullable<

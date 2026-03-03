@@ -80,7 +80,7 @@ def gen_resource_output_schemas() -> list[tuple[str, str]]:
             "Not derivable from DB schema — hand-maintained in manual.py.",
             '"""',
             "",
-            "from app.registry.manual import RESOURCE_OUTPUT_SCHEMAS as RESOURCE_OUTPUT_SCHEMAS",
+            "from app.v5.registry.manual import RESOURCE_OUTPUT_SCHEMAS as RESOURCE_OUTPUT_SCHEMAS",
         ]
     )
     return [("resource_output_schemas.py", content)]
@@ -289,7 +289,7 @@ def gen_resource_modalities() -> list[tuple[str, str]]:
     )
 
     # Read current file to determine which resources have modalities
-    from app.registry.modalities import RESOURCE_MODALITIES as current
+    from app.v5.registry.modalities import RESOURCE_MODALITIES as current
 
     modalities = generate_resource_modalities(sorted({k for _, k in current.keys()}))
 
@@ -318,7 +318,7 @@ def gen_artifact_roles() -> list[tuple[str, str]]:
             "Not derivable from DB — pure business logic, maintained in manual.py.",
             '"""',
             "",
-            "from app.registry.manual import ARTIFACT_ROLES as ARTIFACT_ROLES",
+            "from app.v5.registry.manual import ARTIFACT_ROLES as ARTIFACT_ROLES",
         ]
     )
     return [("artifact_roles.py", content)]
@@ -333,7 +333,7 @@ def gen_artifact_views() -> list[tuple[str, str]]:
             "Not derivable — maintained in manual.py.",
             '"""',
             "",
-            "from app.registry.manual import ARTIFACT_VIEWS as ARTIFACT_VIEWS",
+            "from app.v5.registry.manual import ARTIFACT_VIEWS as ARTIFACT_VIEWS",
         ]
     )
     return [("artifact_views.py", content)]
@@ -348,7 +348,7 @@ def gen_view_entries() -> list[tuple[str, str]]:
             "Not derivable — maintained in manual.py.",
             '"""',
             "",
-            "from app.registry.manual import VIEW_ENTRIES as VIEW_ENTRIES",
+            "from app.v5.registry.manual import VIEW_ENTRIES as VIEW_ENTRIES",
         ]
     )
     return [("view_entries.py", content)]
@@ -363,7 +363,7 @@ def gen_view_resources() -> list[tuple[str, str]]:
             "Not derivable — maintained in manual.py.",
             '"""',
             "",
-            "from app.registry.manual import VIEW_RESOURCES as VIEW_RESOURCES",
+            "from app.v5.registry.manual import VIEW_RESOURCES as VIEW_RESOURCES",
         ]
     )
     return [("view_resources.py", content)]
@@ -379,7 +379,7 @@ def gen_tool_entry_types() -> list[tuple[str, str]]:
             "Maintained in manual.py.",
             '"""',
             "",
-            "from app.registry.manual import TOOL_ENTRY_TYPES as TOOL_ENTRY_TYPES",
+            "from app.v5.registry.manual import TOOL_ENTRY_TYPES as TOOL_ENTRY_TYPES",
         ]
     )
     return [("tool_entry_types.py", content)]
@@ -396,8 +396,8 @@ def gen_artifact_entries() -> list[tuple[str, str]]:
             "",
             "from __future__ import annotations",
             "",
-            "from app.registry.artifact_views import ARTIFACT_VIEWS",
-            "from app.registry.view_entries import VIEW_ENTRIES",
+            "from app.v5.registry.artifact_views import ARTIFACT_VIEWS",
+            "from app.v5.registry.view_entries import VIEW_ENTRIES",
             "",
             "ARTIFACT_ENTRIES: dict[str, list[str]] = {}",
             "for _art, _views in ARTIFACT_VIEWS.items():",
@@ -432,9 +432,9 @@ def gen_artifacts() -> list[tuple[str, str]]:
         "Per-artifact metadata — kind, section, endpoints, socket events.",
         "",
         "Data sources:",
-        "- CRUD vs view: server/app/api/v4/router.py (lines 105-138)",
-        "- Socket handlers: server/app/socket/v4/__init__.py",
-        "- Per-artifact endpoints: each server/app/api/v4/artifacts/{artifact}/__init__.py",
+        "- CRUD vs view: server/app/api/v5/router.py (lines 105-138)",
+        "- Socket handlers: server/app/v5/socket/__init__.py",
+        "- Per-artifact endpoints: each server/app/api/v5/artifacts/{artifact}/__init__.py",
         "- Section mapping: derived from ARTIFACT_ROUTES route prefixes",
         '"""',
         "",
@@ -553,7 +553,7 @@ def gen_artifact_routes() -> list[tuple[str, str]]:
     """Generate artifact_routes.py from filesystem scanning."""
     from scripts.registry_generators.routes_gen import generate_artifact_routes
 
-    from app.registry.artifacts import ARTIFACTS
+    from app.v5.registry.artifacts import ARTIFACTS
 
     artifact_routes = generate_artifact_routes(PROJECT_ROOT, ARTIFACTS)
 

@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/api/v4/artifacts/personas/get": {
+    "/api/v5/artifacts/personas/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -23,14 +23,14 @@ export interface paths {
          *     Query 2: ID fetching (resource IDs, suggestions, agents)
          *     Pass 2: Parallel resource fetching (each resource type has own cache)
          */
-        post: operations["get_persona_api_v4_artifacts_personas_get_post"];
+        post: operations["get_persona_api_v5_artifacts_personas_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/personas/list": {
+    "/api/v5/artifacts/personas/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -43,14 +43,14 @@ export interface paths {
          * Get Persona List
          * @description Get personas list with permissions and scenario details.
          */
-        post: operations["get_persona_list_api_v4_artifacts_personas_list_post"];
+        post: operations["get_persona_list_api_v5_artifacts_personas_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/personas/save": {
+    "/api/v5/artifacts/personas/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -67,14 +67,14 @@ export interface paths {
          *     resolved to IDs (create or match). If any item has resolution errors,
          *     the entire batch fails with per-item error details — no mutation occurs.
          */
-        post: operations["save_persona_api_v4_artifacts_personas_save_post"];
+        post: operations["save_persona_api_v5_artifacts_personas_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/personas/duplicate": {
+    "/api/v5/artifacts/personas/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -87,14 +87,14 @@ export interface paths {
          * Duplicate Persona
          * @description Duplicate a persona.
          */
-        post: operations["duplicate_persona_api_v4_artifacts_personas_duplicate_post"];
+        post: operations["duplicate_persona_api_v5_artifacts_personas_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/personas/delete": {
+    "/api/v5/artifacts/personas/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -107,14 +107,14 @@ export interface paths {
          * Delete Persona
          * @description Bulk delete personas — all-or-nothing single transaction.
          */
-        post: operations["delete_persona_api_v4_artifacts_personas_delete_post"];
+        post: operations["delete_persona_api_v5_artifacts_personas_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/personas/draft": {
+    "/api/v5/artifacts/personas/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -131,10 +131,10 @@ export interface paths {
          * Patch Persona Draft
          * @description Patch persona draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_persona_draft_api_v4_artifacts_personas_draft_patch"];
+        patch: operations["patch_persona_draft_api_v5_artifacts_personas_draft_patch"];
         trace?: never;
     };
-    "/api/v4/artifacts/personas/docs": {
+    "/api/v5/artifacts/personas/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -144,14 +144,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Persona Docs Endpoint */
-        post: operations["get_persona_docs_endpoint_api_v4_artifacts_personas_docs_post"];
+        post: operations["get_persona_docs_endpoint_api_v5_artifacts_personas_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/personas/export": {
+    "/api/v5/artifacts/personas/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -164,14 +164,14 @@ export interface paths {
          * Export Personas
          * @description Export personas as CSV — stores file via upload infrastructure, returns upload_id.
          */
-        post: operations["export_personas_api_v4_artifacts_personas_export_post"];
+        post: operations["export_personas_api_v5_artifacts_personas_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/scenarios/get": {
+    "/api/v5/artifacts/scenarios/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -190,14 +190,14 @@ export interface paths {
          *     Query 2: ID fetching (resource IDs, suggestions, agents)
          *     Pass 2: Parallel resource fetching (each resource type has own cache)
          */
-        post: operations["get_scenario_api_v4_artifacts_scenarios_get_post"];
+        post: operations["get_scenario_api_v5_artifacts_scenarios_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/scenarios/list": {
+    "/api/v5/artifacts/scenarios/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -210,14 +210,14 @@ export interface paths {
          * Get Scenario List
          * @description Get scenarios list with all relationships.
          */
-        post: operations["get_scenario_list_api_v4_artifacts_scenarios_list_post"];
+        post: operations["get_scenario_list_api_v5_artifacts_scenarios_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/scenarios/save": {
+    "/api/v5/artifacts/scenarios/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -234,14 +234,14 @@ export interface paths {
          *     resolved to IDs (create or match). If any item has resolution errors,
          *     the entire batch fails with per-item error details — no mutation occurs.
          */
-        post: operations["save_scenario_api_v4_artifacts_scenarios_save_post"];
+        post: operations["save_scenario_api_v5_artifacts_scenarios_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/scenarios/duplicate": {
+    "/api/v5/artifacts/scenarios/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -254,14 +254,14 @@ export interface paths {
          * Duplicate Scenario
          * @description Duplicate a scenario.
          */
-        post: operations["duplicate_scenario_api_v4_artifacts_scenarios_duplicate_post"];
+        post: operations["duplicate_scenario_api_v5_artifacts_scenarios_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/scenarios/delete": {
+    "/api/v5/artifacts/scenarios/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -274,14 +274,14 @@ export interface paths {
          * Delete Scenario
          * @description Bulk delete scenarios — all-or-nothing single transaction.
          */
-        post: operations["delete_scenario_api_v4_artifacts_scenarios_delete_post"];
+        post: operations["delete_scenario_api_v5_artifacts_scenarios_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/scenarios/draft": {
+    "/api/v5/artifacts/scenarios/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -298,10 +298,10 @@ export interface paths {
          * Patch Scenario Draft
          * @description Patch scenario draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_scenario_draft_api_v4_artifacts_scenarios_draft_patch"];
+        patch: operations["patch_scenario_draft_api_v5_artifacts_scenarios_draft_patch"];
         trace?: never;
     };
-    "/api/v4/artifacts/scenarios/export": {
+    "/api/v5/artifacts/scenarios/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -314,14 +314,14 @@ export interface paths {
          * Export Scenarios
          * @description Export scenarios as CSV — stores file via upload infrastructure, returns upload_id.
          */
-        post: operations["export_scenarios_api_v4_artifacts_scenarios_export_post"];
+        post: operations["export_scenarios_api_v5_artifacts_scenarios_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/scenarios/docs": {
+    "/api/v5/artifacts/scenarios/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -331,14 +331,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Scenario Docs Endpoint */
-        post: operations["get_scenario_docs_endpoint_api_v4_artifacts_scenarios_docs_post"];
+        post: operations["get_scenario_docs_endpoint_api_v5_artifacts_scenarios_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/simulations/get": {
+    "/api/v5/artifacts/simulations/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -353,14 +353,14 @@ export interface paths {
          *
          *     This is a thin HTTP wrapper around get_simulation_client().
          */
-        post: operations["get_simulation_api_v4_artifacts_simulations_get_post"];
+        post: operations["get_simulation_api_v5_artifacts_simulations_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/simulations/list": {
+    "/api/v5/artifacts/simulations/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -373,14 +373,14 @@ export interface paths {
          * Get Simulation List
          * @description Get simulations list with SQL-computed permissions.
          */
-        post: operations["get_simulation_list_api_v4_artifacts_simulations_list_post"];
+        post: operations["get_simulation_list_api_v5_artifacts_simulations_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/simulations/save": {
+    "/api/v5/artifacts/simulations/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -397,14 +397,14 @@ export interface paths {
          *     resolved to IDs (create or match). If any item has resolution errors,
          *     the entire batch fails with per-item error details — no mutation occurs.
          */
-        post: operations["save_simulation_api_v4_artifacts_simulations_save_post"];
+        post: operations["save_simulation_api_v5_artifacts_simulations_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/simulations/duplicate": {
+    "/api/v5/artifacts/simulations/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -421,14 +421,14 @@ export interface paths {
          *     1. Check access and permissions in Python
          *     2. Execute duplicate if permitted
          */
-        post: operations["duplicate_simulation_api_v4_artifacts_simulations_duplicate_post"];
+        post: operations["duplicate_simulation_api_v5_artifacts_simulations_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/simulations/delete": {
+    "/api/v5/artifacts/simulations/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -441,14 +441,14 @@ export interface paths {
          * Delete Simulation
          * @description Bulk delete simulations — all-or-nothing single transaction.
          */
-        post: operations["delete_simulation_api_v4_artifacts_simulations_delete_post"];
+        post: operations["delete_simulation_api_v5_artifacts_simulations_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/simulations/draft": {
+    "/api/v5/artifacts/simulations/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -467,10 +467,10 @@ export interface paths {
          *
          *     Uses Python permission checks before executing draft operation.
          */
-        patch: operations["patch_simulation_draft_api_v4_artifacts_simulations_draft_patch"];
+        patch: operations["patch_simulation_draft_api_v5_artifacts_simulations_draft_patch"];
         trace?: never;
     };
-    "/api/v4/artifacts/simulations/export": {
+    "/api/v5/artifacts/simulations/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -483,14 +483,14 @@ export interface paths {
          * Export Simulations
          * @description Export simulations as CSV — stores file via upload infrastructure, returns upload_id.
          */
-        post: operations["export_simulations_api_v4_artifacts_simulations_export_post"];
+        post: operations["export_simulations_api_v5_artifacts_simulations_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/simulations/docs": {
+    "/api/v5/artifacts/simulations/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -500,14 +500,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Simulation Docs Endpoint */
-        post: operations["get_simulation_docs_endpoint_api_v4_artifacts_simulations_docs_post"];
+        post: operations["get_simulation_docs_endpoint_api_v5_artifacts_simulations_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/documents/list": {
+    "/api/v5/artifacts/documents/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -520,14 +520,14 @@ export interface paths {
          * Get Document List
          * @description Get documents list with permissions and scenario details.
          */
-        post: operations["get_document_list_api_v4_artifacts_documents_list_post"];
+        post: operations["get_document_list_api_v5_artifacts_documents_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/documents/get": {
+    "/api/v5/artifacts/documents/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -540,14 +540,14 @@ export interface paths {
          * Get Document
          * @description Get document information using two-pass architecture.
          */
-        post: operations["get_document_api_v4_artifacts_documents_get_post"];
+        post: operations["get_document_api_v5_artifacts_documents_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/documents/save": {
+    "/api/v5/artifacts/documents/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -560,14 +560,14 @@ export interface paths {
          * Save Document
          * @description Save document - handles both create (input_document_id = NULL) and update (input_document_id provided).
          */
-        post: operations["save_document_api_v4_artifacts_documents_save_post"];
+        post: operations["save_document_api_v5_artifacts_documents_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/documents/duplicate": {
+    "/api/v5/artifacts/documents/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -580,14 +580,14 @@ export interface paths {
          * Duplicate Document
          * @description Duplicate a document.
          */
-        post: operations["duplicate_document_api_v4_artifacts_documents_duplicate_post"];
+        post: operations["duplicate_document_api_v5_artifacts_documents_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/documents/delete": {
+    "/api/v5/artifacts/documents/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -600,14 +600,14 @@ export interface paths {
          * Delete Document
          * @description Delete a document.
          */
-        post: operations["delete_document_api_v4_artifacts_documents_delete_post"];
+        post: operations["delete_document_api_v5_artifacts_documents_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/documents/draft": {
+    "/api/v5/artifacts/documents/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -624,10 +624,10 @@ export interface paths {
          * Patch Document Draft
          * @description Patch document draft - accepts resource actions and creates/updates draft.
          */
-        patch: operations["patch_document_draft_api_v4_artifacts_documents_draft_patch"];
+        patch: operations["patch_document_draft_api_v5_artifacts_documents_draft_patch"];
         trace?: never;
     };
-    "/api/v4/artifacts/documents/bulk/process": {
+    "/api/v5/artifacts/documents/bulk/process": {
         parameters: {
             query?: never;
             header?: never;
@@ -640,14 +640,14 @@ export interface paths {
          * Process Document
          * @description Process CSV file and map columns to target fields for documents.
          */
-        post: operations["process_document_api_v4_artifacts_documents_bulk_process_post"];
+        post: operations["process_document_api_v5_artifacts_documents_bulk_process_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/documents/bulk/search": {
+    "/api/v5/artifacts/documents/bulk/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -660,14 +660,14 @@ export interface paths {
          * Search Document
          * @description Search documents for bulk operations.
          */
-        post: operations["search_document_api_v4_artifacts_documents_bulk_search_post"];
+        post: operations["search_document_api_v5_artifacts_documents_bulk_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/documents/bulk/save": {
+    "/api/v5/artifacts/documents/bulk/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -680,14 +680,14 @@ export interface paths {
          * Save Document
          * @description Bulk create or update documents.
          */
-        post: operations["save_document_api_v4_artifacts_documents_bulk_save_post"];
+        post: operations["save_document_api_v5_artifacts_documents_bulk_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/documents/bulk/delete": {
+    "/api/v5/artifacts/documents/bulk/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -700,14 +700,14 @@ export interface paths {
          * Delete Document
          * @description Bulk delete documents.
          */
-        post: operations["delete_document_api_v4_artifacts_documents_bulk_delete_post"];
+        post: operations["delete_document_api_v5_artifacts_documents_bulk_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/documents/docs": {
+    "/api/v5/artifacts/documents/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -717,14 +717,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Document Docs Endpoint */
-        post: operations["get_document_docs_endpoint_api_v4_artifacts_documents_docs_post"];
+        post: operations["get_document_docs_endpoint_api_v5_artifacts_documents_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/departments/get": {
+    "/api/v5/artifacts/departments/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -739,14 +739,14 @@ export interface paths {
          *
          *     This is a thin HTTP wrapper around get_department_internal().
          */
-        post: operations["get_department_api_v4_artifacts_departments_get_post"];
+        post: operations["get_department_api_v5_artifacts_departments_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/departments/list": {
+    "/api/v5/artifacts/departments/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -759,14 +759,14 @@ export interface paths {
          * Get Department List
          * @description Get list of departments with computed fields.
          */
-        post: operations["get_department_list_api_v4_artifacts_departments_list_post"];
+        post: operations["get_department_list_api_v5_artifacts_departments_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/departments/save": {
+    "/api/v5/artifacts/departments/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -779,14 +779,14 @@ export interface paths {
          * Save Department
          * @description Save department - handles both create (department_id = NULL) and update (department_id provided).
          */
-        post: operations["save_department_api_v4_artifacts_departments_save_post"];
+        post: operations["save_department_api_v5_artifacts_departments_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/departments/duplicate": {
+    "/api/v5/artifacts/departments/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -799,14 +799,14 @@ export interface paths {
          * Duplicate Department
          * @description Duplicate a department.
          */
-        post: operations["duplicate_department_api_v4_artifacts_departments_duplicate_post"];
+        post: operations["duplicate_department_api_v5_artifacts_departments_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/departments/delete": {
+    "/api/v5/artifacts/departments/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -819,14 +819,14 @@ export interface paths {
          * Delete Department
          * @description Delete a department.
          */
-        post: operations["delete_department_api_v4_artifacts_departments_delete_post"];
+        post: operations["delete_department_api_v5_artifacts_departments_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/departments/draft": {
+    "/api/v5/artifacts/departments/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -843,10 +843,10 @@ export interface paths {
          * Patch Department Draft
          * @description Patch department draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_department_draft_api_v4_artifacts_departments_draft_patch"];
+        patch: operations["patch_department_draft_api_v5_artifacts_departments_draft_patch"];
         trace?: never;
     };
-    "/api/v4/artifacts/departments/docs": {
+    "/api/v5/artifacts/departments/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -856,14 +856,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Department Docs Endpoint */
-        post: operations["get_department_docs_endpoint_api_v4_artifacts_departments_docs_post"];
+        post: operations["get_department_docs_endpoint_api_v5_artifacts_departments_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/cohorts/list": {
+    "/api/v5/artifacts/cohorts/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -876,14 +876,14 @@ export interface paths {
          * Get Cohort List
          * @description Get cohorts list with permissions and relationships.
          */
-        post: operations["get_cohort_list_api_v4_artifacts_cohorts_list_post"];
+        post: operations["get_cohort_list_api_v5_artifacts_cohorts_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/cohorts/get": {
+    "/api/v5/artifacts/cohorts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -902,14 +902,14 @@ export interface paths {
          *     Query 2: ID fetching (resource IDs, suggestions, agents)
          *     Pass 2: Parallel resource fetching (each resource type has own cache)
          */
-        post: operations["get_cohort_api_v4_artifacts_cohorts_get_post"];
+        post: operations["get_cohort_api_v5_artifacts_cohorts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/cohorts/save": {
+    "/api/v5/artifacts/cohorts/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -926,14 +926,14 @@ export interface paths {
          *     resolved to IDs (create or match). If any item has resolution errors,
          *     the entire batch fails with per-item error details — no mutation occurs.
          */
-        post: operations["save_cohort_api_v4_artifacts_cohorts_save_post"];
+        post: operations["save_cohort_api_v5_artifacts_cohorts_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/cohorts/duplicate": {
+    "/api/v5/artifacts/cohorts/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -946,14 +946,14 @@ export interface paths {
          * Duplicate Cohort
          * @description Duplicate a cohort with relationships.
          */
-        post: operations["duplicate_cohort_api_v4_artifacts_cohorts_duplicate_post"];
+        post: operations["duplicate_cohort_api_v5_artifacts_cohorts_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/cohorts/delete": {
+    "/api/v5/artifacts/cohorts/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -966,14 +966,14 @@ export interface paths {
          * Delete Cohort
          * @description Bulk delete cohorts — all-or-nothing single transaction.
          */
-        post: operations["delete_cohort_api_v4_artifacts_cohorts_delete_post"];
+        post: operations["delete_cohort_api_v5_artifacts_cohorts_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/cohorts/draft": {
+    "/api/v5/artifacts/cohorts/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -990,10 +990,10 @@ export interface paths {
          * Patch Cohort Draft
          * @description Patch cohort draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_cohort_draft_api_v4_artifacts_cohorts_draft_patch"];
+        patch: operations["patch_cohort_draft_api_v5_artifacts_cohorts_draft_patch"];
         trace?: never;
     };
-    "/api/v4/artifacts/cohorts/export": {
+    "/api/v5/artifacts/cohorts/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -1006,14 +1006,14 @@ export interface paths {
          * Export Cohorts
          * @description Export cohorts as CSV — stores file via upload infrastructure, returns upload_id.
          */
-        post: operations["export_cohorts_api_v4_artifacts_cohorts_export_post"];
+        post: operations["export_cohorts_api_v5_artifacts_cohorts_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/cohorts/docs": {
+    "/api/v5/artifacts/cohorts/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -1023,14 +1023,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Cohort Docs Endpoint */
-        post: operations["get_cohort_docs_endpoint_api_v4_artifacts_cohorts_docs_post"];
+        post: operations["get_cohort_docs_endpoint_api_v5_artifacts_cohorts_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/evals/list": {
+    "/api/v5/artifacts/evals/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -1043,14 +1043,14 @@ export interface paths {
          * Get Eval List
          * @description Get evals list with permissions and status details.
          */
-        post: operations["get_eval_list_api_v4_artifacts_evals_list_post"];
+        post: operations["get_eval_list_api_v5_artifacts_evals_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/evals/get": {
+    "/api/v5/artifacts/evals/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -1069,14 +1069,14 @@ export interface paths {
          *     Query 2: ID fetching (resource IDs, suggestions, agents)
          *     Pass 2: Parallel resource fetching (each resource type has own cache)
          */
-        post: operations["get_eval_api_v4_artifacts_evals_get_post"];
+        post: operations["get_eval_api_v5_artifacts_evals_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/evals/save": {
+    "/api/v5/artifacts/evals/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -1089,14 +1089,14 @@ export interface paths {
          * Save Eval
          * @description Save eval - handles both create (eval_id = NULL) and update (eval_id provided).
          */
-        post: operations["save_eval_api_v4_artifacts_evals_save_post"];
+        post: operations["save_eval_api_v5_artifacts_evals_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/evals/duplicate": {
+    "/api/v5/artifacts/evals/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1109,14 +1109,14 @@ export interface paths {
          * Duplicate Eval
          * @description Duplicate an eval.
          */
-        post: operations["duplicate_eval_api_v4_artifacts_evals_duplicate_post"];
+        post: operations["duplicate_eval_api_v5_artifacts_evals_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/evals/delete": {
+    "/api/v5/artifacts/evals/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1129,14 +1129,14 @@ export interface paths {
          * Delete Eval
          * @description Delete an eval.
          */
-        post: operations["delete_eval_api_v4_artifacts_evals_delete_post"];
+        post: operations["delete_eval_api_v5_artifacts_evals_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/evals/draft": {
+    "/api/v5/artifacts/evals/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -1153,10 +1153,10 @@ export interface paths {
          * Patch Eval Draft
          * @description Patch eval draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_eval_draft_api_v4_artifacts_evals_draft_patch"];
+        patch: operations["patch_eval_draft_api_v5_artifacts_evals_draft_patch"];
         trace?: never;
     };
-    "/api/v4/artifacts/evals/docs": {
+    "/api/v5/artifacts/evals/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -1166,14 +1166,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Eval Docs Endpoint */
-        post: operations["get_eval_docs_endpoint_api_v4_artifacts_evals_docs_post"];
+        post: operations["get_eval_docs_endpoint_api_v5_artifacts_evals_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/rubrics/get": {
+    "/api/v5/artifacts/rubrics/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -1190,14 +1190,14 @@ export interface paths {
          *     Query 2: ID fetching (resource IDs, suggestions, agents)
          *     Pass 2: Parallel resource fetching (each resource type has own cache)
          */
-        post: operations["get_rubric_api_v4_artifacts_rubrics_get_post"];
+        post: operations["get_rubric_api_v5_artifacts_rubrics_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/rubrics/list": {
+    "/api/v5/artifacts/rubrics/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -1210,14 +1210,14 @@ export interface paths {
          * Get Rubric List
          * @description Get rubrics list with hierarchical structure and permissions.
          */
-        post: operations["get_rubric_list_api_v4_artifacts_rubrics_list_post"];
+        post: operations["get_rubric_list_api_v5_artifacts_rubrics_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/rubrics/save": {
+    "/api/v5/artifacts/rubrics/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -1230,14 +1230,14 @@ export interface paths {
          * Save Rubric
          * @description Save rubric - handles both create (rubric_id = NULL) and update (rubric_id provided).
          */
-        post: operations["save_rubric_api_v4_artifacts_rubrics_save_post"];
+        post: operations["save_rubric_api_v5_artifacts_rubrics_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/rubrics/duplicate": {
+    "/api/v5/artifacts/rubrics/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1250,14 +1250,14 @@ export interface paths {
          * Duplicate Rubric
          * @description Duplicate a rubric with entire hierarchy.
          */
-        post: operations["duplicate_rubric_api_v4_artifacts_rubrics_duplicate_post"];
+        post: operations["duplicate_rubric_api_v5_artifacts_rubrics_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/rubrics/delete": {
+    "/api/v5/artifacts/rubrics/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1270,14 +1270,14 @@ export interface paths {
          * Delete Rubric
          * @description Delete a rubric.
          */
-        post: operations["delete_rubric_api_v4_artifacts_rubrics_delete_post"];
+        post: operations["delete_rubric_api_v5_artifacts_rubrics_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/rubrics/draft": {
+    "/api/v5/artifacts/rubrics/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -1294,10 +1294,10 @@ export interface paths {
          * Patch Rubric Draft
          * @description Patch rubric draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_rubric_draft_api_v4_artifacts_rubrics_draft_patch"];
+        patch: operations["patch_rubric_draft_api_v5_artifacts_rubrics_draft_patch"];
         trace?: never;
     };
-    "/api/v4/artifacts/rubrics/docs": {
+    "/api/v5/artifacts/rubrics/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -1307,14 +1307,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Rubric Docs Endpoint */
-        post: operations["get_rubric_docs_endpoint_api_v4_artifacts_rubrics_docs_post"];
+        post: operations["get_rubric_docs_endpoint_api_v5_artifacts_rubrics_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/settings/list": {
+    "/api/v5/artifacts/settings/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -1327,14 +1327,14 @@ export interface paths {
          * Get Setting List
          * @description Get list of all settings ordered by created_at DESC.
          */
-        post: operations["get_setting_list_api_v4_artifacts_settings_list_post"];
+        post: operations["get_setting_list_api_v5_artifacts_settings_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/settings/get": {
+    "/api/v5/artifacts/settings/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -1353,14 +1353,14 @@ export interface paths {
          *     Query 2: ID fetching (resource IDs, suggestions, agents)
          *     Pass 2: Parallel resource fetching (each resource type has own cache)
          */
-        post: operations["get_setting_api_v4_artifacts_settings_get_post"];
+        post: operations["get_setting_api_v5_artifacts_settings_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/settings/save": {
+    "/api/v5/artifacts/settings/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -1373,14 +1373,14 @@ export interface paths {
          * Save Setting
          * @description Save setting - handles both create (setting_id = NULL) and update (setting_id provided).
          */
-        post: operations["save_setting_api_v4_artifacts_settings_save_post"];
+        post: operations["save_setting_api_v5_artifacts_settings_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/settings/duplicate": {
+    "/api/v5/artifacts/settings/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1393,14 +1393,14 @@ export interface paths {
          * Duplicate Setting
          * @description Duplicate a setting.
          */
-        post: operations["duplicate_setting_api_v4_artifacts_settings_duplicate_post"];
+        post: operations["duplicate_setting_api_v5_artifacts_settings_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/settings/delete": {
+    "/api/v5/artifacts/settings/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1413,14 +1413,14 @@ export interface paths {
          * Delete Setting
          * @description Delete a setting.
          */
-        post: operations["delete_setting_api_v4_artifacts_settings_delete_post"];
+        post: operations["delete_setting_api_v5_artifacts_settings_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/settings/draft": {
+    "/api/v5/artifacts/settings/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -1437,10 +1437,10 @@ export interface paths {
          * Patch Setting Draft
          * @description Patch setting draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_setting_draft_api_v4_artifacts_settings_draft_patch"];
+        patch: operations["patch_setting_draft_api_v5_artifacts_settings_draft_patch"];
         trace?: never;
     };
-    "/api/v4/artifacts/settings/docs": {
+    "/api/v5/artifacts/settings/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -1450,14 +1450,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Setting Docs Endpoint */
-        post: operations["get_setting_docs_endpoint_api_v4_artifacts_settings_docs_post"];
+        post: operations["get_setting_docs_endpoint_api_v5_artifacts_settings_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/agents/get": {
+    "/api/v5/artifacts/agents/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -1470,14 +1470,14 @@ export interface paths {
          * Get Agent
          * @description Get agent information using two-pass architecture.
          */
-        post: operations["get_agent_api_v4_artifacts_agents_get_post"];
+        post: operations["get_agent_api_v5_artifacts_agents_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/agents/list": {
+    "/api/v5/artifacts/agents/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -1490,14 +1490,14 @@ export interface paths {
          * Get Agent List
          * @description Get list of agents with permissions.
          */
-        post: operations["get_agent_list_api_v4_artifacts_agents_list_post"];
+        post: operations["get_agent_list_api_v5_artifacts_agents_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/agents/save": {
+    "/api/v5/artifacts/agents/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -1510,14 +1510,14 @@ export interface paths {
          * Save Agent
          * @description Save agent - handles both create (agent_id = NULL) and update (agent_id provided).
          */
-        post: operations["save_agent_api_v4_artifacts_agents_save_post"];
+        post: operations["save_agent_api_v5_artifacts_agents_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/agents/duplicate": {
+    "/api/v5/artifacts/agents/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1530,14 +1530,14 @@ export interface paths {
          * Duplicate Agent
          * @description Duplicate an agent.
          */
-        post: operations["duplicate_agent_api_v4_artifacts_agents_duplicate_post"];
+        post: operations["duplicate_agent_api_v5_artifacts_agents_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/agents/delete": {
+    "/api/v5/artifacts/agents/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1550,14 +1550,14 @@ export interface paths {
          * Delete Agent
          * @description Delete an agent.
          */
-        post: operations["delete_agent_api_v4_artifacts_agents_delete_post"];
+        post: operations["delete_agent_api_v5_artifacts_agents_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/agents/draft": {
+    "/api/v5/artifacts/agents/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -1574,10 +1574,10 @@ export interface paths {
          * Patch Agent Draft
          * @description Patch agent draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_agent_draft_api_v4_artifacts_agents_draft_patch"];
+        patch: operations["patch_agent_draft_api_v5_artifacts_agents_draft_patch"];
         trace?: never;
     };
-    "/api/v4/artifacts/agents/docs": {
+    "/api/v5/artifacts/agents/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -1587,14 +1587,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Agent Docs Endpoint */
-        post: operations["get_agent_docs_endpoint_api_v4_artifacts_agents_docs_post"];
+        post: operations["get_agent_docs_endpoint_api_v5_artifacts_agents_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/models/get": {
+    "/api/v5/artifacts/models/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -1607,14 +1607,14 @@ export interface paths {
          * Get Model
          * @description Get model information using two-pass architecture.
          */
-        post: operations["get_model_api_v4_artifacts_models_get_post"];
+        post: operations["get_model_api_v5_artifacts_models_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/models/list": {
+    "/api/v5/artifacts/models/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -1627,14 +1627,14 @@ export interface paths {
          * Get Model List
          * @description Get models list with permissions and provider details.
          */
-        post: operations["get_model_list_api_v4_artifacts_models_list_post"];
+        post: operations["get_model_list_api_v5_artifacts_models_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/models/save": {
+    "/api/v5/artifacts/models/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -1651,14 +1651,14 @@ export interface paths {
          *     1. Check access and permissions in Python
          *     2. Execute save if permitted
          */
-        post: operations["save_model_api_v4_artifacts_models_save_post"];
+        post: operations["save_model_api_v5_artifacts_models_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/models/duplicate": {
+    "/api/v5/artifacts/models/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1671,14 +1671,14 @@ export interface paths {
          * Duplicate Model
          * @description Duplicate a model.
          */
-        post: operations["duplicate_model_api_v4_artifacts_models_duplicate_post"];
+        post: operations["duplicate_model_api_v5_artifacts_models_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/models/delete": {
+    "/api/v5/artifacts/models/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1691,14 +1691,14 @@ export interface paths {
          * Delete Model
          * @description Delete a model if not in use.
          */
-        post: operations["delete_model_api_v4_artifacts_models_delete_post"];
+        post: operations["delete_model_api_v5_artifacts_models_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/models/draft": {
+    "/api/v5/artifacts/models/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -1715,10 +1715,10 @@ export interface paths {
          * Patch Model Draft
          * @description Patch model draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_model_draft_api_v4_artifacts_models_draft_patch"];
+        patch: operations["patch_model_draft_api_v5_artifacts_models_draft_patch"];
         trace?: never;
     };
-    "/api/v4/artifacts/models/docs": {
+    "/api/v5/artifacts/models/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -1728,14 +1728,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Model Docs Endpoint */
-        post: operations["get_model_docs_endpoint_api_v4_artifacts_models_docs_post"];
+        post: operations["get_model_docs_endpoint_api_v5_artifacts_models_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/providers/list": {
+    "/api/v5/artifacts/providers/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -1748,14 +1748,14 @@ export interface paths {
          * Get Provider List
          * @description Get providers list with Python-computed permissions.
          */
-        post: operations["get_provider_list_api_v4_artifacts_providers_list_post"];
+        post: operations["get_provider_list_api_v5_artifacts_providers_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/providers/get": {
+    "/api/v5/artifacts/providers/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -1768,14 +1768,14 @@ export interface paths {
          * Get Provider
          * @description Get provider information using two-pass architecture.
          */
-        post: operations["get_provider_api_v4_artifacts_providers_get_post"];
+        post: operations["get_provider_api_v5_artifacts_providers_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/providers/save": {
+    "/api/v5/artifacts/providers/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -1788,14 +1788,14 @@ export interface paths {
          * Save Provider
          * @description Save provider - handles both create (provider_id = NULL) and update (provider_id provided).
          */
-        post: operations["save_provider_api_v4_artifacts_providers_save_post"];
+        post: operations["save_provider_api_v5_artifacts_providers_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/providers/duplicate": {
+    "/api/v5/artifacts/providers/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1808,14 +1808,14 @@ export interface paths {
          * Duplicate Provider
          * @description Duplicate a provider.
          */
-        post: operations["duplicate_provider_api_v4_artifacts_providers_duplicate_post"];
+        post: operations["duplicate_provider_api_v5_artifacts_providers_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/providers/delete": {
+    "/api/v5/artifacts/providers/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1828,14 +1828,14 @@ export interface paths {
          * Delete Provider
          * @description Delete a provider (prevents deletion if used by models).
          */
-        post: operations["delete_provider_api_v4_artifacts_providers_delete_post"];
+        post: operations["delete_provider_api_v5_artifacts_providers_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/providers/draft": {
+    "/api/v5/artifacts/providers/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -1852,10 +1852,10 @@ export interface paths {
          * Patch Provider Draft
          * @description Patch provider draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_provider_draft_api_v4_artifacts_providers_draft_patch"];
+        patch: operations["patch_provider_draft_api_v5_artifacts_providers_draft_patch"];
         trace?: never;
     };
-    "/api/v4/artifacts/providers/docs": {
+    "/api/v5/artifacts/providers/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -1865,14 +1865,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Provider Docs Endpoint */
-        post: operations["get_provider_docs_endpoint_api_v4_artifacts_providers_docs_post"];
+        post: operations["get_provider_docs_endpoint_api_v5_artifacts_providers_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/parameters/get": {
+    "/api/v5/artifacts/parameters/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -1885,14 +1885,14 @@ export interface paths {
          * Get Parameter
          * @description Get parameter information using two-pass architecture.
          */
-        post: operations["get_parameter_api_v4_artifacts_parameters_get_post"];
+        post: operations["get_parameter_api_v5_artifacts_parameters_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/parameters/list": {
+    "/api/v5/artifacts/parameters/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -1905,14 +1905,14 @@ export interface paths {
          * Get Parameter List
          * @description Get parameters list with permissions and scenario details.
          */
-        post: operations["get_parameter_list_api_v4_artifacts_parameters_list_post"];
+        post: operations["get_parameter_list_api_v5_artifacts_parameters_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/parameters/save": {
+    "/api/v5/artifacts/parameters/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -1925,14 +1925,14 @@ export interface paths {
          * Save Parameter
          * @description Save parameter - handles both create (parameter_id = NULL) and update (parameter_id provided).
          */
-        post: operations["save_parameter_api_v4_artifacts_parameters_save_post"];
+        post: operations["save_parameter_api_v5_artifacts_parameters_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/parameters/duplicate": {
+    "/api/v5/artifacts/parameters/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1945,14 +1945,14 @@ export interface paths {
          * Duplicate Parameter
          * @description Duplicate a parameter.
          */
-        post: operations["duplicate_parameter_api_v4_artifacts_parameters_duplicate_post"];
+        post: operations["duplicate_parameter_api_v5_artifacts_parameters_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/parameters/delete": {
+    "/api/v5/artifacts/parameters/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1965,14 +1965,14 @@ export interface paths {
          * Delete Parameter
          * @description Delete a parameter.
          */
-        post: operations["delete_parameter_api_v4_artifacts_parameters_delete_post"];
+        post: operations["delete_parameter_api_v5_artifacts_parameters_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/parameters/draft": {
+    "/api/v5/artifacts/parameters/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -1989,10 +1989,10 @@ export interface paths {
          * Patch Parameter Draft
          * @description Patch parameter draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_parameter_draft_api_v4_artifacts_parameters_draft_patch"];
+        patch: operations["patch_parameter_draft_api_v5_artifacts_parameters_draft_patch"];
         trace?: never;
     };
-    "/api/v4/artifacts/parameters/docs": {
+    "/api/v5/artifacts/parameters/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -2002,14 +2002,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Parameter Docs Endpoint */
-        post: operations["get_parameter_docs_endpoint_api_v4_artifacts_parameters_docs_post"];
+        post: operations["get_parameter_docs_endpoint_api_v5_artifacts_parameters_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/fields/get": {
+    "/api/v5/artifacts/fields/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2019,14 +2019,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Field */
-        post: operations["get_field_api_v4_artifacts_fields_get_post"];
+        post: operations["get_field_api_v5_artifacts_fields_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/fields/list": {
+    "/api/v5/artifacts/fields/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -2039,14 +2039,14 @@ export interface paths {
          * Get Field List
          * @description Get fields list with permissions and relationships.
          */
-        post: operations["get_field_list_api_v4_artifacts_fields_list_post"];
+        post: operations["get_field_list_api_v5_artifacts_fields_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/fields/save": {
+    "/api/v5/artifacts/fields/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -2059,14 +2059,14 @@ export interface paths {
          * Save Field
          * @description Save field - handles both create (field_id = NULL) and update (field_id provided).
          */
-        post: operations["save_field_api_v4_artifacts_fields_save_post"];
+        post: operations["save_field_api_v5_artifacts_fields_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/fields/duplicate": {
+    "/api/v5/artifacts/fields/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -2079,14 +2079,14 @@ export interface paths {
          * Duplicate Field
          * @description Duplicate a field with all parameter and department associations.
          */
-        post: operations["duplicate_field_api_v4_artifacts_fields_duplicate_post"];
+        post: operations["duplicate_field_api_v5_artifacts_fields_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/fields/delete": {
+    "/api/v5/artifacts/fields/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2099,14 +2099,14 @@ export interface paths {
          * Delete Field
          * @description Delete a field.
          */
-        post: operations["delete_field_api_v4_artifacts_fields_delete_post"];
+        post: operations["delete_field_api_v5_artifacts_fields_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/fields/draft": {
+    "/api/v5/artifacts/fields/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -2123,10 +2123,10 @@ export interface paths {
          * Patch Field Draft
          * @description Patch field draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_field_draft_api_v4_artifacts_fields_draft_patch"];
+        patch: operations["patch_field_draft_api_v5_artifacts_fields_draft_patch"];
         trace?: never;
     };
-    "/api/v4/artifacts/fields/docs": {
+    "/api/v5/artifacts/fields/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -2136,14 +2136,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Field Docs Endpoint */
-        post: operations["get_field_docs_endpoint_api_v4_artifacts_fields_docs_post"];
+        post: operations["get_field_docs_endpoint_api_v5_artifacts_fields_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/profiles/get": {
+    "/api/v5/artifacts/profiles/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2156,14 +2156,14 @@ export interface paths {
          * Get Profile
          * @description Get profile information using two-pass architecture.
          */
-        post: operations["get_profile_api_v4_artifacts_profiles_get_post"];
+        post: operations["get_profile_api_v5_artifacts_profiles_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/profiles/list": {
+    "/api/v5/artifacts/profiles/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -2176,14 +2176,14 @@ export interface paths {
          * Get Profile List
          * @description Get profiles list with permissions and relationships.
          */
-        post: operations["get_profile_list_api_v4_artifacts_profiles_list_post"];
+        post: operations["get_profile_list_api_v5_artifacts_profiles_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/profiles/save": {
+    "/api/v5/artifacts/profiles/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -2196,14 +2196,14 @@ export interface paths {
          * Save Profile
          * @description Save profile - handles both create and update via resource action composites.
          */
-        post: operations["save_profile_api_v4_artifacts_profiles_save_post"];
+        post: operations["save_profile_api_v5_artifacts_profiles_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/profiles/duplicate": {
+    "/api/v5/artifacts/profiles/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -2216,14 +2216,14 @@ export interface paths {
          * Duplicate Profile
          * @description Duplicate a profile.
          */
-        post: operations["duplicate_profile_api_v4_artifacts_profiles_duplicate_post"];
+        post: operations["duplicate_profile_api_v5_artifacts_profiles_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/profiles/draft": {
+    "/api/v5/artifacts/profiles/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -2240,10 +2240,10 @@ export interface paths {
          * Patch Profile Draft
          * @description Patch profile draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_profile_draft_api_v4_artifacts_profiles_draft_patch"];
+        patch: operations["patch_profile_draft_api_v5_artifacts_profiles_draft_patch"];
         trace?: never;
     };
-    "/api/v4/artifacts/profiles/delete": {
+    "/api/v5/artifacts/profiles/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2256,14 +2256,14 @@ export interface paths {
          * Delete Profile
          * @description Delete a profile.
          */
-        post: operations["delete_profile_api_v4_artifacts_profiles_delete_post"];
+        post: operations["delete_profile_api_v5_artifacts_profiles_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/profiles/bulk/process": {
+    "/api/v5/artifacts/profiles/bulk/process": {
         parameters: {
             query?: never;
             header?: never;
@@ -2276,14 +2276,14 @@ export interface paths {
          * Process Profiles
          * @description Process CSV file and map columns to target fields.
          */
-        post: operations["process_profiles_api_v4_artifacts_profiles_bulk_process_post"];
+        post: operations["process_profiles_api_v5_artifacts_profiles_bulk_process_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/profiles/bulk/search": {
+    "/api/v5/artifacts/profiles/bulk/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -2296,14 +2296,14 @@ export interface paths {
          * Search Profiles
          * @description Search profiles with query and filters.
          */
-        post: operations["search_profiles_api_v4_artifacts_profiles_bulk_search_post"];
+        post: operations["search_profiles_api_v5_artifacts_profiles_bulk_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/profiles/bulk/save": {
+    "/api/v5/artifacts/profiles/bulk/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -2316,14 +2316,14 @@ export interface paths {
          * Save Profiles
          * @description Bulk create or update profiles (upsert).
          */
-        post: operations["save_profiles_api_v4_artifacts_profiles_bulk_save_post"];
+        post: operations["save_profiles_api_v5_artifacts_profiles_bulk_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/profiles/bulk/delete": {
+    "/api/v5/artifacts/profiles/bulk/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2336,14 +2336,14 @@ export interface paths {
          * Delete Profiles
          * @description Bulk delete profiles.
          */
-        post: operations["delete_profiles_api_v4_artifacts_profiles_bulk_delete_post"];
+        post: operations["delete_profiles_api_v5_artifacts_profiles_bulk_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/profiles/docs": {
+    "/api/v5/artifacts/profiles/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -2353,14 +2353,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Profile Docs Endpoint */
-        post: operations["get_profile_docs_endpoint_api_v4_artifacts_profiles_docs_post"];
+        post: operations["get_profile_docs_endpoint_api_v5_artifacts_profiles_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/auths/get": {
+    "/api/v5/artifacts/auths/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2373,14 +2373,14 @@ export interface paths {
          * Get Auth
          * @description Get auth information using two-pass architecture.
          */
-        post: operations["get_auth_api_v4_artifacts_auths_get_post"];
+        post: operations["get_auth_api_v5_artifacts_auths_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/auths/list": {
+    "/api/v5/artifacts/auths/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -2393,14 +2393,14 @@ export interface paths {
          * Get Auth List
          * @description Get auth list with item counts and permissions.
          */
-        post: operations["get_auth_list_api_v4_artifacts_auths_list_post"];
+        post: operations["get_auth_list_api_v5_artifacts_auths_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/auths/save": {
+    "/api/v5/artifacts/auths/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -2413,14 +2413,14 @@ export interface paths {
          * Save Auth
          * @description Save auth - handles both create (auth_id = NULL) and update (auth_id provided).
          */
-        post: operations["save_auth_api_v4_artifacts_auths_save_post"];
+        post: operations["save_auth_api_v5_artifacts_auths_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/auths/duplicate": {
+    "/api/v5/artifacts/auths/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -2433,14 +2433,14 @@ export interface paths {
          * Duplicate Auth
          * @description Duplicate an auth entry with all items and their key associations.
          */
-        post: operations["duplicate_auth_api_v4_artifacts_auths_duplicate_post"];
+        post: operations["duplicate_auth_api_v5_artifacts_auths_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/auths/delete": {
+    "/api/v5/artifacts/auths/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2453,14 +2453,14 @@ export interface paths {
          * Delete Auth
          * @description Delete an auth entry.
          */
-        post: operations["delete_auth_api_v4_artifacts_auths_delete_post"];
+        post: operations["delete_auth_api_v5_artifacts_auths_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/auths/draft": {
+    "/api/v5/artifacts/auths/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -2477,10 +2477,10 @@ export interface paths {
          * Patch Auth Draft
          * @description Patch auth draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_auth_draft_api_v4_artifacts_auths_draft_patch"];
+        patch: operations["patch_auth_draft_api_v5_artifacts_auths_draft_patch"];
         trace?: never;
     };
-    "/api/v4/artifacts/auths/docs": {
+    "/api/v5/artifacts/auths/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -2490,14 +2490,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Auth Docs Endpoint */
-        post: operations["get_auth_docs_endpoint_api_v4_artifacts_auths_docs_post"];
+        post: operations["get_auth_docs_endpoint_api_v5_artifacts_auths_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/tools/list": {
+    "/api/v5/artifacts/tools/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -2510,14 +2510,14 @@ export interface paths {
          * Get Tool List
          * @description Get tools list with permissions.
          */
-        post: operations["get_tool_list_api_v4_artifacts_tools_list_post"];
+        post: operations["get_tool_list_api_v5_artifacts_tools_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/tools/get": {
+    "/api/v5/artifacts/tools/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2530,14 +2530,14 @@ export interface paths {
          * Get Tool
          * @description Get tool information via section-first BFF response.
          */
-        post: operations["get_tool_api_v4_artifacts_tools_get_post"];
+        post: operations["get_tool_api_v5_artifacts_tools_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/tools/save": {
+    "/api/v5/artifacts/tools/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -2550,14 +2550,14 @@ export interface paths {
          * Save Tool
          * @description Save tool - handles both create (tool_id = NULL) and update (tool_id provided).
          */
-        post: operations["save_tool_api_v4_artifacts_tools_save_post"];
+        post: operations["save_tool_api_v5_artifacts_tools_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/tools/duplicate": {
+    "/api/v5/artifacts/tools/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -2570,14 +2570,14 @@ export interface paths {
          * Duplicate Tool
          * @description Duplicate a tool.
          */
-        post: operations["duplicate_tool_api_v4_artifacts_tools_duplicate_post"];
+        post: operations["duplicate_tool_api_v5_artifacts_tools_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/tools/delete": {
+    "/api/v5/artifacts/tools/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2590,14 +2590,14 @@ export interface paths {
          * Delete Tool
          * @description Delete a tool.
          */
-        post: operations["delete_tool_api_v4_artifacts_tools_delete_post"];
+        post: operations["delete_tool_api_v5_artifacts_tools_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/tools/draft": {
+    "/api/v5/artifacts/tools/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -2614,10 +2614,10 @@ export interface paths {
          * Patch Tool Draft
          * @description Patch tool draft - accepts resource IDs and creates/updates draft.
          */
-        patch: operations["patch_tool_draft_api_v4_artifacts_tools_draft_patch"];
+        patch: operations["patch_tool_draft_api_v5_artifacts_tools_draft_patch"];
         trace?: never;
     };
-    "/api/v4/artifacts/tools/docs": {
+    "/api/v5/artifacts/tools/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -2627,14 +2627,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Tool Docs Endpoint */
-        post: operations["get_tool_docs_endpoint_api_v4_artifacts_tools_docs_post"];
+        post: operations["get_tool_docs_endpoint_api_v5_artifacts_tools_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/group/get": {
+    "/api/v5/artifacts/group/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2647,14 +2647,14 @@ export interface paths {
          * Get Group
          * @description Get detailed group information with all runs and messages.
          */
-        post: operations["get_group_api_v4_artifacts_group_get_post"];
+        post: operations["get_group_api_v5_artifacts_group_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/group/docs": {
+    "/api/v5/artifacts/group/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -2664,14 +2664,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Group Docs Endpoint */
-        post: operations["get_group_docs_endpoint_api_v4_artifacts_group_docs_post"];
+        post: operations["get_group_docs_endpoint_api_v5_artifacts_group_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/session/get": {
+    "/api/v5/artifacts/session/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2684,14 +2684,14 @@ export interface paths {
          * Get Session
          * @description Get session detail with groups.
          */
-        post: operations["get_session_api_v4_artifacts_session_get_post"];
+        post: operations["get_session_api_v5_artifacts_session_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/session/docs": {
+    "/api/v5/artifacts/session/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -2701,14 +2701,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Session Docs Endpoint */
-        post: operations["get_session_docs_endpoint_api_v4_artifacts_session_docs_post"];
+        post: operations["get_session_docs_endpoint_api_v5_artifacts_session_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/chat/get": {
+    "/api/v5/artifacts/chat/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2721,14 +2721,14 @@ export interface paths {
          * Chat Get
          * @description Get hydrated resources for chat bundle customization.
          */
-        post: operations["chat_get_api_v4_artifacts_chat_get_post"];
+        post: operations["chat_get_api_v5_artifacts_chat_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/chat/draft": {
+    "/api/v5/artifacts/chat/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -2745,10 +2745,10 @@ export interface paths {
          * Patch Chat Draft
          * @description Patch chat bundle draft for bundle configuration and create/update draft.
          */
-        patch: operations["patch_chat_draft_api_v4_artifacts_chat_draft_patch"];
+        patch: operations["patch_chat_draft_api_v5_artifacts_chat_draft_patch"];
         trace?: never;
     };
-    "/api/v4/artifacts/chat/refresh": {
+    "/api/v5/artifacts/chat/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -2761,14 +2761,14 @@ export interface paths {
          * Chat Refresh
          * @description Refresh all chat section materialized views.
          */
-        post: operations["chat_refresh_api_v4_artifacts_chat_refresh_post"];
+        post: operations["chat_refresh_api_v5_artifacts_chat_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/chat/docs": {
+    "/api/v5/artifacts/chat/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -2778,14 +2778,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Chat Docs Endpoint */
-        post: operations["get_chat_docs_endpoint_api_v4_artifacts_chat_docs_post"];
+        post: operations["get_chat_docs_endpoint_api_v5_artifacts_chat_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/home/get": {
+    "/api/v5/artifacts/home/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2798,14 +2798,14 @@ export interface paths {
          * Home Get
          * @description Get simulations available for home (operational).
          */
-        post: operations["home_get_api_v4_artifacts_home_get_post"];
+        post: operations["home_get_api_v5_artifacts_home_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/home/export": {
+    "/api/v5/artifacts/home/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -2818,14 +2818,14 @@ export interface paths {
          * Export Home
          * @description Export home certificate as PDF, stored via upload infrastructure.
          */
-        post: operations["export_home_api_v4_artifacts_home_export_post"];
+        post: operations["export_home_api_v5_artifacts_home_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/practice/get": {
+    "/api/v5/artifacts/practice/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2838,14 +2838,14 @@ export interface paths {
          * Practice Get
          * @description Get simulations available for practice (operational).
          */
-        post: operations["practice_get_api_v4_artifacts_practice_get_post"];
+        post: operations["practice_get_api_v5_artifacts_practice_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/practice/export": {
+    "/api/v5/artifacts/practice/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -2858,14 +2858,14 @@ export interface paths {
          * Export Practice
          * @description Export practice attempts as CSV — attempt-grain data with hydrated names.
          */
-        post: operations["export_practice_api_v4_artifacts_practice_export_post"];
+        post: operations["export_practice_api_v5_artifacts_practice_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/attempt/get": {
+    "/api/v5/artifacts/attempt/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2886,14 +2886,14 @@ export interface paths {
          *     Each query runs on its own connection from the pool for true parallelism.
          *     The practice flag is determined from the attempt data itself.
          */
-        post: operations["attempt_get_api_v4_artifacts_attempt_get_post"];
+        post: operations["attempt_get_api_v5_artifacts_attempt_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/attempt/archive": {
+    "/api/v5/artifacts/attempt/archive": {
         parameters: {
             query?: never;
             header?: never;
@@ -2906,14 +2906,14 @@ export interface paths {
          * Archive Attempts
          * @description Bulk archive or unarchive attempts (simulation or benchmark).
          */
-        post: operations["archive_attempts_api_v4_artifacts_attempt_archive_post"];
+        post: operations["archive_attempts_api_v5_artifacts_attempt_archive_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/attempt/docs": {
+    "/api/v5/artifacts/attempt/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -2923,14 +2923,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Attempt Docs Endpoint */
-        post: operations["get_attempt_docs_endpoint_api_v4_artifacts_attempt_docs_post"];
+        post: operations["get_attempt_docs_endpoint_api_v5_artifacts_attempt_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/dashboard/get": {
+    "/api/v5/artifacts/dashboard/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2943,14 +2943,14 @@ export interface paths {
          * Get Dashboard
          * @description Get full dashboard bundle with all 4 sections in a single call.
          */
-        post: operations["get_dashboard_api_v4_artifacts_dashboard_get_post"];
+        post: operations["get_dashboard_api_v5_artifacts_dashboard_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/dashboard/refresh": {
+    "/api/v5/artifacts/dashboard/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -2963,14 +2963,14 @@ export interface paths {
          * Dashboard Refresh
          * @description Refresh all dashboard section materialized views.
          */
-        post: operations["dashboard_refresh_api_v4_artifacts_dashboard_refresh_post"];
+        post: operations["dashboard_refresh_api_v5_artifacts_dashboard_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/dashboard/export": {
+    "/api/v5/artifacts/dashboard/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -2983,14 +2983,14 @@ export interface paths {
          * Export Dashboard
          * @description Export dashboard as CSV — chat-grain data with hydrated names.
          */
-        post: operations["export_dashboard_api_v4_artifacts_dashboard_export_post"];
+        post: operations["export_dashboard_api_v5_artifacts_dashboard_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/dashboard/docs": {
+    "/api/v5/artifacts/dashboard/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -3000,14 +3000,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Dashboard Docs Endpoint */
-        post: operations["get_dashboard_docs_endpoint_api_v4_artifacts_dashboard_docs_post"];
+        post: operations["get_dashboard_docs_endpoint_api_v5_artifacts_dashboard_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/reports/export": {
+    "/api/v5/artifacts/reports/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -3020,14 +3020,14 @@ export interface paths {
          * Export Report
          * @description Export reports data as CSV or ZIP file.
          */
-        post: operations["export_report_api_v4_artifacts_reports_export_post"];
+        post: operations["export_report_api_v5_artifacts_reports_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/reports/get": {
+    "/api/v5/artifacts/reports/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3042,14 +3042,14 @@ export interface paths {
          *
          *     Pulls mv_profile_facts as sole data source and computes section skeletons.
          */
-        post: operations["get_reports_api_v4_artifacts_reports_get_post"];
+        post: operations["get_reports_api_v5_artifacts_reports_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/reports/refresh": {
+    "/api/v5/artifacts/reports/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -3062,14 +3062,14 @@ export interface paths {
          * Reports Refresh
          * @description Refresh all reports section materialized views.
          */
-        post: operations["reports_refresh_api_v4_artifacts_reports_refresh_post"];
+        post: operations["reports_refresh_api_v5_artifacts_reports_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/reports/docs": {
+    "/api/v5/artifacts/reports/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -3079,14 +3079,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Reports Docs Endpoint */
-        post: operations["get_reports_docs_endpoint_api_v4_artifacts_reports_docs_post"];
+        post: operations["get_reports_docs_endpoint_api_v5_artifacts_reports_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/leaderboard/get": {
+    "/api/v5/artifacts/leaderboard/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3102,14 +3102,14 @@ export interface paths {
          *     Fetches chat-grain rows from attempt_chat_mv via get_chats_internal()
          *     and aggregates to profile-level leaderboard rows in Python.
          */
-        post: operations["get_leaderboard_api_v4_artifacts_leaderboard_get_post"];
+        post: operations["get_leaderboard_api_v5_artifacts_leaderboard_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/leaderboard/refresh": {
+    "/api/v5/artifacts/leaderboard/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -3122,14 +3122,14 @@ export interface paths {
          * Leaderboard Refresh
          * @description Refresh all leaderboard section materialized views.
          */
-        post: operations["leaderboard_refresh_api_v4_artifacts_leaderboard_refresh_post"];
+        post: operations["leaderboard_refresh_api_v5_artifacts_leaderboard_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/leaderboard/export": {
+    "/api/v5/artifacts/leaderboard/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -3142,14 +3142,14 @@ export interface paths {
          * Export Leaderboard
          * @description Export leaderboard as CSV — profile-level aggregated metrics.
          */
-        post: operations["export_leaderboard_api_v4_artifacts_leaderboard_export_post"];
+        post: operations["export_leaderboard_api_v5_artifacts_leaderboard_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/leaderboard/docs": {
+    "/api/v5/artifacts/leaderboard/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -3159,14 +3159,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Leaderboard Docs Endpoint */
-        post: operations["get_leaderboard_docs_endpoint_api_v4_artifacts_leaderboard_docs_post"];
+        post: operations["get_leaderboard_docs_endpoint_api_v5_artifacts_leaderboard_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/pricing/get": {
+    "/api/v5/artifacts/pricing/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3179,14 +3179,14 @@ export interface paths {
          * Get Pricing
          * @description Get pricing artifact data.
          */
-        post: operations["get_pricing_api_v4_artifacts_pricing_get_post"];
+        post: operations["get_pricing_api_v5_artifacts_pricing_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/pricing/refresh": {
+    "/api/v5/artifacts/pricing/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -3199,14 +3199,14 @@ export interface paths {
          * Pricing Refresh
          * @description Refresh all pricing section materialized views.
          */
-        post: operations["pricing_refresh_api_v4_artifacts_pricing_refresh_post"];
+        post: operations["pricing_refresh_api_v5_artifacts_pricing_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/pricing/export": {
+    "/api/v5/artifacts/pricing/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -3219,14 +3219,14 @@ export interface paths {
          * Export Pricing
          * @description Export pricing as CSV — group-level aggregated data.
          */
-        post: operations["export_pricing_api_v4_artifacts_pricing_export_post"];
+        post: operations["export_pricing_api_v5_artifacts_pricing_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/pricing/docs": {
+    "/api/v5/artifacts/pricing/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -3236,14 +3236,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Pricing Docs Endpoint */
-        post: operations["get_pricing_docs_endpoint_api_v4_artifacts_pricing_docs_post"];
+        post: operations["get_pricing_docs_endpoint_api_v5_artifacts_pricing_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/activity/get": {
+    "/api/v5/artifacts/activity/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3256,14 +3256,14 @@ export interface paths {
          * Get Activity
          * @description Get activity artifact data.
          */
-        post: operations["get_activity_api_v4_artifacts_activity_get_post"];
+        post: operations["get_activity_api_v5_artifacts_activity_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/activity/problem": {
+    "/api/v5/artifacts/activity/problem": {
         parameters: {
             query?: never;
             header?: never;
@@ -3276,14 +3276,14 @@ export interface paths {
          * Create Problem
          * @description Create new problem entry.
          */
-        post: operations["create_problem_api_v4_artifacts_activity_problem_post"];
+        post: operations["create_problem_api_v5_artifacts_activity_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/activity/refresh": {
+    "/api/v5/artifacts/activity/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -3296,14 +3296,14 @@ export interface paths {
          * Activity Refresh
          * @description Refresh all activity section materialized views.
          */
-        post: operations["activity_refresh_api_v4_artifacts_activity_refresh_post"];
+        post: operations["activity_refresh_api_v5_artifacts_activity_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/activity/resolve": {
+    "/api/v5/artifacts/activity/resolve": {
         parameters: {
             query?: never;
             header?: never;
@@ -3316,14 +3316,14 @@ export interface paths {
          * Resolve Problem
          * @description Resolve or unresolve a problem entry.
          */
-        post: operations["resolve_problem_api_v4_artifacts_activity_resolve_post"];
+        post: operations["resolve_problem_api_v5_artifacts_activity_resolve_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/activity/docs": {
+    "/api/v5/artifacts/activity/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -3333,14 +3333,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Activity Docs Endpoint */
-        post: operations["get_activity_docs_endpoint_api_v4_artifacts_activity_docs_post"];
+        post: operations["get_activity_docs_endpoint_api_v5_artifacts_activity_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/health/get": {
+    "/api/v5/artifacts/health/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3353,14 +3353,14 @@ export interface paths {
          * Get Health
          * @description Get health artifact data.
          */
-        post: operations["get_health_api_v4_artifacts_health_get_post"];
+        post: operations["get_health_api_v5_artifacts_health_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/health/refresh": {
+    "/api/v5/artifacts/health/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -3373,14 +3373,14 @@ export interface paths {
          * Health Refresh
          * @description Refresh all health section materialized views.
          */
-        post: operations["health_refresh_api_v4_artifacts_health_refresh_post"];
+        post: operations["health_refresh_api_v5_artifacts_health_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/health/docs": {
+    "/api/v5/artifacts/health/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -3390,14 +3390,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Health Docs Endpoint */
-        post: operations["get_health_docs_endpoint_api_v4_artifacts_health_docs_post"];
+        post: operations["get_health_docs_endpoint_api_v5_artifacts_health_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/benchmark/get": {
+    "/api/v5/artifacts/benchmark/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3410,14 +3410,14 @@ export interface paths {
          * Get Benchmark
          * @description Get benchmark artifact data with full resource hydration.
          */
-        post: operations["get_benchmark_api_v4_artifacts_benchmark_get_post"];
+        post: operations["get_benchmark_api_v5_artifacts_benchmark_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/benchmark/refresh": {
+    "/api/v5/artifacts/benchmark/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -3430,14 +3430,14 @@ export interface paths {
          * Benchmark Refresh
          * @description Refresh all benchmark section materialized views.
          */
-        post: operations["benchmark_refresh_api_v4_artifacts_benchmark_refresh_post"];
+        post: operations["benchmark_refresh_api_v5_artifacts_benchmark_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/benchmark/docs": {
+    "/api/v5/artifacts/benchmark/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -3447,14 +3447,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Benchmark Docs Endpoint */
-        post: operations["get_benchmark_docs_endpoint_api_v4_artifacts_benchmark_docs_post"];
+        post: operations["get_benchmark_docs_endpoint_api_v5_artifacts_benchmark_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/test/get": {
+    "/api/v5/artifacts/test/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3467,14 +3467,14 @@ export interface paths {
          * Get Test Artifact
          * @description Get benchmark test artifact details with tests/invocations in parallel.
          */
-        post: operations["get_test_artifact_api_v4_artifacts_test_get_post"];
+        post: operations["get_test_artifact_api_v5_artifacts_test_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/test/archive": {
+    "/api/v5/artifacts/test/archive": {
         parameters: {
             query?: never;
             header?: never;
@@ -3487,14 +3487,14 @@ export interface paths {
          * Archive Test Artifacts
          * @description Archive or unarchive benchmark tests by IDs.
          */
-        post: operations["archive_test_artifacts_api_v4_artifacts_test_archive_post"];
+        post: operations["archive_test_artifacts_api_v5_artifacts_test_archive_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/artifacts/test/docs": {
+    "/api/v5/artifacts/test/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -3504,14 +3504,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Test Docs Endpoint */
-        post: operations["get_test_docs_endpoint_api_v4_artifacts_test_docs_post"];
+        post: operations["get_test_docs_endpoint_api_v5_artifacts_test_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/agents/get": {
+    "/api/v5/resources/agents/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3526,14 +3526,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_agents_api_v4_resources_agents_get_post"];
+        post: operations["get_agents_api_v5_resources_agents_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/agents/search": {
+    "/api/v5/resources/agents/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -3546,14 +3546,14 @@ export interface paths {
          * Search Agents
          * @description Search agents resources.
          */
-        post: operations["search_agents_api_v4_resources_agents_search_post"];
+        post: operations["search_agents_api_v5_resources_agents_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/systems/get": {
+    "/api/v5/resources/systems/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3566,14 +3566,14 @@ export interface paths {
          * Get Systems
          * @description Get systems resources by IDs.
          */
-        post: operations["get_systems_api_v4_resources_systems_get_post"];
+        post: operations["get_systems_api_v5_resources_systems_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/systems/search": {
+    "/api/v5/resources/systems/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -3586,14 +3586,14 @@ export interface paths {
          * Search Systems
          * @description Search systems resources.
          */
-        post: operations["search_systems_api_v4_resources_systems_search_post"];
+        post: operations["search_systems_api_v5_resources_systems_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/args": {
+    "/api/v5/resources/args": {
         parameters: {
             query?: never;
             header?: never;
@@ -3606,14 +3606,14 @@ export interface paths {
          * Create Args
          * @description Create args resource (always INSERT).
          */
-        post: operations["create_args_api_v4_resources_args_post"];
+        post: operations["create_args_api_v5_resources_args_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/args/get": {
+    "/api/v5/resources/args/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3626,14 +3626,14 @@ export interface paths {
          * Get Args
          * @description Get args resources by IDs.
          */
-        post: operations["get_args_api_v4_resources_args_get_post"];
+        post: operations["get_args_api_v5_resources_args_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/args/search": {
+    "/api/v5/resources/args/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -3646,14 +3646,14 @@ export interface paths {
          * Search Args
          * @description Search args resources.
          */
-        post: operations["search_args_api_v4_resources_args_search_post"];
+        post: operations["search_args_api_v5_resources_args_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/arg_positions": {
+    "/api/v5/resources/arg_positions": {
         parameters: {
             query?: never;
             header?: never;
@@ -3666,14 +3666,14 @@ export interface paths {
          * Create Arg Positions
          * @description Create arg_positions resource (upsert by tool+arg).
          */
-        post: operations["create_arg_positions_api_v4_resources_arg_positions_post"];
+        post: operations["create_arg_positions_api_v5_resources_arg_positions_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/arg_positions/get": {
+    "/api/v5/resources/arg_positions/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3686,14 +3686,14 @@ export interface paths {
          * Get Arg Positions
          * @description Get arg_positions resources by IDs.
          */
-        post: operations["get_arg_positions_api_v4_resources_arg_positions_get_post"];
+        post: operations["get_arg_positions_api_v5_resources_arg_positions_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/arg_positions/search": {
+    "/api/v5/resources/arg_positions/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -3706,14 +3706,14 @@ export interface paths {
          * Search Arg Positions
          * @description Search arg_positions resources.
          */
-        post: operations["search_arg_positions_api_v4_resources_arg_positions_search_post"];
+        post: operations["search_arg_positions_api_v5_resources_arg_positions_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/args_outputs": {
+    "/api/v5/resources/args_outputs": {
         parameters: {
             query?: never;
             header?: never;
@@ -3726,14 +3726,14 @@ export interface paths {
          * Create Args Outputs
          * @description Create args_outputs resource (always INSERT).
          */
-        post: operations["create_args_outputs_api_v4_resources_args_outputs_post"];
+        post: operations["create_args_outputs_api_v5_resources_args_outputs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/args_outputs/get": {
+    "/api/v5/resources/args_outputs/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3746,14 +3746,14 @@ export interface paths {
          * Get Args Outputs
          * @description Get args_outputs resources by IDs.
          */
-        post: operations["get_args_outputs_api_v4_resources_args_outputs_get_post"];
+        post: operations["get_args_outputs_api_v5_resources_args_outputs_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/args_outputs/search": {
+    "/api/v5/resources/args_outputs/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -3766,14 +3766,14 @@ export interface paths {
          * Search Args Outputs
          * @description Search args_outputs resources.
          */
-        post: operations["search_args_outputs_api_v4_resources_args_outputs_search_post"];
+        post: operations["search_args_outputs_api_v5_resources_args_outputs_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/auth_item_keys": {
+    "/api/v5/resources/auth_item_keys": {
         parameters: {
             query?: never;
             header?: never;
@@ -3786,14 +3786,14 @@ export interface paths {
          * Create Auth Item Keys
          * @description Create auth_item_keys resource from auth + item + key tuple.
          */
-        post: operations["create_auth_item_keys_api_v4_resources_auth_item_keys_post"];
+        post: operations["create_auth_item_keys_api_v5_resources_auth_item_keys_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/auth_item_keys/get": {
+    "/api/v5/resources/auth_item_keys/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3806,14 +3806,14 @@ export interface paths {
          * Get Auth Item Keys
          * @description Get auth_item_keys resources by IDs.
          */
-        post: operations["get_auth_item_keys_api_v4_resources_auth_item_keys_get_post"];
+        post: operations["get_auth_item_keys_api_v5_resources_auth_item_keys_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/auth_item_keys/search": {
+    "/api/v5/resources/auth_item_keys/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -3823,14 +3823,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Search Auth Item Keys */
-        post: operations["search_auth_item_keys_api_v4_resources_auth_item_keys_search_post"];
+        post: operations["search_auth_item_keys_api_v5_resources_auth_item_keys_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/auths/get": {
+    "/api/v5/resources/auths/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3845,14 +3845,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_auths_api_v4_resources_auths_get_post"];
+        post: operations["get_auths_api_v5_resources_auths_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/auths/search": {
+    "/api/v5/resources/auths/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -3865,14 +3865,14 @@ export interface paths {
          * Search Auths
          * @description Search auths resources.
          */
-        post: operations["search_auths_api_v4_resources_auths_search_post"];
+        post: operations["search_auths_api_v5_resources_auths_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/entries/get": {
+    "/api/v5/resources/entries/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3887,14 +3887,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_entries_api_v4_resources_entries_get_post"];
+        post: operations["get_entries_api_v5_resources_entries_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/entries/search": {
+    "/api/v5/resources/entries/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -3907,14 +3907,14 @@ export interface paths {
          * Search Entries
          * @description Search entries resources.
          */
-        post: operations["search_entries_api_v4_resources_entries_search_post"];
+        post: operations["search_entries_api_v5_resources_entries_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/cohorts/get": {
+    "/api/v5/resources/cohorts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3929,14 +3929,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_cohorts_api_v4_resources_cohorts_get_post"];
+        post: operations["get_cohorts_api_v5_resources_cohorts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/cohorts/search": {
+    "/api/v5/resources/cohorts/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -3949,14 +3949,14 @@ export interface paths {
          * Search Cohorts
          * @description Search cohorts resources.
          */
-        post: operations["search_cohorts_api_v4_resources_cohorts_search_post"];
+        post: operations["search_cohorts_api_v5_resources_cohorts_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/colors": {
+    "/api/v5/resources/colors": {
         parameters: {
             query?: never;
             header?: never;
@@ -3969,14 +3969,14 @@ export interface paths {
          * Create Colors
          * @description Create colors resource (always INSERT).
          */
-        post: operations["create_colors_api_v4_resources_colors_post"];
+        post: operations["create_colors_api_v5_resources_colors_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/colors/get": {
+    "/api/v5/resources/colors/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3991,14 +3991,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_colors_api_v4_resources_colors_get_post"];
+        post: operations["get_colors_api_v5_resources_colors_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/colors/link": {
+    "/api/v5/resources/colors/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -4011,14 +4011,14 @@ export interface paths {
          * Link Colors
          * @description Record tool call tracking for linking an existing color resource.
          */
-        post: operations["link_colors_api_v4_resources_colors_link_post"];
+        post: operations["link_colors_api_v5_resources_colors_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/colors/search": {
+    "/api/v5/resources/colors/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4028,14 +4028,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Search Colors */
-        post: operations["search_colors_api_v4_resources_colors_search_post"];
+        post: operations["search_colors_api_v5_resources_colors_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/conditional_parameters/get": {
+    "/api/v5/resources/conditional_parameters/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4050,14 +4050,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_conditional_parameters_api_v4_resources_conditional_parameters_get_post"];
+        post: operations["get_conditional_parameters_api_v5_resources_conditional_parameters_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/conditional_parameters/search": {
+    "/api/v5/resources/conditional_parameters/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4070,14 +4070,14 @@ export interface paths {
          * Search Conditional Parameters
          * @description Search conditional_parameters resources.
          */
-        post: operations["search_conditional_parameters_api_v4_resources_conditional_parameters_search_post"];
+        post: operations["search_conditional_parameters_api_v5_resources_conditional_parameters_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/departments/get": {
+    "/api/v5/resources/departments/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4092,14 +4092,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_departments_api_v4_resources_departments_get_post"];
+        post: operations["get_departments_api_v5_resources_departments_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/departments/link": {
+    "/api/v5/resources/departments/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -4112,14 +4112,14 @@ export interface paths {
          * Link Departments
          * @description Record tool call tracking for linking an existing department resource.
          */
-        post: operations["link_departments_api_v4_resources_departments_link_post"];
+        post: operations["link_departments_api_v5_resources_departments_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/departments/search": {
+    "/api/v5/resources/departments/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4129,14 +4129,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Search Departments */
-        post: operations["search_departments_api_v4_resources_departments_search_post"];
+        post: operations["search_departments_api_v5_resources_departments_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/descriptions": {
+    "/api/v5/resources/descriptions": {
         parameters: {
             query?: never;
             header?: never;
@@ -4149,14 +4149,14 @@ export interface paths {
          * Create Descriptions
          * @description Create descriptions resource (always INSERT).
          */
-        post: operations["create_descriptions_api_v4_resources_descriptions_post"];
+        post: operations["create_descriptions_api_v5_resources_descriptions_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/descriptions/get": {
+    "/api/v5/resources/descriptions/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4171,14 +4171,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_descriptions_api_v4_resources_descriptions_get_post"];
+        post: operations["get_descriptions_api_v5_resources_descriptions_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/descriptions/link": {
+    "/api/v5/resources/descriptions/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -4191,14 +4191,14 @@ export interface paths {
          * Link Descriptions
          * @description Record tool call tracking for linking an existing description resource.
          */
-        post: operations["link_descriptions_api_v4_resources_descriptions_link_post"];
+        post: operations["link_descriptions_api_v5_resources_descriptions_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/descriptions/search": {
+    "/api/v5/resources/descriptions/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4208,14 +4208,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Search Descriptions */
-        post: operations["search_descriptions_api_v4_resources_descriptions_search_post"];
+        post: operations["search_descriptions_api_v5_resources_descriptions_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/resources/get": {
+    "/api/v5/resources/resources/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4230,14 +4230,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_resources_api_v4_resources_resources_get_post"];
+        post: operations["get_resources_api_v5_resources_resources_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/resources/search": {
+    "/api/v5/resources/resources/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4247,14 +4247,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Search Resources */
-        post: operations["search_resources_api_v4_resources_resources_search_post"];
+        post: operations["search_resources_api_v5_resources_resources_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/documents/get": {
+    "/api/v5/resources/documents/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4267,14 +4267,14 @@ export interface paths {
          * Get Document
          * @description Get document by ID.
          */
-        post: operations["get_document_api_v4_resources_documents_get_post"];
+        post: operations["get_document_api_v5_resources_documents_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/documents/link": {
+    "/api/v5/resources/documents/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -4287,14 +4287,14 @@ export interface paths {
          * Link Documents
          * @description Record tool call tracking for linking an existing documents resource.
          */
-        post: operations["link_documents_api_v4_resources_documents_link_post"];
+        post: operations["link_documents_api_v5_resources_documents_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/documents/search": {
+    "/api/v5/resources/documents/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4304,14 +4304,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Search Documents */
-        post: operations["search_documents_api_v4_resources_documents_search_post"];
+        post: operations["search_documents_api_v5_resources_documents_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/emails": {
+    "/api/v5/resources/emails": {
         parameters: {
             query?: never;
             header?: never;
@@ -4324,14 +4324,14 @@ export interface paths {
          * Create Emails
          * @description Create emails resource (always INSERT).
          */
-        post: operations["create_emails_api_v4_resources_emails_post"];
+        post: operations["create_emails_api_v5_resources_emails_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/emails/get": {
+    "/api/v5/resources/emails/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4344,14 +4344,14 @@ export interface paths {
          * Get Emails
          * @description Get emails resources by IDs.
          */
-        post: operations["get_emails_api_v4_resources_emails_get_post"];
+        post: operations["get_emails_api_v5_resources_emails_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/emails/search": {
+    "/api/v5/resources/emails/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4364,14 +4364,14 @@ export interface paths {
          * Search Emails
          * @description Search emails resources.
          */
-        post: operations["search_emails_api_v4_resources_emails_search_post"];
+        post: operations["search_emails_api_v5_resources_emails_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/endpoints": {
+    "/api/v5/resources/endpoints": {
         parameters: {
             query?: never;
             header?: never;
@@ -4384,14 +4384,14 @@ export interface paths {
          * Create Endpoints
          * @description Create endpoints resource (always INSERT).
          */
-        post: operations["create_endpoints_api_v4_resources_endpoints_post"];
+        post: operations["create_endpoints_api_v5_resources_endpoints_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/endpoints/get": {
+    "/api/v5/resources/endpoints/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4404,14 +4404,14 @@ export interface paths {
          * Get Endpoints
          * @description Get endpoints resources by IDs.
          */
-        post: operations["get_endpoints_api_v4_resources_endpoints_get_post"];
+        post: operations["get_endpoints_api_v5_resources_endpoints_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/endpoints/search": {
+    "/api/v5/resources/endpoints/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4424,14 +4424,14 @@ export interface paths {
          * Search Endpoints
          * @description Search endpoints resources.
          */
-        post: operations["search_endpoints_api_v4_resources_endpoints_search_post"];
+        post: operations["search_endpoints_api_v5_resources_endpoints_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/evals/get": {
+    "/api/v5/resources/evals/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4446,14 +4446,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_evals_api_v4_resources_evals_get_post"];
+        post: operations["get_evals_api_v5_resources_evals_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/evals/search": {
+    "/api/v5/resources/evals/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4463,14 +4463,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Search Evals */
-        post: operations["search_evals_api_v4_resources_evals_search_post"];
+        post: operations["search_evals_api_v5_resources_evals_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/examples": {
+    "/api/v5/resources/examples": {
         parameters: {
             query?: never;
             header?: never;
@@ -4483,14 +4483,14 @@ export interface paths {
          * Create Examples
          * @description Create examples resource (always INSERT).
          */
-        post: operations["create_examples_api_v4_resources_examples_post"];
+        post: operations["create_examples_api_v5_resources_examples_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/examples/get": {
+    "/api/v5/resources/examples/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4505,14 +4505,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_examples_api_v4_resources_examples_get_post"];
+        post: operations["get_examples_api_v5_resources_examples_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/examples/link": {
+    "/api/v5/resources/examples/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -4525,14 +4525,14 @@ export interface paths {
          * Link Examples
          * @description Record tool call tracking for linking an existing example resource.
          */
-        post: operations["link_examples_api_v4_resources_examples_link_post"];
+        post: operations["link_examples_api_v5_resources_examples_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/examples/search": {
+    "/api/v5/resources/examples/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4542,14 +4542,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Search Examples */
-        post: operations["search_examples_api_v4_resources_examples_search_post"];
+        post: operations["search_examples_api_v5_resources_examples_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/fields/get": {
+    "/api/v5/resources/fields/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4564,14 +4564,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_fields_api_v4_resources_fields_get_post"];
+        post: operations["get_fields_api_v5_resources_fields_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/fields/link": {
+    "/api/v5/resources/fields/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -4584,14 +4584,14 @@ export interface paths {
          * Link Fields
          * @description Record tool call tracking for linking an existing fields resource.
          */
-        post: operations["link_fields_api_v4_resources_fields_link_post"];
+        post: operations["link_fields_api_v5_resources_fields_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/fields/search": {
+    "/api/v5/resources/fields/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4601,14 +4601,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Search Fields */
-        post: operations["search_fields_api_v4_resources_fields_search_post"];
+        post: operations["search_fields_api_v5_resources_fields_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/parameter_fields": {
+    "/api/v5/resources/parameter_fields": {
         parameters: {
             query?: never;
             header?: never;
@@ -4621,14 +4621,14 @@ export interface paths {
          * Create Parameter Fields
          * @description Create parameter_fields resource (always INSERT).
          */
-        post: operations["create_parameter_fields_api_v4_resources_parameter_fields_post"];
+        post: operations["create_parameter_fields_api_v5_resources_parameter_fields_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/parameter_fields/get": {
+    "/api/v5/resources/parameter_fields/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4643,14 +4643,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_parameter_fields_api_v4_resources_parameter_fields_get_post"];
+        post: operations["get_parameter_fields_api_v5_resources_parameter_fields_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/parameter_fields/link": {
+    "/api/v5/resources/parameter_fields/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -4663,14 +4663,14 @@ export interface paths {
          * Link Parameter Fields
          * @description Record tool call tracking for linking an existing parameter_fields resource.
          */
-        post: operations["link_parameter_fields_api_v4_resources_parameter_fields_link_post"];
+        post: operations["link_parameter_fields_api_v5_resources_parameter_fields_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/parameter_fields/search": {
+    "/api/v5/resources/parameter_fields/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4685,14 +4685,14 @@ export interface paths {
          *
          *     Returns all available parameter_fields for the given parameters.
          */
-        post: operations["search_parameter_fields_api_v4_resources_parameter_fields_search_post"];
+        post: operations["search_parameter_fields_api_v5_resources_parameter_fields_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/flags/get": {
+    "/api/v5/resources/flags/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4707,14 +4707,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_flags_api_v4_resources_flags_get_post"];
+        post: operations["get_flags_api_v5_resources_flags_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/flags/link": {
+    "/api/v5/resources/flags/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -4727,14 +4727,14 @@ export interface paths {
          * Link Flags
          * @description Record tool call tracking for linking an existing flag resource.
          */
-        post: operations["link_flags_api_v4_resources_flags_link_post"];
+        post: operations["link_flags_api_v5_resources_flags_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/flags/search": {
+    "/api/v5/resources/flags/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4744,14 +4744,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Search Flags */
-        post: operations["search_flags_api_v4_resources_flags_search_post"];
+        post: operations["search_flags_api_v5_resources_flags_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/icons/get": {
+    "/api/v5/resources/icons/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4766,14 +4766,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_icons_api_v4_resources_icons_get_post"];
+        post: operations["get_icons_api_v5_resources_icons_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/icons/link": {
+    "/api/v5/resources/icons/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -4786,14 +4786,14 @@ export interface paths {
          * Link Icons
          * @description Record tool call tracking for linking an existing icon resource.
          */
-        post: operations["link_icons_api_v4_resources_icons_link_post"];
+        post: operations["link_icons_api_v5_resources_icons_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/icons/search": {
+    "/api/v5/resources/icons/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4803,14 +4803,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Search Icons */
-        post: operations["search_icons_api_v4_resources_icons_search_post"];
+        post: operations["search_icons_api_v5_resources_icons_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/images": {
+    "/api/v5/resources/images": {
         parameters: {
             query?: never;
             header?: never;
@@ -4823,14 +4823,14 @@ export interface paths {
          * Create Images
          * @description Create images resource (always INSERT).
          */
-        post: operations["create_images_api_v4_resources_images_post"];
+        post: operations["create_images_api_v5_resources_images_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/images/get": {
+    "/api/v5/resources/images/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4843,14 +4843,14 @@ export interface paths {
          * Get Image
          * @description Get image by ID.
          */
-        post: operations["get_image_api_v4_resources_images_get_post"];
+        post: operations["get_image_api_v5_resources_images_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/images/link": {
+    "/api/v5/resources/images/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -4863,14 +4863,14 @@ export interface paths {
          * Link Images
          * @description Record tool call tracking for linking an existing images resource.
          */
-        post: operations["link_images_api_v4_resources_images_link_post"];
+        post: operations["link_images_api_v5_resources_images_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/images/search": {
+    "/api/v5/resources/images/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4880,14 +4880,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Search Images */
-        post: operations["search_images_api_v4_resources_images_search_post"];
+        post: operations["search_images_api_v5_resources_images_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/instructions": {
+    "/api/v5/resources/instructions": {
         parameters: {
             query?: never;
             header?: never;
@@ -4900,14 +4900,14 @@ export interface paths {
          * Create Instructions
          * @description Create instructions resource (always INSERT).
          */
-        post: operations["create_instructions_api_v4_resources_instructions_post"];
+        post: operations["create_instructions_api_v5_resources_instructions_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/instructions/get": {
+    "/api/v5/resources/instructions/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4922,14 +4922,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_instructions_api_v4_resources_instructions_get_post"];
+        post: operations["get_instructions_api_v5_resources_instructions_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/instructions/link": {
+    "/api/v5/resources/instructions/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -4942,14 +4942,14 @@ export interface paths {
          * Link Instructions
          * @description Record tool call tracking for linking an existing instruction resource.
          */
-        post: operations["link_instructions_api_v4_resources_instructions_link_post"];
+        post: operations["link_instructions_api_v5_resources_instructions_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/instructions/search": {
+    "/api/v5/resources/instructions/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4959,14 +4959,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Search Instructions */
-        post: operations["search_instructions_api_v4_resources_instructions_search_post"];
+        post: operations["search_instructions_api_v5_resources_instructions_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/items": {
+    "/api/v5/resources/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -4979,14 +4979,14 @@ export interface paths {
          * Create Items
          * @description Create items resource (always INSERT).
          */
-        post: operations["create_items_api_v4_resources_items_post"];
+        post: operations["create_items_api_v5_resources_items_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/items/get": {
+    "/api/v5/resources/items/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4999,14 +4999,14 @@ export interface paths {
          * Get Items
          * @description Get items resources by IDs.
          */
-        post: operations["get_items_api_v4_resources_items_get_post"];
+        post: operations["get_items_api_v5_resources_items_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/items/search": {
+    "/api/v5/resources/items/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5019,14 +5019,14 @@ export interface paths {
          * Search Items
          * @description Search items resources.
          */
-        post: operations["search_items_api_v4_resources_items_search_post"];
+        post: operations["search_items_api_v5_resources_items_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/keys": {
+    "/api/v5/resources/keys": {
         parameters: {
             query?: never;
             header?: never;
@@ -5039,14 +5039,14 @@ export interface paths {
          * Create Keys
          * @description Create keys resource (always INSERT).
          */
-        post: operations["create_keys_api_v4_resources_keys_post"];
+        post: operations["create_keys_api_v5_resources_keys_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/keys/get": {
+    "/api/v5/resources/keys/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5059,14 +5059,14 @@ export interface paths {
          * Get Keys
          * @description Get keys resources by IDs.
          */
-        post: operations["get_keys_api_v4_resources_keys_get_post"];
+        post: operations["get_keys_api_v5_resources_keys_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/keys/search": {
+    "/api/v5/resources/keys/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5079,14 +5079,14 @@ export interface paths {
          * Search Keys
          * @description Search keys resources.
          */
-        post: operations["search_keys_api_v4_resources_keys_search_post"];
+        post: operations["search_keys_api_v5_resources_keys_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/provider_keys": {
+    "/api/v5/resources/provider_keys": {
         parameters: {
             query?: never;
             header?: never;
@@ -5099,14 +5099,14 @@ export interface paths {
          * Create Provider Keys
          * @description Create provider_keys resource from provider + key pair.
          */
-        post: operations["create_provider_keys_api_v4_resources_provider_keys_post"];
+        post: operations["create_provider_keys_api_v5_resources_provider_keys_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/provider_keys/get": {
+    "/api/v5/resources/provider_keys/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5119,14 +5119,14 @@ export interface paths {
          * Get Provider Keys
          * @description Get provider_keys resources by IDs.
          */
-        post: operations["get_provider_keys_api_v4_resources_provider_keys_get_post"];
+        post: operations["get_provider_keys_api_v5_resources_provider_keys_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/provider_keys/search": {
+    "/api/v5/resources/provider_keys/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5136,14 +5136,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Search Provider Keys */
-        post: operations["search_provider_keys_api_v4_resources_provider_keys_search_post"];
+        post: operations["search_provider_keys_api_v5_resources_provider_keys_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/modalities/get": {
+    "/api/v5/resources/modalities/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5156,14 +5156,14 @@ export interface paths {
          * Get Modalities
          * @description Get modalities resources by IDs.
          */
-        post: operations["get_modalities_api_v4_resources_modalities_get_post"];
+        post: operations["get_modalities_api_v5_resources_modalities_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/modalities/search": {
+    "/api/v5/resources/modalities/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5176,14 +5176,14 @@ export interface paths {
          * Search Modalities
          * @description Search modalities resources.
          */
-        post: operations["search_modalities_api_v4_resources_modalities_search_post"];
+        post: operations["search_modalities_api_v5_resources_modalities_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/models/get": {
+    "/api/v5/resources/models/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5198,14 +5198,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_models_api_v4_resources_models_get_post"];
+        post: operations["get_models_api_v5_resources_models_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/models/search": {
+    "/api/v5/resources/models/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5218,14 +5218,14 @@ export interface paths {
          * Search Models
          * @description Search models resources.
          */
-        post: operations["search_models_api_v4_resources_models_search_post"];
+        post: operations["search_models_api_v5_resources_models_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/model_flags/get": {
+    "/api/v5/resources/model_flags/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5238,14 +5238,14 @@ export interface paths {
          * Get Model Flags
          * @description Get model flags by resource IDs.
          */
-        post: operations["get_model_flags_api_v4_resources_model_flags_get_post"];
+        post: operations["get_model_flags_api_v5_resources_model_flags_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/model_flags/search": {
+    "/api/v5/resources/model_flags/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5258,14 +5258,14 @@ export interface paths {
          * Search Model Flags
          * @description Search available model flags for models.
          */
-        post: operations["search_model_flags_api_v4_resources_model_flags_search_post"];
+        post: operations["search_model_flags_api_v5_resources_model_flags_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/model_rubrics/get": {
+    "/api/v5/resources/model_rubrics/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5278,14 +5278,14 @@ export interface paths {
          * Get Model Rubrics
          * @description Get model rubrics by resource IDs.
          */
-        post: operations["get_model_rubrics_api_v4_resources_model_rubrics_get_post"];
+        post: operations["get_model_rubrics_api_v5_resources_model_rubrics_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/model_rubrics/search": {
+    "/api/v5/resources/model_rubrics/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5298,14 +5298,14 @@ export interface paths {
          * Search Model Rubrics
          * @description Search available model rubrics for models.
          */
-        post: operations["search_model_rubrics_api_v4_resources_model_rubrics_search_post"];
+        post: operations["search_model_rubrics_api_v5_resources_model_rubrics_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/model_positions/get": {
+    "/api/v5/resources/model_positions/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5318,14 +5318,14 @@ export interface paths {
          * Get Model Positions
          * @description Get model positions by resource IDs.
          */
-        post: operations["get_model_positions_api_v4_resources_model_positions_get_post"];
+        post: operations["get_model_positions_api_v5_resources_model_positions_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/model_positions/search": {
+    "/api/v5/resources/model_positions/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5338,14 +5338,14 @@ export interface paths {
          * Search Model Positions
          * @description Search available model positions for models.
          */
-        post: operations["search_model_positions_api_v4_resources_model_positions_search_post"];
+        post: operations["search_model_positions_api_v5_resources_model_positions_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/names": {
+    "/api/v5/resources/names": {
         parameters: {
             query?: never;
             header?: never;
@@ -5358,14 +5358,14 @@ export interface paths {
          * Create Names
          * @description Create names resource (always INSERT).
          */
-        post: operations["create_names_api_v4_resources_names_post"];
+        post: operations["create_names_api_v5_resources_names_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/names/get": {
+    "/api/v5/resources/names/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5380,14 +5380,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_names_api_v4_resources_names_get_post"];
+        post: operations["get_names_api_v5_resources_names_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/names/link": {
+    "/api/v5/resources/names/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -5400,14 +5400,14 @@ export interface paths {
          * Link Names
          * @description Record tool call tracking for linking an existing name resource.
          */
-        post: operations["link_names_api_v4_resources_names_link_post"];
+        post: operations["link_names_api_v5_resources_names_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/names/search": {
+    "/api/v5/resources/names/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5420,14 +5420,14 @@ export interface paths {
          * Search Names
          * @description Search names resources.
          */
-        post: operations["search_names_api_v4_resources_names_search_post"];
+        post: operations["search_names_api_v5_resources_names_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/objectives": {
+    "/api/v5/resources/objectives": {
         parameters: {
             query?: never;
             header?: never;
@@ -5440,14 +5440,14 @@ export interface paths {
          * Create Objectives
          * @description Create objectives resource (always INSERT).
          */
-        post: operations["create_objectives_api_v4_resources_objectives_post"];
+        post: operations["create_objectives_api_v5_resources_objectives_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/objectives/get": {
+    "/api/v5/resources/objectives/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5460,14 +5460,14 @@ export interface paths {
          * Get Objective
          * @description Get objective by ID.
          */
-        post: operations["get_objective_api_v4_resources_objectives_get_post"];
+        post: operations["get_objective_api_v5_resources_objectives_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/objectives/link": {
+    "/api/v5/resources/objectives/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -5480,14 +5480,14 @@ export interface paths {
          * Link Objectives
          * @description Record tool call tracking for linking an existing objectives resource.
          */
-        post: operations["link_objectives_api_v4_resources_objectives_link_post"];
+        post: operations["link_objectives_api_v5_resources_objectives_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/objectives/search": {
+    "/api/v5/resources/objectives/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5500,14 +5500,14 @@ export interface paths {
          * Search Objectives
          * @description Search objectives resources.
          */
-        post: operations["search_objectives_api_v4_resources_objectives_search_post"];
+        post: operations["search_objectives_api_v5_resources_objectives_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/options": {
+    "/api/v5/resources/options": {
         parameters: {
             query?: never;
             header?: never;
@@ -5520,14 +5520,14 @@ export interface paths {
          * Create Options
          * @description Create options resource (always INSERT).
          */
-        post: operations["create_options_api_v4_resources_options_post"];
+        post: operations["create_options_api_v5_resources_options_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/options/get": {
+    "/api/v5/resources/options/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5540,14 +5540,14 @@ export interface paths {
          * Get Options
          * @description Get options by IDs.
          */
-        post: operations["get_options_api_v4_resources_options_get_post"];
+        post: operations["get_options_api_v5_resources_options_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/options/link": {
+    "/api/v5/resources/options/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -5560,14 +5560,14 @@ export interface paths {
          * Link Options
          * @description Record tool call tracking for linking an existing options resource.
          */
-        post: operations["link_options_api_v4_resources_options_link_post"];
+        post: operations["link_options_api_v5_resources_options_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/options/search": {
+    "/api/v5/resources/options/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5580,14 +5580,14 @@ export interface paths {
          * Search Options
          * @description Search options resources.
          */
-        post: operations["search_options_api_v4_resources_options_search_post"];
+        post: operations["search_options_api_v5_resources_options_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/parameters/get": {
+    "/api/v5/resources/parameters/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5602,14 +5602,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_parameters_api_v4_resources_parameters_get_post"];
+        post: operations["get_parameters_api_v5_resources_parameters_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/parameters/search": {
+    "/api/v5/resources/parameters/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5619,14 +5619,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Search Parameters */
-        post: operations["search_parameters_api_v4_resources_parameters_search_post"];
+        post: operations["search_parameters_api_v5_resources_parameters_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/personas/get": {
+    "/api/v5/resources/personas/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5639,14 +5639,14 @@ export interface paths {
          * Get Persona
          * @description Get persona by ID.
          */
-        post: operations["get_persona_api_v4_resources_personas_get_post"];
+        post: operations["get_persona_api_v5_resources_personas_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/personas/link": {
+    "/api/v5/resources/personas/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -5659,14 +5659,14 @@ export interface paths {
          * Link Personas
          * @description Record tool call tracking for linking an existing personas resource.
          */
-        post: operations["link_personas_api_v4_resources_personas_link_post"];
+        post: operations["link_personas_api_v5_resources_personas_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/personas/search": {
+    "/api/v5/resources/personas/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5676,14 +5676,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Search Personas */
-        post: operations["search_personas_api_v4_resources_personas_search_post"];
+        post: operations["search_personas_api_v5_resources_personas_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/points": {
+    "/api/v5/resources/points": {
         parameters: {
             query?: never;
             header?: never;
@@ -5696,14 +5696,14 @@ export interface paths {
          * Create Points
          * @description Create points resource (always INSERT).
          */
-        post: operations["create_points_api_v4_resources_points_post"];
+        post: operations["create_points_api_v5_resources_points_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/points/get": {
+    "/api/v5/resources/points/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5716,14 +5716,14 @@ export interface paths {
          * Get Points
          * @description Get points resources by IDs.
          */
-        post: operations["get_points_api_v4_resources_points_get_post"];
+        post: operations["get_points_api_v5_resources_points_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/points/search": {
+    "/api/v5/resources/points/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5736,14 +5736,14 @@ export interface paths {
          * Search Points
          * @description Search points resources.
          */
-        post: operations["search_points_api_v4_resources_points_search_post"];
+        post: operations["search_points_api_v5_resources_points_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/pricing": {
+    "/api/v5/resources/pricing": {
         parameters: {
             query?: never;
             header?: never;
@@ -5756,14 +5756,14 @@ export interface paths {
          * Create Pricing
          * @description Create pricing resource (always INSERT).
          */
-        post: operations["create_pricing_api_v4_resources_pricing_post"];
+        post: operations["create_pricing_api_v5_resources_pricing_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/pricing/get": {
+    "/api/v5/resources/pricing/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5776,14 +5776,14 @@ export interface paths {
          * Get Pricing
          * @description Get pricing resources by IDs.
          */
-        post: operations["get_pricing_api_v4_resources_pricing_get_post"];
+        post: operations["get_pricing_api_v5_resources_pricing_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/pricing/search": {
+    "/api/v5/resources/pricing/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5796,14 +5796,14 @@ export interface paths {
          * Search Pricing
          * @description Search pricing resources.
          */
-        post: operations["search_pricing_api_v4_resources_pricing_search_post"];
+        post: operations["search_pricing_api_v5_resources_pricing_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/problem_statements": {
+    "/api/v5/resources/problem_statements": {
         parameters: {
             query?: never;
             header?: never;
@@ -5816,14 +5816,14 @@ export interface paths {
          * Create Problem Statements
          * @description Create problem_statements resource (always INSERT).
          */
-        post: operations["create_problem_statements_api_v4_resources_problem_statements_post"];
+        post: operations["create_problem_statements_api_v5_resources_problem_statements_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/problem_statements/get": {
+    "/api/v5/resources/problem_statements/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5836,14 +5836,14 @@ export interface paths {
          * Get Problem Statement
          * @description Get problem statement by ID.
          */
-        post: operations["get_problem_statement_api_v4_resources_problem_statements_get_post"];
+        post: operations["get_problem_statement_api_v5_resources_problem_statements_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/problem_statements/link": {
+    "/api/v5/resources/problem_statements/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -5856,14 +5856,14 @@ export interface paths {
          * Link Problem Statements
          * @description Record tool call tracking for linking an existing problem_statements resource.
          */
-        post: operations["link_problem_statements_api_v4_resources_problem_statements_link_post"];
+        post: operations["link_problem_statements_api_v5_resources_problem_statements_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/profiles/get": {
+    "/api/v5/resources/profiles/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5878,14 +5878,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_profiles_api_v4_resources_profiles_get_post"];
+        post: operations["get_profiles_api_v5_resources_profiles_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/profiles/search": {
+    "/api/v5/resources/profiles/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5898,14 +5898,14 @@ export interface paths {
          * Search Profiles
          * @description Search profiles resources.
          */
-        post: operations["search_profiles_api_v4_resources_profiles_search_post"];
+        post: operations["search_profiles_api_v5_resources_profiles_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/profiles/link": {
+    "/api/v5/resources/profiles/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -5918,14 +5918,14 @@ export interface paths {
          * Link Profiles
          * @description Record tool call tracking for linking an existing profile resource.
          */
-        post: operations["link_profiles_api_v4_resources_profiles_link_post"];
+        post: operations["link_profiles_api_v5_resources_profiles_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/prompts": {
+    "/api/v5/resources/prompts": {
         parameters: {
             query?: never;
             header?: never;
@@ -5938,14 +5938,14 @@ export interface paths {
          * Create Prompts
          * @description Create prompts resource (always INSERT).
          */
-        post: operations["create_prompts_api_v4_resources_prompts_post"];
+        post: operations["create_prompts_api_v5_resources_prompts_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/prompts/get": {
+    "/api/v5/resources/prompts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5958,14 +5958,14 @@ export interface paths {
          * Get Prompts
          * @description Get prompts resources by IDs.
          */
-        post: operations["get_prompts_api_v4_resources_prompts_get_post"];
+        post: operations["get_prompts_api_v5_resources_prompts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/prompts/search": {
+    "/api/v5/resources/prompts/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5978,14 +5978,14 @@ export interface paths {
          * Search Prompts
          * @description Search prompts resources.
          */
-        post: operations["search_prompts_api_v4_resources_prompts_search_post"];
+        post: operations["search_prompts_api_v5_resources_prompts_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/protocols": {
+    "/api/v5/resources/protocols": {
         parameters: {
             query?: never;
             header?: never;
@@ -5998,14 +5998,14 @@ export interface paths {
          * Create Protocols
          * @description Create protocols resource (always INSERT).
          */
-        post: operations["create_protocols_api_v4_resources_protocols_post"];
+        post: operations["create_protocols_api_v5_resources_protocols_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/protocols/get": {
+    "/api/v5/resources/protocols/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -6018,14 +6018,14 @@ export interface paths {
          * Get Protocols
          * @description Get protocols resources by IDs.
          */
-        post: operations["get_protocols_api_v4_resources_protocols_get_post"];
+        post: operations["get_protocols_api_v5_resources_protocols_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/protocols/search": {
+    "/api/v5/resources/protocols/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -6035,14 +6035,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Search Protocols */
-        post: operations["search_protocols_api_v4_resources_protocols_search_post"];
+        post: operations["search_protocols_api_v5_resources_protocols_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/providers/get": {
+    "/api/v5/resources/providers/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -6057,14 +6057,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_providers_api_v4_resources_providers_get_post"];
+        post: operations["get_providers_api_v5_resources_providers_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/providers/search": {
+    "/api/v5/resources/providers/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -6077,14 +6077,14 @@ export interface paths {
          * Search Providers
          * @description Search providers resources.
          */
-        post: operations["search_providers_api_v4_resources_providers_search_post"];
+        post: operations["search_providers_api_v5_resources_providers_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/qualities/get": {
+    "/api/v5/resources/qualities/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -6097,14 +6097,14 @@ export interface paths {
          * Get Qualities
          * @description Get qualities resources by IDs.
          */
-        post: operations["get_qualities_api_v4_resources_qualities_get_post"];
+        post: operations["get_qualities_api_v5_resources_qualities_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/qualities/search": {
+    "/api/v5/resources/qualities/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -6117,14 +6117,14 @@ export interface paths {
          * Search Qualities
          * @description Search qualities resources.
          */
-        post: operations["search_qualities_api_v4_resources_qualities_search_post"];
+        post: operations["search_qualities_api_v5_resources_qualities_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/questions": {
+    "/api/v5/resources/questions": {
         parameters: {
             query?: never;
             header?: never;
@@ -6137,14 +6137,14 @@ export interface paths {
          * Create Questions
          * @description Create questions resource (always INSERT).
          */
-        post: operations["create_questions_api_v4_resources_questions_post"];
+        post: operations["create_questions_api_v5_resources_questions_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/questions/get": {
+    "/api/v5/resources/questions/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -6157,14 +6157,14 @@ export interface paths {
          * Get Question
          * @description Get question by ID.
          */
-        post: operations["get_question_api_v4_resources_questions_get_post"];
+        post: operations["get_question_api_v5_resources_questions_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/questions/link": {
+    "/api/v5/resources/questions/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -6177,14 +6177,14 @@ export interface paths {
          * Link Questions
          * @description Record tool call tracking for linking an existing questions resource.
          */
-        post: operations["link_questions_api_v4_resources_questions_link_post"];
+        post: operations["link_questions_api_v5_resources_questions_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/reasoning_levels/get": {
+    "/api/v5/resources/reasoning_levels/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -6199,14 +6199,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_reasoning_levels_api_v4_resources_reasoning_levels_get_post"];
+        post: operations["get_reasoning_levels_api_v5_resources_reasoning_levels_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/reasoning_levels/search": {
+    "/api/v5/resources/reasoning_levels/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -6219,14 +6219,14 @@ export interface paths {
          * Search Reasoning Levels
          * @description Search reasoning_levels resources.
          */
-        post: operations["search_reasoning_levels_api_v4_resources_reasoning_levels_search_post"];
+        post: operations["search_reasoning_levels_api_v5_resources_reasoning_levels_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/request_limits": {
+    "/api/v5/resources/request_limits": {
         parameters: {
             query?: never;
             header?: never;
@@ -6239,14 +6239,14 @@ export interface paths {
          * Create Request Limits
          * @description Create request_limits resource (always INSERT).
          */
-        post: operations["create_request_limits_api_v4_resources_request_limits_post"];
+        post: operations["create_request_limits_api_v5_resources_request_limits_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/request_limits/get": {
+    "/api/v5/resources/request_limits/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -6259,14 +6259,14 @@ export interface paths {
          * Get Request Limits
          * @description Get request_limits resources by IDs.
          */
-        post: operations["get_request_limits_api_v4_resources_request_limits_get_post"];
+        post: operations["get_request_limits_api_v5_resources_request_limits_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/request_limits/search": {
+    "/api/v5/resources/request_limits/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -6279,14 +6279,14 @@ export interface paths {
          * Search Request Limits
          * @description Search request_limits resources.
          */
-        post: operations["search_request_limits_api_v4_resources_request_limits_search_post"];
+        post: operations["search_request_limits_api_v5_resources_request_limits_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/roles/get": {
+    "/api/v5/resources/roles/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -6301,14 +6301,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_roles_api_v4_resources_roles_get_post"];
+        post: operations["get_roles_api_v5_resources_roles_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/roles/search": {
+    "/api/v5/resources/roles/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -6321,14 +6321,14 @@ export interface paths {
          * Search Roles
          * @description Search roles resources.
          */
-        post: operations["search_roles_api_v4_resources_roles_search_post"];
+        post: operations["search_roles_api_v5_resources_roles_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/rubrics/get": {
+    "/api/v5/resources/rubrics/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -6341,14 +6341,14 @@ export interface paths {
          * Get Rubrics
          * @description Get rubrics by simulation ID.
          */
-        post: operations["get_rubrics_api_v4_resources_rubrics_get_post"];
+        post: operations["get_rubrics_api_v5_resources_rubrics_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/rubrics/search": {
+    "/api/v5/resources/rubrics/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -6361,14 +6361,14 @@ export interface paths {
          * Search Rubrics
          * @description Search rubrics resources.
          */
-        post: operations["search_rubrics_api_v4_resources_rubrics_search_post"];
+        post: operations["search_rubrics_api_v5_resources_rubrics_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/scenario_flags/get": {
+    "/api/v5/resources/scenario_flags/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -6381,14 +6381,14 @@ export interface paths {
          * Get Scenario Flags
          * @description Get scenario flags by resource IDs.
          */
-        post: operations["get_scenario_flags_api_v4_resources_scenario_flags_get_post"];
+        post: operations["get_scenario_flags_api_v5_resources_scenario_flags_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/scenario_flags/search": {
+    "/api/v5/resources/scenario_flags/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -6401,14 +6401,14 @@ export interface paths {
          * Search Scenario Flags
          * @description Search available scenario flags for scenarios.
          */
-        post: operations["search_scenario_flags_api_v4_resources_scenario_flags_search_post"];
+        post: operations["search_scenario_flags_api_v5_resources_scenario_flags_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/scenario_flags/link": {
+    "/api/v5/resources/scenario_flags/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -6421,14 +6421,14 @@ export interface paths {
          * Link Scenario Flags
          * @description Record tool call tracking for linking an existing scenario_flags resource.
          */
-        post: operations["link_scenario_flags_api_v4_resources_scenario_flags_link_post"];
+        post: operations["link_scenario_flags_api_v5_resources_scenario_flags_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/profile_personas": {
+    "/api/v5/resources/profile_personas": {
         parameters: {
             query?: never;
             header?: never;
@@ -6441,14 +6441,14 @@ export interface paths {
          * Create Profile Personas
          * @description Create profile_personas resource (always INSERT).
          */
-        post: operations["create_profile_personas_api_v4_resources_profile_personas_post"];
+        post: operations["create_profile_personas_api_v5_resources_profile_personas_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/profile_personas/get": {
+    "/api/v5/resources/profile_personas/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -6461,14 +6461,14 @@ export interface paths {
          * Get Profile Personas
          * @description Get profile personas by resource IDs.
          */
-        post: operations["get_profile_personas_api_v4_resources_profile_personas_get_post"];
+        post: operations["get_profile_personas_api_v5_resources_profile_personas_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/profile_personas/search": {
+    "/api/v5/resources/profile_personas/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -6481,14 +6481,14 @@ export interface paths {
          * Search Profile Personas
          * @description Search available profile personas for profiles.
          */
-        post: operations["search_profile_personas_api_v4_resources_profile_personas_search_post"];
+        post: operations["search_profile_personas_api_v5_resources_profile_personas_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/profile_personas/link": {
+    "/api/v5/resources/profile_personas/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -6501,14 +6501,14 @@ export interface paths {
          * Link Profile Personas
          * @description Record tool call tracking for linking an existing profile persona resource.
          */
-        post: operations["link_profile_personas_api_v4_resources_profile_personas_link_post"];
+        post: operations["link_profile_personas_api_v5_resources_profile_personas_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/scenario_positions": {
+    "/api/v5/resources/scenario_positions": {
         parameters: {
             query?: never;
             header?: never;
@@ -6521,14 +6521,14 @@ export interface paths {
          * Create Scenario Positions
          * @description Create scenario_positions resource (always INSERT).
          */
-        post: operations["create_scenario_positions_api_v4_resources_scenario_positions_post"];
+        post: operations["create_scenario_positions_api_v5_resources_scenario_positions_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/scenario_positions/get": {
+    "/api/v5/resources/scenario_positions/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -6541,14 +6541,14 @@ export interface paths {
          * Get Scenario Positions
          * @description Get scenario positions by resource IDs.
          */
-        post: operations["get_scenario_positions_api_v4_resources_scenario_positions_get_post"];
+        post: operations["get_scenario_positions_api_v5_resources_scenario_positions_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/scenario_positions/search": {
+    "/api/v5/resources/scenario_positions/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -6561,14 +6561,14 @@ export interface paths {
          * Search Scenario Positions
          * @description Search available scenario positions for scenarios.
          */
-        post: operations["search_scenario_positions_api_v4_resources_scenario_positions_search_post"];
+        post: operations["search_scenario_positions_api_v5_resources_scenario_positions_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/scenario_positions/link": {
+    "/api/v5/resources/scenario_positions/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -6581,14 +6581,14 @@ export interface paths {
          * Link Scenario Positions
          * @description Record tool call tracking for linking an existing scenario_positions resource.
          */
-        post: operations["link_scenario_positions_api_v4_resources_scenario_positions_link_post"];
+        post: operations["link_scenario_positions_api_v5_resources_scenario_positions_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/scenario_rubrics": {
+    "/api/v5/resources/scenario_rubrics": {
         parameters: {
             query?: never;
             header?: never;
@@ -6601,14 +6601,14 @@ export interface paths {
          * Create Scenario Rubrics
          * @description Create scenario_rubrics resource (always INSERT).
          */
-        post: operations["create_scenario_rubrics_api_v4_resources_scenario_rubrics_post"];
+        post: operations["create_scenario_rubrics_api_v5_resources_scenario_rubrics_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/scenario_rubrics/get": {
+    "/api/v5/resources/scenario_rubrics/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -6621,14 +6621,14 @@ export interface paths {
          * Get Scenario Rubrics
          * @description Get scenario rubrics by resource IDs.
          */
-        post: operations["get_scenario_rubrics_api_v4_resources_scenario_rubrics_get_post"];
+        post: operations["get_scenario_rubrics_api_v5_resources_scenario_rubrics_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/scenario_rubrics/search": {
+    "/api/v5/resources/scenario_rubrics/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -6641,14 +6641,14 @@ export interface paths {
          * Search Scenario Rubrics
          * @description Search available scenario rubrics for scenarios.
          */
-        post: operations["search_scenario_rubrics_api_v4_resources_scenario_rubrics_search_post"];
+        post: operations["search_scenario_rubrics_api_v5_resources_scenario_rubrics_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/scenario_rubrics/link": {
+    "/api/v5/resources/scenario_rubrics/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -6661,14 +6661,14 @@ export interface paths {
          * Link Scenario Rubrics
          * @description Record tool call tracking for linking an existing scenario_rubrics resource.
          */
-        post: operations["link_scenario_rubrics_api_v4_resources_scenario_rubrics_link_post"];
+        post: operations["link_scenario_rubrics_api_v5_resources_scenario_rubrics_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/scenario_time_limits": {
+    "/api/v5/resources/scenario_time_limits": {
         parameters: {
             query?: never;
             header?: never;
@@ -6681,14 +6681,14 @@ export interface paths {
          * Create Scenario Time Limits
          * @description Create scenario_time_limits resource (always INSERT).
          */
-        post: operations["create_scenario_time_limits_api_v4_resources_scenario_time_limits_post"];
+        post: operations["create_scenario_time_limits_api_v5_resources_scenario_time_limits_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/scenario_time_limits/get": {
+    "/api/v5/resources/scenario_time_limits/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -6701,14 +6701,14 @@ export interface paths {
          * Get Scenario Time Limits
          * @description Get scenario time limits by resource IDs.
          */
-        post: operations["get_scenario_time_limits_api_v4_resources_scenario_time_limits_get_post"];
+        post: operations["get_scenario_time_limits_api_v5_resources_scenario_time_limits_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/scenario_time_limits/search": {
+    "/api/v5/resources/scenario_time_limits/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -6721,14 +6721,14 @@ export interface paths {
          * Search Scenario Time Limits
          * @description Search available scenario time limits for scenarios.
          */
-        post: operations["search_scenario_time_limits_api_v4_resources_scenario_time_limits_search_post"];
+        post: operations["search_scenario_time_limits_api_v5_resources_scenario_time_limits_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/scenario_time_limits/link": {
+    "/api/v5/resources/scenario_time_limits/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -6741,14 +6741,14 @@ export interface paths {
          * Link Scenario Time Limits
          * @description Record tool call tracking for linking an existing scenario_time_limits resource.
          */
-        post: operations["link_scenario_time_limits_api_v4_resources_scenario_time_limits_link_post"];
+        post: operations["link_scenario_time_limits_api_v5_resources_scenario_time_limits_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/scenarios/get": {
+    "/api/v5/resources/scenarios/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -6761,14 +6761,14 @@ export interface paths {
          * Get Scenarios
          * @description Get scenarios by IDs.
          */
-        post: operations["get_scenarios_api_v4_resources_scenarios_get_post"];
+        post: operations["get_scenarios_api_v5_resources_scenarios_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/scenarios/search": {
+    "/api/v5/resources/scenarios/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -6781,14 +6781,14 @@ export interface paths {
          * Search Scenarios
          * @description Search scenarios with filtering and pagination.
          */
-        post: operations["search_scenarios_api_v4_resources_scenarios_search_post"];
+        post: operations["search_scenarios_api_v5_resources_scenarios_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/scenarios/link": {
+    "/api/v5/resources/scenarios/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -6801,14 +6801,14 @@ export interface paths {
          * Link Scenarios
          * @description Record tool call tracking for linking an existing scenario resource.
          */
-        post: operations["link_scenarios_api_v4_resources_scenarios_link_post"];
+        post: operations["link_scenarios_api_v5_resources_scenarios_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/settings/get": {
+    "/api/v5/resources/settings/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -6823,14 +6823,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_settings_api_v4_resources_settings_get_post"];
+        post: operations["get_settings_api_v5_resources_settings_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/settings/search": {
+    "/api/v5/resources/settings/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -6843,14 +6843,14 @@ export interface paths {
          * Search Settings
          * @description Search settings resources.
          */
-        post: operations["search_settings_api_v4_resources_settings_search_post"];
+        post: operations["search_settings_api_v5_resources_settings_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/simulation_positions": {
+    "/api/v5/resources/simulation_positions": {
         parameters: {
             query?: never;
             header?: never;
@@ -6863,14 +6863,14 @@ export interface paths {
          * Create Simulation Positions
          * @description Create simulation_positions resource (always INSERT).
          */
-        post: operations["create_simulation_positions_api_v4_resources_simulation_positions_post"];
+        post: operations["create_simulation_positions_api_v5_resources_simulation_positions_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/simulation_positions/get": {
+    "/api/v5/resources/simulation_positions/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -6883,14 +6883,14 @@ export interface paths {
          * Get Simulation Positions
          * @description Get simulation positions by simulation IDs.
          */
-        post: operations["get_simulation_positions_api_v4_resources_simulation_positions_get_post"];
+        post: operations["get_simulation_positions_api_v5_resources_simulation_positions_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/simulation_positions/search": {
+    "/api/v5/resources/simulation_positions/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -6903,14 +6903,14 @@ export interface paths {
          * Search Simulation Positions
          * @description Search simulation positions with optional filters.
          */
-        post: operations["search_simulation_positions_api_v4_resources_simulation_positions_search_post"];
+        post: operations["search_simulation_positions_api_v5_resources_simulation_positions_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/simulation_positions/link": {
+    "/api/v5/resources/simulation_positions/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -6923,14 +6923,14 @@ export interface paths {
          * Link Simulation Positions
          * @description Record tool call tracking for linking an existing simulation position resource.
          */
-        post: operations["link_simulation_positions_api_v4_resources_simulation_positions_link_post"];
+        post: operations["link_simulation_positions_api_v5_resources_simulation_positions_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/simulation_availability": {
+    "/api/v5/resources/simulation_availability": {
         parameters: {
             query?: never;
             header?: never;
@@ -6943,14 +6943,14 @@ export interface paths {
          * Create Simulation Availability
          * @description Create simulation_availability resource (always INSERT).
          */
-        post: operations["create_simulation_availability_api_v4_resources_simulation_availability_post"];
+        post: operations["create_simulation_availability_api_v5_resources_simulation_availability_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/simulation_availability/get": {
+    "/api/v5/resources/simulation_availability/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -6960,14 +6960,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Simulation Availability */
-        post: operations["get_simulation_availability_api_v4_resources_simulation_availability_get_post"];
+        post: operations["get_simulation_availability_api_v5_resources_simulation_availability_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/simulation_availability/search": {
+    "/api/v5/resources/simulation_availability/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -6977,14 +6977,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Search Simulation Availability */
-        post: operations["search_simulation_availability_api_v4_resources_simulation_availability_search_post"];
+        post: operations["search_simulation_availability_api_v5_resources_simulation_availability_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/simulation_availability/link": {
+    "/api/v5/resources/simulation_availability/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -6997,14 +6997,14 @@ export interface paths {
          * Link Simulation Availability
          * @description Record tool call tracking for linking an existing simulation availability resource.
          */
-        post: operations["link_simulation_availability_api_v4_resources_simulation_availability_link_post"];
+        post: operations["link_simulation_availability_api_v5_resources_simulation_availability_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/simulations/get": {
+    "/api/v5/resources/simulations/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -7017,14 +7017,14 @@ export interface paths {
          * Get Simulations
          * @description Get simulations by IDs.
          */
-        post: operations["get_simulations_api_v4_resources_simulations_get_post"];
+        post: operations["get_simulations_api_v5_resources_simulations_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/simulations/search": {
+    "/api/v5/resources/simulations/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -7037,14 +7037,14 @@ export interface paths {
          * Search Simulations
          * @description Search simulations with optional filters.
          */
-        post: operations["search_simulations_api_v4_resources_simulations_search_post"];
+        post: operations["search_simulations_api_v5_resources_simulations_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/simulations/link": {
+    "/api/v5/resources/simulations/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -7057,14 +7057,14 @@ export interface paths {
          * Link Simulations
          * @description Record tool call tracking for linking an existing simulation resource.
          */
-        post: operations["link_simulations_api_v4_resources_simulations_link_post"];
+        post: operations["link_simulations_api_v5_resources_simulations_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/slugs": {
+    "/api/v5/resources/slugs": {
         parameters: {
             query?: never;
             header?: never;
@@ -7077,14 +7077,14 @@ export interface paths {
          * Create Slugs
          * @description Create slugs resource (always INSERT).
          */
-        post: operations["create_slugs_api_v4_resources_slugs_post"];
+        post: operations["create_slugs_api_v5_resources_slugs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/slugs/get": {
+    "/api/v5/resources/slugs/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -7097,14 +7097,14 @@ export interface paths {
          * Get Slugs
          * @description Get slugs resources by IDs.
          */
-        post: operations["get_slugs_api_v4_resources_slugs_get_post"];
+        post: operations["get_slugs_api_v5_resources_slugs_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/slugs/search": {
+    "/api/v5/resources/slugs/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -7114,14 +7114,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Search Slugs */
-        post: operations["search_slugs_api_v4_resources_slugs_search_post"];
+        post: operations["search_slugs_api_v5_resources_slugs_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/standard_groups": {
+    "/api/v5/resources/standard_groups": {
         parameters: {
             query?: never;
             header?: never;
@@ -7134,14 +7134,14 @@ export interface paths {
          * Create Standard Groups
          * @description Create standard_groups resource (always INSERT).
          */
-        post: operations["create_standard_groups_api_v4_resources_standard_groups_post"];
+        post: operations["create_standard_groups_api_v5_resources_standard_groups_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/standard_groups/get": {
+    "/api/v5/resources/standard_groups/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -7154,14 +7154,14 @@ export interface paths {
          * Get Standard Groups
          * @description Get standard_groups by IDs.
          */
-        post: operations["get_standard_groups_api_v4_resources_standard_groups_get_post"];
+        post: operations["get_standard_groups_api_v5_resources_standard_groups_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/standard_groups/search": {
+    "/api/v5/resources/standard_groups/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -7174,14 +7174,14 @@ export interface paths {
          * Search Standard Groups
          * @description Search standard_groups resources.
          */
-        post: operations["search_standard_groups_api_v4_resources_standard_groups_search_post"];
+        post: operations["search_standard_groups_api_v5_resources_standard_groups_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/standards/get": {
+    "/api/v5/resources/standards/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -7194,14 +7194,14 @@ export interface paths {
          * Get Standards
          * @description Get standards by IDs.
          */
-        post: operations["get_standards_api_v4_resources_standards_get_post"];
+        post: operations["get_standards_api_v5_resources_standards_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/standards/search": {
+    "/api/v5/resources/standards/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -7214,14 +7214,14 @@ export interface paths {
          * Search Standards
          * @description Search standards resources.
          */
-        post: operations["search_standards_api_v4_resources_standards_search_post"];
+        post: operations["search_standards_api_v5_resources_standards_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/temperature_levels/get": {
+    "/api/v5/resources/temperature_levels/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -7236,14 +7236,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_temperature_levels_api_v4_resources_temperature_levels_get_post"];
+        post: operations["get_temperature_levels_api_v5_resources_temperature_levels_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/temperature_levels/search": {
+    "/api/v5/resources/temperature_levels/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -7256,14 +7256,14 @@ export interface paths {
          * Search Temperature Levels
          * @description Search temperature_levels resources.
          */
-        post: operations["search_temperature_levels_api_v4_resources_temperature_levels_search_post"];
+        post: operations["search_temperature_levels_api_v5_resources_temperature_levels_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/thresholds/get": {
+    "/api/v5/resources/thresholds/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -7278,14 +7278,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_thresholds_api_v4_resources_thresholds_get_post"];
+        post: operations["get_thresholds_api_v5_resources_thresholds_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/thresholds/search": {
+    "/api/v5/resources/thresholds/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -7298,14 +7298,14 @@ export interface paths {
          * Search Thresholds
          * @description Search thresholds resources.
          */
-        post: operations["search_thresholds_api_v4_resources_thresholds_search_post"];
+        post: operations["search_thresholds_api_v5_resources_thresholds_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/tools/get": {
+    "/api/v5/resources/tools/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -7320,14 +7320,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_tools_api_v4_resources_tools_get_post"];
+        post: operations["get_tools_api_v5_resources_tools_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/tools/search": {
+    "/api/v5/resources/tools/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -7340,14 +7340,14 @@ export interface paths {
          * Search Tools
          * @description Search tools resources.
          */
-        post: operations["search_tools_api_v4_resources_tools_search_post"];
+        post: operations["search_tools_api_v5_resources_tools_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/values": {
+    "/api/v5/resources/values": {
         parameters: {
             query?: never;
             header?: never;
@@ -7360,14 +7360,14 @@ export interface paths {
          * Create Values
          * @description Create values resource (always INSERT).
          */
-        post: operations["create_values_api_v4_resources_values_post"];
+        post: operations["create_values_api_v5_resources_values_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/values/get": {
+    "/api/v5/resources/values/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -7380,14 +7380,14 @@ export interface paths {
          * Get Values
          * @description Get values resources by IDs.
          */
-        post: operations["get_values_api_v4_resources_values_get_post"];
+        post: operations["get_values_api_v5_resources_values_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/values/search": {
+    "/api/v5/resources/values/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -7397,14 +7397,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Search Values */
-        post: operations["search_values_api_v4_resources_values_search_post"];
+        post: operations["search_values_api_v5_resources_values_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/videos": {
+    "/api/v5/resources/videos": {
         parameters: {
             query?: never;
             header?: never;
@@ -7417,14 +7417,14 @@ export interface paths {
          * Create Videos
          * @description Create videos resource (always INSERT).
          */
-        post: operations["create_videos_api_v4_resources_videos_post"];
+        post: operations["create_videos_api_v5_resources_videos_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/videos/get": {
+    "/api/v5/resources/videos/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -7437,14 +7437,14 @@ export interface paths {
          * Get Video
          * @description Get video by ID.
          */
-        post: operations["get_video_api_v4_resources_videos_get_post"];
+        post: operations["get_video_api_v5_resources_videos_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/videos/link": {
+    "/api/v5/resources/videos/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -7457,14 +7457,14 @@ export interface paths {
          * Link Videos
          * @description Record tool call tracking for linking an existing videos resource.
          */
-        post: operations["link_videos_api_v4_resources_videos_link_post"];
+        post: operations["link_videos_api_v5_resources_videos_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/voices": {
+    "/api/v5/resources/voices": {
         parameters: {
             query?: never;
             header?: never;
@@ -7477,14 +7477,14 @@ export interface paths {
          * Create Voices
          * @description Create voices resource (always INSERT).
          */
-        post: operations["create_voices_api_v4_resources_voices_post"];
+        post: operations["create_voices_api_v5_resources_voices_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/voices/get": {
+    "/api/v5/resources/voices/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -7497,14 +7497,14 @@ export interface paths {
          * Get Voices
          * @description Get voices resources by IDs.
          */
-        post: operations["get_voices_api_v4_resources_voices_get_post"];
+        post: operations["get_voices_api_v5_resources_voices_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/voices/link": {
+    "/api/v5/resources/voices/link": {
         parameters: {
             query?: never;
             header?: never;
@@ -7517,14 +7517,14 @@ export interface paths {
          * Link Voices
          * @description Record tool call tracking for linking an existing voice resource.
          */
-        post: operations["link_voices_api_v4_resources_voices_link_post"];
+        post: operations["link_voices_api_v5_resources_voices_link_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/voices/search": {
+    "/api/v5/resources/voices/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -7537,14 +7537,14 @@ export interface paths {
          * Search Voices
          * @description Search voices resources.
          */
-        post: operations["search_voices_api_v4_resources_voices_search_post"];
+        post: operations["search_voices_api_v5_resources_voices_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/texts": {
+    "/api/v5/resources/texts": {
         parameters: {
             query?: never;
             header?: never;
@@ -7557,14 +7557,14 @@ export interface paths {
          * Create Texts
          * @description Create texts resource (always INSERT).
          */
-        post: operations["create_texts_api_v4_resources_texts_post"];
+        post: operations["create_texts_api_v5_resources_texts_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/texts/get": {
+    "/api/v5/resources/texts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -7579,14 +7579,14 @@ export interface paths {
          *
          *     HTTP wrapper that delegates to internal function for caching and data fetching.
          */
-        post: operations["get_texts_api_v4_resources_texts_get_post"];
+        post: operations["get_texts_api_v5_resources_texts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/texts/search": {
+    "/api/v5/resources/texts/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -7596,14 +7596,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Search Texts */
-        post: operations["search_texts_api_v4_resources_texts_search_post"];
+        post: operations["search_texts_api_v5_resources_texts_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/uploads": {
+    "/api/v5/resources/uploads": {
         parameters: {
             query?: never;
             header?: never;
@@ -7616,14 +7616,14 @@ export interface paths {
          * Create Uploads
          * @description Create uploads resource (always INSERT).
          */
-        post: operations["create_uploads_api_v4_resources_uploads_post"];
+        post: operations["create_uploads_api_v5_resources_uploads_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/uploads/get": {
+    "/api/v5/resources/uploads/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -7636,14 +7636,14 @@ export interface paths {
          * Get Uploads
          * @description Get uploads resources by IDs.
          */
-        post: operations["get_uploads_api_v4_resources_uploads_get_post"];
+        post: operations["get_uploads_api_v5_resources_uploads_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/uploads/search": {
+    "/api/v5/resources/uploads/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -7656,14 +7656,14 @@ export interface paths {
          * Search Uploads
          * @description Search uploads resources.
          */
-        post: operations["search_uploads_api_v4_resources_uploads_search_post"];
+        post: operations["search_uploads_api_v5_resources_uploads_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/activity/get": {
+    "/api/v5/entries/activity/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -7676,14 +7676,14 @@ export interface paths {
          * Get Activity Entries
          * @description Get activity entries by IDs.
          */
-        post: operations["get_activity_entries_api_v4_entries_activity_get_post"];
+        post: operations["get_activity_entries_api_v5_entries_activity_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/activity/search": {
+    "/api/v5/entries/activity/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -7696,14 +7696,14 @@ export interface paths {
          * Search Activity Entries
          * @description Search activity entries.
          */
-        post: operations["search_activity_entries_api_v4_entries_activity_search_post"];
+        post: operations["search_activity_entries_api_v5_entries_activity_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/activity/refresh": {
+    "/api/v5/entries/activity/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -7716,14 +7716,14 @@ export interface paths {
          * Refresh Activity
          * @description Refresh the activity_mv materialized view.
          */
-        post: operations["refresh_activity_api_v4_entries_activity_refresh_post"];
+        post: operations["refresh_activity_api_v5_entries_activity_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/agent_drafts/get": {
+    "/api/v5/entries/agent_drafts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -7736,14 +7736,14 @@ export interface paths {
          * Get Agent Drafts Entries
          * @description Get agent_drafts entries by IDs.
          */
-        post: operations["get_agent_drafts_entries_api_v4_entries_agent_drafts_get_post"];
+        post: operations["get_agent_drafts_entries_api_v5_entries_agent_drafts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/agent_drafts/search": {
+    "/api/v5/entries/agent_drafts/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -7756,14 +7756,14 @@ export interface paths {
          * Search Agent Drafts Entries
          * @description Search agent_drafts entries.
          */
-        post: operations["search_agent_drafts_entries_api_v4_entries_agent_drafts_search_post"];
+        post: operations["search_agent_drafts_entries_api_v5_entries_agent_drafts_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/agent_drafts/refresh": {
+    "/api/v5/entries/agent_drafts/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -7776,14 +7776,14 @@ export interface paths {
          * Refresh Agent Drafts
          * @description Refresh the agent_drafts_mv materialized view.
          */
-        post: operations["refresh_agent_drafts_api_v4_entries_agent_drafts_refresh_post"];
+        post: operations["refresh_agent_drafts_api_v5_entries_agent_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt/get": {
+    "/api/v5/entries/attempt/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -7796,14 +7796,14 @@ export interface paths {
          * Get Attempt Entries
          * @description Get attempt entries by IDs.
          */
-        post: operations["get_attempt_entries_api_v4_entries_attempt_get_post"];
+        post: operations["get_attempt_entries_api_v5_entries_attempt_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt/search": {
+    "/api/v5/entries/attempt/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -7816,14 +7816,14 @@ export interface paths {
          * Search Attempt Entries
          * @description Search attempt entries.
          */
-        post: operations["search_attempt_entries_api_v4_entries_attempt_search_post"];
+        post: operations["search_attempt_entries_api_v5_entries_attempt_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt/refresh": {
+    "/api/v5/entries/attempt/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -7836,14 +7836,14 @@ export interface paths {
          * Refresh Attempt
          * @description Refresh the attempt_mv materialized view.
          */
-        post: operations["refresh_attempt_api_v4_entries_attempt_refresh_post"];
+        post: operations["refresh_attempt_api_v5_entries_attempt_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt/create": {
+    "/api/v5/entries/attempt/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -7856,14 +7856,14 @@ export interface paths {
          * Create Attempt Entry
          * @description Create attempt entry.
          */
-        post: operations["create_attempt_entry_api_v4_entries_attempt_create_post"];
+        post: operations["create_attempt_entry_api_v5_entries_attempt_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_analysis/get": {
+    "/api/v5/entries/attempt_analysis/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -7876,14 +7876,14 @@ export interface paths {
          * Get Attempt Analysis Entries
          * @description Get attempt_analysis entries by IDs.
          */
-        post: operations["get_attempt_analysis_entries_api_v4_entries_attempt_analysis_get_post"];
+        post: operations["get_attempt_analysis_entries_api_v5_entries_attempt_analysis_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_analysis/search": {
+    "/api/v5/entries/attempt_analysis/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -7896,14 +7896,14 @@ export interface paths {
          * Search Attempt Analysis Entries
          * @description Search attempt_analysis entries.
          */
-        post: operations["search_attempt_analysis_entries_api_v4_entries_attempt_analysis_search_post"];
+        post: operations["search_attempt_analysis_entries_api_v5_entries_attempt_analysis_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_analysis/refresh": {
+    "/api/v5/entries/attempt_analysis/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -7916,14 +7916,14 @@ export interface paths {
          * Refresh Attempt Analysis
          * @description Refresh the attempt_analysis_mv materialized view.
          */
-        post: operations["refresh_attempt_analysis_api_v4_entries_attempt_analysis_refresh_post"];
+        post: operations["refresh_attempt_analysis_api_v5_entries_attempt_analysis_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt-analysis/create": {
+    "/api/v5/entries/attempt-analysis/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -7936,14 +7936,14 @@ export interface paths {
          * Create Attempt Analysis Entry
          * @description Create attempt_analysis entry.
          */
-        post: operations["create_attempt_analysis_entry_api_v4_entries_attempt_analysis_create_post"];
+        post: operations["create_attempt_analysis_entry_api_v5_entries_attempt_analysis_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_archive/get": {
+    "/api/v5/entries/attempt_archive/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -7956,14 +7956,14 @@ export interface paths {
          * Get Attempt Archive Entries
          * @description Get attempt_archive entries by IDs.
          */
-        post: operations["get_attempt_archive_entries_api_v4_entries_attempt_archive_get_post"];
+        post: operations["get_attempt_archive_entries_api_v5_entries_attempt_archive_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt-archive/create": {
+    "/api/v5/entries/attempt-archive/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -7976,14 +7976,14 @@ export interface paths {
          * Create Attempt Archive Entry
          * @description Create attempt_archive entry.
          */
-        post: operations["create_attempt_archive_entry_api_v4_entries_attempt_archive_create_post"];
+        post: operations["create_attempt_archive_entry_api_v5_entries_attempt_archive_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_archive/search": {
+    "/api/v5/entries/attempt_archive/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -7996,14 +7996,14 @@ export interface paths {
          * Search Attempt Archive Entries
          * @description Search attempt_archive entries.
          */
-        post: operations["search_attempt_archive_entries_api_v4_entries_attempt_archive_search_post"];
+        post: operations["search_attempt_archive_entries_api_v5_entries_attempt_archive_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_archive/refresh": {
+    "/api/v5/entries/attempt_archive/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -8016,14 +8016,14 @@ export interface paths {
          * Refresh Attempt Archive
          * @description Refresh the attempt_archive_mv materialized view.
          */
-        post: operations["refresh_attempt_archive_api_v4_entries_attempt_archive_refresh_post"];
+        post: operations["refresh_attempt_archive_api_v5_entries_attempt_archive_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_chat/get": {
+    "/api/v5/entries/attempt_chat/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -8036,14 +8036,14 @@ export interface paths {
          * Get Attempt Chat Entries
          * @description Get attempt_chat entries by IDs.
          */
-        post: operations["get_attempt_chat_entries_api_v4_entries_attempt_chat_get_post"];
+        post: operations["get_attempt_chat_entries_api_v5_entries_attempt_chat_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_chat/search": {
+    "/api/v5/entries/attempt_chat/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -8056,14 +8056,14 @@ export interface paths {
          * Search Attempt Chat Entries
          * @description Search attempt_chat entries.
          */
-        post: operations["search_attempt_chat_entries_api_v4_entries_attempt_chat_search_post"];
+        post: operations["search_attempt_chat_entries_api_v5_entries_attempt_chat_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_chat/refresh": {
+    "/api/v5/entries/attempt_chat/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -8076,14 +8076,14 @@ export interface paths {
          * Refresh Attempt Chat
          * @description Refresh the attempt_chat_mv materialized view.
          */
-        post: operations["refresh_attempt_chat_api_v4_entries_attempt_chat_refresh_post"];
+        post: operations["refresh_attempt_chat_api_v5_entries_attempt_chat_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt-chat/create": {
+    "/api/v5/entries/attempt-chat/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -8096,14 +8096,14 @@ export interface paths {
          * Create Attempt Chat Entry
          * @description Create attempt_chat entry.
          */
-        post: operations["create_attempt_chat_entry_api_v4_entries_attempt_chat_create_post"];
+        post: operations["create_attempt_chat_entry_api_v5_entries_attempt_chat_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt-chat-bridge/create": {
+    "/api/v5/entries/attempt-chat-bridge/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -8116,14 +8116,14 @@ export interface paths {
          * Create Attempt Chat Bridge Entry
          * @description Create attempt_chat_bridge entry.
          */
-        post: operations["create_attempt_chat_bridge_entry_api_v4_entries_attempt_chat_bridge_create_post"];
+        post: operations["create_attempt_chat_bridge_entry_api_v5_entries_attempt_chat_bridge_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt-chat-bridge/search": {
+    "/api/v5/entries/attempt-chat-bridge/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -8136,14 +8136,14 @@ export interface paths {
          * Search Attempt Chat Bridge Entries
          * @description Search attempt_chat_bridge entries.
          */
-        post: operations["search_attempt_chat_bridge_entries_api_v4_entries_attempt_chat_bridge_search_post"];
+        post: operations["search_attempt_chat_bridge_entries_api_v5_entries_attempt_chat_bridge_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt-home/create": {
+    "/api/v5/entries/attempt-home/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -8156,14 +8156,14 @@ export interface paths {
          * Create Attempt Home Entry
          * @description Create attempt_home bridge entry.
          */
-        post: operations["create_attempt_home_entry_api_v4_entries_attempt_home_create_post"];
+        post: operations["create_attempt_home_entry_api_v5_entries_attempt_home_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt-home/search": {
+    "/api/v5/entries/attempt-home/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -8176,14 +8176,14 @@ export interface paths {
          * Search Attempt Home Entries
          * @description Search attempt_home entries.
          */
-        post: operations["search_attempt_home_entries_api_v4_entries_attempt_home_search_post"];
+        post: operations["search_attempt_home_entries_api_v5_entries_attempt_home_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_completion/get": {
+    "/api/v5/entries/attempt_completion/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -8196,14 +8196,14 @@ export interface paths {
          * Get Attempt Completion Entries
          * @description Get attempt_completion entries by IDs.
          */
-        post: operations["get_attempt_completion_entries_api_v4_entries_attempt_completion_get_post"];
+        post: operations["get_attempt_completion_entries_api_v5_entries_attempt_completion_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_completion/search": {
+    "/api/v5/entries/attempt_completion/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -8216,14 +8216,14 @@ export interface paths {
          * Search Attempt Completion Entries
          * @description Search attempt_completion entries.
          */
-        post: operations["search_attempt_completion_entries_api_v4_entries_attempt_completion_search_post"];
+        post: operations["search_attempt_completion_entries_api_v5_entries_attempt_completion_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_completion/refresh": {
+    "/api/v5/entries/attempt_completion/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -8236,14 +8236,14 @@ export interface paths {
          * Refresh Attempt Completion
          * @description Refresh the attempt_completion_mv materialized view.
          */
-        post: operations["refresh_attempt_completion_api_v4_entries_attempt_completion_refresh_post"];
+        post: operations["refresh_attempt_completion_api_v5_entries_attempt_completion_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt-completion/create": {
+    "/api/v5/entries/attempt-completion/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -8256,14 +8256,14 @@ export interface paths {
          * Create Attempt Completion Entry
          * @description Create attempt_completion entry.
          */
-        post: operations["create_attempt_completion_entry_api_v4_entries_attempt_completion_create_post"];
+        post: operations["create_attempt_completion_entry_api_v5_entries_attempt_completion_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_content/get": {
+    "/api/v5/entries/attempt_content/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -8276,14 +8276,14 @@ export interface paths {
          * Get Attempt Content Entries
          * @description Get attempt_content entries by IDs.
          */
-        post: operations["get_attempt_content_entries_api_v4_entries_attempt_content_get_post"];
+        post: operations["get_attempt_content_entries_api_v5_entries_attempt_content_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_content/search": {
+    "/api/v5/entries/attempt_content/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -8296,14 +8296,14 @@ export interface paths {
          * Search Attempt Content Entries
          * @description Search attempt_content entries.
          */
-        post: operations["search_attempt_content_entries_api_v4_entries_attempt_content_search_post"];
+        post: operations["search_attempt_content_entries_api_v5_entries_attempt_content_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_content/refresh": {
+    "/api/v5/entries/attempt_content/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -8316,14 +8316,14 @@ export interface paths {
          * Refresh Attempt Content
          * @description Refresh the attempt_content_mv materialized view.
          */
-        post: operations["refresh_attempt_content_api_v4_entries_attempt_content_refresh_post"];
+        post: operations["refresh_attempt_content_api_v5_entries_attempt_content_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt-content/create": {
+    "/api/v5/entries/attempt-content/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -8336,14 +8336,14 @@ export interface paths {
          * Create Attempt Content Entry
          * @description Create attempt_content entry.
          */
-        post: operations["create_attempt_content_entry_api_v4_entries_attempt_content_create_post"];
+        post: operations["create_attempt_content_entry_api_v5_entries_attempt_content_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_feedback/get": {
+    "/api/v5/entries/attempt_feedback/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -8356,14 +8356,14 @@ export interface paths {
          * Get Attempt Feedback Entries
          * @description Get attempt_feedback entries by IDs.
          */
-        post: operations["get_attempt_feedback_entries_api_v4_entries_attempt_feedback_get_post"];
+        post: operations["get_attempt_feedback_entries_api_v5_entries_attempt_feedback_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_feedback/search": {
+    "/api/v5/entries/attempt_feedback/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -8376,14 +8376,14 @@ export interface paths {
          * Search Attempt Feedback Entries
          * @description Search attempt_feedback entries.
          */
-        post: operations["search_attempt_feedback_entries_api_v4_entries_attempt_feedback_search_post"];
+        post: operations["search_attempt_feedback_entries_api_v5_entries_attempt_feedback_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_feedback/refresh": {
+    "/api/v5/entries/attempt_feedback/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -8396,14 +8396,14 @@ export interface paths {
          * Refresh Attempt Feedback
          * @description Refresh the attempt_feedback_mv materialized view.
          */
-        post: operations["refresh_attempt_feedback_api_v4_entries_attempt_feedback_refresh_post"];
+        post: operations["refresh_attempt_feedback_api_v5_entries_attempt_feedback_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt-feedback/create": {
+    "/api/v5/entries/attempt-feedback/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -8416,14 +8416,14 @@ export interface paths {
          * Create Attempt Feedback Entry
          * @description Create attempt_feedback entry.
          */
-        post: operations["create_attempt_feedback_entry_api_v4_entries_attempt_feedback_create_post"];
+        post: operations["create_attempt_feedback_entry_api_v5_entries_attempt_feedback_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_grade/get": {
+    "/api/v5/entries/attempt_grade/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -8436,14 +8436,14 @@ export interface paths {
          * Get Attempt Grade Entries
          * @description Get attempt_grade entries by IDs.
          */
-        post: operations["get_attempt_grade_entries_api_v4_entries_attempt_grade_get_post"];
+        post: operations["get_attempt_grade_entries_api_v5_entries_attempt_grade_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_grade/search": {
+    "/api/v5/entries/attempt_grade/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -8456,14 +8456,14 @@ export interface paths {
          * Search Attempt Grade Entries
          * @description Search attempt_grade entries.
          */
-        post: operations["search_attempt_grade_entries_api_v4_entries_attempt_grade_search_post"];
+        post: operations["search_attempt_grade_entries_api_v5_entries_attempt_grade_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_grade/refresh": {
+    "/api/v5/entries/attempt_grade/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -8476,14 +8476,14 @@ export interface paths {
          * Refresh Attempt Grade
          * @description Refresh the attempt_grade_mv materialized view.
          */
-        post: operations["refresh_attempt_grade_api_v4_entries_attempt_grade_refresh_post"];
+        post: operations["refresh_attempt_grade_api_v5_entries_attempt_grade_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt-grade/create": {
+    "/api/v5/entries/attempt-grade/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -8496,14 +8496,14 @@ export interface paths {
          * Create Attempt Grade Entry
          * @description Create attempt_grade entry.
          */
-        post: operations["create_attempt_grade_entry_api_v4_entries_attempt_grade_create_post"];
+        post: operations["create_attempt_grade_entry_api_v5_entries_attempt_grade_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_highlight/get": {
+    "/api/v5/entries/attempt_highlight/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -8516,14 +8516,14 @@ export interface paths {
          * Get Attempt Highlight Entries
          * @description Get attempt_highlight entries by IDs.
          */
-        post: operations["get_attempt_highlight_entries_api_v4_entries_attempt_highlight_get_post"];
+        post: operations["get_attempt_highlight_entries_api_v5_entries_attempt_highlight_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_highlight/search": {
+    "/api/v5/entries/attempt_highlight/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -8536,14 +8536,14 @@ export interface paths {
          * Search Attempt Highlight Entries
          * @description Search attempt_highlight entries.
          */
-        post: operations["search_attempt_highlight_entries_api_v4_entries_attempt_highlight_search_post"];
+        post: operations["search_attempt_highlight_entries_api_v5_entries_attempt_highlight_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_highlight/refresh": {
+    "/api/v5/entries/attempt_highlight/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -8556,14 +8556,14 @@ export interface paths {
          * Refresh Attempt Highlight
          * @description Refresh the attempt_highlight_mv materialized view.
          */
-        post: operations["refresh_attempt_highlight_api_v4_entries_attempt_highlight_refresh_post"];
+        post: operations["refresh_attempt_highlight_api_v5_entries_attempt_highlight_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt-highlight/create": {
+    "/api/v5/entries/attempt-highlight/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -8576,14 +8576,14 @@ export interface paths {
          * Create Attempt Highlight Entry
          * @description Create attempt_highlight entry.
          */
-        post: operations["create_attempt_highlight_entry_api_v4_entries_attempt_highlight_create_post"];
+        post: operations["create_attempt_highlight_entry_api_v5_entries_attempt_highlight_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_hint/get": {
+    "/api/v5/entries/attempt_hint/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -8596,14 +8596,14 @@ export interface paths {
          * Get Attempt Hint Entries
          * @description Get attempt_hint entries by IDs.
          */
-        post: operations["get_attempt_hint_entries_api_v4_entries_attempt_hint_get_post"];
+        post: operations["get_attempt_hint_entries_api_v5_entries_attempt_hint_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_hint/search": {
+    "/api/v5/entries/attempt_hint/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -8616,14 +8616,14 @@ export interface paths {
          * Search Attempt Hint Entries
          * @description Search attempt_hint entries.
          */
-        post: operations["search_attempt_hint_entries_api_v4_entries_attempt_hint_search_post"];
+        post: operations["search_attempt_hint_entries_api_v5_entries_attempt_hint_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_hint/refresh": {
+    "/api/v5/entries/attempt_hint/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -8636,14 +8636,14 @@ export interface paths {
          * Refresh Attempt Hint
          * @description Refresh the attempt_hint_mv materialized view.
          */
-        post: operations["refresh_attempt_hint_api_v4_entries_attempt_hint_refresh_post"];
+        post: operations["refresh_attempt_hint_api_v5_entries_attempt_hint_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt-hint/create": {
+    "/api/v5/entries/attempt-hint/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -8656,14 +8656,14 @@ export interface paths {
          * Create Attempt Hint Entry
          * @description Create attempt_hint entry.
          */
-        post: operations["create_attempt_hint_entry_api_v4_entries_attempt_hint_create_post"];
+        post: operations["create_attempt_hint_entry_api_v5_entries_attempt_hint_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_improvement/get": {
+    "/api/v5/entries/attempt_improvement/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -8676,14 +8676,14 @@ export interface paths {
          * Get Attempt Improvement Entries
          * @description Get attempt_improvement entries by IDs.
          */
-        post: operations["get_attempt_improvement_entries_api_v4_entries_attempt_improvement_get_post"];
+        post: operations["get_attempt_improvement_entries_api_v5_entries_attempt_improvement_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_improvement/search": {
+    "/api/v5/entries/attempt_improvement/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -8696,14 +8696,14 @@ export interface paths {
          * Search Attempt Improvement Entries
          * @description Search attempt_improvement entries.
          */
-        post: operations["search_attempt_improvement_entries_api_v4_entries_attempt_improvement_search_post"];
+        post: operations["search_attempt_improvement_entries_api_v5_entries_attempt_improvement_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_improvement/refresh": {
+    "/api/v5/entries/attempt_improvement/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -8716,14 +8716,14 @@ export interface paths {
          * Refresh Attempt Improvement
          * @description Refresh the attempt_improvement_mv materialized view.
          */
-        post: operations["refresh_attempt_improvement_api_v4_entries_attempt_improvement_refresh_post"];
+        post: operations["refresh_attempt_improvement_api_v5_entries_attempt_improvement_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt-improvement/create": {
+    "/api/v5/entries/attempt-improvement/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -8736,14 +8736,14 @@ export interface paths {
          * Create Attempt Improvement Entry
          * @description Create attempt_improvement entry.
          */
-        post: operations["create_attempt_improvement_entry_api_v4_entries_attempt_improvement_create_post"];
+        post: operations["create_attempt_improvement_entry_api_v5_entries_attempt_improvement_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_message/get": {
+    "/api/v5/entries/attempt_message/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -8756,14 +8756,14 @@ export interface paths {
          * Get Attempt Message Entries
          * @description Get attempt_message entries by IDs.
          */
-        post: operations["get_attempt_message_entries_api_v4_entries_attempt_message_get_post"];
+        post: operations["get_attempt_message_entries_api_v5_entries_attempt_message_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_message/search": {
+    "/api/v5/entries/attempt_message/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -8776,14 +8776,14 @@ export interface paths {
          * Search Attempt Message Entries
          * @description Search attempt_message entries.
          */
-        post: operations["search_attempt_message_entries_api_v4_entries_attempt_message_search_post"];
+        post: operations["search_attempt_message_entries_api_v5_entries_attempt_message_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_message/refresh": {
+    "/api/v5/entries/attempt_message/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -8796,14 +8796,14 @@ export interface paths {
          * Refresh Attempt Message
          * @description Refresh the attempt_message_mv materialized view.
          */
-        post: operations["refresh_attempt_message_api_v4_entries_attempt_message_refresh_post"];
+        post: operations["refresh_attempt_message_api_v5_entries_attempt_message_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt-message/create": {
+    "/api/v5/entries/attempt-message/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -8816,14 +8816,14 @@ export interface paths {
          * Create Attempt Message Entry
          * @description Create attempt_message entry.
          */
-        post: operations["create_attempt_message_entry_api_v4_entries_attempt_message_create_post"];
+        post: operations["create_attempt_message_entry_api_v5_entries_attempt_message_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt-practice/create": {
+    "/api/v5/entries/attempt-practice/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -8836,14 +8836,14 @@ export interface paths {
          * Create Attempt Practice Entry
          * @description Create attempt_practice bridge entry.
          */
-        post: operations["create_attempt_practice_entry_api_v4_entries_attempt_practice_create_post"];
+        post: operations["create_attempt_practice_entry_api_v5_entries_attempt_practice_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt-practice/search": {
+    "/api/v5/entries/attempt-practice/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -8856,14 +8856,14 @@ export interface paths {
          * Search Attempt Practice Entries
          * @description Search attempt_practice entries.
          */
-        post: operations["search_attempt_practice_entries_api_v4_entries_attempt_practice_search_post"];
+        post: operations["search_attempt_practice_entries_api_v5_entries_attempt_practice_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_message_tree/get": {
+    "/api/v5/entries/attempt_message_tree/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -8876,14 +8876,14 @@ export interface paths {
          * Get Attempt Message Tree Entries
          * @description Get attempt_message_tree entries by IDs.
          */
-        post: operations["get_attempt_message_tree_entries_api_v4_entries_attempt_message_tree_get_post"];
+        post: operations["get_attempt_message_tree_entries_api_v5_entries_attempt_message_tree_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_message_tree/search": {
+    "/api/v5/entries/attempt_message_tree/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -8896,14 +8896,14 @@ export interface paths {
          * Search Attempt Message Tree Entries
          * @description Search attempt_message_tree entries.
          */
-        post: operations["search_attempt_message_tree_entries_api_v4_entries_attempt_message_tree_search_post"];
+        post: operations["search_attempt_message_tree_entries_api_v5_entries_attempt_message_tree_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_message_tree/refresh": {
+    "/api/v5/entries/attempt_message_tree/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -8916,14 +8916,14 @@ export interface paths {
          * Refresh Attempt Message Tree
          * @description Refresh the attempt_message_tree_mv materialized view.
          */
-        post: operations["refresh_attempt_message_tree_api_v4_entries_attempt_message_tree_refresh_post"];
+        post: operations["refresh_attempt_message_tree_api_v5_entries_attempt_message_tree_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_replacement/get": {
+    "/api/v5/entries/attempt_replacement/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -8936,14 +8936,14 @@ export interface paths {
          * Get Attempt Replacement Entries
          * @description Get attempt_replacement entries by IDs.
          */
-        post: operations["get_attempt_replacement_entries_api_v4_entries_attempt_replacement_get_post"];
+        post: operations["get_attempt_replacement_entries_api_v5_entries_attempt_replacement_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_replacement/search": {
+    "/api/v5/entries/attempt_replacement/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -8956,14 +8956,14 @@ export interface paths {
          * Search Attempt Replacement Entries
          * @description Search attempt_replacement entries.
          */
-        post: operations["search_attempt_replacement_entries_api_v4_entries_attempt_replacement_search_post"];
+        post: operations["search_attempt_replacement_entries_api_v5_entries_attempt_replacement_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_replacement/refresh": {
+    "/api/v5/entries/attempt_replacement/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -8976,14 +8976,14 @@ export interface paths {
          * Refresh Attempt Replacement
          * @description Refresh the attempt_replacement_mv materialized view.
          */
-        post: operations["refresh_attempt_replacement_api_v4_entries_attempt_replacement_refresh_post"];
+        post: operations["refresh_attempt_replacement_api_v5_entries_attempt_replacement_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt-replacement/create": {
+    "/api/v5/entries/attempt-replacement/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -8996,14 +8996,14 @@ export interface paths {
          * Create Attempt Replacement Entry
          * @description Create attempt_replacement entry.
          */
-        post: operations["create_attempt_replacement_entry_api_v4_entries_attempt_replacement_create_post"];
+        post: operations["create_attempt_replacement_entry_api_v5_entries_attempt_replacement_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_strength/get": {
+    "/api/v5/entries/attempt_strength/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -9016,14 +9016,14 @@ export interface paths {
          * Get Attempt Strength Entries
          * @description Get attempt_strength entries by IDs.
          */
-        post: operations["get_attempt_strength_entries_api_v4_entries_attempt_strength_get_post"];
+        post: operations["get_attempt_strength_entries_api_v5_entries_attempt_strength_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_strength/search": {
+    "/api/v5/entries/attempt_strength/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -9036,14 +9036,14 @@ export interface paths {
          * Search Attempt Strength Entries
          * @description Search attempt_strength entries.
          */
-        post: operations["search_attempt_strength_entries_api_v4_entries_attempt_strength_search_post"];
+        post: operations["search_attempt_strength_entries_api_v5_entries_attempt_strength_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt_strength/refresh": {
+    "/api/v5/entries/attempt_strength/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -9056,14 +9056,14 @@ export interface paths {
          * Refresh Attempt Strength
          * @description Refresh the attempt_strength_mv materialized view.
          */
-        post: operations["refresh_attempt_strength_api_v4_entries_attempt_strength_refresh_post"];
+        post: operations["refresh_attempt_strength_api_v5_entries_attempt_strength_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/attempt-strength/create": {
+    "/api/v5/entries/attempt-strength/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -9076,14 +9076,14 @@ export interface paths {
          * Create Attempt Strength Entry
          * @description Create attempt_strength entry.
          */
-        post: operations["create_attempt_strength_entry_api_v4_entries_attempt_strength_create_post"];
+        post: operations["create_attempt_strength_entry_api_v5_entries_attempt_strength_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/audios/get": {
+    "/api/v5/entries/audios/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -9096,14 +9096,14 @@ export interface paths {
          * Get Audios Entries
          * @description Get audios entries by IDs.
          */
-        post: operations["get_audios_entries_api_v4_entries_audios_get_post"];
+        post: operations["get_audios_entries_api_v5_entries_audios_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/audios/search": {
+    "/api/v5/entries/audios/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -9116,14 +9116,14 @@ export interface paths {
          * Search Audios Entries
          * @description Search audios entries.
          */
-        post: operations["search_audios_entries_api_v4_entries_audios_search_post"];
+        post: operations["search_audios_entries_api_v5_entries_audios_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/audios/refresh": {
+    "/api/v5/entries/audios/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -9136,14 +9136,14 @@ export interface paths {
          * Refresh Audios
          * @description Refresh the audios_mv materialized view.
          */
-        post: operations["refresh_audios_api_v4_entries_audios_refresh_post"];
+        post: operations["refresh_audios_api_v5_entries_audios_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/auth_drafts/get": {
+    "/api/v5/entries/auth_drafts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -9156,14 +9156,14 @@ export interface paths {
          * Get Auth Drafts Entries
          * @description Get auth_drafts entries by IDs.
          */
-        post: operations["get_auth_drafts_entries_api_v4_entries_auth_drafts_get_post"];
+        post: operations["get_auth_drafts_entries_api_v5_entries_auth_drafts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/auth_drafts/search": {
+    "/api/v5/entries/auth_drafts/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -9176,14 +9176,14 @@ export interface paths {
          * Search Auth Drafts Entries
          * @description Search auth_drafts entries.
          */
-        post: operations["search_auth_drafts_entries_api_v4_entries_auth_drafts_search_post"];
+        post: operations["search_auth_drafts_entries_api_v5_entries_auth_drafts_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/auth_drafts/refresh": {
+    "/api/v5/entries/auth_drafts/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -9196,14 +9196,14 @@ export interface paths {
          * Refresh Auth Drafts
          * @description Refresh the auth_drafts_mv materialized view.
          */
-        post: operations["refresh_auth_drafts_api_v4_entries_auth_drafts_refresh_post"];
+        post: operations["refresh_auth_drafts_api_v5_entries_auth_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/benchmark/get": {
+    "/api/v5/entries/benchmark/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -9216,14 +9216,14 @@ export interface paths {
          * Get Benchmark Entries
          * @description Get benchmark entries by IDs.
          */
-        post: operations["get_benchmark_entries_api_v4_entries_benchmark_get_post"];
+        post: operations["get_benchmark_entries_api_v5_entries_benchmark_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/benchmark/search": {
+    "/api/v5/entries/benchmark/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -9236,14 +9236,14 @@ export interface paths {
          * Search Benchmark Entries
          * @description Search benchmark entries.
          */
-        post: operations["search_benchmark_entries_api_v4_entries_benchmark_search_post"];
+        post: operations["search_benchmark_entries_api_v5_entries_benchmark_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/benchmark/refresh": {
+    "/api/v5/entries/benchmark/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -9256,14 +9256,14 @@ export interface paths {
          * Refresh Benchmark
          * @description Refresh the benchmark_mv materialized view.
          */
-        post: operations["refresh_benchmark_api_v4_entries_benchmark_refresh_post"];
+        post: operations["refresh_benchmark_api_v5_entries_benchmark_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/calls/get": {
+    "/api/v5/entries/calls/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -9276,14 +9276,14 @@ export interface paths {
          * Get Calls Entries
          * @description Get calls entries by IDs.
          */
-        post: operations["get_calls_entries_api_v4_entries_calls_get_post"];
+        post: operations["get_calls_entries_api_v5_entries_calls_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/calls/search": {
+    "/api/v5/entries/calls/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -9296,14 +9296,14 @@ export interface paths {
          * Search Calls Entries
          * @description Search calls entries.
          */
-        post: operations["search_calls_entries_api_v4_entries_calls_search_post"];
+        post: operations["search_calls_entries_api_v5_entries_calls_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/calls/refresh": {
+    "/api/v5/entries/calls/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -9316,14 +9316,14 @@ export interface paths {
          * Refresh Calls
          * @description Refresh the calls_mv materialized view.
          */
-        post: operations["refresh_calls_api_v4_entries_calls_refresh_post"];
+        post: operations["refresh_calls_api_v5_entries_calls_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/certificates/get": {
+    "/api/v5/entries/certificates/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -9336,14 +9336,14 @@ export interface paths {
          * Get Certificates Entries
          * @description Get certificates entries by IDs.
          */
-        post: operations["get_certificates_entries_api_v4_entries_certificates_get_post"];
+        post: operations["get_certificates_entries_api_v5_entries_certificates_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/certificates/search": {
+    "/api/v5/entries/certificates/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -9356,14 +9356,14 @@ export interface paths {
          * Search Certificates Entries
          * @description Search certificates entries.
          */
-        post: operations["search_certificates_entries_api_v4_entries_certificates_search_post"];
+        post: operations["search_certificates_entries_api_v5_entries_certificates_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/certificates/refresh": {
+    "/api/v5/entries/certificates/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -9376,14 +9376,14 @@ export interface paths {
          * Refresh Certificates
          * @description Refresh the certificates_mv materialized view.
          */
-        post: operations["refresh_certificates_api_v4_entries_certificates_refresh_post"];
+        post: operations["refresh_certificates_api_v5_entries_certificates_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/certificates/create": {
+    "/api/v5/entries/certificates/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -9396,14 +9396,14 @@ export interface paths {
          * Create Certificates Entry
          * @description Create certificates entry.
          */
-        post: operations["create_certificates_entry_api_v4_entries_certificates_create_post"];
+        post: operations["create_certificates_entry_api_v5_entries_certificates_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/cohort_drafts/get": {
+    "/api/v5/entries/cohort_drafts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -9416,14 +9416,14 @@ export interface paths {
          * Get Cohort Drafts Entries
          * @description Get cohort_drafts entries by IDs.
          */
-        post: operations["get_cohort_drafts_entries_api_v4_entries_cohort_drafts_get_post"];
+        post: operations["get_cohort_drafts_entries_api_v5_entries_cohort_drafts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/cohort_drafts/search": {
+    "/api/v5/entries/cohort_drafts/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -9436,14 +9436,14 @@ export interface paths {
          * Search Cohort Drafts Entries
          * @description Search cohort_drafts entries.
          */
-        post: operations["search_cohort_drafts_entries_api_v4_entries_cohort_drafts_search_post"];
+        post: operations["search_cohort_drafts_entries_api_v5_entries_cohort_drafts_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/cohort_drafts/refresh": {
+    "/api/v5/entries/cohort_drafts/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -9456,14 +9456,14 @@ export interface paths {
          * Refresh Cohort Drafts
          * @description Refresh the cohort_drafts_mv materialized view.
          */
-        post: operations["refresh_cohort_drafts_api_v4_entries_cohort_drafts_refresh_post"];
+        post: operations["refresh_cohort_drafts_api_v5_entries_cohort_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/conversations/get": {
+    "/api/v5/entries/conversations/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -9476,14 +9476,14 @@ export interface paths {
          * Get Conversations Entries
          * @description Get conversations entries by IDs.
          */
-        post: operations["get_conversations_entries_api_v4_entries_conversations_get_post"];
+        post: operations["get_conversations_entries_api_v5_entries_conversations_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/conversations/search": {
+    "/api/v5/entries/conversations/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -9496,14 +9496,14 @@ export interface paths {
          * Search Conversations Entries
          * @description Search conversations entries.
          */
-        post: operations["search_conversations_entries_api_v4_entries_conversations_search_post"];
+        post: operations["search_conversations_entries_api_v5_entries_conversations_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/conversations/refresh": {
+    "/api/v5/entries/conversations/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -9516,14 +9516,14 @@ export interface paths {
          * Refresh Conversations
          * @description Refresh the conversations_mv materialized view.
          */
-        post: operations["refresh_conversations_api_v4_entries_conversations_refresh_post"];
+        post: operations["refresh_conversations_api_v5_entries_conversations_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/conversations/create": {
+    "/api/v5/entries/conversations/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -9536,14 +9536,14 @@ export interface paths {
          * Create Conversations Entry
          * @description Create conversations entry.
          */
-        post: operations["create_conversations_entry_api_v4_entries_conversations_create_post"];
+        post: operations["create_conversations_entry_api_v5_entries_conversations_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/conversations_completions/get": {
+    "/api/v5/entries/conversations_completions/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -9556,14 +9556,14 @@ export interface paths {
          * Get Conversations Completions Entries
          * @description Get conversations_completions entries by IDs.
          */
-        post: operations["get_conversations_completions_entries_api_v4_entries_conversations_completions_get_post"];
+        post: operations["get_conversations_completions_entries_api_v5_entries_conversations_completions_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/conversations_completions/search": {
+    "/api/v5/entries/conversations_completions/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -9576,14 +9576,14 @@ export interface paths {
          * Search Conversations Completions Entries
          * @description Search conversations_completions entries.
          */
-        post: operations["search_conversations_completions_entries_api_v4_entries_conversations_completions_search_post"];
+        post: operations["search_conversations_completions_entries_api_v5_entries_conversations_completions_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/conversations_completions/refresh": {
+    "/api/v5/entries/conversations_completions/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -9596,14 +9596,14 @@ export interface paths {
          * Refresh Conversations Completions
          * @description Refresh the conversations_completions_mv materialized view.
          */
-        post: operations["refresh_conversations_completions_api_v4_entries_conversations_completions_refresh_post"];
+        post: operations["refresh_conversations_completions_api_v5_entries_conversations_completions_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/conversations-completions/create": {
+    "/api/v5/entries/conversations-completions/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -9616,14 +9616,14 @@ export interface paths {
          * Create Conversations Completions Entry
          * @description Create conversations_completions entry.
          */
-        post: operations["create_conversations_completions_entry_api_v4_entries_conversations_completions_create_post"];
+        post: operations["create_conversations_completions_entry_api_v5_entries_conversations_completions_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/debug_info/get": {
+    "/api/v5/entries/debug_info/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -9636,14 +9636,14 @@ export interface paths {
          * Get Debug Info Entries
          * @description Get debug_info entries by IDs.
          */
-        post: operations["get_debug_info_entries_api_v4_entries_debug_info_get_post"];
+        post: operations["get_debug_info_entries_api_v5_entries_debug_info_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/debug_info/search": {
+    "/api/v5/entries/debug_info/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -9656,14 +9656,14 @@ export interface paths {
          * Search Debug Info Entries
          * @description Search debug_info entries.
          */
-        post: operations["search_debug_info_entries_api_v4_entries_debug_info_search_post"];
+        post: operations["search_debug_info_entries_api_v5_entries_debug_info_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/debug_info/refresh": {
+    "/api/v5/entries/debug_info/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -9676,14 +9676,14 @@ export interface paths {
          * Refresh Debug Info
          * @description Refresh the debug_info_mv materialized view.
          */
-        post: operations["refresh_debug_info_api_v4_entries_debug_info_refresh_post"];
+        post: operations["refresh_debug_info_api_v5_entries_debug_info_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/debug-info/create": {
+    "/api/v5/entries/debug-info/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -9696,14 +9696,14 @@ export interface paths {
          * Create Debug Info Entry
          * @description Create debug_info entry.
          */
-        post: operations["create_debug_info_entry_api_v4_entries_debug_info_create_post"];
+        post: operations["create_debug_info_entry_api_v5_entries_debug_info_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/department_drafts/get": {
+    "/api/v5/entries/department_drafts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -9716,14 +9716,14 @@ export interface paths {
          * Get Department Drafts Entries
          * @description Get department_drafts entries by IDs.
          */
-        post: operations["get_department_drafts_entries_api_v4_entries_department_drafts_get_post"];
+        post: operations["get_department_drafts_entries_api_v5_entries_department_drafts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/department_drafts/search": {
+    "/api/v5/entries/department_drafts/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -9736,14 +9736,14 @@ export interface paths {
          * Search Department Drafts Entries
          * @description Search department_drafts entries.
          */
-        post: operations["search_department_drafts_entries_api_v4_entries_department_drafts_search_post"];
+        post: operations["search_department_drafts_entries_api_v5_entries_department_drafts_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/department_drafts/refresh": {
+    "/api/v5/entries/department_drafts/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -9756,14 +9756,14 @@ export interface paths {
          * Refresh Department Drafts
          * @description Refresh the department_drafts_mv materialized view.
          */
-        post: operations["refresh_department_drafts_api_v4_entries_department_drafts_refresh_post"];
+        post: operations["refresh_department_drafts_api_v5_entries_department_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/document_drafts/get": {
+    "/api/v5/entries/document_drafts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -9776,14 +9776,14 @@ export interface paths {
          * Get Document Drafts Entries
          * @description Get document_drafts entries by IDs.
          */
-        post: operations["get_document_drafts_entries_api_v4_entries_document_drafts_get_post"];
+        post: operations["get_document_drafts_entries_api_v5_entries_document_drafts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/document_drafts/search": {
+    "/api/v5/entries/document_drafts/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -9796,14 +9796,14 @@ export interface paths {
          * Search Document Drafts Entries
          * @description Search document_drafts entries.
          */
-        post: operations["search_document_drafts_entries_api_v4_entries_document_drafts_search_post"];
+        post: operations["search_document_drafts_entries_api_v5_entries_document_drafts_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/document_drafts/refresh": {
+    "/api/v5/entries/document_drafts/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -9816,14 +9816,14 @@ export interface paths {
          * Refresh Document Drafts
          * @description Refresh the document_drafts_mv materialized view.
          */
-        post: operations["refresh_document_drafts_api_v4_entries_document_drafts_refresh_post"];
+        post: operations["refresh_document_drafts_api_v5_entries_document_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/emulations/get": {
+    "/api/v5/entries/emulations/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -9836,14 +9836,14 @@ export interface paths {
          * Get Emulations Entries
          * @description Get emulations entries by IDs.
          */
-        post: operations["get_emulations_entries_api_v4_entries_emulations_get_post"];
+        post: operations["get_emulations_entries_api_v5_entries_emulations_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/emulations/search": {
+    "/api/v5/entries/emulations/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -9856,14 +9856,14 @@ export interface paths {
          * Search Emulations Entries
          * @description Search emulations entries.
          */
-        post: operations["search_emulations_entries_api_v4_entries_emulations_search_post"];
+        post: operations["search_emulations_entries_api_v5_entries_emulations_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/emulations/refresh": {
+    "/api/v5/entries/emulations/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -9876,14 +9876,14 @@ export interface paths {
          * Refresh Emulations
          * @description Refresh the emulations_mv materialized view.
          */
-        post: operations["refresh_emulations_api_v4_entries_emulations_refresh_post"];
+        post: operations["refresh_emulations_api_v5_entries_emulations_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/eval_drafts/get": {
+    "/api/v5/entries/eval_drafts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -9896,14 +9896,14 @@ export interface paths {
          * Get Eval Drafts Entries
          * @description Get eval_drafts entries by IDs.
          */
-        post: operations["get_eval_drafts_entries_api_v4_entries_eval_drafts_get_post"];
+        post: operations["get_eval_drafts_entries_api_v5_entries_eval_drafts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/eval_drafts/search": {
+    "/api/v5/entries/eval_drafts/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -9916,14 +9916,14 @@ export interface paths {
          * Search Eval Drafts Entries
          * @description Search eval_drafts entries.
          */
-        post: operations["search_eval_drafts_entries_api_v4_entries_eval_drafts_search_post"];
+        post: operations["search_eval_drafts_entries_api_v5_entries_eval_drafts_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/eval_drafts/refresh": {
+    "/api/v5/entries/eval_drafts/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -9936,14 +9936,14 @@ export interface paths {
          * Refresh Eval Drafts
          * @description Refresh the eval_drafts_mv materialized view.
          */
-        post: operations["refresh_eval_drafts_api_v4_entries_eval_drafts_refresh_post"];
+        post: operations["refresh_eval_drafts_api_v5_entries_eval_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/field_drafts/get": {
+    "/api/v5/entries/field_drafts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -9956,14 +9956,14 @@ export interface paths {
          * Get Field Drafts Entries
          * @description Get field_drafts entries by IDs.
          */
-        post: operations["get_field_drafts_entries_api_v4_entries_field_drafts_get_post"];
+        post: operations["get_field_drafts_entries_api_v5_entries_field_drafts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/field_drafts/search": {
+    "/api/v5/entries/field_drafts/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -9976,14 +9976,14 @@ export interface paths {
          * Search Field Drafts Entries
          * @description Search field_drafts entries.
          */
-        post: operations["search_field_drafts_entries_api_v4_entries_field_drafts_search_post"];
+        post: operations["search_field_drafts_entries_api_v5_entries_field_drafts_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/field_drafts/refresh": {
+    "/api/v5/entries/field_drafts/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -9996,14 +9996,14 @@ export interface paths {
          * Refresh Field Drafts
          * @description Refresh the field_drafts_mv materialized view.
          */
-        post: operations["refresh_field_drafts_api_v4_entries_field_drafts_refresh_post"];
+        post: operations["refresh_field_drafts_api_v5_entries_field_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/files/get": {
+    "/api/v5/entries/files/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -10016,14 +10016,14 @@ export interface paths {
          * Get Files Entries
          * @description Get files entries by IDs.
          */
-        post: operations["get_files_entries_api_v4_entries_files_get_post"];
+        post: operations["get_files_entries_api_v5_entries_files_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/files/search": {
+    "/api/v5/entries/files/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -10036,14 +10036,14 @@ export interface paths {
          * Search Files Entries
          * @description Search files entries.
          */
-        post: operations["search_files_entries_api_v4_entries_files_search_post"];
+        post: operations["search_files_entries_api_v5_entries_files_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/files/refresh": {
+    "/api/v5/entries/files/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -10056,14 +10056,14 @@ export interface paths {
          * Refresh Files
          * @description Refresh the files_mv materialized view.
          */
-        post: operations["refresh_files_api_v4_entries_files_refresh_post"];
+        post: operations["refresh_files_api_v5_entries_files_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/grants/get": {
+    "/api/v5/entries/grants/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -10076,14 +10076,14 @@ export interface paths {
          * Get Grants Entries
          * @description Get grants entries by IDs.
          */
-        post: operations["get_grants_entries_api_v4_entries_grants_get_post"];
+        post: operations["get_grants_entries_api_v5_entries_grants_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/grants/search": {
+    "/api/v5/entries/grants/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -10096,14 +10096,14 @@ export interface paths {
          * Search Grants Entries
          * @description Search grants entries.
          */
-        post: operations["search_grants_entries_api_v4_entries_grants_search_post"];
+        post: operations["search_grants_entries_api_v5_entries_grants_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/grants/refresh": {
+    "/api/v5/entries/grants/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -10116,14 +10116,14 @@ export interface paths {
          * Refresh Grants
          * @description Refresh the grants_mv materialized view.
          */
-        post: operations["refresh_grants_api_v4_entries_grants_refresh_post"];
+        post: operations["refresh_grants_api_v5_entries_grants_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/groups/get": {
+    "/api/v5/entries/groups/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -10136,14 +10136,14 @@ export interface paths {
          * Get Groups Entries
          * @description Get groups entries by IDs.
          */
-        post: operations["get_groups_entries_api_v4_entries_groups_get_post"];
+        post: operations["get_groups_entries_api_v5_entries_groups_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/groups/search": {
+    "/api/v5/entries/groups/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -10156,14 +10156,14 @@ export interface paths {
          * Search Groups Entries
          * @description Search groups entries.
          */
-        post: operations["search_groups_entries_api_v4_entries_groups_search_post"];
+        post: operations["search_groups_entries_api_v5_entries_groups_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/groups/refresh": {
+    "/api/v5/entries/groups/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -10176,14 +10176,14 @@ export interface paths {
          * Refresh Groups
          * @description Refresh the groups_mv materialized view.
          */
-        post: operations["refresh_groups_api_v4_entries_groups_refresh_post"];
+        post: operations["refresh_groups_api_v5_entries_groups_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/health/get": {
+    "/api/v5/entries/health/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -10196,14 +10196,14 @@ export interface paths {
          * Get Health Entries
          * @description Get health entries by IDs.
          */
-        post: operations["get_health_entries_api_v4_entries_health_get_post"];
+        post: operations["get_health_entries_api_v5_entries_health_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/health/search": {
+    "/api/v5/entries/health/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -10216,14 +10216,14 @@ export interface paths {
          * Search Health Entries
          * @description Search health entries.
          */
-        post: operations["search_health_entries_api_v4_entries_health_search_post"];
+        post: operations["search_health_entries_api_v5_entries_health_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/health/refresh": {
+    "/api/v5/entries/health/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -10236,14 +10236,14 @@ export interface paths {
          * Refresh Health
          * @description Refresh the health_mv materialized view.
          */
-        post: operations["refresh_health_api_v4_entries_health_refresh_post"];
+        post: operations["refresh_health_api_v5_entries_health_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/home/get": {
+    "/api/v5/entries/home/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -10256,14 +10256,14 @@ export interface paths {
          * Get Home Entries
          * @description Get home entries by IDs.
          */
-        post: operations["get_home_entries_api_v4_entries_home_get_post"];
+        post: operations["get_home_entries_api_v5_entries_home_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/home/search": {
+    "/api/v5/entries/home/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -10276,14 +10276,14 @@ export interface paths {
          * Search Home Entries
          * @description Search home entries.
          */
-        post: operations["search_home_entries_api_v4_entries_home_search_post"];
+        post: operations["search_home_entries_api_v5_entries_home_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/home/refresh": {
+    "/api/v5/entries/home/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -10296,14 +10296,14 @@ export interface paths {
          * Refresh Home
          * @description Refresh the home_mv materialized view.
          */
-        post: operations["refresh_home_api_v4_entries_home_refresh_post"];
+        post: operations["refresh_home_api_v5_entries_home_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/home_chat/get": {
+    "/api/v5/entries/home_chat/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -10316,14 +10316,14 @@ export interface paths {
          * Get Home Chat Entries
          * @description Get home_chat entries by IDs.
          */
-        post: operations["get_home_chat_entries_api_v4_entries_home_chat_get_post"];
+        post: operations["get_home_chat_entries_api_v5_entries_home_chat_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/home_chat/search": {
+    "/api/v5/entries/home_chat/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -10336,14 +10336,14 @@ export interface paths {
          * Search Home Chat Entries
          * @description Search home_chat entries.
          */
-        post: operations["search_home_chat_entries_api_v4_entries_home_chat_search_post"];
+        post: operations["search_home_chat_entries_api_v5_entries_home_chat_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/home_training/get": {
+    "/api/v5/entries/home_training/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -10356,14 +10356,14 @@ export interface paths {
          * Get Home Training Entries
          * @description Get home_training entries by IDs.
          */
-        post: operations["get_home_training_entries_api_v4_entries_home_training_get_post"];
+        post: operations["get_home_training_entries_api_v5_entries_home_training_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/home_training/search": {
+    "/api/v5/entries/home_training/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -10376,14 +10376,14 @@ export interface paths {
          * Search Home Training Entries
          * @description Search home_training entries.
          */
-        post: operations["search_home_training_entries_api_v4_entries_home_training_search_post"];
+        post: operations["search_home_training_entries_api_v5_entries_home_training_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/home_training/refresh": {
+    "/api/v5/entries/home_training/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -10396,14 +10396,14 @@ export interface paths {
          * Refresh Home Training
          * @description Refresh the home_training_mv materialized view.
          */
-        post: operations["refresh_home_training_api_v4_entries_home_training_refresh_post"];
+        post: operations["refresh_home_training_api_v5_entries_home_training_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/images/get": {
+    "/api/v5/entries/images/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -10416,14 +10416,14 @@ export interface paths {
          * Get Images Entries
          * @description Get images entries by IDs.
          */
-        post: operations["get_images_entries_api_v4_entries_images_get_post"];
+        post: operations["get_images_entries_api_v5_entries_images_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/images/search": {
+    "/api/v5/entries/images/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -10436,14 +10436,14 @@ export interface paths {
          * Search Images Entries
          * @description Search images entries.
          */
-        post: operations["search_images_entries_api_v4_entries_images_search_post"];
+        post: operations["search_images_entries_api_v5_entries_images_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/images/refresh": {
+    "/api/v5/entries/images/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -10456,14 +10456,14 @@ export interface paths {
          * Refresh Images
          * @description Refresh the images_mv materialized view.
          */
-        post: operations["refresh_images_api_v4_entries_images_refresh_post"];
+        post: operations["refresh_images_api_v5_entries_images_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/logins/get": {
+    "/api/v5/entries/logins/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -10476,14 +10476,14 @@ export interface paths {
          * Get Logins Entries
          * @description Get logins entries by IDs.
          */
-        post: operations["get_logins_entries_api_v4_entries_logins_get_post"];
+        post: operations["get_logins_entries_api_v5_entries_logins_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/logins/search": {
+    "/api/v5/entries/logins/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -10496,14 +10496,14 @@ export interface paths {
          * Search Logins Entries
          * @description Search logins entries.
          */
-        post: operations["search_logins_entries_api_v4_entries_logins_search_post"];
+        post: operations["search_logins_entries_api_v5_entries_logins_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/logins/refresh": {
+    "/api/v5/entries/logins/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -10516,14 +10516,14 @@ export interface paths {
          * Refresh Logins
          * @description Refresh the logins_mv materialized view.
          */
-        post: operations["refresh_logins_api_v4_entries_logins_refresh_post"];
+        post: operations["refresh_logins_api_v5_entries_logins_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/messages/get": {
+    "/api/v5/entries/messages/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -10536,14 +10536,14 @@ export interface paths {
          * Get Messages Entries
          * @description Get messages entries by IDs.
          */
-        post: operations["get_messages_entries_api_v4_entries_messages_get_post"];
+        post: operations["get_messages_entries_api_v5_entries_messages_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/messages/search": {
+    "/api/v5/entries/messages/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -10556,14 +10556,14 @@ export interface paths {
          * Search Messages Entries
          * @description Search messages entries.
          */
-        post: operations["search_messages_entries_api_v4_entries_messages_search_post"];
+        post: operations["search_messages_entries_api_v5_entries_messages_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/messages/refresh": {
+    "/api/v5/entries/messages/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -10576,14 +10576,14 @@ export interface paths {
          * Refresh Messages
          * @description Refresh the messages_mv materialized view.
          */
-        post: operations["refresh_messages_api_v4_entries_messages_refresh_post"];
+        post: operations["refresh_messages_api_v5_entries_messages_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/messages_completions/get": {
+    "/api/v5/entries/messages_completions/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -10596,14 +10596,14 @@ export interface paths {
          * Get Messages Completions Entries
          * @description Get messages_completions entries by IDs.
          */
-        post: operations["get_messages_completions_entries_api_v4_entries_messages_completions_get_post"];
+        post: operations["get_messages_completions_entries_api_v5_entries_messages_completions_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/messages_completions/search": {
+    "/api/v5/entries/messages_completions/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -10616,14 +10616,14 @@ export interface paths {
          * Search Messages Completions Entries
          * @description Search messages_completions entries.
          */
-        post: operations["search_messages_completions_entries_api_v4_entries_messages_completions_search_post"];
+        post: operations["search_messages_completions_entries_api_v5_entries_messages_completions_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/messages_completions/refresh": {
+    "/api/v5/entries/messages_completions/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -10636,14 +10636,14 @@ export interface paths {
          * Refresh Messages Completions
          * @description Refresh the messages_completions_mv materialized view.
          */
-        post: operations["refresh_messages_completions_api_v4_entries_messages_completions_refresh_post"];
+        post: operations["refresh_messages_completions_api_v5_entries_messages_completions_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/metrics/get": {
+    "/api/v5/entries/metrics/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -10656,14 +10656,14 @@ export interface paths {
          * Get Metrics Entries
          * @description Get metrics entries by IDs.
          */
-        post: operations["get_metrics_entries_api_v4_entries_metrics_get_post"];
+        post: operations["get_metrics_entries_api_v5_entries_metrics_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/metrics/search": {
+    "/api/v5/entries/metrics/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -10676,14 +10676,14 @@ export interface paths {
          * Search Metrics Entries
          * @description Search metrics entries.
          */
-        post: operations["search_metrics_entries_api_v4_entries_metrics_search_post"];
+        post: operations["search_metrics_entries_api_v5_entries_metrics_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/metrics/refresh": {
+    "/api/v5/entries/metrics/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -10696,14 +10696,14 @@ export interface paths {
          * Refresh Metrics
          * @description Refresh the metrics_mv materialized view.
          */
-        post: operations["refresh_metrics_api_v4_entries_metrics_refresh_post"];
+        post: operations["refresh_metrics_api_v5_entries_metrics_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/model_drafts/get": {
+    "/api/v5/entries/model_drafts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -10716,14 +10716,14 @@ export interface paths {
          * Get Model Drafts Entries
          * @description Get model_drafts entries by IDs.
          */
-        post: operations["get_model_drafts_entries_api_v4_entries_model_drafts_get_post"];
+        post: operations["get_model_drafts_entries_api_v5_entries_model_drafts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/model_drafts/search": {
+    "/api/v5/entries/model_drafts/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -10736,14 +10736,14 @@ export interface paths {
          * Search Model Drafts Entries
          * @description Search model_drafts entries.
          */
-        post: operations["search_model_drafts_entries_api_v4_entries_model_drafts_search_post"];
+        post: operations["search_model_drafts_entries_api_v5_entries_model_drafts_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/model_drafts/refresh": {
+    "/api/v5/entries/model_drafts/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -10756,14 +10756,14 @@ export interface paths {
          * Refresh Model Drafts
          * @description Refresh the model_drafts_mv materialized view.
          */
-        post: operations["refresh_model_drafts_api_v4_entries_model_drafts_refresh_post"];
+        post: operations["refresh_model_drafts_api_v5_entries_model_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/mutes/get": {
+    "/api/v5/entries/mutes/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -10776,14 +10776,14 @@ export interface paths {
          * Get Mutes Entries
          * @description Get mutes entries by IDs.
          */
-        post: operations["get_mutes_entries_api_v4_entries_mutes_get_post"];
+        post: operations["get_mutes_entries_api_v5_entries_mutes_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/mutes/search": {
+    "/api/v5/entries/mutes/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -10796,14 +10796,14 @@ export interface paths {
          * Search Mutes Entries
          * @description Search mutes entries.
          */
-        post: operations["search_mutes_entries_api_v4_entries_mutes_search_post"];
+        post: operations["search_mutes_entries_api_v5_entries_mutes_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/mutes/refresh": {
+    "/api/v5/entries/mutes/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -10816,14 +10816,14 @@ export interface paths {
          * Refresh Mutes
          * @description Refresh the mutes_mv materialized view.
          */
-        post: operations["refresh_mutes_api_v4_entries_mutes_refresh_post"];
+        post: operations["refresh_mutes_api_v5_entries_mutes_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/mutes/create": {
+    "/api/v5/entries/mutes/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -10836,14 +10836,14 @@ export interface paths {
          * Create Mutes Entry
          * @description Create mutes entry.
          */
-        post: operations["create_mutes_entry_api_v4_entries_mutes_create_post"];
+        post: operations["create_mutes_entry_api_v5_entries_mutes_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/parameter_drafts/get": {
+    "/api/v5/entries/parameter_drafts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -10856,14 +10856,14 @@ export interface paths {
          * Get Parameter Drafts Entries
          * @description Get parameter_drafts entries by IDs.
          */
-        post: operations["get_parameter_drafts_entries_api_v4_entries_parameter_drafts_get_post"];
+        post: operations["get_parameter_drafts_entries_api_v5_entries_parameter_drafts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/parameter_drafts/search": {
+    "/api/v5/entries/parameter_drafts/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -10876,14 +10876,14 @@ export interface paths {
          * Search Parameter Drafts Entries
          * @description Search parameter_drafts entries.
          */
-        post: operations["search_parameter_drafts_entries_api_v4_entries_parameter_drafts_search_post"];
+        post: operations["search_parameter_drafts_entries_api_v5_entries_parameter_drafts_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/parameter_drafts/refresh": {
+    "/api/v5/entries/parameter_drafts/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -10896,14 +10896,14 @@ export interface paths {
          * Refresh Parameter Drafts
          * @description Refresh the parameter_drafts_mv materialized view.
          */
-        post: operations["refresh_parameter_drafts_api_v4_entries_parameter_drafts_refresh_post"];
+        post: operations["refresh_parameter_drafts_api_v5_entries_parameter_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/persona/get": {
+    "/api/v5/entries/persona/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -10916,14 +10916,14 @@ export interface paths {
          * Get Persona Entries
          * @description Get persona entries by IDs.
          */
-        post: operations["get_persona_entries_api_v4_entries_persona_get_post"];
+        post: operations["get_persona_entries_api_v5_entries_persona_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/persona/search": {
+    "/api/v5/entries/persona/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -10936,14 +10936,14 @@ export interface paths {
          * Search Persona Entries
          * @description Search persona entries.
          */
-        post: operations["search_persona_entries_api_v4_entries_persona_search_post"];
+        post: operations["search_persona_entries_api_v5_entries_persona_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/persona/refresh": {
+    "/api/v5/entries/persona/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -10956,14 +10956,14 @@ export interface paths {
          * Refresh Persona
          * @description Refresh the persona_mv materialized view.
          */
-        post: operations["refresh_persona_api_v4_entries_persona_refresh_post"];
+        post: operations["refresh_persona_api_v5_entries_persona_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/persona/create": {
+    "/api/v5/entries/persona/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -10976,14 +10976,14 @@ export interface paths {
          * Create Persona Entry
          * @description Create persona entry.
          */
-        post: operations["create_persona_entry_api_v4_entries_persona_create_post"];
+        post: operations["create_persona_entry_api_v5_entries_persona_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/persona_drafts/get": {
+    "/api/v5/entries/persona_drafts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -10996,14 +10996,14 @@ export interface paths {
          * Get Persona Drafts Entries
          * @description Get persona_drafts entries by IDs.
          */
-        post: operations["get_persona_drafts_entries_api_v4_entries_persona_drafts_get_post"];
+        post: operations["get_persona_drafts_entries_api_v5_entries_persona_drafts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/persona_drafts/search": {
+    "/api/v5/entries/persona_drafts/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -11016,14 +11016,14 @@ export interface paths {
          * Search Persona Drafts Entries
          * @description Search persona_drafts entries.
          */
-        post: operations["search_persona_drafts_entries_api_v4_entries_persona_drafts_search_post"];
+        post: operations["search_persona_drafts_entries_api_v5_entries_persona_drafts_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/persona_drafts/refresh": {
+    "/api/v5/entries/persona_drafts/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -11036,14 +11036,14 @@ export interface paths {
          * Refresh Persona Drafts
          * @description Refresh the persona_drafts_mv materialized view.
          */
-        post: operations["refresh_persona_drafts_api_v4_entries_persona_drafts_refresh_post"];
+        post: operations["refresh_persona_drafts_api_v5_entries_persona_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/practice/get": {
+    "/api/v5/entries/practice/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -11056,14 +11056,14 @@ export interface paths {
          * Get Practice Entries
          * @description Get practice entries by IDs.
          */
-        post: operations["get_practice_entries_api_v4_entries_practice_get_post"];
+        post: operations["get_practice_entries_api_v5_entries_practice_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/practice/search": {
+    "/api/v5/entries/practice/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -11076,14 +11076,14 @@ export interface paths {
          * Search Practice Entries
          * @description Search practice entries.
          */
-        post: operations["search_practice_entries_api_v4_entries_practice_search_post"];
+        post: operations["search_practice_entries_api_v5_entries_practice_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/practice/refresh": {
+    "/api/v5/entries/practice/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -11096,14 +11096,14 @@ export interface paths {
          * Refresh Practice
          * @description Refresh the practice_mv materialized view.
          */
-        post: operations["refresh_practice_api_v4_entries_practice_refresh_post"];
+        post: operations["refresh_practice_api_v5_entries_practice_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/practice_chat/get": {
+    "/api/v5/entries/practice_chat/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -11116,14 +11116,14 @@ export interface paths {
          * Get Practice Chat Entries
          * @description Get practice_chat entries by IDs.
          */
-        post: operations["get_practice_chat_entries_api_v4_entries_practice_chat_get_post"];
+        post: operations["get_practice_chat_entries_api_v5_entries_practice_chat_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/practice_chat/search": {
+    "/api/v5/entries/practice_chat/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -11136,14 +11136,14 @@ export interface paths {
          * Search Practice Chat Entries
          * @description Search practice_chat entries.
          */
-        post: operations["search_practice_chat_entries_api_v4_entries_practice_chat_search_post"];
+        post: operations["search_practice_chat_entries_api_v5_entries_practice_chat_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/practice_training/get": {
+    "/api/v5/entries/practice_training/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -11156,14 +11156,14 @@ export interface paths {
          * Get Practice Training Entries
          * @description Get practice_training entries by IDs.
          */
-        post: operations["get_practice_training_entries_api_v4_entries_practice_training_get_post"];
+        post: operations["get_practice_training_entries_api_v5_entries_practice_training_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/practice_training/search": {
+    "/api/v5/entries/practice_training/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -11176,14 +11176,14 @@ export interface paths {
          * Search Practice Training Entries
          * @description Search practice_training entries.
          */
-        post: operations["search_practice_training_entries_api_v4_entries_practice_training_search_post"];
+        post: operations["search_practice_training_entries_api_v5_entries_practice_training_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/practice_training/refresh": {
+    "/api/v5/entries/practice_training/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -11196,14 +11196,14 @@ export interface paths {
          * Refresh Practice Training
          * @description Refresh the practice_training_mv materialized view.
          */
-        post: operations["refresh_practice_training_api_v4_entries_practice_training_refresh_post"];
+        post: operations["refresh_practice_training_api_v5_entries_practice_training_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/problems/get": {
+    "/api/v5/entries/problems/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -11216,14 +11216,14 @@ export interface paths {
          * Get Problems Entries
          * @description Get problems entries by IDs.
          */
-        post: operations["get_problems_entries_api_v4_entries_problems_get_post"];
+        post: operations["get_problems_entries_api_v5_entries_problems_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/problems/create": {
+    "/api/v5/entries/problems/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -11236,14 +11236,14 @@ export interface paths {
          * Create Problems Entry
          * @description Create problems entry.
          */
-        post: operations["create_problems_entry_api_v4_entries_problems_create_post"];
+        post: operations["create_problems_entry_api_v5_entries_problems_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/problems/search": {
+    "/api/v5/entries/problems/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -11256,14 +11256,14 @@ export interface paths {
          * Search Problems Entries
          * @description Search problems entries.
          */
-        post: operations["search_problems_entries_api_v4_entries_problems_search_post"];
+        post: operations["search_problems_entries_api_v5_entries_problems_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/problems/refresh": {
+    "/api/v5/entries/problems/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -11276,14 +11276,14 @@ export interface paths {
          * Refresh Problems
          * @description Refresh the problems_mv materialized view.
          */
-        post: operations["refresh_problems_api_v4_entries_problems_refresh_post"];
+        post: operations["refresh_problems_api_v5_entries_problems_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/profile_drafts/get": {
+    "/api/v5/entries/profile_drafts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -11296,14 +11296,14 @@ export interface paths {
          * Get Profile Drafts Entries
          * @description Get profile_drafts entries by IDs.
          */
-        post: operations["get_profile_drafts_entries_api_v4_entries_profile_drafts_get_post"];
+        post: operations["get_profile_drafts_entries_api_v5_entries_profile_drafts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/profile_drafts/search": {
+    "/api/v5/entries/profile_drafts/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -11316,14 +11316,14 @@ export interface paths {
          * Search Profile Drafts Entries
          * @description Search profile_drafts entries.
          */
-        post: operations["search_profile_drafts_entries_api_v4_entries_profile_drafts_search_post"];
+        post: operations["search_profile_drafts_entries_api_v5_entries_profile_drafts_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/profile_drafts/refresh": {
+    "/api/v5/entries/profile_drafts/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -11336,14 +11336,14 @@ export interface paths {
          * Refresh Profile Drafts
          * @description Refresh the profile_drafts_mv materialized view.
          */
-        post: operations["refresh_profile_drafts_api_v4_entries_profile_drafts_refresh_post"];
+        post: operations["refresh_profile_drafts_api_v5_entries_profile_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/provider_drafts/get": {
+    "/api/v5/entries/provider_drafts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -11356,14 +11356,14 @@ export interface paths {
          * Get Provider Drafts Entries
          * @description Get provider_drafts entries by IDs.
          */
-        post: operations["get_provider_drafts_entries_api_v4_entries_provider_drafts_get_post"];
+        post: operations["get_provider_drafts_entries_api_v5_entries_provider_drafts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/provider_drafts/search": {
+    "/api/v5/entries/provider_drafts/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -11376,14 +11376,14 @@ export interface paths {
          * Search Provider Drafts Entries
          * @description Search provider_drafts entries.
          */
-        post: operations["search_provider_drafts_entries_api_v4_entries_provider_drafts_search_post"];
+        post: operations["search_provider_drafts_entries_api_v5_entries_provider_drafts_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/provider_drafts/refresh": {
+    "/api/v5/entries/provider_drafts/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -11396,14 +11396,14 @@ export interface paths {
          * Refresh Provider Drafts
          * @description Refresh the provider_drafts_mv materialized view.
          */
-        post: operations["refresh_provider_drafts_api_v4_entries_provider_drafts_refresh_post"];
+        post: operations["refresh_provider_drafts_api_v5_entries_provider_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/reports/get": {
+    "/api/v5/entries/reports/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -11416,14 +11416,14 @@ export interface paths {
          * Get Reports Entries
          * @description Get reports entries by IDs.
          */
-        post: operations["get_reports_entries_api_v4_entries_reports_get_post"];
+        post: operations["get_reports_entries_api_v5_entries_reports_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/reports/search": {
+    "/api/v5/entries/reports/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -11436,14 +11436,14 @@ export interface paths {
          * Search Reports Entries
          * @description Search reports entries.
          */
-        post: operations["search_reports_entries_api_v4_entries_reports_search_post"];
+        post: operations["search_reports_entries_api_v5_entries_reports_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/reports/refresh": {
+    "/api/v5/entries/reports/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -11456,14 +11456,14 @@ export interface paths {
          * Refresh Reports
          * @description Refresh the reports_mv materialized view.
          */
-        post: operations["refresh_reports_api_v4_entries_reports_refresh_post"];
+        post: operations["refresh_reports_api_v5_entries_reports_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/reports/create": {
+    "/api/v5/entries/reports/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -11476,14 +11476,14 @@ export interface paths {
          * Create Reports Entry
          * @description Create reports entry.
          */
-        post: operations["create_reports_entry_api_v4_entries_reports_create_post"];
+        post: operations["create_reports_entry_api_v5_entries_reports_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/resolves/get": {
+    "/api/v5/entries/resolves/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -11496,14 +11496,14 @@ export interface paths {
          * Get Resolves Entries
          * @description Get resolves entries by IDs.
          */
-        post: operations["get_resolves_entries_api_v4_entries_resolves_get_post"];
+        post: operations["get_resolves_entries_api_v5_entries_resolves_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/resolves/create": {
+    "/api/v5/entries/resolves/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -11516,14 +11516,14 @@ export interface paths {
          * Create Resolves Entry
          * @description Create resolves entry.
          */
-        post: operations["create_resolves_entry_api_v4_entries_resolves_create_post"];
+        post: operations["create_resolves_entry_api_v5_entries_resolves_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/resolves/search": {
+    "/api/v5/entries/resolves/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -11536,14 +11536,14 @@ export interface paths {
          * Search Resolves Entries
          * @description Search resolves entries.
          */
-        post: operations["search_resolves_entries_api_v4_entries_resolves_search_post"];
+        post: operations["search_resolves_entries_api_v5_entries_resolves_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/resolves/refresh": {
+    "/api/v5/entries/resolves/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -11556,14 +11556,14 @@ export interface paths {
          * Refresh Resolves
          * @description Refresh the resolves_mv materialized view.
          */
-        post: operations["refresh_resolves_api_v4_entries_resolves_refresh_post"];
+        post: operations["refresh_resolves_api_v5_entries_resolves_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/responses/get": {
+    "/api/v5/entries/responses/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -11576,14 +11576,14 @@ export interface paths {
          * Get Responses Entries
          * @description Get responses entries by IDs.
          */
-        post: operations["get_responses_entries_api_v4_entries_responses_get_post"];
+        post: operations["get_responses_entries_api_v5_entries_responses_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/responses/search": {
+    "/api/v5/entries/responses/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -11596,14 +11596,14 @@ export interface paths {
          * Search Responses Entries
          * @description Search responses entries.
          */
-        post: operations["search_responses_entries_api_v4_entries_responses_search_post"];
+        post: operations["search_responses_entries_api_v5_entries_responses_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/responses/refresh": {
+    "/api/v5/entries/responses/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -11616,14 +11616,14 @@ export interface paths {
          * Refresh Responses
          * @description Refresh the responses_mv materialized view.
          */
-        post: operations["refresh_responses_api_v4_entries_responses_refresh_post"];
+        post: operations["refresh_responses_api_v5_entries_responses_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/responses/create": {
+    "/api/v5/entries/responses/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -11636,14 +11636,14 @@ export interface paths {
          * Create Responses Entry
          * @description Create responses entry.
          */
-        post: operations["create_responses_entry_api_v4_entries_responses_create_post"];
+        post: operations["create_responses_entry_api_v5_entries_responses_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/rubric_drafts/get": {
+    "/api/v5/entries/rubric_drafts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -11656,14 +11656,14 @@ export interface paths {
          * Get Rubric Drafts Entries
          * @description Get rubric_drafts entries by IDs.
          */
-        post: operations["get_rubric_drafts_entries_api_v4_entries_rubric_drafts_get_post"];
+        post: operations["get_rubric_drafts_entries_api_v5_entries_rubric_drafts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/rubric_drafts/search": {
+    "/api/v5/entries/rubric_drafts/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -11676,14 +11676,14 @@ export interface paths {
          * Search Rubric Drafts Entries
          * @description Search rubric_drafts entries.
          */
-        post: operations["search_rubric_drafts_entries_api_v4_entries_rubric_drafts_search_post"];
+        post: operations["search_rubric_drafts_entries_api_v5_entries_rubric_drafts_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/rubric_drafts/refresh": {
+    "/api/v5/entries/rubric_drafts/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -11696,14 +11696,14 @@ export interface paths {
          * Refresh Rubric Drafts
          * @description Refresh the rubric_drafts_mv materialized view.
          */
-        post: operations["refresh_rubric_drafts_api_v4_entries_rubric_drafts_refresh_post"];
+        post: operations["refresh_rubric_drafts_api_v5_entries_rubric_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/run_pricing/get": {
+    "/api/v5/entries/run_pricing/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -11716,14 +11716,14 @@ export interface paths {
          * Get Run Pricing Entries
          * @description Get run_pricing entries by IDs.
          */
-        post: operations["get_run_pricing_entries_api_v4_entries_run_pricing_get_post"];
+        post: operations["get_run_pricing_entries_api_v5_entries_run_pricing_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/run_pricing/search": {
+    "/api/v5/entries/run_pricing/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -11736,14 +11736,14 @@ export interface paths {
          * Search Run Pricing Entries
          * @description Search run_pricing entries.
          */
-        post: operations["search_run_pricing_entries_api_v4_entries_run_pricing_search_post"];
+        post: operations["search_run_pricing_entries_api_v5_entries_run_pricing_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/run_pricing/refresh": {
+    "/api/v5/entries/run_pricing/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -11756,14 +11756,14 @@ export interface paths {
          * Refresh Run Pricing
          * @description Refresh the run_pricing_mv materialized view.
          */
-        post: operations["refresh_run_pricing_api_v4_entries_run_pricing_refresh_post"];
+        post: operations["refresh_run_pricing_api_v5_entries_run_pricing_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/runs/get": {
+    "/api/v5/entries/runs/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -11776,14 +11776,14 @@ export interface paths {
          * Get Runs Entries
          * @description Get runs entries by IDs.
          */
-        post: operations["get_runs_entries_api_v4_entries_runs_get_post"];
+        post: operations["get_runs_entries_api_v5_entries_runs_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/runs/search": {
+    "/api/v5/entries/runs/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -11796,14 +11796,14 @@ export interface paths {
          * Search Runs Entries
          * @description Search runs entries.
          */
-        post: operations["search_runs_entries_api_v4_entries_runs_search_post"];
+        post: operations["search_runs_entries_api_v5_entries_runs_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/runs/refresh": {
+    "/api/v5/entries/runs/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -11816,14 +11816,14 @@ export interface paths {
          * Refresh Runs
          * @description Refresh the runs_mv materialized view.
          */
-        post: operations["refresh_runs_api_v4_entries_runs_refresh_post"];
+        post: operations["refresh_runs_api_v5_entries_runs_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/scenario_drafts/get": {
+    "/api/v5/entries/scenario_drafts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -11836,14 +11836,14 @@ export interface paths {
          * Get Scenario Drafts Entries
          * @description Get scenario_drafts entries by IDs.
          */
-        post: operations["get_scenario_drafts_entries_api_v4_entries_scenario_drafts_get_post"];
+        post: operations["get_scenario_drafts_entries_api_v5_entries_scenario_drafts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/scenario_drafts/search": {
+    "/api/v5/entries/scenario_drafts/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -11856,14 +11856,14 @@ export interface paths {
          * Search Scenario Drafts Entries
          * @description Search scenario_drafts entries.
          */
-        post: operations["search_scenario_drafts_entries_api_v4_entries_scenario_drafts_search_post"];
+        post: operations["search_scenario_drafts_entries_api_v5_entries_scenario_drafts_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/scenario_drafts/refresh": {
+    "/api/v5/entries/scenario_drafts/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -11876,14 +11876,14 @@ export interface paths {
          * Refresh Scenario Drafts
          * @description Refresh the scenario_drafts_mv materialized view.
          */
-        post: operations["refresh_scenario_drafts_api_v4_entries_scenario_drafts_refresh_post"];
+        post: operations["refresh_scenario_drafts_api_v5_entries_scenario_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/sessions/get": {
+    "/api/v5/entries/sessions/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -11896,14 +11896,14 @@ export interface paths {
          * Get Sessions Entries
          * @description Get sessions entries by IDs.
          */
-        post: operations["get_sessions_entries_api_v4_entries_sessions_get_post"];
+        post: operations["get_sessions_entries_api_v5_entries_sessions_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/sessions/search": {
+    "/api/v5/entries/sessions/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -11916,14 +11916,14 @@ export interface paths {
          * Search Sessions Entries
          * @description Search sessions entries.
          */
-        post: operations["search_sessions_entries_api_v4_entries_sessions_search_post"];
+        post: operations["search_sessions_entries_api_v5_entries_sessions_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/sessions/refresh": {
+    "/api/v5/entries/sessions/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -11936,14 +11936,14 @@ export interface paths {
          * Refresh Sessions
          * @description Refresh the sessions_mv materialized view.
          */
-        post: operations["refresh_sessions_api_v4_entries_sessions_refresh_post"];
+        post: operations["refresh_sessions_api_v5_entries_sessions_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/setting_drafts/get": {
+    "/api/v5/entries/setting_drafts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -11956,14 +11956,14 @@ export interface paths {
          * Get Setting Drafts Entries
          * @description Get setting_drafts entries by IDs.
          */
-        post: operations["get_setting_drafts_entries_api_v4_entries_setting_drafts_get_post"];
+        post: operations["get_setting_drafts_entries_api_v5_entries_setting_drafts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/setting_drafts/search": {
+    "/api/v5/entries/setting_drafts/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -11976,14 +11976,14 @@ export interface paths {
          * Search Setting Drafts Entries
          * @description Search setting_drafts entries.
          */
-        post: operations["search_setting_drafts_entries_api_v4_entries_setting_drafts_search_post"];
+        post: operations["search_setting_drafts_entries_api_v5_entries_setting_drafts_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/setting_drafts/refresh": {
+    "/api/v5/entries/setting_drafts/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -11996,14 +11996,14 @@ export interface paths {
          * Refresh Setting Drafts
          * @description Refresh the setting_drafts_mv materialized view.
          */
-        post: operations["refresh_setting_drafts_api_v4_entries_setting_drafts_refresh_post"];
+        post: operations["refresh_setting_drafts_api_v5_entries_setting_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/simulation_drafts/get": {
+    "/api/v5/entries/simulation_drafts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -12016,14 +12016,14 @@ export interface paths {
          * Get Simulation Drafts Entries
          * @description Get simulation_drafts entries by IDs.
          */
-        post: operations["get_simulation_drafts_entries_api_v4_entries_simulation_drafts_get_post"];
+        post: operations["get_simulation_drafts_entries_api_v5_entries_simulation_drafts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/simulation_drafts/search": {
+    "/api/v5/entries/simulation_drafts/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -12036,14 +12036,14 @@ export interface paths {
          * Search Simulation Drafts Entries
          * @description Search simulation_drafts entries.
          */
-        post: operations["search_simulation_drafts_entries_api_v4_entries_simulation_drafts_search_post"];
+        post: operations["search_simulation_drafts_entries_api_v5_entries_simulation_drafts_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/simulation_drafts/refresh": {
+    "/api/v5/entries/simulation_drafts/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -12056,14 +12056,14 @@ export interface paths {
          * Refresh Simulation Drafts
          * @description Refresh the simulation_drafts_mv materialized view.
          */
-        post: operations["refresh_simulation_drafts_api_v4_entries_simulation_drafts_refresh_post"];
+        post: operations["refresh_simulation_drafts_api_v5_entries_simulation_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/suite/get": {
+    "/api/v5/entries/suite/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -12076,14 +12076,14 @@ export interface paths {
          * Get Suite Entries
          * @description Get suite entries by IDs.
          */
-        post: operations["get_suite_entries_api_v4_entries_suite_get_post"];
+        post: operations["get_suite_entries_api_v5_entries_suite_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/suite/search": {
+    "/api/v5/entries/suite/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -12096,14 +12096,14 @@ export interface paths {
          * Search Suite Entries
          * @description Search suite entries.
          */
-        post: operations["search_suite_entries_api_v4_entries_suite_search_post"];
+        post: operations["search_suite_entries_api_v5_entries_suite_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/suite/refresh": {
+    "/api/v5/entries/suite/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -12116,14 +12116,14 @@ export interface paths {
          * Refresh Suite
          * @description Refresh the suite_mv materialized view.
          */
-        post: operations["refresh_suite_api_v4_entries_suite_refresh_post"];
+        post: operations["refresh_suite_api_v5_entries_suite_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/suite_department/get": {
+    "/api/v5/entries/suite_department/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -12136,14 +12136,14 @@ export interface paths {
          * Get Suite Department Entries
          * @description Get suite_department entries by IDs.
          */
-        post: operations["get_suite_department_entries_api_v4_entries_suite_department_get_post"];
+        post: operations["get_suite_department_entries_api_v5_entries_suite_department_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/suite_department/search": {
+    "/api/v5/entries/suite_department/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -12156,14 +12156,14 @@ export interface paths {
          * Search Suite Department Entries
          * @description Search suite_department entries.
          */
-        post: operations["search_suite_department_entries_api_v4_entries_suite_department_search_post"];
+        post: operations["search_suite_department_entries_api_v5_entries_suite_department_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/suite_department/refresh": {
+    "/api/v5/entries/suite_department/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -12176,14 +12176,14 @@ export interface paths {
          * Refresh Suite Department
          * @description Refresh the suite_department_mv materialized view.
          */
-        post: operations["refresh_suite_department_api_v4_entries_suite_department_refresh_post"];
+        post: operations["refresh_suite_department_api_v5_entries_suite_department_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/suite_drafts/get": {
+    "/api/v5/entries/suite_drafts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -12196,14 +12196,14 @@ export interface paths {
          * Get Suite Drafts Entries
          * @description Get suite_drafts entries by IDs.
          */
-        post: operations["get_suite_drafts_entries_api_v4_entries_suite_drafts_get_post"];
+        post: operations["get_suite_drafts_entries_api_v5_entries_suite_drafts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/suite_drafts/search": {
+    "/api/v5/entries/suite_drafts/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -12216,14 +12216,14 @@ export interface paths {
          * Search Suite Drafts Entries
          * @description Search suite_drafts entries.
          */
-        post: operations["search_suite_drafts_entries_api_v4_entries_suite_drafts_search_post"];
+        post: operations["search_suite_drafts_entries_api_v5_entries_suite_drafts_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/suite_drafts/refresh": {
+    "/api/v5/entries/suite_drafts/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -12236,14 +12236,14 @@ export interface paths {
          * Refresh Suite Drafts
          * @description Refresh the suite_drafts_mv materialized view.
          */
-        post: operations["refresh_suite_drafts_api_v4_entries_suite_drafts_refresh_post"];
+        post: operations["refresh_suite_drafts_api_v5_entries_suite_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test/get": {
+    "/api/v5/entries/test/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -12256,14 +12256,14 @@ export interface paths {
          * Get Test Entries
          * @description Get test entries by IDs.
          */
-        post: operations["get_test_entries_api_v4_entries_test_get_post"];
+        post: operations["get_test_entries_api_v5_entries_test_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test/search": {
+    "/api/v5/entries/test/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -12276,14 +12276,14 @@ export interface paths {
          * Search Test Entries
          * @description Search test entries.
          */
-        post: operations["search_test_entries_api_v4_entries_test_search_post"];
+        post: operations["search_test_entries_api_v5_entries_test_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test/refresh": {
+    "/api/v5/entries/test/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -12296,14 +12296,14 @@ export interface paths {
          * Refresh Test
          * @description Refresh the test_mv materialized view.
          */
-        post: operations["refresh_test_api_v4_entries_test_refresh_post"];
+        post: operations["refresh_test_api_v5_entries_test_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test/create": {
+    "/api/v5/entries/test/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -12316,14 +12316,14 @@ export interface paths {
          * Create Test Entry
          * @description Create test entry.
          */
-        post: operations["create_test_entry_api_v4_entries_test_create_post"];
+        post: operations["create_test_entry_api_v5_entries_test_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test_archive/get": {
+    "/api/v5/entries/test_archive/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -12336,14 +12336,14 @@ export interface paths {
          * Get Test Archive Entries
          * @description Get test_archive entries by IDs.
          */
-        post: operations["get_test_archive_entries_api_v4_entries_test_archive_get_post"];
+        post: operations["get_test_archive_entries_api_v5_entries_test_archive_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test-archive/create": {
+    "/api/v5/entries/test-archive/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -12356,14 +12356,14 @@ export interface paths {
          * Create Test Archive Entry
          * @description Create test_archive entry.
          */
-        post: operations["create_test_archive_entry_api_v4_entries_test_archive_create_post"];
+        post: operations["create_test_archive_entry_api_v5_entries_test_archive_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test_archive/search": {
+    "/api/v5/entries/test_archive/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -12376,14 +12376,14 @@ export interface paths {
          * Search Test Archive Entries
          * @description Search test_archive entries.
          */
-        post: operations["search_test_archive_entries_api_v4_entries_test_archive_search_post"];
+        post: operations["search_test_archive_entries_api_v5_entries_test_archive_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test_archive/refresh": {
+    "/api/v5/entries/test_archive/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -12396,14 +12396,14 @@ export interface paths {
          * Refresh Test Archive
          * @description Refresh the test_archive_mv materialized view.
          */
-        post: operations["refresh_test_archive_api_v4_entries_test_archive_refresh_post"];
+        post: operations["refresh_test_archive_api_v5_entries_test_archive_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test_completion/get": {
+    "/api/v5/entries/test_completion/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -12416,14 +12416,14 @@ export interface paths {
          * Get Test Completion Entries
          * @description Get test_completion entries by IDs.
          */
-        post: operations["get_test_completion_entries_api_v4_entries_test_completion_get_post"];
+        post: operations["get_test_completion_entries_api_v5_entries_test_completion_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test_completion/search": {
+    "/api/v5/entries/test_completion/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -12436,14 +12436,14 @@ export interface paths {
          * Search Test Completion Entries
          * @description Search test_completion entries.
          */
-        post: operations["search_test_completion_entries_api_v4_entries_test_completion_search_post"];
+        post: operations["search_test_completion_entries_api_v5_entries_test_completion_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test_completion/refresh": {
+    "/api/v5/entries/test_completion/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -12456,14 +12456,14 @@ export interface paths {
          * Refresh Test Completion
          * @description Refresh the test_completion_mv materialized view.
          */
-        post: operations["refresh_test_completion_api_v4_entries_test_completion_refresh_post"];
+        post: operations["refresh_test_completion_api_v5_entries_test_completion_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test-completion/create": {
+    "/api/v5/entries/test-completion/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -12476,14 +12476,14 @@ export interface paths {
          * Create Test Completion Entry
          * @description Create test_completion entry.
          */
-        post: operations["create_test_completion_entry_api_v4_entries_test_completion_create_post"];
+        post: operations["create_test_completion_entry_api_v5_entries_test_completion_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test_feedback/get": {
+    "/api/v5/entries/test_feedback/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -12496,14 +12496,14 @@ export interface paths {
          * Get Test Feedback Entries
          * @description Get test_feedback entries by IDs.
          */
-        post: operations["get_test_feedback_entries_api_v4_entries_test_feedback_get_post"];
+        post: operations["get_test_feedback_entries_api_v5_entries_test_feedback_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test_feedback/search": {
+    "/api/v5/entries/test_feedback/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -12516,14 +12516,14 @@ export interface paths {
          * Search Test Feedback Entries
          * @description Search test_feedback entries.
          */
-        post: operations["search_test_feedback_entries_api_v4_entries_test_feedback_search_post"];
+        post: operations["search_test_feedback_entries_api_v5_entries_test_feedback_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test_feedback/refresh": {
+    "/api/v5/entries/test_feedback/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -12536,14 +12536,14 @@ export interface paths {
          * Refresh Test Feedback
          * @description Refresh the test_feedback_mv materialized view.
          */
-        post: operations["refresh_test_feedback_api_v4_entries_test_feedback_refresh_post"];
+        post: operations["refresh_test_feedback_api_v5_entries_test_feedback_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test-feedback/create": {
+    "/api/v5/entries/test-feedback/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -12556,14 +12556,14 @@ export interface paths {
          * Create Test Feedback Entry
          * @description Create test_feedback entry.
          */
-        post: operations["create_test_feedback_entry_api_v4_entries_test_feedback_create_post"];
+        post: operations["create_test_feedback_entry_api_v5_entries_test_feedback_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test_grade/get": {
+    "/api/v5/entries/test_grade/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -12576,14 +12576,14 @@ export interface paths {
          * Get Test Grade Entries
          * @description Get test_grade entries by IDs.
          */
-        post: operations["get_test_grade_entries_api_v4_entries_test_grade_get_post"];
+        post: operations["get_test_grade_entries_api_v5_entries_test_grade_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test_grade/search": {
+    "/api/v5/entries/test_grade/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -12596,14 +12596,14 @@ export interface paths {
          * Search Test Grade Entries
          * @description Search test_grade entries.
          */
-        post: operations["search_test_grade_entries_api_v4_entries_test_grade_search_post"];
+        post: operations["search_test_grade_entries_api_v5_entries_test_grade_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test_grade/refresh": {
+    "/api/v5/entries/test_grade/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -12616,14 +12616,14 @@ export interface paths {
          * Refresh Test Grade
          * @description Refresh the test_grade_mv materialized view.
          */
-        post: operations["refresh_test_grade_api_v4_entries_test_grade_refresh_post"];
+        post: operations["refresh_test_grade_api_v5_entries_test_grade_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test-grade/create": {
+    "/api/v5/entries/test-grade/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -12636,14 +12636,14 @@ export interface paths {
          * Create Test Grade Entry
          * @description Create test_grade entry.
          */
-        post: operations["create_test_grade_entry_api_v4_entries_test_grade_create_post"];
+        post: operations["create_test_grade_entry_api_v5_entries_test_grade_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test-invocation/create": {
+    "/api/v5/entries/test-invocation/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -12656,14 +12656,14 @@ export interface paths {
          * Create Test Invocation Entry
          * @description Create test_invocation entry.
          */
-        post: operations["create_test_invocation_entry_api_v4_entries_test_invocation_create_post"];
+        post: operations["create_test_invocation_entry_api_v5_entries_test_invocation_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test_invocation/get": {
+    "/api/v5/entries/test_invocation/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -12676,14 +12676,14 @@ export interface paths {
          * Get Test Invocation Entries
          * @description Get test_invocation entries by IDs.
          */
-        post: operations["get_test_invocation_entries_api_v4_entries_test_invocation_get_post"];
+        post: operations["get_test_invocation_entries_api_v5_entries_test_invocation_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test_invocation/search": {
+    "/api/v5/entries/test_invocation/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -12696,14 +12696,14 @@ export interface paths {
          * Search Test Invocation Entries
          * @description Search test_invocation entries.
          */
-        post: operations["search_test_invocation_entries_api_v4_entries_test_invocation_search_post"];
+        post: operations["search_test_invocation_entries_api_v5_entries_test_invocation_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test_invocation/refresh": {
+    "/api/v5/entries/test_invocation/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -12716,14 +12716,14 @@ export interface paths {
          * Refresh Test Invocation
          * @description Refresh the test_invocation_mv materialized view.
          */
-        post: operations["refresh_test_invocation_api_v4_entries_test_invocation_refresh_post"];
+        post: operations["refresh_test_invocation_api_v5_entries_test_invocation_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test_stop/get": {
+    "/api/v5/entries/test_stop/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -12736,14 +12736,14 @@ export interface paths {
          * Get Test Stop Entries
          * @description Get test_stop entries by IDs.
          */
-        post: operations["get_test_stop_entries_api_v4_entries_test_stop_get_post"];
+        post: operations["get_test_stop_entries_api_v5_entries_test_stop_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test_stop/search": {
+    "/api/v5/entries/test_stop/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -12756,14 +12756,14 @@ export interface paths {
          * Search Test Stop Entries
          * @description Search test_stop entries.
          */
-        post: operations["search_test_stop_entries_api_v4_entries_test_stop_search_post"];
+        post: operations["search_test_stop_entries_api_v5_entries_test_stop_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test_stop/refresh": {
+    "/api/v5/entries/test_stop/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -12776,14 +12776,14 @@ export interface paths {
          * Refresh Test Stop
          * @description Refresh the test_stop_mv materialized view.
          */
-        post: operations["refresh_test_stop_api_v4_entries_test_stop_refresh_post"];
+        post: operations["refresh_test_stop_api_v5_entries_test_stop_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/test-stop/create": {
+    "/api/v5/entries/test-stop/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -12796,14 +12796,14 @@ export interface paths {
          * Create Test Stop Entry
          * @description Create test_stop entry.
          */
-        post: operations["create_test_stop_entry_api_v4_entries_test_stop_create_post"];
+        post: operations["create_test_stop_entry_api_v5_entries_test_stop_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/texts/get": {
+    "/api/v5/entries/texts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -12816,14 +12816,14 @@ export interface paths {
          * Get Texts Entries
          * @description Get texts entries by IDs.
          */
-        post: operations["get_texts_entries_api_v4_entries_texts_get_post"];
+        post: operations["get_texts_entries_api_v5_entries_texts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/texts/search": {
+    "/api/v5/entries/texts/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -12836,14 +12836,14 @@ export interface paths {
          * Search Texts Entries
          * @description Search texts entries.
          */
-        post: operations["search_texts_entries_api_v4_entries_texts_search_post"];
+        post: operations["search_texts_entries_api_v5_entries_texts_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/texts/refresh": {
+    "/api/v5/entries/texts/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -12856,14 +12856,14 @@ export interface paths {
          * Refresh Texts
          * @description Refresh the texts_mv materialized view.
          */
-        post: operations["refresh_texts_api_v4_entries_texts_refresh_post"];
+        post: operations["refresh_texts_api_v5_entries_texts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/tokens/get": {
+    "/api/v5/entries/tokens/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -12876,14 +12876,14 @@ export interface paths {
          * Get Tokens Entries
          * @description Get tokens entries by IDs.
          */
-        post: operations["get_tokens_entries_api_v4_entries_tokens_get_post"];
+        post: operations["get_tokens_entries_api_v5_entries_tokens_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/tokens/search": {
+    "/api/v5/entries/tokens/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -12896,14 +12896,14 @@ export interface paths {
          * Search Tokens Entries
          * @description Search tokens entries.
          */
-        post: operations["search_tokens_entries_api_v4_entries_tokens_search_post"];
+        post: operations["search_tokens_entries_api_v5_entries_tokens_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/tokens/refresh": {
+    "/api/v5/entries/tokens/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -12916,14 +12916,14 @@ export interface paths {
          * Refresh Tokens
          * @description Refresh the tokens_mv materialized view.
          */
-        post: operations["refresh_tokens_api_v4_entries_tokens_refresh_post"];
+        post: operations["refresh_tokens_api_v5_entries_tokens_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/tool_drafts/get": {
+    "/api/v5/entries/tool_drafts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -12936,14 +12936,14 @@ export interface paths {
          * Get Tool Drafts Entries
          * @description Get tool_drafts entries by IDs.
          */
-        post: operations["get_tool_drafts_entries_api_v4_entries_tool_drafts_get_post"];
+        post: operations["get_tool_drafts_entries_api_v5_entries_tool_drafts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/tool_drafts/search": {
+    "/api/v5/entries/tool_drafts/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -12956,14 +12956,14 @@ export interface paths {
          * Search Tool Drafts Entries
          * @description Search tool_drafts entries.
          */
-        post: operations["search_tool_drafts_entries_api_v4_entries_tool_drafts_search_post"];
+        post: operations["search_tool_drafts_entries_api_v5_entries_tool_drafts_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/tool_drafts/refresh": {
+    "/api/v5/entries/tool_drafts/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -12976,14 +12976,14 @@ export interface paths {
          * Refresh Tool Drafts
          * @description Refresh the tool_drafts_mv materialized view.
          */
-        post: operations["refresh_tool_drafts_api_v4_entries_tool_drafts_refresh_post"];
+        post: operations["refresh_tool_drafts_api_v5_entries_tool_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/training/get": {
+    "/api/v5/entries/training/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -12996,14 +12996,14 @@ export interface paths {
          * Get Training Entries
          * @description Get training entries by IDs.
          */
-        post: operations["get_training_entries_api_v4_entries_training_get_post"];
+        post: operations["get_training_entries_api_v5_entries_training_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/training/search": {
+    "/api/v5/entries/training/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -13016,14 +13016,14 @@ export interface paths {
          * Search Training Entries
          * @description Search training entries.
          */
-        post: operations["search_training_entries_api_v4_entries_training_search_post"];
+        post: operations["search_training_entries_api_v5_entries_training_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/training/refresh": {
+    "/api/v5/entries/training/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -13036,14 +13036,14 @@ export interface paths {
          * Refresh Training
          * @description Refresh the training_mv materialized view.
          */
-        post: operations["refresh_training_api_v4_entries_training_refresh_post"];
+        post: operations["refresh_training_api_v5_entries_training_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/training_department/get": {
+    "/api/v5/entries/training_department/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -13056,14 +13056,14 @@ export interface paths {
          * Get Training Department Entries
          * @description Get training_department entries by IDs.
          */
-        post: operations["get_training_department_entries_api_v4_entries_training_department_get_post"];
+        post: operations["get_training_department_entries_api_v5_entries_training_department_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/training_department/search": {
+    "/api/v5/entries/training_department/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -13076,14 +13076,14 @@ export interface paths {
          * Search Training Department Entries
          * @description Search training_department entries.
          */
-        post: operations["search_training_department_entries_api_v4_entries_training_department_search_post"];
+        post: operations["search_training_department_entries_api_v5_entries_training_department_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/training_department/refresh": {
+    "/api/v5/entries/training_department/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -13096,14 +13096,14 @@ export interface paths {
          * Refresh Training Department
          * @description Refresh the training_department_mv materialized view.
          */
-        post: operations["refresh_training_department_api_v4_entries_training_department_refresh_post"];
+        post: operations["refresh_training_department_api_v5_entries_training_department_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/training_drafts/get": {
+    "/api/v5/entries/training_drafts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -13116,14 +13116,14 @@ export interface paths {
          * Get Training Drafts Entries
          * @description Get training_drafts entries by IDs.
          */
-        post: operations["get_training_drafts_entries_api_v4_entries_training_drafts_get_post"];
+        post: operations["get_training_drafts_entries_api_v5_entries_training_drafts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/training_drafts/search": {
+    "/api/v5/entries/training_drafts/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -13136,14 +13136,14 @@ export interface paths {
          * Search Training Drafts Entries
          * @description Search training_drafts entries.
          */
-        post: operations["search_training_drafts_entries_api_v4_entries_training_drafts_search_post"];
+        post: operations["search_training_drafts_entries_api_v5_entries_training_drafts_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/training_drafts/refresh": {
+    "/api/v5/entries/training_drafts/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -13156,14 +13156,14 @@ export interface paths {
          * Refresh Training Drafts
          * @description Refresh the training_drafts_mv materialized view.
          */
-        post: operations["refresh_training_drafts_api_v4_entries_training_drafts_refresh_post"];
+        post: operations["refresh_training_drafts_api_v5_entries_training_drafts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/uploads/get": {
+    "/api/v5/entries/uploads/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -13179,14 +13179,14 @@ export interface paths {
          *     MCP mode: Returns upload metadata (file_path, mime_type, size, created_at).
          *     Normal mode: Also returns metadata (use /uploads/download/{id} for file content).
          */
-        post: operations["get_uploads_entries_api_v4_entries_uploads_get_post"];
+        post: operations["get_uploads_entries_api_v5_entries_uploads_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/uploads/search": {
+    "/api/v5/entries/uploads/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -13199,14 +13199,14 @@ export interface paths {
          * Search Uploads Entries
          * @description Search uploads entries.
          */
-        post: operations["search_uploads_entries_api_v4_entries_uploads_search_post"];
+        post: operations["search_uploads_entries_api_v5_entries_uploads_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/uploads/refresh": {
+    "/api/v5/entries/uploads/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -13219,14 +13219,14 @@ export interface paths {
          * Refresh Uploads
          * @description Refresh the uploads_mv materialized view.
          */
-        post: operations["refresh_uploads_api_v4_entries_uploads_refresh_post"];
+        post: operations["refresh_uploads_api_v5_entries_uploads_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/uploads_completions/get": {
+    "/api/v5/entries/uploads_completions/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -13239,14 +13239,14 @@ export interface paths {
          * Get Uploads Completions Entries
          * @description Get uploads_completions entries by IDs.
          */
-        post: operations["get_uploads_completions_entries_api_v4_entries_uploads_completions_get_post"];
+        post: operations["get_uploads_completions_entries_api_v5_entries_uploads_completions_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/uploads_completions/search": {
+    "/api/v5/entries/uploads_completions/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -13259,14 +13259,14 @@ export interface paths {
          * Search Uploads Completions Entries
          * @description Search uploads_completions entries.
          */
-        post: operations["search_uploads_completions_entries_api_v4_entries_uploads_completions_search_post"];
+        post: operations["search_uploads_completions_entries_api_v5_entries_uploads_completions_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/uploads_completions/refresh": {
+    "/api/v5/entries/uploads_completions/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -13279,14 +13279,14 @@ export interface paths {
          * Refresh Uploads Completions
          * @description Refresh the uploads_completions_mv materialized view.
          */
-        post: operations["refresh_uploads_completions_api_v4_entries_uploads_completions_refresh_post"];
+        post: operations["refresh_uploads_completions_api_v5_entries_uploads_completions_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/videos/get": {
+    "/api/v5/entries/videos/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -13299,14 +13299,14 @@ export interface paths {
          * Get Videos Entries
          * @description Get videos entries by IDs.
          */
-        post: operations["get_videos_entries_api_v4_entries_videos_get_post"];
+        post: operations["get_videos_entries_api_v5_entries_videos_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/videos/search": {
+    "/api/v5/entries/videos/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -13319,14 +13319,14 @@ export interface paths {
          * Search Videos Entries
          * @description Search videos entries.
          */
-        post: operations["search_videos_entries_api_v4_entries_videos_search_post"];
+        post: operations["search_videos_entries_api_v5_entries_videos_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/entries/videos/refresh": {
+    "/api/v5/entries/videos/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -13339,14 +13339,14 @@ export interface paths {
          * Refresh Videos
          * @description Refresh the videos_mv materialized view.
          */
-        post: operations["refresh_videos_api_v4_entries_videos_refresh_post"];
+        post: operations["refresh_videos_api_v5_entries_videos_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/auth/login": {
+    "/api/v5/auth/login": {
         parameters: {
             query?: never;
             header?: never;
@@ -13359,14 +13359,14 @@ export interface paths {
          * Get Login Providers
          * @description Get list of active auth provider options and departments for login page.
          */
-        post: operations["get_login_providers_api_v4_auth_login_post"];
+        post: operations["get_login_providers_api_v5_auth_login_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/auth/profile": {
+    "/api/v5/auth/profile": {
         parameters: {
             query?: never;
             header?: never;
@@ -13379,14 +13379,14 @@ export interface paths {
          * Get Auth Profile
          * @description Identity + permissions endpoint.
          */
-        post: operations["get_auth_profile_api_v4_auth_profile_post"];
+        post: operations["get_auth_profile_api_v5_auth_profile_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/auth/settings": {
+    "/api/v5/auth/settings": {
         parameters: {
             query?: never;
             header?: never;
@@ -13399,14 +13399,14 @@ export interface paths {
          * Get Auth Settings
          * @description Department-level settings + theme endpoint.
          */
-        post: operations["get_auth_settings_api_v4_auth_settings_post"];
+        post: operations["get_auth_settings_api_v5_auth_settings_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/auth/page": {
+    "/api/v5/auth/page": {
         parameters: {
             query?: never;
             header?: never;
@@ -13419,14 +13419,14 @@ export interface paths {
          * Get Auth Page
          * @description Server-driven routing metadata endpoint.
          */
-        post: operations["get_auth_page_api_v4_auth_page_post"];
+        post: operations["get_auth_page_api_v5_auth_page_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/auth/analytics": {
+    "/api/v5/auth/analytics": {
         parameters: {
             query?: never;
             header?: never;
@@ -13441,14 +13441,14 @@ export interface paths {
          *
          *     Returns None for pages that don't show analytics filters.
          */
-        post: operations["get_analytics_filters_api_v4_auth_analytics_post"];
+        post: operations["get_analytics_filters_api_v5_auth_analytics_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/auth/drafts": {
+    "/api/v5/auth/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -13461,14 +13461,14 @@ export interface paths {
          * Get Drafts
          * @description Return drafts for the current page's artifact type.
          */
-        post: operations["get_drafts_api_v4_auth_drafts_post"];
+        post: operations["get_drafts_api_v5_auth_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/auth/email": {
+    "/api/v5/auth/email": {
         parameters: {
             query?: never;
             header?: never;
@@ -13481,14 +13481,14 @@ export interface paths {
          * Get Profile By Email
          * @description Get profile by email (for auth operations).
          */
-        post: operations["get_profile_by_email_api_v4_auth_email_post"];
+        post: operations["get_profile_by_email_api_v5_auth_email_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/auth/generate": {
+    "/api/v5/auth/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -13501,14 +13501,14 @@ export interface paths {
          * Get Group Messages
          * @description Return paginated messages for a specific group.
          */
-        post: operations["get_group_messages_api_v4_auth_generate_post"];
+        post: operations["get_group_messages_api_v5_auth_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/auth/group": {
+    "/api/v5/auth/group": {
         parameters: {
             query?: never;
             header?: never;
@@ -13521,14 +13521,14 @@ export interface paths {
          * Resolve Group
          * @description Resolve a group_id from attempt, test, draft, or create fresh.
          */
-        post: operations["resolve_group_api_v4_auth_group_post"];
+        post: operations["resolve_group_api_v5_auth_group_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/auth/upsert": {
+    "/api/v5/auth/upsert": {
         parameters: {
             query?: never;
             header?: never;
@@ -13541,14 +13541,14 @@ export interface paths {
          * Create Or Update Profile
          * @description Create or update a profile based on email.
          */
-        post: operations["create_or_update_profile_api_v4_auth_upsert_post"];
+        post: operations["create_or_update_profile_api_v5_auth_upsert_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/auth/simulatable": {
+    "/api/v5/auth/simulatable": {
         parameters: {
             query?: never;
             header?: never;
@@ -13561,14 +13561,14 @@ export interface paths {
          * Search Simulatable Profiles
          * @description Search profiles that can be emulated by the requester.
          */
-        post: operations["search_simulatable_profiles_api_v4_auth_simulatable_post"];
+        post: operations["search_simulatable_profiles_api_v5_auth_simulatable_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/auth/emulate": {
+    "/api/v5/auth/emulate": {
         parameters: {
             query?: never;
             header?: never;
@@ -13581,14 +13581,14 @@ export interface paths {
          * Authorize Emulation
          * @description Create emulation grant and return default-idp redirect URL.
          */
-        post: operations["authorize_emulation_api_v4_auth_emulate_post"];
+        post: operations["authorize_emulation_api_v5_auth_emulate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/auth/callback": {
+    "/api/v5/auth/callback": {
         parameters: {
             query?: never;
             header?: never;
@@ -13601,14 +13601,14 @@ export interface paths {
          * Get Auth Callback
          * @description Lightweight redirect resolution — returns only redirect_path.
          */
-        post: operations["get_auth_callback_api_v4_auth_callback_post"];
+        post: operations["get_auth_callback_api_v5_auth_callback_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/auth/decrypt": {
+    "/api/v5/auth/decrypt": {
         parameters: {
             query?: never;
             header?: never;
@@ -13621,14 +13621,14 @@ export interface paths {
          * Decrypt Key
          * @description Decrypt a key's encrypted value.
          */
-        post: operations["decrypt_key_api_v4_auth_decrypt_post"];
+        post: operations["decrypt_key_api_v5_auth_decrypt_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/uploads/discover": {
+    "/api/v5/uploads/discover": {
         parameters: {
             query?: never;
             header?: never;
@@ -13643,12 +13643,12 @@ export interface paths {
          * Tus Discover
          * @description TUS protocol discovery.
          */
-        options: operations["tus_discover_api_v4_uploads_discover_options"];
+        options: operations["tus_discover_api_v5_uploads_discover_options"];
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/uploads/discover/{upload_id}": {
+    "/api/v5/uploads/discover/{upload_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -13663,12 +13663,12 @@ export interface paths {
          * Tus Discover Upload
          * @description TUS protocol discovery for a specific upload.
          */
-        options: operations["tus_discover_upload_api_v4_uploads_discover__upload_id__options"];
+        options: operations["tus_discover_upload_api_v5_uploads_discover__upload_id__options"];
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/uploads/create": {
+    "/api/v5/uploads/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -13681,14 +13681,14 @@ export interface paths {
          * Tus Create
          * @description Create a TUS upload session.
          */
-        post: operations["tus_create_api_v4_uploads_create_post"];
+        post: operations["tus_create_api_v5_uploads_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/uploads/{upload_id}/status": {
+    "/api/v5/uploads/{upload_id}/status": {
         parameters: {
             query?: never;
             header?: never;
@@ -13704,11 +13704,11 @@ export interface paths {
          * Tus Status
          * @description Get current upload offset and length.
          */
-        head: operations["tus_status_api_v4_uploads__upload_id__status_head"];
+        head: operations["tus_status_api_v5_uploads__upload_id__status_head"];
         patch?: never;
         trace?: never;
     };
-    "/api/v4/uploads/{upload_id}/chunk": {
+    "/api/v5/uploads/{upload_id}/chunk": {
         parameters: {
             query?: never;
             header?: never;
@@ -13725,10 +13725,10 @@ export interface paths {
          * Tus Chunk
          * @description Append a chunk to an in-progress upload.
          */
-        patch: operations["tus_chunk_api_v4_uploads__upload_id__chunk_patch"];
+        patch: operations["tus_chunk_api_v5_uploads__upload_id__chunk_patch"];
         trace?: never;
     };
-    "/api/v4/uploads/{upload_id}/finalize": {
+    "/api/v5/uploads/{upload_id}/finalize": {
         parameters: {
             query?: never;
             header?: never;
@@ -13741,14 +13741,14 @@ export interface paths {
          * Finalize Upload
          * @description Finalize a TUS upload and create upload record.
          */
-        post: operations["finalize_upload_api_v4_uploads__upload_id__finalize_post"];
+        post: operations["finalize_upload_api_v5_uploads__upload_id__finalize_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/uploads/{upload_id}/download": {
+    "/api/v5/uploads/{upload_id}/download": {
         parameters: {
             query?: never;
             header?: never;
@@ -13759,7 +13759,7 @@ export interface paths {
          * Download Upload
          * @description Download an upload file by ID.
          */
-        get: operations["download_upload_api_v4_uploads__upload_id__download_get"];
+        get: operations["download_upload_api_v5_uploads__upload_id__download_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -13768,7 +13768,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/uploads/{upload_id}/preview": {
+    "/api/v5/uploads/{upload_id}/preview": {
         parameters: {
             query?: never;
             header?: never;
@@ -13779,7 +13779,7 @@ export interface paths {
          * Preview Upload
          * @description Return a PNG preview of the first page of a PDF upload.
          */
-        get: operations["preview_upload_api_v4_uploads__upload_id__preview_get"];
+        get: operations["preview_upload_api_v5_uploads__upload_id__preview_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -13788,7 +13788,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/uploads/{upload_id}/template": {
+    "/api/v5/uploads/{upload_id}/template": {
         parameters: {
             query?: never;
             header?: never;
@@ -13799,7 +13799,7 @@ export interface paths {
          * Render Upload Template
          * @description Render an HTML upload as a template with placeholder defaults.
          */
-        get: operations["render_upload_template_api_v4_uploads__upload_id__template_get"];
+        get: operations["render_upload_template_api_v5_uploads__upload_id__template_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -13808,7 +13808,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/uploads/csv": {
+    "/api/v5/uploads/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -13821,7 +13821,7 @@ export interface paths {
          * Parse Csv
          * @description Parse a previously uploaded CSV file and return headers + rows.
          */
-        post: operations["parse_csv_api_v4_uploads_csv_post"];
+        post: operations["parse_csv_api_v5_uploads_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -23379,9 +23379,9 @@ export interface components {
             /** Link Tool Id */
             link_tool_id?: string | null;
             /** Current */
-            current?: components["schemas"]["app__sql__types__QGetScenariosV4Item"][] | null;
+            current?: components["schemas"]["app__v5__sql__types__QGetScenariosV4Item"][] | null;
             /** Resources */
-            resources?: components["schemas"]["app__sql__types__QGetScenariosV4Item"][] | null;
+            resources?: components["schemas"]["app__v5__sql__types__QGetScenariosV4Item"][] | null;
         };
         /**
          * ChatSimulationOperational
@@ -26384,9 +26384,9 @@ export interface components {
             /** Link Tool Id */
             link_tool_id?: string | null;
             /** Current */
-            current?: components["schemas"]["app__sql__types__QGetSettingsV4Item"][] | null;
+            current?: components["schemas"]["app__v5__sql__types__QGetSettingsV4Item"][] | null;
             /** Resources */
-            resources?: components["schemas"]["app__sql__types__QGetSettingsV4Item"][] | null;
+            resources?: components["schemas"]["app__v5__sql__types__QGetSettingsV4Item"][] | null;
         };
         /** DepartmentsGenerationEvent */
         DepartmentsGenerationEvent: {
@@ -28938,7 +28938,7 @@ export interface components {
         };
         /**
          * GetAnalyticsFiltersApiResponse
-         * @description Response for POST /api/v4/auth/analytics.
+         * @description Response for POST /api/v5/auth/analytics.
          */
         GetAnalyticsFiltersApiResponse: {
             fields: components["schemas"]["AnalyticsFilterFields"];
@@ -31396,7 +31396,7 @@ export interface components {
          */
         GetRolesApiResponse: {
             /** Items */
-            items?: components["schemas"]["app__api__v4__resources__roles__types__QGetRolesV4Item"][] | null;
+            items?: components["schemas"]["app__v5__api__resources__roles__types__QGetRolesV4Item"][] | null;
         };
         /** GetRubricApiRequest */
         GetRubricApiRequest: {
@@ -31679,7 +31679,7 @@ export interface components {
          */
         GetScenariosApiResponse: {
             /** Items */
-            items?: components["schemas"]["app__api__v4__artifacts__simulation__types__QGetScenariosV4Item"][] | null;
+            items?: components["schemas"]["app__v5__api__main__simulation__types__QGetScenariosV4Item"][] | null;
         };
         /**
          * GetScenariosListApiRequest
@@ -31866,7 +31866,7 @@ export interface components {
          */
         GetSettingsApiResponse: {
             /** Items */
-            items?: components["schemas"]["app__api__v4__resources__settings__types__QGetSettingsV4Item"][] | null;
+            items?: components["schemas"]["app__v5__api__resources__settings__types__QGetSettingsV4Item"][] | null;
         };
         /** GetSettingsListApiRequest */
         GetSettingsListApiRequest: Record<string, never>;
@@ -47892,7 +47892,7 @@ export interface components {
         /** SearchRolesApiResponse */
         SearchRolesApiResponse: {
             /** Items */
-            items?: components["schemas"]["app__sql__types__QGetRolesV4Item"][] | null;
+            items?: components["schemas"]["app__v5__sql__types__QGetRolesV4Item"][] | null;
         };
         /** SearchRubricDraftsEntriesApiRequest */
         SearchRubricDraftsEntriesApiRequest: {
@@ -48133,7 +48133,7 @@ export interface components {
          */
         SearchScenariosApiResponse: {
             /** Items */
-            items?: components["schemas"]["app__api__v4__artifacts__simulation__types__QGetScenariosV4Item"][] | null;
+            items?: components["schemas"]["app__v5__api__main__simulation__types__QGetScenariosV4Item"][] | null;
         };
         /** SearchSessionsEntriesApiRequest */
         SearchSessionsEntriesApiRequest: {
@@ -48215,7 +48215,7 @@ export interface components {
         /** SearchSettingsApiResponse */
         SearchSettingsApiResponse: {
             /** Items */
-            items?: components["schemas"]["app__sql__types__QGetSettingsV4Item"][] | null;
+            items?: components["schemas"]["app__v5__sql__types__QGetSettingsV4Item"][] | null;
         };
         /** SearchSimulatableProfilesApiRequest */
         SearchSimulatableProfilesApiRequest: {
@@ -49541,9 +49541,9 @@ export interface components {
             /** Link Tool Id */
             link_tool_id?: string | null;
             /** Current */
-            current?: components["schemas"]["app__sql__types__QGetRolesV4Item"][] | null;
+            current?: components["schemas"]["app__v5__sql__types__QGetRolesV4Item"][] | null;
             /** Resources */
-            resources?: components["schemas"]["app__sql__types__QGetRolesV4Item"][] | null;
+            resources?: components["schemas"]["app__v5__sql__types__QGetRolesV4Item"][] | null;
         };
         /** SettingsGenerationEvent */
         SettingsGenerationEvent: {
@@ -51574,7 +51574,7 @@ export interface components {
          * DeleteDocumentApiRequest
          * @description Request model for delete document endpoint.
          */
-        app__api__v4__artifacts__document__types__DeleteDocumentApiRequest: {
+        app__v5__api__main__document__types__DeleteDocumentApiRequest: {
             /**
              * Document Id
              * Format: uuid
@@ -51585,7 +51585,7 @@ export interface components {
          * DeleteDocumentApiResponse
          * @description Response model for delete document endpoint.
          */
-        app__api__v4__artifacts__document__types__DeleteDocumentApiResponse: {
+        app__v5__api__main__document__types__DeleteDocumentApiResponse: {
             /** Success */
             success: boolean;
             /** Message */
@@ -51595,7 +51595,7 @@ export interface components {
          * SaveDocumentApiRequest
          * @description Request model for save document endpoint - flat resource IDs.
          */
-        app__api__v4__artifacts__document__types__SaveDocumentApiRequest: {
+        app__v5__api__main__document__types__SaveDocumentApiRequest: {
             /** Input Document Id */
             input_document_id?: string | null;
             /**
@@ -51622,7 +51622,7 @@ export interface components {
          * SaveDocumentApiResponse
          * @description Response model for save document endpoint.
          */
-        app__api__v4__artifacts__document__types__SaveDocumentApiResponse: {
+        app__v5__api__main__document__types__SaveDocumentApiResponse: {
             /** Success */
             success: boolean;
             /**
@@ -51637,7 +51637,7 @@ export interface components {
          * QGetScenariosV4Item
          * @description Scenario item from scenarios resource query.
          */
-        app__api__v4__artifacts__simulation__types__QGetScenariosV4Item: {
+        app__v5__api__main__simulation__types__QGetScenariosV4Item: {
             /** Scenario Id */
             scenario_id?: string | null;
             /** Name */
@@ -51679,7 +51679,7 @@ export interface components {
          * QGetRolesV4Item
          * @description Role item returned from get endpoint.
          */
-        app__api__v4__resources__roles__types__QGetRolesV4Item: {
+        app__v5__api__resources__roles__types__QGetRolesV4Item: {
             /** Id */
             id?: string | null;
             /** Role */
@@ -51697,7 +51697,7 @@ export interface components {
          * QGetSettingsV4Auth
          * @description Auth item in settings.
          */
-        app__api__v4__resources__settings__types__QGetSettingsV4Auth: {
+        app__v5__api__resources__settings__types__QGetSettingsV4Auth: {
             /** Auth Id */
             auth_id?: string | null;
             /** Name */
@@ -51711,7 +51711,7 @@ export interface components {
          * QGetSettingsV4Item
          * @description Settings item returned from get endpoint.
          */
-        app__api__v4__resources__settings__types__QGetSettingsV4Item: {
+        app__v5__api__resources__settings__types__QGetSettingsV4Item: {
             /** Settings Id */
             settings_id?: string | null;
             /** Created At */
@@ -51761,14 +51761,14 @@ export interface components {
             /** Auth Ids */
             auth_ids?: string[] | null;
             /** Auths */
-            auths?: components["schemas"]["app__api__v4__resources__settings__types__QGetSettingsV4Auth"][] | null;
+            auths?: components["schemas"]["app__v5__api__resources__settings__types__QGetSettingsV4Auth"][] | null;
             /** Provider Ids */
             provider_ids?: string[] | null;
             /** Providers */
             providers?: components["schemas"]["QGetSettingsV4Provider"][] | null;
         };
         /** DeleteDocumentApiRequest */
-        app__sql__types__DeleteDocumentApiRequest: {
+        app__v5__sql__types__DeleteDocumentApiRequest: {
             /**
              * Document Id
              * Format: uuid
@@ -51776,7 +51776,7 @@ export interface components {
             document_id: string;
         };
         /** DeleteDocumentApiResponse */
-        app__sql__types__DeleteDocumentApiResponse: {
+        app__v5__sql__types__DeleteDocumentApiResponse: {
             /** Success */
             success?: boolean | null;
             /** Message */
@@ -51789,7 +51789,7 @@ export interface components {
             actor_name?: string | null;
         };
         /** QGetRolesV4Item */
-        app__sql__types__QGetRolesV4Item: {
+        app__v5__sql__types__QGetRolesV4Item: {
             /** Id */
             id: string | null;
             /** Role */
@@ -51804,7 +51804,7 @@ export interface components {
             color_hex: string | null;
         };
         /** QGetScenariosV4Item */
-        app__sql__types__QGetScenariosV4Item: {
+        app__v5__sql__types__QGetScenariosV4Item: {
             /** Scenario Id */
             scenario_id: string | null;
             /** Name */
@@ -51843,7 +51843,7 @@ export interface components {
             problem_statement_ids: string[] | null;
         };
         /** QGetSettingsV4Auth */
-        app__sql__types__QGetSettingsV4Auth: {
+        app__v5__sql__types__QGetSettingsV4Auth: {
             /** Auth Id */
             auth_id: string | null;
             /** Name */
@@ -51854,7 +51854,7 @@ export interface components {
             slug: string | null;
         };
         /** QGetSettingsV4Item */
-        app__sql__types__QGetSettingsV4Item: {
+        app__v5__sql__types__QGetSettingsV4Item: {
             /** Settings Id */
             settings_id: string | null;
             /** Created At */
@@ -51904,12 +51904,12 @@ export interface components {
             /** Auth Ids */
             auth_ids: string[] | null;
             /** Auths */
-            auths: components["schemas"]["app__sql__types__QGetSettingsV4Auth"][] | null;
+            auths: components["schemas"]["app__v5__sql__types__QGetSettingsV4Auth"][] | null;
             /** Provider Key Ids */
             provider_key_ids: string[] | null;
         };
         /** SaveDocumentApiRequest */
-        app__sql__types__SaveDocumentApiRequest: {
+        app__v5__sql__types__SaveDocumentApiRequest: {
             /** Input Document Id */
             input_document_id?: string | null;
             /** Group Id */
@@ -51924,136 +51924,136 @@ export interface components {
             texts?: components["schemas"]["DocumentMultiResourceAction"] | null;
         };
         /** SaveDocumentApiResponse */
-        app__sql__types__SaveDocumentApiResponse: {
+        app__v5__sql__types__SaveDocumentApiResponse: {
             /** Document Id */
             document_id?: string | null;
         };
         /** GetHomeTrainingEntriesApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__1: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__1: {
             [key: string]: unknown;
         };
         /** SearchSuiteDraftsEntriesApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__10: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__10: {
             [key: string]: unknown;
         };
         /** GetTrainingEntriesApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__11: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__11: {
             [key: string]: unknown;
         };
         /** SearchTrainingEntriesApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__12: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__12: {
             [key: string]: unknown;
         };
         /** GetTrainingDepartmentEntriesApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__13: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__13: {
             [key: string]: unknown;
         };
         /** SearchTrainingDepartmentEntriesApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__14: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__14: {
             [key: string]: unknown;
         };
         /** GetTrainingDraftsEntriesApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__15: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__15: {
             [key: string]: unknown;
         };
         /** SearchTrainingDraftsEntriesApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__16: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__16: {
             [key: string]: unknown;
         };
         /** GetHomeTrainingEntriesApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__17: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__17: {
             [key: string]: unknown;
         };
         /** SearchHomeTrainingEntriesApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__18: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__18: {
             [key: string]: unknown;
         };
         /** GetPracticeTrainingEntriesApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__19: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__19: {
             [key: string]: unknown;
         };
         /** SearchHomeTrainingEntriesApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__2: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__2: {
             [key: string]: unknown;
         };
         /** SearchPracticeTrainingEntriesApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__20: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__20: {
             [key: string]: unknown;
         };
         /** GetSuiteEntriesApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__21: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__21: {
             [key: string]: unknown;
         };
         /** SearchSuiteEntriesApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__22: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__22: {
             [key: string]: unknown;
         };
         /** GetSuiteDepartmentEntriesApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__23: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__23: {
             [key: string]: unknown;
         };
         /** SearchSuiteDepartmentEntriesApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__24: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__24: {
             [key: string]: unknown;
         };
         /** GetSuiteDraftsEntriesApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__25: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__25: {
             [key: string]: unknown;
         };
         /** SearchSuiteDraftsEntriesApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__26: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__26: {
             [key: string]: unknown;
         };
         /** GetTrainingEntriesApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__27: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__27: {
             [key: string]: unknown;
         };
         /** SearchTrainingEntriesApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__28: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__28: {
             [key: string]: unknown;
         };
         /** GetTrainingDepartmentEntriesApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__29: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__29: {
             [key: string]: unknown;
         };
         /** GetPracticeTrainingEntriesApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__3: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__3: {
             [key: string]: unknown;
         };
         /** SearchTrainingDepartmentEntriesApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__30: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__30: {
             [key: string]: unknown;
         };
         /** GetTrainingDraftsEntriesApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__31: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__31: {
             [key: string]: unknown;
         };
         /** SearchTrainingDraftsEntriesApiResponse */
-        app__sql__types___build_missing_type___locals____MissingSqlType__32: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__32: {
             [key: string]: unknown;
         };
         /** SearchPracticeTrainingEntriesApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__4: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__4: {
             [key: string]: unknown;
         };
         /** GetSuiteEntriesApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__5: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__5: {
             [key: string]: unknown;
         };
         /** SearchSuiteEntriesApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__6: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__6: {
             [key: string]: unknown;
         };
         /** GetSuiteDepartmentEntriesApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__7: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__7: {
             [key: string]: unknown;
         };
         /** SearchSuiteDepartmentEntriesApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__8: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__8: {
             [key: string]: unknown;
         };
         /** GetSuiteDraftsEntriesApiRequest */
-        app__sql__types___build_missing_type___locals____MissingSqlType__9: {
+        app__v5__sql__types___build_missing_type___locals____MissingSqlType__9: {
             [key: string]: unknown;
         };
     };
@@ -52065,7 +52065,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    get_persona_api_v4_artifacts_personas_get_post: {
+    get_persona_api_v5_artifacts_personas_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -52102,7 +52102,7 @@ export interface operations {
             };
         };
     };
-    get_persona_list_api_v4_artifacts_personas_list_post: {
+    get_persona_list_api_v5_artifacts_personas_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -52139,7 +52139,7 @@ export interface operations {
             };
         };
     };
-    save_persona_api_v4_artifacts_personas_save_post: {
+    save_persona_api_v5_artifacts_personas_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -52176,7 +52176,7 @@ export interface operations {
             };
         };
     };
-    duplicate_persona_api_v4_artifacts_personas_duplicate_post: {
+    duplicate_persona_api_v5_artifacts_personas_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -52213,7 +52213,7 @@ export interface operations {
             };
         };
     };
-    delete_persona_api_v4_artifacts_personas_delete_post: {
+    delete_persona_api_v5_artifacts_personas_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -52250,7 +52250,7 @@ export interface operations {
             };
         };
     };
-    patch_persona_draft_api_v4_artifacts_personas_draft_patch: {
+    patch_persona_draft_api_v5_artifacts_personas_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -52287,7 +52287,7 @@ export interface operations {
             };
         };
     };
-    get_persona_docs_endpoint_api_v4_artifacts_personas_docs_post: {
+    get_persona_docs_endpoint_api_v5_artifacts_personas_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -52324,7 +52324,7 @@ export interface operations {
             };
         };
     };
-    export_personas_api_v4_artifacts_personas_export_post: {
+    export_personas_api_v5_artifacts_personas_export_post: {
         parameters: {
             query?: never;
             header?: {
@@ -52361,7 +52361,7 @@ export interface operations {
             };
         };
     };
-    get_scenario_api_v4_artifacts_scenarios_get_post: {
+    get_scenario_api_v5_artifacts_scenarios_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -52398,7 +52398,7 @@ export interface operations {
             };
         };
     };
-    get_scenario_list_api_v4_artifacts_scenarios_list_post: {
+    get_scenario_list_api_v5_artifacts_scenarios_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -52435,7 +52435,7 @@ export interface operations {
             };
         };
     };
-    save_scenario_api_v4_artifacts_scenarios_save_post: {
+    save_scenario_api_v5_artifacts_scenarios_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -52472,7 +52472,7 @@ export interface operations {
             };
         };
     };
-    duplicate_scenario_api_v4_artifacts_scenarios_duplicate_post: {
+    duplicate_scenario_api_v5_artifacts_scenarios_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -52509,7 +52509,7 @@ export interface operations {
             };
         };
     };
-    delete_scenario_api_v4_artifacts_scenarios_delete_post: {
+    delete_scenario_api_v5_artifacts_scenarios_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -52546,7 +52546,7 @@ export interface operations {
             };
         };
     };
-    patch_scenario_draft_api_v4_artifacts_scenarios_draft_patch: {
+    patch_scenario_draft_api_v5_artifacts_scenarios_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -52583,7 +52583,7 @@ export interface operations {
             };
         };
     };
-    export_scenarios_api_v4_artifacts_scenarios_export_post: {
+    export_scenarios_api_v5_artifacts_scenarios_export_post: {
         parameters: {
             query?: never;
             header?: {
@@ -52620,7 +52620,7 @@ export interface operations {
             };
         };
     };
-    get_scenario_docs_endpoint_api_v4_artifacts_scenarios_docs_post: {
+    get_scenario_docs_endpoint_api_v5_artifacts_scenarios_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -52657,7 +52657,7 @@ export interface operations {
             };
         };
     };
-    get_simulation_api_v4_artifacts_simulations_get_post: {
+    get_simulation_api_v5_artifacts_simulations_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -52694,7 +52694,7 @@ export interface operations {
             };
         };
     };
-    get_simulation_list_api_v4_artifacts_simulations_list_post: {
+    get_simulation_list_api_v5_artifacts_simulations_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -52731,7 +52731,7 @@ export interface operations {
             };
         };
     };
-    save_simulation_api_v4_artifacts_simulations_save_post: {
+    save_simulation_api_v5_artifacts_simulations_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -52768,7 +52768,7 @@ export interface operations {
             };
         };
     };
-    duplicate_simulation_api_v4_artifacts_simulations_duplicate_post: {
+    duplicate_simulation_api_v5_artifacts_simulations_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -52805,7 +52805,7 @@ export interface operations {
             };
         };
     };
-    delete_simulation_api_v4_artifacts_simulations_delete_post: {
+    delete_simulation_api_v5_artifacts_simulations_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -52842,7 +52842,7 @@ export interface operations {
             };
         };
     };
-    patch_simulation_draft_api_v4_artifacts_simulations_draft_patch: {
+    patch_simulation_draft_api_v5_artifacts_simulations_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -52879,7 +52879,7 @@ export interface operations {
             };
         };
     };
-    export_simulations_api_v4_artifacts_simulations_export_post: {
+    export_simulations_api_v5_artifacts_simulations_export_post: {
         parameters: {
             query?: never;
             header?: {
@@ -52916,7 +52916,7 @@ export interface operations {
             };
         };
     };
-    get_simulation_docs_endpoint_api_v4_artifacts_simulations_docs_post: {
+    get_simulation_docs_endpoint_api_v5_artifacts_simulations_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -52953,7 +52953,7 @@ export interface operations {
             };
         };
     };
-    get_document_list_api_v4_artifacts_documents_list_post: {
+    get_document_list_api_v5_artifacts_documents_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -52990,7 +52990,7 @@ export interface operations {
             };
         };
     };
-    get_document_api_v4_artifacts_documents_get_post: {
+    get_document_api_v5_artifacts_documents_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -53027,7 +53027,7 @@ export interface operations {
             };
         };
     };
-    save_document_api_v4_artifacts_documents_save_post: {
+    save_document_api_v5_artifacts_documents_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -53040,7 +53040,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v4__artifacts__document__types__SaveDocumentApiRequest"];
+                "application/json": components["schemas"]["app__v5__api__main__document__types__SaveDocumentApiRequest"];
             };
         };
         responses: {
@@ -53050,7 +53050,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v4__artifacts__document__types__SaveDocumentApiResponse"];
+                    "application/json": components["schemas"]["app__v5__api__main__document__types__SaveDocumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53064,7 +53064,7 @@ export interface operations {
             };
         };
     };
-    duplicate_document_api_v4_artifacts_documents_duplicate_post: {
+    duplicate_document_api_v5_artifacts_documents_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -53101,7 +53101,7 @@ export interface operations {
             };
         };
     };
-    delete_document_api_v4_artifacts_documents_delete_post: {
+    delete_document_api_v5_artifacts_documents_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -53114,7 +53114,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v4__artifacts__document__types__DeleteDocumentApiRequest"];
+                "application/json": components["schemas"]["app__v5__api__main__document__types__DeleteDocumentApiRequest"];
             };
         };
         responses: {
@@ -53124,7 +53124,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v4__artifacts__document__types__DeleteDocumentApiResponse"];
+                    "application/json": components["schemas"]["app__v5__api__main__document__types__DeleteDocumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53138,7 +53138,7 @@ export interface operations {
             };
         };
     };
-    patch_document_draft_api_v4_artifacts_documents_draft_patch: {
+    patch_document_draft_api_v5_artifacts_documents_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -53175,7 +53175,7 @@ export interface operations {
             };
         };
     };
-    process_document_api_v4_artifacts_documents_bulk_process_post: {
+    process_document_api_v5_artifacts_documents_bulk_process_post: {
         parameters: {
             query?: never;
             header?: {
@@ -53212,7 +53212,7 @@ export interface operations {
             };
         };
     };
-    search_document_api_v4_artifacts_documents_bulk_search_post: {
+    search_document_api_v5_artifacts_documents_bulk_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -53249,7 +53249,7 @@ export interface operations {
             };
         };
     };
-    save_document_api_v4_artifacts_documents_bulk_save_post: {
+    save_document_api_v5_artifacts_documents_bulk_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -53262,7 +53262,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types__SaveDocumentApiRequest"];
+                "application/json": components["schemas"]["app__v5__sql__types__SaveDocumentApiRequest"];
             };
         };
         responses: {
@@ -53272,7 +53272,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types__SaveDocumentApiResponse"];
+                    "application/json": components["schemas"]["app__v5__sql__types__SaveDocumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53286,7 +53286,7 @@ export interface operations {
             };
         };
     };
-    delete_document_api_v4_artifacts_documents_bulk_delete_post: {
+    delete_document_api_v5_artifacts_documents_bulk_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -53299,7 +53299,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types__DeleteDocumentApiRequest"];
+                "application/json": components["schemas"]["app__v5__sql__types__DeleteDocumentApiRequest"];
             };
         };
         responses: {
@@ -53309,7 +53309,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types__DeleteDocumentApiResponse"];
+                    "application/json": components["schemas"]["app__v5__sql__types__DeleteDocumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53323,7 +53323,7 @@ export interface operations {
             };
         };
     };
-    get_document_docs_endpoint_api_v4_artifacts_documents_docs_post: {
+    get_document_docs_endpoint_api_v5_artifacts_documents_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -53360,7 +53360,7 @@ export interface operations {
             };
         };
     };
-    get_department_api_v4_artifacts_departments_get_post: {
+    get_department_api_v5_artifacts_departments_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -53397,7 +53397,7 @@ export interface operations {
             };
         };
     };
-    get_department_list_api_v4_artifacts_departments_list_post: {
+    get_department_list_api_v5_artifacts_departments_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -53434,7 +53434,7 @@ export interface operations {
             };
         };
     };
-    save_department_api_v4_artifacts_departments_save_post: {
+    save_department_api_v5_artifacts_departments_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -53471,7 +53471,7 @@ export interface operations {
             };
         };
     };
-    duplicate_department_api_v4_artifacts_departments_duplicate_post: {
+    duplicate_department_api_v5_artifacts_departments_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -53508,7 +53508,7 @@ export interface operations {
             };
         };
     };
-    delete_department_api_v4_artifacts_departments_delete_post: {
+    delete_department_api_v5_artifacts_departments_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -53545,7 +53545,7 @@ export interface operations {
             };
         };
     };
-    patch_department_draft_api_v4_artifacts_departments_draft_patch: {
+    patch_department_draft_api_v5_artifacts_departments_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -53582,7 +53582,7 @@ export interface operations {
             };
         };
     };
-    get_department_docs_endpoint_api_v4_artifacts_departments_docs_post: {
+    get_department_docs_endpoint_api_v5_artifacts_departments_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -53619,7 +53619,7 @@ export interface operations {
             };
         };
     };
-    get_cohort_list_api_v4_artifacts_cohorts_list_post: {
+    get_cohort_list_api_v5_artifacts_cohorts_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -53656,7 +53656,7 @@ export interface operations {
             };
         };
     };
-    get_cohort_api_v4_artifacts_cohorts_get_post: {
+    get_cohort_api_v5_artifacts_cohorts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -53693,7 +53693,7 @@ export interface operations {
             };
         };
     };
-    save_cohort_api_v4_artifacts_cohorts_save_post: {
+    save_cohort_api_v5_artifacts_cohorts_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -53730,7 +53730,7 @@ export interface operations {
             };
         };
     };
-    duplicate_cohort_api_v4_artifacts_cohorts_duplicate_post: {
+    duplicate_cohort_api_v5_artifacts_cohorts_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -53767,7 +53767,7 @@ export interface operations {
             };
         };
     };
-    delete_cohort_api_v4_artifacts_cohorts_delete_post: {
+    delete_cohort_api_v5_artifacts_cohorts_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -53804,7 +53804,7 @@ export interface operations {
             };
         };
     };
-    patch_cohort_draft_api_v4_artifacts_cohorts_draft_patch: {
+    patch_cohort_draft_api_v5_artifacts_cohorts_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -53841,7 +53841,7 @@ export interface operations {
             };
         };
     };
-    export_cohorts_api_v4_artifacts_cohorts_export_post: {
+    export_cohorts_api_v5_artifacts_cohorts_export_post: {
         parameters: {
             query?: never;
             header?: {
@@ -53878,7 +53878,7 @@ export interface operations {
             };
         };
     };
-    get_cohort_docs_endpoint_api_v4_artifacts_cohorts_docs_post: {
+    get_cohort_docs_endpoint_api_v5_artifacts_cohorts_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -53915,7 +53915,7 @@ export interface operations {
             };
         };
     };
-    get_eval_list_api_v4_artifacts_evals_list_post: {
+    get_eval_list_api_v5_artifacts_evals_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -53952,7 +53952,7 @@ export interface operations {
             };
         };
     };
-    get_eval_api_v4_artifacts_evals_get_post: {
+    get_eval_api_v5_artifacts_evals_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -53989,7 +53989,7 @@ export interface operations {
             };
         };
     };
-    save_eval_api_v4_artifacts_evals_save_post: {
+    save_eval_api_v5_artifacts_evals_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -54026,7 +54026,7 @@ export interface operations {
             };
         };
     };
-    duplicate_eval_api_v4_artifacts_evals_duplicate_post: {
+    duplicate_eval_api_v5_artifacts_evals_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -54063,7 +54063,7 @@ export interface operations {
             };
         };
     };
-    delete_eval_api_v4_artifacts_evals_delete_post: {
+    delete_eval_api_v5_artifacts_evals_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -54100,7 +54100,7 @@ export interface operations {
             };
         };
     };
-    patch_eval_draft_api_v4_artifacts_evals_draft_patch: {
+    patch_eval_draft_api_v5_artifacts_evals_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -54137,7 +54137,7 @@ export interface operations {
             };
         };
     };
-    get_eval_docs_endpoint_api_v4_artifacts_evals_docs_post: {
+    get_eval_docs_endpoint_api_v5_artifacts_evals_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -54174,7 +54174,7 @@ export interface operations {
             };
         };
     };
-    get_rubric_api_v4_artifacts_rubrics_get_post: {
+    get_rubric_api_v5_artifacts_rubrics_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -54211,7 +54211,7 @@ export interface operations {
             };
         };
     };
-    get_rubric_list_api_v4_artifacts_rubrics_list_post: {
+    get_rubric_list_api_v5_artifacts_rubrics_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -54248,7 +54248,7 @@ export interface operations {
             };
         };
     };
-    save_rubric_api_v4_artifacts_rubrics_save_post: {
+    save_rubric_api_v5_artifacts_rubrics_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -54285,7 +54285,7 @@ export interface operations {
             };
         };
     };
-    duplicate_rubric_api_v4_artifacts_rubrics_duplicate_post: {
+    duplicate_rubric_api_v5_artifacts_rubrics_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -54322,7 +54322,7 @@ export interface operations {
             };
         };
     };
-    delete_rubric_api_v4_artifacts_rubrics_delete_post: {
+    delete_rubric_api_v5_artifacts_rubrics_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -54359,7 +54359,7 @@ export interface operations {
             };
         };
     };
-    patch_rubric_draft_api_v4_artifacts_rubrics_draft_patch: {
+    patch_rubric_draft_api_v5_artifacts_rubrics_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -54396,7 +54396,7 @@ export interface operations {
             };
         };
     };
-    get_rubric_docs_endpoint_api_v4_artifacts_rubrics_docs_post: {
+    get_rubric_docs_endpoint_api_v5_artifacts_rubrics_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -54433,7 +54433,7 @@ export interface operations {
             };
         };
     };
-    get_setting_list_api_v4_artifacts_settings_list_post: {
+    get_setting_list_api_v5_artifacts_settings_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -54470,7 +54470,7 @@ export interface operations {
             };
         };
     };
-    get_setting_api_v4_artifacts_settings_get_post: {
+    get_setting_api_v5_artifacts_settings_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -54507,7 +54507,7 @@ export interface operations {
             };
         };
     };
-    save_setting_api_v4_artifacts_settings_save_post: {
+    save_setting_api_v5_artifacts_settings_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -54544,7 +54544,7 @@ export interface operations {
             };
         };
     };
-    duplicate_setting_api_v4_artifacts_settings_duplicate_post: {
+    duplicate_setting_api_v5_artifacts_settings_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -54581,7 +54581,7 @@ export interface operations {
             };
         };
     };
-    delete_setting_api_v4_artifacts_settings_delete_post: {
+    delete_setting_api_v5_artifacts_settings_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -54618,7 +54618,7 @@ export interface operations {
             };
         };
     };
-    patch_setting_draft_api_v4_artifacts_settings_draft_patch: {
+    patch_setting_draft_api_v5_artifacts_settings_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -54655,7 +54655,7 @@ export interface operations {
             };
         };
     };
-    get_setting_docs_endpoint_api_v4_artifacts_settings_docs_post: {
+    get_setting_docs_endpoint_api_v5_artifacts_settings_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -54692,7 +54692,7 @@ export interface operations {
             };
         };
     };
-    get_agent_api_v4_artifacts_agents_get_post: {
+    get_agent_api_v5_artifacts_agents_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -54729,7 +54729,7 @@ export interface operations {
             };
         };
     };
-    get_agent_list_api_v4_artifacts_agents_list_post: {
+    get_agent_list_api_v5_artifacts_agents_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -54766,7 +54766,7 @@ export interface operations {
             };
         };
     };
-    save_agent_api_v4_artifacts_agents_save_post: {
+    save_agent_api_v5_artifacts_agents_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -54803,7 +54803,7 @@ export interface operations {
             };
         };
     };
-    duplicate_agent_api_v4_artifacts_agents_duplicate_post: {
+    duplicate_agent_api_v5_artifacts_agents_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -54840,7 +54840,7 @@ export interface operations {
             };
         };
     };
-    delete_agent_api_v4_artifacts_agents_delete_post: {
+    delete_agent_api_v5_artifacts_agents_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -54877,7 +54877,7 @@ export interface operations {
             };
         };
     };
-    patch_agent_draft_api_v4_artifacts_agents_draft_patch: {
+    patch_agent_draft_api_v5_artifacts_agents_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -54914,7 +54914,7 @@ export interface operations {
             };
         };
     };
-    get_agent_docs_endpoint_api_v4_artifacts_agents_docs_post: {
+    get_agent_docs_endpoint_api_v5_artifacts_agents_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -54951,7 +54951,7 @@ export interface operations {
             };
         };
     };
-    get_model_api_v4_artifacts_models_get_post: {
+    get_model_api_v5_artifacts_models_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -54988,7 +54988,7 @@ export interface operations {
             };
         };
     };
-    get_model_list_api_v4_artifacts_models_list_post: {
+    get_model_list_api_v5_artifacts_models_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -55025,7 +55025,7 @@ export interface operations {
             };
         };
     };
-    save_model_api_v4_artifacts_models_save_post: {
+    save_model_api_v5_artifacts_models_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -55062,7 +55062,7 @@ export interface operations {
             };
         };
     };
-    duplicate_model_api_v4_artifacts_models_duplicate_post: {
+    duplicate_model_api_v5_artifacts_models_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -55099,7 +55099,7 @@ export interface operations {
             };
         };
     };
-    delete_model_api_v4_artifacts_models_delete_post: {
+    delete_model_api_v5_artifacts_models_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -55136,7 +55136,7 @@ export interface operations {
             };
         };
     };
-    patch_model_draft_api_v4_artifacts_models_draft_patch: {
+    patch_model_draft_api_v5_artifacts_models_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -55173,7 +55173,7 @@ export interface operations {
             };
         };
     };
-    get_model_docs_endpoint_api_v4_artifacts_models_docs_post: {
+    get_model_docs_endpoint_api_v5_artifacts_models_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -55210,7 +55210,7 @@ export interface operations {
             };
         };
     };
-    get_provider_list_api_v4_artifacts_providers_list_post: {
+    get_provider_list_api_v5_artifacts_providers_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -55247,7 +55247,7 @@ export interface operations {
             };
         };
     };
-    get_provider_api_v4_artifacts_providers_get_post: {
+    get_provider_api_v5_artifacts_providers_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -55284,7 +55284,7 @@ export interface operations {
             };
         };
     };
-    save_provider_api_v4_artifacts_providers_save_post: {
+    save_provider_api_v5_artifacts_providers_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -55321,7 +55321,7 @@ export interface operations {
             };
         };
     };
-    duplicate_provider_api_v4_artifacts_providers_duplicate_post: {
+    duplicate_provider_api_v5_artifacts_providers_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -55358,7 +55358,7 @@ export interface operations {
             };
         };
     };
-    delete_provider_api_v4_artifacts_providers_delete_post: {
+    delete_provider_api_v5_artifacts_providers_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -55395,7 +55395,7 @@ export interface operations {
             };
         };
     };
-    patch_provider_draft_api_v4_artifacts_providers_draft_patch: {
+    patch_provider_draft_api_v5_artifacts_providers_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -55432,7 +55432,7 @@ export interface operations {
             };
         };
     };
-    get_provider_docs_endpoint_api_v4_artifacts_providers_docs_post: {
+    get_provider_docs_endpoint_api_v5_artifacts_providers_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -55469,7 +55469,7 @@ export interface operations {
             };
         };
     };
-    get_parameter_api_v4_artifacts_parameters_get_post: {
+    get_parameter_api_v5_artifacts_parameters_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -55506,7 +55506,7 @@ export interface operations {
             };
         };
     };
-    get_parameter_list_api_v4_artifacts_parameters_list_post: {
+    get_parameter_list_api_v5_artifacts_parameters_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -55543,7 +55543,7 @@ export interface operations {
             };
         };
     };
-    save_parameter_api_v4_artifacts_parameters_save_post: {
+    save_parameter_api_v5_artifacts_parameters_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -55580,7 +55580,7 @@ export interface operations {
             };
         };
     };
-    duplicate_parameter_api_v4_artifacts_parameters_duplicate_post: {
+    duplicate_parameter_api_v5_artifacts_parameters_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -55617,7 +55617,7 @@ export interface operations {
             };
         };
     };
-    delete_parameter_api_v4_artifacts_parameters_delete_post: {
+    delete_parameter_api_v5_artifacts_parameters_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -55654,7 +55654,7 @@ export interface operations {
             };
         };
     };
-    patch_parameter_draft_api_v4_artifacts_parameters_draft_patch: {
+    patch_parameter_draft_api_v5_artifacts_parameters_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -55691,7 +55691,7 @@ export interface operations {
             };
         };
     };
-    get_parameter_docs_endpoint_api_v4_artifacts_parameters_docs_post: {
+    get_parameter_docs_endpoint_api_v5_artifacts_parameters_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -55728,7 +55728,7 @@ export interface operations {
             };
         };
     };
-    get_field_api_v4_artifacts_fields_get_post: {
+    get_field_api_v5_artifacts_fields_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -55765,7 +55765,7 @@ export interface operations {
             };
         };
     };
-    get_field_list_api_v4_artifacts_fields_list_post: {
+    get_field_list_api_v5_artifacts_fields_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -55802,7 +55802,7 @@ export interface operations {
             };
         };
     };
-    save_field_api_v4_artifacts_fields_save_post: {
+    save_field_api_v5_artifacts_fields_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -55839,7 +55839,7 @@ export interface operations {
             };
         };
     };
-    duplicate_field_api_v4_artifacts_fields_duplicate_post: {
+    duplicate_field_api_v5_artifacts_fields_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -55876,7 +55876,7 @@ export interface operations {
             };
         };
     };
-    delete_field_api_v4_artifacts_fields_delete_post: {
+    delete_field_api_v5_artifacts_fields_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -55913,7 +55913,7 @@ export interface operations {
             };
         };
     };
-    patch_field_draft_api_v4_artifacts_fields_draft_patch: {
+    patch_field_draft_api_v5_artifacts_fields_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -55950,7 +55950,7 @@ export interface operations {
             };
         };
     };
-    get_field_docs_endpoint_api_v4_artifacts_fields_docs_post: {
+    get_field_docs_endpoint_api_v5_artifacts_fields_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -55987,7 +55987,7 @@ export interface operations {
             };
         };
     };
-    get_profile_api_v4_artifacts_profiles_get_post: {
+    get_profile_api_v5_artifacts_profiles_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -56024,7 +56024,7 @@ export interface operations {
             };
         };
     };
-    get_profile_list_api_v4_artifacts_profiles_list_post: {
+    get_profile_list_api_v5_artifacts_profiles_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -56061,7 +56061,7 @@ export interface operations {
             };
         };
     };
-    save_profile_api_v4_artifacts_profiles_save_post: {
+    save_profile_api_v5_artifacts_profiles_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -56098,7 +56098,7 @@ export interface operations {
             };
         };
     };
-    duplicate_profile_api_v4_artifacts_profiles_duplicate_post: {
+    duplicate_profile_api_v5_artifacts_profiles_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -56135,7 +56135,7 @@ export interface operations {
             };
         };
     };
-    patch_profile_draft_api_v4_artifacts_profiles_draft_patch: {
+    patch_profile_draft_api_v5_artifacts_profiles_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -56172,7 +56172,7 @@ export interface operations {
             };
         };
     };
-    delete_profile_api_v4_artifacts_profiles_delete_post: {
+    delete_profile_api_v5_artifacts_profiles_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -56209,7 +56209,7 @@ export interface operations {
             };
         };
     };
-    process_profiles_api_v4_artifacts_profiles_bulk_process_post: {
+    process_profiles_api_v5_artifacts_profiles_bulk_process_post: {
         parameters: {
             query?: never;
             header?: {
@@ -56246,7 +56246,7 @@ export interface operations {
             };
         };
     };
-    search_profiles_api_v4_artifacts_profiles_bulk_search_post: {
+    search_profiles_api_v5_artifacts_profiles_bulk_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -56283,7 +56283,7 @@ export interface operations {
             };
         };
     };
-    save_profiles_api_v4_artifacts_profiles_bulk_save_post: {
+    save_profiles_api_v5_artifacts_profiles_bulk_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -56320,7 +56320,7 @@ export interface operations {
             };
         };
     };
-    delete_profiles_api_v4_artifacts_profiles_bulk_delete_post: {
+    delete_profiles_api_v5_artifacts_profiles_bulk_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -56357,7 +56357,7 @@ export interface operations {
             };
         };
     };
-    get_profile_docs_endpoint_api_v4_artifacts_profiles_docs_post: {
+    get_profile_docs_endpoint_api_v5_artifacts_profiles_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -56394,7 +56394,7 @@ export interface operations {
             };
         };
     };
-    get_auth_api_v4_artifacts_auths_get_post: {
+    get_auth_api_v5_artifacts_auths_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -56431,7 +56431,7 @@ export interface operations {
             };
         };
     };
-    get_auth_list_api_v4_artifacts_auths_list_post: {
+    get_auth_list_api_v5_artifacts_auths_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -56468,7 +56468,7 @@ export interface operations {
             };
         };
     };
-    save_auth_api_v4_artifacts_auths_save_post: {
+    save_auth_api_v5_artifacts_auths_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -56505,7 +56505,7 @@ export interface operations {
             };
         };
     };
-    duplicate_auth_api_v4_artifacts_auths_duplicate_post: {
+    duplicate_auth_api_v5_artifacts_auths_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -56542,7 +56542,7 @@ export interface operations {
             };
         };
     };
-    delete_auth_api_v4_artifacts_auths_delete_post: {
+    delete_auth_api_v5_artifacts_auths_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -56579,7 +56579,7 @@ export interface operations {
             };
         };
     };
-    patch_auth_draft_api_v4_artifacts_auths_draft_patch: {
+    patch_auth_draft_api_v5_artifacts_auths_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -56616,7 +56616,7 @@ export interface operations {
             };
         };
     };
-    get_auth_docs_endpoint_api_v4_artifacts_auths_docs_post: {
+    get_auth_docs_endpoint_api_v5_artifacts_auths_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -56653,7 +56653,7 @@ export interface operations {
             };
         };
     };
-    get_tool_list_api_v4_artifacts_tools_list_post: {
+    get_tool_list_api_v5_artifacts_tools_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -56690,7 +56690,7 @@ export interface operations {
             };
         };
     };
-    get_tool_api_v4_artifacts_tools_get_post: {
+    get_tool_api_v5_artifacts_tools_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -56727,7 +56727,7 @@ export interface operations {
             };
         };
     };
-    save_tool_api_v4_artifacts_tools_save_post: {
+    save_tool_api_v5_artifacts_tools_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -56764,7 +56764,7 @@ export interface operations {
             };
         };
     };
-    duplicate_tool_api_v4_artifacts_tools_duplicate_post: {
+    duplicate_tool_api_v5_artifacts_tools_duplicate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -56801,7 +56801,7 @@ export interface operations {
             };
         };
     };
-    delete_tool_api_v4_artifacts_tools_delete_post: {
+    delete_tool_api_v5_artifacts_tools_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -56838,7 +56838,7 @@ export interface operations {
             };
         };
     };
-    patch_tool_draft_api_v4_artifacts_tools_draft_patch: {
+    patch_tool_draft_api_v5_artifacts_tools_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -56875,7 +56875,7 @@ export interface operations {
             };
         };
     };
-    get_tool_docs_endpoint_api_v4_artifacts_tools_docs_post: {
+    get_tool_docs_endpoint_api_v5_artifacts_tools_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -56912,7 +56912,7 @@ export interface operations {
             };
         };
     };
-    get_group_api_v4_artifacts_group_get_post: {
+    get_group_api_v5_artifacts_group_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -56949,7 +56949,7 @@ export interface operations {
             };
         };
     };
-    get_group_docs_endpoint_api_v4_artifacts_group_docs_post: {
+    get_group_docs_endpoint_api_v5_artifacts_group_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -56984,7 +56984,7 @@ export interface operations {
             };
         };
     };
-    get_session_api_v4_artifacts_session_get_post: {
+    get_session_api_v5_artifacts_session_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -57021,7 +57021,7 @@ export interface operations {
             };
         };
     };
-    get_session_docs_endpoint_api_v4_artifacts_session_docs_post: {
+    get_session_docs_endpoint_api_v5_artifacts_session_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -57056,7 +57056,7 @@ export interface operations {
             };
         };
     };
-    chat_get_api_v4_artifacts_chat_get_post: {
+    chat_get_api_v5_artifacts_chat_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -57093,7 +57093,7 @@ export interface operations {
             };
         };
     };
-    patch_chat_draft_api_v4_artifacts_chat_draft_patch: {
+    patch_chat_draft_api_v5_artifacts_chat_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -57130,7 +57130,7 @@ export interface operations {
             };
         };
     };
-    chat_refresh_api_v4_artifacts_chat_refresh_post: {
+    chat_refresh_api_v5_artifacts_chat_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -57167,7 +57167,7 @@ export interface operations {
             };
         };
     };
-    get_chat_docs_endpoint_api_v4_artifacts_chat_docs_post: {
+    get_chat_docs_endpoint_api_v5_artifacts_chat_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -57204,7 +57204,7 @@ export interface operations {
             };
         };
     };
-    home_get_api_v4_artifacts_home_get_post: {
+    home_get_api_v5_artifacts_home_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -57241,7 +57241,7 @@ export interface operations {
             };
         };
     };
-    export_home_api_v4_artifacts_home_export_post: {
+    export_home_api_v5_artifacts_home_export_post: {
         parameters: {
             query?: never;
             header?: {
@@ -57274,7 +57274,7 @@ export interface operations {
             };
         };
     };
-    practice_get_api_v4_artifacts_practice_get_post: {
+    practice_get_api_v5_artifacts_practice_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -57311,7 +57311,7 @@ export interface operations {
             };
         };
     };
-    export_practice_api_v4_artifacts_practice_export_post: {
+    export_practice_api_v5_artifacts_practice_export_post: {
         parameters: {
             query?: never;
             header?: {
@@ -57348,7 +57348,7 @@ export interface operations {
             };
         };
     };
-    attempt_get_api_v4_artifacts_attempt_get_post: {
+    attempt_get_api_v5_artifacts_attempt_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -57385,7 +57385,7 @@ export interface operations {
             };
         };
     };
-    archive_attempts_api_v4_artifacts_attempt_archive_post: {
+    archive_attempts_api_v5_artifacts_attempt_archive_post: {
         parameters: {
             query?: never;
             header?: {
@@ -57422,7 +57422,7 @@ export interface operations {
             };
         };
     };
-    get_attempt_docs_endpoint_api_v4_artifacts_attempt_docs_post: {
+    get_attempt_docs_endpoint_api_v5_artifacts_attempt_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -57459,7 +57459,7 @@ export interface operations {
             };
         };
     };
-    get_dashboard_api_v4_artifacts_dashboard_get_post: {
+    get_dashboard_api_v5_artifacts_dashboard_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -57496,7 +57496,7 @@ export interface operations {
             };
         };
     };
-    dashboard_refresh_api_v4_artifacts_dashboard_refresh_post: {
+    dashboard_refresh_api_v5_artifacts_dashboard_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -57533,7 +57533,7 @@ export interface operations {
             };
         };
     };
-    export_dashboard_api_v4_artifacts_dashboard_export_post: {
+    export_dashboard_api_v5_artifacts_dashboard_export_post: {
         parameters: {
             query?: never;
             header?: {
@@ -57570,7 +57570,7 @@ export interface operations {
             };
         };
     };
-    get_dashboard_docs_endpoint_api_v4_artifacts_dashboard_docs_post: {
+    get_dashboard_docs_endpoint_api_v5_artifacts_dashboard_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -57607,7 +57607,7 @@ export interface operations {
             };
         };
     };
-    export_report_api_v4_artifacts_reports_export_post: {
+    export_report_api_v5_artifacts_reports_export_post: {
         parameters: {
             query?: never;
             header?: {
@@ -57644,7 +57644,7 @@ export interface operations {
             };
         };
     };
-    get_reports_api_v4_artifacts_reports_get_post: {
+    get_reports_api_v5_artifacts_reports_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -57681,7 +57681,7 @@ export interface operations {
             };
         };
     };
-    reports_refresh_api_v4_artifacts_reports_refresh_post: {
+    reports_refresh_api_v5_artifacts_reports_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -57718,7 +57718,7 @@ export interface operations {
             };
         };
     };
-    get_reports_docs_endpoint_api_v4_artifacts_reports_docs_post: {
+    get_reports_docs_endpoint_api_v5_artifacts_reports_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -57755,7 +57755,7 @@ export interface operations {
             };
         };
     };
-    get_leaderboard_api_v4_artifacts_leaderboard_get_post: {
+    get_leaderboard_api_v5_artifacts_leaderboard_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -57792,7 +57792,7 @@ export interface operations {
             };
         };
     };
-    leaderboard_refresh_api_v4_artifacts_leaderboard_refresh_post: {
+    leaderboard_refresh_api_v5_artifacts_leaderboard_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -57829,7 +57829,7 @@ export interface operations {
             };
         };
     };
-    export_leaderboard_api_v4_artifacts_leaderboard_export_post: {
+    export_leaderboard_api_v5_artifacts_leaderboard_export_post: {
         parameters: {
             query?: never;
             header?: {
@@ -57866,7 +57866,7 @@ export interface operations {
             };
         };
     };
-    get_leaderboard_docs_endpoint_api_v4_artifacts_leaderboard_docs_post: {
+    get_leaderboard_docs_endpoint_api_v5_artifacts_leaderboard_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -57903,7 +57903,7 @@ export interface operations {
             };
         };
     };
-    get_pricing_api_v4_artifacts_pricing_get_post: {
+    get_pricing_api_v5_artifacts_pricing_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -57940,7 +57940,7 @@ export interface operations {
             };
         };
     };
-    pricing_refresh_api_v4_artifacts_pricing_refresh_post: {
+    pricing_refresh_api_v5_artifacts_pricing_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -57977,7 +57977,7 @@ export interface operations {
             };
         };
     };
-    export_pricing_api_v4_artifacts_pricing_export_post: {
+    export_pricing_api_v5_artifacts_pricing_export_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58014,7 +58014,7 @@ export interface operations {
             };
         };
     };
-    get_pricing_docs_endpoint_api_v4_artifacts_pricing_docs_post: {
+    get_pricing_docs_endpoint_api_v5_artifacts_pricing_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58051,7 +58051,7 @@ export interface operations {
             };
         };
     };
-    get_activity_api_v4_artifacts_activity_get_post: {
+    get_activity_api_v5_artifacts_activity_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58088,7 +58088,7 @@ export interface operations {
             };
         };
     };
-    create_problem_api_v4_artifacts_activity_problem_post: {
+    create_problem_api_v5_artifacts_activity_problem_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58125,7 +58125,7 @@ export interface operations {
             };
         };
     };
-    activity_refresh_api_v4_artifacts_activity_refresh_post: {
+    activity_refresh_api_v5_artifacts_activity_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58162,7 +58162,7 @@ export interface operations {
             };
         };
     };
-    resolve_problem_api_v4_artifacts_activity_resolve_post: {
+    resolve_problem_api_v5_artifacts_activity_resolve_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58199,7 +58199,7 @@ export interface operations {
             };
         };
     };
-    get_activity_docs_endpoint_api_v4_artifacts_activity_docs_post: {
+    get_activity_docs_endpoint_api_v5_artifacts_activity_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58236,7 +58236,7 @@ export interface operations {
             };
         };
     };
-    get_health_api_v4_artifacts_health_get_post: {
+    get_health_api_v5_artifacts_health_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58273,7 +58273,7 @@ export interface operations {
             };
         };
     };
-    health_refresh_api_v4_artifacts_health_refresh_post: {
+    health_refresh_api_v5_artifacts_health_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58310,7 +58310,7 @@ export interface operations {
             };
         };
     };
-    get_health_docs_endpoint_api_v4_artifacts_health_docs_post: {
+    get_health_docs_endpoint_api_v5_artifacts_health_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58345,7 +58345,7 @@ export interface operations {
             };
         };
     };
-    get_benchmark_api_v4_artifacts_benchmark_get_post: {
+    get_benchmark_api_v5_artifacts_benchmark_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58382,7 +58382,7 @@ export interface operations {
             };
         };
     };
-    benchmark_refresh_api_v4_artifacts_benchmark_refresh_post: {
+    benchmark_refresh_api_v5_artifacts_benchmark_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58419,7 +58419,7 @@ export interface operations {
             };
         };
     };
-    get_benchmark_docs_endpoint_api_v4_artifacts_benchmark_docs_post: {
+    get_benchmark_docs_endpoint_api_v5_artifacts_benchmark_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58456,7 +58456,7 @@ export interface operations {
             };
         };
     };
-    get_test_artifact_api_v4_artifacts_test_get_post: {
+    get_test_artifact_api_v5_artifacts_test_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58493,7 +58493,7 @@ export interface operations {
             };
         };
     };
-    archive_test_artifacts_api_v4_artifacts_test_archive_post: {
+    archive_test_artifacts_api_v5_artifacts_test_archive_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58530,7 +58530,7 @@ export interface operations {
             };
         };
     };
-    get_test_docs_endpoint_api_v4_artifacts_test_docs_post: {
+    get_test_docs_endpoint_api_v5_artifacts_test_docs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58565,7 +58565,7 @@ export interface operations {
             };
         };
     };
-    get_agents_api_v4_resources_agents_get_post: {
+    get_agents_api_v5_resources_agents_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58602,7 +58602,7 @@ export interface operations {
             };
         };
     };
-    search_agents_api_v4_resources_agents_search_post: {
+    search_agents_api_v5_resources_agents_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58639,7 +58639,7 @@ export interface operations {
             };
         };
     };
-    get_systems_api_v4_resources_systems_get_post: {
+    get_systems_api_v5_resources_systems_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58676,7 +58676,7 @@ export interface operations {
             };
         };
     };
-    search_systems_api_v4_resources_systems_search_post: {
+    search_systems_api_v5_resources_systems_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58713,7 +58713,7 @@ export interface operations {
             };
         };
     };
-    create_args_api_v4_resources_args_post: {
+    create_args_api_v5_resources_args_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58750,7 +58750,7 @@ export interface operations {
             };
         };
     };
-    get_args_api_v4_resources_args_get_post: {
+    get_args_api_v5_resources_args_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58787,7 +58787,7 @@ export interface operations {
             };
         };
     };
-    search_args_api_v4_resources_args_search_post: {
+    search_args_api_v5_resources_args_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58824,7 +58824,7 @@ export interface operations {
             };
         };
     };
-    create_arg_positions_api_v4_resources_arg_positions_post: {
+    create_arg_positions_api_v5_resources_arg_positions_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58861,7 +58861,7 @@ export interface operations {
             };
         };
     };
-    get_arg_positions_api_v4_resources_arg_positions_get_post: {
+    get_arg_positions_api_v5_resources_arg_positions_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58898,7 +58898,7 @@ export interface operations {
             };
         };
     };
-    search_arg_positions_api_v4_resources_arg_positions_search_post: {
+    search_arg_positions_api_v5_resources_arg_positions_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58935,7 +58935,7 @@ export interface operations {
             };
         };
     };
-    create_args_outputs_api_v4_resources_args_outputs_post: {
+    create_args_outputs_api_v5_resources_args_outputs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -58972,7 +58972,7 @@ export interface operations {
             };
         };
     };
-    get_args_outputs_api_v4_resources_args_outputs_get_post: {
+    get_args_outputs_api_v5_resources_args_outputs_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59009,7 +59009,7 @@ export interface operations {
             };
         };
     };
-    search_args_outputs_api_v4_resources_args_outputs_search_post: {
+    search_args_outputs_api_v5_resources_args_outputs_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59046,7 +59046,7 @@ export interface operations {
             };
         };
     };
-    create_auth_item_keys_api_v4_resources_auth_item_keys_post: {
+    create_auth_item_keys_api_v5_resources_auth_item_keys_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59083,7 +59083,7 @@ export interface operations {
             };
         };
     };
-    get_auth_item_keys_api_v4_resources_auth_item_keys_get_post: {
+    get_auth_item_keys_api_v5_resources_auth_item_keys_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59120,7 +59120,7 @@ export interface operations {
             };
         };
     };
-    search_auth_item_keys_api_v4_resources_auth_item_keys_search_post: {
+    search_auth_item_keys_api_v5_resources_auth_item_keys_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59157,7 +59157,7 @@ export interface operations {
             };
         };
     };
-    get_auths_api_v4_resources_auths_get_post: {
+    get_auths_api_v5_resources_auths_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59194,7 +59194,7 @@ export interface operations {
             };
         };
     };
-    search_auths_api_v4_resources_auths_search_post: {
+    search_auths_api_v5_resources_auths_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59231,7 +59231,7 @@ export interface operations {
             };
         };
     };
-    get_entries_api_v4_resources_entries_get_post: {
+    get_entries_api_v5_resources_entries_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59268,7 +59268,7 @@ export interface operations {
             };
         };
     };
-    search_entries_api_v4_resources_entries_search_post: {
+    search_entries_api_v5_resources_entries_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59305,7 +59305,7 @@ export interface operations {
             };
         };
     };
-    get_cohorts_api_v4_resources_cohorts_get_post: {
+    get_cohorts_api_v5_resources_cohorts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59342,7 +59342,7 @@ export interface operations {
             };
         };
     };
-    search_cohorts_api_v4_resources_cohorts_search_post: {
+    search_cohorts_api_v5_resources_cohorts_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59379,7 +59379,7 @@ export interface operations {
             };
         };
     };
-    create_colors_api_v4_resources_colors_post: {
+    create_colors_api_v5_resources_colors_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59416,7 +59416,7 @@ export interface operations {
             };
         };
     };
-    get_colors_api_v4_resources_colors_get_post: {
+    get_colors_api_v5_resources_colors_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59453,7 +59453,7 @@ export interface operations {
             };
         };
     };
-    link_colors_api_v4_resources_colors_link_post: {
+    link_colors_api_v5_resources_colors_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59490,7 +59490,7 @@ export interface operations {
             };
         };
     };
-    search_colors_api_v4_resources_colors_search_post: {
+    search_colors_api_v5_resources_colors_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59527,7 +59527,7 @@ export interface operations {
             };
         };
     };
-    get_conditional_parameters_api_v4_resources_conditional_parameters_get_post: {
+    get_conditional_parameters_api_v5_resources_conditional_parameters_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59564,7 +59564,7 @@ export interface operations {
             };
         };
     };
-    search_conditional_parameters_api_v4_resources_conditional_parameters_search_post: {
+    search_conditional_parameters_api_v5_resources_conditional_parameters_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59601,7 +59601,7 @@ export interface operations {
             };
         };
     };
-    get_departments_api_v4_resources_departments_get_post: {
+    get_departments_api_v5_resources_departments_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59638,7 +59638,7 @@ export interface operations {
             };
         };
     };
-    link_departments_api_v4_resources_departments_link_post: {
+    link_departments_api_v5_resources_departments_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59675,7 +59675,7 @@ export interface operations {
             };
         };
     };
-    search_departments_api_v4_resources_departments_search_post: {
+    search_departments_api_v5_resources_departments_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59712,7 +59712,7 @@ export interface operations {
             };
         };
     };
-    create_descriptions_api_v4_resources_descriptions_post: {
+    create_descriptions_api_v5_resources_descriptions_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59749,7 +59749,7 @@ export interface operations {
             };
         };
     };
-    get_descriptions_api_v4_resources_descriptions_get_post: {
+    get_descriptions_api_v5_resources_descriptions_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59786,7 +59786,7 @@ export interface operations {
             };
         };
     };
-    link_descriptions_api_v4_resources_descriptions_link_post: {
+    link_descriptions_api_v5_resources_descriptions_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59823,7 +59823,7 @@ export interface operations {
             };
         };
     };
-    search_descriptions_api_v4_resources_descriptions_search_post: {
+    search_descriptions_api_v5_resources_descriptions_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59860,7 +59860,7 @@ export interface operations {
             };
         };
     };
-    get_resources_api_v4_resources_resources_get_post: {
+    get_resources_api_v5_resources_resources_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59897,7 +59897,7 @@ export interface operations {
             };
         };
     };
-    search_resources_api_v4_resources_resources_search_post: {
+    search_resources_api_v5_resources_resources_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59934,7 +59934,7 @@ export interface operations {
             };
         };
     };
-    get_document_api_v4_resources_documents_get_post: {
+    get_document_api_v5_resources_documents_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -59971,7 +59971,7 @@ export interface operations {
             };
         };
     };
-    link_documents_api_v4_resources_documents_link_post: {
+    link_documents_api_v5_resources_documents_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60008,7 +60008,7 @@ export interface operations {
             };
         };
     };
-    search_documents_api_v4_resources_documents_search_post: {
+    search_documents_api_v5_resources_documents_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60045,7 +60045,7 @@ export interface operations {
             };
         };
     };
-    create_emails_api_v4_resources_emails_post: {
+    create_emails_api_v5_resources_emails_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60082,7 +60082,7 @@ export interface operations {
             };
         };
     };
-    get_emails_api_v4_resources_emails_get_post: {
+    get_emails_api_v5_resources_emails_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60119,7 +60119,7 @@ export interface operations {
             };
         };
     };
-    search_emails_api_v4_resources_emails_search_post: {
+    search_emails_api_v5_resources_emails_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60156,7 +60156,7 @@ export interface operations {
             };
         };
     };
-    create_endpoints_api_v4_resources_endpoints_post: {
+    create_endpoints_api_v5_resources_endpoints_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60193,7 +60193,7 @@ export interface operations {
             };
         };
     };
-    get_endpoints_api_v4_resources_endpoints_get_post: {
+    get_endpoints_api_v5_resources_endpoints_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60230,7 +60230,7 @@ export interface operations {
             };
         };
     };
-    search_endpoints_api_v4_resources_endpoints_search_post: {
+    search_endpoints_api_v5_resources_endpoints_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60267,7 +60267,7 @@ export interface operations {
             };
         };
     };
-    get_evals_api_v4_resources_evals_get_post: {
+    get_evals_api_v5_resources_evals_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60304,7 +60304,7 @@ export interface operations {
             };
         };
     };
-    search_evals_api_v4_resources_evals_search_post: {
+    search_evals_api_v5_resources_evals_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60341,7 +60341,7 @@ export interface operations {
             };
         };
     };
-    create_examples_api_v4_resources_examples_post: {
+    create_examples_api_v5_resources_examples_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60378,7 +60378,7 @@ export interface operations {
             };
         };
     };
-    get_examples_api_v4_resources_examples_get_post: {
+    get_examples_api_v5_resources_examples_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60415,7 +60415,7 @@ export interface operations {
             };
         };
     };
-    link_examples_api_v4_resources_examples_link_post: {
+    link_examples_api_v5_resources_examples_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60452,7 +60452,7 @@ export interface operations {
             };
         };
     };
-    search_examples_api_v4_resources_examples_search_post: {
+    search_examples_api_v5_resources_examples_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60489,7 +60489,7 @@ export interface operations {
             };
         };
     };
-    get_fields_api_v4_resources_fields_get_post: {
+    get_fields_api_v5_resources_fields_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60526,7 +60526,7 @@ export interface operations {
             };
         };
     };
-    link_fields_api_v4_resources_fields_link_post: {
+    link_fields_api_v5_resources_fields_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60563,7 +60563,7 @@ export interface operations {
             };
         };
     };
-    search_fields_api_v4_resources_fields_search_post: {
+    search_fields_api_v5_resources_fields_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60600,7 +60600,7 @@ export interface operations {
             };
         };
     };
-    create_parameter_fields_api_v4_resources_parameter_fields_post: {
+    create_parameter_fields_api_v5_resources_parameter_fields_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60637,7 +60637,7 @@ export interface operations {
             };
         };
     };
-    get_parameter_fields_api_v4_resources_parameter_fields_get_post: {
+    get_parameter_fields_api_v5_resources_parameter_fields_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60674,7 +60674,7 @@ export interface operations {
             };
         };
     };
-    link_parameter_fields_api_v4_resources_parameter_fields_link_post: {
+    link_parameter_fields_api_v5_resources_parameter_fields_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60711,7 +60711,7 @@ export interface operations {
             };
         };
     };
-    search_parameter_fields_api_v4_resources_parameter_fields_search_post: {
+    search_parameter_fields_api_v5_resources_parameter_fields_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60748,7 +60748,7 @@ export interface operations {
             };
         };
     };
-    get_flags_api_v4_resources_flags_get_post: {
+    get_flags_api_v5_resources_flags_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60785,7 +60785,7 @@ export interface operations {
             };
         };
     };
-    link_flags_api_v4_resources_flags_link_post: {
+    link_flags_api_v5_resources_flags_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60822,7 +60822,7 @@ export interface operations {
             };
         };
     };
-    search_flags_api_v4_resources_flags_search_post: {
+    search_flags_api_v5_resources_flags_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60859,7 +60859,7 @@ export interface operations {
             };
         };
     };
-    get_icons_api_v4_resources_icons_get_post: {
+    get_icons_api_v5_resources_icons_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60896,7 +60896,7 @@ export interface operations {
             };
         };
     };
-    link_icons_api_v4_resources_icons_link_post: {
+    link_icons_api_v5_resources_icons_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60933,7 +60933,7 @@ export interface operations {
             };
         };
     };
-    search_icons_api_v4_resources_icons_search_post: {
+    search_icons_api_v5_resources_icons_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -60970,7 +60970,7 @@ export interface operations {
             };
         };
     };
-    create_images_api_v4_resources_images_post: {
+    create_images_api_v5_resources_images_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61007,7 +61007,7 @@ export interface operations {
             };
         };
     };
-    get_image_api_v4_resources_images_get_post: {
+    get_image_api_v5_resources_images_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61044,7 +61044,7 @@ export interface operations {
             };
         };
     };
-    link_images_api_v4_resources_images_link_post: {
+    link_images_api_v5_resources_images_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61081,7 +61081,7 @@ export interface operations {
             };
         };
     };
-    search_images_api_v4_resources_images_search_post: {
+    search_images_api_v5_resources_images_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61118,7 +61118,7 @@ export interface operations {
             };
         };
     };
-    create_instructions_api_v4_resources_instructions_post: {
+    create_instructions_api_v5_resources_instructions_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61155,7 +61155,7 @@ export interface operations {
             };
         };
     };
-    get_instructions_api_v4_resources_instructions_get_post: {
+    get_instructions_api_v5_resources_instructions_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61192,7 +61192,7 @@ export interface operations {
             };
         };
     };
-    link_instructions_api_v4_resources_instructions_link_post: {
+    link_instructions_api_v5_resources_instructions_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61229,7 +61229,7 @@ export interface operations {
             };
         };
     };
-    search_instructions_api_v4_resources_instructions_search_post: {
+    search_instructions_api_v5_resources_instructions_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61266,7 +61266,7 @@ export interface operations {
             };
         };
     };
-    create_items_api_v4_resources_items_post: {
+    create_items_api_v5_resources_items_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61303,7 +61303,7 @@ export interface operations {
             };
         };
     };
-    get_items_api_v4_resources_items_get_post: {
+    get_items_api_v5_resources_items_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61340,7 +61340,7 @@ export interface operations {
             };
         };
     };
-    search_items_api_v4_resources_items_search_post: {
+    search_items_api_v5_resources_items_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61377,7 +61377,7 @@ export interface operations {
             };
         };
     };
-    create_keys_api_v4_resources_keys_post: {
+    create_keys_api_v5_resources_keys_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61414,7 +61414,7 @@ export interface operations {
             };
         };
     };
-    get_keys_api_v4_resources_keys_get_post: {
+    get_keys_api_v5_resources_keys_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61451,7 +61451,7 @@ export interface operations {
             };
         };
     };
-    search_keys_api_v4_resources_keys_search_post: {
+    search_keys_api_v5_resources_keys_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61488,7 +61488,7 @@ export interface operations {
             };
         };
     };
-    create_provider_keys_api_v4_resources_provider_keys_post: {
+    create_provider_keys_api_v5_resources_provider_keys_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61525,7 +61525,7 @@ export interface operations {
             };
         };
     };
-    get_provider_keys_api_v4_resources_provider_keys_get_post: {
+    get_provider_keys_api_v5_resources_provider_keys_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61562,7 +61562,7 @@ export interface operations {
             };
         };
     };
-    search_provider_keys_api_v4_resources_provider_keys_search_post: {
+    search_provider_keys_api_v5_resources_provider_keys_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61599,7 +61599,7 @@ export interface operations {
             };
         };
     };
-    get_modalities_api_v4_resources_modalities_get_post: {
+    get_modalities_api_v5_resources_modalities_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61636,7 +61636,7 @@ export interface operations {
             };
         };
     };
-    search_modalities_api_v4_resources_modalities_search_post: {
+    search_modalities_api_v5_resources_modalities_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61673,7 +61673,7 @@ export interface operations {
             };
         };
     };
-    get_models_api_v4_resources_models_get_post: {
+    get_models_api_v5_resources_models_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61710,7 +61710,7 @@ export interface operations {
             };
         };
     };
-    search_models_api_v4_resources_models_search_post: {
+    search_models_api_v5_resources_models_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61747,7 +61747,7 @@ export interface operations {
             };
         };
     };
-    get_model_flags_api_v4_resources_model_flags_get_post: {
+    get_model_flags_api_v5_resources_model_flags_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61784,7 +61784,7 @@ export interface operations {
             };
         };
     };
-    search_model_flags_api_v4_resources_model_flags_search_post: {
+    search_model_flags_api_v5_resources_model_flags_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61821,7 +61821,7 @@ export interface operations {
             };
         };
     };
-    get_model_rubrics_api_v4_resources_model_rubrics_get_post: {
+    get_model_rubrics_api_v5_resources_model_rubrics_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61858,7 +61858,7 @@ export interface operations {
             };
         };
     };
-    search_model_rubrics_api_v4_resources_model_rubrics_search_post: {
+    search_model_rubrics_api_v5_resources_model_rubrics_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61895,7 +61895,7 @@ export interface operations {
             };
         };
     };
-    get_model_positions_api_v4_resources_model_positions_get_post: {
+    get_model_positions_api_v5_resources_model_positions_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61932,7 +61932,7 @@ export interface operations {
             };
         };
     };
-    search_model_positions_api_v4_resources_model_positions_search_post: {
+    search_model_positions_api_v5_resources_model_positions_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61969,7 +61969,7 @@ export interface operations {
             };
         };
     };
-    create_names_api_v4_resources_names_post: {
+    create_names_api_v5_resources_names_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62006,7 +62006,7 @@ export interface operations {
             };
         };
     };
-    get_names_api_v4_resources_names_get_post: {
+    get_names_api_v5_resources_names_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62043,7 +62043,7 @@ export interface operations {
             };
         };
     };
-    link_names_api_v4_resources_names_link_post: {
+    link_names_api_v5_resources_names_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62080,7 +62080,7 @@ export interface operations {
             };
         };
     };
-    search_names_api_v4_resources_names_search_post: {
+    search_names_api_v5_resources_names_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62117,7 +62117,7 @@ export interface operations {
             };
         };
     };
-    create_objectives_api_v4_resources_objectives_post: {
+    create_objectives_api_v5_resources_objectives_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62154,7 +62154,7 @@ export interface operations {
             };
         };
     };
-    get_objective_api_v4_resources_objectives_get_post: {
+    get_objective_api_v5_resources_objectives_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62191,7 +62191,7 @@ export interface operations {
             };
         };
     };
-    link_objectives_api_v4_resources_objectives_link_post: {
+    link_objectives_api_v5_resources_objectives_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62228,7 +62228,7 @@ export interface operations {
             };
         };
     };
-    search_objectives_api_v4_resources_objectives_search_post: {
+    search_objectives_api_v5_resources_objectives_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62265,7 +62265,7 @@ export interface operations {
             };
         };
     };
-    create_options_api_v4_resources_options_post: {
+    create_options_api_v5_resources_options_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62302,7 +62302,7 @@ export interface operations {
             };
         };
     };
-    get_options_api_v4_resources_options_get_post: {
+    get_options_api_v5_resources_options_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62339,7 +62339,7 @@ export interface operations {
             };
         };
     };
-    link_options_api_v4_resources_options_link_post: {
+    link_options_api_v5_resources_options_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62376,7 +62376,7 @@ export interface operations {
             };
         };
     };
-    search_options_api_v4_resources_options_search_post: {
+    search_options_api_v5_resources_options_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62413,7 +62413,7 @@ export interface operations {
             };
         };
     };
-    get_parameters_api_v4_resources_parameters_get_post: {
+    get_parameters_api_v5_resources_parameters_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62450,7 +62450,7 @@ export interface operations {
             };
         };
     };
-    search_parameters_api_v4_resources_parameters_search_post: {
+    search_parameters_api_v5_resources_parameters_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62487,7 +62487,7 @@ export interface operations {
             };
         };
     };
-    get_persona_api_v4_resources_personas_get_post: {
+    get_persona_api_v5_resources_personas_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62524,7 +62524,7 @@ export interface operations {
             };
         };
     };
-    link_personas_api_v4_resources_personas_link_post: {
+    link_personas_api_v5_resources_personas_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62561,7 +62561,7 @@ export interface operations {
             };
         };
     };
-    search_personas_api_v4_resources_personas_search_post: {
+    search_personas_api_v5_resources_personas_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62598,7 +62598,7 @@ export interface operations {
             };
         };
     };
-    create_points_api_v4_resources_points_post: {
+    create_points_api_v5_resources_points_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62635,7 +62635,7 @@ export interface operations {
             };
         };
     };
-    get_points_api_v4_resources_points_get_post: {
+    get_points_api_v5_resources_points_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62672,7 +62672,7 @@ export interface operations {
             };
         };
     };
-    search_points_api_v4_resources_points_search_post: {
+    search_points_api_v5_resources_points_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62709,7 +62709,7 @@ export interface operations {
             };
         };
     };
-    create_pricing_api_v4_resources_pricing_post: {
+    create_pricing_api_v5_resources_pricing_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62746,7 +62746,7 @@ export interface operations {
             };
         };
     };
-    get_pricing_api_v4_resources_pricing_get_post: {
+    get_pricing_api_v5_resources_pricing_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62783,7 +62783,7 @@ export interface operations {
             };
         };
     };
-    search_pricing_api_v4_resources_pricing_search_post: {
+    search_pricing_api_v5_resources_pricing_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62820,7 +62820,7 @@ export interface operations {
             };
         };
     };
-    create_problem_statements_api_v4_resources_problem_statements_post: {
+    create_problem_statements_api_v5_resources_problem_statements_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62857,7 +62857,7 @@ export interface operations {
             };
         };
     };
-    get_problem_statement_api_v4_resources_problem_statements_get_post: {
+    get_problem_statement_api_v5_resources_problem_statements_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62894,7 +62894,7 @@ export interface operations {
             };
         };
     };
-    link_problem_statements_api_v4_resources_problem_statements_link_post: {
+    link_problem_statements_api_v5_resources_problem_statements_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62931,7 +62931,7 @@ export interface operations {
             };
         };
     };
-    get_profiles_api_v4_resources_profiles_get_post: {
+    get_profiles_api_v5_resources_profiles_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -62968,7 +62968,7 @@ export interface operations {
             };
         };
     };
-    search_profiles_api_v4_resources_profiles_search_post: {
+    search_profiles_api_v5_resources_profiles_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63005,7 +63005,7 @@ export interface operations {
             };
         };
     };
-    link_profiles_api_v4_resources_profiles_link_post: {
+    link_profiles_api_v5_resources_profiles_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63042,7 +63042,7 @@ export interface operations {
             };
         };
     };
-    create_prompts_api_v4_resources_prompts_post: {
+    create_prompts_api_v5_resources_prompts_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63079,7 +63079,7 @@ export interface operations {
             };
         };
     };
-    get_prompts_api_v4_resources_prompts_get_post: {
+    get_prompts_api_v5_resources_prompts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63116,7 +63116,7 @@ export interface operations {
             };
         };
     };
-    search_prompts_api_v4_resources_prompts_search_post: {
+    search_prompts_api_v5_resources_prompts_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63153,7 +63153,7 @@ export interface operations {
             };
         };
     };
-    create_protocols_api_v4_resources_protocols_post: {
+    create_protocols_api_v5_resources_protocols_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63190,7 +63190,7 @@ export interface operations {
             };
         };
     };
-    get_protocols_api_v4_resources_protocols_get_post: {
+    get_protocols_api_v5_resources_protocols_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63227,7 +63227,7 @@ export interface operations {
             };
         };
     };
-    search_protocols_api_v4_resources_protocols_search_post: {
+    search_protocols_api_v5_resources_protocols_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63264,7 +63264,7 @@ export interface operations {
             };
         };
     };
-    get_providers_api_v4_resources_providers_get_post: {
+    get_providers_api_v5_resources_providers_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63301,7 +63301,7 @@ export interface operations {
             };
         };
     };
-    search_providers_api_v4_resources_providers_search_post: {
+    search_providers_api_v5_resources_providers_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63338,7 +63338,7 @@ export interface operations {
             };
         };
     };
-    get_qualities_api_v4_resources_qualities_get_post: {
+    get_qualities_api_v5_resources_qualities_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63375,7 +63375,7 @@ export interface operations {
             };
         };
     };
-    search_qualities_api_v4_resources_qualities_search_post: {
+    search_qualities_api_v5_resources_qualities_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63412,7 +63412,7 @@ export interface operations {
             };
         };
     };
-    create_questions_api_v4_resources_questions_post: {
+    create_questions_api_v5_resources_questions_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63449,7 +63449,7 @@ export interface operations {
             };
         };
     };
-    get_question_api_v4_resources_questions_get_post: {
+    get_question_api_v5_resources_questions_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63486,7 +63486,7 @@ export interface operations {
             };
         };
     };
-    link_questions_api_v4_resources_questions_link_post: {
+    link_questions_api_v5_resources_questions_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63523,7 +63523,7 @@ export interface operations {
             };
         };
     };
-    get_reasoning_levels_api_v4_resources_reasoning_levels_get_post: {
+    get_reasoning_levels_api_v5_resources_reasoning_levels_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63560,7 +63560,7 @@ export interface operations {
             };
         };
     };
-    search_reasoning_levels_api_v4_resources_reasoning_levels_search_post: {
+    search_reasoning_levels_api_v5_resources_reasoning_levels_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63597,7 +63597,7 @@ export interface operations {
             };
         };
     };
-    create_request_limits_api_v4_resources_request_limits_post: {
+    create_request_limits_api_v5_resources_request_limits_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63634,7 +63634,7 @@ export interface operations {
             };
         };
     };
-    get_request_limits_api_v4_resources_request_limits_get_post: {
+    get_request_limits_api_v5_resources_request_limits_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63671,7 +63671,7 @@ export interface operations {
             };
         };
     };
-    search_request_limits_api_v4_resources_request_limits_search_post: {
+    search_request_limits_api_v5_resources_request_limits_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63708,7 +63708,7 @@ export interface operations {
             };
         };
     };
-    get_roles_api_v4_resources_roles_get_post: {
+    get_roles_api_v5_resources_roles_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63745,7 +63745,7 @@ export interface operations {
             };
         };
     };
-    search_roles_api_v4_resources_roles_search_post: {
+    search_roles_api_v5_resources_roles_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63782,7 +63782,7 @@ export interface operations {
             };
         };
     };
-    get_rubrics_api_v4_resources_rubrics_get_post: {
+    get_rubrics_api_v5_resources_rubrics_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63819,7 +63819,7 @@ export interface operations {
             };
         };
     };
-    search_rubrics_api_v4_resources_rubrics_search_post: {
+    search_rubrics_api_v5_resources_rubrics_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63856,7 +63856,7 @@ export interface operations {
             };
         };
     };
-    get_scenario_flags_api_v4_resources_scenario_flags_get_post: {
+    get_scenario_flags_api_v5_resources_scenario_flags_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63893,7 +63893,7 @@ export interface operations {
             };
         };
     };
-    search_scenario_flags_api_v4_resources_scenario_flags_search_post: {
+    search_scenario_flags_api_v5_resources_scenario_flags_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63930,7 +63930,7 @@ export interface operations {
             };
         };
     };
-    link_scenario_flags_api_v4_resources_scenario_flags_link_post: {
+    link_scenario_flags_api_v5_resources_scenario_flags_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -63967,7 +63967,7 @@ export interface operations {
             };
         };
     };
-    create_profile_personas_api_v4_resources_profile_personas_post: {
+    create_profile_personas_api_v5_resources_profile_personas_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64004,7 +64004,7 @@ export interface operations {
             };
         };
     };
-    get_profile_personas_api_v4_resources_profile_personas_get_post: {
+    get_profile_personas_api_v5_resources_profile_personas_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64041,7 +64041,7 @@ export interface operations {
             };
         };
     };
-    search_profile_personas_api_v4_resources_profile_personas_search_post: {
+    search_profile_personas_api_v5_resources_profile_personas_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64078,7 +64078,7 @@ export interface operations {
             };
         };
     };
-    link_profile_personas_api_v4_resources_profile_personas_link_post: {
+    link_profile_personas_api_v5_resources_profile_personas_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64115,7 +64115,7 @@ export interface operations {
             };
         };
     };
-    create_scenario_positions_api_v4_resources_scenario_positions_post: {
+    create_scenario_positions_api_v5_resources_scenario_positions_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64152,7 +64152,7 @@ export interface operations {
             };
         };
     };
-    get_scenario_positions_api_v4_resources_scenario_positions_get_post: {
+    get_scenario_positions_api_v5_resources_scenario_positions_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64189,7 +64189,7 @@ export interface operations {
             };
         };
     };
-    search_scenario_positions_api_v4_resources_scenario_positions_search_post: {
+    search_scenario_positions_api_v5_resources_scenario_positions_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64226,7 +64226,7 @@ export interface operations {
             };
         };
     };
-    link_scenario_positions_api_v4_resources_scenario_positions_link_post: {
+    link_scenario_positions_api_v5_resources_scenario_positions_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64263,7 +64263,7 @@ export interface operations {
             };
         };
     };
-    create_scenario_rubrics_api_v4_resources_scenario_rubrics_post: {
+    create_scenario_rubrics_api_v5_resources_scenario_rubrics_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64300,7 +64300,7 @@ export interface operations {
             };
         };
     };
-    get_scenario_rubrics_api_v4_resources_scenario_rubrics_get_post: {
+    get_scenario_rubrics_api_v5_resources_scenario_rubrics_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64337,7 +64337,7 @@ export interface operations {
             };
         };
     };
-    search_scenario_rubrics_api_v4_resources_scenario_rubrics_search_post: {
+    search_scenario_rubrics_api_v5_resources_scenario_rubrics_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64374,7 +64374,7 @@ export interface operations {
             };
         };
     };
-    link_scenario_rubrics_api_v4_resources_scenario_rubrics_link_post: {
+    link_scenario_rubrics_api_v5_resources_scenario_rubrics_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64411,7 +64411,7 @@ export interface operations {
             };
         };
     };
-    create_scenario_time_limits_api_v4_resources_scenario_time_limits_post: {
+    create_scenario_time_limits_api_v5_resources_scenario_time_limits_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64448,7 +64448,7 @@ export interface operations {
             };
         };
     };
-    get_scenario_time_limits_api_v4_resources_scenario_time_limits_get_post: {
+    get_scenario_time_limits_api_v5_resources_scenario_time_limits_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64485,7 +64485,7 @@ export interface operations {
             };
         };
     };
-    search_scenario_time_limits_api_v4_resources_scenario_time_limits_search_post: {
+    search_scenario_time_limits_api_v5_resources_scenario_time_limits_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64522,7 +64522,7 @@ export interface operations {
             };
         };
     };
-    link_scenario_time_limits_api_v4_resources_scenario_time_limits_link_post: {
+    link_scenario_time_limits_api_v5_resources_scenario_time_limits_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64559,7 +64559,7 @@ export interface operations {
             };
         };
     };
-    get_scenarios_api_v4_resources_scenarios_get_post: {
+    get_scenarios_api_v5_resources_scenarios_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64596,7 +64596,7 @@ export interface operations {
             };
         };
     };
-    search_scenarios_api_v4_resources_scenarios_search_post: {
+    search_scenarios_api_v5_resources_scenarios_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64633,7 +64633,7 @@ export interface operations {
             };
         };
     };
-    link_scenarios_api_v4_resources_scenarios_link_post: {
+    link_scenarios_api_v5_resources_scenarios_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64670,7 +64670,7 @@ export interface operations {
             };
         };
     };
-    get_settings_api_v4_resources_settings_get_post: {
+    get_settings_api_v5_resources_settings_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64707,7 +64707,7 @@ export interface operations {
             };
         };
     };
-    search_settings_api_v4_resources_settings_search_post: {
+    search_settings_api_v5_resources_settings_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64744,7 +64744,7 @@ export interface operations {
             };
         };
     };
-    create_simulation_positions_api_v4_resources_simulation_positions_post: {
+    create_simulation_positions_api_v5_resources_simulation_positions_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64781,7 +64781,7 @@ export interface operations {
             };
         };
     };
-    get_simulation_positions_api_v4_resources_simulation_positions_get_post: {
+    get_simulation_positions_api_v5_resources_simulation_positions_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64818,7 +64818,7 @@ export interface operations {
             };
         };
     };
-    search_simulation_positions_api_v4_resources_simulation_positions_search_post: {
+    search_simulation_positions_api_v5_resources_simulation_positions_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64855,7 +64855,7 @@ export interface operations {
             };
         };
     };
-    link_simulation_positions_api_v4_resources_simulation_positions_link_post: {
+    link_simulation_positions_api_v5_resources_simulation_positions_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64892,7 +64892,7 @@ export interface operations {
             };
         };
     };
-    create_simulation_availability_api_v4_resources_simulation_availability_post: {
+    create_simulation_availability_api_v5_resources_simulation_availability_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64929,7 +64929,7 @@ export interface operations {
             };
         };
     };
-    get_simulation_availability_api_v4_resources_simulation_availability_get_post: {
+    get_simulation_availability_api_v5_resources_simulation_availability_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -64966,7 +64966,7 @@ export interface operations {
             };
         };
     };
-    search_simulation_availability_api_v4_resources_simulation_availability_search_post: {
+    search_simulation_availability_api_v5_resources_simulation_availability_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65003,7 +65003,7 @@ export interface operations {
             };
         };
     };
-    link_simulation_availability_api_v4_resources_simulation_availability_link_post: {
+    link_simulation_availability_api_v5_resources_simulation_availability_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65040,7 +65040,7 @@ export interface operations {
             };
         };
     };
-    get_simulations_api_v4_resources_simulations_get_post: {
+    get_simulations_api_v5_resources_simulations_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65077,7 +65077,7 @@ export interface operations {
             };
         };
     };
-    search_simulations_api_v4_resources_simulations_search_post: {
+    search_simulations_api_v5_resources_simulations_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65114,7 +65114,7 @@ export interface operations {
             };
         };
     };
-    link_simulations_api_v4_resources_simulations_link_post: {
+    link_simulations_api_v5_resources_simulations_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65151,7 +65151,7 @@ export interface operations {
             };
         };
     };
-    create_slugs_api_v4_resources_slugs_post: {
+    create_slugs_api_v5_resources_slugs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65188,7 +65188,7 @@ export interface operations {
             };
         };
     };
-    get_slugs_api_v4_resources_slugs_get_post: {
+    get_slugs_api_v5_resources_slugs_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65225,7 +65225,7 @@ export interface operations {
             };
         };
     };
-    search_slugs_api_v4_resources_slugs_search_post: {
+    search_slugs_api_v5_resources_slugs_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65262,7 +65262,7 @@ export interface operations {
             };
         };
     };
-    create_standard_groups_api_v4_resources_standard_groups_post: {
+    create_standard_groups_api_v5_resources_standard_groups_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65299,7 +65299,7 @@ export interface operations {
             };
         };
     };
-    get_standard_groups_api_v4_resources_standard_groups_get_post: {
+    get_standard_groups_api_v5_resources_standard_groups_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65336,7 +65336,7 @@ export interface operations {
             };
         };
     };
-    search_standard_groups_api_v4_resources_standard_groups_search_post: {
+    search_standard_groups_api_v5_resources_standard_groups_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65373,7 +65373,7 @@ export interface operations {
             };
         };
     };
-    get_standards_api_v4_resources_standards_get_post: {
+    get_standards_api_v5_resources_standards_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65410,7 +65410,7 @@ export interface operations {
             };
         };
     };
-    search_standards_api_v4_resources_standards_search_post: {
+    search_standards_api_v5_resources_standards_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65447,7 +65447,7 @@ export interface operations {
             };
         };
     };
-    get_temperature_levels_api_v4_resources_temperature_levels_get_post: {
+    get_temperature_levels_api_v5_resources_temperature_levels_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65484,7 +65484,7 @@ export interface operations {
             };
         };
     };
-    search_temperature_levels_api_v4_resources_temperature_levels_search_post: {
+    search_temperature_levels_api_v5_resources_temperature_levels_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65521,7 +65521,7 @@ export interface operations {
             };
         };
     };
-    get_thresholds_api_v4_resources_thresholds_get_post: {
+    get_thresholds_api_v5_resources_thresholds_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65558,7 +65558,7 @@ export interface operations {
             };
         };
     };
-    search_thresholds_api_v4_resources_thresholds_search_post: {
+    search_thresholds_api_v5_resources_thresholds_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65595,7 +65595,7 @@ export interface operations {
             };
         };
     };
-    get_tools_api_v4_resources_tools_get_post: {
+    get_tools_api_v5_resources_tools_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65632,7 +65632,7 @@ export interface operations {
             };
         };
     };
-    search_tools_api_v4_resources_tools_search_post: {
+    search_tools_api_v5_resources_tools_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65669,7 +65669,7 @@ export interface operations {
             };
         };
     };
-    create_values_api_v4_resources_values_post: {
+    create_values_api_v5_resources_values_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65706,7 +65706,7 @@ export interface operations {
             };
         };
     };
-    get_values_api_v4_resources_values_get_post: {
+    get_values_api_v5_resources_values_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65743,7 +65743,7 @@ export interface operations {
             };
         };
     };
-    search_values_api_v4_resources_values_search_post: {
+    search_values_api_v5_resources_values_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65780,7 +65780,7 @@ export interface operations {
             };
         };
     };
-    create_videos_api_v4_resources_videos_post: {
+    create_videos_api_v5_resources_videos_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65817,7 +65817,7 @@ export interface operations {
             };
         };
     };
-    get_video_api_v4_resources_videos_get_post: {
+    get_video_api_v5_resources_videos_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65854,7 +65854,7 @@ export interface operations {
             };
         };
     };
-    link_videos_api_v4_resources_videos_link_post: {
+    link_videos_api_v5_resources_videos_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65891,7 +65891,7 @@ export interface operations {
             };
         };
     };
-    create_voices_api_v4_resources_voices_post: {
+    create_voices_api_v5_resources_voices_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65928,7 +65928,7 @@ export interface operations {
             };
         };
     };
-    get_voices_api_v4_resources_voices_get_post: {
+    get_voices_api_v5_resources_voices_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -65965,7 +65965,7 @@ export interface operations {
             };
         };
     };
-    link_voices_api_v4_resources_voices_link_post: {
+    link_voices_api_v5_resources_voices_link_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66002,7 +66002,7 @@ export interface operations {
             };
         };
     };
-    search_voices_api_v4_resources_voices_search_post: {
+    search_voices_api_v5_resources_voices_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66039,7 +66039,7 @@ export interface operations {
             };
         };
     };
-    create_texts_api_v4_resources_texts_post: {
+    create_texts_api_v5_resources_texts_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66076,7 +66076,7 @@ export interface operations {
             };
         };
     };
-    get_texts_api_v4_resources_texts_get_post: {
+    get_texts_api_v5_resources_texts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66113,7 +66113,7 @@ export interface operations {
             };
         };
     };
-    search_texts_api_v4_resources_texts_search_post: {
+    search_texts_api_v5_resources_texts_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66150,7 +66150,7 @@ export interface operations {
             };
         };
     };
-    create_uploads_api_v4_resources_uploads_post: {
+    create_uploads_api_v5_resources_uploads_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66187,7 +66187,7 @@ export interface operations {
             };
         };
     };
-    get_uploads_api_v4_resources_uploads_get_post: {
+    get_uploads_api_v5_resources_uploads_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66224,7 +66224,7 @@ export interface operations {
             };
         };
     };
-    search_uploads_api_v4_resources_uploads_search_post: {
+    search_uploads_api_v5_resources_uploads_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66261,7 +66261,7 @@ export interface operations {
             };
         };
     };
-    get_activity_entries_api_v4_entries_activity_get_post: {
+    get_activity_entries_api_v5_entries_activity_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66298,7 +66298,7 @@ export interface operations {
             };
         };
     };
-    search_activity_entries_api_v4_entries_activity_search_post: {
+    search_activity_entries_api_v5_entries_activity_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66335,7 +66335,7 @@ export interface operations {
             };
         };
     };
-    refresh_activity_api_v4_entries_activity_refresh_post: {
+    refresh_activity_api_v5_entries_activity_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66370,7 +66370,7 @@ export interface operations {
             };
         };
     };
-    get_agent_drafts_entries_api_v4_entries_agent_drafts_get_post: {
+    get_agent_drafts_entries_api_v5_entries_agent_drafts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66407,7 +66407,7 @@ export interface operations {
             };
         };
     };
-    search_agent_drafts_entries_api_v4_entries_agent_drafts_search_post: {
+    search_agent_drafts_entries_api_v5_entries_agent_drafts_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66444,7 +66444,7 @@ export interface operations {
             };
         };
     };
-    refresh_agent_drafts_api_v4_entries_agent_drafts_refresh_post: {
+    refresh_agent_drafts_api_v5_entries_agent_drafts_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66479,7 +66479,7 @@ export interface operations {
             };
         };
     };
-    get_attempt_entries_api_v4_entries_attempt_get_post: {
+    get_attempt_entries_api_v5_entries_attempt_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66516,7 +66516,7 @@ export interface operations {
             };
         };
     };
-    search_attempt_entries_api_v4_entries_attempt_search_post: {
+    search_attempt_entries_api_v5_entries_attempt_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66553,7 +66553,7 @@ export interface operations {
             };
         };
     };
-    refresh_attempt_api_v4_entries_attempt_refresh_post: {
+    refresh_attempt_api_v5_entries_attempt_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66588,7 +66588,7 @@ export interface operations {
             };
         };
     };
-    create_attempt_entry_api_v4_entries_attempt_create_post: {
+    create_attempt_entry_api_v5_entries_attempt_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66625,7 +66625,7 @@ export interface operations {
             };
         };
     };
-    get_attempt_analysis_entries_api_v4_entries_attempt_analysis_get_post: {
+    get_attempt_analysis_entries_api_v5_entries_attempt_analysis_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66662,7 +66662,7 @@ export interface operations {
             };
         };
     };
-    search_attempt_analysis_entries_api_v4_entries_attempt_analysis_search_post: {
+    search_attempt_analysis_entries_api_v5_entries_attempt_analysis_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66699,7 +66699,7 @@ export interface operations {
             };
         };
     };
-    refresh_attempt_analysis_api_v4_entries_attempt_analysis_refresh_post: {
+    refresh_attempt_analysis_api_v5_entries_attempt_analysis_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66734,7 +66734,7 @@ export interface operations {
             };
         };
     };
-    create_attempt_analysis_entry_api_v4_entries_attempt_analysis_create_post: {
+    create_attempt_analysis_entry_api_v5_entries_attempt_analysis_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66771,7 +66771,7 @@ export interface operations {
             };
         };
     };
-    get_attempt_archive_entries_api_v4_entries_attempt_archive_get_post: {
+    get_attempt_archive_entries_api_v5_entries_attempt_archive_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66808,7 +66808,7 @@ export interface operations {
             };
         };
     };
-    create_attempt_archive_entry_api_v4_entries_attempt_archive_create_post: {
+    create_attempt_archive_entry_api_v5_entries_attempt_archive_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66845,7 +66845,7 @@ export interface operations {
             };
         };
     };
-    search_attempt_archive_entries_api_v4_entries_attempt_archive_search_post: {
+    search_attempt_archive_entries_api_v5_entries_attempt_archive_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66882,7 +66882,7 @@ export interface operations {
             };
         };
     };
-    refresh_attempt_archive_api_v4_entries_attempt_archive_refresh_post: {
+    refresh_attempt_archive_api_v5_entries_attempt_archive_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66917,7 +66917,7 @@ export interface operations {
             };
         };
     };
-    get_attempt_chat_entries_api_v4_entries_attempt_chat_get_post: {
+    get_attempt_chat_entries_api_v5_entries_attempt_chat_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66954,7 +66954,7 @@ export interface operations {
             };
         };
     };
-    search_attempt_chat_entries_api_v4_entries_attempt_chat_search_post: {
+    search_attempt_chat_entries_api_v5_entries_attempt_chat_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -66991,7 +66991,7 @@ export interface operations {
             };
         };
     };
-    refresh_attempt_chat_api_v4_entries_attempt_chat_refresh_post: {
+    refresh_attempt_chat_api_v5_entries_attempt_chat_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67026,7 +67026,7 @@ export interface operations {
             };
         };
     };
-    create_attempt_chat_entry_api_v4_entries_attempt_chat_create_post: {
+    create_attempt_chat_entry_api_v5_entries_attempt_chat_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67063,7 +67063,7 @@ export interface operations {
             };
         };
     };
-    create_attempt_chat_bridge_entry_api_v4_entries_attempt_chat_bridge_create_post: {
+    create_attempt_chat_bridge_entry_api_v5_entries_attempt_chat_bridge_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67100,7 +67100,7 @@ export interface operations {
             };
         };
     };
-    search_attempt_chat_bridge_entries_api_v4_entries_attempt_chat_bridge_search_post: {
+    search_attempt_chat_bridge_entries_api_v5_entries_attempt_chat_bridge_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67137,7 +67137,7 @@ export interface operations {
             };
         };
     };
-    create_attempt_home_entry_api_v4_entries_attempt_home_create_post: {
+    create_attempt_home_entry_api_v5_entries_attempt_home_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67174,7 +67174,7 @@ export interface operations {
             };
         };
     };
-    search_attempt_home_entries_api_v4_entries_attempt_home_search_post: {
+    search_attempt_home_entries_api_v5_entries_attempt_home_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67211,7 +67211,7 @@ export interface operations {
             };
         };
     };
-    get_attempt_completion_entries_api_v4_entries_attempt_completion_get_post: {
+    get_attempt_completion_entries_api_v5_entries_attempt_completion_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67248,7 +67248,7 @@ export interface operations {
             };
         };
     };
-    search_attempt_completion_entries_api_v4_entries_attempt_completion_search_post: {
+    search_attempt_completion_entries_api_v5_entries_attempt_completion_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67285,7 +67285,7 @@ export interface operations {
             };
         };
     };
-    refresh_attempt_completion_api_v4_entries_attempt_completion_refresh_post: {
+    refresh_attempt_completion_api_v5_entries_attempt_completion_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67320,7 +67320,7 @@ export interface operations {
             };
         };
     };
-    create_attempt_completion_entry_api_v4_entries_attempt_completion_create_post: {
+    create_attempt_completion_entry_api_v5_entries_attempt_completion_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67357,7 +67357,7 @@ export interface operations {
             };
         };
     };
-    get_attempt_content_entries_api_v4_entries_attempt_content_get_post: {
+    get_attempt_content_entries_api_v5_entries_attempt_content_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67394,7 +67394,7 @@ export interface operations {
             };
         };
     };
-    search_attempt_content_entries_api_v4_entries_attempt_content_search_post: {
+    search_attempt_content_entries_api_v5_entries_attempt_content_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67431,7 +67431,7 @@ export interface operations {
             };
         };
     };
-    refresh_attempt_content_api_v4_entries_attempt_content_refresh_post: {
+    refresh_attempt_content_api_v5_entries_attempt_content_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67466,7 +67466,7 @@ export interface operations {
             };
         };
     };
-    create_attempt_content_entry_api_v4_entries_attempt_content_create_post: {
+    create_attempt_content_entry_api_v5_entries_attempt_content_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67503,7 +67503,7 @@ export interface operations {
             };
         };
     };
-    get_attempt_feedback_entries_api_v4_entries_attempt_feedback_get_post: {
+    get_attempt_feedback_entries_api_v5_entries_attempt_feedback_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67540,7 +67540,7 @@ export interface operations {
             };
         };
     };
-    search_attempt_feedback_entries_api_v4_entries_attempt_feedback_search_post: {
+    search_attempt_feedback_entries_api_v5_entries_attempt_feedback_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67577,7 +67577,7 @@ export interface operations {
             };
         };
     };
-    refresh_attempt_feedback_api_v4_entries_attempt_feedback_refresh_post: {
+    refresh_attempt_feedback_api_v5_entries_attempt_feedback_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67612,7 +67612,7 @@ export interface operations {
             };
         };
     };
-    create_attempt_feedback_entry_api_v4_entries_attempt_feedback_create_post: {
+    create_attempt_feedback_entry_api_v5_entries_attempt_feedback_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67649,7 +67649,7 @@ export interface operations {
             };
         };
     };
-    get_attempt_grade_entries_api_v4_entries_attempt_grade_get_post: {
+    get_attempt_grade_entries_api_v5_entries_attempt_grade_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67686,7 +67686,7 @@ export interface operations {
             };
         };
     };
-    search_attempt_grade_entries_api_v4_entries_attempt_grade_search_post: {
+    search_attempt_grade_entries_api_v5_entries_attempt_grade_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67723,7 +67723,7 @@ export interface operations {
             };
         };
     };
-    refresh_attempt_grade_api_v4_entries_attempt_grade_refresh_post: {
+    refresh_attempt_grade_api_v5_entries_attempt_grade_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67758,7 +67758,7 @@ export interface operations {
             };
         };
     };
-    create_attempt_grade_entry_api_v4_entries_attempt_grade_create_post: {
+    create_attempt_grade_entry_api_v5_entries_attempt_grade_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67795,7 +67795,7 @@ export interface operations {
             };
         };
     };
-    get_attempt_highlight_entries_api_v4_entries_attempt_highlight_get_post: {
+    get_attempt_highlight_entries_api_v5_entries_attempt_highlight_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67832,7 +67832,7 @@ export interface operations {
             };
         };
     };
-    search_attempt_highlight_entries_api_v4_entries_attempt_highlight_search_post: {
+    search_attempt_highlight_entries_api_v5_entries_attempt_highlight_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67869,7 +67869,7 @@ export interface operations {
             };
         };
     };
-    refresh_attempt_highlight_api_v4_entries_attempt_highlight_refresh_post: {
+    refresh_attempt_highlight_api_v5_entries_attempt_highlight_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67904,7 +67904,7 @@ export interface operations {
             };
         };
     };
-    create_attempt_highlight_entry_api_v4_entries_attempt_highlight_create_post: {
+    create_attempt_highlight_entry_api_v5_entries_attempt_highlight_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67941,7 +67941,7 @@ export interface operations {
             };
         };
     };
-    get_attempt_hint_entries_api_v4_entries_attempt_hint_get_post: {
+    get_attempt_hint_entries_api_v5_entries_attempt_hint_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -67978,7 +67978,7 @@ export interface operations {
             };
         };
     };
-    search_attempt_hint_entries_api_v4_entries_attempt_hint_search_post: {
+    search_attempt_hint_entries_api_v5_entries_attempt_hint_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68015,7 +68015,7 @@ export interface operations {
             };
         };
     };
-    refresh_attempt_hint_api_v4_entries_attempt_hint_refresh_post: {
+    refresh_attempt_hint_api_v5_entries_attempt_hint_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68050,7 +68050,7 @@ export interface operations {
             };
         };
     };
-    create_attempt_hint_entry_api_v4_entries_attempt_hint_create_post: {
+    create_attempt_hint_entry_api_v5_entries_attempt_hint_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68087,7 +68087,7 @@ export interface operations {
             };
         };
     };
-    get_attempt_improvement_entries_api_v4_entries_attempt_improvement_get_post: {
+    get_attempt_improvement_entries_api_v5_entries_attempt_improvement_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68124,7 +68124,7 @@ export interface operations {
             };
         };
     };
-    search_attempt_improvement_entries_api_v4_entries_attempt_improvement_search_post: {
+    search_attempt_improvement_entries_api_v5_entries_attempt_improvement_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68161,7 +68161,7 @@ export interface operations {
             };
         };
     };
-    refresh_attempt_improvement_api_v4_entries_attempt_improvement_refresh_post: {
+    refresh_attempt_improvement_api_v5_entries_attempt_improvement_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68196,7 +68196,7 @@ export interface operations {
             };
         };
     };
-    create_attempt_improvement_entry_api_v4_entries_attempt_improvement_create_post: {
+    create_attempt_improvement_entry_api_v5_entries_attempt_improvement_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68233,7 +68233,7 @@ export interface operations {
             };
         };
     };
-    get_attempt_message_entries_api_v4_entries_attempt_message_get_post: {
+    get_attempt_message_entries_api_v5_entries_attempt_message_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68270,7 +68270,7 @@ export interface operations {
             };
         };
     };
-    search_attempt_message_entries_api_v4_entries_attempt_message_search_post: {
+    search_attempt_message_entries_api_v5_entries_attempt_message_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68307,7 +68307,7 @@ export interface operations {
             };
         };
     };
-    refresh_attempt_message_api_v4_entries_attempt_message_refresh_post: {
+    refresh_attempt_message_api_v5_entries_attempt_message_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68342,7 +68342,7 @@ export interface operations {
             };
         };
     };
-    create_attempt_message_entry_api_v4_entries_attempt_message_create_post: {
+    create_attempt_message_entry_api_v5_entries_attempt_message_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68379,7 +68379,7 @@ export interface operations {
             };
         };
     };
-    create_attempt_practice_entry_api_v4_entries_attempt_practice_create_post: {
+    create_attempt_practice_entry_api_v5_entries_attempt_practice_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68416,7 +68416,7 @@ export interface operations {
             };
         };
     };
-    search_attempt_practice_entries_api_v4_entries_attempt_practice_search_post: {
+    search_attempt_practice_entries_api_v5_entries_attempt_practice_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68453,7 +68453,7 @@ export interface operations {
             };
         };
     };
-    get_attempt_message_tree_entries_api_v4_entries_attempt_message_tree_get_post: {
+    get_attempt_message_tree_entries_api_v5_entries_attempt_message_tree_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68490,7 +68490,7 @@ export interface operations {
             };
         };
     };
-    search_attempt_message_tree_entries_api_v4_entries_attempt_message_tree_search_post: {
+    search_attempt_message_tree_entries_api_v5_entries_attempt_message_tree_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68527,7 +68527,7 @@ export interface operations {
             };
         };
     };
-    refresh_attempt_message_tree_api_v4_entries_attempt_message_tree_refresh_post: {
+    refresh_attempt_message_tree_api_v5_entries_attempt_message_tree_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68562,7 +68562,7 @@ export interface operations {
             };
         };
     };
-    get_attempt_replacement_entries_api_v4_entries_attempt_replacement_get_post: {
+    get_attempt_replacement_entries_api_v5_entries_attempt_replacement_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68599,7 +68599,7 @@ export interface operations {
             };
         };
     };
-    search_attempt_replacement_entries_api_v4_entries_attempt_replacement_search_post: {
+    search_attempt_replacement_entries_api_v5_entries_attempt_replacement_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68636,7 +68636,7 @@ export interface operations {
             };
         };
     };
-    refresh_attempt_replacement_api_v4_entries_attempt_replacement_refresh_post: {
+    refresh_attempt_replacement_api_v5_entries_attempt_replacement_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68671,7 +68671,7 @@ export interface operations {
             };
         };
     };
-    create_attempt_replacement_entry_api_v4_entries_attempt_replacement_create_post: {
+    create_attempt_replacement_entry_api_v5_entries_attempt_replacement_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68708,7 +68708,7 @@ export interface operations {
             };
         };
     };
-    get_attempt_strength_entries_api_v4_entries_attempt_strength_get_post: {
+    get_attempt_strength_entries_api_v5_entries_attempt_strength_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68745,7 +68745,7 @@ export interface operations {
             };
         };
     };
-    search_attempt_strength_entries_api_v4_entries_attempt_strength_search_post: {
+    search_attempt_strength_entries_api_v5_entries_attempt_strength_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68782,7 +68782,7 @@ export interface operations {
             };
         };
     };
-    refresh_attempt_strength_api_v4_entries_attempt_strength_refresh_post: {
+    refresh_attempt_strength_api_v5_entries_attempt_strength_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68817,7 +68817,7 @@ export interface operations {
             };
         };
     };
-    create_attempt_strength_entry_api_v4_entries_attempt_strength_create_post: {
+    create_attempt_strength_entry_api_v5_entries_attempt_strength_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68854,7 +68854,7 @@ export interface operations {
             };
         };
     };
-    get_audios_entries_api_v4_entries_audios_get_post: {
+    get_audios_entries_api_v5_entries_audios_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68891,7 +68891,7 @@ export interface operations {
             };
         };
     };
-    search_audios_entries_api_v4_entries_audios_search_post: {
+    search_audios_entries_api_v5_entries_audios_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68928,7 +68928,7 @@ export interface operations {
             };
         };
     };
-    refresh_audios_api_v4_entries_audios_refresh_post: {
+    refresh_audios_api_v5_entries_audios_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -68963,7 +68963,7 @@ export interface operations {
             };
         };
     };
-    get_auth_drafts_entries_api_v4_entries_auth_drafts_get_post: {
+    get_auth_drafts_entries_api_v5_entries_auth_drafts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69000,7 +69000,7 @@ export interface operations {
             };
         };
     };
-    search_auth_drafts_entries_api_v4_entries_auth_drafts_search_post: {
+    search_auth_drafts_entries_api_v5_entries_auth_drafts_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69037,7 +69037,7 @@ export interface operations {
             };
         };
     };
-    refresh_auth_drafts_api_v4_entries_auth_drafts_refresh_post: {
+    refresh_auth_drafts_api_v5_entries_auth_drafts_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69072,7 +69072,7 @@ export interface operations {
             };
         };
     };
-    get_benchmark_entries_api_v4_entries_benchmark_get_post: {
+    get_benchmark_entries_api_v5_entries_benchmark_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69109,7 +69109,7 @@ export interface operations {
             };
         };
     };
-    search_benchmark_entries_api_v4_entries_benchmark_search_post: {
+    search_benchmark_entries_api_v5_entries_benchmark_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69146,7 +69146,7 @@ export interface operations {
             };
         };
     };
-    refresh_benchmark_api_v4_entries_benchmark_refresh_post: {
+    refresh_benchmark_api_v5_entries_benchmark_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69181,7 +69181,7 @@ export interface operations {
             };
         };
     };
-    get_calls_entries_api_v4_entries_calls_get_post: {
+    get_calls_entries_api_v5_entries_calls_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69218,7 +69218,7 @@ export interface operations {
             };
         };
     };
-    search_calls_entries_api_v4_entries_calls_search_post: {
+    search_calls_entries_api_v5_entries_calls_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69255,7 +69255,7 @@ export interface operations {
             };
         };
     };
-    refresh_calls_api_v4_entries_calls_refresh_post: {
+    refresh_calls_api_v5_entries_calls_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69290,7 +69290,7 @@ export interface operations {
             };
         };
     };
-    get_certificates_entries_api_v4_entries_certificates_get_post: {
+    get_certificates_entries_api_v5_entries_certificates_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69327,7 +69327,7 @@ export interface operations {
             };
         };
     };
-    search_certificates_entries_api_v4_entries_certificates_search_post: {
+    search_certificates_entries_api_v5_entries_certificates_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69364,7 +69364,7 @@ export interface operations {
             };
         };
     };
-    refresh_certificates_api_v4_entries_certificates_refresh_post: {
+    refresh_certificates_api_v5_entries_certificates_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69399,7 +69399,7 @@ export interface operations {
             };
         };
     };
-    create_certificates_entry_api_v4_entries_certificates_create_post: {
+    create_certificates_entry_api_v5_entries_certificates_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69436,7 +69436,7 @@ export interface operations {
             };
         };
     };
-    get_cohort_drafts_entries_api_v4_entries_cohort_drafts_get_post: {
+    get_cohort_drafts_entries_api_v5_entries_cohort_drafts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69473,7 +69473,7 @@ export interface operations {
             };
         };
     };
-    search_cohort_drafts_entries_api_v4_entries_cohort_drafts_search_post: {
+    search_cohort_drafts_entries_api_v5_entries_cohort_drafts_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69510,7 +69510,7 @@ export interface operations {
             };
         };
     };
-    refresh_cohort_drafts_api_v4_entries_cohort_drafts_refresh_post: {
+    refresh_cohort_drafts_api_v5_entries_cohort_drafts_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69545,7 +69545,7 @@ export interface operations {
             };
         };
     };
-    get_conversations_entries_api_v4_entries_conversations_get_post: {
+    get_conversations_entries_api_v5_entries_conversations_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69582,7 +69582,7 @@ export interface operations {
             };
         };
     };
-    search_conversations_entries_api_v4_entries_conversations_search_post: {
+    search_conversations_entries_api_v5_entries_conversations_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69619,7 +69619,7 @@ export interface operations {
             };
         };
     };
-    refresh_conversations_api_v4_entries_conversations_refresh_post: {
+    refresh_conversations_api_v5_entries_conversations_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69654,7 +69654,7 @@ export interface operations {
             };
         };
     };
-    create_conversations_entry_api_v4_entries_conversations_create_post: {
+    create_conversations_entry_api_v5_entries_conversations_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69691,7 +69691,7 @@ export interface operations {
             };
         };
     };
-    get_conversations_completions_entries_api_v4_entries_conversations_completions_get_post: {
+    get_conversations_completions_entries_api_v5_entries_conversations_completions_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69728,7 +69728,7 @@ export interface operations {
             };
         };
     };
-    search_conversations_completions_entries_api_v4_entries_conversations_completions_search_post: {
+    search_conversations_completions_entries_api_v5_entries_conversations_completions_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69765,7 +69765,7 @@ export interface operations {
             };
         };
     };
-    refresh_conversations_completions_api_v4_entries_conversations_completions_refresh_post: {
+    refresh_conversations_completions_api_v5_entries_conversations_completions_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69800,7 +69800,7 @@ export interface operations {
             };
         };
     };
-    create_conversations_completions_entry_api_v4_entries_conversations_completions_create_post: {
+    create_conversations_completions_entry_api_v5_entries_conversations_completions_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69837,7 +69837,7 @@ export interface operations {
             };
         };
     };
-    get_debug_info_entries_api_v4_entries_debug_info_get_post: {
+    get_debug_info_entries_api_v5_entries_debug_info_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69874,7 +69874,7 @@ export interface operations {
             };
         };
     };
-    search_debug_info_entries_api_v4_entries_debug_info_search_post: {
+    search_debug_info_entries_api_v5_entries_debug_info_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69911,7 +69911,7 @@ export interface operations {
             };
         };
     };
-    refresh_debug_info_api_v4_entries_debug_info_refresh_post: {
+    refresh_debug_info_api_v5_entries_debug_info_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69946,7 +69946,7 @@ export interface operations {
             };
         };
     };
-    create_debug_info_entry_api_v4_entries_debug_info_create_post: {
+    create_debug_info_entry_api_v5_entries_debug_info_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -69983,7 +69983,7 @@ export interface operations {
             };
         };
     };
-    get_department_drafts_entries_api_v4_entries_department_drafts_get_post: {
+    get_department_drafts_entries_api_v5_entries_department_drafts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70020,7 +70020,7 @@ export interface operations {
             };
         };
     };
-    search_department_drafts_entries_api_v4_entries_department_drafts_search_post: {
+    search_department_drafts_entries_api_v5_entries_department_drafts_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70057,7 +70057,7 @@ export interface operations {
             };
         };
     };
-    refresh_department_drafts_api_v4_entries_department_drafts_refresh_post: {
+    refresh_department_drafts_api_v5_entries_department_drafts_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70092,7 +70092,7 @@ export interface operations {
             };
         };
     };
-    get_document_drafts_entries_api_v4_entries_document_drafts_get_post: {
+    get_document_drafts_entries_api_v5_entries_document_drafts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70129,7 +70129,7 @@ export interface operations {
             };
         };
     };
-    search_document_drafts_entries_api_v4_entries_document_drafts_search_post: {
+    search_document_drafts_entries_api_v5_entries_document_drafts_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70166,7 +70166,7 @@ export interface operations {
             };
         };
     };
-    refresh_document_drafts_api_v4_entries_document_drafts_refresh_post: {
+    refresh_document_drafts_api_v5_entries_document_drafts_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70201,7 +70201,7 @@ export interface operations {
             };
         };
     };
-    get_emulations_entries_api_v4_entries_emulations_get_post: {
+    get_emulations_entries_api_v5_entries_emulations_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70238,7 +70238,7 @@ export interface operations {
             };
         };
     };
-    search_emulations_entries_api_v4_entries_emulations_search_post: {
+    search_emulations_entries_api_v5_entries_emulations_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70275,7 +70275,7 @@ export interface operations {
             };
         };
     };
-    refresh_emulations_api_v4_entries_emulations_refresh_post: {
+    refresh_emulations_api_v5_entries_emulations_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70310,7 +70310,7 @@ export interface operations {
             };
         };
     };
-    get_eval_drafts_entries_api_v4_entries_eval_drafts_get_post: {
+    get_eval_drafts_entries_api_v5_entries_eval_drafts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70347,7 +70347,7 @@ export interface operations {
             };
         };
     };
-    search_eval_drafts_entries_api_v4_entries_eval_drafts_search_post: {
+    search_eval_drafts_entries_api_v5_entries_eval_drafts_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70384,7 +70384,7 @@ export interface operations {
             };
         };
     };
-    refresh_eval_drafts_api_v4_entries_eval_drafts_refresh_post: {
+    refresh_eval_drafts_api_v5_entries_eval_drafts_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70419,7 +70419,7 @@ export interface operations {
             };
         };
     };
-    get_field_drafts_entries_api_v4_entries_field_drafts_get_post: {
+    get_field_drafts_entries_api_v5_entries_field_drafts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70456,7 +70456,7 @@ export interface operations {
             };
         };
     };
-    search_field_drafts_entries_api_v4_entries_field_drafts_search_post: {
+    search_field_drafts_entries_api_v5_entries_field_drafts_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70493,7 +70493,7 @@ export interface operations {
             };
         };
     };
-    refresh_field_drafts_api_v4_entries_field_drafts_refresh_post: {
+    refresh_field_drafts_api_v5_entries_field_drafts_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70528,7 +70528,7 @@ export interface operations {
             };
         };
     };
-    get_files_entries_api_v4_entries_files_get_post: {
+    get_files_entries_api_v5_entries_files_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70565,7 +70565,7 @@ export interface operations {
             };
         };
     };
-    search_files_entries_api_v4_entries_files_search_post: {
+    search_files_entries_api_v5_entries_files_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70602,7 +70602,7 @@ export interface operations {
             };
         };
     };
-    refresh_files_api_v4_entries_files_refresh_post: {
+    refresh_files_api_v5_entries_files_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70637,7 +70637,7 @@ export interface operations {
             };
         };
     };
-    get_grants_entries_api_v4_entries_grants_get_post: {
+    get_grants_entries_api_v5_entries_grants_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70674,7 +70674,7 @@ export interface operations {
             };
         };
     };
-    search_grants_entries_api_v4_entries_grants_search_post: {
+    search_grants_entries_api_v5_entries_grants_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70711,7 +70711,7 @@ export interface operations {
             };
         };
     };
-    refresh_grants_api_v4_entries_grants_refresh_post: {
+    refresh_grants_api_v5_entries_grants_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70746,7 +70746,7 @@ export interface operations {
             };
         };
     };
-    get_groups_entries_api_v4_entries_groups_get_post: {
+    get_groups_entries_api_v5_entries_groups_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70783,7 +70783,7 @@ export interface operations {
             };
         };
     };
-    search_groups_entries_api_v4_entries_groups_search_post: {
+    search_groups_entries_api_v5_entries_groups_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70820,7 +70820,7 @@ export interface operations {
             };
         };
     };
-    refresh_groups_api_v4_entries_groups_refresh_post: {
+    refresh_groups_api_v5_entries_groups_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70855,7 +70855,7 @@ export interface operations {
             };
         };
     };
-    get_health_entries_api_v4_entries_health_get_post: {
+    get_health_entries_api_v5_entries_health_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70892,7 +70892,7 @@ export interface operations {
             };
         };
     };
-    search_health_entries_api_v4_entries_health_search_post: {
+    search_health_entries_api_v5_entries_health_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70929,7 +70929,7 @@ export interface operations {
             };
         };
     };
-    refresh_health_api_v4_entries_health_refresh_post: {
+    refresh_health_api_v5_entries_health_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -70964,7 +70964,7 @@ export interface operations {
             };
         };
     };
-    get_home_entries_api_v4_entries_home_get_post: {
+    get_home_entries_api_v5_entries_home_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71001,7 +71001,7 @@ export interface operations {
             };
         };
     };
-    search_home_entries_api_v4_entries_home_search_post: {
+    search_home_entries_api_v5_entries_home_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71038,7 +71038,7 @@ export interface operations {
             };
         };
     };
-    refresh_home_api_v4_entries_home_refresh_post: {
+    refresh_home_api_v5_entries_home_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71073,7 +71073,7 @@ export interface operations {
             };
         };
     };
-    get_home_chat_entries_api_v4_entries_home_chat_get_post: {
+    get_home_chat_entries_api_v5_entries_home_chat_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71110,7 +71110,7 @@ export interface operations {
             };
         };
     };
-    search_home_chat_entries_api_v4_entries_home_chat_search_post: {
+    search_home_chat_entries_api_v5_entries_home_chat_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71147,7 +71147,7 @@ export interface operations {
             };
         };
     };
-    get_home_training_entries_api_v4_entries_home_training_get_post: {
+    get_home_training_entries_api_v5_entries_home_training_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71160,7 +71160,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__1"];
+                "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__1"];
             };
         };
         responses: {
@@ -71170,7 +71170,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__17"];
+                    "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__17"];
                 };
             };
             /** @description Validation Error */
@@ -71184,7 +71184,7 @@ export interface operations {
             };
         };
     };
-    search_home_training_entries_api_v4_entries_home_training_search_post: {
+    search_home_training_entries_api_v5_entries_home_training_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71197,7 +71197,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__2"];
+                "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__2"];
             };
         };
         responses: {
@@ -71207,7 +71207,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__18"];
+                    "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__18"];
                 };
             };
             /** @description Validation Error */
@@ -71221,7 +71221,7 @@ export interface operations {
             };
         };
     };
-    refresh_home_training_api_v4_entries_home_training_refresh_post: {
+    refresh_home_training_api_v5_entries_home_training_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71256,7 +71256,7 @@ export interface operations {
             };
         };
     };
-    get_images_entries_api_v4_entries_images_get_post: {
+    get_images_entries_api_v5_entries_images_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71293,7 +71293,7 @@ export interface operations {
             };
         };
     };
-    search_images_entries_api_v4_entries_images_search_post: {
+    search_images_entries_api_v5_entries_images_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71330,7 +71330,7 @@ export interface operations {
             };
         };
     };
-    refresh_images_api_v4_entries_images_refresh_post: {
+    refresh_images_api_v5_entries_images_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71365,7 +71365,7 @@ export interface operations {
             };
         };
     };
-    get_logins_entries_api_v4_entries_logins_get_post: {
+    get_logins_entries_api_v5_entries_logins_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71402,7 +71402,7 @@ export interface operations {
             };
         };
     };
-    search_logins_entries_api_v4_entries_logins_search_post: {
+    search_logins_entries_api_v5_entries_logins_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71439,7 +71439,7 @@ export interface operations {
             };
         };
     };
-    refresh_logins_api_v4_entries_logins_refresh_post: {
+    refresh_logins_api_v5_entries_logins_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71474,7 +71474,7 @@ export interface operations {
             };
         };
     };
-    get_messages_entries_api_v4_entries_messages_get_post: {
+    get_messages_entries_api_v5_entries_messages_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71511,7 +71511,7 @@ export interface operations {
             };
         };
     };
-    search_messages_entries_api_v4_entries_messages_search_post: {
+    search_messages_entries_api_v5_entries_messages_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71548,7 +71548,7 @@ export interface operations {
             };
         };
     };
-    refresh_messages_api_v4_entries_messages_refresh_post: {
+    refresh_messages_api_v5_entries_messages_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71583,7 +71583,7 @@ export interface operations {
             };
         };
     };
-    get_messages_completions_entries_api_v4_entries_messages_completions_get_post: {
+    get_messages_completions_entries_api_v5_entries_messages_completions_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71620,7 +71620,7 @@ export interface operations {
             };
         };
     };
-    search_messages_completions_entries_api_v4_entries_messages_completions_search_post: {
+    search_messages_completions_entries_api_v5_entries_messages_completions_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71657,7 +71657,7 @@ export interface operations {
             };
         };
     };
-    refresh_messages_completions_api_v4_entries_messages_completions_refresh_post: {
+    refresh_messages_completions_api_v5_entries_messages_completions_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71692,7 +71692,7 @@ export interface operations {
             };
         };
     };
-    get_metrics_entries_api_v4_entries_metrics_get_post: {
+    get_metrics_entries_api_v5_entries_metrics_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71729,7 +71729,7 @@ export interface operations {
             };
         };
     };
-    search_metrics_entries_api_v4_entries_metrics_search_post: {
+    search_metrics_entries_api_v5_entries_metrics_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71766,7 +71766,7 @@ export interface operations {
             };
         };
     };
-    refresh_metrics_api_v4_entries_metrics_refresh_post: {
+    refresh_metrics_api_v5_entries_metrics_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71801,7 +71801,7 @@ export interface operations {
             };
         };
     };
-    get_model_drafts_entries_api_v4_entries_model_drafts_get_post: {
+    get_model_drafts_entries_api_v5_entries_model_drafts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71838,7 +71838,7 @@ export interface operations {
             };
         };
     };
-    search_model_drafts_entries_api_v4_entries_model_drafts_search_post: {
+    search_model_drafts_entries_api_v5_entries_model_drafts_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71875,7 +71875,7 @@ export interface operations {
             };
         };
     };
-    refresh_model_drafts_api_v4_entries_model_drafts_refresh_post: {
+    refresh_model_drafts_api_v5_entries_model_drafts_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71910,7 +71910,7 @@ export interface operations {
             };
         };
     };
-    get_mutes_entries_api_v4_entries_mutes_get_post: {
+    get_mutes_entries_api_v5_entries_mutes_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71947,7 +71947,7 @@ export interface operations {
             };
         };
     };
-    search_mutes_entries_api_v4_entries_mutes_search_post: {
+    search_mutes_entries_api_v5_entries_mutes_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -71984,7 +71984,7 @@ export interface operations {
             };
         };
     };
-    refresh_mutes_api_v4_entries_mutes_refresh_post: {
+    refresh_mutes_api_v5_entries_mutes_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72019,7 +72019,7 @@ export interface operations {
             };
         };
     };
-    create_mutes_entry_api_v4_entries_mutes_create_post: {
+    create_mutes_entry_api_v5_entries_mutes_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72056,7 +72056,7 @@ export interface operations {
             };
         };
     };
-    get_parameter_drafts_entries_api_v4_entries_parameter_drafts_get_post: {
+    get_parameter_drafts_entries_api_v5_entries_parameter_drafts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72093,7 +72093,7 @@ export interface operations {
             };
         };
     };
-    search_parameter_drafts_entries_api_v4_entries_parameter_drafts_search_post: {
+    search_parameter_drafts_entries_api_v5_entries_parameter_drafts_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72130,7 +72130,7 @@ export interface operations {
             };
         };
     };
-    refresh_parameter_drafts_api_v4_entries_parameter_drafts_refresh_post: {
+    refresh_parameter_drafts_api_v5_entries_parameter_drafts_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72165,7 +72165,7 @@ export interface operations {
             };
         };
     };
-    get_persona_entries_api_v4_entries_persona_get_post: {
+    get_persona_entries_api_v5_entries_persona_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72202,7 +72202,7 @@ export interface operations {
             };
         };
     };
-    search_persona_entries_api_v4_entries_persona_search_post: {
+    search_persona_entries_api_v5_entries_persona_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72239,7 +72239,7 @@ export interface operations {
             };
         };
     };
-    refresh_persona_api_v4_entries_persona_refresh_post: {
+    refresh_persona_api_v5_entries_persona_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72274,7 +72274,7 @@ export interface operations {
             };
         };
     };
-    create_persona_entry_api_v4_entries_persona_create_post: {
+    create_persona_entry_api_v5_entries_persona_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72311,7 +72311,7 @@ export interface operations {
             };
         };
     };
-    get_persona_drafts_entries_api_v4_entries_persona_drafts_get_post: {
+    get_persona_drafts_entries_api_v5_entries_persona_drafts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72348,7 +72348,7 @@ export interface operations {
             };
         };
     };
-    search_persona_drafts_entries_api_v4_entries_persona_drafts_search_post: {
+    search_persona_drafts_entries_api_v5_entries_persona_drafts_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72385,7 +72385,7 @@ export interface operations {
             };
         };
     };
-    refresh_persona_drafts_api_v4_entries_persona_drafts_refresh_post: {
+    refresh_persona_drafts_api_v5_entries_persona_drafts_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72420,7 +72420,7 @@ export interface operations {
             };
         };
     };
-    get_practice_entries_api_v4_entries_practice_get_post: {
+    get_practice_entries_api_v5_entries_practice_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72457,7 +72457,7 @@ export interface operations {
             };
         };
     };
-    search_practice_entries_api_v4_entries_practice_search_post: {
+    search_practice_entries_api_v5_entries_practice_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72494,7 +72494,7 @@ export interface operations {
             };
         };
     };
-    refresh_practice_api_v4_entries_practice_refresh_post: {
+    refresh_practice_api_v5_entries_practice_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72529,7 +72529,7 @@ export interface operations {
             };
         };
     };
-    get_practice_chat_entries_api_v4_entries_practice_chat_get_post: {
+    get_practice_chat_entries_api_v5_entries_practice_chat_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72566,7 +72566,7 @@ export interface operations {
             };
         };
     };
-    search_practice_chat_entries_api_v4_entries_practice_chat_search_post: {
+    search_practice_chat_entries_api_v5_entries_practice_chat_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72603,7 +72603,7 @@ export interface operations {
             };
         };
     };
-    get_practice_training_entries_api_v4_entries_practice_training_get_post: {
+    get_practice_training_entries_api_v5_entries_practice_training_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72616,7 +72616,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__3"];
+                "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__3"];
             };
         };
         responses: {
@@ -72626,7 +72626,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__19"];
+                    "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__19"];
                 };
             };
             /** @description Validation Error */
@@ -72640,7 +72640,7 @@ export interface operations {
             };
         };
     };
-    search_practice_training_entries_api_v4_entries_practice_training_search_post: {
+    search_practice_training_entries_api_v5_entries_practice_training_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72653,7 +72653,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__4"];
+                "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__4"];
             };
         };
         responses: {
@@ -72663,7 +72663,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__20"];
+                    "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__20"];
                 };
             };
             /** @description Validation Error */
@@ -72677,7 +72677,7 @@ export interface operations {
             };
         };
     };
-    refresh_practice_training_api_v4_entries_practice_training_refresh_post: {
+    refresh_practice_training_api_v5_entries_practice_training_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72712,7 +72712,7 @@ export interface operations {
             };
         };
     };
-    get_problems_entries_api_v4_entries_problems_get_post: {
+    get_problems_entries_api_v5_entries_problems_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72749,7 +72749,7 @@ export interface operations {
             };
         };
     };
-    create_problems_entry_api_v4_entries_problems_create_post: {
+    create_problems_entry_api_v5_entries_problems_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72786,7 +72786,7 @@ export interface operations {
             };
         };
     };
-    search_problems_entries_api_v4_entries_problems_search_post: {
+    search_problems_entries_api_v5_entries_problems_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72823,7 +72823,7 @@ export interface operations {
             };
         };
     };
-    refresh_problems_api_v4_entries_problems_refresh_post: {
+    refresh_problems_api_v5_entries_problems_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72858,7 +72858,7 @@ export interface operations {
             };
         };
     };
-    get_profile_drafts_entries_api_v4_entries_profile_drafts_get_post: {
+    get_profile_drafts_entries_api_v5_entries_profile_drafts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72895,7 +72895,7 @@ export interface operations {
             };
         };
     };
-    search_profile_drafts_entries_api_v4_entries_profile_drafts_search_post: {
+    search_profile_drafts_entries_api_v5_entries_profile_drafts_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72932,7 +72932,7 @@ export interface operations {
             };
         };
     };
-    refresh_profile_drafts_api_v4_entries_profile_drafts_refresh_post: {
+    refresh_profile_drafts_api_v5_entries_profile_drafts_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -72967,7 +72967,7 @@ export interface operations {
             };
         };
     };
-    get_provider_drafts_entries_api_v4_entries_provider_drafts_get_post: {
+    get_provider_drafts_entries_api_v5_entries_provider_drafts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73004,7 +73004,7 @@ export interface operations {
             };
         };
     };
-    search_provider_drafts_entries_api_v4_entries_provider_drafts_search_post: {
+    search_provider_drafts_entries_api_v5_entries_provider_drafts_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73041,7 +73041,7 @@ export interface operations {
             };
         };
     };
-    refresh_provider_drafts_api_v4_entries_provider_drafts_refresh_post: {
+    refresh_provider_drafts_api_v5_entries_provider_drafts_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73076,7 +73076,7 @@ export interface operations {
             };
         };
     };
-    get_reports_entries_api_v4_entries_reports_get_post: {
+    get_reports_entries_api_v5_entries_reports_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73113,7 +73113,7 @@ export interface operations {
             };
         };
     };
-    search_reports_entries_api_v4_entries_reports_search_post: {
+    search_reports_entries_api_v5_entries_reports_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73150,7 +73150,7 @@ export interface operations {
             };
         };
     };
-    refresh_reports_api_v4_entries_reports_refresh_post: {
+    refresh_reports_api_v5_entries_reports_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73185,7 +73185,7 @@ export interface operations {
             };
         };
     };
-    create_reports_entry_api_v4_entries_reports_create_post: {
+    create_reports_entry_api_v5_entries_reports_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73222,7 +73222,7 @@ export interface operations {
             };
         };
     };
-    get_resolves_entries_api_v4_entries_resolves_get_post: {
+    get_resolves_entries_api_v5_entries_resolves_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73259,7 +73259,7 @@ export interface operations {
             };
         };
     };
-    create_resolves_entry_api_v4_entries_resolves_create_post: {
+    create_resolves_entry_api_v5_entries_resolves_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73296,7 +73296,7 @@ export interface operations {
             };
         };
     };
-    search_resolves_entries_api_v4_entries_resolves_search_post: {
+    search_resolves_entries_api_v5_entries_resolves_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73333,7 +73333,7 @@ export interface operations {
             };
         };
     };
-    refresh_resolves_api_v4_entries_resolves_refresh_post: {
+    refresh_resolves_api_v5_entries_resolves_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73368,7 +73368,7 @@ export interface operations {
             };
         };
     };
-    get_responses_entries_api_v4_entries_responses_get_post: {
+    get_responses_entries_api_v5_entries_responses_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73405,7 +73405,7 @@ export interface operations {
             };
         };
     };
-    search_responses_entries_api_v4_entries_responses_search_post: {
+    search_responses_entries_api_v5_entries_responses_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73442,7 +73442,7 @@ export interface operations {
             };
         };
     };
-    refresh_responses_api_v4_entries_responses_refresh_post: {
+    refresh_responses_api_v5_entries_responses_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73477,7 +73477,7 @@ export interface operations {
             };
         };
     };
-    create_responses_entry_api_v4_entries_responses_create_post: {
+    create_responses_entry_api_v5_entries_responses_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73514,7 +73514,7 @@ export interface operations {
             };
         };
     };
-    get_rubric_drafts_entries_api_v4_entries_rubric_drafts_get_post: {
+    get_rubric_drafts_entries_api_v5_entries_rubric_drafts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73551,7 +73551,7 @@ export interface operations {
             };
         };
     };
-    search_rubric_drafts_entries_api_v4_entries_rubric_drafts_search_post: {
+    search_rubric_drafts_entries_api_v5_entries_rubric_drafts_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73588,7 +73588,7 @@ export interface operations {
             };
         };
     };
-    refresh_rubric_drafts_api_v4_entries_rubric_drafts_refresh_post: {
+    refresh_rubric_drafts_api_v5_entries_rubric_drafts_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73623,7 +73623,7 @@ export interface operations {
             };
         };
     };
-    get_run_pricing_entries_api_v4_entries_run_pricing_get_post: {
+    get_run_pricing_entries_api_v5_entries_run_pricing_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73660,7 +73660,7 @@ export interface operations {
             };
         };
     };
-    search_run_pricing_entries_api_v4_entries_run_pricing_search_post: {
+    search_run_pricing_entries_api_v5_entries_run_pricing_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73697,7 +73697,7 @@ export interface operations {
             };
         };
     };
-    refresh_run_pricing_api_v4_entries_run_pricing_refresh_post: {
+    refresh_run_pricing_api_v5_entries_run_pricing_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73732,7 +73732,7 @@ export interface operations {
             };
         };
     };
-    get_runs_entries_api_v4_entries_runs_get_post: {
+    get_runs_entries_api_v5_entries_runs_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73769,7 +73769,7 @@ export interface operations {
             };
         };
     };
-    search_runs_entries_api_v4_entries_runs_search_post: {
+    search_runs_entries_api_v5_entries_runs_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73806,7 +73806,7 @@ export interface operations {
             };
         };
     };
-    refresh_runs_api_v4_entries_runs_refresh_post: {
+    refresh_runs_api_v5_entries_runs_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73841,7 +73841,7 @@ export interface operations {
             };
         };
     };
-    get_scenario_drafts_entries_api_v4_entries_scenario_drafts_get_post: {
+    get_scenario_drafts_entries_api_v5_entries_scenario_drafts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73878,7 +73878,7 @@ export interface operations {
             };
         };
     };
-    search_scenario_drafts_entries_api_v4_entries_scenario_drafts_search_post: {
+    search_scenario_drafts_entries_api_v5_entries_scenario_drafts_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73915,7 +73915,7 @@ export interface operations {
             };
         };
     };
-    refresh_scenario_drafts_api_v4_entries_scenario_drafts_refresh_post: {
+    refresh_scenario_drafts_api_v5_entries_scenario_drafts_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73950,7 +73950,7 @@ export interface operations {
             };
         };
     };
-    get_sessions_entries_api_v4_entries_sessions_get_post: {
+    get_sessions_entries_api_v5_entries_sessions_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -73987,7 +73987,7 @@ export interface operations {
             };
         };
     };
-    search_sessions_entries_api_v4_entries_sessions_search_post: {
+    search_sessions_entries_api_v5_entries_sessions_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74024,7 +74024,7 @@ export interface operations {
             };
         };
     };
-    refresh_sessions_api_v4_entries_sessions_refresh_post: {
+    refresh_sessions_api_v5_entries_sessions_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74059,7 +74059,7 @@ export interface operations {
             };
         };
     };
-    get_setting_drafts_entries_api_v4_entries_setting_drafts_get_post: {
+    get_setting_drafts_entries_api_v5_entries_setting_drafts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74096,7 +74096,7 @@ export interface operations {
             };
         };
     };
-    search_setting_drafts_entries_api_v4_entries_setting_drafts_search_post: {
+    search_setting_drafts_entries_api_v5_entries_setting_drafts_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74133,7 +74133,7 @@ export interface operations {
             };
         };
     };
-    refresh_setting_drafts_api_v4_entries_setting_drafts_refresh_post: {
+    refresh_setting_drafts_api_v5_entries_setting_drafts_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74168,7 +74168,7 @@ export interface operations {
             };
         };
     };
-    get_simulation_drafts_entries_api_v4_entries_simulation_drafts_get_post: {
+    get_simulation_drafts_entries_api_v5_entries_simulation_drafts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74205,7 +74205,7 @@ export interface operations {
             };
         };
     };
-    search_simulation_drafts_entries_api_v4_entries_simulation_drafts_search_post: {
+    search_simulation_drafts_entries_api_v5_entries_simulation_drafts_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74242,7 +74242,7 @@ export interface operations {
             };
         };
     };
-    refresh_simulation_drafts_api_v4_entries_simulation_drafts_refresh_post: {
+    refresh_simulation_drafts_api_v5_entries_simulation_drafts_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74277,7 +74277,7 @@ export interface operations {
             };
         };
     };
-    get_suite_entries_api_v4_entries_suite_get_post: {
+    get_suite_entries_api_v5_entries_suite_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74290,7 +74290,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__5"];
+                "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__5"];
             };
         };
         responses: {
@@ -74300,7 +74300,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__21"];
+                    "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__21"];
                 };
             };
             /** @description Validation Error */
@@ -74314,7 +74314,7 @@ export interface operations {
             };
         };
     };
-    search_suite_entries_api_v4_entries_suite_search_post: {
+    search_suite_entries_api_v5_entries_suite_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74327,7 +74327,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__6"];
+                "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__6"];
             };
         };
         responses: {
@@ -74337,7 +74337,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__22"];
+                    "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__22"];
                 };
             };
             /** @description Validation Error */
@@ -74351,7 +74351,7 @@ export interface operations {
             };
         };
     };
-    refresh_suite_api_v4_entries_suite_refresh_post: {
+    refresh_suite_api_v5_entries_suite_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74386,7 +74386,7 @@ export interface operations {
             };
         };
     };
-    get_suite_department_entries_api_v4_entries_suite_department_get_post: {
+    get_suite_department_entries_api_v5_entries_suite_department_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74399,7 +74399,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__7"];
+                "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__7"];
             };
         };
         responses: {
@@ -74409,7 +74409,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__23"];
+                    "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__23"];
                 };
             };
             /** @description Validation Error */
@@ -74423,7 +74423,7 @@ export interface operations {
             };
         };
     };
-    search_suite_department_entries_api_v4_entries_suite_department_search_post: {
+    search_suite_department_entries_api_v5_entries_suite_department_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74436,7 +74436,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__8"];
+                "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__8"];
             };
         };
         responses: {
@@ -74446,7 +74446,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__24"];
+                    "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__24"];
                 };
             };
             /** @description Validation Error */
@@ -74460,7 +74460,7 @@ export interface operations {
             };
         };
     };
-    refresh_suite_department_api_v4_entries_suite_department_refresh_post: {
+    refresh_suite_department_api_v5_entries_suite_department_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74495,7 +74495,7 @@ export interface operations {
             };
         };
     };
-    get_suite_drafts_entries_api_v4_entries_suite_drafts_get_post: {
+    get_suite_drafts_entries_api_v5_entries_suite_drafts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74508,7 +74508,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__9"];
+                "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__9"];
             };
         };
         responses: {
@@ -74518,7 +74518,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__25"];
+                    "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__25"];
                 };
             };
             /** @description Validation Error */
@@ -74532,7 +74532,7 @@ export interface operations {
             };
         };
     };
-    search_suite_drafts_entries_api_v4_entries_suite_drafts_search_post: {
+    search_suite_drafts_entries_api_v5_entries_suite_drafts_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74545,7 +74545,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__10"];
+                "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__10"];
             };
         };
         responses: {
@@ -74555,7 +74555,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__26"];
+                    "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__26"];
                 };
             };
             /** @description Validation Error */
@@ -74569,7 +74569,7 @@ export interface operations {
             };
         };
     };
-    refresh_suite_drafts_api_v4_entries_suite_drafts_refresh_post: {
+    refresh_suite_drafts_api_v5_entries_suite_drafts_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74604,7 +74604,7 @@ export interface operations {
             };
         };
     };
-    get_test_entries_api_v4_entries_test_get_post: {
+    get_test_entries_api_v5_entries_test_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74641,7 +74641,7 @@ export interface operations {
             };
         };
     };
-    search_test_entries_api_v4_entries_test_search_post: {
+    search_test_entries_api_v5_entries_test_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74678,7 +74678,7 @@ export interface operations {
             };
         };
     };
-    refresh_test_api_v4_entries_test_refresh_post: {
+    refresh_test_api_v5_entries_test_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74713,7 +74713,7 @@ export interface operations {
             };
         };
     };
-    create_test_entry_api_v4_entries_test_create_post: {
+    create_test_entry_api_v5_entries_test_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74750,7 +74750,7 @@ export interface operations {
             };
         };
     };
-    get_test_archive_entries_api_v4_entries_test_archive_get_post: {
+    get_test_archive_entries_api_v5_entries_test_archive_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74787,7 +74787,7 @@ export interface operations {
             };
         };
     };
-    create_test_archive_entry_api_v4_entries_test_archive_create_post: {
+    create_test_archive_entry_api_v5_entries_test_archive_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74824,7 +74824,7 @@ export interface operations {
             };
         };
     };
-    search_test_archive_entries_api_v4_entries_test_archive_search_post: {
+    search_test_archive_entries_api_v5_entries_test_archive_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74861,7 +74861,7 @@ export interface operations {
             };
         };
     };
-    refresh_test_archive_api_v4_entries_test_archive_refresh_post: {
+    refresh_test_archive_api_v5_entries_test_archive_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74896,7 +74896,7 @@ export interface operations {
             };
         };
     };
-    get_test_completion_entries_api_v4_entries_test_completion_get_post: {
+    get_test_completion_entries_api_v5_entries_test_completion_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74933,7 +74933,7 @@ export interface operations {
             };
         };
     };
-    search_test_completion_entries_api_v4_entries_test_completion_search_post: {
+    search_test_completion_entries_api_v5_entries_test_completion_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -74970,7 +74970,7 @@ export interface operations {
             };
         };
     };
-    refresh_test_completion_api_v4_entries_test_completion_refresh_post: {
+    refresh_test_completion_api_v5_entries_test_completion_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75005,7 +75005,7 @@ export interface operations {
             };
         };
     };
-    create_test_completion_entry_api_v4_entries_test_completion_create_post: {
+    create_test_completion_entry_api_v5_entries_test_completion_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75042,7 +75042,7 @@ export interface operations {
             };
         };
     };
-    get_test_feedback_entries_api_v4_entries_test_feedback_get_post: {
+    get_test_feedback_entries_api_v5_entries_test_feedback_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75079,7 +75079,7 @@ export interface operations {
             };
         };
     };
-    search_test_feedback_entries_api_v4_entries_test_feedback_search_post: {
+    search_test_feedback_entries_api_v5_entries_test_feedback_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75116,7 +75116,7 @@ export interface operations {
             };
         };
     };
-    refresh_test_feedback_api_v4_entries_test_feedback_refresh_post: {
+    refresh_test_feedback_api_v5_entries_test_feedback_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75151,7 +75151,7 @@ export interface operations {
             };
         };
     };
-    create_test_feedback_entry_api_v4_entries_test_feedback_create_post: {
+    create_test_feedback_entry_api_v5_entries_test_feedback_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75188,7 +75188,7 @@ export interface operations {
             };
         };
     };
-    get_test_grade_entries_api_v4_entries_test_grade_get_post: {
+    get_test_grade_entries_api_v5_entries_test_grade_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75225,7 +75225,7 @@ export interface operations {
             };
         };
     };
-    search_test_grade_entries_api_v4_entries_test_grade_search_post: {
+    search_test_grade_entries_api_v5_entries_test_grade_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75262,7 +75262,7 @@ export interface operations {
             };
         };
     };
-    refresh_test_grade_api_v4_entries_test_grade_refresh_post: {
+    refresh_test_grade_api_v5_entries_test_grade_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75297,7 +75297,7 @@ export interface operations {
             };
         };
     };
-    create_test_grade_entry_api_v4_entries_test_grade_create_post: {
+    create_test_grade_entry_api_v5_entries_test_grade_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75334,7 +75334,7 @@ export interface operations {
             };
         };
     };
-    create_test_invocation_entry_api_v4_entries_test_invocation_create_post: {
+    create_test_invocation_entry_api_v5_entries_test_invocation_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75371,7 +75371,7 @@ export interface operations {
             };
         };
     };
-    get_test_invocation_entries_api_v4_entries_test_invocation_get_post: {
+    get_test_invocation_entries_api_v5_entries_test_invocation_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75408,7 +75408,7 @@ export interface operations {
             };
         };
     };
-    search_test_invocation_entries_api_v4_entries_test_invocation_search_post: {
+    search_test_invocation_entries_api_v5_entries_test_invocation_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75445,7 +75445,7 @@ export interface operations {
             };
         };
     };
-    refresh_test_invocation_api_v4_entries_test_invocation_refresh_post: {
+    refresh_test_invocation_api_v5_entries_test_invocation_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75480,7 +75480,7 @@ export interface operations {
             };
         };
     };
-    get_test_stop_entries_api_v4_entries_test_stop_get_post: {
+    get_test_stop_entries_api_v5_entries_test_stop_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75517,7 +75517,7 @@ export interface operations {
             };
         };
     };
-    search_test_stop_entries_api_v4_entries_test_stop_search_post: {
+    search_test_stop_entries_api_v5_entries_test_stop_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75554,7 +75554,7 @@ export interface operations {
             };
         };
     };
-    refresh_test_stop_api_v4_entries_test_stop_refresh_post: {
+    refresh_test_stop_api_v5_entries_test_stop_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75589,7 +75589,7 @@ export interface operations {
             };
         };
     };
-    create_test_stop_entry_api_v4_entries_test_stop_create_post: {
+    create_test_stop_entry_api_v5_entries_test_stop_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75626,7 +75626,7 @@ export interface operations {
             };
         };
     };
-    get_texts_entries_api_v4_entries_texts_get_post: {
+    get_texts_entries_api_v5_entries_texts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75663,7 +75663,7 @@ export interface operations {
             };
         };
     };
-    search_texts_entries_api_v4_entries_texts_search_post: {
+    search_texts_entries_api_v5_entries_texts_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75700,7 +75700,7 @@ export interface operations {
             };
         };
     };
-    refresh_texts_api_v4_entries_texts_refresh_post: {
+    refresh_texts_api_v5_entries_texts_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75735,7 +75735,7 @@ export interface operations {
             };
         };
     };
-    get_tokens_entries_api_v4_entries_tokens_get_post: {
+    get_tokens_entries_api_v5_entries_tokens_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75772,7 +75772,7 @@ export interface operations {
             };
         };
     };
-    search_tokens_entries_api_v4_entries_tokens_search_post: {
+    search_tokens_entries_api_v5_entries_tokens_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75809,7 +75809,7 @@ export interface operations {
             };
         };
     };
-    refresh_tokens_api_v4_entries_tokens_refresh_post: {
+    refresh_tokens_api_v5_entries_tokens_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75844,7 +75844,7 @@ export interface operations {
             };
         };
     };
-    get_tool_drafts_entries_api_v4_entries_tool_drafts_get_post: {
+    get_tool_drafts_entries_api_v5_entries_tool_drafts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75881,7 +75881,7 @@ export interface operations {
             };
         };
     };
-    search_tool_drafts_entries_api_v4_entries_tool_drafts_search_post: {
+    search_tool_drafts_entries_api_v5_entries_tool_drafts_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75918,7 +75918,7 @@ export interface operations {
             };
         };
     };
-    refresh_tool_drafts_api_v4_entries_tool_drafts_refresh_post: {
+    refresh_tool_drafts_api_v5_entries_tool_drafts_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75953,7 +75953,7 @@ export interface operations {
             };
         };
     };
-    get_training_entries_api_v4_entries_training_get_post: {
+    get_training_entries_api_v5_entries_training_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -75966,7 +75966,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__11"];
+                "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__11"];
             };
         };
         responses: {
@@ -75976,7 +75976,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__27"];
+                    "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__27"];
                 };
             };
             /** @description Validation Error */
@@ -75990,7 +75990,7 @@ export interface operations {
             };
         };
     };
-    search_training_entries_api_v4_entries_training_search_post: {
+    search_training_entries_api_v5_entries_training_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76003,7 +76003,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__12"];
+                "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__12"];
             };
         };
         responses: {
@@ -76013,7 +76013,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__28"];
+                    "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__28"];
                 };
             };
             /** @description Validation Error */
@@ -76027,7 +76027,7 @@ export interface operations {
             };
         };
     };
-    refresh_training_api_v4_entries_training_refresh_post: {
+    refresh_training_api_v5_entries_training_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76062,7 +76062,7 @@ export interface operations {
             };
         };
     };
-    get_training_department_entries_api_v4_entries_training_department_get_post: {
+    get_training_department_entries_api_v5_entries_training_department_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76075,7 +76075,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__13"];
+                "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__13"];
             };
         };
         responses: {
@@ -76085,7 +76085,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__29"];
+                    "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__29"];
                 };
             };
             /** @description Validation Error */
@@ -76099,7 +76099,7 @@ export interface operations {
             };
         };
     };
-    search_training_department_entries_api_v4_entries_training_department_search_post: {
+    search_training_department_entries_api_v5_entries_training_department_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76112,7 +76112,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__14"];
+                "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__14"];
             };
         };
         responses: {
@@ -76122,7 +76122,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__30"];
+                    "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__30"];
                 };
             };
             /** @description Validation Error */
@@ -76136,7 +76136,7 @@ export interface operations {
             };
         };
     };
-    refresh_training_department_api_v4_entries_training_department_refresh_post: {
+    refresh_training_department_api_v5_entries_training_department_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76171,7 +76171,7 @@ export interface operations {
             };
         };
     };
-    get_training_drafts_entries_api_v4_entries_training_drafts_get_post: {
+    get_training_drafts_entries_api_v5_entries_training_drafts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76184,7 +76184,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__15"];
+                "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__15"];
             };
         };
         responses: {
@@ -76194,7 +76194,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__31"];
+                    "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__31"];
                 };
             };
             /** @description Validation Error */
@@ -76208,7 +76208,7 @@ export interface operations {
             };
         };
     };
-    search_training_drafts_entries_api_v4_entries_training_drafts_search_post: {
+    search_training_drafts_entries_api_v5_entries_training_drafts_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76221,7 +76221,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__16"];
+                "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__16"];
             };
         };
         responses: {
@@ -76231,7 +76231,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__sql__types___build_missing_type___locals____MissingSqlType__32"];
+                    "application/json": components["schemas"]["app__v5__sql__types___build_missing_type___locals____MissingSqlType__32"];
                 };
             };
             /** @description Validation Error */
@@ -76245,7 +76245,7 @@ export interface operations {
             };
         };
     };
-    refresh_training_drafts_api_v4_entries_training_drafts_refresh_post: {
+    refresh_training_drafts_api_v5_entries_training_drafts_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76280,7 +76280,7 @@ export interface operations {
             };
         };
     };
-    get_uploads_entries_api_v4_entries_uploads_get_post: {
+    get_uploads_entries_api_v5_entries_uploads_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76317,7 +76317,7 @@ export interface operations {
             };
         };
     };
-    search_uploads_entries_api_v4_entries_uploads_search_post: {
+    search_uploads_entries_api_v5_entries_uploads_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76354,7 +76354,7 @@ export interface operations {
             };
         };
     };
-    refresh_uploads_api_v4_entries_uploads_refresh_post: {
+    refresh_uploads_api_v5_entries_uploads_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76389,7 +76389,7 @@ export interface operations {
             };
         };
     };
-    get_uploads_completions_entries_api_v4_entries_uploads_completions_get_post: {
+    get_uploads_completions_entries_api_v5_entries_uploads_completions_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76426,7 +76426,7 @@ export interface operations {
             };
         };
     };
-    search_uploads_completions_entries_api_v4_entries_uploads_completions_search_post: {
+    search_uploads_completions_entries_api_v5_entries_uploads_completions_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76463,7 +76463,7 @@ export interface operations {
             };
         };
     };
-    refresh_uploads_completions_api_v4_entries_uploads_completions_refresh_post: {
+    refresh_uploads_completions_api_v5_entries_uploads_completions_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76498,7 +76498,7 @@ export interface operations {
             };
         };
     };
-    get_videos_entries_api_v4_entries_videos_get_post: {
+    get_videos_entries_api_v5_entries_videos_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76535,7 +76535,7 @@ export interface operations {
             };
         };
     };
-    search_videos_entries_api_v4_entries_videos_search_post: {
+    search_videos_entries_api_v5_entries_videos_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76572,7 +76572,7 @@ export interface operations {
             };
         };
     };
-    refresh_videos_api_v4_entries_videos_refresh_post: {
+    refresh_videos_api_v5_entries_videos_refresh_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76607,7 +76607,7 @@ export interface operations {
             };
         };
     };
-    get_login_providers_api_v4_auth_login_post: {
+    get_login_providers_api_v5_auth_login_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76644,7 +76644,7 @@ export interface operations {
             };
         };
     };
-    get_auth_profile_api_v4_auth_profile_post: {
+    get_auth_profile_api_v5_auth_profile_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76681,7 +76681,7 @@ export interface operations {
             };
         };
     };
-    get_auth_settings_api_v4_auth_settings_post: {
+    get_auth_settings_api_v5_auth_settings_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76718,7 +76718,7 @@ export interface operations {
             };
         };
     };
-    get_auth_page_api_v4_auth_page_post: {
+    get_auth_page_api_v5_auth_page_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76755,7 +76755,7 @@ export interface operations {
             };
         };
     };
-    get_analytics_filters_api_v4_auth_analytics_post: {
+    get_analytics_filters_api_v5_auth_analytics_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76788,7 +76788,7 @@ export interface operations {
             };
         };
     };
-    get_drafts_api_v4_auth_drafts_post: {
+    get_drafts_api_v5_auth_drafts_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76821,7 +76821,7 @@ export interface operations {
             };
         };
     };
-    get_profile_by_email_api_v4_auth_email_post: {
+    get_profile_by_email_api_v5_auth_email_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76858,7 +76858,7 @@ export interface operations {
             };
         };
     };
-    get_group_messages_api_v4_auth_generate_post: {
+    get_group_messages_api_v5_auth_generate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76895,7 +76895,7 @@ export interface operations {
             };
         };
     };
-    resolve_group_api_v4_auth_group_post: {
+    resolve_group_api_v5_auth_group_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76932,7 +76932,7 @@ export interface operations {
             };
         };
     };
-    create_or_update_profile_api_v4_auth_upsert_post: {
+    create_or_update_profile_api_v5_auth_upsert_post: {
         parameters: {
             query?: never;
             header?: {
@@ -76969,7 +76969,7 @@ export interface operations {
             };
         };
     };
-    search_simulatable_profiles_api_v4_auth_simulatable_post: {
+    search_simulatable_profiles_api_v5_auth_simulatable_post: {
         parameters: {
             query?: never;
             header?: {
@@ -77006,7 +77006,7 @@ export interface operations {
             };
         };
     };
-    authorize_emulation_api_v4_auth_emulate_post: {
+    authorize_emulation_api_v5_auth_emulate_post: {
         parameters: {
             query?: never;
             header?: {
@@ -77043,7 +77043,7 @@ export interface operations {
             };
         };
     };
-    get_auth_callback_api_v4_auth_callback_post: {
+    get_auth_callback_api_v5_auth_callback_post: {
         parameters: {
             query?: never;
             header?: {
@@ -77080,7 +77080,7 @@ export interface operations {
             };
         };
     };
-    decrypt_key_api_v4_auth_decrypt_post: {
+    decrypt_key_api_v5_auth_decrypt_post: {
         parameters: {
             query?: never;
             header?: {
@@ -77117,7 +77117,7 @@ export interface operations {
             };
         };
     };
-    tus_discover_api_v4_uploads_discover_options: {
+    tus_discover_api_v5_uploads_discover_options: {
         parameters: {
             query?: never;
             header?: {
@@ -77150,7 +77150,7 @@ export interface operations {
             };
         };
     };
-    tus_discover_upload_api_v4_uploads_discover__upload_id__options: {
+    tus_discover_upload_api_v5_uploads_discover__upload_id__options: {
         parameters: {
             query?: never;
             header?: {
@@ -77185,7 +77185,7 @@ export interface operations {
             };
         };
     };
-    tus_create_api_v4_uploads_create_post: {
+    tus_create_api_v5_uploads_create_post: {
         parameters: {
             query?: never;
             header?: {
@@ -77218,7 +77218,7 @@ export interface operations {
             };
         };
     };
-    tus_status_api_v4_uploads__upload_id__status_head: {
+    tus_status_api_v5_uploads__upload_id__status_head: {
         parameters: {
             query?: never;
             header?: {
@@ -77253,7 +77253,7 @@ export interface operations {
             };
         };
     };
-    tus_chunk_api_v4_uploads__upload_id__chunk_patch: {
+    tus_chunk_api_v5_uploads__upload_id__chunk_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -77288,7 +77288,7 @@ export interface operations {
             };
         };
     };
-    finalize_upload_api_v4_uploads__upload_id__finalize_post: {
+    finalize_upload_api_v5_uploads__upload_id__finalize_post: {
         parameters: {
             query?: never;
             header?: {
@@ -77323,7 +77323,7 @@ export interface operations {
             };
         };
     };
-    download_upload_api_v4_uploads__upload_id__download_get: {
+    download_upload_api_v5_uploads__upload_id__download_get: {
         parameters: {
             query?: never;
             header?: {
@@ -77358,7 +77358,7 @@ export interface operations {
             };
         };
     };
-    preview_upload_api_v4_uploads__upload_id__preview_get: {
+    preview_upload_api_v5_uploads__upload_id__preview_get: {
         parameters: {
             query?: never;
             header?: {
@@ -77393,7 +77393,7 @@ export interface operations {
             };
         };
     };
-    render_upload_template_api_v4_uploads__upload_id__template_get: {
+    render_upload_template_api_v5_uploads__upload_id__template_get: {
         parameters: {
             query?: never;
             header?: {
@@ -77428,7 +77428,7 @@ export interface operations {
             };
         };
     };
-    parse_csv_api_v4_uploads_csv_post: {
+    parse_csv_api_v5_uploads_csv_post: {
         parameters: {
             query?: never;
             header?: {

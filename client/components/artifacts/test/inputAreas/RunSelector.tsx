@@ -17,7 +17,7 @@ import type { OutputOf } from "@/lib/api/types";
 import { Loader2, Play } from "lucide-react";
 import { useState } from "react";
 
-type TestArtifactOut = OutputOf<"/api/v4/artifacts/test/get", "post">;
+type TestArtifactOut = OutputOf<"/api/v5/artifacts/test/get", "post">;
 type RunItem = NonNullable<TestArtifactOut["runs"]>[number];
 
 export interface RunSelectorProps {

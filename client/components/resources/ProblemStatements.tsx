@@ -24,20 +24,20 @@ import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // Link types for tool call tracking
-type LinkProblemStatementsIn = InputOf<"/api/v4/resources/problem_statements/link", "post">;
-type LinkProblemStatementsOut = OutputOf<"/api/v4/resources/problem_statements/link", "post">;
+type LinkProblemStatementsIn = InputOf<"/api/v5/resources/problem_statements/link", "post">;
+type LinkProblemStatementsOut = OutputOf<"/api/v5/resources/problem_statements/link", "post">;
 
 type CreateDraftProblemStatementsIn = InputOf<
-  "/api/v4/resources/problem_statements",
+  "/api/v5/resources/problem_statements",
   "post"
 >;
 type CreateDraftProblemStatementsOut = OutputOf<
-  "/api/v4/resources/problem_statements",
+  "/api/v5/resources/problem_statements",
   "post"
 >;
 
 // Derive resource item type from the GET endpoint response
-type ProblemStatementGetResponse = OutputOf<"/api/v4/resources/problem_statements/get", "post">;
+type ProblemStatementGetResponse = OutputOf<"/api/v5/resources/problem_statements/get", "post">;
 export type ProblemStatementResourceItem = NonNullable<ProblemStatementGetResponse["item"]>;
 
 // Word-based diff types and utilities

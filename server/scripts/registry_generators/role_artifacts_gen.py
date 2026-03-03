@@ -8,7 +8,7 @@ from collections import defaultdict
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from app.api.v4.auth.route_permissions import ROUTE_PERMISSIONS
+from app.v5.api.auth.route_permissions import ROUTE_PERMISSIONS
 
 
 def generate_role_artifacts() -> dict[str, list[str]]:

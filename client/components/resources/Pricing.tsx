@@ -22,11 +22,11 @@ import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
-type CreateDraftPricingIn = InputOf<"/api/v4/resources/pricing", "post">;
-type CreateDraftPricingOut = OutputOf<"/api/v4/resources/pricing", "post">;
+type CreateDraftPricingIn = InputOf<"/api/v5/resources/pricing", "post">;
+type CreateDraftPricingOut = OutputOf<"/api/v5/resources/pricing", "post">;
 
 // Derive resource item type from the GET endpoint response
-type PricingGetResponse = OutputOf<"/api/v4/resources/pricing/get", "post">;
+type PricingGetResponse = OutputOf<"/api/v5/resources/pricing/get", "post">;
 export type PricingResourceItem = NonNullable<PricingGetResponse["items"]>[number];
 
 export interface PricingItem {

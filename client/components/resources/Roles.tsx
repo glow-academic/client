@@ -35,7 +35,7 @@ import { Check, Loader2, Pencil, Plus, Sparkles, User, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 
 // Derive resource item type from the GET endpoint response
-type RolesGetResponse = OutputOf<"/api/v4/resources/roles/get", "post">;
+type RolesGetResponse = OutputOf<"/api/v5/resources/roles/get", "post">;
 export type RolesResourceItem = NonNullable<RolesGetResponse["items"]>[number];
 
 export interface RolesProps {

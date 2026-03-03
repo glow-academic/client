@@ -73,29 +73,29 @@ const findCurrentFlagId = (
 ): string | null => flags?.find((f) => f.key === key)?.flag_option_id ?? null;
 
 // Types defined inline using InputOf/OutputOf
-type SaveModelIn = InputOf<"/api/v4/artifacts/models/save", "post">;
-type SaveModelOut = OutputOf<"/api/v4/artifacts/models/save", "post">;
-type PatchModelDraftIn = InputOf<"/api/v4/artifacts/models/draft", "patch">;
-type PatchModelDraftOut = OutputOf<"/api/v4/artifacts/models/draft", "patch">;
+type SaveModelIn = InputOf<"/api/v5/artifacts/models/save", "post">;
+type SaveModelOut = OutputOf<"/api/v5/artifacts/models/save", "post">;
+type PatchModelDraftIn = InputOf<"/api/v5/artifacts/models/draft", "patch">;
+type PatchModelDraftOut = OutputOf<"/api/v5/artifacts/models/draft", "patch">;
 
-type ModelData = OutputOf<"/api/v4/artifacts/models/get", "post">;
+type ModelData = OutputOf<"/api/v5/artifacts/models/get", "post">;
 
-type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
-type CreateDraftValuesIn = InputOf<"/api/v4/resources/values", "post">;
-type CreateDraftValuesOut = OutputOf<"/api/v4/resources/values", "post">;
-type CreateDraftPricingIn = InputOf<"/api/v4/resources/pricing", "post">;
-type CreateDraftPricingOut = OutputOf<"/api/v4/resources/pricing", "post">;
-type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
-type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
+type CreateDraftValuesIn = InputOf<"/api/v5/resources/values", "post">;
+type CreateDraftValuesOut = OutputOf<"/api/v5/resources/values", "post">;
+type CreateDraftPricingIn = InputOf<"/api/v5/resources/pricing", "post">;
+type CreateDraftPricingOut = OutputOf<"/api/v5/resources/pricing", "post">;
+type CreateDraftVoicesIn = InputOf<"/api/v5/resources/voices", "post">;
+type CreateDraftVoicesOut = OutputOf<"/api/v5/resources/voices", "post">;
 
 type FlushResult = {
   name_id?: string | null;

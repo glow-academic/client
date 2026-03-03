@@ -13,20 +13,20 @@ import type { Metadata } from "next";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetFieldIn = InputOf<"/api/v4/artifacts/fields/get", "post">;
-type GetFieldOut = OutputOf<"/api/v4/artifacts/fields/get", "post">;
-type SaveFieldIn = InputOf<"/api/v4/artifacts/fields/save", "post">;
-type SaveFieldOut = OutputOf<"/api/v4/artifacts/fields/save", "post">;
-type PatchFieldDraftIn = InputOf<"/api/v4/artifacts/fields/draft", "patch">;
-type PatchFieldDraftOut = OutputOf<"/api/v4/artifacts/fields/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type GetFieldIn = InputOf<"/api/v5/artifacts/fields/get", "post">;
+type GetFieldOut = OutputOf<"/api/v5/artifacts/fields/get", "post">;
+type SaveFieldIn = InputOf<"/api/v5/artifacts/fields/save", "post">;
+type SaveFieldOut = OutputOf<"/api/v5/artifacts/fields/save", "post">;
+type PatchFieldDraftIn = InputOf<"/api/v5/artifacts/fields/draft", "patch">;
+type PatchFieldDraftOut = OutputOf<"/api/v5/artifacts/fields/draft", "patch">;
+type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 
@@ -58,8 +58,8 @@ const getFieldDefault = async (input: GetFieldIn): Promise<GetFieldOut> => {
 
 /** ---- Metadata ---- */
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/fields/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/fields/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/fields/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/fields/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/fields/docs", input);

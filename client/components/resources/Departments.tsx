@@ -22,11 +22,11 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
-type LinkDepartmentsIn = InputOf<"/api/v4/resources/departments/link", "post">;
-type LinkDepartmentsOut = OutputOf<"/api/v4/resources/departments/link", "post">;
+type LinkDepartmentsIn = InputOf<"/api/v5/resources/departments/link", "post">;
+type LinkDepartmentsOut = OutputOf<"/api/v5/resources/departments/link", "post">;
 
 // Derive resource item type from the GET endpoint response
-type DepartmentsGetResponse = OutputOf<"/api/v4/resources/departments/get", "post">;
+type DepartmentsGetResponse = OutputOf<"/api/v5/resources/departments/get", "post">;
 export type DepartmentResourceItem = NonNullable<DepartmentsGetResponse["items"]>[number];
 
 export interface DepartmentItem {

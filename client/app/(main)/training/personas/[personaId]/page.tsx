@@ -19,44 +19,44 @@ import {
 } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetPersonaIn = InputOf<"/api/v4/artifacts/personas/get", "post">;
-type GetPersonaOut = OutputOf<"/api/v4/artifacts/personas/get", "post">;
-type SavePersonaIn = InputOf<"/api/v4/artifacts/personas/save", "post">;
-type SavePersonaOut = OutputOf<"/api/v4/artifacts/personas/save", "post">;
-type PatchPersonaDraftIn = InputOf<"/api/v4/artifacts/personas/draft", "patch">;
-type PatchPersonaDraftOut = OutputOf<"/api/v4/artifacts/personas/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type GetPersonaIn = InputOf<"/api/v5/artifacts/personas/get", "post">;
+type GetPersonaOut = OutputOf<"/api/v5/artifacts/personas/get", "post">;
+type SavePersonaIn = InputOf<"/api/v5/artifacts/personas/save", "post">;
+type SavePersonaOut = OutputOf<"/api/v5/artifacts/personas/save", "post">;
+type PatchPersonaDraftIn = InputOf<"/api/v5/artifacts/personas/draft", "patch">;
+type PatchPersonaDraftOut = OutputOf<"/api/v5/artifacts/personas/draft", "patch">;
+type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftInstructionsIn = InputOf<
-  "/api/v4/resources/instructions",
+  "/api/v5/resources/instructions",
   "post"
 >;
 type CreateDraftInstructionsOut = OutputOf<
-  "/api/v4/resources/instructions",
+  "/api/v5/resources/instructions",
   "post"
 >;
-type CreateDraftColorsIn = InputOf<"/api/v4/resources/colors", "post">;
-type CreateDraftColorsOut = OutputOf<"/api/v4/resources/colors", "post">;
-type CreateDraftExamplesIn = InputOf<"/api/v4/resources/examples", "post">;
-type CreateDraftExamplesOut = OutputOf<"/api/v4/resources/examples", "post">;
+type CreateDraftColorsIn = InputOf<"/api/v5/resources/colors", "post">;
+type CreateDraftColorsOut = OutputOf<"/api/v5/resources/colors", "post">;
+type CreateDraftExamplesIn = InputOf<"/api/v5/resources/examples", "post">;
+type CreateDraftExamplesOut = OutputOf<"/api/v5/resources/examples", "post">;
 type CreateDraftParameterFieldsIn = InputOf<
-  "/api/v4/resources/parameter_fields",
+  "/api/v5/resources/parameter_fields",
   "post"
 >;
 type CreateDraftParameterFieldsOut = OutputOf<
-  "/api/v4/resources/parameter_fields",
+  "/api/v5/resources/parameter_fields",
   "post"
 >;
-type CreateDraftVoicesIn = InputOf<"/api/v4/resources/voices", "post">;
-type CreateDraftVoicesOut = OutputOf<"/api/v4/resources/voices", "post">;
+type CreateDraftVoicesIn = InputOf<"/api/v5/resources/voices", "post">;
+type CreateDraftVoicesOut = OutputOf<"/api/v5/resources/voices", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -71,8 +71,8 @@ const getPersona = async (input: GetPersonaIn): Promise<GetPersonaOut> => {
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/personas/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/personas/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/personas/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/personas/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/personas/docs", input);

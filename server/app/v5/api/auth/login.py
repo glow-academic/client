@@ -1,0 +1,66 @@
+"""Auth login endpoint - returns list of active provider options and departments."""
+
+from typing import Annotated, Any, cast
+from uuid import UUID
+
+import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, Request
+
+from app.main import get_db
+from app.v5.sql.types import (
+    GetLoginDataApiRequest,
+    GetLoginDataApiResponse,
+    GetLoginDataSqlParams,
+    GetLoginDataSqlRow,
+)
+from app.v5.utils.sql_helper import execute_sql_typed
+
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/v5/sql/queries/auth/get_login_data_complete.sql"
+
+router = APIRouter()
+
+
+@router.post("/login", response_model=GetLoginDataApiResponse)
+async def get_login_providers(
+    request: GetLoginDataApiRequest,
+    http_request: Request,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> GetLoginDataApiResponse:
+    """Get list of active auth provider options and departments for login page."""
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+
+    try:
+        # Use department_id from request body if provided
+        department_id: UUID | None = (
+            request.department_id if request.department_id else None
+        )
+
+        params = GetLoginDataSqlParams(department_id=department_id)
+        sql_params = params.to_tuple()
+
+        # Execute query with typed helper - automatically detects and calls function if present
+        result = cast(
+            GetLoginDataSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
+        )
+
+        # Convert SQL result to API response (all fields come from SQL)
+        api_response = GetLoginDataApiResponse.model_validate(result.model_dump())
+
+        return api_response
+    except Exception:
+        # Return empty response if error occurs
+        return GetLoginDataApiResponse(
+            providers=[],
+            departments=[],
+            guest_login_enabled=True,
+            default_department_id=None,
+            realm_name="master",
+            organization_id=None,
+        )

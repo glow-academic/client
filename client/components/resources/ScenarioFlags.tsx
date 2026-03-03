@@ -23,18 +23,18 @@ import { Check, Loader2, Power, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftSimulationScenarioFlagsIn = InputOf<
-  "/api/v4/resources/scenario_flags",
+  "/api/v5/resources/scenario_flags",
   "post"
 >;
 type CreateDraftSimulationScenarioFlagsOut = OutputOf<
-  "/api/v4/resources/scenario_flags",
+  "/api/v5/resources/scenario_flags",
   "post"
 >;
-type LinkScenarioFlagsIn = InputOf<"/api/v4/resources/scenario_flags/link", "post">;
-type LinkScenarioFlagsOut = OutputOf<"/api/v4/resources/scenario_flags/link", "post">;
+type LinkScenarioFlagsIn = InputOf<"/api/v5/resources/scenario_flags/link", "post">;
+type LinkScenarioFlagsOut = OutputOf<"/api/v5/resources/scenario_flags/link", "post">;
 
 // Derive resource item type from the GET endpoint response
-type ScenarioFlagsGetResponse = OutputOf<"/api/v4/resources/scenario_flags/get", "post">;
+type ScenarioFlagsGetResponse = OutputOf<"/api/v5/resources/scenario_flags/get", "post">;
 export type ScenarioFlagsResourceItem = NonNullable<ScenarioFlagsGetResponse["items"]>[number];
 
 export interface ScenarioFlagsProps {

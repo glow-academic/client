@@ -26,7 +26,7 @@ import {
   type BenchmarkBundleFormState,
 } from "../documentAreas/ResourcePanel";
 
-type TestArtifactOut = OutputOf<"/api/v4/artifacts/test/get", "post">;
+type TestArtifactOut = OutputOf<"/api/v5/artifacts/test/get", "post">;
 type RunItem = NonNullable<TestArtifactOut["runs"]>[number];
 
 export interface TestChatProps {

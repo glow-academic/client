@@ -33,11 +33,11 @@ const Monaco = dynamic(() => import("@monaco-editor/react"), {
   ),
 });
 
-type CreateDraftPromptsIn = InputOf<"/api/v4/resources/prompts", "post">;
-type CreateDraftPromptsOut = OutputOf<"/api/v4/resources/prompts", "post">;
+type CreateDraftPromptsIn = InputOf<"/api/v5/resources/prompts", "post">;
+type CreateDraftPromptsOut = OutputOf<"/api/v5/resources/prompts", "post">;
 
 // Derive resource item type from the GET endpoint response
-type PromptsGetResponse = OutputOf<"/api/v4/resources/prompts/get", "post">;
+type PromptsGetResponse = OutputOf<"/api/v5/resources/prompts/get", "post">;
 export type PromptResourceItem = NonNullable<PromptsGetResponse["items"]>[number];
 
 // Word-based diff types and utilities

@@ -19,13 +19,13 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
-type LinkNamesIn = InputOf<"/api/v4/resources/names/link", "post">;
-type LinkNamesOut = OutputOf<"/api/v4/resources/names/link", "post">;
+type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
+type LinkNamesIn = InputOf<"/api/v5/resources/names/link", "post">;
+type LinkNamesOut = OutputOf<"/api/v5/resources/names/link", "post">;
 
 // Derive resource item type from the GET endpoint response
-type NamesGetResponse = OutputOf<"/api/v4/resources/names/get", "post">;
+type NamesGetResponse = OutputOf<"/api/v5/resources/names/get", "post">;
 export type NameResourceItem = NonNullable<NamesGetResponse["items"]>[number];
 
 export interface NamesProps {

@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from app.registry.manual import (
+from app.v5.registry.manual import (
     ARTIFACTS_WITHOUT_SOCKET,
     SECTION_OVERRIDES,
     VIEW_ENDPOINT_OVERRIDES,
@@ -34,8 +34,8 @@ ORDER BY table_name;
 
 
 def _scan_api_dirs(server_dir: Path) -> set[str]:
-    """Scan server/app/api/v4/artifacts/ for artifact directory names."""
-    artifacts_dir = server_dir / "app" / "api" / "v4" / "artifacts"
+    """Scan server/app/api/v5/artifacts/ for artifact directory names."""
+    artifacts_dir = server_dir / "app" / "v5" / "main"
     if not artifacts_dir.exists():
         return set()
     return {
@@ -48,7 +48,7 @@ def _scan_api_dirs(server_dir: Path) -> set[str]:
 def _scan_view_endpoints(server_dir: Path, artifact_name: str) -> frozenset[str]:
     """Scan a view artifact's __init__.py for endpoint function names."""
     init_file = (
-        server_dir / "app" / "api" / "v4" / "artifacts" / artifact_name / "__init__.py"
+        server_dir / "app" / "v5" / "main" / artifact_name / "__init__.py"
     )
     if not init_file.exists():
         return frozenset()
@@ -70,7 +70,7 @@ def _scan_view_endpoints(server_dir: Path, artifact_name: str) -> frozenset[str]
 
 def _scan_py_endpoints(server_dir: Path, artifact_name: str) -> frozenset[str]:
     """Scan for .py files in the artifact directory (excluding __init__.py, __pycache__)."""
-    artifact_dir = server_dir / "app" / "api" / "v4" / "artifacts" / artifact_name
+    artifact_dir = server_dir / "app" / "v5" / "main" / artifact_name
     if not artifact_dir.exists():
         return frozenset()
     return frozenset(
@@ -156,7 +156,7 @@ def generate_artifacts(
     # 4. Determine which CRUD artifacts have socket events
     # Use SAVE_REGISTRY membership minus ARTIFACTS_WITHOUT_SOCKET
     # Import lazily to avoid circular imports
-    from app.socket.v5.internal.generation_save_registry import SAVE_REGISTRY
+    from app.v5.socket.internal.generation_save_registry import SAVE_REGISTRY
 
     socket_artifacts = set(SAVE_REGISTRY.keys()) - ARTIFACTS_WITHOUT_SOCKET
 

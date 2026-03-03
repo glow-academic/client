@@ -33,11 +33,11 @@ import { Check, Eye, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 
 // Link types for tool call tracking
-type LinkDocumentsIn = InputOf<"/api/v4/resources/documents/link", "post">;
-type LinkDocumentsOut = OutputOf<"/api/v4/resources/documents/link", "post">;
+type LinkDocumentsIn = InputOf<"/api/v5/resources/documents/link", "post">;
+type LinkDocumentsOut = OutputOf<"/api/v5/resources/documents/link", "post">;
 
 // Derive resource item type from the GET endpoint response
-type DocumentGetResponse = OutputOf<"/api/v4/resources/documents/get", "post">;
+type DocumentGetResponse = OutputOf<"/api/v5/resources/documents/get", "post">;
 export type DocumentResourceItem = NonNullable<DocumentGetResponse["items"]>[number];
 
 export interface DocumentItem {

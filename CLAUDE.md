@@ -13,16 +13,16 @@ make help         # Show all commands
 
 | Layer | Location | Purpose |
 |-------|----------|---------|
-| **Views** | `server/app/api/v4/views/` | Read layer — queries MVs with declarative SQL filters, `*_internal()` |
-| **Resources** | `server/app/api/v4/resources/` | Cached data-access functions, `*_internal()` for reuse |
-| **Artifacts** | `server/app/api/v4/artifacts/` | BFF aggregation — views + resources + permissions |
-| **Socket** | `server/app/socket/v4/artifacts/` | WebSocket AI generation (generate, complete, progress, error) |
+| **Views** | `server/app/v5/api/views/` | Read layer — queries MVs with declarative SQL filters, `*_internal()` |
+| **Resources** | `server/app/v5/api/resources/` | Cached data-access functions, `*_internal()` for reuse |
+| **Artifacts** | `server/app/v5/api/main/` | BFF aggregation — views + resources + permissions |
+| **Socket** | `server/app/v5/socket/artifacts/` | WebSocket AI generation (generate, complete, progress, error) |
 | **Permissions** | `*/permissions.py` per artifact | Pure Python business logic — no SQL |
 
 ## Type Flow
 
 ```
-SQL files (server/app/sql/v4/queries/)
+SQL files (server/app/v5/sql/queries/)
     ↓ make sql-compile
 server/app/sql/types.py (*SqlParams, *SqlRow)
     ↓ make openapi-gen
@@ -36,12 +36,12 @@ client/lib/api/schema.ts → InputOf / OutputOf
 ## File Locations
 
 ```
-server/app/sql/v4/queries/[resource]/       — SQL files (one per route)
-server/app/api/v4/artifacts/[resource]/     — Artifact endpoints
-server/app/api/v4/resources/[resource]/     — Resource endpoints
-server/app/api/v4/views/[domain]/           — View endpoints
-server/app/socket/v4/artifacts/[resource]/  — Socket handlers
-server/tests/integration/api/v4/[resource]/ — Integration tests
+server/app/v5/sql/queries/[resource]/       — SQL files (one per route)
+server/app/v5/api/main/[resource]/     — Artifact endpoints
+server/app/v5/api/resources/[resource]/     — Resource endpoints
+server/app/v5/api/views/[domain]/           — View endpoints
+server/app/v5/socket/artifacts/[resource]/  — Socket handlers
+server/tests/integration/api/v5/[resource]/ — Integration tests
 server/tests/e2e/                           — E2E Playwright tests
 client/app/(main)/[resource]/page.tsx       — Server actions
 client/components/[resource]/               — UI components
@@ -100,7 +100,7 @@ ls database/migrate/ | sort -n | tail -1   # Find latest number
 make migrate-db                             # Apply migration
 ```
 
-**IMPORTANT: MVs are JIT compiled.** Materialized view definitions live in `server/app/sql/v4/views/` and are compiled at runtime by `make sql-compile`. **Never** put MV CREATE/DROP/REFRESH statements in migration files. Migrations should only contain DDL for tables, indexes, constraints, and enum values. To change an MV, edit its source SQL file directly.
+**IMPORTANT: MVs are JIT compiled.** Materialized view definitions live in `server/app/v5/sql/views/` and are compiled at runtime by `make sql-compile`. **Never** put MV CREATE/DROP/REFRESH statements in migration files. Migrations should only contain DDL for tables, indexes, constraints, and enum values. To change an MV, edit its source SQL file directly.
 
 ## Testing
 

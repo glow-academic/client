@@ -23,7 +23,7 @@ import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 // Derive resource item type from the GET endpoint response
-type EntriesGetResponse = OutputOf<"/api/v4/resources/entries/get", "post">;
+type EntriesGetResponse = OutputOf<"/api/v5/resources/entries/get", "post">;
 export type EntriesResourceItem = NonNullable<EntriesGetResponse["items"]>[number];
 
 export interface EntryItem {

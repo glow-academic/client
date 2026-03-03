@@ -35,28 +35,28 @@ import {
 } from "@/lib/resources/action-builders";
 import { parseAsString, type Parser } from "nuqs";
 
-type SaveAuthIn = InputOf<"/api/v4/artifacts/auths/save", "post">;
-type SaveAuthOut = OutputOf<"/api/v4/artifacts/auths/save", "post">;
-type PatchAuthDraftIn = InputOf<"/api/v4/artifacts/auths/draft", "patch">;
-type PatchAuthDraftOut = OutputOf<"/api/v4/artifacts/auths/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type SaveAuthIn = InputOf<"/api/v5/artifacts/auths/save", "post">;
+type SaveAuthOut = OutputOf<"/api/v5/artifacts/auths/save", "post">;
+type PatchAuthDraftIn = InputOf<"/api/v5/artifacts/auths/draft", "patch">;
+type PatchAuthDraftOut = OutputOf<"/api/v5/artifacts/auths/draft", "patch">;
+type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
-type CreateDraftProtocolsIn = InputOf<"/api/v4/resources/protocols", "post">;
+type CreateDraftProtocolsIn = InputOf<"/api/v5/resources/protocols", "post">;
 type CreateDraftProtocolsOut = OutputOf<
-  "/api/v4/resources/protocols",
+  "/api/v5/resources/protocols",
   "post"
 >;
-type CreateDraftSlugsIn = InputOf<"/api/v4/resources/slugs", "post">;
-type CreateDraftSlugsOut = OutputOf<"/api/v4/resources/slugs", "post">;
-type AuthData = OutputOf<"/api/v4/artifacts/auths/get", "post">;
+type CreateDraftSlugsIn = InputOf<"/api/v5/resources/slugs", "post">;
+type CreateDraftSlugsOut = OutputOf<"/api/v5/resources/slugs", "post">;
+type AuthData = OutputOf<"/api/v5/artifacts/auths/get", "post">;
 
 type AuthFormState = {
   name_id: string | null;

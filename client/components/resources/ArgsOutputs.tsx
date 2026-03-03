@@ -22,14 +22,14 @@ import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type CreateDraftArgsOutputsIn = InputOf<"/api/v4/resources/args_outputs", "post">;
+type CreateDraftArgsOutputsIn = InputOf<"/api/v5/resources/args_outputs", "post">;
 type CreateDraftArgsOutputsOut = OutputOf<
-  "/api/v4/resources/args_outputs",
+  "/api/v5/resources/args_outputs",
   "post"
 >;
 
 // Derive resource item type from the GET endpoint response
-type ArgsOutputsGetResponse = OutputOf<"/api/v4/resources/args_outputs/get", "post">;
+type ArgsOutputsGetResponse = OutputOf<"/api/v5/resources/args_outputs/get", "post">;
 export type ArgsOutputsResourceItem = NonNullable<ArgsOutputsGetResponse["items"]>[number];
 
 export interface ArgsOutputsDetail {

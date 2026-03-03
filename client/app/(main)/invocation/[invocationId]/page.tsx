@@ -14,15 +14,15 @@ import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetBenchmarkBundleOut = OutputOf<
-  "/api/v4/artifacts/invocation/get",
+  "/api/v5/artifacts/invocation/get",
   "post"
 >;
 type PatchBenchmarkDraftIn = InputOf<
-  "/api/v4/artifacts/invocation/draft",
+  "/api/v5/artifacts/invocation/draft",
   "patch"
 >;
 type PatchBenchmarkDraftOut = OutputOf<
-  "/api/v4/artifacts/invocation/draft",
+  "/api/v5/artifacts/invocation/draft",
   "patch"
 >;
 

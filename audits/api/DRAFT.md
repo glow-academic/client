@@ -10,13 +10,13 @@ The source of truth is the **persona** draft implementation. Every artifact draf
 
 | Layer | Location | Purpose |
 |-------|----------|---------|
-| **Request Types** | `server/app/api/v4/artifacts/{artifact}/types.py` | Optional nested resource actions with `to_tuple()` + `from_request()` |
-| **Access Check SQL** | `server/app/sql/v4/queries/{artifact}s/check_{artifact}_duplicate_access_complete.sql` | Lighter access check (shared with duplicate) |
-| **Draft SQL** | `server/app/sql/v4/queries/{artifact}s/patch_{artifact}_draft_complete.sql` | Delete-then-insert connection pattern with version control |
-| **Python Handler** | `server/app/api/v4/artifacts/{artifact}/draft.py` | Permission check, transaction, cache invalidation |
-| **Permissions** | `server/app/api/v4/artifacts/{artifact}/permissions.py` | `compute_can_draft()` — simple role check |
+| **Request Types** | `server/app/v5/api/main/{artifact}/types.py` | Optional nested resource actions with `to_tuple()` + `from_request()` |
+| **Access Check SQL** | `server/app/v5/sql/queries/{artifact}s/check_{artifact}_duplicate_access_complete.sql` | Lighter access check (shared with duplicate) |
+| **Draft SQL** | `server/app/v5/sql/queries/{artifact}s/patch_{artifact}_draft_complete.sql` | Delete-then-insert connection pattern with version control |
+| **Python Handler** | `server/app/v5/api/main/{artifact}/draft.py` | Permission check, transaction, cache invalidation |
+| **Permissions** | `server/app/v5/api/main/{artifact}/permissions.py` | `compute_can_draft()` — simple role check |
 
-Reference: `server/app/api/v4/artifacts/persona/draft.py`, `persona/types.py`
+Reference: `server/app/v5/api/main/persona/draft.py`, `persona/types.py`
 
 ---
 
@@ -31,7 +31,7 @@ Draft endpoints use the PATCH HTTP method, not POST. This reflects autosave sema
 async def patch_{artifact}_draft(http_request: Request, body: Patch{Artifact}DraftApiRequest):
 ```
 
-Reference: `server/app/api/v4/artifacts/persona/draft.py`
+Reference: `server/app/v5/api/main/persona/draft.py`
 
 ### Rule 2: All resource fields are flat optional IDs
 
@@ -50,7 +50,7 @@ class Patch{Artifact}DraftApiRequest(BaseModel):
 
 No `group_id` (server-resolved), no tool IDs (server-resolved), no nested wrapper types.
 
-Reference: `server/app/api/v4/artifacts/persona/types.py`
+Reference: `server/app/v5/api/main/persona/types.py`
 
 ### Rule 3: `expected_version` for optimistic concurrency control
 
@@ -81,7 +81,7 @@ def from_request(
     )
 ```
 
-Reference: `server/app/api/v4/artifacts/persona/types.py`
+Reference: `server/app/v5/api/main/persona/types.py`
 
 ### Rule 5: Create vs update draft
 
@@ -125,7 +125,7 @@ def to_tuple(self) -> tuple:
     )
 ```
 
-Reference: `server/app/api/v4/artifacts/persona/types.py`
+Reference: `server/app/v5/api/main/persona/types.py`
 
 ### Rule 8: Tool-call tracking conditional on `v_group_id IS NOT NULL`
 
@@ -151,7 +151,7 @@ def compute_can_draft(user_role: str) -> bool:
 User role must come from `get_auth_profile_internal()`, not the monolithic `get_profile_context_internal()`:
 
 ```python
-from app.api.v4.auth.profile import get_auth_profile_internal
+from app.v5.auth.profile import get_auth_profile_internal
 
 profile_ctx = await get_auth_profile_internal(conn, profile_id, bypass_cache=False)
 user_role = profile_ctx.access.role
@@ -159,7 +159,7 @@ user_role = profile_ctx.access.role
 
 See GET.md Rule 2 for the full profile/settings split pattern.
 
-Reference: `server/app/api/v4/artifacts/persona/permissions.py`, `draft.py`
+Reference: `server/app/v5/api/main/persona/permissions.py`, `draft.py`
 
 ### Rule 10: Lighter access check SQL
 
@@ -171,7 +171,7 @@ access = await execute_sql_typed(conn, SQL_PATH_DUPLICATE_ACCESS, params=access_
 
 This is a lighter check that validates the artifact exists and the user has basic access, without the full save access data.
 
-Reference: `server/app/api/v4/artifacts/persona/draft.py`
+Reference: `server/app/v5/api/main/persona/draft.py`
 
 ### Rule 11: Cache invalidation with draft tags
 
@@ -181,7 +181,7 @@ Draft endpoints must invalidate both artifact and draft cache tags:
 await invalidate_tags(["{artifact}s", "drafts"])
 ```
 
-Reference: `server/app/api/v4/artifacts/persona/draft.py`
+Reference: `server/app/v5/api/main/persona/draft.py`
 
 ### Rule 12: Response shape
 
@@ -227,7 +227,7 @@ The client does NOT send `group_id` in the draft request. The server resolves it
 ### Audit 1: Draft endpoint existence
 
 ```bash
-for artifact_dir in server/app/api/v4/artifacts/*/; do
+for artifact_dir in server/app/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   [ ! -f "${artifact_dir}draft.py" ] && echo "MISSING DRAFT ENDPOINT: $artifact"
 done
@@ -238,7 +238,7 @@ done
 ### Audit 2: PATCH method usage
 
 ```bash
-for artifact_dir in server/app/api/v4/artifacts/*/; do
+for artifact_dir in server/app/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}draft.py"
   [ ! -f "$file" ] && continue
@@ -251,7 +251,7 @@ done
 ### Audit 3: Optional resource fields in request
 
 ```bash
-for artifact_dir in server/app/api/v4/artifacts/*/; do
+for artifact_dir in server/app/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}types.py"
   [ ! -f "$file" ] && continue
@@ -266,7 +266,7 @@ done
 ### Audit 4: Expected version in request
 
 ```bash
-for artifact_dir in server/app/api/v4/artifacts/*/; do
+for artifact_dir in server/app/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}types.py"
   [ ! -f "$file" ] && continue
@@ -280,7 +280,7 @@ done
 ### Audit 5: Cache invalidation includes draft tags
 
 ```bash
-for artifact_dir in server/app/api/v4/artifacts/*/; do
+for artifact_dir in server/app/v5/api/main/*/; do
   artifact=$(basename "$artifact_dir")
   file="${artifact_dir}draft.py"
   [ ! -f "$file" ] && continue
@@ -294,7 +294,7 @@ done
 ### Audit 6: Draft SQL uses delete-then-insert
 
 ```bash
-for sql_file in server/app/sql/v4/queries/*/patch_*_draft_complete.sql; do
+for sql_file in server/app/v5/sql/queries/*/patch_*_draft_complete.sql; do
   artifact=$(basename "$(dirname "$sql_file")")
   grep -q "DELETE FROM.*drafts_connection" "$sql_file" || echo "NO DELETE-THEN-INSERT: $artifact"
 done
@@ -305,7 +305,7 @@ done
 ### Audit 7: Version collision detection in SQL
 
 ```bash
-for sql_file in server/app/sql/v4/queries/*/patch_*_draft_complete.sql; do
+for sql_file in server/app/v5/sql/queries/*/patch_*_draft_complete.sql; do
   artifact=$(basename "$(dirname "$sql_file")")
   grep -q "expected_version\|version" "$sql_file" || echo "NO VERSION CHECK: $artifact"
 done
@@ -373,7 +373,7 @@ Version collision detection: {N}
 ## Important Notes
 
 1. **Do NOT fix anything.** This is a read-only audit. Report only.
-2. **The persona draft is the gold standard.** Reference: `server/app/api/v4/artifacts/persona/draft.py`.
+2. **The persona draft is the gold standard.** Reference: `server/app/v5/api/main/persona/draft.py`.
 3. **No composite types needed**: Both save and draft SQL receive flat UUID parameters. The previous composite types are replaced by flat parameters.
 4. **No `audit_activity` decorator**: Unlike save/delete/duplicate, draft endpoints typically do NOT use the `audit_activity` decorator — they use minimal `audit_set()` with actor ID + draft ID only.
 5. **Frontend integration**: Drafts are autosaved by `useDraftLifecycle` hook (1s debounce). The hook sends the full form state on every change with `expected_version` for concurrency control.

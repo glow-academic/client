@@ -11,7 +11,7 @@ import AttemptImprovement from "./secondary/AttemptImprovement";
 import CohortPerformance from "./secondary/CohortPerformance";
 import PersonaPerformance from "./secondary/PersonaPerformance";
 
-export type SecondaryOut = OutputOf<"/api/v4/artifacts/dashboard/get", "post">;
+export type SecondaryOut = OutputOf<"/api/v5/artifacts/dashboard/get", "post">;
 
 function validateStatus(
   status: string | null | undefined,

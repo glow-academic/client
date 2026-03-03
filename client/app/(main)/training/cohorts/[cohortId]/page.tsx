@@ -14,36 +14,36 @@ import type { Metadata } from "next";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetCohortIn = InputOf<"/api/v4/artifacts/cohorts/get", "post">;
-type GetCohortOut = OutputOf<"/api/v4/artifacts/cohorts/get", "post">;
-type SaveCohortIn = InputOf<"/api/v4/artifacts/cohorts/save", "post">;
-type SaveCohortOut = OutputOf<"/api/v4/artifacts/cohorts/save", "post">;
-type PatchCohortDraftIn = InputOf<"/api/v4/artifacts/cohorts/draft", "patch">;
-type PatchCohortDraftOut = OutputOf<"/api/v4/artifacts/cohorts/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type GetCohortIn = InputOf<"/api/v5/artifacts/cohorts/get", "post">;
+type GetCohortOut = OutputOf<"/api/v5/artifacts/cohorts/get", "post">;
+type SaveCohortIn = InputOf<"/api/v5/artifacts/cohorts/save", "post">;
+type SaveCohortOut = OutputOf<"/api/v5/artifacts/cohorts/save", "post">;
+type PatchCohortDraftIn = InputOf<"/api/v5/artifacts/cohorts/draft", "patch">;
+type PatchCohortDraftOut = OutputOf<"/api/v5/artifacts/cohorts/draft", "patch">;
+type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v4/resources/descriptions",
+  "/api/v5/resources/descriptions",
   "post"
 >;
 type CreateDraftSimulationPositionsIn = InputOf<
-  "/api/v4/resources/simulation_positions",
+  "/api/v5/resources/simulation_positions",
   "post"
 >;
 type CreateDraftSimulationPositionsOut = OutputOf<
-  "/api/v4/resources/simulation_positions",
+  "/api/v5/resources/simulation_positions",
   "post"
 >;
 type CreateDraftProfilePersonasIn = InputOf<
-  "/api/v4/resources/profile_personas",
+  "/api/v5/resources/profile_personas",
   "post"
 >;
 type CreateDraftProfilePersonasOut = OutputOf<
-  "/api/v4/resources/profile_personas",
+  "/api/v5/resources/profile_personas",
   "post"
 >;
 
@@ -60,8 +60,8 @@ const getCohort = async (input: GetCohortIn): Promise<GetCohortOut> => {
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v4/artifacts/cohorts/docs", "post">;
-type DocsOut = OutputOf<"/api/v4/artifacts/cohorts/docs", "post">;
+type DocsIn = InputOf<"/api/v5/artifacts/cohorts/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/cohorts/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
   return api.post("/artifacts/cohorts/docs", input);
