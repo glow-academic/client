@@ -17,7 +17,7 @@ from app.v5.api.resources.simulations.types import (
     GetSimulationsV4Item,
 )
 from app.v5.infra.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.v5.infra.globals import get_db
 from app.v5.sql.types import load_sql_query
 from app.v5.utils.cache.cache_key import cache_key
 from app.v5.utils.cache.get_cached import get_cached

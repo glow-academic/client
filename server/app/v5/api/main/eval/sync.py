@@ -65,7 +65,7 @@ async def sync_benchmark_entries(
         get_model_positions_internal,
     )
     from app.v5.api.resources.model_rubrics.get import get_model_rubrics_internal
-    from app.main import get_pool
+    from app.v5.infra.globals import get_pool
 
     if not model_ids:
         return 0

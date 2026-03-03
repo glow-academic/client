@@ -30,7 +30,7 @@ from app.v5.api.resources.cohorts.create import create_cohorts_internal
 from app.v5.api.resources.descriptions.create import create_descriptions_internal
 from app.v5.api.resources.names.create import create_names_internal
 from app.v5.infra.error.handle_route_error import handle_route_error
-from app.main import get_db, get_pool
+from app.v5.infra.globals import get_db, get_pool
 from app.v5.sql.types import (
     GetCohortAccessSqlParams,
     GetCohortAccessSqlRow,

@@ -7,7 +7,7 @@ Falls back to an in-memory dict when Redis is unavailable.
 import json
 from typing import Any
 
-from app.main import get_redis_client
+from app.v5.infra.globals import get_redis_client
 from app.v5.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

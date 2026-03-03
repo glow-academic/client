@@ -37,7 +37,7 @@ from app.v5.api.resources.scenario_time_limits.link import (
 )
 from app.v5.api.resources.scenarios.link import link_scenarios_internal
 from app.v5.infra.error.handle_route_error import handle_route_error
-from app.main import get_db, get_pool
+from app.v5.infra.globals import get_db, get_pool
 from app.v5.sql.types import (
     PatchSimulationDraftSqlRow,
     load_sql_query,

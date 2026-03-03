@@ -7,7 +7,7 @@ import uuid
 
 from fastapi import APIRouter, Request, Response
 
-from app.main import TUS_UPLOADS_DIR
+from app.v5.infra.globals import TUS_UPLOADS_DIR
 
 router = APIRouter()
 

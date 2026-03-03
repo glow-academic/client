@@ -30,7 +30,7 @@ from app.v5.api.resources.profiles.get import get_profiles_internal
 from app.v5.api.resources.simulations.get import get_simulations_internal
 from app.v5.api.types import ListFilterSection
 from app.v5.infra.error.handle_route_error import handle_route_error
-from app.main import get_db, get_pool
+from app.v5.infra.globals import get_db, get_pool
 from app.v5.sql.types import (
     GetCohortsListApiRequest,
     GetCohortsListSqlParams,

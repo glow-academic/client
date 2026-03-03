@@ -31,7 +31,7 @@ from app.v5.api.resources.names.link import link_names_internal
 from app.v5.api.resources.parameter_fields.link import link_parameter_fields_internal
 from app.v5.api.resources.voices.link import link_voices_internal
 from app.v5.infra.error.handle_route_error import handle_route_error
-from app.main import get_db, get_pool
+from app.v5.infra.globals import get_db, get_pool
 from app.v5.utils.cache.invalidate_tags import invalidate_tags
 from app.v5.utils.logging.db_logger import get_logger
 from app.v5.utils.sql_helper import execute_sql_typed

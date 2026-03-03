@@ -7,7 +7,7 @@ import asyncpg
 from fastapi import APIRouter, Depends, Request, Response
 
 from app.v5.infra.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.v5.infra.globals import get_db
 from app.v5.utils.cache.invalidate_tags import invalidate_tags
 
 MV_NAME = "videos_mv"

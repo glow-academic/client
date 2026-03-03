@@ -9,7 +9,7 @@ import asyncpg  # type: ignore
 import httpx  # type: ignore
 from fastapi import status  # type: ignore
 
-from app.main import get_pool, get_redis_client, get_sio_instance
+from app.v5.infra.globals import get_pool, get_redis_client, get_sio_instance
 
 
 @dataclass

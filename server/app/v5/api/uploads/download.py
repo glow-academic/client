@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import FileResponse, StreamingResponse
 
 from app.v5.infra.error.handle_route_error import handle_route_error
-from app.main import AUDIO_FOLDER, IMAGE_FOLDER, UPLOAD_FOLDER, get_db
+from app.v5.infra.globals import AUDIO_FOLDER, IMAGE_FOLDER, UPLOAD_FOLDER, get_db
 from app.v5.sql.types import (
     GetUploadFileInfoSqlParams,
     GetUploadFileInfoSqlRow,

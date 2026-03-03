@@ -10,7 +10,7 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.v5.infra.error.handle_route_error import handle_route_error
-from app.main import AUDIO_FOLDER, TUS_UPLOADS_DIR, UPLOAD_FOLDER, VIDEO_FOLDER, get_db
+from app.v5.infra.globals import AUDIO_FOLDER, TUS_UPLOADS_DIR, UPLOAD_FOLDER, VIDEO_FOLDER, get_db
 from app.v5.sql.types import (
     FinalizeUploadApiResponse,
     FinalizeUploadSqlParams,

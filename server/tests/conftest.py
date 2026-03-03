@@ -42,7 +42,7 @@ os.environ["E2E_STORAGE"] = os.getenv("E2E_STORAGE", "")
 server_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(server_dir))
 
-from app.main import close_db_pool, init_db_pool  # noqa: E402
+from app.v5.infra.globals import close_db_pool, init_db_pool  # noqa: E402
 from app.v5.utils.test_db import get_test_db_url  # noqa: E402
 
 # Store the test database URL for direct connections

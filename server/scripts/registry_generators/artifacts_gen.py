@@ -156,7 +156,7 @@ def generate_artifacts(
     # 4. Determine which CRUD artifacts have socket events
     # Use SAVE_REGISTRY membership minus ARTIFACTS_WITHOUT_SOCKET
     # Import lazily to avoid circular imports
-    from app.v5.socket.internal.generation_save_registry import SAVE_REGISTRY
+    from app.v5.api.socket.internal.generation_save_registry import SAVE_REGISTRY
 
     socket_artifacts = set(SAVE_REGISTRY.keys()) - ARTIFACTS_WITHOUT_SOCKET
 

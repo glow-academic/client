@@ -16,7 +16,7 @@ from pydantic import BaseModel
 
 from app.v5.api.auth.route_permissions import compute_redirect_path
 from app.v5.infra.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.v5.infra.globals import get_db
 from app.v5.sql.types import (
     GetProfileContextApiRequest,
     ResolveCallbackRedirectSqlParams,

@@ -7,7 +7,7 @@ This enables dynamic IdP visibility filtering based on department selection via 
 from datetime import datetime
 from typing import Any
 
-from app.main import UPLOAD_FOLDER
+from app.v5.infra.globals import UPLOAD_FOLDER
 from app.v5.utils.logging.db_logger import get_logger
 from app.v5.utils.sql_helper import _detect_function_in_sql, load_sql
 

@@ -8,7 +8,7 @@ import logging
 
 from app.v5.infra.websocket.adapters.audio.realtime import RealtimeAudioAdapter
 from app.v5.infra.websocket.session_store import AudioSession, remove_session
-from app.main import (
+from app.v5.infra.globals import (
     _voice_message_ids,
     _voice_message_ids_lock,
 )
@@ -22,7 +22,7 @@ def get_audio_adapter() -> RealtimeAudioAdapter:
     """Get or create the audio adapter singleton."""
     global _audio_adapter
     if _audio_adapter is None:
-        from app.v5.socket.internal.attempt.audio.events import get_audio_emitter
+        from app.v5.api.socket.internal.attempt.audio.events import get_audio_emitter
 
         _audio_adapter = RealtimeAudioAdapter(emitter=get_audio_emitter())
     return _audio_adapter

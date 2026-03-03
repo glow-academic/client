@@ -1,7 +1,7 @@
 """Cancel an active run using cooperative cancellation."""
 
 from app.v5.infra.websocket.get_active_run import get_active_run
-from app.main import get_redis_client
+from app.v5.infra.globals import get_redis_client
 from app.v5.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

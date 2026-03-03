@@ -3,7 +3,7 @@
 import asyncio
 from collections.abc import Iterable
 
-from app.main import get_redis_client
+from app.v5.infra.globals import get_redis_client
 from app.v5.utils.cache.tag_set_name import tag_set_name
 from app.v5.utils.logging.db_logger import get_logger
 

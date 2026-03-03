@@ -6,7 +6,7 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, Request
 
-from app.main import get_db
+from app.v5.infra.globals import get_db
 from app.v5.sql.types import (
     GetLoginDataApiRequest,
     GetLoginDataApiResponse,

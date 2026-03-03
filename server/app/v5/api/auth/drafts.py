@@ -35,7 +35,7 @@ from app.v5.api.entries.simulation_drafts.get import (
 from app.v5.api.entries.tool_drafts.get import get_tool_drafts_entries_internal
 from app.v5.api.entries.training_drafts.get import get_training_drafts_entries_internal
 from app.v5.infra.error.handle_route_error import handle_route_error
-from app.main import get_db, get_pool
+from app.v5.infra.globals import get_db, get_pool
 
 router = APIRouter()
 

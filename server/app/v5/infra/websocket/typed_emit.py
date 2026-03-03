@@ -4,7 +4,7 @@ from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
-from app.main import sio
+from app.v5.infra.globals import sio
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -46,7 +46,7 @@ async def emit_to_internal(
         sid: Socket ID for routing responses
         group_id: Group ID for grouping runs
     """
-    from app.main import get_internal_sio
+    from app.v5.infra.globals import get_internal_sio
 
     internal_sio = get_internal_sio()
     emit_data: dict[str, Any] = {

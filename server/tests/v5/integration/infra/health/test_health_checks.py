@@ -12,7 +12,7 @@ from app.v5.infra.health import (
     check_websocket,
     run_service_checks,
 )
-from app.main import get_redis_client
+from app.v5.infra.globals import get_redis_client
 
 pytestmark = pytest.mark.asyncio
 

@@ -71,7 +71,7 @@ def patch_sio_instance(
     monkeypatch.setattr(main, "sio", mock_sio)
 
     handler_module_paths = [
-        "app.v5.socket.client.connect",
+        "app.v5.api.socket.client.connect",
     ]
 
     for module_path in handler_module_paths:
@@ -100,7 +100,7 @@ def patch_get_db_connection(
     monkeypatch.setattr(get_db_connection, "get_db_connection", mock_get_db_connection)
 
     import_modules = [
-        "app.v5.socket.client.connect",
+        "app.v5.api.socket.client.connect",
     ]
 
     for module_path in import_modules:

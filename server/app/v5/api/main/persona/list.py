@@ -31,7 +31,7 @@ from app.v5.api.resources.fields.get import get_fields_internal
 from app.v5.api.resources.scenarios.get import get_scenarios_internal
 from app.v5.api.types import ListFilterOption, ListFilterSection
 from app.v5.infra.error.handle_route_error import handle_route_error
-from app.main import get_db, get_pool
+from app.v5.infra.globals import get_db, get_pool
 from app.v5.sql.types import (
     GetPersonasListApiRequest,
     GetPersonasListSqlParams,

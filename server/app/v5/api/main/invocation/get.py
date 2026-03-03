@@ -50,7 +50,7 @@ from app.v5.api.resources.temperature_levels.get import get_temperature_levels_i
 from app.v5.api.resources.tools.get import get_tools_internal
 from app.v5.api.resources.voices.get import get_voices_internal
 from app.v5.infra.error.handle_route_error import handle_route_error
-from app.main import get_pool
+from app.v5.infra.globals import get_pool
 
 router = APIRouter()
 

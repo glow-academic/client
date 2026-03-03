@@ -16,7 +16,7 @@ from app.v5.api.main.scenario.types import (
 )
 from app.v5.api.auth.profile import get_auth_profile_internal
 from app.v5.infra.error.handle_route_error import handle_route_error
-from app.main import UPLOAD_FOLDER, get_db, get_pool
+from app.v5.infra.globals import UPLOAD_FOLDER, get_db, get_pool
 from app.v5.sql.types import (
     ExportScenariosSqlParams,
     ExportScenariosSqlRow,

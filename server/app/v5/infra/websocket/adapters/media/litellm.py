@@ -7,7 +7,7 @@ from typing import Any
 
 from app.v5.infra.websocket.adapters.media.base import BaseMediaAdapter, MediaResult
 from app.v5.infra.websocket.get_db_connection import get_db_connection
-from app.main import IMAGE_FOLDER, UPLOAD_FOLDER, VIDEO_FOLDER
+from app.v5.infra.globals import IMAGE_FOLDER, UPLOAD_FOLDER, VIDEO_FOLDER
 from app.v5.utils.sql_helper import load_sql
 
 try:

@@ -105,7 +105,7 @@ from app.v5.api.resources.scenario_time_limits.search import (
 from app.v5.api.resources.scenarios.search import search_scenarios_internal
 from app.v5.api.resources.tools.get import get_tools_internal
 from app.v5.infra.error.handle_route_error import handle_route_error
-from app.main import get_db, get_pool
+from app.v5.infra.globals import get_db, get_pool
 from app.v5.sql.types import QGetScenarioFlagsV4Item, load_sql_query
 from app.v5.utils.sql_helper import execute_sql_typed
 

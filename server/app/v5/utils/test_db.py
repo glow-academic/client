@@ -13,7 +13,7 @@ def get_test_db_url() -> str | None:
     Prefers the explicit _test_db_url (set during template clone flow),
     falls back to deriving from the container.
     """
-    from app.main import _test_container, _test_db_url
+    from app.v5.infra.globals import _test_container, _test_db_url
 
     # If conftest set an explicit URL (e.g. after cloning a template DB), use it
     if _test_db_url is not None:

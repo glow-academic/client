@@ -66,7 +66,7 @@ from app.v5.api.resources.providers.get import get_providers_internal
 from app.v5.api.resources.settings.get import get_settings_internal
 from app.v5.api.resources.tools.get import get_tools_internal
 from app.v5.infra.error.handle_route_error import handle_route_error
-from app.main import get_db, get_pool
+from app.v5.infra.globals import get_db, get_pool
 from app.v5.sql.types import (
     GetDepartmentAccessSqlParams,
     GetDepartmentAccessSqlRow,

@@ -6,7 +6,7 @@ from tests.integration.socket.v4.conftest import MockSocketIO
 from tests.integration.socket.v4.helpers import get_or_create_test_profile
 
 from app.v5.infra.websocket.add_guest_socket import add_guest_socket
-from app.v5.socket.client.connect import connect, disconnect
+from app.v5.api.socket.client.connect import connect, disconnect
 
 pytestmark = pytest.mark.asyncio
 

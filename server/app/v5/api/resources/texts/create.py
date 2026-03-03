@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.v5.infra.error.handle_route_error import handle_route_error
 from app.v5.infra.storage.file_writer import write_text_file
-from app.main import get_db
+from app.v5.infra.globals import get_db
 from app.v5.sql.types import (
     TextsApiRequest,
     TextsApiResponse,

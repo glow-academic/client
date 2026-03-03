@@ -23,7 +23,7 @@ from app.v5.api.resources.departments.get import get_departments_internal
 from app.v5.api.resources.roles.get import get_roles_internal
 from app.v5.infra.error.handle_route_error import handle_route_error
 from app.v5.infra.sessions.get import get_session_internal
-from app.main import get_db, get_pool
+from app.v5.infra.globals import get_db, get_pool
 from app.v5.sql.types import GetProfileContextApiRequest
 
 router = APIRouter()

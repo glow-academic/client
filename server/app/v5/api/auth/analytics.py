@@ -20,7 +20,7 @@ from app.v5.api.auth.types import (
     AnalyticsFilterOption,
     GetAnalyticsFiltersApiResponse,
 )
-from app.main import get_db, get_pool
+from app.v5.infra.globals import get_db, get_pool
 from app.v5.sql.types import (
     GetProfileContextAccessSqlParams,
     GetProfileContextAccessSqlRow,

@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.v5.infra.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.v5.infra.globals import get_db
 from app.v5.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/v5/sql/queries/resources/link_examples_complete.sql"

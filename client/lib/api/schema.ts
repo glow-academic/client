@@ -20858,9 +20858,6 @@ export interface paths {
         /**
          * Oauth Authorization Server Metadata
          * @description RFC 8414 OAuth Authorization Server Metadata endpoint.
-         *
-         *     ChatGPT Dev Mode uses this endpoint to discover OAuth configuration.
-         *     This is required for OAuth to work with ChatGPT.
          */
         get: operations["oauth_authorization_server_metadata__well_known_oauth_authorization_server_get"];
         put?: never;
@@ -20878,10 +20875,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Root Info
-         * @description Return general server information.
-         */
+        /** Root Info */
         get: operations["root_info__get"];
         put?: never;
         post?: never;
@@ -20898,13 +20892,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Health Services
-         * @description Rich health endpoint for dashboard.
-         *
-         *     Returns per-service status + latencies.
-         *     Automatically logs health checks to database when called by notify service.
-         */
+        /** Health Services */
         get: operations["health_services_health_get"];
         put?: never;
         post?: never;
@@ -20923,13 +20911,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Metrics Snapshot
-         * @description Trigger metrics snapshot to database.
-         *
-         *     Called by notify service to log metrics snapshot.
-         *     No leader election needed since notify service is single instance.
-         */
+        /** Metrics Snapshot */
         post: operations["metrics_snapshot_metrics_post"];
         delete?: never;
         options?: never;
@@ -20946,13 +20928,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Schema Changed
-         * @description Notify the server that SQL types have changed (e.g. after sql-compile-incremental).
-         *
-         *     Expires all pooled connections so stale prepared statements with old OIDs
-         *     are discarded. Called automatically by the sql-compile-incremental watcher.
-         */
+        /** Schema Changed */
         post: operations["schema_changed_schema_changed_post"];
         delete?: never;
         options?: never;
@@ -20969,17 +20945,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Init System
-         * @description Trigger system initialization (SQL compilation and Keycloak sync).
-         *
-         *     Called by notify service to initialize system on startup.
-         *     Performs:
-         *     1. SQL type compilation (if types.py is missing or incomplete)
-         *     2. Keycloak sync to ensure identity providers are configured.
-         *
-         *     No authentication required - internal service-to-service call.
-         */
+        /** Init System */
         post: operations["init_system_init_post"];
         delete?: never;
         options?: never;

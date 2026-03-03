@@ -1,6 +1,6 @@
 """Find the chat ID for a socket ID."""
 
-from app.main import get_redis_client
+from app.v5.infra.globals import get_redis_client
 from app.v5.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

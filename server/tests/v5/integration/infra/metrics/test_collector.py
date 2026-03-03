@@ -7,7 +7,7 @@ from app.v5.infra.metrics.collector import (
     record_error,
     record_request,
 )
-from app.main import get_pool, get_redis_client
+from app.v5.infra.globals import get_pool, get_redis_client
 
 pytestmark = pytest.mark.asyncio
 

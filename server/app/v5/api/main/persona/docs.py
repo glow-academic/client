@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends
 
 from app.v5.api.main.persona import permissions
 from app.v5.api.resources.names.get import get_names_internal
-from app.main import get_db
+from app.v5.infra.globals import get_db
 from app.v5.sql.types import GetPersonaDocsSqlParams, GetPersonaDocsSqlRow
 from app.v5.utils.docs_helper import (
     ArtifactDocsConfig,

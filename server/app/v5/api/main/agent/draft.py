@@ -10,7 +10,7 @@ from app.v5.api.main.agent.types import (
     PatchAgentDraftApiResponse,
 )
 from app.v5.infra.error.handle_route_error import handle_route_error
-from app.main import get_db
+from app.v5.infra.globals import get_db
 from app.v5.sql.types import (
     PatchAgentDraftSqlParams,
     PatchAgentDraftSqlRow,
