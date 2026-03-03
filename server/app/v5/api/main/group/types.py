@@ -180,7 +180,7 @@ from app.v5.api.entries.runs.search import (  # noqa: E402
     GetRunListViewResponse,
     RunViewItem,
 )
-from app.v5.sql.types import (  # noqa: E402
+from app.sql.types import (  # noqa: E402
     GetCallListViewSqlRow,
     GetGroupListViewSqlRow,
     GetMessageListViewSqlRow,

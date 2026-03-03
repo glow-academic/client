@@ -1,5 +1,5 @@
 """
-Tests for app.v5.utils.document.read_pdf_text_pages
+Tests for app.utils.document.read_pdf_text_pages
 """
 
 from pathlib import Path
@@ -27,10 +27,10 @@ class TestRead_Pdf_Text_Pages:
         mock_reader = MagicMock()
         mock_reader.pages = [mock_page1, mock_page2]
 
-        from app.v5.utils.document.read_pdf_text_pages import read_pdf_text_pages
+        from app.utils.document.read_pdf_text_pages import read_pdf_text_pages
 
         with patch(
-            "app.v5.utils.document.read_pdf_text_pages.pypdf.PdfReader",
+            "app.utils.document.read_pdf_text_pages.pypdf.PdfReader",
             return_value=mock_reader,
         ):
             result = read_pdf_text_pages(str(test_file))
@@ -49,10 +49,10 @@ class TestRead_Pdf_Text_Pages:
         mock_reader = MagicMock()
         mock_reader.pages = []
 
-        from app.v5.utils.document.read_pdf_text_pages import read_pdf_text_pages
+        from app.utils.document.read_pdf_text_pages import read_pdf_text_pages
 
         with patch(
-            "app.v5.utils.document.read_pdf_text_pages.pypdf.PdfReader",
+            "app.utils.document.read_pdf_text_pages.pypdf.PdfReader",
             return_value=mock_reader,
         ):
             result = read_pdf_text_pages(str(test_file))
@@ -65,7 +65,7 @@ class TestRead_Pdf_Text_Pages:
         """Test read_pdf_text_pages error handling."""
         test_file = tmp_path / "nonexistent.pdf"
 
-        from app.v5.utils.document.read_pdf_text_pages import read_pdf_text_pages
+        from app.utils.document.read_pdf_text_pages import read_pdf_text_pages
 
         with pytest.raises(ValueError, match="Error reading PDF file"):
             read_pdf_text_pages(str(test_file))
@@ -82,10 +82,10 @@ class TestRead_Pdf_Text_Pages:
         mock_reader = MagicMock()
         mock_reader.pages = [mock_page]
 
-        from app.v5.utils.document.read_pdf_text_pages import read_pdf_text_pages
+        from app.utils.document.read_pdf_text_pages import read_pdf_text_pages
 
         with patch(
-            "app.v5.utils.document.read_pdf_text_pages.pypdf.PdfReader",
+            "app.utils.document.read_pdf_text_pages.pypdf.PdfReader",
             return_value=mock_reader,
         ):
             result = read_pdf_text_pages(str(test_file))

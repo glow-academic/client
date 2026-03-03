@@ -6,7 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.v5.api.main.types import InternalResponseBase
-from app.v5.sql.types import QGetHealthListViewV4Item, QGetMetricListViewV4Item
+from app.sql.types import QGetHealthListViewV4Item, QGetMetricListViewV4Item
 
 
 class HealthRequest(BaseModel):

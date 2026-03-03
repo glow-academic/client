@@ -1,5 +1,5 @@
 """
-Tests for app.v5.utils.auth.encrypt_api_key
+Tests for app.utils.auth.encrypt_api_key
 """
 
 import os
@@ -7,8 +7,8 @@ from unittest.mock import patch
 
 import pytest
 
-from app.v5.utils.auth.decrypt_api_key import decrypt_api_key
-from app.v5.utils.auth.encrypt_api_key import encrypt_api_key
+from app.utils.auth.decrypt_api_key import decrypt_api_key
+from app.utils.auth.encrypt_api_key import encrypt_api_key
 
 
 class TestEncrypt_Api_Key:

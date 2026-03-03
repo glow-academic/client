@@ -13,9 +13,9 @@ from app.v5.api.main.simulation.permissions import (
     has_access,
 )
 from app.v5.api.resources.names.create import create_names_internal
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db, get_pool
-from app.v5.sql.types import (
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db, get_pool
+from app.sql.types import (
     CheckSimulationDuplicateAccessSqlParams,
     CheckSimulationDuplicateAccessSqlRow,
     DuplicateSimulationApiRequest,
@@ -24,13 +24,13 @@ from app.v5.sql.types import (
     DuplicateSimulationSqlRow,
     load_sql_query,
 )
-from app.v5.utils.cache.invalidate_tags import invalidate_tags
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level
-SQL_PATH = "app/v5/sql/queries/simulations/duplicate_simulation_complete.sql"
+SQL_PATH = "app/sql/queries/simulations/duplicate_simulation_complete.sql"
 ACCESS_SQL_PATH = (
-    "app/v5/sql/queries/simulations/check_simulation_duplicate_access_complete.sql"
+    "app/sql/queries/simulations/check_simulation_duplicate_access_complete.sql"
 )
 
 router = APIRouter()

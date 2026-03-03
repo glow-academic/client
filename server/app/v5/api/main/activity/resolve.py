@@ -8,10 +8,10 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db
-from app.v5.utils.cache.invalidate_tags import invalidate_tags
-from app.v5.utils.sql_helper import load_sql
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.sql_helper import load_sql
 
 
 # Inline request/response schemas
@@ -51,7 +51,7 @@ async def resolve_problem(
             )
 
         # Execute update query
-        sql_query = load_sql("app/v5/sql/queries/activity/resolve_problem_complete.sql")
+        sql_query = load_sql("app/sql/queries/activity/resolve_problem_complete.sql")
         sql_params = (str(request.problem_id), request.resolved, profile_id)
         result = await conn.fetchrow(
             sql_query, request.problem_id, request.resolved, profile_id

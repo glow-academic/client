@@ -5,20 +5,20 @@ from typing import Annotated, Any, cast
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db, transaction
-from app.v5.sql.types import (
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db, transaction
+from app.sql.types import (
     CreateOrUpdateProfileApiRequest,
     CreateOrUpdateProfileApiResponse,
     CreateOrUpdateProfileSqlParams,
     CreateOrUpdateProfileSqlRow,
     load_sql_query,
 )
-from app.v5.utils.cache.invalidate_tags import invalidate_tags
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/v5/sql/queries/profile/create_or_update_profile_complete.sql"
+SQL_PATH = "app/sql/queries/profile/create_or_update_profile_complete.sql"
 
 router = APIRouter()
 

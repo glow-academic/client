@@ -7,8 +7,8 @@ from typing import Any
 
 from app.v5.infra.websocket.adapters.media.base import BaseMediaAdapter, MediaResult
 from app.v5.infra.websocket.get_db_connection import get_db_connection
-from app.v5.infra.globals import IMAGE_FOLDER, UPLOAD_FOLDER, VIDEO_FOLDER
-from app.v5.utils.sql_helper import load_sql
+from app.globals import IMAGE_FOLDER, UPLOAD_FOLDER, VIDEO_FOLDER
+from app.utils.sql_helper import load_sql
 
 try:
     import litellm  # type: ignore
@@ -318,7 +318,7 @@ class LitellmMediaAdapter(BaseMediaAdapter):
 
         # Create upload record
         sql_insert_upload = load_sql(
-            "app/v5/sql/queries/uploads/insert_upload_complete.sql"
+            "app/sql/queries/uploads/insert_upload_complete.sql"
         )
 
         # Relative path from UPLOAD_FOLDER for storage

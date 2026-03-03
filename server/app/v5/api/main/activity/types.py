@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 from app.v5.api.main.session.types import GetSessionListResponse
 from app.v5.api.main.types import InternalResponseBase
-from app.v5.sql.types import (
+from app.sql.types import (
     GetActivityListViewSqlRow,
     GetGrantListViewSqlRow,
     GetLoginListViewSqlRow,

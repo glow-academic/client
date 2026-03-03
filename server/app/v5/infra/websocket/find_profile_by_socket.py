@@ -2,8 +2,8 @@
 
 import contextvars
 
-from app.v5.infra.globals import get_redis_client, get_socket_owner_dict
-from app.v5.utils.logging.db_logger import get_logger
+from app.globals import get_redis_client, get_socket_owner_dict
+from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

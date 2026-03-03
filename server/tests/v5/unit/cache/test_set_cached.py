@@ -1,12 +1,12 @@
 """
-Tests for app.v5.utils.cache.set_cached
+Tests for app.utils.cache.set_cached
 """
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app.v5.utils.cache.set_cached import set_cached
+from app.utils.cache.set_cached import set_cached
 
 
 class TestSet_Cached:
@@ -29,7 +29,7 @@ class TestSet_Cached:
         mock_pipeline.execute = AsyncMock()
 
         with patch(
-            "app.v5.utils.cache.set_cached.get_redis_client", return_value=mock_redis
+            "app.utils.cache.set_cached.get_redis_client", return_value=mock_redis
         ):
             await set_cached(key, data, ttl, tags)
 
@@ -45,7 +45,7 @@ class TestSet_Cached:
         ttl = 60
         tags = ["tag1"]
 
-        with patch("app.v5.utils.cache.set_cached.get_redis_client", return_value=None):
+        with patch("app.utils.cache.set_cached.get_redis_client", return_value=None):
             # Should not raise an error
             await set_cached(key, data, ttl, tags)
 
@@ -61,7 +61,7 @@ class TestSet_Cached:
         mock_redis.pipeline = MagicMock(side_effect=Exception("Redis error"))
 
         with patch(
-            "app.v5.utils.cache.set_cached.get_redis_client", return_value=mock_redis
+            "app.utils.cache.set_cached.get_redis_client", return_value=mock_redis
         ):
             # Should not raise an error, just log it
             await set_cached(key, data, ttl, tags)

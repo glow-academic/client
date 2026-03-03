@@ -35,16 +35,16 @@ from app.v5.api.resources.problem_statements.link import (
 )
 from app.v5.api.resources.questions.link import link_questions_internal
 from app.v5.api.resources.videos.link import link_videos_internal
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db, get_pool
-from app.v5.sql.types import load_sql_query
-from app.v5.utils.cache.invalidate_tags import invalidate_tags
-from app.v5.utils.logging.db_logger import get_logger
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db, get_pool
+from app.sql.types import load_sql_query
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
-SQL_PATH = "app/v5/sql/queries/scenarios/patch_scenario_draft_complete.sql"
+SQL_PATH = "app/sql/queries/scenarios/patch_scenario_draft_complete.sql"
 
 # Single-select resource key → link internal function
 SINGLE_LINK_MAP: dict[str, Any] = {

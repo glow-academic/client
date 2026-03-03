@@ -20,14 +20,14 @@ from app.v5.api.auth.types import (
     AnalyticsFilterOption,
     GetAnalyticsFiltersApiResponse,
 )
-from app.v5.infra.globals import get_db, get_pool
-from app.v5.sql.types import (
+from app.globals import get_db, get_pool
+from app.sql.types import (
     GetProfileContextAccessSqlParams,
     GetProfileContextAccessSqlRow,
 )
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
-SQL_ACCESS_PATH = "app/v5/sql/queries/profile/get_profile_context_access_complete.sql"
+SQL_ACCESS_PATH = "app/sql/queries/profile/get_profile_context_access_complete.sql"
 
 router = APIRouter()
 

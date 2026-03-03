@@ -38,13 +38,13 @@ from app.v5.api.resources.simulations.get import get_simulations_internal
 from app.v5.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.v5.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.v5.infra.websocket.get_db_connection import get_db_connection
-from app.v5.infra.globals import get_internal_sio
+from app.globals import get_internal_sio
 from app.v5.api.socket.client.types import AttemptStartPayload
 from app.v5.api.socket.internal.attempt.types import (
     AttemptErrorData,
     AttemptProceedData,
 )
-from app.v5.utils.logging.db_logger import get_logger
+from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

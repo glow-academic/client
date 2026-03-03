@@ -1,11 +1,11 @@
-"""Integration tests for app.v5.infra.metrics.snapshot."""
+"""Integration tests for app.metrics.snapshot."""
 
 from datetime import UTC, datetime
 
 import asyncpg
 import pytest
 
-from app.v5.infra.metrics.snapshot import log_metrics_snapshot
+from app.metrics.snapshot import log_metrics_snapshot
 
 pytestmark = pytest.mark.asyncio
 

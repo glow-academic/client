@@ -11,11 +11,11 @@ from typing import Any, cast
 
 from app.v5.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.v5.infra.websocket.get_db_connection import get_db_connection
-from app.v5.infra.globals import get_internal_sio
+from app.globals import get_internal_sio
 from app.v5.api.socket.internal.generate_artifact import GenerateArtifactPayload
-from app.v5.sql.types import GetAgentModelInfoSqlParams, GetAgentModelInfoSqlRow
-from app.v5.utils.logging.db_logger import get_logger
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.sql.types import GetAgentModelInfoSqlParams, GetAgentModelInfoSqlRow
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
@@ -92,7 +92,7 @@ async def handle_media_generation(data: dict[str, Any]) -> None:
                 GetAgentModelInfoSqlRow,
                 await execute_sql_typed(
                     conn,
-                    "app/v5/sql/queries/agents/get_agent_model_info_complete.sql",
+                    "app/sql/queries/agents/get_agent_model_info_complete.sql",
                     params=params,
                 ),
             )

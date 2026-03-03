@@ -19,11 +19,11 @@ from typing import Any
 
 from app.v5.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.v5.infra.websocket.session_store import get_session_by_group_id, rotate_run_id
-from app.v5.infra.globals import get_internal_sio, get_pool
+from app.globals import get_internal_sio, get_pool
 from app.v5.api.socket.client.registry import REGISTRY
 from app.v5.api.socket.client.types import GeneratePayload
 from app.v5.api.socket.types import GenerateErrorApiRequest
-from app.v5.utils.logging.db_logger import get_logger
+from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

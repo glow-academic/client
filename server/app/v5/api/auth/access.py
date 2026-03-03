@@ -10,16 +10,16 @@ import asyncpg
 from fastapi import HTTPException
 
 from app.v5.registry.artifact_entries import ARTIFACT_ENTRIES
-from app.v5.sql.types import (
+from app.sql.types import (
     GetProfileContextAccessSqlParams,
     GetProfileContextAccessSqlRow,
 )
-from app.v5.utils.cache.cache_key import cache_key
-from app.v5.utils.cache.get_cached import get_cached
-from app.v5.utils.cache.set_cached import set_cached
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
 
-SQL_ACCESS_PATH = "app/v5/sql/queries/profile/get_profile_context_access_complete.sql"
+SQL_ACCESS_PATH = "app/sql/queries/profile/get_profile_context_access_complete.sql"
 
 CACHE_TAGS = ["auth", "access"]
 CACHE_TTL = 60

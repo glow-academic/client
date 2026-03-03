@@ -20,19 +20,19 @@ from app.v5.infra.websocket.remove_active_connection import remove_active_connec
 from app.v5.infra.websocket.remove_guest_socket import remove_guest_socket
 from app.v5.infra.websocket.remove_socket_owner import remove_socket_owner
 from app.v5.infra.websocket.set_socket_owner import set_socket_owner
-from app.v5.infra.globals import get_internal_sio, sio
-from app.v5.sql.types import (
+from app.globals import get_internal_sio, sio
+from app.sql.types import (
     UpdateProfileToActiveSqlParams,
     UpdateProfileToActiveSqlRow,
     UpdateProfileToInactiveSqlParams,
     UpdateProfileToInactiveSqlRow,
 )
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
 
-SQL_MARK_INACTIVE = "app/v5/sql/queries/profile/update_profile_to_inactive_complete.sql"
-SQL_MARK_ACTIVE = "app/v5/sql/queries/profile/update_profile_to_active_complete.sql"
+SQL_MARK_INACTIVE = "app/sql/queries/profile/update_profile_to_inactive_complete.sql"
+SQL_MARK_ACTIVE = "app/sql/queries/profile/update_profile_to_active_complete.sql"
 
 
 async def _mark_profile_inactive(profile_id: str) -> None:
@@ -72,7 +72,7 @@ async def _mark_profile_active(profile_id: str) -> None:
 async def _store_session_id(sid: str, session_id: str) -> None:
     """Store session_id in Redis for activity logging."""
     try:
-        from app.v5.infra.globals import get_redis_client
+        from app.globals import get_redis_client
 
         redis_client = get_redis_client()
         if redis_client:

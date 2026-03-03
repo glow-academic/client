@@ -1,18 +1,18 @@
-"""Integration tests for app.v5.infra.health."""
+"""Integration tests for app.health."""
 
 from contextlib import asynccontextmanager
 from unittest.mock import MagicMock
 
 import pytest
 
-from app.v5.infra.health import (
+from app.health import (
     check_database,
     check_keycloak,
     check_redis,
     check_websocket,
     run_service_checks,
 )
-from app.v5.infra.globals import get_redis_client
+from app.globals import get_redis_client
 
 pytestmark = pytest.mark.asyncio
 

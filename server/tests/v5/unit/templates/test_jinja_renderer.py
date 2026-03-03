@@ -1,6 +1,6 @@
-"""Unit tests for app.v5.infra.templates.jinja_renderer."""
+"""Unit tests for app.utils.templates.jinja_renderer."""
 
-from app.v5.infra.templates.jinja_renderer import (
+from app.utils.templates.jinja_renderer import (
     inject_theme_css_variables,
     render_template,
 )
@@ -13,7 +13,7 @@ class TestInjectThemeCssVariables:
         """Test injecting CSS variables into HTML with head tag."""
         # Arrange
         html = "<html><head><title>Test</title></head><body>Content</body></html>"
-        from app.v5.utils.settings.theme import ThemeTokens
+        from app.utils.settings.theme import ThemeTokens
 
         theme_tokens = ThemeTokens(
             primary="#000000",
@@ -34,7 +34,7 @@ class TestInjectThemeCssVariables:
         """Test injecting CSS variables into HTML without head tag."""
         # Arrange
         html = "<html><body>Content</body></html>"
-        from app.v5.utils.settings.theme import ThemeTokens
+        from app.utils.settings.theme import ThemeTokens
 
         theme_tokens = ThemeTokens(
             primary="#000000",
@@ -57,7 +57,7 @@ class TestRenderTemplate:
 
     def test_render_template_success(self) -> None:
         """Test successful template rendering."""
-        from app.v5.utils.settings.theme import ThemeTokens
+        from app.utils.settings.theme import ThemeTokens
 
         # Arrange
         template = "Hello {{ name }}!"
@@ -77,7 +77,7 @@ class TestRenderTemplate:
 
     def test_render_template_with_theme(self) -> None:
         """Test template rendering with theme injection."""
-        from app.v5.utils.settings.theme import ThemeTokens
+        from app.utils.settings.theme import ThemeTokens
 
         # Arrange
         template = "<html><head></head><body>Content</body></html>"
@@ -98,7 +98,7 @@ class TestRenderTemplate:
 
     def test_render_template_with_variables(self) -> None:
         """Test template rendering with variables."""
-        from app.v5.utils.settings.theme import ThemeTokens
+        from app.utils.settings.theme import ThemeTokens
 
         # Arrange
         template = "{{ greeting }}, {{ name }}!"

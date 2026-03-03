@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.v5.sql.types import (
+from app.sql.types import (
     QGetAgentsV4Item,
     QGetArgsOutputsV4Item,
     QGetArgsV4Item,

@@ -9,8 +9,8 @@ from typing import Any
 
 from app.v5.infra.websocket.get_db_connection import get_db_connection
 from app.v5.infra.websocket.session_store import get_session_by_chat_id
-from app.v5.infra.globals import sio
-from app.v5.utils.logging.db_logger import get_logger
+from app.globals import sio
+from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

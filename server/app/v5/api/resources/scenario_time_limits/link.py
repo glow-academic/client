@@ -7,11 +7,11 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db
+from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/v5/sql/queries/resources/link_scenario_time_limits_complete.sql"
+SQL_PATH = "app/sql/queries/resources/link_scenario_time_limits_complete.sql"
 
 
 class LinkScenarioTimeLimitsApiRequest(BaseModel):

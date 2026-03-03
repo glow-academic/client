@@ -30,14 +30,14 @@ async def test_disconnect_with_profile_success(
 
     # Assert
     # Verify profile was marked as inactive in database
-    from app.v5.sql.types import (
+    from app.sql.types import (
         TestGetProfileByIdV4SqlParams,
     )
-    from app.v5.utils.sql_helper import execute_sql_typed
+    from app.utils.sql_helper import execute_sql_typed
 
     profile_result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/v5/sql/integration/queries/socket/helpers/test_get_profile_by_id_v4_complete.sql",
+        sql_path="tests/sql/integration/queries/socket/helpers/test_get_profile_by_id_v4_complete.sql",
         params=TestGetProfileByIdV4SqlParams(profile_id=profile_id),
     )
     assert profile_result.active is False

@@ -11,23 +11,23 @@ from app.v5.api.main.field.types import (
     DuplicateFieldApiResponse,
 )
 from app.v5.api.auth.profile import get_auth_profile_internal
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db, get_pool
-from app.v5.sql.types import (
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db, get_pool
+from app.sql.types import (
     CheckFieldDuplicateAccessSqlParams,
     CheckFieldDuplicateAccessSqlRow,
     DuplicateFieldSqlParams,
     DuplicateFieldSqlRow,
     load_sql_query,
 )
-from app.v5.utils.cache.invalidate_tags import invalidate_tags
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.sql_helper import execute_sql_typed
 
 # SQL paths
 ACCESS_CHECK_SQL_PATH = (
-    "app/v5/sql/queries/fields/check_field_duplicate_access_complete.sql"
+    "app/sql/queries/fields/check_field_duplicate_access_complete.sql"
 )
-DUPLICATE_SQL_PATH = "app/v5/sql/queries/fields/duplicate_field_complete.sql"
+DUPLICATE_SQL_PATH = "app/sql/queries/fields/duplicate_field_complete.sql"
 
 router = APIRouter()
 

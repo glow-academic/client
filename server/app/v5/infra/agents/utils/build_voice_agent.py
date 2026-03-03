@@ -3,7 +3,7 @@
 from typing import Any
 
 from app.v5.infra.agents.generic_agent import DEBUG_INFO_TOOL_SUFFIX, GenericAgent
-from app.v5.utils.logging.db_logger import get_logger
+from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

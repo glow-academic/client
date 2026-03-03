@@ -1,8 +1,8 @@
-"""Unit tests for app.v5.utils.logging.db_logger."""
+"""Unit tests for app.utils.logging.db_logger."""
 
 import logging
 
-from app.v5.utils.logging.db_logger import get_logger, set_profile_id
+from app.utils.logging.db_logger import get_logger, set_profile_id
 
 
 class TestGetLogger:

@@ -5,17 +5,17 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.v5.sql.types import (
+from app.sql.types import (
     GetProfileSummaryViewSqlParams,
     GetProfileSummaryViewSqlRow,
 )
-from app.v5.utils.cache.cache_key import cache_key
-from app.v5.utils.cache.get_cached import get_cached
-from app.v5.utils.cache.set_cached import set_cached
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
 
 PROFILE_SUMMARY_SQL_PATH = (
-    "app/v5/sql/queries/views/activity/profile_summary/"
+    "app/sql/queries/views/activity/profile_summary/"
     "get_profile_summary_view_complete.sql"
 )
 

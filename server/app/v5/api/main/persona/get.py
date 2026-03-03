@@ -105,9 +105,9 @@ from app.v5.api.resources.providers.get import get_providers_internal
 from app.v5.api.resources.tools.get import get_tools_internal
 from app.v5.api.resources.voices.get import get_voices_internal
 from app.v5.api.resources.voices.search import search_voices_internal
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db, get_pool
-from app.v5.sql.types import (
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db, get_pool
+from app.sql.types import (
     GetPersonaAccessSqlParams,
     GetPersonaAccessSqlRow,
     GetPersonaIdsSqlParams,
@@ -115,11 +115,11 @@ from app.v5.sql.types import (
     QGetParameterFieldsV4Item,
     load_sql_query,
 )
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 # SQL paths
-QUERY1_SQL_PATH = "app/v5/sql/queries/personas/get_persona_access_complete.sql"
-QUERY2_SQL_PATH = "app/v5/sql/queries/personas/get_persona_ids_complete.sql"
+QUERY1_SQL_PATH = "app/sql/queries/personas/get_persona_access_complete.sql"
+QUERY2_SQL_PATH = "app/sql/queries/personas/get_persona_ids_complete.sql"
 
 router = APIRouter()
 

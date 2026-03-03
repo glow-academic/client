@@ -40,9 +40,9 @@ from app.v5.api.resources.profiles.get import get_profiles_internal
 from app.v5.api.resources.providers.get import get_providers_internal
 from app.v5.api.resources.scenarios.get import get_scenarios_internal
 from app.v5.api.resources.simulations.get import get_simulations_internal
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db, get_pool
-from app.v5.sql.types import (
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db, get_pool
+from app.sql.types import (
     GetActiveSettingsSqlParams,
     GetActiveSettingsSqlRow,
     QGetAgentsV4Item,
@@ -51,7 +51,7 @@ from app.v5.sql.types import (
     QGetProvidersV4Item,
     QGetToolsV4Item,
 )
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 router = APIRouter()
 
@@ -221,7 +221,7 @@ async def get_reports_websocket(
 
 
 ACTIVE_SETTINGS_SQL_PATH = (
-    "app/v5/sql/queries/settings/get_active_settings_complete.sql"
+    "app/sql/queries/settings/get_active_settings_complete.sql"
 )
 
 

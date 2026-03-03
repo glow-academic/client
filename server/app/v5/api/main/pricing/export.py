@@ -17,15 +17,15 @@ from app.v5.api.main.pricing.types import (
     ExportPricingApiResponse,
 )
 from app.v5.api.auth.profile import get_auth_profile_internal
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import UPLOAD_FOLDER, get_db, get_pool
-from app.v5.sql.types import (
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import UPLOAD_FOLDER, get_db, get_pool
+from app.sql.types import (
     InsertUploadSqlParams,
     InsertUploadSqlRow,
 )
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
-UPLOAD_SQL_PATH = "app/v5/sql/queries/uploads/insert_upload_complete.sql"
+UPLOAD_SQL_PATH = "app/sql/queries/uploads/insert_upload_complete.sql"
 
 PIPE = "|"
 

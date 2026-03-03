@@ -11,13 +11,13 @@ from app.v5.api.main.chat.types import (
     PatchChatDraftSqlParams,
     PatchChatDraftSqlRow,
 )
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db
-from app.v5.sql.types import load_sql_query
-from app.v5.utils.cache.invalidate_tags import invalidate_tags
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db
+from app.sql.types import load_sql_query
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/v5/sql/queries/training/patch_training_draft_complete.sql"
+SQL_PATH = "app/sql/queries/training/patch_training_draft_complete.sql"
 
 router = APIRouter()
 

@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.v5.api.main.chat import permissions
-from app.v5.utils.docs_helper import (
+from app.utils.docs_helper import (
     ArtifactDocsConfig,
     DocsApiRequest,
     DocsApiResponse,

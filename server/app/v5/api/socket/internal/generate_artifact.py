@@ -31,9 +31,9 @@ from app.v5.infra.websocket.tool_call_utils import (
     parse_partial_json,
     resolve_output_fields,
 )
-from app.v5.infra.globals import get_internal_sio
+from app.globals import get_internal_sio
 from app.v5.api.socket.types import GenerateErrorApiRequest
-from app.v5.utils.auth.decrypt_api_key import decrypt_api_key
+from app.utils.auth.decrypt_api_key import decrypt_api_key
 
 # Try to import litellm
 try:
@@ -270,7 +270,7 @@ async def _execute_artifact_tool_inline(
                 kwargs["conn"] = conn
                 result = await fn(**kwargs)
         elif config.requires_pool:
-            from app.v5.infra.globals import get_pool
+            from app.globals import get_pool
 
             pool = get_pool()
             kwargs["pool"] = pool

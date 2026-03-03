@@ -104,14 +104,14 @@ from app.v5.api.resources.scenario_time_limits.search import (
 )
 from app.v5.api.resources.scenarios.search import search_scenarios_internal
 from app.v5.api.resources.tools.get import get_tools_internal
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db, get_pool
-from app.v5.sql.types import QGetScenarioFlagsV4Item, load_sql_query
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db, get_pool
+from app.sql.types import QGetScenarioFlagsV4Item, load_sql_query
+from app.utils.sql_helper import execute_sql_typed
 
 # SQL paths for two-pass architecture
-QUERY1_SQL_PATH = "app/v5/sql/queries/simulations/get_simulation_access_complete.sql"
-QUERY2_SQL_PATH = "app/v5/sql/queries/simulations/get_simulation_ids_complete.sql"
+QUERY1_SQL_PATH = "app/sql/queries/simulations/get_simulation_access_complete.sql"
+QUERY2_SQL_PATH = "app/sql/queries/simulations/get_simulation_ids_complete.sql"
 
 router = APIRouter()
 

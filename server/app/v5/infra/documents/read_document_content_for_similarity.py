@@ -4,7 +4,7 @@ import os
 
 import pypdf  # type: ignore
 
-from app.v5.infra.globals import UPLOAD_FOLDER
+from app.globals import UPLOAD_FOLDER
 
 
 def read_document_content_for_similarity(file_path: str) -> str:

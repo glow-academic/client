@@ -20,15 +20,15 @@ from app.v5.api.entries.attempt_chat.get import get_chats_internal
 from app.v5.api.resources.cohorts.get import get_cohorts_internal
 from app.v5.api.resources.profiles.get import get_profiles_internal
 from app.v5.api.resources.simulations.get import get_simulations_internal
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import UPLOAD_FOLDER, get_db, get_pool
-from app.v5.sql.types import InsertUploadSqlParams, InsertUploadSqlRow
-from app.v5.utils.logging.db_logger import get_logger
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import UPLOAD_FOLDER, get_db, get_pool
+from app.sql.types import InsertUploadSqlParams, InsertUploadSqlRow
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
-UPLOAD_SQL_PATH = "app/v5/sql/queries/uploads/insert_upload_complete.sql"
+UPLOAD_SQL_PATH = "app/sql/queries/uploads/insert_upload_complete.sql"
 
 
 @dataclass

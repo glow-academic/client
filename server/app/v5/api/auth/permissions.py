@@ -6,15 +6,15 @@ from typing import Any
 
 from app.v5.api.resources.cohorts.types import QGetCohortsV4Item
 from app.v5.api.resources.departments.get import QGetDepartmentsV4Item
-from app.v5.sql.types import (
+from app.sql.types import (
     QGetProfileContextAccessV4ArtifactAgent,
     QGetProfileContextV4Cohort,
     QGetProfileContextV4Department,
     QGetProfileContextV4RoleResource,
     QGetProfileContextV4ThemeTokens,
 )
-from app.v5.utils.theme.color_utils import ensure_contrast, shade, tint
-from app.v5.utils.theme.oklch_to_hex import hex_to_oklch
+from app.utils.theme.color_utils import ensure_contrast, shade, tint
+from app.utils.theme.oklch_to_hex import hex_to_oklch
 
 
 def normalize_color_to_oklch(color: str) -> str:

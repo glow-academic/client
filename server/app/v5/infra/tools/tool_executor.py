@@ -18,15 +18,15 @@ import asyncpg
 
 from app.v5.infra.artifacts.discovery import map_template_values_to_table_columns
 from app.v5.infra.tools.render_tool_template import render_tool_template
-from app.v5.sql.types import (
+from app.sql.types import (
     CreateEntryRecordSqlParams,
     CreateEntryRecordSqlRow,
     InfraToolsCreateCallForToolSqlParams,
     InfraToolsCreateCallForToolSqlRow,
     InfraToolsLinkToolCallSqlParams,
 )
-from app.v5.utils.logging.db_logger import get_logger
-from app.v5.utils.sql_helper import execute_sql_typed, load_sql
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed, load_sql
 
 logger = get_logger(__name__)
 
@@ -172,7 +172,7 @@ async def _execute_entry_tool(
             CreateEntryRecordSqlRow,
             await execute_sql_typed(
                 conn,
-                "app/v5/sql/queries/entries/create_entry_record_complete.sql",
+                "app/sql/queries/entries/create_entry_record_complete.sql",
                 params=entry_params,
             ),
         )
@@ -280,7 +280,7 @@ async def _execute_resource_tool(
                 )
 
             create_resource_sql = load_sql(
-                "app/v5/sql/queries/resources/create_resource_record_complete.sql"
+                "app/sql/queries/resources/create_resource_record_complete.sql"
             )
 
             # Note: We pass None for call_id since we're not tracking calls in this flow
@@ -411,7 +411,7 @@ async def _create_tool_call_record(
         InfraToolsCreateCallForToolSqlRow,
         await execute_sql_typed(
             conn,
-            "app/v5/sql/queries/infrastructure/tools/create_call_for_tool_complete.sql",
+            "app/sql/queries/infrastructure/tools/create_call_for_tool_complete.sql",
             params=InfraToolsCreateCallForToolSqlParams(
                 external_call_id=external_call_id or str(uuid.uuid4()),
                 run_id=run_id,
@@ -425,7 +425,7 @@ async def _create_tool_call_record(
     call_id = call_result.call_id
     await execute_sql_typed(
         conn,
-        "app/v5/sql/queries/infrastructure/tools/link_tool_call_complete.sql",
+        "app/sql/queries/infrastructure/tools/link_tool_call_complete.sql",
         params=InfraToolsLinkToolCallSqlParams(tool_id=tool_id, call_id=call_id),
     )
     return call_id

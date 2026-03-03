@@ -62,12 +62,12 @@ from app.v5.api.resources.scenarios.get import get_scenarios_internal
 from app.v5.api.resources.simulations.get import get_simulations_internal
 from app.v5.api.resources.standard_groups.get import get_standard_groups_internal
 from app.v5.api.resources.standards.search import search_standards_internal
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db, get_pool
-from app.v5.sql.types import GetPracticeContextViewSqlRow
-from app.v5.utils.cache.cache_key import cache_key
-from app.v5.utils.cache.get_cached import get_cached
-from app.v5.utils.cache.set_cached import set_cached
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db, get_pool
+from app.sql.types import GetPracticeContextViewSqlRow
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
 
 router = APIRouter()
 

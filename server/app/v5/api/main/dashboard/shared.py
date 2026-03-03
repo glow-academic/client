@@ -11,18 +11,18 @@ from app.v5.api.main.dashboard.types import DashboardRequest
 from app.v5.api.entries.attempt_chat.get import FilterOption, GetChatsResponse
 from app.v5.api.resources.rubrics.get import get_rubrics_batch_internal
 from app.v5.api.resources.standard_groups.get import get_standard_groups_internal
-from app.v5.sql.types import GetActiveSettingsSqlParams, GetActiveSettingsSqlRow
-from app.v5.utils.cache.cache_key import cache_key
-from app.v5.utils.cache.get_cached import get_cached
-from app.v5.utils.cache.set_cached import set_cached
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.sql.types import GetActiveSettingsSqlParams, GetActiveSettingsSqlRow
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
 
 ACTIVE_SETTINGS_SQL_PATH = (
-    "app/v5/sql/queries/settings/get_active_settings_complete.sql"
+    "app/sql/queries/settings/get_active_settings_complete.sql"
 )
 
 SQL_PATH_RUBRIC_SCORES = (
-    "app/v5/sql/queries/views/chat/rubric_scores/get_rubric_scores_complete.sql"
+    "app/sql/queries/views/chat/rubric_scores/get_rubric_scores_complete.sql"
 )
 
 # ---------------------------------------------------------------------------
@@ -211,7 +211,7 @@ async def get_rubric_scores_internal(
     bypass_cache: bool = False,
 ) -> RubricScoresResponse:
     """Fetch rubric scores."""
-    from app.v5.sql.types import GetRubricScoresSqlParams
+    from app.sql.types import GetRubricScoresSqlParams
 
     cache_key_val = cache_key(
         "entries/chat/rubric_scores",
@@ -541,7 +541,7 @@ def build_field_meta(
 # ---------------------------------------------------------------------------
 
 SQL_PATH_MESSAGE_STATS = (
-    "app/v5/sql/queries/views/chat/message_stats/get_message_stats_complete.sql"
+    "app/sql/queries/views/chat/message_stats/get_message_stats_complete.sql"
 )
 
 
@@ -573,7 +573,7 @@ async def get_message_stats_internal(
     if not chat_ids:
         return {}
 
-    from app.v5.sql.types import GetMessageStatsSqlParams
+    from app.sql.types import GetMessageStatsSqlParams
 
     cache_key_val = cache_key(
         "entries/chat/message_stats",
@@ -629,7 +629,7 @@ async def get_message_stats_internal(
 # ---------------------------------------------------------------------------
 
 TRAINING_CONFIG_SQL = (
-    "app/v5/sql/queries/views/chat/training_config/get_training_config_complete.sql"
+    "app/sql/queries/views/chat/training_config/get_training_config_complete.sql"
 )
 
 
@@ -642,7 +642,7 @@ async def fetch_training_doc_ids(
     if not attempt_chat_ids:
         return {}
 
-    from app.v5.sql.types import GetTrainingConfigSqlParams
+    from app.sql.types import GetTrainingConfigSqlParams
 
     tc_cache_key = cache_key(
         "dashboard/training_doc_ids",

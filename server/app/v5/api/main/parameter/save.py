@@ -21,24 +21,24 @@ from app.v5.api.main.parameter.types import (
     SaveParameterSqlRow,
 )
 from app.v5.api.auth.profile import get_auth_profile_internal
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db, get_pool
-from app.v5.sql.types import (
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db, get_pool
+from app.sql.types import (
     CheckParameterSaveAccessSqlParams,
     CheckParameterSaveAccessSqlRow,
     load_sql_query,
 )
-from app.v5.utils.cache.invalidate_tags import invalidate_tags
-from app.v5.utils.logging.db_logger import get_logger
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
 # SQL paths
 ACCESS_CHECK_SQL_PATH = (
-    "app/v5/sql/queries/parameters/check_parameter_save_access_complete.sql"
+    "app/sql/queries/parameters/check_parameter_save_access_complete.sql"
 )
-SQL_PATH = "app/v5/sql/queries/parameters/save_parameter_complete.sql"
+SQL_PATH = "app/sql/queries/parameters/save_parameter_complete.sql"
 
 router = APIRouter()
 

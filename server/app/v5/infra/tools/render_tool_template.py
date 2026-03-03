@@ -7,21 +7,21 @@ import asyncpg
 from jinja2 import Environment, TemplateError, TemplateSyntaxError
 from jinja2.environment import Template as JinjaTemplate
 
-from app.v5.sql.types import (
+from app.sql.types import (
     GetResourceOutputSchemaFieldsSqlParams,
     GetResourceOutputSchemaFieldsSqlRow,
     InfraToolsGetToolCallResultV4SqlParams,
     InfraToolsGetToolCallResultV4SqlRow,
 )
-from app.v5.utils.logging.db_logger import get_logger
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
 # Use the output schema fields directly - this queries args_outputs_resource via tool_args_outputs_junction
-GET_OUTPUT_SCHEMA_FIELDS_SQL_PATH = "app/v5/sql/queries/infra/artifacts/discovery/get_resource_output_schema_fields_complete.sql"
+GET_OUTPUT_SCHEMA_FIELDS_SQL_PATH = "app/sql/queries/infra/artifacts/discovery/get_resource_output_schema_fields_complete.sql"
 GET_TOOL_CALL_RESULT_SQL_PATH = (
-    "app/v5/sql/queries/infrastructure/tools/get_tool_call_result_v4_complete.sql"
+    "app/sql/queries/infrastructure/tools/get_tool_call_result_v4_complete.sql"
 )
 
 

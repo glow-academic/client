@@ -107,7 +107,7 @@ async def handle_internal_event(
             # If Redis lookup fails (e.g., recursion error), try in-memory fallback
             # This prevents infinite recursion while still allowing error propagation
             try:
-                from app.v5.infra.globals import get_socket_owner_dict
+                from app.globals import get_socket_owner_dict
 
                 socket_owner = get_socket_owner_dict()
                 # Try in-memory fallback (reverse lookup: find profile_id by socket_id)
@@ -121,11 +121,11 @@ async def handle_internal_event(
                 if error_event_name:
                     try:
                         # Emit error directly to client using sid as room (doesn't require profile lookup)
-                        from app.v5.infra.globals import sio
+                        from app.globals import sio
 
                         if error_event_name == "generate_error":
                             # For generate_error, emit to internal bus
-                            from app.v5.infra.globals import get_internal_sio
+                            from app.globals import get_internal_sio
 
                             internal_sio = get_internal_sio()
                             await internal_sio.emit(
@@ -158,7 +158,7 @@ async def handle_internal_event(
                 # Special handling for generate_error - emit to internal bus
                 if error_event_name == "generate_error":
                     try:
-                        from app.v5.infra.globals import get_internal_sio
+                        from app.globals import get_internal_sio
 
                         internal_sio = get_internal_sio()
                         await internal_sio.emit(
@@ -213,7 +213,7 @@ async def handle_internal_event(
         if error_event_name == "generate_error":
             if sid:
                 try:
-                    from app.v5.infra.globals import get_internal_sio
+                    from app.globals import get_internal_sio
 
                     internal_sio = get_internal_sio()
                     await internal_sio.emit(
@@ -257,7 +257,7 @@ async def handle_internal_event(
         if error_event_name and error_response_type and sid:
             try:
                 if error_event_name == "generate_error":
-                    from app.v5.infra.globals import get_internal_sio
+                    from app.globals import get_internal_sio
 
                     internal_sio = get_internal_sio()
                     await internal_sio.emit(

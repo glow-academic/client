@@ -6,7 +6,7 @@ Listens to generation_channel(type=progress) and emits to client:
 
 from typing import Any
 
-from app.v5.infra.globals import get_internal_sio, sio
+from app.globals import get_internal_sio, sio
 from app.v5.api.socket.client.types import GenerationProgressEvent
 
 internal_sio = get_internal_sio()

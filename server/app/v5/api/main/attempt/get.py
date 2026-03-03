@@ -122,11 +122,11 @@ from app.v5.api.resources.standard_groups.get import get_standard_groups_interna
 from app.v5.api.resources.standards.get import get_standards_internal
 from app.v5.api.resources.tools.get import get_tools_internal
 from app.v5.api.resources.videos.get import get_videos_internal
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db, get_pool
-from app.v5.utils.cache.cache_key import cache_key
-from app.v5.utils.cache.get_cached import get_cached
-from app.v5.utils.cache.set_cached import set_cached
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db, get_pool
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
 
 router = APIRouter()
 

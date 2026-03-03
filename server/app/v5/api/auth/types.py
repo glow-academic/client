@@ -13,7 +13,7 @@ from app.v5.api.auth.route_permissions import (
     PageMetadata,
     SidebarSection,
 )
-from app.v5.sql.types import (
+from app.sql.types import (
     GetProfileContextAccessSqlRow,
     GetSettingsThemeDataSqlRow,
     QGetAgentsV4Item,

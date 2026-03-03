@@ -1,12 +1,12 @@
 """
-Tests for app.v5.utils.cache.get_cached_response
+Tests for app.utils.cache.get_cached_response
 """
 
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.v5.utils.cache.get_cached_response import get_cached_response
+from app.utils.cache.get_cached_response import get_cached_response
 
 
 class TestGet_Cached_Response:
@@ -21,7 +21,7 @@ class TestGet_Cached_Response:
         mock_request.method = "GET"
         mock_request.url.path = "/api/v3/test"
 
-        with patch("app.v5.utils.cache.get_cached_response.get_cached") as mock_get_cached:
+        with patch("app.utils.cache.get_cached_response.get_cached") as mock_get_cached:
             mock_get_cached.return_value = cached_data
             result = await get_cached_response(mock_request, ["tag1"])
 
@@ -36,7 +36,7 @@ class TestGet_Cached_Response:
         mock_request.method = "POST"
         mock_request.url.path = "/api/v3/test"
 
-        with patch("app.v5.utils.cache.get_cached_response.get_cached") as mock_get_cached:
+        with patch("app.utils.cache.get_cached_response.get_cached") as mock_get_cached:
             mock_get_cached.return_value = cached_data
             result = await get_cached_response(mock_request, ["tag1"], "user123")
 
@@ -49,7 +49,7 @@ class TestGet_Cached_Response:
         mock_request.method = "GET"
         mock_request.url.path = "/api/v3/test"
 
-        with patch("app.v5.utils.cache.get_cached_response.get_cached") as mock_get_cached:
+        with patch("app.utils.cache.get_cached_response.get_cached") as mock_get_cached:
             mock_get_cached.return_value = None
             result = await get_cached_response(mock_request, ["tag1"])
 

@@ -10,9 +10,9 @@ import uuid
 from typing import Any
 
 from app.v5.api.main.test.get import get_test_websocket
-from app.v5.infra.globals import get_internal_sio, get_pool, sio
+from app.globals import get_internal_sio, get_pool, sio
 from app.v5.api.socket.types import TestAllCompleteEvent, determine_next_run
-from app.v5.utils.logging.db_logger import get_logger
+from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

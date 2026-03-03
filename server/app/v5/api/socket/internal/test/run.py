@@ -15,12 +15,12 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from app.v5.infra.storage.file_writer import write_text_file
+from app.utils.storage.file_writer import write_text_file
 from app.v5.infra.websocket.get_db_connection import get_db_connection
-from app.v5.infra.globals import get_internal_sio
+from app.globals import get_internal_sio
 from app.v5.api.socket.client.types import TestRunPayload
 from app.v5.api.socket.internal.test.types import TestErrorData
-from app.v5.utils.logging.db_logger import get_logger
+from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -122,7 +122,7 @@ async def test_run_handler(data: dict[str, Any]) -> None:
             # Copy messages into the new run
             for msg in messages_to_copy:
                 # Read original content from disk and write a new copy
-                from app.v5.infra.storage.file_writer import read_text_file
+                from app.utils.storage.file_writer import read_text_file
 
                 content = read_text_file(msg["file_path"]) if msg["file_path"] else ""
                 upload_id = await write_text_file(conn, None, content)

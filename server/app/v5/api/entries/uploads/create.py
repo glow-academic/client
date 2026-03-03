@@ -10,9 +10,9 @@ from app.v5.api.entries.uploads.types import (
     CreateUploadsEntrySqlParams,
     CreateUploadsEntrySqlRow,
 )
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/v5/sql/queries/entries/uploads/create_uploads_entries_complete.sql"
+SQL_PATH = "app/sql/queries/entries/uploads/create_uploads_entries_complete.sql"
 
 
 async def create_uploads_entry_internal(

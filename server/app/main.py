@@ -1,11 +1,11 @@
 # server/app/main.py
-"""Thin entry-point — delegates everything to app.v5.server.
+"""Thin entry-point — delegates everything to app.server.
 
 Usage:
     uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 """
 
-from app.v5.server import app, fastapi_app  # noqa: F401
+from app.server import app, fastapi_app  # noqa: F401
 
 if __name__ == "__main__":
     import uvicorn

@@ -12,12 +12,12 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from pydantic import BaseModel
 
-from app.v5.utils.logging.db_logger import get_logger
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
-SQL_PATH = "app/v5/sql/queries/entries/cohort_sync/sync_cohort_entries_complete.sql"
+SQL_PATH = "app/sql/queries/entries/cohort_sync/sync_cohort_entries_complete.sql"
 
 # Flag name → chat_entry column mapping (13 entries)
 FLAG_NAME_TO_COLUMN: dict[str, str] = {
@@ -101,7 +101,7 @@ async def sync_cohort_entries(
     )
     from app.v5.api.resources.simulations.get import get_simulations_internal
     from app.v5.api.resources.standards.search import search_standards_internal
-    from app.v5.infra.globals import get_pool
+    from app.globals import get_pool
 
     if not simulation_ids:
         return 0

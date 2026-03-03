@@ -5,20 +5,20 @@ from uuid import UUID
 
 import asyncpg
 
-from app.v5.sql.types import (
+from app.sql.types import (
     GetChatEntriesSqlParams,
     GetChatEntriesSqlRow,
 )
-from app.v5.utils.cache.cache_key import cache_key
-from app.v5.utils.cache.get_cached import get_cached
-from app.v5.utils.cache.set_cached import set_cached
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
 
 # ---------------------------------------------------------------------------
 # Entry-level get from chat_mv (canonical entry get)
 # ---------------------------------------------------------------------------
 
-CHAT_ENTRIES_SQL_PATH = "app/v5/sql/queries/entries/chat/get_chat_entries_complete.sql"
+CHAT_ENTRIES_SQL_PATH = "app/sql/queries/entries/chat/get_chat_entries_complete.sql"
 
 
 async def get_chat_entries_internal(

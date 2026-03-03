@@ -6,10 +6,10 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db
-from app.v5.utils.cache.invalidate_tags import invalidate_tags
-from app.v5.utils.sql_helper import load_sql
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.sql_helper import load_sql
 
 
 # Inline request/response schemas
@@ -65,7 +65,7 @@ async def create_problem(
             )
 
         # Execute insert query
-        sql_query = load_sql("app/v5/sql/queries/activity/create_problem_complete.sql")
+        sql_query = load_sql("app/sql/queries/activity/create_problem_complete.sql")
         sql_params = (request.type, request.message, profile_id)
         result = await conn.fetchrow(
             sql_query, request.type, request.message, profile_id

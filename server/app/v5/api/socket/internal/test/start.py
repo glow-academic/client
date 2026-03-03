@@ -13,22 +13,22 @@ import uuid
 from typing import Any, cast
 
 from app.v5.infra.websocket.get_db_connection import get_db_connection
-from app.v5.infra.globals import get_internal_sio
+from app.globals import get_internal_sio
 from app.v5.api.socket.client.types import TestStartPayload
 from app.v5.api.socket.internal.test.types import (
     TestErrorData,
     TestProceedData,
 )
-from app.v5.sql.types import StartTestSqlParams, StartTestSqlRow
-from app.v5.utils.cache.invalidate_tags import invalidate_tags
-from app.v5.utils.logging.db_logger import get_logger
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.sql.types import StartTestSqlParams, StartTestSqlRow
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
 
-SQL_PATH_START_TEST = "app/v5/sql/queries/generate/test/start_test_complete.sql"
+SQL_PATH_START_TEST = "app/sql/queries/generate/test/start_test_complete.sql"
 
 
 @internal_sio.on("test_start")  # type: ignore

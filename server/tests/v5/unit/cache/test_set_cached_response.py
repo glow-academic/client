@@ -1,12 +1,12 @@
 """
-Tests for app.v5.utils.cache.set_cached_response
+Tests for app.utils.cache.set_cached_response
 """
 
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.v5.utils.cache.set_cached_response import set_cached_response
+from app.utils.cache.set_cached_response import set_cached_response
 
 
 class TestSet_Cached_Response:
@@ -22,7 +22,7 @@ class TestSet_Cached_Response:
         tags = ["tag1", "tag2"]
         ttl = 60
 
-        with patch("app.v5.utils.cache.set_cached_response.set_cached") as mock_set_cached:
+        with patch("app.utils.cache.set_cached_response.set_cached") as mock_set_cached:
             mock_set_cached.return_value = None
             await set_cached_response(mock_request, data, tags, ttl)
 
@@ -38,7 +38,7 @@ class TestSet_Cached_Response:
         tags = ["tag1"]
         ttl = 120
 
-        with patch("app.v5.utils.cache.set_cached_response.set_cached") as mock_set_cached:
+        with patch("app.utils.cache.set_cached_response.set_cached") as mock_set_cached:
             mock_set_cached.return_value = None
             await set_cached_response(mock_request, data, tags, ttl, "user123")
 

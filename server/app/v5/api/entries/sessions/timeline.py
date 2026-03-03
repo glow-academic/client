@@ -5,17 +5,17 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.v5.sql.types import (
+from app.sql.types import (
     GetSessionTimelineViewSqlParams,
     GetSessionTimelineViewSqlRow,
 )
-from app.v5.utils.cache.cache_key import cache_key
-from app.v5.utils.cache.get_cached import get_cached
-from app.v5.utils.cache.set_cached import set_cached
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
 
 TIMELINE_SQL_PATH = (
-    "app/v5/sql/queries/views/session/timeline/get_session_timeline_view_complete.sql"
+    "app/sql/queries/views/session/timeline/get_session_timeline_view_complete.sql"
 )
 
 

@@ -14,30 +14,30 @@ Steps:
 import uuid
 from typing import Any
 
-from app.v5.infra.storage.file_writer import write_text_file
+from app.utils.storage.file_writer import write_text_file
 from app.v5.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.v5.infra.websocket.generation_tracker import (
     cleanup_generation,
     record_agent_complete,
 )
 from app.v5.infra.websocket.get_db_connection import get_db_connection
-from app.v5.infra.globals import get_internal_sio
+from app.globals import get_internal_sio
 from app.v5.api.socket.internal.attempt.types import AttemptChatStartedData
 from app.v5.api.socket.internal.generation_save_registry import save_artifact
 from app.v5.api.socket.internal.generation_types import (
     GenerationCompleteData,
     GenerationSavedData,
 )
-from app.v5.utils.cache.invalidate_tags import invalidate_tags
-from app.v5.utils.logging.db_logger import get_logger
-from app.v5.utils.sql_helper import load_sql
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
 
 SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
-    "app/v5/sql/queries/messages/create_message_with_text_complete.sql"
+    "app/sql/queries/messages/create_message_with_text_complete.sql"
 )
 
 

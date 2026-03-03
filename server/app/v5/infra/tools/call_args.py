@@ -4,8 +4,8 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.v5.utils.cache.get_cached import get_cached
-from app.v5.utils.cache.set_cached import set_cached
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
 
 
 class ToolArgInfo:

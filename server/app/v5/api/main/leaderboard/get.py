@@ -41,9 +41,9 @@ from app.v5.api.resources.profiles.get import get_profiles_internal
 from app.v5.api.resources.providers.get import get_providers_internal
 from app.v5.api.resources.scenarios.get import get_scenarios_internal
 from app.v5.api.resources.simulations.get import get_simulations_internal
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db, get_pool
-from app.v5.sql.types import (
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db, get_pool
+from app.sql.types import (
     GetActiveSettingsSqlParams,
     GetActiveSettingsSqlRow,
     QGetAgentsV4Item,
@@ -52,10 +52,10 @@ from app.v5.sql.types import (
     QGetProvidersV4Item,
     QGetToolsV4Item,
 )
-from app.v5.utils.cache.cache_key import cache_key
-from app.v5.utils.cache.get_cached import get_cached
-from app.v5.utils.cache.set_cached import set_cached
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
 
 router = APIRouter()
 
@@ -229,11 +229,11 @@ async def get_leaderboard_websocket(
 # ---------------------------------------------------------------------------
 
 SQL_PATH_MESSAGE_STATS = (
-    "app/v5/sql/queries/views/chat/message_stats/get_message_stats_complete.sql"
+    "app/sql/queries/views/chat/message_stats/get_message_stats_complete.sql"
 )
 
 ACTIVE_SETTINGS_SQL_PATH = (
-    "app/v5/sql/queries/settings/get_active_settings_complete.sql"
+    "app/sql/queries/settings/get_active_settings_complete.sql"
 )
 
 # ---------------------------------------------------------------------------
@@ -274,7 +274,7 @@ async def get_message_stats_internal(
     if not chat_ids:
         return {}
 
-    from app.v5.sql.types import GetMessageStatsSqlParams
+    from app.sql.types import GetMessageStatsSqlParams
 
     cache_key_val = cache_key(
         "entries/chat/message_stats",

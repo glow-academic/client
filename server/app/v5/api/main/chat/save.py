@@ -9,8 +9,8 @@ from typing import Any
 
 import asyncpg  # type: ignore
 
-from app.v5.utils.cache.invalidate_tags import invalidate_tags
-from app.v5.utils.logging.db_logger import get_logger
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

@@ -8,9 +8,9 @@ generation_channel(type=progress).
 from typing import Any
 
 from app.v5.infra.websocket.generation_tracker import record_resource_complete
-from app.v5.infra.globals import get_internal_sio
+from app.globals import get_internal_sio
 from app.v5.api.socket.internal.generation_types import GenerationProgressData
-from app.v5.utils.logging.db_logger import get_logger
+from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

@@ -14,7 +14,7 @@ from typing import Any
 
 import asyncpg
 
-from app.v5.utils.sql_helper import _detect_function_in_sql, load_sql
+from app.utils.sql_helper import _detect_function_in_sql, load_sql
 
 
 async def get_resource_sql_function_name(
@@ -35,7 +35,7 @@ async def get_resource_sql_function_name(
     Returns:
         Function name if found, None otherwise
     """
-    sql_path = "app/v5/sql/queries/infra/artifacts/discovery/get_resource_sql_function_name_complete.sql"
+    sql_path = "app/sql/queries/infra/artifacts/discovery/get_resource_sql_function_name_complete.sql"
 
     # Load SQL and detect if it's a function
     sql_text = load_sql(sql_path)
@@ -71,7 +71,7 @@ async def get_resource_table_columns(
         - is_nullable: Whether column allows NULL
         - column_default: Default value if any
     """
-    sql_path = "app/v5/sql/queries/infra/artifacts/discovery/get_resource_table_columns_complete.sql"
+    sql_path = "app/sql/queries/infra/artifacts/discovery/get_resource_table_columns_complete.sql"
 
     # Load SQL and detect if it's a function
     sql_text = load_sql(sql_path)
@@ -193,7 +193,7 @@ async def get_resource_output_schema_fields(
     Returns:
         List of schema field metadata dictionaries
     """
-    sql_path = "app/v5/sql/queries/infra/artifacts/discovery/get_resource_output_schema_fields_complete.sql"
+    sql_path = "app/sql/queries/infra/artifacts/discovery/get_resource_output_schema_fields_complete.sql"
 
     import uuid
 
@@ -326,7 +326,7 @@ async def get_agent_end_event_name(conn: asyncpg.Connection, artifact_type: str)
     Returns:
         Event name string (e.g., "persona_end", "scenario_end", "text_end")
     """
-    sql_path = "app/v5/sql/queries/infra/artifacts/discovery/get_agent_end_event_name_complete.sql"
+    sql_path = "app/sql/queries/infra/artifacts/discovery/get_agent_end_event_name_complete.sql"
 
     # Load SQL and detect if it's a function
     sql_text = load_sql(sql_path)

@@ -10,10 +10,10 @@ from app.v5.api.entries.emulations.types import (
     CreateEmulationsEntrySqlParams,
     CreateEmulationsEntrySqlRow,
 )
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = (
-    "app/v5/sql/queries/entries/emulations/create_emulations_entries_complete.sql"
+    "app/sql/queries/entries/emulations/create_emulations_entries_complete.sql"
 )
 
 

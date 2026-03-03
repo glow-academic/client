@@ -26,21 +26,21 @@ from app.v5.api.main.agent.types import (
 from app.v5.api.auth.profile import get_auth_profile_internal
 from app.v5.api.resources.models.get import get_models_internal
 from app.v5.api.types import ListFilterSection
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db, get_pool
-from app.v5.sql.types import (
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db, get_pool
+from app.sql.types import (
     GetAgentsListApiRequest,
     GetAgentsListSqlParams,
     GetAgentsListSqlRow,
     load_sql_query,
 )
-from app.v5.utils.cache.cache_key import cache_key
-from app.v5.utils.cache.get_cached import get_cached
-from app.v5.utils.cache.set_cached import set_cached
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/v5/sql/queries/agents/get_agents_list_complete.sql"
+SQL_PATH = "app/sql/queries/agents/get_agents_list_complete.sql"
 
 router = APIRouter()
 

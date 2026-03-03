@@ -1,13 +1,13 @@
-"""Integration tests for app.v5.infra.metrics.collector."""
+"""Integration tests for app.metrics.collector."""
 
 import pytest
 
-from app.v5.infra.metrics.collector import (
+from app.metrics.collector import (
     initialize_metrics,
     record_error,
     record_request,
 )
-from app.v5.infra.globals import get_pool, get_redis_client
+from app.globals import get_pool, get_redis_client
 
 pytestmark = pytest.mark.asyncio
 

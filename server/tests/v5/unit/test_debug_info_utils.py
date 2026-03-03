@@ -1,5 +1,5 @@
 """
-Tests for app.v5.utils.debug_info
+Tests for app.utils.debug_info
 """
 
 import uuid

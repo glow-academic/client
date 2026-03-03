@@ -11,23 +11,23 @@ from app.v5.api.main.simulation.types import (
     DeleteSimulationApiResponse,
     DeleteSimulationResult,
 )
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db, get_pool
-from app.v5.sql.types import (
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db, get_pool
+from app.sql.types import (
     CheckSimulationDeleteAccessSqlParams,
     CheckSimulationDeleteAccessSqlRow,
     DeleteSimulationSqlParams,
     DeleteSimulationSqlRow,
     load_sql_query,
 )
-from app.v5.utils.cache.invalidate_tags import invalidate_tags
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.sql_helper import execute_sql_typed
 
 # SQL paths
 ACCESS_CHECK_SQL_PATH = (
-    "app/v5/sql/queries/simulations/check_simulation_delete_access_complete.sql"
+    "app/sql/queries/simulations/check_simulation_delete_access_complete.sql"
 )
-DELETE_SQL_PATH = "app/v5/sql/queries/simulations/delete_simulation_complete.sql"
+DELETE_SQL_PATH = "app/sql/queries/simulations/delete_simulation_complete.sql"
 
 router = APIRouter()
 

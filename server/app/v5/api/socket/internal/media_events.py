@@ -11,7 +11,7 @@ keeping the infra layer decoupled from the socket layer.
 from typing import Any
 
 from app.v5.infra.websocket.adapters.media.base import MediaResult
-from app.v5.infra.globals import get_internal_sio
+from app.globals import get_internal_sio
 
 
 class InternalBusMediaEmitter:

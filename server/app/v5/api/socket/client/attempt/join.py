@@ -6,10 +6,10 @@ Handles: attempt_join — join a chat room for real-time updates.
 from typing import Any
 
 from app.v5.infra.websocket.find_profile_by_socket import find_profile_by_socket
-from app.v5.infra.globals import get_internal_sio, sio
+from app.globals import get_internal_sio, sio
 from app.v5.api.socket.client.types import AttemptJoinPayload
 from app.v5.api.socket.internal.attempt.types import AttemptErrorData, AttemptJoinedData
-from app.v5.utils.logging.db_logger import get_logger
+from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

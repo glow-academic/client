@@ -1,10 +1,10 @@
 """
-Tests for app.v5.utils.csv.validate_csv_format
+Tests for app.utils.csv.validate_csv_format
 """
 
 from pathlib import Path
 
-from app.v5.infra.csv.validate_csv_format import validate_csv_format
+from app.utils.csv.validate_csv_format import validate_csv_format
 
 
 class TestValidate_Csv_Format:

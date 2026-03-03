@@ -67,19 +67,19 @@ from app.v5.api.resources.providers.get import get_providers_internal
 from app.v5.api.resources.questions.get import get_questions_internal
 from app.v5.api.resources.scenarios.get import get_scenarios_internal
 from app.v5.api.resources.videos.get import get_videos_internal
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_pool
-from app.v5.sql.types import (
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_pool
+from app.sql.types import (
     GetTrainingStartContextSqlParams,
     GetTrainingStartContextSqlRow,
     QGetTrainingDraftsEntriesV4Item,
 )
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 router = APIRouter()
 
 SQL_PATH_START_CONTEXT = (
-    "app/v5/sql/queries/generate/training/get_training_start_context_complete.sql"
+    "app/sql/queries/generate/training/get_training_start_context_complete.sql"
 )
 
 # =============================================================================

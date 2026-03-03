@@ -1,9 +1,9 @@
-"""Integration tests for app.v5.infra.error.handle_route_error."""
+"""Integration tests for app.utils.error.handle_route_error."""
 
 import pytest
 from fastapi import HTTPException
 
-from app.v5.infra.error.handle_route_error import handle_route_error
+from app.utils.error.handle_route_error import handle_route_error
 
 
 class TestHandleRouteError:

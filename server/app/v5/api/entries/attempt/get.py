@@ -8,23 +8,23 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db
-from app.v5.sql.types import (
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db
+from app.sql.types import (
     GetAttemptEntriesApiRequest,
     GetAttemptEntriesApiResponse,
     GetAttemptEntriesSqlParams,
     GetAttemptEntriesSqlRow,
     load_sql_query,
 )
-from app.v5.utils.cache.cache_key import cache_key
-from app.v5.utils.cache.get_cached import get_cached
-from app.v5.utils.cache.set_cached import set_cached
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/v5/sql/queries/entries/attempt/get_attempt_entries_complete.sql"
+SQL_PATH = "app/sql/queries/entries/attempt/get_attempt_entries_complete.sql"
 TRAINING_CONFIG_SQL = (
-    "app/v5/sql/queries/views/chat/training_config/get_training_config_complete.sql"
+    "app/sql/queries/views/chat/training_config/get_training_config_complete.sql"
 )
 
 router = APIRouter()
@@ -136,7 +136,7 @@ async def _fetch_training_config(
     if not attempt_chat_ids:
         return {}
 
-    from app.v5.sql.types import GetTrainingConfigSqlParams
+    from app.sql.types import GetTrainingConfigSqlParams
 
     tc_cache_key = cache_key(
         "entries/chat/training_config/get",
@@ -381,7 +381,7 @@ async def get_attempt_chats_internal(
 # ---------------------------------------------------------------------------
 
 MESSAGES_SQL_PATH = (
-    "app/v5/sql/queries/views/attempt/messages/get_attempt_messages_view_complete.sql"
+    "app/sql/queries/views/attempt/messages/get_attempt_messages_view_complete.sql"
 )
 
 
@@ -391,7 +391,7 @@ async def get_attempt_messages_internal(
     bypass_cache: bool = False,
 ) -> list[AttemptMessageViewItem]:
     """Internal function for fetching lean message data."""
-    from app.v5.sql.types import GetAttemptMessagesViewSqlParams
+    from app.sql.types import GetAttemptMessagesViewSqlParams
 
     cache_key_val = cache_key(
         "entries/attempt/messages/get",

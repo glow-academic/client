@@ -16,15 +16,15 @@ from app.v5.api.main.simulation.types import (
     GetScenariosSqlRow,
     QGetScenariosV4Item,
 )
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db
-from app.v5.utils.cache.cache_key import cache_key
-from app.v5.utils.cache.get_cached import get_cached
-from app.v5.utils.cache.set_cached import set_cached
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
 
 # SQL path for scenarios get
-SQL_PATH = "app/v5/sql/queries/resources/scenarios/get_scenarios_complete.sql"
+SQL_PATH = "app/sql/queries/resources/scenarios/get_scenarios_complete.sql"
 
 router = APIRouter()
 

@@ -30,16 +30,16 @@ from app.v5.api.resources.instructions.link import link_instructions_internal
 from app.v5.api.resources.names.link import link_names_internal
 from app.v5.api.resources.parameter_fields.link import link_parameter_fields_internal
 from app.v5.api.resources.voices.link import link_voices_internal
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db, get_pool
-from app.v5.utils.cache.invalidate_tags import invalidate_tags
-from app.v5.utils.logging.db_logger import get_logger
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db, get_pool
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
 # SQL paths
-SQL_PATH = "app/v5/sql/queries/personas/patch_persona_draft_complete.sql"
+SQL_PATH = "app/sql/queries/personas/patch_persona_draft_complete.sql"
 
 # Single-select resource key → link internal function
 SINGLE_LINK_MAP: dict[str, Any] = {

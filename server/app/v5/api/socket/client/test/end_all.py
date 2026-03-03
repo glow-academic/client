@@ -8,10 +8,10 @@ invocations as completed and emits test_ended.
 
 from typing import Any
 
-from app.v5.infra.globals import get_internal_sio, sio
+from app.globals import get_internal_sio, sio
 from app.v5.api.socket.client.types import TestEndAllPayload
 from app.v5.api.socket.internal.test.types import TestErrorData, TestProceedData
-from app.v5.utils.logging.db_logger import get_logger
+from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

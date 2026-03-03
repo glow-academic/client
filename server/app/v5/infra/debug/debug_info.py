@@ -5,10 +5,10 @@ from typing import Any
 
 import asyncpg  # type: ignore
 
-from app.v5.sql.types import InfrastructureDebugInsertDebugInfoSqlParams
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.sql.types import InfrastructureDebugInsertDebugInfoSqlParams
+from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/v5/sql/queries/infrastructure/infrastructure_debug_insert_debug_info_complete.sql"
+SQL_PATH = "app/sql/queries/infrastructure/infrastructure_debug_insert_debug_info_complete.sql"
 
 
 @dataclass

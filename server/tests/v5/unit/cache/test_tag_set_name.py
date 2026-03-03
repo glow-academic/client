@@ -1,8 +1,8 @@
 """
-Tests for app.v5.utils.cache.tag_set_name
+Tests for app.utils.cache.tag_set_name
 """
 
-from app.v5.utils.cache.tag_set_name import tag_set_name
+from app.utils.cache.tag_set_name import tag_set_name
 
 
 class TestTag_Set_Name:

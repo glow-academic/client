@@ -2,10 +2,10 @@
 
 import asyncpg  # type: ignore
 
-from app.v5.sql.types import (
+from app.sql.types import (
     GetOrCreateTestProfileV4SqlParams,
 )
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 
 async def get_or_create_test_profile(
@@ -15,7 +15,7 @@ async def get_or_create_test_profile(
     params = GetOrCreateTestProfileV4SqlParams(email=email)
     result = await execute_sql_typed(
         conn=db,
-        sql_path="tests/v5/sql/integration/queries/helpers/test_get_or_create_test_profile_v4_complete.sql",
+        sql_path="tests/sql/integration/queries/helpers/test_get_or_create_test_profile_v4_complete.sql",
         params=params,
     )
     return str(result.profile_id)

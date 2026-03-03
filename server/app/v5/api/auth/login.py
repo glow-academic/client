@@ -6,17 +6,17 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, Request
 
-from app.v5.infra.globals import get_db
-from app.v5.sql.types import (
+from app.globals import get_db
+from app.sql.types import (
     GetLoginDataApiRequest,
     GetLoginDataApiResponse,
     GetLoginDataSqlParams,
     GetLoginDataSqlRow,
 )
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/v5/sql/queries/auth/get_login_data_complete.sql"
+SQL_PATH = "app/sql/queries/auth/get_login_data_complete.sql"
 
 router = APIRouter()
 

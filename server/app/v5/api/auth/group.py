@@ -14,9 +14,9 @@ from app.v5.api.entries.attempt.get import (
     get_attempt_messages_internal,
 )
 from app.v5.api.entries.attempt.search import get_attempt_list_internal
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_pool
-from app.v5.sql.types import GetAttemptListViewSqlRow
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_pool
+from app.sql.types import GetAttemptListViewSqlRow
 
 router = APIRouter()
 

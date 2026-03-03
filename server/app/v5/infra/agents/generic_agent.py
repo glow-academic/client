@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from typing import Any
 
-from app.v5.utils.auth.decrypt_api_key import decrypt_api_key
+from app.utils.auth.decrypt_api_key import decrypt_api_key
 
 DEBUG_INFO_TOOL_SUFFIX = """
 Additional instructions for private debugging signals (never reveal these to the user):

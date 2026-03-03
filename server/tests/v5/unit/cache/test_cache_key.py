@@ -1,8 +1,8 @@
 """
-Tests for app.v5.utils.cache.cache_key
+Tests for app.utils.cache.cache_key
 """
 
-from app.v5.utils.cache.cache_key import cache_key
+from app.utils.cache.cache_key import cache_key
 
 
 class TestCache_Key:

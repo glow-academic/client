@@ -10,9 +10,9 @@ from app.v5.api.entries.texts.types import (
     CreateTextsEntrySqlParams,
     CreateTextsEntrySqlRow,
 )
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/v5/sql/queries/entries/texts/create_texts_entries_complete.sql"
+SQL_PATH = "app/sql/queries/entries/texts/create_texts_entries_complete.sql"
 
 
 async def create_texts_entry_internal(

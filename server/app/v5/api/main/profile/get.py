@@ -69,20 +69,20 @@ from app.v5.api.resources.providers.get import get_providers_internal
 from app.v5.api.resources.request_limits.get import get_request_limits_internal
 from app.v5.api.resources.request_limits.search import search_request_limits_internal
 from app.v5.api.resources.tools.get import get_tools_internal
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db, get_pool
-from app.v5.sql.types import (
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db, get_pool
+from app.sql.types import (
     GetProfileAccessSqlParams,
     GetProfileAccessSqlRow,
     GetProfileIdsSqlParams,
     GetProfileIdsSqlRow,
     load_sql_query,
 )
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 # SQL paths
-QUERY1_SQL_PATH = "app/v5/sql/queries/profile/get_profile_access_complete.sql"
-QUERY2_SQL_PATH = "app/v5/sql/queries/profile/get_profile_ids_complete.sql"
+QUERY1_SQL_PATH = "app/sql/queries/profile/get_profile_access_complete.sql"
+QUERY2_SQL_PATH = "app/sql/queries/profile/get_profile_ids_complete.sql"
 
 router = APIRouter()
 

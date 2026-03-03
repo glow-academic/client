@@ -74,9 +74,9 @@ from app.v5.api.entries import router as entries_router
 # ============================================================================
 from app.v5.api.resources import router as resources_router
 
-from app.v5.utils.mcp.get_mcp import get_mcp
-from app.v5.utils.profile.get_profile_id import get_profile_id
-from app.v5.utils.session.get_session_id import get_session_id
+from app.utils.mcp.get_mcp import get_mcp
+from app.utils.profile.get_profile_id import get_profile_id
+from app.utils.session.get_session_id import get_session_id
 
 # ============================================================================
 # Main Router Configuration

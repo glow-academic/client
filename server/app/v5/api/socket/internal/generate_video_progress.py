@@ -6,8 +6,8 @@ so the client can show video generation progress.
 
 from typing import Any
 
-from app.v5.infra.globals import get_internal_sio
-from app.v5.utils.logging.db_logger import get_logger
+from app.globals import get_internal_sio
+from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

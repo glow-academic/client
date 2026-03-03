@@ -1,9 +1,9 @@
-"""Integration tests for app.v5.infra.error.log_and_raise_error."""
+"""Integration tests for app.utils.error.log_and_raise_error."""
 
 import pytest
 from fastapi import HTTPException
 
-from app.v5.infra.error.log_and_raise_error import log_and_raise_error
+from app.utils.error.log_and_raise_error import log_and_raise_error
 
 
 class TestLogAndRaiseError:

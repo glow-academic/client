@@ -11,9 +11,9 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.v5.api.auth.profile import get_auth_profile_internal
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db, get_pool
-from app.v5.sql.types import (
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db, get_pool
+from app.sql.types import (
     GetPerSimulationMetricsSqlParams,
     GetPerSimulationMetricsSqlRow,
     GetReportsBundleApiRequest,
@@ -22,16 +22,16 @@ from app.v5.sql.types import (
     GetReportsBundleSqlRow,
     load_sql_query,
 )
-from app.v5.utils.logging.db_logger import get_logger
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
 router = APIRouter(tags=["reports"])
 
-BUNDLE_SQL_PATH = "app/v5/sql/queries/reports/get_reports_bundle_complete.sql"
+BUNDLE_SQL_PATH = "app/sql/queries/reports/get_reports_bundle_complete.sql"
 PER_SIM_METRICS_SQL_PATH = (
-    "app/v5/sql/queries/reports/get_per_simulation_metrics_complete.sql"
+    "app/sql/queries/reports/get_per_simulation_metrics_complete.sql"
 )
 
 

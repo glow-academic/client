@@ -8,14 +8,14 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.v5.sql.types import (
+from app.sql.types import (
     PrepareTrainingStartSqlParams,
     PrepareTrainingStartSqlRow,
 )
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH_PREPARE_START = (
-    "app/v5/sql/queries/generate/training/prepare_training_start_complete.sql"
+    "app/sql/queries/generate/training/prepare_training_start_complete.sql"
 )
 
 

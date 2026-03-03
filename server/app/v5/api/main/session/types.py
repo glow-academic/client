@@ -144,7 +144,7 @@ class GetSessionWebsocketResponse(InternalResponseBase):
 
 
 from app.v5.api.entries.runs.search import GetRunListViewResponse  # noqa: E402
-from app.v5.sql.types import (  # noqa: E402
+from app.sql.types import (  # noqa: E402
     GetGroupListViewSqlRow,
     GetSessionListViewSqlRow,
     GetSessionTimelineViewSqlRow,

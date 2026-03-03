@@ -16,9 +16,9 @@ from app.v5.api.entries.messages_completions.create import (
     create_messages_completions_entry_internal,
 )
 from app.v5.infra.websocket.get_db_connection import get_db_connection
-from app.v5.infra.globals import get_internal_sio
+from app.globals import get_internal_sio
 from app.v5.api.socket.internal.attempt.types import AttemptUserCompleteData
-from app.v5.utils.logging.db_logger import get_logger
+from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

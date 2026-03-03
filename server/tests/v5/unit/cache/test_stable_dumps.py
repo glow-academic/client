@@ -1,10 +1,10 @@
 """
-Tests for app.v5.utils.cache.stable_dumps
+Tests for app.utils.cache.stable_dumps
 """
 
 import json
 
-from app.v5.utils.cache.stable_dumps import stable_dumps
+from app.utils.cache.stable_dumps import stable_dumps
 
 
 class TestStable_Dumps:

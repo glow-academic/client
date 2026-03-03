@@ -16,12 +16,12 @@ from app.v5.api.main.types import InternalResponseBase
 from app.v5.api.entries.attempt.get import AttemptMessageViewItem as MessageViewItem
 from app.v5.api.entries.attempt.get import ChatViewItem
 from app.v5.api.entries.runs.search import GetRunListViewResponse
-from app.v5.sql.types import (
+from app.sql.types import (
     QGetAgentsV4Item,
     QGetModelsV4Item,
     QGetProvidersV4Item,
 )
-from app.v5.sql.types import (
+from app.sql.types import (
     QGetAttemptListViewV4Item as AttemptViewItem,
 )
 

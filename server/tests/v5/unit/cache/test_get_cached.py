@@ -1,5 +1,5 @@
 """
-Tests for app.v5.utils.cache.get_cached
+Tests for app.utils.cache.get_cached
 """
 
 import json
@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.v5.utils.cache.get_cached import get_cached
+from app.utils.cache.get_cached import get_cached
 
 
 class TestGet_Cached:
@@ -23,7 +23,7 @@ class TestGet_Cached:
         mock_redis.get = AsyncMock(return_value=json.dumps(cached_data).encode("utf-8"))
 
         with patch(
-            "app.v5.utils.cache.get_cached.get_redis_client", return_value=mock_redis
+            "app.utils.cache.get_cached.get_redis_client", return_value=mock_redis
         ):
             result = await get_cached(key)
 
@@ -40,7 +40,7 @@ class TestGet_Cached:
         mock_redis.get = AsyncMock(return_value=json.dumps(cached_data))
 
         with patch(
-            "app.v5.utils.cache.get_cached.get_redis_client", return_value=mock_redis
+            "app.utils.cache.get_cached.get_redis_client", return_value=mock_redis
         ):
             result = await get_cached(key)
 
@@ -55,7 +55,7 @@ class TestGet_Cached:
         mock_redis.get = AsyncMock(return_value=None)
 
         with patch(
-            "app.v5.utils.cache.get_cached.get_redis_client", return_value=mock_redis
+            "app.utils.cache.get_cached.get_redis_client", return_value=mock_redis
         ):
             result = await get_cached(key)
 
@@ -66,7 +66,7 @@ class TestGet_Cached:
         """Test get_cached when redis_client is None."""
         key = "test_key"
 
-        with patch("app.v5.utils.cache.get_cached.get_redis_client", return_value=None):
+        with patch("app.utils.cache.get_cached.get_redis_client", return_value=None):
             result = await get_cached(key)
 
             assert result is None
@@ -80,7 +80,7 @@ class TestGet_Cached:
         mock_redis.get = AsyncMock(side_effect=Exception("Redis error"))
 
         with patch(
-            "app.v5.utils.cache.get_cached.get_redis_client", return_value=mock_redis
+            "app.utils.cache.get_cached.get_redis_client", return_value=mock_redis
         ):
             result = await get_cached(key)
 

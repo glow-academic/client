@@ -1,5 +1,5 @@
 """
-Tests for app.v5.utils.document.read_text_file
+Tests for app.utils.document.read_text_file
 """
 
 from pathlib import Path
@@ -12,7 +12,7 @@ class TestRead_Text_File:
 
     def test_read_text_file_utf8(self, tmp_path: Path) -> None:
         """Test reading UTF-8 text file."""
-        from app.v5.utils.document.read_text_file import read_text_file
+        from app.utils.document.read_text_file import read_text_file
 
         test_file = tmp_path / "test.txt"
         test_file.write_text("Hello World\nTest Content", encoding="utf-8")
@@ -23,7 +23,7 @@ class TestRead_Text_File:
 
     def test_read_text_file_latin1_fallback(self, tmp_path: Path) -> None:
         """Test reading text file with latin-1 fallback."""
-        from app.v5.utils.document.read_text_file import read_text_file
+        from app.utils.document.read_text_file import read_text_file
 
         test_file = tmp_path / "test.txt"
         # Write bytes that are valid latin-1 but not UTF-8
@@ -36,7 +36,7 @@ class TestRead_Text_File:
 
     def test_read_text_file_not_found(self, tmp_path: Path) -> None:
         """Test read_text_file with file not found."""
-        from app.v5.utils.document.read_text_file import read_text_file
+        from app.utils.document.read_text_file import read_text_file
 
         test_file = tmp_path / "nonexistent.txt"
 
@@ -45,7 +45,7 @@ class TestRead_Text_File:
 
     def test_read_text_file_strips_whitespace(self, tmp_path: Path) -> None:
         """Test read_text_file strips whitespace."""
-        from app.v5.utils.document.read_text_file import read_text_file
+        from app.utils.document.read_text_file import read_text_file
 
         test_file = tmp_path / "test.txt"
         test_file.write_text("  Hello World  \n", encoding="utf-8")
@@ -57,7 +57,7 @@ class TestRead_Text_File:
 
     def test_read_text_file_encoding_error(self, tmp_path: Path) -> None:
         """Test read_text_file with encoding error."""
-        from app.v5.utils.document.read_text_file import read_text_file
+        from app.utils.document.read_text_file import read_text_file
 
         # Let's use a file that doesn't exist to test the error path
         nonexistent_file = tmp_path / "nonexistent.txt"

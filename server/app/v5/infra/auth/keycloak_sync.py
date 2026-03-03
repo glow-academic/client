@@ -6,11 +6,11 @@ import socket
 from dataclasses import dataclass
 from typing import Any
 
-from app.v5.infra.globals import get_pool
-from app.v5.api.mcp.oauth import MCP_RESOURCE, is_mcp_enabled
-from app.v5.utils.auth.decrypt_api_key import decrypt_api_key
-from app.v5.utils.logging.db_logger import get_logger
-from app.v5.utils.sql_helper import _detect_function_in_sql, load_sql
+from app.globals import get_pool
+from app.mcp.oauth import MCP_RESOURCE, is_mcp_enabled
+from app.utils.auth.decrypt_api_key import decrypt_api_key
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import _detect_function_in_sql, load_sql
 
 logger = get_logger(__name__)
 
@@ -407,7 +407,7 @@ async def ensure_mcp_client_scope(kc_admin: Any) -> None:
             # Update scope to ensure consent screen is disabled
             # Note: We update via database directly since Admin API has method signature issues
             try:
-                from app.v5.infra.globals import get_pool
+                from app.globals import get_pool
 
                 pool = get_pool()
                 if pool:
@@ -977,7 +977,7 @@ async def ensure_default_scopes_no_consent(kc_admin: Any) -> None:
         kc_admin: KeycloakAdmin instance (must be in master realm)
     """
     try:
-        from app.v5.infra.globals import get_pool
+        from app.globals import get_pool
 
         pool = get_pool()
         if not pool:
@@ -1078,7 +1078,7 @@ async def sync_identity_provider_for_realm_level(
 
         async with pool.acquire() as conn:
             items_sql_text = load_sql(
-                "app/v5/sql/queries/keycloak/get_auth_items_complete.sql"
+                "app/sql/queries/keycloak/get_auth_items_complete.sql"
             )
             items_is_function, items_function_name, items_schema = (
                 _detect_function_in_sql(items_sql_text)
@@ -1206,11 +1206,11 @@ async def sync_identity_provider_for_org(
         # Get auth items (config) - use department_id for department-specific settings
         import uuid
 
-        from app.v5.sql.types import GetAuthItemsSqlParams
+        from app.sql.types import GetAuthItemsSqlParams
 
         async with pool.acquire() as conn:
             items_sql_text = load_sql(
-                "app/v5/sql/queries/keycloak/get_auth_items_complete.sql"
+                "app/sql/queries/keycloak/get_auth_items_complete.sql"
             )
             items_is_function, items_function_name, items_schema = (
                 _detect_function_in_sql(items_sql_text)
@@ -1799,7 +1799,7 @@ async def sync_identity_providers(
 
         async with pool.acquire() as conn:
             profiles_sql = load_sql(
-                "app/v5/sql/queries/keycloak/get_setting_profiles_for_idp_complete.sql"
+                "app/sql/queries/keycloak/get_setting_profiles_for_idp_complete.sql"
             )
             profiles_is_function, profiles_function_name, profiles_schema = (
                 _detect_function_in_sql(profiles_sql)
@@ -1832,7 +1832,7 @@ async def sync_identity_providers(
         # Step 1: Check if departments exist - if they do, skip realm-level IdPs that are also department-scoped
         async with pool.acquire() as conn:
             dept_sql = load_sql(
-                "app/v5/sql/queries/keycloak/get_departments_for_org_sync_complete.sql"
+                "app/sql/queries/keycloak/get_departments_for_org_sync_complete.sql"
             )
             dept_is_function, dept_function_name, dept_schema = _detect_function_in_sql(
                 dept_sql
@@ -1851,7 +1851,7 @@ async def sync_identity_providers(
                 # Collect all auth_ids that are linked to department settings
                 if has_departments:
                     auths_sql_text = load_sql(
-                        "app/v5/sql/queries/keycloak/get_auths_for_org_complete.sql"
+                        "app/sql/queries/keycloak/get_auths_for_org_complete.sql"
                     )
                     auths_is_function, auths_function_name, auths_schema = (
                         _detect_function_in_sql(auths_sql_text)
@@ -1876,7 +1876,7 @@ async def sync_identity_providers(
         logger.info("Syncing realm-level IdPs (platform login)...")
         async with pool.acquire() as conn:
             sql_text = load_sql(
-                "app/v5/sql/queries/keycloak/get_auths_for_realm_level_complete.sql"
+                "app/sql/queries/keycloak/get_auths_for_realm_level_complete.sql"
             )
             is_function, function_name, schema = _detect_function_in_sql(sql_text)
 
@@ -1942,7 +1942,7 @@ async def sync_identity_providers(
         logger.info("Syncing department-scoped IdPs...")
         async with pool.acquire() as conn:
             sql_text = load_sql(
-                "app/v5/sql/queries/keycloak/get_departments_for_org_sync_complete.sql"
+                "app/sql/queries/keycloak/get_departments_for_org_sync_complete.sql"
             )
             is_function, function_name, schema = _detect_function_in_sql(sql_text)
 
@@ -1974,7 +1974,7 @@ async def sync_identity_providers(
 
                     # Get auths for this department
                     auths_sql_text = load_sql(
-                        "app/v5/sql/queries/keycloak/get_auths_for_org_complete.sql"
+                        "app/sql/queries/keycloak/get_auths_for_org_complete.sql"
                     )
                     auths_is_function, auths_function_name, auths_schema = (
                         _detect_function_in_sql(auths_sql_text)
@@ -2032,7 +2032,7 @@ async def sync_identity_providers(
             expected_default_idp_aliases: set[str] = set()
             async with pool.acquire() as conn:
                 profiles_sql = load_sql(
-                    "app/v5/sql/queries/keycloak/get_setting_profiles_for_idp_complete.sql"
+                    "app/sql/queries/keycloak/get_setting_profiles_for_idp_complete.sql"
                 )
                 profiles_is_function, profiles_function_name, profiles_schema = (
                     _detect_function_in_sql(profiles_sql)
@@ -2050,7 +2050,7 @@ async def sync_identity_providers(
             # Get expected realm-level slugs
             async with pool.acquire() as conn:
                 sql_text = load_sql(
-                    "app/v5/sql/queries/keycloak/get_auths_for_realm_level_complete.sql"
+                    "app/sql/queries/keycloak/get_auths_for_realm_level_complete.sql"
                 )
                 is_function, function_name, schema = _detect_function_in_sql(sql_text)
                 if is_function and function_name:
@@ -2065,7 +2065,7 @@ async def sync_identity_providers(
             # Get expected department-scoped aliases (auth_{slug}_{auth_id} pattern)
             async with pool.acquire() as conn:
                 sql_text = load_sql(
-                    "app/v5/sql/queries/keycloak/get_departments_for_org_sync_complete.sql"
+                    "app/sql/queries/keycloak/get_departments_for_org_sync_complete.sql"
                 )
                 is_function, function_name, schema = _detect_function_in_sql(sql_text)
                 if is_function and function_name:
@@ -2080,7 +2080,7 @@ async def sync_identity_providers(
                         dept_id = str(dept["department_id"])
 
                         auths_sql_text = load_sql(
-                            "app/v5/sql/queries/keycloak/get_auths_for_org_complete.sql"
+                            "app/sql/queries/keycloak/get_auths_for_org_complete.sql"
                         )
                         auths_is_function, auths_function_name, auths_schema = (
                             _detect_function_in_sql(auths_sql_text)
@@ -2220,14 +2220,14 @@ async def sync_keycloak(department_id: str | None = None) -> None:
                 async with pool.acquire() as conn:
                     from typing import cast
 
-                    from app.v5.sql.types import UpdateMasterRealmSslSqlRow
-                    from app.v5.utils.sql_helper import execute_sql_typed
+                    from app.sql.types import UpdateMasterRealmSslSqlRow
+                    from app.utils.sql_helper import execute_sql_typed
 
                     result = cast(
                         UpdateMasterRealmSslSqlRow,
                         await execute_sql_typed(
                             conn,
-                            "app/v5/sql/queries/keycloak/update_master_realm_ssl_complete.sql",
+                            "app/sql/queries/keycloak/update_master_realm_ssl_complete.sql",
                             params=None,
                         ),
                     )
@@ -2386,7 +2386,7 @@ async def perform_keycloak_sync(
         # Check if Keycloak is available BEFORE attempting sync
         # Note: Keycloak might return 403 "HTTPS required" before sync disables SSL requirement
         # This is expected and sync will fix it, so we proceed anyway
-        from app.v5.infra.health import check_keycloak
+        from app.health import check_keycloak
 
         keycloak_check = await check_keycloak()
         # Only fail if Keycloak is completely unavailable (connection error, not 403 HTTPS required)

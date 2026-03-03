@@ -5,19 +5,19 @@ from typing import Annotated, Any, cast
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db
-from app.v5.sql.types import (
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db
+from app.sql.types import (
     GetProfileByEmailApiRequest,
     GetProfileByEmailApiResponse,
     GetProfileByEmailSqlParams,
     GetProfileByEmailSqlRow,
     load_sql_query,
 )
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/v5/sql/queries/profile/get_profile_by_email_complete.sql"
+SQL_PATH = "app/sql/queries/profile/get_profile_by_email_complete.sql"
 
 router = APIRouter()
 

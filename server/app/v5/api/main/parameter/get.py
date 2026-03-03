@@ -72,20 +72,20 @@ from app.v5.api.resources.parameter_fields.search import (
 )
 from app.v5.api.resources.profiles.get import get_profiles_internal
 from app.v5.api.resources.providers.get import get_providers_internal
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db, get_pool
-from app.v5.sql.types import (
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db, get_pool
+from app.sql.types import (
     GetParameterAccessSqlParams,
     GetParameterAccessSqlRow,
     GetParameterIdsSqlParams,
     GetParameterIdsSqlRow,
     load_sql_query,
 )
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 # SQL paths
-QUERY1_SQL_PATH = "app/v5/sql/queries/parameters/get_parameter_access_complete.sql"
-QUERY2_SQL_PATH = "app/v5/sql/queries/parameters/get_parameter_ids_complete.sql"
+QUERY1_SQL_PATH = "app/sql/queries/parameters/get_parameter_access_complete.sql"
+QUERY2_SQL_PATH = "app/sql/queries/parameters/get_parameter_ids_complete.sql"
 
 router = APIRouter()
 

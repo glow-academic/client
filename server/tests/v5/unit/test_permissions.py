@@ -1,5 +1,5 @@
 """
-Tests for app.v5.utils.permissions
+Tests for app.utils.permissions
 """
 
 from app.v5.infra.permissions import (

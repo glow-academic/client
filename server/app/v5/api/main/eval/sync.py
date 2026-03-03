@@ -11,13 +11,13 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from pydantic import BaseModel
 
-from app.v5.utils.logging.db_logger import get_logger
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
 SQL_PATH = (
-    "app/v5/sql/queries/entries/benchmark_sync/sync_benchmark_entries_complete.sql"
+    "app/sql/queries/entries/benchmark_sync/sync_benchmark_entries_complete.sql"
 )
 
 
@@ -65,7 +65,7 @@ async def sync_benchmark_entries(
         get_model_positions_internal,
     )
     from app.v5.api.resources.model_rubrics.get import get_model_rubrics_internal
-    from app.v5.infra.globals import get_pool
+    from app.globals import get_pool
 
     if not model_ids:
         return 0

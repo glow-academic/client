@@ -7,18 +7,18 @@ Saves assistant message to DB on text_complete. Run-level completion
 import uuid
 from typing import Any
 
-from app.v5.infra.storage.file_writer import write_text_file
+from app.utils.storage.file_writer import write_text_file
 from app.v5.infra.websocket.get_db_connection import get_db_connection
-from app.v5.infra.globals import get_internal_sio
-from app.v5.utils.logging.db_logger import get_logger
-from app.v5.utils.sql_helper import load_sql
+from app.globals import get_internal_sio
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
 
 SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
-    "app/v5/sql/queries/messages/create_message_with_text_complete.sql"
+    "app/sql/queries/messages/create_message_with_text_complete.sql"
 )
 
 

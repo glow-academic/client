@@ -24,18 +24,18 @@ from app.v5.api.resources.agents.get import get_agents_internal
 from app.v5.api.resources.settings.get import get_settings_internal
 from app.v5.api.resources.systems.get import get_systems_internal
 from app.v5.api.resources.tools.get import get_tools_internal
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db, get_pool
-from app.v5.sql.types import (
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db, get_pool
+from app.sql.types import (
     GetProfileContextApiRequest,
     GetSettingsThemeDataSqlParams,
     GetSettingsThemeDataSqlRow,
     QGetProfileContextV4ThemeTokens,
 )
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 SQL_SETTINGS_THEME_PATH = (
-    "app/v5/sql/queries/settings/get_settings_theme_data_complete.sql"
+    "app/sql/queries/settings/get_settings_theme_data_complete.sql"
 )
 
 router = APIRouter()

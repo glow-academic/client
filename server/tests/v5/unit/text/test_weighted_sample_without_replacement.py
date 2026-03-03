@@ -1,5 +1,5 @@
 """
-Tests for app.v5.utils.text.weighted_sample_without_replacement
+Tests for app.utils.text.weighted_sample_without_replacement
 """
 
 
@@ -8,7 +8,7 @@ class TestWeighted_Sample_Without_Replacement:
 
     def test_weighted_sample_without_replacement_success(self) -> None:
         """Test successful weighted_sample_without_replacement execution."""
-        from app.v5.utils.text.weighted_sample_without_replacement import (
+        from app.utils.text.weighted_sample_without_replacement import (
             weighted_sample_without_replacement,
         )
 
@@ -23,7 +23,7 @@ class TestWeighted_Sample_Without_Replacement:
 
     def test_weighted_sample_without_replacement_k_greater_than_len(self) -> None:
         """Test weighted_sample_without_replacement with k > len(items)."""
-        from app.v5.utils.text.weighted_sample_without_replacement import (
+        from app.utils.text.weighted_sample_without_replacement import (
             weighted_sample_without_replacement,
         )
 
@@ -37,7 +37,7 @@ class TestWeighted_Sample_Without_Replacement:
 
     def test_weighted_sample_without_replacement_zero_scores(self) -> None:
         """Test weighted_sample_without_replacement with zero scores."""
-        from app.v5.utils.text.weighted_sample_without_replacement import (
+        from app.utils.text.weighted_sample_without_replacement import (
             weighted_sample_without_replacement,
         )
 
@@ -51,7 +51,7 @@ class TestWeighted_Sample_Without_Replacement:
 
     def test_weighted_sample_without_replacement_k_zero(self) -> None:
         """Test weighted_sample_without_replacement with k=0."""
-        from app.v5.utils.text.weighted_sample_without_replacement import (
+        from app.utils.text.weighted_sample_without_replacement import (
             weighted_sample_without_replacement,
         )
 

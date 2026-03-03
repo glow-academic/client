@@ -6,9 +6,9 @@ from typing import Annotated
 import asyncpg
 from fastapi import APIRouter, Depends, Request, Response
 
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db
-from app.v5.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db
+from app.utils.cache.invalidate_tags import invalidate_tags
 
 MV_NAME = "attempt_message_tree_mv"
 

@@ -1,12 +1,12 @@
 """
-Tests for app.v5.utils.auth.derive_key
+Tests for app.utils.auth.derive_key
 """
 
 import os
 
 import pytest
 
-from app.v5.utils.auth.derive_key import derive_key
+from app.utils.auth.derive_key import derive_key
 
 
 class TestDerive_Key:

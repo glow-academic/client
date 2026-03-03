@@ -1,10 +1,10 @@
 """
-Tests for app.v5.utils.csv.parse_csv_file
+Tests for app.utils.csv.parse_csv_file
 """
 
 from pathlib import Path
 
-from app.v5.infra.csv.parse_csv_file import parse_csv_file
+from app.utils.csv.parse_csv_file import parse_csv_file
 
 
 class TestParse_Csv_File:

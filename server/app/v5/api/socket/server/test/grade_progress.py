@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from app.v5.infra.globals import get_internal_sio, sio
+from app.globals import get_internal_sio, sio
 from app.v5.api.socket.client.types import TestGradedEvent
 
 internal_sio = get_internal_sio()

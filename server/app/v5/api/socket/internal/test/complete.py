@@ -9,18 +9,18 @@ from typing import Any
 
 from app.v5.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.v5.infra.websocket.get_db_connection import get_db_connection
-from app.v5.infra.globals import get_internal_sio
+from app.globals import get_internal_sio
 from app.v5.api.socket.internal.test.types import TestGradedData
-from app.v5.sql.types import CompleteTestGradeSqlParams
-from app.v5.utils.logging.db_logger import get_logger
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.sql.types import CompleteTestGradeSqlParams
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
 
 SQL_PATH_COMPLETE_GRADE = (
-    "app/v5/sql/queries/generate/test/complete_test_grade_complete.sql"
+    "app/sql/queries/generate/test/complete_test_grade_complete.sql"
 )
 
 

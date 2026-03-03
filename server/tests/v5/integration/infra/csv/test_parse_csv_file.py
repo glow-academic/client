@@ -1,9 +1,9 @@
-"""Integration tests for app.v5.infra.csv.parse_csv_file."""
+"""Integration tests for app.utils.csv.parse_csv_file."""
 
 import tempfile
 from pathlib import Path
 
-from app.v5.infra.csv.parse_csv_file import parse_csv_file
+from app.utils.csv.parse_csv_file import parse_csv_file
 
 
 class TestParseCsvFile:

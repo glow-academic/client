@@ -4,10 +4,10 @@ import os
 import uuid
 from typing import cast
 
-from app.v5.infra.globals import UPLOAD_FOLDER, get_pool
-from app.v5.utils.auth.decrypt_api_key import decrypt_api_key
-from app.v5.utils.logging.db_logger import get_logger
-from app.v5.utils.sql_helper import execute_sql_typed, load_sql
+from app.globals import UPLOAD_FOLDER, get_pool
+from app.utils.auth.decrypt_api_key import decrypt_api_key
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed, load_sql
 
 logger = get_logger(__name__)
 
@@ -28,7 +28,7 @@ async def _mark_image_completed(image_id: str) -> None:
         try:
             async with pool.acquire() as conn:
                 sql_update_image = load_sql(
-                    "app/v5/sql/queries/images/update_image_completed.sql"
+                    "app/sql/queries/images/update_image_completed.sql"
                 )
                 await conn.execute(sql_update_image, image_id, True)
         except Exception as e:
@@ -45,7 +45,7 @@ async def generate_image_background(
         image_id: Image ID (UUID as string)
         storage_key: Storage key for retrieving context
     """
-    from app.v5.infra.globals import get_image_generation_storage
+    from app.globals import get_image_generation_storage
 
     pool = get_pool()
     if not pool:
@@ -77,7 +77,7 @@ async def generate_image_background(
                 await _mark_image_completed(image_id)
                 return
 
-            from app.v5.sql.types import (
+            from app.sql.types import (
                 GetAgentModelInfoSqlParams,
                 GetAgentModelInfoSqlRow,
             )
@@ -89,7 +89,7 @@ async def generate_image_background(
                 GetAgentModelInfoSqlRow,
                 await execute_sql_typed(
                     conn,
-                    "app/v5/sql/queries/agents/get_agent_model_info_complete.sql",
+                    "app/sql/queries/agents/get_agent_model_info_complete.sql",
                     params=params,
                 ),
             )
@@ -229,7 +229,7 @@ async def generate_image_background(
                 mime_type = "image/gif"
 
             # Create upload record
-            sql_insert_upload = load_sql("app/v5/sql/queries/uploads/insert_upload.sql")
+            sql_insert_upload = load_sql("app/sql/queries/uploads/insert_upload.sql")
             upload_row = await conn.fetchrow(
                 sql_insert_upload,
                 file_path,
@@ -251,7 +251,7 @@ async def generate_image_background(
 
             # Link image to upload via junction table
             sql_insert_image_upload = load_sql(
-                "app/v5/sql/queries/images/insert_image_upload_complete.sql"
+                "app/sql/queries/images/insert_image_upload_complete.sql"
             )
             image_upload_row = await conn.fetchrow(
                 sql_insert_image_upload,
@@ -267,7 +267,7 @@ async def generate_image_background(
 
             # Update image record: completed=true
             sql_update_image = load_sql(
-                "app/v5/sql/queries/images/update_image_completed.sql"
+                "app/sql/queries/images/update_image_completed.sql"
             )
             await conn.execute(sql_update_image, image_id, True)
 

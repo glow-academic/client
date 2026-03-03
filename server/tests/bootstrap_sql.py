@@ -9,7 +9,7 @@ from pathlib import Path
 
 import asyncpg  # type: ignore
 
-from app.v5.infra.sql.compile_types import (
+from app.sql.compile_types import (
     VERSION,
     _sort_sql_files,
     execute_sql_file,

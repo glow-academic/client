@@ -12,15 +12,15 @@ from app.v5.api.entries.attempt_archive.types import (
     CreateAttemptArchiveEntrySqlParams,
     CreateAttemptArchiveEntrySqlRow,
 )
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.storage.file_writer import write_text_file
+from app.utils.error.handle_route_error import handle_route_error
+from app.utils.storage.file_writer import write_text_file
 from app.v5.infra.tools.call_args import record_call_args, resolve_tool_for_entry
-from app.v5.infra.globals import get_db
-from app.v5.sql.types import load_sql_query
-from app.v5.utils.cache.invalidate_tags import invalidate_tags
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.globals import get_db
+from app.sql.types import load_sql_query
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/v5/sql/queries/entries/attempt_archive/create_attempt_archive_entries_complete.sql"
+SQL_PATH = "app/sql/queries/entries/attempt_archive/create_attempt_archive_entries_complete.sql"
 
 ENTRY_TYPE = "attempt_archives"
 

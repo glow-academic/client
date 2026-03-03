@@ -1,5 +1,5 @@
 """
-Tests for app.v5.utils.document.format_document_info
+Tests for app.utils.document.format_document_info
 """
 
 from pathlib import Path

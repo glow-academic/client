@@ -1,9 +1,9 @@
-"""Integration tests for app.v5.infra.csv.validate_csv_format."""
+"""Integration tests for app.utils.csv.validate_csv_format."""
 
 import tempfile
 from pathlib import Path
 
-from app.v5.infra.csv.validate_csv_format import validate_csv_format
+from app.utils.csv.validate_csv_format import validate_csv_format
 
 
 class TestValidateCsvFormat:

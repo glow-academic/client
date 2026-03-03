@@ -6,9 +6,9 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db
-from app.v5.sql.types import (
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db
+from app.sql.types import (
     GetPracticeContextViewSqlRow,
     GetPracticeEntriesApiRequest,
     GetPracticeEntriesApiResponse,
@@ -16,14 +16,14 @@ from app.v5.sql.types import (
     GetPracticeEntriesSqlRow,
     load_sql_query,
 )
-from app.v5.utils.cache.cache_key import cache_key
-from app.v5.utils.cache.get_cached import get_cached
-from app.v5.utils.cache.set_cached import set_cached
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/v5/sql/queries/entries/practice/get_practice_entries_complete.sql"
+SQL_PATH = "app/sql/queries/entries/practice/get_practice_entries_complete.sql"
 VIEW_SQL_PATH = (
-    "app/v5/sql/queries/views/practice/context/get_practice_context_view_complete.sql"
+    "app/sql/queries/views/practice/context/get_practice_context_view_complete.sql"
 )
 
 router = APIRouter()
@@ -35,7 +35,7 @@ async def get_practice_context_view_internal(
     bypass_cache: bool = False,
 ) -> GetPracticeContextViewSqlRow:
     """Internal function for IDs-first practice context data."""
-    from app.v5.sql.types import GetPracticeContextViewSqlParams
+    from app.sql.types import GetPracticeContextViewSqlParams
 
     cache_key_val = cache_key(
         "views/practice/context/get",

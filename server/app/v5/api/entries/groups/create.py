@@ -10,9 +10,9 @@ from app.v5.api.entries.groups.types import (
     CreateGroupsEntrySqlParams,
     CreateGroupsEntrySqlRow,
 )
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/v5/sql/queries/entries/groups/create_groups_entries_complete.sql"
+SQL_PATH = "app/sql/queries/entries/groups/create_groups_entries_complete.sql"
 
 
 async def create_groups_entry_internal(

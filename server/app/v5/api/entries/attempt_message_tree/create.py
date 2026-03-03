@@ -9,9 +9,9 @@ from app.v5.api.entries.attempt_message_tree.types import (
     CreateAttemptMessageTreeEntrySqlParams,
     CreateAttemptMessageTreeEntrySqlRow,
 )
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/v5/sql/queries/entries/attempt_message_tree/create_attempt_message_tree_entries_complete.sql"
+SQL_PATH = "app/sql/queries/entries/attempt_message_tree/create_attempt_message_tree_entries_complete.sql"
 
 
 async def create_attempt_message_tree_entry_internal(

@@ -7,9 +7,9 @@ This enables dynamic IdP visibility filtering based on department selection via 
 from datetime import datetime
 from typing import Any
 
-from app.v5.infra.globals import UPLOAD_FOLDER
-from app.v5.utils.logging.db_logger import get_logger
-from app.v5.utils.sql_helper import _detect_function_in_sql, load_sql
+from app.globals import UPLOAD_FOLDER
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import _detect_function_in_sql, load_sql
 
 logger = get_logger(__name__)
 
@@ -37,7 +37,7 @@ async def generate_keycloak_theme_providers(pool: Any) -> None:
     async with pool.acquire() as conn:
         # Step 1: Get ALL realm-level IdP aliases (for platform fallback)
         realm_level_sql = load_sql(
-            "app/v5/sql/queries/keycloak/get_auths_for_realm_level_complete.sql"
+            "app/sql/queries/keycloak/get_auths_for_realm_level_complete.sql"
         )
         is_function, function_name, schema = _detect_function_in_sql(realm_level_sql)
 
@@ -49,7 +49,7 @@ async def generate_keycloak_theme_providers(pool: Any) -> None:
 
         # Step 2: Get all default-idp profile aliases (per settings)
         profiles_sql = load_sql(
-            "app/v5/sql/queries/keycloak/get_setting_profiles_for_idp_complete.sql"
+            "app/sql/queries/keycloak/get_setting_profiles_for_idp_complete.sql"
         )
         profiles_is_function, profiles_function_name, profiles_schema = (
             _detect_function_in_sql(profiles_sql)
@@ -80,7 +80,7 @@ async def generate_keycloak_theme_providers(pool: Any) -> None:
 
         # Step 3: Get ALL departments with titles
         dept_sql = load_sql(
-            "app/v5/sql/queries/keycloak/get_departments_for_org_sync_complete.sql"
+            "app/sql/queries/keycloak/get_departments_for_org_sync_complete.sql"
         )
         is_function, function_name, schema = _detect_function_in_sql(dept_sql)
 
@@ -106,7 +106,7 @@ async def generate_keycloak_theme_providers(pool: Any) -> None:
 
                 # Get auths for this department
                 auths_sql = load_sql(
-                    "app/v5/sql/queries/keycloak/get_auths_for_org_complete.sql"
+                    "app/sql/queries/keycloak/get_auths_for_org_complete.sql"
                 )
                 auths_is_function, auths_function_name, auths_schema = (
                     _detect_function_in_sql(auths_sql)

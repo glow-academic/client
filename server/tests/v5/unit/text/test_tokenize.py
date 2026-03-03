@@ -1,5 +1,5 @@
 """
-Tests for app.v5.utils.text.tokenize
+Tests for app.utils.text.tokenize
 """
 
 
@@ -8,7 +8,7 @@ class TestTokenize:
 
     def test_tokenize_success(self) -> None:
         """Test successful tokenize execution."""
-        from app.v5.utils.text.tokenize import tokenize
+        from app.utils.text.tokenize import tokenize
 
         # Test basic tokenization
         result = tokenize("Hello World Test")
@@ -16,7 +16,7 @@ class TestTokenize:
 
     def test_tokenize_empty(self) -> None:
         """Test tokenize with empty string."""
-        from app.v5.utils.text.tokenize import tokenize
+        from app.utils.text.tokenize import tokenize
 
         # Test empty string
         result = tokenize("")
@@ -24,7 +24,7 @@ class TestTokenize:
 
     def test_tokenize_none(self) -> None:
         """Test tokenize with None input."""
-        from app.v5.utils.text.tokenize import tokenize
+        from app.utils.text.tokenize import tokenize
 
         # Test None handling
         result = tokenize(None)
@@ -32,7 +32,7 @@ class TestTokenize:
 
     def test_tokenize_whitespace_only(self) -> None:
         """Test tokenize with whitespace only."""
-        from app.v5.utils.text.tokenize import tokenize
+        from app.utils.text.tokenize import tokenize
 
         # Test whitespace only
         result = tokenize("   \n\t  ")

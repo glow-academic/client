@@ -10,9 +10,9 @@ Also records token usage and re-enters the rate limit gate for the next turn.
 from typing import Any
 
 from app.v5.infra.websocket.session_store import get_session_by_group_id
-from app.v5.infra.globals import get_internal_sio
+from app.globals import get_internal_sio
 from app.v5.api.socket.internal.attempt.types import AttemptStoppedData
-from app.v5.utils.logging.db_logger import get_logger
+from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

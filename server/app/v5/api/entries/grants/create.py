@@ -10,9 +10,9 @@ from app.v5.api.entries.grants.types import (
     CreateGrantsEntrySqlParams,
     CreateGrantsEntrySqlRow,
 )
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/v5/sql/queries/entries/grants/create_grants_entries_complete.sql"
+SQL_PATH = "app/sql/queries/entries/grants/create_grants_entries_complete.sql"
 
 
 async def create_grants_entry_internal(

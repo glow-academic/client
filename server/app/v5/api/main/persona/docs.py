@@ -7,9 +7,9 @@ from fastapi import APIRouter, Depends
 
 from app.v5.api.main.persona import permissions
 from app.v5.api.resources.names.get import get_names_internal
-from app.v5.infra.globals import get_db
-from app.v5.sql.types import GetPersonaDocsSqlParams, GetPersonaDocsSqlRow
-from app.v5.utils.docs_helper import (
+from app.globals import get_db
+from app.sql.types import GetPersonaDocsSqlParams, GetPersonaDocsSqlRow
+from app.utils.docs_helper import (
     ArtifactDocsConfig,
     DocsApiRequest,
     DocsApiResponse,
@@ -17,9 +17,9 @@ from app.v5.utils.docs_helper import (
     build_artifact_docs_static,
     compute_docs_metadata,
 )
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/v5/sql/queries/personas/get_persona_docs_complete.sql"
+SQL_PATH = "app/sql/queries/personas/get_persona_docs_complete.sql"
 
 CONFIG = ArtifactDocsConfig(
     name="persona",

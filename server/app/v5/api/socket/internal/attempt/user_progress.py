@@ -6,7 +6,7 @@ Text path skips this event entirely.
 
 from typing import Any
 
-from app.v5.infra.globals import get_internal_sio
+from app.globals import get_internal_sio
 from app.v5.api.socket.internal.attempt.types import AttemptUserProgressData
 
 internal_sio = get_internal_sio()

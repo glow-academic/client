@@ -1,12 +1,12 @@
 """
-Tests for app.v5.utils.cache.invalidate_tags
+Tests for app.utils.cache.invalidate_tags
 """
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app.v5.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.cache.invalidate_tags import invalidate_tags
 
 
 class TestInvalidate_Tags:
@@ -27,7 +27,7 @@ class TestInvalidate_Tags:
         mock_pipeline.execute = AsyncMock()
 
         with patch(
-            "app.v5.utils.cache.invalidate_tags.get_redis_client", return_value=mock_redis
+            "app.utils.cache.invalidate_tags.get_redis_client", return_value=mock_redis
         ):
             await invalidate_tags(tags)
 
@@ -47,7 +47,7 @@ class TestInvalidate_Tags:
         mock_pipeline.execute = AsyncMock()
 
         with patch(
-            "app.v5.utils.cache.invalidate_tags.get_redis_client", return_value=mock_redis
+            "app.utils.cache.invalidate_tags.get_redis_client", return_value=mock_redis
         ):
             await invalidate_tags(tags)
 
@@ -59,7 +59,7 @@ class TestInvalidate_Tags:
         tags = ["tag1"]
 
         with patch(
-            "app.v5.utils.cache.invalidate_tags.get_redis_client", return_value=None
+            "app.utils.cache.invalidate_tags.get_redis_client", return_value=None
         ):
             # Should not raise an error
             await invalidate_tags(tags)
@@ -73,7 +73,7 @@ class TestInvalidate_Tags:
         mock_redis.pipeline = MagicMock(side_effect=Exception("Redis error"))
 
         with patch(
-            "app.v5.utils.cache.invalidate_tags.get_redis_client", return_value=mock_redis
+            "app.utils.cache.invalidate_tags.get_redis_client", return_value=mock_redis
         ):
             # Should not raise an error, just log it
             await invalidate_tags(tags)

@@ -1,5 +1,5 @@
 """
-Tests for app.v5.utils.auth.decrypt_api_key
+Tests for app.utils.auth.decrypt_api_key
 """
 
 import base64
@@ -12,7 +12,7 @@ from cryptography.hazmat.primitives import hashes, padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
-from app.v5.utils.auth.decrypt_api_key import decrypt_api_key
+from app.utils.auth.decrypt_api_key import decrypt_api_key
 
 
 class TestDecrypt_Api_Key:

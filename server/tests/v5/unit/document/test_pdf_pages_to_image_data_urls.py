@@ -1,5 +1,5 @@
 """
-Tests for app.v5.utils.document.pdf_pages_to_image_data_urls
+Tests for app.utils.document.pdf_pages_to_image_data_urls
 """
 
 from pathlib import Path
@@ -20,7 +20,7 @@ class TestPdf_Pages_To_Image_Data_Urls:
         # Patch sys.modules to simulate fitz not being available
         import sys
 
-        from app.v5.utils.document.pdf_pages_to_image_data_urls import (
+        from app.utils.document.pdf_pages_to_image_data_urls import (
             pdf_pages_to_image_data_urls,
         )
 
@@ -45,7 +45,7 @@ class TestPdf_Pages_To_Image_Data_Urls:
         except ImportError:
             pytest.skip("fitz (PyMuPDF) not available")
 
-        from app.v5.utils.document.pdf_pages_to_image_data_urls import (
+        from app.utils.document.pdf_pages_to_image_data_urls import (
             pdf_pages_to_image_data_urls,
         )
 
@@ -79,7 +79,7 @@ class TestPdf_Pages_To_Image_Data_Urls:
         except ImportError:
             pytest.skip("fitz (PyMuPDF) not available")
 
-        from app.v5.utils.document.pdf_pages_to_image_data_urls import (
+        from app.utils.document.pdf_pages_to_image_data_urls import (
             pdf_pages_to_image_data_urls,
         )
 

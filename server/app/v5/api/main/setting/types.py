@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.v5.api.main.types import InternalResponseBase
 from app.v5.api.entries.runs.search import GetRunListViewResponse
 from app.v5.api.types import BaseResourceSection
-from app.v5.sql.types import (
+from app.sql.types import (
     QGetAgentsV4Item,
     QGetAuthItemKeysV4Item,
     QGetAuthsV4Item,

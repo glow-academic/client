@@ -6,14 +6,14 @@ import uuid
 from typing import Any
 
 from app.v5.infra.generation import convert_tools_to_dict, render_developer_instructions
-from app.v5.infra.globals import get_internal_sio
+from app.globals import get_internal_sio
 from app.v5.api.socket.types import GenerateErrorApiRequest
-from app.v5.utils.sql_helper import load_sql
+from app.utils.sql_helper import load_sql
 
 internal_sio = get_internal_sio()
 
-CREATE_RUN_SQL_PATH = "app/v5/sql/queries/generate/start/get_generation_run_context_and_create_run_complete.sql"
-TEXT_RUN_CONTEXT_SQL_PATH = "app/v5/sql/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"
+CREATE_RUN_SQL_PATH = "app/sql/queries/generate/start/get_generation_run_context_and_create_run_complete.sql"
+TEXT_RUN_CONTEXT_SQL_PATH = "app/sql/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"
 
 
 def _normalize_key(value: str | None) -> str:

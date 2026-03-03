@@ -6,9 +6,9 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db
-from app.v5.sql.types import (
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db
+from app.sql.types import (
     GetTrainingEntriesApiRequest,
     GetTrainingEntriesApiResponse,
     GetTrainingEntriesSqlParams,
@@ -16,14 +16,14 @@ from app.v5.sql.types import (
     GetTrainingViewSqlRow,
     load_sql_query,
 )
-from app.v5.utils.cache.cache_key import cache_key
-from app.v5.utils.cache.get_cached import get_cached
-from app.v5.utils.cache.set_cached import set_cached
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
+from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/v5/sql/queries/entries/training/get_training_entries_complete.sql"
+SQL_PATH = "app/sql/queries/entries/training/get_training_entries_complete.sql"
 VIEW_SQL_PATH = (
-    "app/v5/sql/queries/views/training/bundle/get_training_view_complete.sql"
+    "app/sql/queries/views/training/bundle/get_training_view_complete.sql"
 )
 
 router = APIRouter()
@@ -73,7 +73,7 @@ async def get_training_view_internal(
     chat_entry_id: UUID,
 ) -> GetTrainingViewSqlRow:
     """Thin MV-backed bundle scope lookup used by training artifacts."""
-    from app.v5.sql.types import GetTrainingViewSqlParams
+    from app.sql.types import GetTrainingViewSqlParams
 
     params = GetTrainingViewSqlParams(
         profile_id_filter=profile_id,

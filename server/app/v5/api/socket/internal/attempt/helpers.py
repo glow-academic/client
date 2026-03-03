@@ -9,7 +9,7 @@ from app.v5.api.entries.groups.create import create_groups_entry_internal
 from app.v5.api.entries.runs.create import create_runs_entry_internal
 from app.v5.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.v5.infra.websocket.get_db_connection import get_db_connection
-from app.v5.infra.globals import get_internal_sio
+from app.globals import get_internal_sio
 from app.v5.api.socket.internal.attempt.types import GenerateRequestData
 
 

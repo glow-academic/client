@@ -10,10 +10,10 @@ from app.v5.api.entries.run_pricing.types import (
     CreateRunPricingEntrySqlParams,
     CreateRunPricingEntrySqlRow,
 )
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = (
-    "app/v5/sql/queries/entries/run_pricing/create_run_pricing_entries_complete.sql"
+    "app/sql/queries/entries/run_pricing/create_run_pricing_entries_complete.sql"
 )
 
 

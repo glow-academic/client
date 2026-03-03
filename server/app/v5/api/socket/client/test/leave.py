@@ -5,9 +5,9 @@ Handles: test_leave — leave a test room.
 
 from typing import Any
 
-from app.v5.infra.globals import sio
+from app.globals import sio
 from app.v5.api.socket.client.types import TestLeavePayload
-from app.v5.utils.logging.db_logger import get_logger
+from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

@@ -12,7 +12,7 @@ from app.v5.api.main.chat.types import (
 )
 from app.v5.api.main.types import HistoryResponse, InternalResponseBase
 from app.v5.api.entries.runs.search import GetRunListViewResponse
-from app.v5.sql.types import (
+from app.sql.types import (
     QGetDepartmentsV4Item,
     QGetDocumentsV4Item,
     QGetImagesV4Item,

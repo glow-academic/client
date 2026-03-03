@@ -14,8 +14,8 @@ import httpx
 import pytest_asyncio
 from tests.seed_helpers import TEST_SUPERADMIN_PROFILE_ID
 
-from app.v5.server import fastapi_app
-from app.v5.infra.globals import get_db, get_pool
+from app.server import fastapi_app
+from app.globals import get_db, get_pool
 
 # Ensure the test superadmin profile is linked to the Purdue CS department so
 # that artifact GET endpoints (which require ≥1 accessible department) work.

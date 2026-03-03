@@ -1,5 +1,5 @@
 """
-Tests for app.v5.utils.text.read_document_content_for_similarity
+Tests for app.utils.text.read_document_content_for_similarity
 """
 
 from pathlib import Path

@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from app.v5.utils.docs_helper import (
+from app.utils.docs_helper import (
     ResourceDocsConfig,
     build_resource_docs_static,
 )

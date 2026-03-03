@@ -1,10 +1,10 @@
 """
-Tests for app.v5.utils.test_db
+Tests for app.utils.test_db
 """
 
 from unittest.mock import MagicMock, patch
 
-from app.v5.utils.test_db import get_test_db_url
+from app.utils.test_db import get_test_db_url
 
 
 class TestGet_Test_Db_Url:

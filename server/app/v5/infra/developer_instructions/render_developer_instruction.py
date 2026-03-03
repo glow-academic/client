@@ -7,16 +7,16 @@ import asyncpg
 from jinja2 import Environment, TemplateError
 from jinja2.environment import Template as JinjaTemplate
 
-from app.v5.sql.types import (
+from app.sql.types import (
     InfrastructureDeveloperInstructionsGetDomainArtifactSqlParams,
     InfrastructureDeveloperInstructionsGetDomainArtifactSqlRow,
 )
-from app.v5.utils.logging.db_logger import get_logger
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
-SQL_PATH = "app/v5/sql/queries/infrastructure/developer_instructions/get_domain_artifact_complete.sql"
+SQL_PATH = "app/sql/queries/infrastructure/developer_instructions/get_domain_artifact_complete.sql"
 
 
 async def render_developer_instruction(
@@ -44,7 +44,7 @@ async def render_developer_instruction(
     try:
         # Step 1: Get developer instruction template
         # Get agent's artifact from domains to query the right developer instruction
-        from app.v5.sql.types import GetDeveloperInstructionSqlParams
+        from app.sql.types import GetDeveloperInstructionSqlParams
 
         # Get agent's artifact from domains
         params = InfrastructureDeveloperInstructionsGetDomainArtifactSqlParams(
@@ -72,7 +72,7 @@ async def render_developer_instruction(
         # But it actually uses agent_role_val to match domains.artifact
         dev_instruction_result = await execute_sql_typed(
             conn,
-            "app/v5/sql/queries/developer_instructions/get_developer_instruction_complete.sql",
+            "app/sql/queries/developer_instructions/get_developer_instruction_complete.sql",
             params=dev_instruction_params,
         )
 
@@ -85,7 +85,7 @@ async def render_developer_instruction(
         template_str = dev_instruction_result.template
 
         # Step 2: Get context with whitelisted fields
-        from app.v5.sql.types import GetDeveloperInstructionContextSqlParams
+        from app.sql.types import GetDeveloperInstructionContextSqlParams
 
         context_params = GetDeveloperInstructionContextSqlParams(
             agent_id=agent_id,
@@ -94,7 +94,7 @@ async def render_developer_instruction(
 
         context_result = await execute_sql_typed(
             conn,
-            "app/v5/sql/queries/developer_instructions/get_developer_instruction_context_complete.sql",
+            "app/sql/queries/developer_instructions/get_developer_instruction_context_complete.sql",
             params=context_params,
         )
 

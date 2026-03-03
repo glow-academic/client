@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.v5.utils.theme.oklch_to_hex import hex_to_oklch, oklch_to_hex, parse_oklch
+from app.utils.theme.oklch_to_hex import hex_to_oklch, oklch_to_hex, parse_oklch
 
 
 class TestParseOklch:

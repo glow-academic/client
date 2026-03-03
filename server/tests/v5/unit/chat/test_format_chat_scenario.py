@@ -1,5 +1,5 @@
 """
-Tests for app.v5.utils.chat.format_chat_scenario
+Tests for app.utils.chat.format_chat_scenario
 """
 
 

@@ -10,9 +10,9 @@ from app.v5.api.entries.images.types import (
     CreateImagesEntrySqlParams,
     CreateImagesEntrySqlRow,
 )
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/v5/sql/queries/entries/images/create_images_entries_complete.sql"
+SQL_PATH = "app/sql/queries/entries/images/create_images_entries_complete.sql"
 
 
 async def create_images_entry_internal(

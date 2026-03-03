@@ -1,5 +1,5 @@
 """
-Tests for app.v5.utils.error.handle_route_error
+Tests for app.utils.error.handle_route_error
 """
 
 from unittest.mock import MagicMock, patch
@@ -8,7 +8,7 @@ import asyncpg  # type: ignore
 import pytest
 from fastapi import HTTPException, Request
 
-from app.v5.infra.error.handle_route_error import handle_route_error
+from app.utils.error.handle_route_error import handle_route_error
 
 
 class TestHandle_Route_Error:
@@ -61,7 +61,7 @@ class TestHandle_Route_Error:
         operation = "test_operation"
 
         with patch(
-            "app.v5.infra.error.handle_route_error.log_and_raise_error"
+            "app.utils.error.handle_route_error.log_and_raise_error"
         ) as mock_log_and_raise:
             mock_log_and_raise.side_effect = HTTPException(
                 status_code=500, detail="Test"

@@ -10,9 +10,9 @@ from app.v5.api.entries.messages.types import (
     CreateMessagesEntrySqlParams,
     CreateMessagesEntrySqlRow,
 )
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/v5/sql/queries/entries/messages/create_messages_entries_complete.sql"
+SQL_PATH = "app/sql/queries/entries/messages/create_messages_entries_complete.sql"
 
 
 async def create_messages_entry_internal(

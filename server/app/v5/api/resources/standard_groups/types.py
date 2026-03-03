@@ -5,7 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.v5.sql.types import QGetStandardGroupsV4Item
+from app.sql.types import QGetStandardGroupsV4Item
 
 
 class GetStandardGroupsApiRequest(BaseModel):

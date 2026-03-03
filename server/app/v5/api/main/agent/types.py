@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from app.v5.api.main.types import InternalResponseBase
 from app.v5.api.entries.runs.search import GetRunListViewResponse
 from app.v5.api.types import BaseResourceSection, ListFilterSection
-from app.v5.sql.types import (
+from app.sql.types import (
     QGetAgentDraftsEntriesV4Item,
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,

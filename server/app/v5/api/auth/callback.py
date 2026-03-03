@@ -15,16 +15,16 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.v5.api.auth.route_permissions import compute_redirect_path
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db
-from app.v5.sql.types import (
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db
+from app.sql.types import (
     GetProfileContextApiRequest,
     ResolveCallbackRedirectSqlParams,
     ResolveCallbackRedirectSqlRow,
 )
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.sql_helper import execute_sql_typed
 
-SQL_CALLBACK_PATH = "app/v5/sql/queries/auth/resolve_callback_redirect_complete.sql"
+SQL_CALLBACK_PATH = "app/sql/queries/auth/resolve_callback_redirect_complete.sql"
 
 router = APIRouter()
 

@@ -10,14 +10,14 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from app.v5.api.auth.types import GetGroupMessagesApiResponse, GroupMessageItem
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db
-from app.v5.sql.types import GetAuthGroupMessagesSqlParams, GetAuthGroupMessagesSqlRow
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db
+from app.sql.types import GetAuthGroupMessagesSqlParams, GetAuthGroupMessagesSqlRow
+from app.utils.sql_helper import execute_sql_typed
 
 router = APIRouter()
 
-SQL_PATH = "app/v5/sql/queries/auth/group/get_auth_group_messages_complete.sql"
+SQL_PATH = "app/sql/queries/auth/group/get_auth_group_messages_complete.sql"
 
 
 class GetGroupMessagesApiRequest(BaseModel):

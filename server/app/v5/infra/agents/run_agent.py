@@ -10,7 +10,7 @@ import litellm  # type: ignore
 from app.v5.infra.artifacts.convert_tools_to_openai_format import (
     convert_tools_to_openai_format,
 )
-from app.v5.utils.logging.db_logger import get_logger
+from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

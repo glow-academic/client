@@ -12,16 +12,16 @@ from app.v5.api.entries.attempt_hint.types import (
     CreateAttemptHintEntrySqlParams,
     CreateAttemptHintEntrySqlRow,
 )
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.storage.file_writer import write_text_file
+from app.utils.error.handle_route_error import handle_route_error
+from app.utils.storage.file_writer import write_text_file
 from app.v5.infra.tools.call_args import resolve_tool_for_entry
-from app.v5.infra.globals import get_db
-from app.v5.sql.types import load_sql_query
-from app.v5.utils.cache.invalidate_tags import invalidate_tags
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.globals import get_db
+from app.sql.types import load_sql_query
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = (
-    "app/v5/sql/queries/entries/attempt_hint/create_attempt_hint_entries_complete.sql"
+    "app/sql/queries/entries/attempt_hint/create_attempt_hint_entries_complete.sql"
 )
 
 ENTRY_TYPE = "hints"

@@ -4,7 +4,7 @@ from typing import Any
 
 from pydantic import Field
 
-from app.v5.utils.logging.db_logger import get_logger
+from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

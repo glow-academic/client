@@ -22,22 +22,22 @@ from app.v5.api.main.agent.types import (
     SaveAgentSqlRow,
 )
 from app.v5.api.auth.profile import get_auth_profile_internal
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db, get_pool
-from app.v5.sql.types import (
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db, get_pool
+from app.sql.types import (
     GetAgentAccessSqlParams,
     GetAgentAccessSqlRow,
     load_sql_query,
 )
-from app.v5.utils.cache.invalidate_tags import invalidate_tags
-from app.v5.utils.logging.db_logger import get_logger
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-ACCESS_SQL_PATH = "app/v5/sql/queries/agents/get_agent_access_complete.sql"
-SQL_PATH = "app/v5/sql/queries/agents/save_agent_complete.sql"
+ACCESS_SQL_PATH = "app/sql/queries/agents/get_agent_access_complete.sql"
+SQL_PATH = "app/sql/queries/agents/save_agent_complete.sql"
 
 router = APIRouter()
 

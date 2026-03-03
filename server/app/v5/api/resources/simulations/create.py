@@ -5,11 +5,11 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from pydantic import BaseModel
 
-from app.v5.utils.cache.invalidate_tags import invalidate_tags
-from app.v5.utils.sql_helper import execute_sql_typed
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.sql_helper import execute_sql_typed
 
 # SQL path for creating denormalized simulations_resource
-SQL_PATH = "app/v5/sql/queries/resources/simulations/create_simulations_complete.sql"
+SQL_PATH = "app/sql/queries/resources/simulations/create_simulations_complete.sql"
 
 
 class CreateSimulationsSqlParams(BaseModel):

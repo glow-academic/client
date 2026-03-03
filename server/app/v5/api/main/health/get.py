@@ -31,9 +31,9 @@ from app.v5.api.resources.args_outputs.get import get_args_outputs_internal
 from app.v5.api.resources.models.get import get_models_internal
 from app.v5.api.resources.profiles.get import get_profiles_internal
 from app.v5.api.resources.providers.get import get_providers_internal
-from app.v5.infra.error.handle_route_error import handle_route_error
-from app.v5.infra.globals import get_db, get_pool
-from app.v5.sql.types import (
+from app.utils.error.handle_route_error import handle_route_error
+from app.globals import get_db, get_pool
+from app.sql.types import (
     QGetAgentsV4Item,
     QGetModelsV4Item,
     QGetProfilesV4Item,
