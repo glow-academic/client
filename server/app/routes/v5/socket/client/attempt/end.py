@@ -26,7 +26,7 @@ from app.routes.v5.tools.entries.attempt_grade.create import (
     create_attempt_grade_entry_internal,
 )
 from app.routes.v5.tools.entries.groups.create import create_groups_entry_internal
-from app.routes.v5.tools.entries.runs.create import create_runs_entry_internal
+from app.routes.v5.tools.entries.runs.create import create_run
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -80,7 +80,7 @@ async def attempt_end(sid: str, data: dict[str, Any]) -> None:
                 )
                 group_id = group_result.id
 
-                run_result = await create_runs_entry_internal(
+                run_result = await create_run(
                     conn,
                     session_id=session_id,
                     group_id=group_id,

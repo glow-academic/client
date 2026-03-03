@@ -4,7 +4,7 @@ Handles: @internal_sio.on("attempt_start")
 
 Flow:
 1. Resolve session_id, profiles_resource_id, persona_id, num_chats, simulation metadata
-2. Create run (with profile link) via create_runs_entry_internal
+2. Create run (with profile link) via create_run
 3. Create persona entry (with resource link) via create_persona_entry_internal
 4. Create attempt entry (with profiles connection) via create_attempt_entry_internal
 5. Create parent bridge via create_attempt_practice/home_entry_internal
@@ -47,7 +47,7 @@ from app.routes.v5.tools.entries.practice.get import get_practice_entries_intern
 from app.routes.v5.tools.entries.practice_chat.search import (
     search_practice_chat_entries_internal,
 )
-from app.routes.v5.tools.entries.runs.create import create_runs_entry_internal
+from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.resources.profile_personas.get import (
     get_profile_personas_internal,
 )
@@ -171,7 +171,7 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
                 # --- Mutations via _internal() calls ---
 
                 # 6. Create run for this group + link profile
-                run_result = await create_runs_entry_internal(
+                run_result = await create_run(
                     conn,
                     session_id=session_id,
                     group_id=payload.group_id,

@@ -10,7 +10,7 @@ from app.infra.websocket.get_db_connection import get_db_connection
 from app.routes.auth.access import get_access_internal
 from app.routes.v5.socket.internal.attempt.types import GenerateRequestData
 from app.routes.v5.tools.entries.groups.create import create_groups_entry_internal
-from app.routes.v5.tools.entries.runs.create import create_runs_entry_internal
+from app.routes.v5.tools.entries.runs.create import create_run
 
 
 async def emit_chat_generate(
@@ -51,7 +51,7 @@ async def emit_chat_generate(
         )
         group_id = group_result.id
 
-        run_result = await create_runs_entry_internal(
+        run_result = await create_run(
             conn,
             session_id=session_id,
             group_id=group_id,

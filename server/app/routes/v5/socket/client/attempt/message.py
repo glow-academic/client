@@ -44,7 +44,7 @@ from app.routes.v5.tools.entries.attempt_message_tree.refresh import (
 )
 from app.routes.v5.tools.entries.messages.create import create_messages_entry_internal
 from app.routes.v5.tools.entries.messages.search import search_messages_entries_internal
-from app.routes.v5.tools.entries.runs.create import create_runs_entry_internal
+from app.routes.v5.tools.entries.runs.create import create_run
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
 
@@ -128,7 +128,7 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
             access = await get_access_internal(conn, profile_id)
             profiles_id = access.profiles_id
 
-            run_result = await create_runs_entry_internal(
+            run_result = await create_run(
                 conn,
                 group_id=group_id,
                 profiles_id=profiles_id,
