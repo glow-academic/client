@@ -360,6 +360,7 @@ migrate-db:
 	@cd database && bash scripts/start.sh --migrate
 	@echo "✅ Database migrations completed"
 	@echo ""
+	@$(MAKE) split-schema
 	@$(MAKE) generate-test-schema
 	@echo ""
 	@echo "✅ Migration + regeneration complete"
@@ -375,6 +376,18 @@ migrate-db-all:
 	@echo "Running all database migrations..."
 	@cd database && yarn migrate:all
 	@echo "✅ All database migrations completed"
+
+# Split schema.sql into structured files
+split-schema:
+	@echo "Splitting schema.sql into structured files..."
+	@python3 database/scripts/split_schema.py
+	@echo "✅ Schema split complete"
+
+# Concatenate split schema files back into schema.sql
+concat-schema:
+	@echo "Concatenating schema files..."
+	@bash database/scripts/concat_schema.sh
+	@echo "✅ Schema concatenated"
 
 # Compile SQL files and generate types
 sql-compile: check-venv

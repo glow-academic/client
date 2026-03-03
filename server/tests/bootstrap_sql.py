@@ -44,7 +44,10 @@ async def bootstrap_all_sql(conn: asyncpg.Connection) -> None:
         );
     """)
 
-    views_dir = _SERVER_ROOT / "app" / "sql" / VERSION / "views"
+    # Prefer database/schema/views/ as primary MV source, fallback to server/app/sql/views/
+    _DB_VIEWS_DIR = _SERVER_ROOT.parent / "database" / "schema" / "views"
+    _SERVER_VIEWS_DIR = _SERVER_ROOT / "app" / "sql" / VERSION / "views"
+    views_dir = _DB_VIEWS_DIR if _DB_VIEWS_DIR.exists() else _SERVER_VIEWS_DIR
     queries_dir = _SERVER_ROOT / "app" / "sql" / VERSION / "queries"
 
     sql_files: list[Path] = []
