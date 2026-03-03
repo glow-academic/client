@@ -9,6 +9,8 @@ keys.txt
 
 history/
 database/seeds/seed_modules.sql
+database/schema.sql
+server/tests/test-schema.sql
 .venv/
 uploads/tus_uploads/
 uploads/audio/

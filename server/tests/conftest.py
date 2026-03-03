@@ -56,6 +56,54 @@ def _filter_meta_commands(sql: str) -> str:
     )
 
 
+def _concat_schema(schema_dir: Path) -> str:
+    """Concatenate split schema files into a single SQL string.
+
+    Load order: extensions → enums → tables → indexes → foreign_keys.
+    Skips views/ and indexes/views/ (loaded by bootstrap_all_sql).
+    """
+    parts: list[str] = []
+
+    # extensions.sql
+    ext = schema_dir / "extensions.sql"
+    if ext.exists():
+        parts.append(ext.read_text())
+
+    # Prerequisite functions (needed by table DEFAULT clauses)
+    funcs = schema_dir / "functions.sql"
+    if funcs.exists():
+        parts.append(funcs.read_text())
+
+    # enums/ (sorted)
+    enums_dir = schema_dir / "enums"
+    if enums_dir.exists():
+        for f in sorted(enums_dir.glob("*.sql")):
+            parts.append(f.read_text())
+
+    # tables/ and indexes/ share the same subfolder structure
+    subfolders = ("artifacts", "entries", "resources", "junctions", "connections")
+
+    for subfolder in subfolders:
+        d = schema_dir / "tables" / subfolder
+        if d.exists():
+            for f in sorted(d.glob("*.sql")):
+                parts.append(f.read_text())
+
+    for subfolder in subfolders:
+        d = schema_dir / "indexes" / subfolder
+        if d.exists():
+            for f in sorted(d.glob("*.sql")):
+                parts.append(f.read_text())
+
+    for subfolder in subfolders:
+        d = schema_dir / "foreign_keys" / subfolder
+        if d.exists():
+            for f in sorted(d.glob("*.sql")):
+                parts.append(f.read_text())
+
+    return "\n".join(parts)
+
+
 # --- CORE TEST FIXTURES ---
 
 
@@ -70,13 +118,13 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
 
     database_dir = Path(__file__).parent.parent.parent / "database"
     sql_dir = server_dir / "app" / "sql"
-    schema_file = database_dir / "schema.sql"
+    schema_dir = database_dir / "schema"
     seed_file = database_dir / "test-seed.sql"
 
-    if not schema_file.exists():
+    if not schema_dir.exists():
         raise FileNotFoundError(
-            f"Schema file not found: {schema_file}\n"
-            "Please run 'make export-schema' to generate it."
+            f"Schema directory not found: {schema_dir}\n"
+            "Please run 'make split-schema' to generate it."
         )
 
     if not seed_file.exists():
@@ -154,10 +202,10 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
 
             pool = main_mod._db_pool
 
-            schema_sql = _filter_meta_commands(schema_file.read_text())
+            schema_sql = _filter_meta_commands(_concat_schema(schema_dir))
             async with pool.acquire() as conn:
                 await conn.execute(schema_sql)
-            print("🗄️  Test schema applied")
+            print("🗄️  Test schema applied (from split files)")
 
             # Apply seed data
             seed_sql = _filter_meta_commands(seed_file.read_text())

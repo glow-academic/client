@@ -601,9 +601,10 @@ if [[ "$CLEAN_MODULES" == true ]]; then
   # Setup fresh database
   setup_database
 
-  # Load schema
-  echo "📄 Loading schema.sql..."
+  # Load schema from split files
+  echo "📄 Loading schema from split files..."
   export PGPASSWORD="$DB_PASSWORD"
+  bash "$script_dir/concat_schema.sh" "$script_dir/../schema.sql"
   psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$script_dir/../schema.sql"
 
   # Create keycloak schema (Keycloak's Liquibase manages the actual tables).

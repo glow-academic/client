@@ -14,18 +14,24 @@ import asyncpg  # type: ignore[import]
 
 
 def compute_db_hash(database_dir: Path, sql_dir: Path) -> str:
-    """SHA-256 of schema.sql + test-seed.sql + all SQL files (sorted by path).
+    """SHA-256 of database/schema/ + test-seed.sql + all SQL files (sorted by path).
 
     Returns the first 16 hex chars — enough for uniqueness while keeping
     template names readable.
     """
     h = hashlib.sha256()
 
-    # Hash the two large seed files first
-    for name in ("schema.sql", "test-seed.sql"):
-        p = database_dir / name
-        if p.exists():
-            h.update(p.read_bytes())
+    # Hash structured schema files (database/schema/)
+    schema_dir = database_dir / "schema"
+    if schema_dir.exists():
+        for f in sorted(schema_dir.rglob("*.sql")):
+            h.update(str(f.relative_to(schema_dir)).encode())
+            h.update(f.read_bytes())
+
+    # Hash the test seed
+    seed = database_dir / "test-seed.sql"
+    if seed.exists():
+        h.update(seed.read_bytes())
 
     # Hash every SQL file under the sql directory (deterministic order)
     sql_files = sorted(sql_dir.rglob("*.sql"))

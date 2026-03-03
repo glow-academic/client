@@ -361,9 +361,8 @@ migrate-db:
 	@echo "✅ Database migrations completed"
 	@echo ""
 	@$(MAKE) split-schema
-	@$(MAKE) generate-test-schema
 	@echo ""
-	@echo "✅ Migration + regeneration complete"
+	@echo "✅ Migration + schema split complete"
 
 # Migrate database (most recent migration only, no regeneration)
 migrate-db-only:
