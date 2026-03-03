@@ -39,7 +39,7 @@ from app.routes.v5.tools.resources.args.get import get_args_internal
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
 from app.routes.v5.tools.resources.evals.get import get_evals_internal
 from app.routes.v5.tools.resources.models.get import get_models_internal
-from app.routes.v5.tools.resources.names.get import get_names_internal
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.providers.get import get_providers_internal
 from app.routes.v5.tools.resources.rubrics.get import get_rubrics_batch_internal
 from app.routes.v5.tools.resources.tools.get import get_tools_internal
@@ -285,7 +285,7 @@ async def get_test_internal(
             if not eval_name_ids:
                 return {}
             async with pool.acquire() as c:
-                names_list = await get_names_internal(
+                names_list = await get_names(
                     c, list(eval_name_ids), bypass_cache=bypass_cache
                 )
                 return {n.id: n.name for n in names_list if n.id and n.name}

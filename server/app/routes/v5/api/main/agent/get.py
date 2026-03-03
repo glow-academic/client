@@ -97,7 +97,7 @@ from app.routes.v5.tools.resources.instructions.search import (
 )
 from app.routes.v5.tools.resources.models.get import get_models_internal
 from app.routes.v5.tools.resources.models.search import search_models_internal
-from app.routes.v5.tools.resources.names.get import get_names_internal
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
 from app.routes.v5.tools.resources.prompts.get import get_prompts_internal
@@ -415,7 +415,7 @@ async def get_agent_internal(
 
     async def fetch_names():
         async with pool.acquire() as c:
-            selected = await get_names_internal(c, name_ids, bypass_cache)
+            selected = await get_names(c, name_ids, bypass_cache)
             suggestions = await search_names_internal(
                 c,
                 None,

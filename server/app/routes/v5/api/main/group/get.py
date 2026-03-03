@@ -45,7 +45,7 @@ from app.routes.v5.tools.resources.agents.get import get_agents_internal
 from app.routes.v5.tools.resources.args.get import get_args_internal
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
 from app.routes.v5.tools.resources.models.get import get_models_internal
-from app.routes.v5.tools.resources.names.get import get_names_internal
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
 from app.routes.v5.tools.resources.providers.get import get_providers_internal
 from app.routes.v5.tools.resources.tools.get import get_tools_internal
@@ -158,7 +158,7 @@ async def get_group_internal(
 
     # 3. Resolve actor name
     async with pool.acquire() as conn:
-        actor_name_items = await get_names_internal(conn, [profile_id], bypass_cache)
+        actor_name_items = await get_names(conn, [profile_id], bypass_cache)
     actor_name = actor_name_items[0].name if actor_name_items else None
 
     # 4. Verify group exists
@@ -391,7 +391,7 @@ async def get_group(
         # Fetch names + tools via resource layer (both handle empty lists)
         all_name_ids = list(all_model_ids | all_agent_ids | all_profile_ids)
         name_items, tool_items = await asyncio.gather(
-            get_names_internal(conn, all_name_ids, bypass_cache),
+            get_names(conn, all_name_ids, bypass_cache),
             get_tools_internal(conn, list(all_tool_ids), bypass_cache),
         )
         name_map = {item.id: item.name for item in name_items if item.id and item.name}

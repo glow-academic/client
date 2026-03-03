@@ -79,7 +79,7 @@ from app.routes.v5.tools.resources.flags.search import search_flags_internal
 from app.routes.v5.tools.resources.images.get import get_images_internal
 from app.routes.v5.tools.resources.images.search import search_images_internal
 from app.routes.v5.tools.resources.models.get import get_models_internal
-from app.routes.v5.tools.resources.names.get import get_names_internal
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.tools.resources.parameter_fields.get import (
     get_parameter_fields_internal,
@@ -350,7 +350,7 @@ async def get_document_internal(
 
     async def fetch_names():
         async with pool.acquire() as c:
-            selected = await get_names_internal(c, name_ids, bypass_cache)
+            selected = await get_names(c, name_ids, bypass_cache)
             suggestions = await search_names_internal(
                 c,
                 None,

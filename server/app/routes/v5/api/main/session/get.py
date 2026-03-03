@@ -40,7 +40,7 @@ from app.routes.v5.tools.entries.sessions.timeline import (
 from app.routes.v5.tools.resources.args.get import get_args_internal
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
 from app.routes.v5.tools.resources.models.get import get_models_internal
-from app.routes.v5.tools.resources.names.get import get_names_internal
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
 from app.routes.v5.tools.resources.providers.get import get_providers_internal
 from app.sql.types import (
@@ -196,7 +196,7 @@ async def get_session_internal(
     profile_name = None
     if session.profile_id:
         async with pool.acquire() as conn:
-            name_items = await get_names_internal(
+            name_items = await get_names(
                 conn, [session.profile_id], bypass_cache
             )
             if name_items:

@@ -4,7 +4,7 @@ import asyncpg
 import httpx
 import pytest
 
-from app.v5.api.resources.names.get import get_names_internal
+from app.v5.api.resources.names.get import get_names
 from app.v5.api.resources.names.search import search_names_internal
 
 pytestmark = pytest.mark.asyncio
@@ -69,7 +69,7 @@ class TestGetNames:
 
 
 class TestGetNamesInternal:
-    """Tests for get_names_internal function."""
+    """Tests for get_names function."""
 
     async def test_returns_items_for_valid_ids(self, db: asyncpg.Connection) -> None:
         """Internal function returns items for valid seed IDs."""
@@ -79,7 +79,7 @@ class TestGetNamesInternal:
         seed_ids = [item.id for item in search_items[:2]]
 
         # Act
-        items = await get_names_internal(db, seed_ids, bypass_cache=True)
+        items = await get_names(db, seed_ids, bypass_cache=True)
 
         # Assert
         assert len(items) == len(seed_ids)
@@ -89,7 +89,7 @@ class TestGetNamesInternal:
     async def test_returns_empty_for_empty_ids(self, db: asyncpg.Connection) -> None:
         """Internal function returns empty list for empty IDs."""
         # Act
-        items = await get_names_internal(db, [], bypass_cache=True)
+        items = await get_names(db, [], bypass_cache=True)
 
         # Assert
         assert items == []

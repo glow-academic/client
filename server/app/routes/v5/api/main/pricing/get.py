@@ -40,7 +40,7 @@ from app.routes.v5.tools.resources.agents.get import get_agents_internal
 from app.routes.v5.tools.resources.args.get import get_args_internal
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
 from app.routes.v5.tools.resources.models.get import get_models_internal
-from app.routes.v5.tools.resources.names.get import get_names_internal
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
 from app.routes.v5.tools.resources.providers.get import get_providers_internal
 from app.sql.types import (
@@ -327,7 +327,7 @@ async def get_group_list_internal(
     # Fetch names via resource layer
     all_name_ids = list(all_agent_ids | all_model_ids | all_profile_ids)
     name_items = (
-        await get_names_internal(conn, all_name_ids, bypass_cache)
+        await get_names(conn, all_name_ids, bypass_cache)
         if all_name_ids
         else []
     )

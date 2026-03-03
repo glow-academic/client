@@ -6,7 +6,7 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends
 
 from app.infra.globals import get_db
-from app.routes.v5.tools.resources.names.get import get_names_internal
+from app.routes.v5.tools.resources.names.get import get_names
 from app.sql.types import GetProfileDocsSqlParams, GetProfileDocsSqlRow
 from app.utils.docs_helper import (
     ArtifactDocsConfig,
@@ -112,7 +112,7 @@ async def get_profile_docs_endpoint(
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
         if row and row.name_id:
-            names = await get_names_internal(conn, [row.name_id])
+            names = await get_names(conn, [row.name_id])
             if names:
                 entity_name = names[0].name
     return compute_docs_metadata(CONFIG.page_metadata, entity_name)

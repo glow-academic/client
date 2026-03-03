@@ -47,7 +47,7 @@ from app.routes.v5.tools.entries.sessions.get import (
 from app.routes.v5.tools.resources.args.get import get_args_internal
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
 from app.routes.v5.tools.resources.models.get import get_models_internal
-from app.routes.v5.tools.resources.names.get import get_names_internal
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
 from app.routes.v5.tools.resources.providers.get import get_providers_internal
 from app.sql.types import (
@@ -335,7 +335,7 @@ async def get_session_list_internal(
             page_limit=10000,
             bypass_cache=bypass_cache,
         ),
-        get_names_internal(conn, all_profile_ids, bypass_cache),
+        get_names(conn, all_profile_ids, bypass_cache),
         get_session_counts_view_internal(conn, session_ids, bypass_cache),
     )
 
@@ -538,7 +538,7 @@ async def get_activity(
             summary_names: dict[UUID, str] = {}
             if summary_pids:
                 async with pool.acquire() as c:
-                    name_items = await get_names_internal(c, summary_pids, bypass_cache)
+                    name_items = await get_names(c, summary_pids, bypass_cache)
                     summary_names = {
                         i.id: i.name for i in name_items if i.id and i.name
                     }

@@ -90,7 +90,7 @@ from app.routes.v5.tools.resources.descriptions.search import (
 from app.routes.v5.tools.resources.flags.get import get_flags_internal
 from app.routes.v5.tools.resources.flags.search import search_flags_internal
 from app.routes.v5.tools.resources.models.get import get_models_internal
-from app.routes.v5.tools.resources.names.get import get_names_internal
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.tools.resources.personas.search import search_personas_internal
 from app.routes.v5.tools.resources.profile_personas.get import (
@@ -382,7 +382,7 @@ async def get_cohort_internal(
 
     async def fetch_names() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_names_internal(c, name_ids, bypass_cache)
+            selected = await get_names(c, name_ids, bypass_cache)
             suggestions = await search_names_internal(
                 c,
                 None,
