@@ -23,8 +23,8 @@ type SaveSimulationIn = InputOf<"/api/v5/artifacts/simulations/save", "post">;
 type SaveSimulationOut = OutputOf<"/api/v5/artifacts/simulations/save", "post">;
 type SearchFlagsIn = InputOf<"/api/v5/resources/flags/search", "post">;
 type SearchFlagsOut = NonNullable<OutputOf<"/api/v5/resources/flags/search", "post">["items"]>;
-type ParseCsvIn = InputOf<"/api/v5/uploads/csv", "post">;
-type ParseCsvOut = OutputOf<"/api/v5/uploads/csv", "post">;
+type ParseCsvIn = InputOf<"/uploads/csv", "post">;
+type ParseCsvOut = OutputOf<"/uploads/csv", "post">;
 
 /** ---- Body type for simulations list request ---- */
 type SimulationsListBody = {

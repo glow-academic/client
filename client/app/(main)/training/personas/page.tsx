@@ -27,8 +27,8 @@ type SearchIconsIn = InputOf<"/api/v5/resources/icons/search", "post">;
 type SearchIconsOut = NonNullable<OutputOf<"/api/v5/resources/icons/search", "post">["items"]>;
 type SearchVoicesIn = InputOf<"/api/v5/resources/voices/search", "post">;
 type SearchVoicesOut = NonNullable<OutputOf<"/api/v5/resources/voices/search", "post">["items"]>;
-type ParseCsvIn = InputOf<"/api/v5/uploads/csv", "post">;
-type ParseCsvOut = OutputOf<"/api/v5/uploads/csv", "post">;
+type ParseCsvIn = InputOf<"/uploads/csv", "post">;
+type ParseCsvOut = OutputOf<"/uploads/csv", "post">;
 
 /** ---- Body type for personas list request ---- */
 type PersonasListBody = {

@@ -8,7 +8,7 @@ export async function OPTIONS(
   try {
     const { upload_id } = await params;
     const response = await fetch(
-      `${INTERNAL_HTTP_BASE}/api/v5/uploads/discover/${upload_id}`,
+      `${INTERNAL_HTTP_BASE}/uploads/discover/${upload_id}`,
       {
         method: "OPTIONS",
         headers: {
@@ -42,7 +42,7 @@ export async function HEAD(
   try {
     const { upload_id } = await params;
     const response = await fetch(
-      `${INTERNAL_HTTP_BASE}/api/v5/uploads/${upload_id}/status`,
+      `${INTERNAL_HTTP_BASE}/uploads/${upload_id}/status`,
       {
         method: "HEAD",
         headers: {
@@ -90,7 +90,7 @@ export async function PATCH(
     const body = await request.arrayBuffer();
 
     const response = await fetch(
-      `${INTERNAL_HTTP_BASE}/api/v5/uploads/${upload_id}/chunk`,
+      `${INTERNAL_HTTP_BASE}/uploads/${upload_id}/chunk`,
       {
         method: "PATCH",
         headers: tusHeaders,

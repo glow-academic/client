@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function OPTIONS(request: NextRequest) {
   try {
     const response = await fetch(
-      `${INTERNAL_HTTP_BASE}/api/v5/uploads/discover`,
+      `${INTERNAL_HTTP_BASE}/uploads/discover`,
       {
         method: "OPTIONS",
         headers: {
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
         : null;
 
     const response = await fetch(
-      `${INTERNAL_HTTP_BASE}/api/v5/uploads/create`,
+      `${INTERNAL_HTTP_BASE}/uploads/create`,
       {
         method: "POST",
         headers: tusHeaders,
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     response.headers.forEach((value, key) => {
       if (key.toLowerCase() === "location") {
         // Rewrite backend location to BFF location
-        const location = value.replace(/\/api\/v4\/uploads\//, "/api/uploads/");
+        const location = value.replace(/\/uploads\//, "/api/uploads/");
         headers.set(key, location);
       } else {
         headers.set(key, value);

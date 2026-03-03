@@ -288,6 +288,11 @@ from app.v5.infra.auth.default_idp import router as default_idp_router  # noqa: 
 
 fastapi_app.include_router(default_idp_router)
 
+# Uploads (version-agnostic — TUS protocol, download, preview, template)
+from app.v5.api.uploads import router as uploads_router  # noqa: E402
+
+fastapi_app.include_router(uploads_router)
+
 
 # ---------------------------------------------------------------------------
 # Root-level endpoints

@@ -12,8 +12,8 @@ export async function GET(
 
     // Route to preview or download endpoint based on query param
     const endpoint = preview
-      ? `${INTERNAL_HTTP_BASE}/api/v5/uploads/${upload_id}/preview`
-      : `${INTERNAL_HTTP_BASE}/api/v5/uploads/${upload_id}/download`;
+      ? `${INTERNAL_HTTP_BASE}/uploads/${upload_id}/preview`
+      : `${INTERNAL_HTTP_BASE}/uploads/${upload_id}/download`;
 
     const headers: HeadersInit = {
       Cookie: request.headers.get("cookie") || "",

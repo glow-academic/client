@@ -47,9 +47,9 @@ async def tus_create(request: Request) -> Response:
         f.write(f"length:{upload_length}\noffset:0")
 
     if app_prefix:
-        location = f"/{app_prefix}/api/v5/uploads/{upload_id}"
+        location = f"/{app_prefix}/uploads/{upload_id}"
     else:
-        location = f"/api/v5/uploads/{upload_id}"
+        location = f"/uploads/{upload_id}"
 
     profile_id = (
         getattr(request.state, "profile_id", None)
