@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop stop-keycloak install-client install-e2e restore-db migrate-db migrate-db-only migrate-db-all connect-db fresh-db bootstrap-keys build-test-seed typecheck-client build-client openapi-gen gen-client-types sql-compile sql-format watch-sql-types configure deploy deploy-clean
+.PHONY: help setup install clean format lint typecheck run test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop stop-keycloak install-client restore-db migrate-db migrate-db-only migrate-db-all connect-db fresh-db bootstrap-keys build-test-seed typecheck-client build-client openapi-gen gen-client-types sql-compile sql-format watch-sql-types configure deploy deploy-clean
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -131,7 +131,6 @@ generate-test-schema:
 # Test paths (DRY)
 UNIT_TEST_PATH = server/tests/v5/unit
 INTEGRATION_TEST_PATH = server/tests/v5/integration
-E2E_TEST_PATH = server/tests/v5/e2e
 
 # Run unit tests
 test-unit: check-venv
@@ -167,32 +166,13 @@ test: check-venv
 test-cov: check-venv
 	@if [ -n "$(ARGS)" ]; then \
 		echo "Running pytest with coverage on: $(ARGS)"; \
-		COVERAGE_FILE=server/.coverage $(VENV_PYTHON) -m pytest $(ARGS) --cov=server/app --cov-report=term-missing --cov-report=html:server/htmlcov -m "not e2e"; \
+		COVERAGE_FILE=server/.coverage $(VENV_PYTHON) -m pytest $(ARGS) --cov=server/app --cov-report=term-missing --cov-report=html:server/htmlcov; \
 	else \
 		echo "Running unit and integration tests with coverage..."; \
 		COVERAGE_FILE=server/.coverage $(VENV_PYTHON) -m pytest $(UNIT_TEST_PATH) $(INTEGRATION_TEST_PATH) --cov=server/app --cov-report=term-missing --cov-report=html:server/htmlcov; \
 	fi
 	@echo "✅ Coverage report generated at server/htmlcov/index.html"
 
-test-e2e: check-venv
-	@if [ -n "$(ARGS)" ]; then \
-		echo "Running E2E tests (headless) on: $(ARGS)"; \
-		ENV=test AUTH_SECRET=test_secret_key_for_integration_tests SECRET_KEY=test_secret_key_for_integration_tests $(VENV_PYTHON) -m pytest $(ARGS) -m e2e -q; \
-	else \
-		echo "Running E2E tests (headless)..."; \
-		ENV=test AUTH_SECRET=test_secret_key_for_integration_tests SECRET_KEY=test_secret_key_for_integration_tests $(VENV_PYTHON) -m pytest $(E2E_TEST_PATH) -m e2e -q; \
-	fi
-	@echo "✅ E2E tests complete"
-
-test-e2e-headed: check-venv
-	@if [ -n "$(ARGS)" ]; then \
-		echo "Running E2E tests (headed) on: $(ARGS)"; \
-		ENV=test AUTH_SECRET=test_secret_key_for_integration_tests SECRET_KEY=test_secret_key_for_integration_tests E2E_HEADED=1 $(VENV_PYTHON) -m pytest $(ARGS) -m e2e -q --headed; \
-	else \
-		echo "Running E2E tests (headed)..."; \
-		ENV=test AUTH_SECRET=test_secret_key_for_integration_tests SECRET_KEY=test_secret_key_for_integration_tests E2E_HEADED=1 $(VENV_PYTHON) -m pytest $(E2E_TEST_PATH) -m e2e -q --headed; \
-	fi
-	@echo "✅ E2E tests complete"
 # Run client typecheck
 typecheck-client:
 	@echo "Running client typecheck..."
@@ -204,11 +184,6 @@ build-client:
 	@echo "Building client for production..."
 	@cd client && yarn build
 	@echo "✅ Client build complete"
-
-install-e2e: check-venv
-	@echo "Installing Playwright browsers..."
-	@$(VENV_BIN)/playwright install
-	@echo "✅ Playwright browsers installed"
 
 # Generate OpenAPI schema manually
 openapi-gen: check-venv
@@ -285,10 +260,6 @@ run: check-venv
 	sleep 3; \
 	(SERVER_URL=http://localhost:$(SERVER_PORT) APP_PREFIX=$${APP_PREFIX:-} $(PWD)/notify/notify.sh 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;37m%s\033[0m' "$$line")"; done) & \
 	wait
-
-run-test:
-	@echo "🚀 Starting all GLOW services in TEST mode..."
-	@ENV=test AUTH_SECRET=test_secret_key_for_integration_tests SECRET_KEY=test_secret_key_for_integration_tests $(MAKE) run
 
 # Stop all services (for cleanup)
 stop:

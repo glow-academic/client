@@ -33,10 +33,6 @@ os.environ["TESTCONTAINERS_REUSE_ENABLE"] = os.getenv(
 os.environ["AUTH_SECRET"] = os.getenv(
     "AUTH_SECRET", "test_secret_key_for_integration_tests"
 )
-os.environ["E2E_PROFILE_ID"] = os.getenv(
-    "E2E_PROFILE_ID", "965bd24f-dfae-4063-b370-e1373df46322"
-)
-os.environ["E2E_STORAGE"] = os.getenv("E2E_STORAGE", "")
 
 # Add the server directory to Python's path
 server_dir = Path(__file__).parent.parent
@@ -270,7 +266,7 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
 
 
 @pytest_asyncio.fixture
-async def db() -> AsyncGenerator[asyncpg.Connection, None]:
+async def conn() -> AsyncGenerator[asyncpg.Connection, None]:
     """Provide clean database connection with transaction rollback.
 
     Each test gets:
@@ -287,29 +283,15 @@ async def db() -> AsyncGenerator[asyncpg.Connection, None]:
         )
 
     # Create connection directly (not from pool) to avoid event loop issues
-    conn = await asyncpg.connect(_test_db_url)
+    connection = await asyncpg.connect(_test_db_url)
 
-    tx = conn.transaction()
+    tx = connection.transaction()
     await tx.start()
     try:
-        yield conn
+        yield connection
     finally:
         await tx.rollback()  # Undo all test changes
-        await conn.close()
-
-
-@pytest.fixture
-def disable_cache() -> None:
-    """Disable caching in tests.
-
-    This is a no-op fixture since the codebase uses manual caching
-    (get_cached/set_cached) rather than a decorator. Tests include this
-    fixture for consistency and in case caching behavior needs to be
-    disabled in the future.
-    """
-    # No-op: caching is done manually via get_cached/set_cached,
-    # not via a decorator, so there's nothing to disable
-    pass
+        await connection.close()
 
 
 # --- OTHER CONFIG ---
