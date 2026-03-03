@@ -9,7 +9,7 @@ from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.infra.websocket.get_db_connection import get_db_connection
 from app.routes.auth.access import get_access_internal
 from app.routes.v5.socket.internal.attempt.types import GenerateRequestData
-from app.routes.v5.tools.entries.groups.create import create_groups_entry_internal
+from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.runs.create import create_run
 
 
@@ -45,7 +45,7 @@ async def emit_chat_generate(
         access = await get_access_internal(conn, profile_id)
         profiles_id = access.profiles_id
 
-        group_result = await create_groups_entry_internal(
+        group_result = await create_group(
             conn,
             session_id=session_id,
         )

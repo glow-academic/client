@@ -25,7 +25,7 @@ from app.routes.v5.socket.internal.attempt.types import (
 from app.routes.v5.tools.entries.attempt_grade.create import (
     create_attempt_grade_entry_internal,
 )
-from app.routes.v5.tools.entries.groups.create import create_groups_entry_internal
+from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.utils.logging.db_logger import get_logger
 
@@ -74,7 +74,7 @@ async def attempt_end(sid: str, data: dict[str, Any]) -> None:
                 access = await get_access_internal(conn, profile_id)
                 profiles_id = access.profiles_id
 
-                group_result = await create_groups_entry_internal(
+                group_result = await create_group(
                     conn,
                     session_id=session_id,
                 )
