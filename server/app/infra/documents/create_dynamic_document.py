@@ -8,7 +8,7 @@ import asyncpg  # type: ignore
 from fastapi import Request
 
 from app.utils.templates.jinja_renderer import render_template
-from app.globals import UPLOAD_FOLDER
+from app.infra.globals import UPLOAD_FOLDER
 from app.sql.types import (
     GetActiveSettingsSqlParams,
     GetActiveSettingsSqlRow,

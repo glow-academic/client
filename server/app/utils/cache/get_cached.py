@@ -3,7 +3,7 @@
 import json
 from typing import Any
 
-from app.globals import get_redis_client
+from app.infra.globals import get_redis_client
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

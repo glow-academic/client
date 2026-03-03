@@ -11,7 +11,7 @@ from typing import Any
 
 from app.routes.v5.api.entries.messages.create import create_messages_entry_internal
 from app.infra.websocket.get_db_connection import get_db_connection
-from app.globals import get_internal_sio
+from app.infra.globals import get_internal_sio
 from app.routes.v5.socket.internal.attempt.types import AttemptUserStartData
 from app.utils.logging.db_logger import get_logger
 

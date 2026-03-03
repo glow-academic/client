@@ -16,7 +16,7 @@ from app.routes.v5.api.resources.simulations.types import (
     SearchSimulationsSqlRow,
 )
 from app.utils.error.handle_route_error import handle_route_error
-from app.globals import get_db
+from app.infra.globals import get_db
 from app.sql.types import SearchSimulationsSqlParams, load_sql_query
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached

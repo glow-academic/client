@@ -6,7 +6,7 @@ Resolves chat_id from session and passes raw audio bytes through.
 from typing import Any
 
 from app.infra.websocket.session_store import get_session_by_group_id
-from app.globals import get_internal_sio
+from app.infra.globals import get_internal_sio
 from app.routes.v5.socket.internal.attempt.types import AttemptAssistantProgressData
 
 internal_sio = get_internal_sio()

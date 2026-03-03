@@ -2,7 +2,7 @@
 
 import asyncio
 
-from app.globals import get_active_results_dict
+from app.infra.globals import get_active_results_dict
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

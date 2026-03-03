@@ -860,7 +860,7 @@ async def call_endpoint_handler(
     """Call an endpoint handler with proper Request/Response/DB context."""
     from starlette.requests import Request as StarletteRequest
 
-    from app.globals import get_db
+    from app.infra.globals import get_db
 
     try:
         request_model = get_request_model_from_handler(handler)
@@ -1750,7 +1750,7 @@ def register_endpoints(server: FastMCP) -> None:
         import os
         import uuid as uuid_mod
 
-        from app.globals import AUDIO_FOLDER, UPLOAD_FOLDER, VIDEO_FOLDER, get_db
+        from app.infra.globals import AUDIO_FOLDER, UPLOAD_FOLDER, VIDEO_FOLDER, get_db
         from app.sql.types import FinalizeUploadSqlParams, FinalizeUploadSqlRow
         from app.utils.cache.invalidate_tags import invalidate_tags
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
@@ -1832,7 +1832,7 @@ def register_endpoints(server: FastMCP) -> None:
         import os
         import uuid as uuid_mod
 
-        from app.globals import AUDIO_FOLDER, IMAGE_FOLDER, UPLOAD_FOLDER, get_db
+        from app.infra.globals import AUDIO_FOLDER, IMAGE_FOLDER, UPLOAD_FOLDER, get_db
         from app.sql.types import GetUploadFileInfoSqlParams, GetUploadFileInfoSqlRow
         from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
         from app.utils.mime.get_content_type import get_content_type

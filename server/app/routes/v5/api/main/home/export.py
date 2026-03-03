@@ -21,7 +21,7 @@ from app.routes.v5.api.resources.cohorts.get import get_cohorts_internal
 from app.routes.v5.api.resources.profiles.get import get_profiles_internal
 from app.routes.v5.api.resources.simulations.get import get_simulations_internal
 from app.utils.error.handle_route_error import handle_route_error
-from app.globals import UPLOAD_FOLDER, get_db, get_pool
+from app.infra.globals import UPLOAD_FOLDER, get_db, get_pool
 from app.sql.types import InsertUploadSqlParams, InsertUploadSqlRow
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed

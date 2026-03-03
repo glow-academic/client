@@ -6,7 +6,7 @@ Attempt-specific: emits attempt_assistant_progress for chat/attempt artifacts
 
 from typing import Any
 
-from app.globals import get_internal_sio
+from app.infra.globals import get_internal_sio
 from app.routes.v5.socket.internal.attempt.types import AttemptAssistantProgressData
 from app.utils.logging.db_logger import get_logger
 

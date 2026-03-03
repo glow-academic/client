@@ -98,7 +98,7 @@ from app.routes.v5.api.resources.tools.get import get_tools_internal
 from app.routes.v5.api.resources.values.get import get_values_internal
 from app.routes.v5.api.resources.voices.get import get_voices_internal
 from app.utils.error.handle_route_error import handle_route_error
-from app.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool
 from app.sql.types import load_sql_query
 from app.utils.sql_helper import execute_sql_typed
 

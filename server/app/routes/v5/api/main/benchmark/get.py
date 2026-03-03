@@ -29,7 +29,7 @@ from app.routes.v5.api.entries.test.search import get_test_list_internal
 from app.routes.v5.api.resources.departments.get import get_departments_internal
 from app.routes.v5.api.resources.evals.get import get_evals_internal
 from app.utils.error.handle_route_error import handle_route_error
-from app.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool
 from app.sql.types import QGetTestListViewV4Item
 
 router = APIRouter()

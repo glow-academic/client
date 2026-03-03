@@ -6,7 +6,7 @@ Listens to generation_channel(type=media_progress) and emits to client:
 
 from typing import Any
 
-from app.globals import get_internal_sio, sio
+from app.infra.globals import get_internal_sio, sio
 from app.routes.v5.socket.client.types import GenerationMediaProgressEvent
 
 internal_sio = get_internal_sio()

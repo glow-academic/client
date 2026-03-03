@@ -21,7 +21,7 @@ from app.infra.websocket.generation_tracker import (
     record_agent_complete,
 )
 from app.infra.websocket.get_db_connection import get_db_connection
-from app.globals import get_internal_sio
+from app.infra.globals import get_internal_sio
 from app.routes.v5.socket.internal.attempt.types import AttemptChatStartedData
 from app.routes.v5.socket.internal.generation_save_registry import save_artifact
 from app.routes.v5.socket.internal.generation_types import (

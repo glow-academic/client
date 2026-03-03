@@ -10,7 +10,7 @@ from typing import Any
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.get_db_connection import get_db_connection
 from app.infra.websocket.typed_emit import emit_to_internal
-from app.globals import get_internal_sio, sio
+from app.infra.globals import get_internal_sio, sio
 from app.routes.v5.socket.client.types import GeneratePayload
 from app.routes.v5.socket.types import GenerateErrorApiRequest
 from app.utils.logging.db_logger import get_logger

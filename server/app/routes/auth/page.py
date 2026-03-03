@@ -22,7 +22,7 @@ from app.routes.auth.route_permissions import (
 )
 from app.routes.auth.types import GetAuthPageApiResponse
 from app.utils.error.handle_route_error import handle_route_error
-from app.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool
 from app.sql.types import GetProfileContextApiRequest
 
 router = APIRouter()

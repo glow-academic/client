@@ -1,6 +1,6 @@
 """Remove stored Runner result for a chat."""
 
-from app.globals import get_active_results_dict
+from app.infra.globals import get_active_results_dict
 
 
 async def remove_active_result(chat_id: str) -> None:

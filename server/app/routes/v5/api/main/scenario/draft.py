@@ -36,7 +36,7 @@ from app.routes.v5.api.resources.problem_statements.link import (
 from app.routes.v5.api.resources.questions.link import link_questions_internal
 from app.routes.v5.api.resources.videos.link import link_videos_internal
 from app.utils.error.handle_route_error import handle_route_error
-from app.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool
 from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger

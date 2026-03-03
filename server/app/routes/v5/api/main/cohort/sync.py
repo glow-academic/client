@@ -101,7 +101,7 @@ async def sync_cohort_entries(
     )
     from app.routes.v5.api.resources.simulations.get import get_simulations_internal
     from app.routes.v5.api.resources.standards.search import search_standards_internal
-    from app.globals import get_pool
+    from app.infra.globals import get_pool
 
     if not simulation_ids:
         return 0

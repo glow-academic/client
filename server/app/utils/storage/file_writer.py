@@ -15,7 +15,7 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.globals import UPLOAD_FOLDER
+from app.infra.globals import UPLOAD_FOLDER
 
 # Sub-directories under UPLOAD_FOLDER
 TEXT_FOLDER = UPLOAD_FOLDER / "text"

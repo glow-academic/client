@@ -10,7 +10,7 @@ import uuid
 from typing import Any
 
 from app.routes.v5.api.main.test.get import get_test_websocket
-from app.globals import get_internal_sio, get_pool, sio
+from app.infra.globals import get_internal_sio, get_pool, sio
 from app.routes.v5.socket.types import TestAllCompleteEvent, determine_next_run
 from app.utils.logging.db_logger import get_logger
 

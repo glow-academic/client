@@ -1,6 +1,6 @@
 """Store the Runner result object locally for immediate cancel."""
 
-from app.globals import get_active_results_dict
+from app.infra.globals import get_active_results_dict
 
 
 async def store_active_result(chat_id: str, result: object) -> None:

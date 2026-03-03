@@ -23,7 +23,7 @@ import uuid
 from typing import Any, cast
 
 from app.infra.websocket.get_db_connection import get_db_connection
-from app.globals import get_internal_sio
+from app.infra.globals import get_internal_sio
 from app.routes.v5.socket.internal.test.types import (
     TestErrorData,
     TestProceedData,

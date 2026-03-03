@@ -31,7 +31,7 @@ from app.routes.v5.api.resources.descriptions.create import create_descriptions_
 from app.routes.v5.api.resources.names.create import create_names_internal
 from app.routes.v5.api.resources.scenarios.create import create_scenarios_internal
 from app.utils.error.handle_route_error import handle_route_error
-from app.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool
 from app.sql.types import (
     GetScenarioAccessSqlParams,
     GetScenarioAccessSqlRow,

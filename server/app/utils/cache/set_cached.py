@@ -4,7 +4,7 @@ import json
 from collections.abc import Iterable
 from typing import Any
 
-from app.globals import get_redis_client
+from app.infra.globals import get_redis_client
 from app.utils.cache.tag_set_name import tag_set_name
 from app.utils.logging.db_logger import get_logger
 

@@ -5,7 +5,7 @@ Handles: test_error_event — re-emits as test_error.
 
 from typing import Any
 
-from app.globals import get_internal_sio
+from app.infra.globals import get_internal_sio
 from app.routes.v5.socket.internal.test.types import TestErrorData
 
 internal_sio = get_internal_sio()

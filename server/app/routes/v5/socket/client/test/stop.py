@@ -5,7 +5,7 @@ Handles: test_stop — stop current test execution.
 
 from typing import Any
 
-from app.globals import get_internal_sio, sio
+from app.infra.globals import get_internal_sio, sio
 from app.routes.v5.socket.client.types import TestStopPayload
 from app.utils.logging.db_logger import get_logger
 

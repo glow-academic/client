@@ -7,7 +7,7 @@ from typing import Any, cast
 
 import asyncpg  # type: ignore
 
-from app.globals import get_pool
+from app.infra.globals import get_pool
 from app.sql.types import (
     InfrastructureEvalsGetRubricDetailsSqlParams,
     InfrastructureEvalsGetRubricDetailsSqlRow,

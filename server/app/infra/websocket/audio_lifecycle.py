@@ -8,7 +8,7 @@ import logging
 
 from app.infra.websocket.adapters.audio.realtime import RealtimeAudioAdapter
 from app.infra.websocket.session_store import AudioSession, remove_session
-from app.globals import (
+from app.infra.globals import (
     _voice_message_ids,
     _voice_message_ids_lock,
 )

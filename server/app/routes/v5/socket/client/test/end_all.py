@@ -8,7 +8,7 @@ invocations as completed and emits test_ended.
 
 from typing import Any
 
-from app.globals import get_internal_sio, sio
+from app.infra.globals import get_internal_sio, sio
 from app.routes.v5.socket.client.types import TestEndAllPayload
 from app.routes.v5.socket.internal.test.types import TestErrorData, TestProceedData
 from app.utils.logging.db_logger import get_logger

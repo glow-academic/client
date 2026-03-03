@@ -31,7 +31,7 @@ from app.infra.websocket.tool_call_utils import (
     parse_partial_json,
     resolve_output_fields,
 )
-from app.globals import get_internal_sio
+from app.infra.globals import get_internal_sio
 from app.routes.v5.socket.types import GenerateErrorApiRequest
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 
@@ -270,7 +270,7 @@ async def _execute_artifact_tool_inline(
                 kwargs["conn"] = conn
                 result = await fn(**kwargs)
         elif config.requires_pool:
-            from app.globals import get_pool
+            from app.infra.globals import get_pool
 
             pool = get_pool()
             kwargs["pool"] = pool

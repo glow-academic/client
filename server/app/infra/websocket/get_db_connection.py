@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 
 import asyncpg
 
-from app.globals import get_pool
+from app.infra.globals import get_pool
 
 
 @asynccontextmanager

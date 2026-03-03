@@ -8,7 +8,7 @@ from typing import Any
 
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.session_store import get_session_by_group_id
-from app.globals import get_internal_sio
+from app.infra.globals import get_internal_sio
 from app.routes.v5.socket.internal.attempt.types import AttemptUserReceivedStartData
 
 internal_sio = get_internal_sio()

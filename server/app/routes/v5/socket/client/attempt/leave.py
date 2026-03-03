@@ -5,7 +5,7 @@ Handles: attempt_leave — leave a chat room.
 
 from typing import Any
 
-from app.globals import sio
+from app.infra.globals import sio
 from app.routes.v5.socket.client.types import AttemptLeavePayload
 from app.utils.logging.db_logger import get_logger
 

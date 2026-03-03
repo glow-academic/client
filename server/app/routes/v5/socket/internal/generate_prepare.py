@@ -37,7 +37,7 @@ from app.infra.websocket.generation_tracker import (
 )
 from app.infra.websocket.get_db_connection import get_db_connection
 from app.infra.websocket.typed_emit import emit_to_internal
-from app.globals import get_internal_sio, get_pool
+from app.infra.globals import get_internal_sio, get_pool
 from app.registry.modalities import get_tool_output_modalities
 from app.routes.v5.socket.client.registry import REGISTRY, ArtifactGenerateConfig
 from app.routes.v5.socket.client.types import ArtifactTypeItem, EntryTypeItem, GeneratePayload

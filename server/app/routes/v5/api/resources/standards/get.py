@@ -14,7 +14,7 @@ from app.routes.v5.api.resources.standards.types import (
     GetStandardsApiResponse,
 )
 from app.utils.error.handle_route_error import handle_route_error
-from app.globals import get_db
+from app.infra.globals import get_db
 from app.sql.types import (
     GetStandardsSqlParams,
     GetStandardsSqlRow,

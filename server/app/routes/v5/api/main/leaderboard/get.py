@@ -42,7 +42,7 @@ from app.routes.v5.api.resources.providers.get import get_providers_internal
 from app.routes.v5.api.resources.scenarios.get import get_scenarios_internal
 from app.routes.v5.api.resources.simulations.get import get_simulations_internal
 from app.utils.error.handle_route_error import handle_route_error
-from app.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool
 from app.sql.types import (
     GetActiveSettingsSqlParams,
     GetActiveSettingsSqlRow,

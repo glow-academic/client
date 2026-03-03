@@ -82,7 +82,7 @@ from app.routes.v5.api.resources.tools.get import get_tools_internal
 from app.routes.v5.api.resources.uploads.get import get_uploads_internal
 from app.routes.v5.api.resources.uploads.search import search_uploads_internal
 from app.utils.error.handle_route_error import handle_route_error
-from app.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool
 from app.sql.types import (
     GetDocumentAccessSqlParams,
     GetDocumentAccessSqlRow,

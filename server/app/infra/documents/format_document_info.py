@@ -13,7 +13,7 @@ from openai.types.responses.response_input_message_content_list_param import (
 from openai.types.responses.response_input_text_param import ResponseInputTextParam
 
 from app.infra.agents.types import TResponseInputItem
-from app.globals import UPLOAD_FOLDER
+from app.infra.globals import UPLOAD_FOLDER
 from app.utils.document.pdf_pages_to_image_data_urls import pdf_pages_to_image_data_urls
 from app.utils.document.read_pdf_text_pages import read_pdf_text_pages
 from app.utils.document.read_text_file import read_text_file

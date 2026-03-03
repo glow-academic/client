@@ -21,7 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from app.globals import (
+from app.infra.globals import (
     close_db_pool,
     get_pool,
     init_db_pool,
@@ -77,7 +77,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                 socketio_logger.addHandler(handler)
 
         # Initialize Redis client for HTTP caching and socket ownership management
-        import app.globals as _globals
+        import app.infra.globals as _globals
 
         redis_url = os.getenv("REDIS_URL")
         logger.info(

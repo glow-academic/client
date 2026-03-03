@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.templates.jinja_renderer import render_template
-from app.globals import AUDIO_FOLDER, IMAGE_FOLDER, UPLOAD_FOLDER, get_db
+from app.infra.globals import AUDIO_FOLDER, IMAGE_FOLDER, UPLOAD_FOLDER, get_db
 from app.sql.types import (
     GetUploadFileInfoSqlParams,
     GetUploadFileInfoSqlRow,

@@ -6,7 +6,7 @@ import socket
 from dataclasses import dataclass
 from typing import Any
 
-from app.globals import get_pool
+from app.infra.globals import get_pool
 from app.routes.mcp.oauth import MCP_RESOURCE, is_mcp_enabled
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 from app.utils.logging.db_logger import get_logger
@@ -407,7 +407,7 @@ async def ensure_mcp_client_scope(kc_admin: Any) -> None:
             # Update scope to ensure consent screen is disabled
             # Note: We update via database directly since Admin API has method signature issues
             try:
-                from app.globals import get_pool
+                from app.infra.globals import get_pool
 
                 pool = get_pool()
                 if pool:
@@ -977,7 +977,7 @@ async def ensure_default_scopes_no_consent(kc_admin: Any) -> None:
         kc_admin: KeycloakAdmin instance (must be in master realm)
     """
     try:
-        from app.globals import get_pool
+        from app.infra.globals import get_pool
 
         pool = get_pool()
         if not pool:

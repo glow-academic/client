@@ -11,7 +11,7 @@ from pydantic import BaseModel
 
 from app.routes.auth.types import GetGroupMessagesApiResponse, GroupMessageItem
 from app.utils.error.handle_route_error import handle_route_error
-from app.globals import get_db
+from app.infra.globals import get_db
 from app.sql.types import GetAuthGroupMessagesSqlParams, GetAuthGroupMessagesSqlRow
 from app.utils.sql_helper import execute_sql_typed
 

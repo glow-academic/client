@@ -70,7 +70,7 @@ from app.routes.v5.api.resources.request_limits.get import get_request_limits_in
 from app.routes.v5.api.resources.request_limits.search import search_request_limits_internal
 from app.routes.v5.api.resources.tools.get import get_tools_internal
 from app.utils.error.handle_route_error import handle_route_error
-from app.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool
 from app.sql.types import (
     GetProfileAccessSqlParams,
     GetProfileAccessSqlRow,

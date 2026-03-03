@@ -40,7 +40,7 @@ from app.routes.v5.api.resources.parameter_fields.search import (
 from app.routes.v5.api.resources.personas.create import create_personas_internal
 from app.routes.v5.api.resources.voices.search import search_voices_internal
 from app.utils.error.handle_route_error import handle_route_error
-from app.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool
 from app.sql.types import (
     CheckPersonaSaveAccessSqlParams,
     CheckPersonaSaveAccessSqlRow,

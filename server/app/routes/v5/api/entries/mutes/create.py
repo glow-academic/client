@@ -15,7 +15,7 @@ from app.routes.v5.api.entries.mutes.types import (
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.storage.file_writer import write_text_file
 from app.infra.tools.call_args import record_call_args, resolve_tool_for_entry
-from app.globals import get_db
+from app.infra.globals import get_db
 from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed

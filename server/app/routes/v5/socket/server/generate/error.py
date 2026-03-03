@@ -6,7 +6,7 @@ Listens to generation_channel(type=error) and emits to client:
 
 from typing import Any
 
-from app.globals import get_internal_sio, sio
+from app.infra.globals import get_internal_sio, sio
 from app.routes.v5.socket.client.types import GenerationErrorEvent
 
 internal_sio = get_internal_sio()

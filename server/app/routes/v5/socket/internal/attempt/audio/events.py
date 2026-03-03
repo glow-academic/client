@@ -32,7 +32,7 @@ from app.infra.websocket.tool_call_utils import (
     parse_partial_json,
     resolve_output_fields,
 )
-from app.globals import get_internal_sio
+from app.infra.globals import get_internal_sio
 
 
 class InternalBusAudioEmitter:

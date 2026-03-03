@@ -15,7 +15,7 @@ from app.routes.v5.api.resources.options.types import (
     GetOptionV4Item,
 )
 from app.utils.error.handle_route_error import handle_route_error
-from app.globals import get_db
+from app.infra.globals import get_db
 from app.sql.types import (
     GetOptionsSqlParams,
     GetOptionsSqlRow,

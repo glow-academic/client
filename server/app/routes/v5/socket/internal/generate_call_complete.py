@@ -9,7 +9,7 @@ Run-level completion (tokens, auto-save, multi-agent) is handled by generate_run
 
 from typing import Any
 
-from app.globals import get_internal_sio
+from app.infra.globals import get_internal_sio
 from app.routes.v5.socket.internal.attempt.types import (
     AttemptAssistantHintsData,
     AttemptGradeProgressData,

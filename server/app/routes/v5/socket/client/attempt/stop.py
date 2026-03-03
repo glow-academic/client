@@ -11,7 +11,7 @@ from typing import Any, cast
 from app.infra.websocket.cancel_active_result import cancel_active_result
 from app.infra.websocket.cancel_active_run import cancel_active_run
 from app.infra.websocket.get_db_connection import get_db_connection
-from app.globals import get_internal_sio, sio
+from app.infra.globals import get_internal_sio, sio
 from app.routes.v5.socket.client.types import AttemptStopPayload
 from app.routes.v5.socket.internal.attempt.types import AttemptErrorData, AttemptStoppedData
 from app.sql.types import SimulationTextStopRunSqlParams, SimulationTextStopRunSqlRow

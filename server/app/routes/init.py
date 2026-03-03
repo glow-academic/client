@@ -3,7 +3,7 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
-from app.globals import expire_all_connections
+from app.infra.globals import expire_all_connections
 
 router = APIRouter()
 

@@ -11,7 +11,7 @@ import httpx  # type: ignore
 from fastapi import APIRouter, status  # type: ignore
 from fastapi.responses import JSONResponse
 
-from app.globals import get_pool, get_redis_client, get_sio_instance
+from app.infra.globals import get_pool, get_redis_client, get_sio_instance
 
 router = APIRouter()
 

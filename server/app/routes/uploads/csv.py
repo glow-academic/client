@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from app.utils.error.handle_route_error import handle_route_error
-from app.globals import UPLOAD_FOLDER, get_db
+from app.infra.globals import UPLOAD_FOLDER, get_db
 from app.sql.types import (
     GetUploadFileInfoSqlParams,
     GetUploadFileInfoSqlRow,

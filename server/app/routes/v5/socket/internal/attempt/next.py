@@ -8,7 +8,7 @@ The proceed handler resolves context, checks remaining, and handles everything.
 
 from typing import Any
 
-from app.globals import get_internal_sio
+from app.infra.globals import get_internal_sio
 from app.routes.v5.socket.client.types import AttemptNextPayload
 from app.routes.v5.socket.internal.attempt.types import (
     AttemptErrorData,

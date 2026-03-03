@@ -11,7 +11,7 @@ from app.routes.v5.api.main.document.types import (
     PatchDocumentDraftSqlParams,
 )
 from app.utils.error.handle_route_error import handle_route_error
-from app.globals import get_db
+from app.infra.globals import get_db
 from app.sql.types import (
     PatchDocumentDraftSqlRow,
     load_sql_query,

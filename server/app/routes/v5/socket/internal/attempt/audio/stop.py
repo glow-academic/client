@@ -9,7 +9,7 @@ from typing import Any
 
 from app.infra.websocket.audio_lifecycle import cleanup_audio_session
 from app.infra.websocket.session_store import get_session_by_group_id
-from app.globals import get_internal_sio
+from app.infra.globals import get_internal_sio
 from app.routes.v5.socket.internal.attempt.types import AttemptAudioEndedData
 
 internal_sio = get_internal_sio()

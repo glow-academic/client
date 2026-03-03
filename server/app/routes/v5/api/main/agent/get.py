@@ -108,7 +108,7 @@ from app.routes.v5.api.resources.tools.search import search_tools_internal
 from app.routes.v5.api.resources.voices.get import get_voices_internal
 from app.routes.v5.api.resources.voices.search import search_voices_internal
 from app.utils.error.handle_route_error import handle_route_error
-from app.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool
 from app.sql.types import (
     GetAgentAccessSqlParams,
     GetAgentAccessSqlRow,

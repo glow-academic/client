@@ -1,6 +1,6 @@
 """Remove the socket ownership for a profile from Redis."""
 
-from app.globals import get_redis_client, get_socket_owner_dict
+from app.infra.globals import get_redis_client, get_socket_owner_dict
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

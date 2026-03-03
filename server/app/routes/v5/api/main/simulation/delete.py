@@ -12,7 +12,7 @@ from app.routes.v5.api.main.simulation.types import (
     DeleteSimulationResult,
 )
 from app.utils.error.handle_route_error import handle_route_error
-from app.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool
 from app.sql.types import (
     CheckSimulationDeleteAccessSqlParams,
     CheckSimulationDeleteAccessSqlRow,

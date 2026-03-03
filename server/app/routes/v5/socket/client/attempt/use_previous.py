@@ -9,7 +9,7 @@ from typing import Any
 
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.get_db_connection import get_db_connection
-from app.globals import get_internal_sio, sio
+from app.infra.globals import get_internal_sio, sio
 from app.routes.v5.socket.client.types import AttemptUsePreviousPayload
 from app.routes.v5.socket.internal.attempt.types import (
     AttemptErrorData,

@@ -7,7 +7,7 @@ Handles:
 
 from typing import Any
 
-from app.globals import get_internal_sio
+from app.infra.globals import get_internal_sio
 from app.routes.v5.socket.internal.test.types import TestProgressData, TestRunCompleteData
 
 internal_sio = get_internal_sio()

@@ -4,7 +4,7 @@ import os
 import uuid
 from typing import cast
 
-from app.globals import UPLOAD_FOLDER, get_pool
+from app.infra.globals import UPLOAD_FOLDER, get_pool
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import execute_sql_typed, load_sql
@@ -45,7 +45,7 @@ async def generate_image_background(
         image_id: Image ID (UUID as string)
         storage_key: Storage key for retrieving context
     """
-    from app.globals import get_image_generation_storage
+    from app.infra.globals import get_image_generation_storage
 
     pool = get_pool()
     if not pool:

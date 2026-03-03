@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.routes.auth.profile import get_auth_profile_internal
 from app.utils.error.handle_route_error import handle_route_error
-from app.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool
 from app.sql.types import (
     BulkArchiveAttemptsApiRequest,
     BulkArchiveAttemptsApiResponse,

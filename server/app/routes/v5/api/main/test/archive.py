@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.routes.v5.api.main.test.types import ArchiveTestsRequest, ArchiveTestsResponse
 from app.utils.error.handle_route_error import handle_route_error
-from app.globals import get_db
+from app.infra.globals import get_db
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import load_sql
 

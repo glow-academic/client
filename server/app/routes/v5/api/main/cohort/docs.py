@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends
 
 from app.routes.v5.api.main.cohort import permissions
 from app.routes.v5.api.resources.names.get import get_names_internal
-from app.globals import get_db
+from app.infra.globals import get_db
 from app.sql.types import GetCohortDocsSqlParams, GetCohortDocsSqlRow
 from app.utils.docs_helper import (
     ArtifactDocsConfig,

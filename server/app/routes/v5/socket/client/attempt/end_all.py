@@ -8,7 +8,7 @@ chats as completed and emits attempt_ended.
 
 from typing import Any
 
-from app.globals import get_internal_sio, sio
+from app.infra.globals import get_internal_sio, sio
 from app.routes.v5.socket.client.types import AttemptEndAllPayload
 from app.routes.v5.socket.internal.attempt.types import AttemptErrorData, AttemptProceedData
 from app.utils.logging.db_logger import get_logger
