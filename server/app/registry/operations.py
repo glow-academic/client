@@ -45,7 +45,7 @@ def resolve_callable(
 #   docs      → None (not yet implemented)
 # ---------------------------------------------------------------------------
 
-_A = "app.v5.main"
+_A = "app.routes.v5.main"
 
 ARTIFACT_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
     # activity (view-only)
@@ -391,7 +391,7 @@ ARTIFACT_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
 #   docs   → None (not yet implemented)
 # ---------------------------------------------------------------------------
 
-_R = "app.v5.api.resources"
+_R = "app.routes.v5.api.resources"
 
 
 def _res(
@@ -512,7 +512,7 @@ RESOURCE_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
 #   responses      → get_simulation_responses_internal
 # ---------------------------------------------------------------------------
 
-_E = "app.v5.api.entries"
+_E = "app.routes.v5.api.entries"
 
 
 def _ent(

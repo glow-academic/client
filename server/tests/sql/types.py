@@ -261,7 +261,7 @@ def get_sql_types(sql_path: str) -> tuple[Type[BaseModel], Type[BaseModel]]:
     """Get SQL input and output types for a SQL file path.
     
     Args:
-        sql_path: SQL file path (e.g., "app/sql/v4/queries/agents/get_agent_new_complete.sql")
+        sql_path: SQL file path (e.g., "app/sql/queries/agents/get_agent_new_complete.sql")
     
     Returns:
         Tuple of (SqlParamsType, SqlRowType)
@@ -287,7 +287,7 @@ def get_api_types(sql_path: str) -> tuple[Type[BaseModel], Type[BaseModel]]:
     """Get API request and response types for a SQL file path.
     
     Args:
-        sql_path: SQL file path (e.g., "app/sql/v4/queries/agents/get_agent_new_complete.sql")
+        sql_path: SQL file path (e.g., "app/sql/queries/agents/get_agent_new_complete.sql")
     
     Returns:
         Tuple of (ApiRequestType, ApiResponseType)

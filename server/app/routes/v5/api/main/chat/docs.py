@@ -1,0 +1,84 @@
+"""Chat artifact documentation."""
+
+from typing import Any
+
+from fastapi import APIRouter
+
+from app.routes.v5.api.main.chat import permissions
+from app.utils.docs_helper import (
+    ArtifactDocsConfig,
+    DocsApiRequest,
+    DocsApiResponse,
+    PageMetadataConfig,
+    build_artifact_docs_static,
+    compute_docs_metadata,
+)
+
+CONFIG = ArtifactDocsConfig(
+    name="training",
+    plural_name="training",
+    entity_type="analytics",
+    permissions_module=permissions,
+    permission_functions=[
+        "compute_mode",
+        "compute_score_status",
+        "compute_pass_pct",
+        "compute_status",
+        "compute_status_instructional",
+        "compute_completion_pct",
+        "compute_show_view",
+        "compute_show_continue",
+    ],
+    api_routing={
+        "base_path": "/api/v5/training",
+        "endpoints": {
+            "get": {
+                "path": "/get",
+                "method": "POST",
+                "description": "Get training data with simulation cards and progress",
+            },
+            "refresh": {
+                "path": "/refresh",
+                "method": "POST",
+                "description": "Refresh training materialized views",
+            },
+        },
+    },
+    glow_context={
+        "description": "Training provides the main student-facing analytics, showing simulation cards with progress, scores, and completion status.",
+        "use_cases": [
+            "Viewing assigned simulations and progress",
+            "Tracking training completion percentage",
+            "Viewing pass/fail status per simulation",
+            "Continuing in-progress training sessions",
+        ],
+        "related_concepts": [
+            "Attempts - Training aggregates attempt data",
+            "Simulations - Training cards represent simulations",
+            "Sessions - Training tracks session progress",
+            "Dashboard - Training metrics feed into dashboard",
+        ],
+    },
+    page_metadata=PageMetadataConfig(
+        list_title="Create",
+        list_description="Create new teaching resources for teaching assistant training. Design simulations, scenarios, personas, and other educational content to support simulation-based learning and pedagogical development.",
+        detail_title="Training",
+        detail_description="Training details for teaching assistant development. View simulation cards and practice progress.",
+        new_title="New Training",
+        new_description="Create new training content for teaching assistant development.",
+    ),
+)
+
+router = APIRouter()
+
+
+@router.post("/docs", response_model=DocsApiResponse)
+async def get_chat_docs_endpoint(
+    request: DocsApiRequest,
+) -> DocsApiResponse:
+    return compute_docs_metadata(CONFIG.page_metadata)
+
+
+def get_chat_docs_static() -> dict[str, Any]:
+    """Get chat documentation (static portions only, for MCP)."""
+    return build_artifact_docs_static(CONFIG)

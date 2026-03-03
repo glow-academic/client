@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from app.globals import get_pool
-from app.mcp.oauth import MCP_RESOURCE, is_mcp_enabled
+from app.routes.mcp.oauth import MCP_RESOURCE, is_mcp_enabled
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import _detect_function_in_sql, load_sql
@@ -2386,7 +2386,7 @@ async def perform_keycloak_sync(
         # Check if Keycloak is available BEFORE attempting sync
         # Note: Keycloak might return 403 "HTTPS required" before sync disables SSL requirement
         # This is expected and sync will fix it, so we proceed anyway
-        from app.health import check_keycloak
+        from app.routes.health import check_keycloak
 
         keycloak_check = await check_keycloak()
         # Only fail if Keycloak is completely unavailable (connection error, not 403 HTTPS required)

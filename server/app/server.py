@@ -104,7 +104,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         pool = get_pool()
 
         # Initialize metrics collector
-        from app.metrics.collector import initialize_metrics
+        from app.routes.metrics.collector import initialize_metrics
 
         if pool:
             await initialize_metrics(pool, _globals.redis_client)
@@ -114,7 +114,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             )
 
         # Import MCP server for lifespan management
-        from app.mcp import mcp_server as artifacts_resources_mcp_server
+        from app.routes.mcp import mcp_server as artifacts_resources_mcp_server
 
         await stack.enter_async_context(
             artifacts_resources_mcp_server.session_manager.run()
@@ -196,7 +196,7 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
     """Middleware that automatically logs all requests/responses to database."""
 
     async def dispatch(self, request: Request, call_next: Any) -> Response:
-        from app.metrics.collector import record_error, record_request
+        from app.routes.metrics.collector import record_error, record_request
         from app.utils.logging.db_logger import get_logger, set_profile_id
 
         logger = get_logger(__name__)
@@ -263,18 +263,18 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
 fastapi_app.add_middleware(DBLoggingMiddleware)
 
 # Add MCP OAuth middleware
-from app.mcp.oauth import McpOAuthMiddleware  # noqa: E402
+from app.routes.mcp.oauth import McpOAuthMiddleware  # noqa: E402
 
 fastapi_app.add_middleware(McpOAuthMiddleware)
 
 # ---------------------------------------------------------------------------
 # Routers — versioned API
 # ---------------------------------------------------------------------------
-from app.v5.router import router as api_v5_router  # noqa: E402
+from app.routes.v5.router import router as api_v5_router  # noqa: E402
 
 fastapi_app.include_router(api_v5_router)
 
-from app.v5.socket import router as socket_v5_router  # noqa: E402
+from app.routes.v5.socket import router as socket_v5_router  # noqa: E402
 
 fastapi_app.include_router(socket_v5_router)
 
@@ -295,35 +295,35 @@ fastapi_app.include_router(
     ],
 )
 
-from app.default_idp import router as default_idp_router  # noqa: E402
+from app.routes.default_idp import router as default_idp_router  # noqa: E402
 
 fastapi_app.include_router(default_idp_router)
 
-from app.uploads import router as uploads_router  # noqa: E402
+from app.routes.uploads import router as uploads_router  # noqa: E402
 
 fastapi_app.include_router(uploads_router)
 
-from app.health import router as health_router  # noqa: E402
+from app.routes.health import router as health_router  # noqa: E402
 
 fastapi_app.include_router(health_router)
 
-from app.metrics import router as metrics_router  # noqa: E402
+from app.routes.metrics import router as metrics_router  # noqa: E402
 
 fastapi_app.include_router(metrics_router)
 
-from app.well_known import router as well_known_router  # noqa: E402
+from app.routes.well_known import router as well_known_router  # noqa: E402
 
 fastapi_app.include_router(well_known_router)
 
-from app.root_info import router as root_info_router  # noqa: E402
+from app.routes.root_info import router as root_info_router  # noqa: E402
 
 fastapi_app.include_router(root_info_router)
 
-from app.schema_changed import router as schema_changed_router  # noqa: E402
+from app.routes.schema_changed import router as schema_changed_router  # noqa: E402
 
 fastapi_app.include_router(schema_changed_router)
 
-from app.init import router as init_router  # noqa: E402
+from app.routes.init import router as init_router  # noqa: E402
 
 fastapi_app.include_router(init_router)
 
@@ -331,7 +331,7 @@ fastapi_app.include_router(init_router)
 # ---------------------------------------------------------------------------
 # MCP mount
 # ---------------------------------------------------------------------------
-from app.mcp import mcp_server as artifacts_resources_mcp_server  # noqa: E402
+from app.routes.mcp import mcp_server as artifacts_resources_mcp_server  # noqa: E402
 
 mcp_app = artifacts_resources_mcp_server.streamable_http_app()
 fastapi_app.mount("/", mcp_app, name="Artifacts-Resources-MCP")

@@ -1,9 +1,9 @@
 """Permissions utilities for v4 API.
 
-Re-exports from the canonical location in app.auth.route_permissions.
+Re-exports from the canonical location in app.routes.auth.route_permissions.
 """
 
-from app.auth.route_permissions import (  # noqa: F401
+from app.routes.auth.route_permissions import (  # noqa: F401
     ROUTE_PERMISSIONS,
     ProfileRole,
     RoutePermission,
