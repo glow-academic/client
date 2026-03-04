@@ -5,7 +5,6 @@ Handles profile-based socket management, guest connections, and cleanup.
 
 import time
 import uuid
-from datetime import UTC, datetime
 from typing import cast
 
 from app.infra.globals import get_internal_sio, sio
@@ -42,7 +41,6 @@ async def _mark_profile_inactive(profile_id: str) -> None:
             async with conn.transaction():
                 params = UpdateProfileToInactiveSqlParams(
                     profile_id=uuid.UUID(profile_id),
-                    last_active=datetime.now(UTC).isoformat(),
                 )
                 await cast(
                     UpdateProfileToInactiveSqlRow,
@@ -59,7 +57,6 @@ async def _mark_profile_active(profile_id: str) -> None:
             async with conn.transaction():
                 params = UpdateProfileToActiveSqlParams(
                     profile_id=uuid.UUID(profile_id),
-                    last_active=datetime.now(UTC).isoformat(),
                 )
                 await cast(
                     UpdateProfileToActiveSqlRow,

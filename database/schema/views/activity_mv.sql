@@ -9,8 +9,10 @@ CREATE MATERIALIZED VIEW public.activity_mv AS
  SELECT a.id AS activity_id,
     pac.profiles_id AS profile_id,
     a.session_id,
-    a.last_active,
-    a.created_at
+    a.created_at,
+    a.active,
+    a.mcp,
+    a.generated
    FROM (public.activity_entry a
      LEFT JOIN public.profiles_activity_connection pac ON (((pac.activity_id = a.id) AND (pac.active = true))))
   WHERE (a.active = true)

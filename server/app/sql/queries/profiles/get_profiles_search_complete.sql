@@ -181,7 +181,7 @@ staff_rows AS (
     LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = p.id AND prl.active = true
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
     LEFT JOIN LATERAL (
-        SELECT ae.last_active
+        SELECT ae.created_at AS last_active
         FROM profiles_activity_connection pactj
         JOIN activity_entry ae ON ae.id = pactj.activity_id
         WHERE pactj.profiles_id = p.id

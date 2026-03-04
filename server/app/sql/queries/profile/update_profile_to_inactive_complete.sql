@@ -22,8 +22,7 @@ END $$;
 
 -- 3) Recreate function
 CREATE OR REPLACE FUNCTION socket_update_profile_to_inactive_v4(
-    profile_id uuid,
-    last_active timestamptz
+    profile_id uuid
 )
 RETURNS TABLE (
     profile_exists boolean,
@@ -54,9 +53,9 @@ update_profile AS (
     SELECT profile_id FROM insert_or_update_flag
 ),
 insert_activity AS (
-    -- Insert view_activity_entry record
-    INSERT INTO activity_entry (last_active)
-    SELECT last_active
+    -- Insert activity_entry record
+    INSERT INTO activity_entry (id)
+    SELECT uuidv7()
     FROM update_profile up
     RETURNING id as activity_id
 ),

@@ -9,13 +9,11 @@ SET default_table_access_method = heap;
 --
 
 CREATE TABLE public.activity_entry (
-    last_active timestamp with time zone DEFAULT now() CONSTRAINT profile_activity_last_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT profile_activity_created_at_not_null NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT profile_activity_id_v7_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT profile_activity_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT profile_activity_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT profile_activity_active_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT profile_activity_updated_at_not_null NOT NULL,
     session_id uuid NOT NULL
 );
 

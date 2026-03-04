@@ -1925,59 +1925,6 @@ class GetLoginDataApiResponse(BaseModel):
 
 
 
-# Generated from: get_auth_group_messages
-
-class GetAuthGroupMessagesSqlParams(BaseModel):
-
-    group_id_param: UUID
-    page_limit_val: int | None = 50
-    page_offset_val: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.group_id_param,
-            self.page_limit_val,
-            self.page_offset_val,
-        )
-
-class QGetAuthGroupMessagesV4Message(BaseModel):
-
-    message_id: UUID | None
-    run_id: UUID | None
-    role: str | None
-    message_created_at: datetime | None
-    text_upload_ids: list[UUID] | None
-    audio_upload_ids: list[UUID] | None
-    image_upload_ids: list[UUID] | None
-    video_upload_ids: list[UUID] | None
-    file_upload_ids: list[UUID] | None
-    call_upload_ids: list[UUID] | None
-
-class QGetAuthGroupMessagesV4Item(BaseModel):
-
-    group_id: UUID | None
-    group_name: str | None
-    group_created_at: datetime | None
-    session_id: UUID | None
-    messages: list[QGetAuthGroupMessagesV4Message] | None
-    total_message_count: int | None
-
-class GetAuthGroupMessagesSqlRow(BaseModel):
-
-    items: list[QGetAuthGroupMessagesV4Item] | None = None
-
-class GetAuthGroupMessagesApiRequest(BaseModel):
-
-    group_id_param: UUID
-    page_limit_val: int | None = 50
-    page_offset_val: int | None = 0
-
-class GetAuthGroupMessagesApiResponse(BaseModel):
-
-    items: list[QGetAuthGroupMessagesV4Item] | None = None
-
-
-
 # Generated from: patch_auth_draft
 
 class AuthItemInput(BaseModel):
@@ -16281,40 +16228,6 @@ class PrepareTrainingStartApiResponse(BaseModel):
 
 
 
-# Generated from: complete_image_generation
-
-class CompleteImageGenerationSqlParams(BaseModel):
-
-    image_id: UUID
-    file_path: str
-    mime_type: str
-    file_size: int
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.image_id,
-            self.file_path,
-            self.mime_type,
-            self.file_size,
-        )
-
-class CompleteImageGenerationSqlRow(BaseModel):
-
-    upload_id: UUID | None = None
-
-class CompleteImageGenerationApiRequest(BaseModel):
-
-    image_id: UUID
-    file_path: str
-    mime_type: str
-    file_size: int
-
-class CompleteImageGenerationApiResponse(BaseModel):
-
-    upload_id: UUID | None = None
-
-
-
 # Generated from: get_agent_end_event_name
 
 class GetAgentEndEventNameSqlParams(BaseModel):
@@ -20617,12 +20530,10 @@ class SearchSimulatableProfilesApiResponse(BaseModel):
 class UpdateProfileToActiveSqlParams(BaseModel):
 
     profile_id: UUID
-    last_active: datetime
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
-            self.last_active,
         )
 
 class UpdateProfileToActiveSqlRow(BaseModel):
@@ -20632,7 +20543,7 @@ class UpdateProfileToActiveSqlRow(BaseModel):
 
 class UpdateProfileToActiveApiRequest(BaseModel):
 
-    last_active: datetime
+    pass
 
 class UpdateProfileToActiveApiResponse(BaseModel):
 
@@ -20646,12 +20557,10 @@ class UpdateProfileToActiveApiResponse(BaseModel):
 class UpdateProfileToInactiveSqlParams(BaseModel):
 
     profile_id: UUID
-    last_active: datetime
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
-            self.last_active,
         )
 
 class UpdateProfileToInactiveSqlRow(BaseModel):
@@ -20661,7 +20570,7 @@ class UpdateProfileToInactiveSqlRow(BaseModel):
 
 class UpdateProfileToInactiveApiRequest(BaseModel):
 
-    last_active: datetime
+    pass
 
 class UpdateProfileToInactiveApiResponse(BaseModel):
 
@@ -33551,47 +33460,6 @@ class PatchTrainingDraftApiResponse(BaseModel):
 
 
 
-# Generated from: finalize_upload
-
-class FinalizeUploadSqlParams(BaseModel):
-
-    upload_file_path: str
-    content_type: str
-    file_size: int
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.upload_file_path,
-            self.content_type,
-            self.file_size,
-            self.profile_id,
-        )
-
-class FinalizeUploadSqlRow(BaseModel):
-
-    upload_id: UUID | None = None
-    actor_name: str | None = None
-    success: bool | None = None
-    message: str | None = None
-    status: str | None = None
-
-class FinalizeUploadApiRequest(BaseModel):
-
-    upload_file_path: str
-    content_type: str
-    file_size: int
-
-class FinalizeUploadApiResponse(BaseModel):
-
-    upload_id: UUID | None = None
-    actor_name: str | None = None
-    success: bool | None = None
-    message: str | None = None
-    status: str | None = None
-
-
-
 # Generated from: get_upload_file_info
 
 class GetUploadFileInfoSqlParams(BaseModel):
@@ -33626,37 +33494,6 @@ class GetUploadFileInfoApiResponse(BaseModel):
     mime_type: str | None = None
     size: int | None = None
     actor_name: str | None = None
-
-
-
-# Generated from: insert_upload
-
-class InsertUploadSqlParams(BaseModel):
-
-    file_path: str
-    mime_type: str
-    size: int
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.file_path,
-            self.mime_type,
-            self.size,
-        )
-
-class InsertUploadSqlRow(BaseModel):
-
-    id: str | None = None
-
-class InsertUploadApiRequest(BaseModel):
-
-    file_path: str
-    mime_type: str
-    size: int
-
-class InsertUploadApiResponse(BaseModel):
-
-    id: str | None = None
 
 
 
@@ -33946,46 +33783,6 @@ class LinkSchemaTemplateV4ApiResponse(BaseModel):
 
 
 
-# Generated from: create_generation_and_link
-
-class CreateGenerationAndLinkSqlParams(BaseModel):
-
-    video_id: UUID
-    file_path: str
-    mime_type: str
-    upload_id: UUID
-    active: bool
-    run_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.video_id,
-            self.file_path,
-            self.mime_type,
-            self.upload_id,
-            self.active,
-            self.run_id,
-        )
-
-class CreateGenerationAndLinkSqlRow(BaseModel):
-
-    generation_id: UUID | None = None
-
-class CreateGenerationAndLinkApiRequest(BaseModel):
-
-    video_id: UUID
-    file_path: str
-    mime_type: str
-    upload_id: UUID
-    active: bool
-    run_id: UUID
-
-class CreateGenerationAndLinkApiResponse(BaseModel):
-
-    generation_id: UUID | None = None
-
-
-
 
 # ============================================================================
 # REGISTRY
@@ -34261,12 +34058,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetLoginDataSqlRow",
         "GetLoginDataApiRequest",
         "GetLoginDataApiResponse",
-    ),
-    "app/sql/queries/auth/group/get_auth_group_messages_complete.sql": (
-        "GetAuthGroupMessagesSqlParams",
-        "GetAuthGroupMessagesSqlRow",
-        "GetAuthGroupMessagesApiRequest",
-        "GetAuthGroupMessagesApiResponse",
     ),
     "app/sql/queries/auth/patch_auth_draft_complete.sql": (
         "PatchAuthDraftSqlParams",
@@ -36523,12 +36314,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareTrainingStartSqlRow",
         "PrepareTrainingStartApiRequest",
         "PrepareTrainingStartApiResponse",
-    ),
-    "app/sql/queries/images/complete_image_generation_complete.sql": (
-        "CompleteImageGenerationSqlParams",
-        "CompleteImageGenerationSqlRow",
-        "CompleteImageGenerationApiRequest",
-        "CompleteImageGenerationApiResponse",
     ),
     "app/sql/queries/infra/artifacts/discovery/get_agent_end_event_name_complete.sql": (
         "GetAgentEndEventNameSqlParams",
@@ -38996,23 +38781,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PatchTrainingDraftApiRequest",
         "PatchTrainingDraftApiResponse",
     ),
-    "app/sql/queries/uploads/finalize_upload_complete.sql": (
-        "FinalizeUploadSqlParams",
-        "FinalizeUploadSqlRow",
-        "FinalizeUploadApiRequest",
-        "FinalizeUploadApiResponse",
-    ),
     "app/sql/queries/uploads/get_upload_file_info_complete.sql": (
         "GetUploadFileInfoSqlParams",
         "GetUploadFileInfoSqlRow",
         "GetUploadFileInfoApiRequest",
         "GetUploadFileInfoApiResponse",
-    ),
-    "app/sql/queries/uploads/insert_upload_complete.sql": (
-        "InsertUploadSqlParams",
-        "InsertUploadSqlRow",
-        "InsertUploadApiRequest",
-        "InsertUploadApiResponse",
     ),
     "app/sql/queries/utils/create_schema_field_item_v4_complete.sql": (
         "CreateSchemaFieldItemV4SqlParams",
@@ -39067,12 +38840,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "LinkSchemaTemplateV4SqlRow",
         "LinkSchemaTemplateV4ApiRequest",
         "LinkSchemaTemplateV4ApiResponse",
-    ),
-    "app/sql/queries/videos/create_generation_and_link_complete.sql": (
-        "CreateGenerationAndLinkSqlParams",
-        "CreateGenerationAndLinkSqlRow",
-        "CreateGenerationAndLinkApiRequest",
-        "CreateGenerationAndLinkApiResponse",
     ),
 }
 
@@ -39359,11 +39126,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/auth/get_login_data_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/auth/group/get_auth_group_messages_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -41244,11 +41006,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/generate/training/prepare_training_start_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/images/complete_image_generation_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -43308,17 +43065,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/uploads/finalize_upload_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/uploads/get_upload_file_info_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/uploads/insert_upload_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -43364,11 +43111,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/utils/link_schema_template_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/videos/create_generation_and_link_complete.sql"]
     ) -> SqlString: ...
 
     @overload

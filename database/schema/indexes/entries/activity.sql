@@ -26,26 +26,10 @@ CREATE INDEX idx_profile_activity_generated ON public.activity_entry USING btree
 
 --
 
--- Name: idx_profile_activity_last_active; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_profile_activity_last_active ON public.activity_entry USING btree (last_active);
-
-
---
-
 -- Name: idx_profile_activity_mcp; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_profile_activity_mcp ON public.activity_entry USING btree (mcp);
-
-
---
-
--- Name: profile_activity_created_at_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX profile_activity_created_at_idx ON public.activity_entry USING btree (created_at);
 
 
 --
