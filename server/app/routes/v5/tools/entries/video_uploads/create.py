@@ -1,0 +1,26 @@
+"""Video Uploads CREATE — reusable data-access layer."""
+
+from uuid import UUID
+
+import asyncpg  # type: ignore
+
+from app.routes.v5.tools.entries.video_uploads.types import CreateVideoUploadResponse
+
+
+async def create_video_upload(
+    conn: asyncpg.Connection,
+    video_id: UUID,
+    upload_id: UUID,
+    mcp: bool = False,
+) -> CreateVideoUploadResponse:
+    """Create a video_uploads entry."""
+    row_id = await conn.fetchval("""
+        INSERT INTO video_uploads_entry (video_id, upload_id, mcp, generated)
+        VALUES ($1, $2, $3, true)
+        RETURNING id
+    """, video_id, upload_id, mcp)
+
+    if row_id is None:
+        raise ValueError("Failed to create video_uploads entry")
+
+    return CreateVideoUploadResponse(id=row_id)
