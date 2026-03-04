@@ -58,7 +58,7 @@ from app.routes.v5.tools.entries.profile_drafts.get import (
     get_profile_drafts_entries_internal,
 )
 from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
-from app.routes.v5.tools.resources.agents.get import get_agents_internal
+from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments
@@ -443,7 +443,7 @@ async def get_profile_internal(
             return (None, None, None, None)
 
         async with pool.acquire() as c:
-            agents = await get_agents_internal(c, config_agent_ids, bypass_cache)
+            agents = await get_agents(c, config_agent_ids, get_redis_client(), bypass_cache)
             models = (
                 await get_models(c, config_model_ids, get_redis_client(), bypass_cache)
                 if config_model_ids

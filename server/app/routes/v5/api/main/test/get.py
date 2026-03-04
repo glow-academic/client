@@ -34,7 +34,7 @@ from app.routes.v5.api.main.test.types import (
 )
 from app.routes.v5.tools.entries.test.search import get_test_list_internal
 from app.routes.v5.tools.entries.test_invocation.get import get_test_invocation_internal
-from app.routes.v5.tools.resources.agents.get import get_agents_internal
+from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.evals.get import get_evals_internal
@@ -121,8 +121,8 @@ async def get_test_internal(
                 if not p_agent_id:
                     return None
                 async with pool.acquire() as c:
-                    return await get_agents_internal(
-                        c, [p_agent_id], bypass_cache=bypass_cache
+                    return await get_agents(
+                        c, [p_agent_id], get_redis_client(), bypass_cache=bypass_cache
                     )
 
             async def fetch_models() -> Any:

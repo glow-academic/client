@@ -79,7 +79,7 @@ from app.routes.v5.tools.entries.persona_drafts.get import (
     get_persona_drafts_entries_internal,
 )
 from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
-from app.routes.v5.tools.resources.agents.get import get_agents_internal
+from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.colors.get import get_colors
@@ -617,7 +617,7 @@ async def get_persona_internal(
 
     async def fetch_config_agents():
         async with pool.acquire() as c:
-            return await get_agents_internal(c, config_agent_resource_ids, bypass_cache)
+            return await get_agents(c, config_agent_resource_ids, get_redis_client(), bypass_cache)
 
     async def fetch_config_models():
         async with pool.acquire() as c:

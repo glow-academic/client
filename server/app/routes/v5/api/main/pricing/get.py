@@ -36,7 +36,7 @@ from app.routes.v5.tools.entries.runs.search import (
     GetRunListViewResponse,
     get_run_list_entries_internal,
 )
-from app.routes.v5.tools.resources.agents.get import get_agents_internal
+from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.models.get import get_models
@@ -470,8 +470,8 @@ async def get_pricing(
         # Step 3: Batch hydrate agents + models in parallel
         async def fetch_agents():
             async with pool.acquire() as c:
-                return await get_agents_internal(
-                    c, list(agent_ids_set), bypass_cache=bypass_cache
+                return await get_agents(
+                    c, list(agent_ids_set), get_redis_client(), bypass_cache=bypass_cache
                 )
 
         async def fetch_models():

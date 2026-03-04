@@ -76,7 +76,7 @@ from app.routes.v5.tools.entries.runs.search import get_run_list_entries_interna
 from app.routes.v5.tools.entries.simulation_drafts.get import (
     get_simulation_drafts_entries_internal,
 )
-from app.routes.v5.tools.resources.agents.get import get_agents_internal
+from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments
@@ -726,8 +726,8 @@ async def get_simulation_internal(
     config_providers_result: list[Any] = []
     if unique_agent_ids:
         async with pool.acquire() as c:
-            config_agents_result = await get_agents_internal(
-                c, unique_agent_ids, bypass_cache
+            config_agents_result = await get_agents(
+                c, unique_agent_ids, get_redis_client(), bypass_cache
             )
     model_ids = list(
         dict.fromkeys(
