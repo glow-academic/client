@@ -120,7 +120,7 @@ from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.questions.get import get_questions
 from app.routes.v5.tools.resources.rubrics.get import get_rubrics_batch_internal
 from app.routes.v5.tools.resources.scenarios.get import get_scenarios
-from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
+from app.routes.v5.tools.resources.simulations.get import get_simulations
 from app.routes.v5.tools.resources.standard_groups.get import (
     get_standard_groups,
 )
@@ -326,8 +326,8 @@ async def get_attempt_internal(
 
                 # Fetch documents
                 if document_ids:
-                    items = await get_documents_internal(
-                        c, document_ids, bypass_cache=bypass_cache
+                    items = await get_documents(
+                        c, document_ids, get_redis_client(), bypass_cache=bypass_cache
                     )
                     for item in items:
                         if item.document_id:
@@ -352,8 +352,8 @@ async def get_attempt_internal(
 
                 # Fetch personas
                 if persona_ids:
-                    items = await get_personas_internal(
-                        c, persona_ids, bypass_cache=bypass_cache
+                    items = await get_personas(
+                        c, persona_ids, get_redis_client(), bypass_cache=bypass_cache
                     )
                     for item in items:
                         if item.persona_id:
@@ -704,8 +704,8 @@ async def get_attempt_internal(
             if not sim_id:
                 return None
             async with pool.acquire() as c:
-                items = await get_simulations_internal(
-                    c, [sim_id], bypass_cache=bypass_cache
+                items = await get_simulations(
+                    c, [sim_id], get_redis_client(), bypass_cache=bypass_cache
                 )
                 if items and items[0].name:
                     return items[0].name

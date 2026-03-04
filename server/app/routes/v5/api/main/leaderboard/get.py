@@ -41,7 +41,7 @@ from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.scenarios.get import get_scenarios
-from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
+from app.routes.v5.tools.resources.simulations.get import get_simulations
 from app.sql.types import (
     GetActiveSettingsSqlParams,
     GetActiveSettingsSqlRow,
@@ -465,9 +465,10 @@ async def get_leaderboard(
 
         async def fetch_simulations() -> list:
             async with pool.acquire() as c:
-                return await get_simulations_internal(
+                return await get_simulations(
                     conn=c,
                     ids=list(simulation_id_set),
+                    redis=get_redis_client(),
                     bypass_cache=bypass_cache,
                 )
 

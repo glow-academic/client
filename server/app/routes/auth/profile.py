@@ -18,7 +18,7 @@ from app.routes.auth.route_permissions import (
     compute_available_sections,
 )
 from app.routes.auth.types import AuthProfileInternalData, GetAuthProfileApiResponse
-from app.routes.v5.tools.resources.cohorts.get import get_cohorts_internal
+from app.routes.v5.tools.resources.cohorts.get import get_cohorts
 from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.roles.get import get_roles
 from app.utils.error.handle_route_error import handle_route_error
@@ -60,7 +60,7 @@ async def get_auth_profile_internal(
         if not cohort_ids:
             return []
         async with pool.acquire() as c:
-            return await get_cohorts_internal(c, cohort_ids, bypass_cache)
+            return await get_cohorts(c, cohort_ids, get_redis_client(), bypass_cache)
 
     async def fetch_roles():
         async with pool.acquire() as c:

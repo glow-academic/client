@@ -169,7 +169,7 @@ async def export_leaderboard(
         from app.routes.v5.tools.resources.profiles.get import get_profiles
         from app.routes.v5.tools.resources.scenarios.get import get_scenarios
         from app.routes.v5.tools.resources.simulations.get import (
-            get_simulations_internal,
+            get_simulations,
         )
 
         profile_id_set = {item.profile_id for item in chat_items}
@@ -189,8 +189,8 @@ async def export_leaderboard(
 
         async def fetch_simulations() -> list:
             async with pool.acquire() as c:
-                return await get_simulations_internal(
-                    conn=c, ids=list(simulation_id_set), bypass_cache=True
+                return await get_simulations(
+                    conn=c, ids=list(simulation_id_set), redis=get_redis_client(), bypass_cache=True
                 )
 
         async def fetch_scenarios() -> list:

@@ -380,8 +380,8 @@ async def fetch_dashboard_history_data(
         if not h_scenario_ids:
             return []
         async with pool.acquire() as c:
-            return await get_scenarios_internal(
-                c, list(h_scenario_ids), bypass_cache=bypass_cache
+            return await get_scenarios(
+                c, list(h_scenario_ids), get_redis_client(), bypass_cache=bypass_cache
             )
 
     h_sims, h_profs, h_pers, h_scens = await asyncio.gather(
@@ -652,8 +652,8 @@ async def get_dashboard_internal(
 
     async def _get_scenarios() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_scenarios_internal(
-                conn=c, ids=list(scenario_ids_set), bypass_cache=bypass_cache
+            return await get_scenarios(
+                conn=c, ids=list(scenario_ids_set), redis=get_redis_client(), bypass_cache=bypass_cache
             )
 
     async def _get_rubric_resources() -> tuple[list[Any], dict[str, str]]:

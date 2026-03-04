@@ -25,10 +25,10 @@ from app.routes.v5.tools.entries.attempt.get import (
     get_attempt_chats_internal,
 )
 from app.routes.v5.tools.entries.attempt.search import get_attempt_list_internal
-from app.routes.v5.tools.resources.personas.get import get_personas_internal
+from app.routes.v5.tools.resources.personas.get import get_personas
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.scenarios.get import get_scenarios
-from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
+from app.routes.v5.tools.resources.simulations.get import get_simulations
 from app.sql.types import (
     InsertUploadSqlParams,
     InsertUploadSqlRow,
@@ -174,8 +174,8 @@ async def export_practice(
             if not sim_ids_set:
                 return []
             async with pool.acquire() as c:
-                return await get_simulations_internal(
-                    c, list(sim_ids_set), bypass_cache=True
+                return await get_simulations(
+                    c, list(sim_ids_set), get_redis_client(), bypass_cache=True
                 )
 
         async def _get_profiles() -> list[Any]:
@@ -190,8 +190,8 @@ async def export_practice(
             if not persona_ids_set:
                 return []
             async with pool.acquire() as c:
-                return await get_personas_internal(
-                    c, list(persona_ids_set), bypass_cache=True
+                return await get_personas(
+                    c, list(persona_ids_set), get_redis_client(), bypass_cache=True
                 )
 
         async def _get_scenarios() -> list[Any]:

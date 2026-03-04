@@ -19,9 +19,9 @@ from app.routes.v5.api.main.dashboard.types import (
     ExportDashboardApiResponse,
 )
 from app.routes.v5.tools.entries.attempt_chat.get import get_chats_internal
-from app.routes.v5.tools.resources.personas.get import get_personas_internal
+from app.routes.v5.tools.resources.personas.get import get_personas
 from app.routes.v5.tools.resources.profiles.get import get_profiles
-from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
+from app.routes.v5.tools.resources.scenarios.get import get_scenarios
 from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
 from app.sql.types import (
     InsertUploadSqlParams,
@@ -177,14 +177,14 @@ async def export_dashboard(
 
         async def _get_personas() -> list[Any]:
             async with pool.acquire() as c:
-                return await get_personas_internal(
-                    conn=c, ids=list(persona_ids_set), bypass_cache=True
+                return await get_personas(
+                    conn=c, ids=list(persona_ids_set), redis=get_redis_client(), bypass_cache=True
                 )
 
         async def _get_scenarios() -> list[Any]:
             async with pool.acquire() as c:
-                return await get_scenarios_internal(
-                    conn=c, ids=list(scenario_ids_set), bypass_cache=True
+                return await get_scenarios(
+                    conn=c, ids=list(scenario_ids_set), redis=get_redis_client(), bypass_cache=True
                 )
 
         async def _get_cohort_names() -> list[Any]:

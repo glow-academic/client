@@ -40,7 +40,7 @@ from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.scenarios.get import get_scenarios
-from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
+from app.routes.v5.tools.resources.simulations.get import get_simulations
 from app.sql.types import (
     GetActiveSettingsSqlParams,
     GetActiveSettingsSqlRow,
@@ -378,9 +378,10 @@ async def get_reports(
 
         # Hydrate minimal metadata for normalized resources
         async with pool.acquire() as c:
-            simulations = await get_simulations_internal(
+            simulations = await get_simulations(
                 conn=c,
                 ids=[UUID(simulation_id) for simulation_id in simulation_ids],
+                redis=get_redis_client(),
                 bypass_cache=bypass_cache,
             )
             profiles = await get_profiles(

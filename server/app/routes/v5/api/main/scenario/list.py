@@ -35,11 +35,11 @@ from app.routes.v5.api.main.scenario.types import (
     ListScenarioSqlRow,
 )
 from app.routes.v5.api.types import ListFilterSection
-from app.routes.v5.tools.resources.cohorts.get import get_cohorts_internal
+from app.routes.v5.tools.resources.cohorts.get import get_cohorts
 from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.fields.get import get_fields
 from app.routes.v5.tools.resources.objectives.get import get_objectives
-from app.routes.v5.tools.resources.personas.get import get_personas_internal
+from app.routes.v5.tools.resources.personas.get import get_personas
 from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
 from app.sql.types import load_sql_query
 from app.utils.cache.cache_key import cache_key
@@ -284,8 +284,8 @@ async def get_scenario_list(
                 if not persona_id_set:
                     return []
                 async with pool.acquire() as c:
-                    return await get_personas_internal(
-                        c, list(persona_id_set), bypass_cache
+                    return await get_personas(
+                        c, list(persona_id_set), get_redis_client(), bypass_cache
                     )
 
             async def fetch_simulations() -> list:
@@ -327,8 +327,8 @@ async def get_scenario_list(
                 if not cohort_id_set:
                     return []
                 async with pool.acquire() as c:
-                    return await get_cohorts_internal(
-                        c, list(cohort_id_set), bypass_cache
+                    return await get_cohorts(
+                        c, list(cohort_id_set), get_redis_client(), bypass_cache
                     )
 
             (

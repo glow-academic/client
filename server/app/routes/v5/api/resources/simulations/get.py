@@ -8,16 +8,14 @@ from typing import Annotated, Any
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
+from app.infra.globals import get_db, get_redis_client
 from app.routes.v5.api.resources.simulations.types import (
     GetSimulationsApiRequest,
     GetSimulationsApiResponse,
 )
 from app.routes.v5.tools.resources.simulations.get import (
-    SQL_PATH,
-    get_simulations_internal,
+    get_simulations as get_simulations_resource,
 )
-from app.sql.types import load_sql_query
 from app.utils.error.handle_route_error import handle_route_error
 
 # Load SQL with types at module level
@@ -42,7 +40,6 @@ async def get_simulations(
     """Get simulations by IDs."""
     tags = ["resources", "simulations"]
 
-    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -58,9 +55,10 @@ async def get_simulations(
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
         # Use internal function
-        items = await get_simulations_internal(
+        items = await get_simulations_resource(
             conn=conn,
             ids=request.ids or [],
+            redis=get_redis_client(),
             bypass_cache=bypass_cache,
         )
 
@@ -76,7 +74,7 @@ async def get_simulations(
             error=e,
             route_path=http_request.url.path,
             operation="get_simulations",
-            sql_query=sql_query,
+            sql_query=None,
             sql_params=sql_params,
             request=http_request,
         )

@@ -55,15 +55,15 @@ from app.routes.v5.tools.entries.practice.get import get_practice_context_view_i
 from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.cohorts.get import get_cohorts_internal
-from app.routes.v5.tools.resources.personas.get import get_personas_internal
+from app.routes.v5.tools.resources.cohorts.get import get_cohorts
+from app.routes.v5.tools.resources.personas.get import get_personas
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.rubrics.get import get_rubrics_internal
 from app.routes.v5.tools.resources.scenario_time_limits.get import (
     get_scenario_time_limits,
 )
 from app.routes.v5.tools.resources.scenarios.get import get_scenarios
-from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
+from app.routes.v5.tools.resources.simulations.get import get_simulations
 from app.routes.v5.tools.resources.standard_groups.get import (
     get_standard_groups,
 )
@@ -352,8 +352,8 @@ async def _fetch_practice_history_data(
         if not h_sim_ids:
             return []
         async with pool.acquire() as c:
-            return await get_simulations_internal(
-                c, list(h_sim_ids), bypass_cache=bypass_cache
+            return await get_simulations(
+                c, list(h_sim_ids), get_redis_client(), bypass_cache=bypass_cache
             )
 
     async def _h_profiles() -> list[Any]:
@@ -368,8 +368,8 @@ async def _fetch_practice_history_data(
         if not h_persona_ids:
             return []
         async with pool.acquire() as c:
-            return await get_personas_internal(
-                c, list(h_persona_ids), bypass_cache=bypass_cache
+            return await get_personas(
+                c, list(h_persona_ids), get_redis_client(), bypass_cache=bypass_cache
             )
 
     async def _h_scenarios() -> list[Any]:
@@ -580,8 +580,8 @@ async def get_practice_internal(
     # --- Phase 2a: Parallel resource hydration (no instructional data) ---
     async def fetch_simulations() -> list:
         async with pool.acquire() as c:
-            return await get_simulations_internal(
-                c, simulation_ids, bypass_cache=bypass_cache
+            return await get_simulations(
+                c, simulation_ids, get_redis_client(), bypass_cache=bypass_cache
             )
 
     async def fetch_scenarios() -> list:
@@ -594,8 +594,8 @@ async def get_practice_internal(
 
     async def fetch_cohorts() -> list:
         async with pool.acquire() as c:
-            return await get_cohorts_internal(
-                c, cohort_ids_list, bypass_cache=bypass_cache
+            return await get_cohorts(
+                c, cohort_ids_list, get_redis_client(), bypass_cache=bypass_cache
             )
 
     async def fetch_rubrics() -> list:
@@ -643,8 +643,8 @@ async def get_practice_internal(
     persona_list: list = []
     if all_persona_ids:
         async with pool.acquire() as c:
-            persona_list = await get_personas_internal(
-                c, list(all_persona_ids), bypass_cache=bypass_cache
+            persona_list = await get_personas(
+                c, list(all_persona_ids), get_redis_client(), bypass_cache=bypass_cache
             )
 
     # --- Phase 2b: Sequential — derive standard_group_ids from rubrics ---

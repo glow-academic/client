@@ -46,7 +46,7 @@ from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.resources.profile_personas.get import (
     get_profile_personas,
 )
-from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
+from app.routes.v5.tools.resources.simulations.get import get_simulations
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -155,9 +155,10 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
                 sim_name = None
                 sim_desc = None
                 if simulation_ids:
-                    simulations = await get_simulations_internal(
+                    simulations = await get_simulations(
                         conn,
                         [uuid.UUID(sid_str) for sid_str in simulation_ids[:1]],
+                        get_redis_client(),
                         bypass_cache=True,
                     )
                     if simulations:
