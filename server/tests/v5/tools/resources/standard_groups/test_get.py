@@ -1,0 +1,75 @@
+"""Tests for get_standard_groups."""
+
+from uuid import uuid4
+
+import pytest
+
+from app.routes.v5.tools.resources.standard_groups.get import get_standard_groups
+
+pytestmark = pytest.mark.asyncio
+
+
+async def test_gets_created_standard_group(conn, redis_client):
+    row_id = await conn.fetchval("""
+        INSERT INTO standard_groups_resource (name, short_name, description, points, pass_points)
+        VALUES ('Test Group', 'TG', 'desc', 100, 70)
+        RETURNING id
+    """)
+
+    items = await get_standard_groups(conn, [row_id], redis_client)
+
+    assert len(items) == 1
+    assert items[0].id == row_id
+    assert items[0].name == "Test Group"
+    assert items[0].short_name == "TG"
+    assert items[0].description == "desc"
+    assert items[0].points == 100
+    assert items[0].pass_points == 70
+    assert items[0].active is True
+
+
+async def test_returns_empty_for_missing_id(conn, redis_client):
+    items = await get_standard_groups(conn, [uuid4()], redis_client)
+
+    assert items == []
+
+
+async def test_returns_empty_for_empty_ids(conn, redis_client):
+    items = await get_standard_groups(conn, [], redis_client)
+
+    assert items == []
+
+
+async def test_cache_hit_skips_db(conn, redis_client):
+    row_id = await conn.fetchval("""
+        INSERT INTO standard_groups_resource (name, short_name, description, points, pass_points)
+        VALUES ('Test Group', 'TG', 'desc', 100, 70)
+        RETURNING id
+    """)
+
+    # First call populates cache
+    items = await get_standard_groups(conn, [row_id], redis_client)
+    assert len(items) == 1
+
+    # Second call serves from cache
+    items2 = await get_standard_groups(conn, [row_id], redis_client)
+    assert len(items2) == 1
+    assert items2[0].id == row_id
+
+
+async def test_bypass_cache_skips_read_and_write(conn, redis_client):
+    row_id = await conn.fetchval("""
+        INSERT INTO standard_groups_resource (name, short_name, description, points, pass_points)
+        VALUES ('Test Group', 'TG', 'desc', 100, 70)
+        RETURNING id
+    """)
+
+    items = await get_standard_groups(conn, [row_id], redis_client, bypass_cache=True)
+    assert len(items) == 1
+
+    from app.utils.cache.cache_key import cache_key
+    from app.utils.cache.get_cached import get_cached
+
+    key = cache_key("/api/v5/resources/standard_groups/get", {"ids": [str(row_id)]})
+    cached = await get_cached(key, redis=redis_client)
+    assert cached is None

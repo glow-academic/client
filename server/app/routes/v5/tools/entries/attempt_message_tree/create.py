@@ -1,47 +1,38 @@
-"""attempt_message_tree/create internal — reusable data-access layer."""
+"""Entry CREATE — reusable data-access layer."""
 
 from uuid import UUID
 
-import asyncpg  # type: ignore
+import asyncpg
 
-from app.routes.v5.api.entries.attempt_message_tree.types import (
-    CreateAttemptMessageTreeEntryResponse,
-    CreateAttemptMessageTreeEntrySqlParams,
-    CreateAttemptMessageTreeEntrySqlRow,
+from app.routes.v5.tools.entries.attempt_message_tree.types import (
+    CreateAttemptMessageTreeResponse,
 )
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/entries/attempt_message_tree/create_attempt_message_tree_entries_complete.sql"
 
 
-async def create_attempt_message_tree_entry_internal(
+async def create_attempt_message_tree(
     conn: asyncpg.Connection,
     parent_id: UUID,
     child_id: UUID,
+    session_id: UUID,
     mcp: bool = False,
-) -> CreateAttemptMessageTreeEntryResponse | None:
-    """Create an attempt_message_tree entry (parent→child edge).
+) -> CreateAttemptMessageTreeResponse | None:
+    """Create an attempt_message_tree entry.
 
-    Returns None if the edge already exists (ON CONFLICT DO NOTHING).
+    Uses ON CONFLICT (parent_id, child_id) DO NOTHING.
+    Returns None if conflict.
     """
-    params = CreateAttemptMessageTreeEntrySqlParams(
-        parent_id=parent_id,
-        child_id=child_id,
-        mcp=mcp,
+    row = await conn.fetchrow(
+        """
+        INSERT INTO attempt_message_tree_entry (parent_id, child_id, session_id, mcp, generated)
+        VALUES ($1, $2, $3, $4, true)
+        ON CONFLICT (parent_id, child_id) DO NOTHING
+        RETURNING parent_id, child_id
+        """,
+        parent_id,
+        child_id,
+        session_id,
+        mcp,
     )
-
-    result = await execute_sql_typed(conn, SQL_PATH, params=params)
-
-    if not result:
+    if row is None:
         return None
-
-    row = CreateAttemptMessageTreeEntrySqlRow.model_validate(
-        result.model_dump()
-        if hasattr(result, "model_dump")
-        else {"id": getattr(result, "id", None)}
-    )
-
-    if not row.id:
-        return None
-
-    return CreateAttemptMessageTreeEntryResponse(id=row.id)
+    return CreateAttemptMessageTreeResponse(parent_id=row["parent_id"], child_id=row["child_id"])
