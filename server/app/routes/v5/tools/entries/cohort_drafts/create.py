@@ -18,4 +18,6 @@ async def create_cohort_drafts(
     mcp: bool = False,
 ) -> CreateDraftResponse:
     """Create a cohort_drafts entry."""
-    return await create_draft(conn, TABLE, group_id=group_id, session_id=session_id, version=version, mcp=mcp)
+    return await create_draft(
+        conn, TABLE, group_id=group_id, session_id=session_id, version=version, mcp=mcp
+    )

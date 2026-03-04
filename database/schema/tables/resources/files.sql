@@ -10,8 +10,7 @@ CREATE TABLE public.files_resource (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT uploads_resource_created_at_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT uploads_resource_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT uploads_resource_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT uploads_resource_mcp_not_null NOT NULL,
-    upload_id uuid
+    mcp boolean DEFAULT false CONSTRAINT uploads_resource_mcp_not_null NOT NULL
 );
 
 

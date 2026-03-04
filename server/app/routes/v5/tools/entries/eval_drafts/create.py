@@ -18,4 +18,6 @@ async def create_eval_drafts(
     mcp: bool = False,
 ) -> CreateDraftResponse:
     """Create a eval_drafts entry."""
-    return await create_draft(conn, TABLE, group_id=group_id, session_id=session_id, version=version, mcp=mcp)
+    return await create_draft(
+        conn, TABLE, group_id=group_id, session_id=session_id, version=version, mcp=mcp
+    )

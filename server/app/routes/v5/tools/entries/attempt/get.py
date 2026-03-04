@@ -1,25 +1,17 @@
 """attempt/get — reusable data-access layer."""
 
 from datetime import datetime
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from pydantic import BaseModel
 
 from app.routes.v5.tools.entries.attempt.types import GetAttemptResponse
-from app.sql.types import (
-    GetAttemptEntriesSqlParams,
-    GetAttemptEntriesSqlRow,
-)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
 
 MV_NAME = "attempt_mv"
-
-SQL_PATH = "app/sql/queries/entries/attempt/get_attempt_entries_complete.sql"
 
 
 async def get_attempts(
@@ -234,45 +226,6 @@ async def _fetch_training_config(
     )
 
     return configs
-
-
-async def get_attempt_entries_internal(
-    conn: asyncpg.Connection,
-    ids: list[UUID],
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to fetch attempt entries by IDs."""
-    if not ids:
-        return []
-
-    tags = ["entries", "attempt"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/attempt/get",
-        {"ids": [str(id) for id in ids]},
-    )
-
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    params = GetAttemptEntriesSqlParams(ids=ids)
-    result = cast(
-        GetAttemptEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
 
 
 async def get_attempt_chats_internal(

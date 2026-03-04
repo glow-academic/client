@@ -11,8 +11,7 @@ CREATE TABLE public.resources_resource (
     active boolean DEFAULT true CONSTRAINT domains_resource_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT domains_resource_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT domains_resource_mcp_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT domains_resource_created_at_not_null NOT NULL,
-    creatable boolean DEFAULT false CONSTRAINT domains_resource_creatable_not_null NOT NULL
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT domains_resource_created_at_not_null NOT NULL
 );
 
 

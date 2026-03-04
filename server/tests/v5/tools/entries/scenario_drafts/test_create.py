@@ -19,14 +19,18 @@ async def _setup(conn):
 
 async def test_create_returns_id(conn):
     session, group = await _setup(conn)
-    result = await create_scenario_drafts(conn, group_id=group.id, session_id=session.id)
+    result = await create_scenario_drafts(
+        conn, group_id=group.id, session_id=session.id
+    )
 
     assert result.id is not None
 
 
 async def test_roundtrip(conn):
     session, group = await _setup(conn)
-    result = await create_scenario_drafts(conn, group_id=group.id, session_id=session.id)
+    result = await create_scenario_drafts(
+        conn, group_id=group.id, session_id=session.id
+    )
 
     items = await get_scenario_drafts(conn, [result.id])
 

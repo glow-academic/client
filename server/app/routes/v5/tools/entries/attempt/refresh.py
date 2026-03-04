@@ -1,10 +1,6 @@
 """attempt/refresh — reusable data-access layer."""
 
-import time
-
 import asyncpg
-
-from app.utils.cache.invalidate_tags import invalidate_tags
 
 MV_NAME = "attempt_mv"
 
@@ -12,18 +8,3 @@ MV_NAME = "attempt_mv"
 async def refresh_attempt(conn: asyncpg.Connection) -> None:
     """Refresh attempt_mv concurrently."""
     await conn.execute(f"REFRESH MATERIALIZED VIEW CONCURRENTLY {MV_NAME}")
-
-
-async def refresh_attempt_internal(
-    conn: asyncpg.Connection,
-) -> dict:
-    """Refresh attempt_mv concurrently."""
-    start_time = time.time()
-    await conn.execute(f"REFRESH MATERIALIZED VIEW CONCURRENTLY {MV_NAME}")
-    duration_ms = int((time.time() - start_time) * 1000)
-    await invalidate_tags(["entries", "attempt"], redis=get_redis_client())
-    return {
-        "success": True,
-        "duration_ms": duration_ms,
-        "message": f"Refreshed {MV_NAME} in {duration_ms}ms",
-    }

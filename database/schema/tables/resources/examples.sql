@@ -10,7 +10,8 @@ CREATE TABLE public.examples_resource (
     example text CONSTRAINT examples_example_not_null NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT examples_id_v7_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT examples_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT examples_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT examples_mcp_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL
 );
 
 

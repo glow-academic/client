@@ -2,7 +2,9 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.department_drafts.create import create_department_drafts
+from app.routes.v5.tools.entries.department_drafts.create import (
+    create_department_drafts,
+)
 from app.routes.v5.tools.entries.department_drafts.get import get_department_drafts
 from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.sessions.create import create_session
@@ -19,14 +21,18 @@ async def _setup(conn):
 
 async def test_create_returns_id(conn):
     session, group = await _setup(conn)
-    result = await create_department_drafts(conn, group_id=group.id, session_id=session.id)
+    result = await create_department_drafts(
+        conn, group_id=group.id, session_id=session.id
+    )
 
     assert result.id is not None
 
 
 async def test_roundtrip(conn):
     session, group = await _setup(conn)
-    result = await create_department_drafts(conn, group_id=group.id, session_id=session.id)
+    result = await create_department_drafts(
+        conn, group_id=group.id, session_id=session.id
+    )
 
     items = await get_department_drafts(conn, [result.id])
 

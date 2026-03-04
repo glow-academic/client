@@ -18,4 +18,6 @@ async def create_model_drafts(
     mcp: bool = False,
 ) -> CreateDraftResponse:
     """Create a model_drafts entry."""
-    return await create_draft(conn, TABLE, group_id=group_id, session_id=session_id, version=version, mcp=mcp)
+    return await create_draft(
+        conn, TABLE, group_id=group_id, session_id=session_id, version=version, mcp=mcp
+    )

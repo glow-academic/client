@@ -21,7 +21,9 @@ async def _setup(conn):
 
 async def test_finds_created(conn):
     session, group = await _setup(conn)
-    result = await create_provider_drafts(conn, group_id=group.id, session_id=session.id)
+    result = await create_provider_drafts(
+        conn, group_id=group.id, session_id=session.id
+    )
 
     items = await search_provider_drafts(conn, group_id=group.id)
 

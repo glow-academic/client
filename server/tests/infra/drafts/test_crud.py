@@ -75,7 +75,9 @@ async def test_create_with_mcp(conn):
 
 async def test_create_rejects_invalid_table(conn):
     with pytest.raises(ValueError, match="Invalid drafts table"):
-        await create_draft(conn, "not_a_real_table", group_id=uuid4(), session_id=uuid4())
+        await create_draft(
+            conn, "not_a_real_table", group_id=uuid4(), session_id=uuid4()
+        )
 
 
 # ── get_drafts ───────────────────────────────────────────────────────────

@@ -31,12 +31,8 @@ from app.routes.v5.socket.internal.attempt.types import (
     GenerateRequestData,
 )
 from app.routes.v5.socket.types import MESSAGE_ENTRY_TYPES
-from app.routes.v5.tools.entries.attempt_chat.get import (
-    get_attempt_chat_entries_internal,
-)
-from app.routes.v5.tools.entries.attempt_message.refresh import (
-    refresh_attempt_message_internal,
-)
+from app.routes.v5.tools.entries.attempt_chat.get import get_attempt_chats
+from app.routes.v5.tools.entries.attempt_message.refresh import refresh_attempt_message
 from app.routes.v5.tools.entries.attempt_message_tree.create import (
     create_attempt_message_tree_entry_internal,
 )
@@ -93,9 +89,7 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
 
         async with get_db_connection() as conn:
             # Step 1: Resolve group_id from attempt_chat_entry
-            chat_entries = await get_attempt_chat_entries_internal(
-                conn, [chat_id], bypass_cache=True
-            )
+            chat_entries = await get_attempt_chats(conn, [chat_id])
 
             if not chat_entries:
                 await internal_sio.emit(
@@ -109,9 +103,7 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
                 )
                 return
 
-            group_id = chat_entries[0].get("group_id")
-            if group_id and isinstance(group_id, str):
-                group_id = uuid.UUID(group_id)
+            group_id = chat_entries[0].group_id
 
             if not group_id:
                 await internal_sio.emit(
@@ -237,7 +229,7 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
 
         # Step 5b: Refresh MVs so generate_prepare sees the new message
         async with get_db_connection() as conn:
-            await refresh_attempt_message_internal(conn)
+            await refresh_attempt_message(conn)
             await refresh_attempt_message_tree_internal(conn)
 
         # Step 5c: Invalidate attempt caches so generate_prepare fetches fresh data

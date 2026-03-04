@@ -36,12 +36,10 @@ from app.routes.v5.socket.internal.attempt.types import (
     AttemptProceedData,
     AttemptStartedData,
 )
-from app.routes.v5.tools.entries.attempt.get import get_attempt_entries_internal
-from app.routes.v5.tools.entries.attempt.refresh import refresh_attempt_internal
+from app.routes.v5.tools.entries.attempt.get import get_attempts
+from app.routes.v5.tools.entries.attempt.refresh import refresh_attempt
 from app.routes.v5.tools.entries.attempt_chat.create import create_attempt_chat
-from app.routes.v5.tools.entries.attempt_chat.refresh import (
-    refresh_attempt_chat_internal,
-)
+from app.routes.v5.tools.entries.attempt_chat.refresh import refresh_attempt_chat
 from app.routes.v5.tools.entries.attempt_chat_bridge.create import (
     create_attempt_chat_bridge,
 )
@@ -200,8 +198,8 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
                             pass
 
                 # Refresh MVs
-                await refresh_attempt_internal(conn)
-                await refresh_attempt_chat_internal(conn)
+                await refresh_attempt(conn)
+                await refresh_attempt_chat(conn)
 
             await internal_sio.emit(
                 "attempt_ended",
@@ -219,16 +217,14 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
 
         async with get_db_connection() as conn:
             # 3a. Get attempt entry (num_chats, practice flag, department_id)
-            attempt_entries = await get_attempt_entries_internal(
-                conn, [attempt_id], bypass_cache=True
-            )
+            attempt_entries = await get_attempts(conn, [attempt_id])
             if not attempt_entries:
                 raise ValueError(f"Attempt not found: {attempt_id}")
             attempt_data = attempt_entries[0]
 
-            num_chats = attempt_data.get("num_chats", 1)
-            is_practice = attempt_data.get("practice", False)
-            attempt_department_id = attempt_data.get("department_id")
+            num_chats = attempt_data.num_chats
+            is_practice = attempt_data.practice
+            attempt_department_id = attempt_data.department_id
 
             # 3b. Get already-resolved bridges (completed_count + resolved chat_ids)
             bridges = await search_attempt_chat_bridge_entries_internal(
@@ -505,8 +501,8 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
         else:
             # Paths 1 & 3 (no generation): refresh MVs, emit chat_started
             async with get_db_connection() as conn:
-                await refresh_attempt_internal(conn)
-                await refresh_attempt_chat_internal(conn)
+                await refresh_attempt(conn)
+                await refresh_attempt_chat(conn)
 
             await internal_sio.emit(
                 "attempt_chat_started",

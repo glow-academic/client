@@ -23,6 +23,13 @@ async def search_department_drafts(
 ) -> list[GetDraftResponse]:
     """Search department_drafts with declarative filters."""
     return await search_drafts(
-        conn, TABLE, group_id=group_id, session_id=session_id,
-        date_from=date_from, date_to=date_to, mcp=mcp, limit=limit, offset=offset,
+        conn,
+        TABLE,
+        group_id=group_id,
+        session_id=session_id,
+        date_from=date_from,
+        date_to=date_to,
+        mcp=mcp,
+        limit=limit,
+        offset=offset,
     )

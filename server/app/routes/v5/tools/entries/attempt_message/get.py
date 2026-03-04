@@ -1,13 +1,11 @@
-"""attempt_message/get internal — reusable data-access layer."""
+"""attempt_message/get — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
+from app.routes.v5.tools.entries.attempt_message.types import GetAttemptMessageResponse
 from app.sql.types import (
-    GetAttemptMessageEntriesSqlParams,
-    GetAttemptMessageEntriesSqlRow,
     QGetSimulationMessagesViewV4Item,
 )
 from app.utils.cache.cache_key import cache_key
@@ -15,50 +13,45 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = (
-    "app/sql/queries/entries/attempt_message/get_attempt_message_entries_complete.sql"
-)
+MV_NAME = "attempt_message_mv"
 
 VIEW_SQL_PATH = "app/sql/queries/views/simulation/messages/get_simulation_messages_view_complete.sql"
 
 
-async def get_attempt_message_entries_internal(
+async def get_attempt_messages(
     conn: asyncpg.Connection,
     ids: list[UUID],
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to fetch attempt_message entries by IDs."""
+) -> list[GetAttemptMessageResponse]:
+    """Get attempt_message entries by IDs from attempt_message_mv."""
     if not ids:
         return []
 
-    tags = ["entries", "attempt_message"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/attempt_message/get",
-        {"ids": [str(id) for id in ids]},
+    rows = await conn.fetch(
+        f"""
+        SELECT message_id, chat_id, attempt_id, type,
+               created_at, completed, runs_id, text_id,
+               history_file_path, audio_id
+        FROM {MV_NAME}
+        WHERE message_id = ANY($1)
+        """,
+        ids,
     )
 
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    params = GetAttemptMessageEntriesSqlParams(ids=ids)
-    result = cast(
-        GetAttemptMessageEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
+    return [
+        GetAttemptMessageResponse(
+            message_id=r["message_id"],
+            chat_id=r["chat_id"],
+            attempt_id=r["attempt_id"],
+            type=r["type"],
+            created_at=r["created_at"],
+            completed=r["completed"],
+            runs_id=r["runs_id"],
+            text_id=r["text_id"],
+            history_file_path=r["history_file_path"],
+            audio_id=r["audio_id"],
+        )
+        for r in rows
+    ]
 
 
 async def get_attempt_message_internal(

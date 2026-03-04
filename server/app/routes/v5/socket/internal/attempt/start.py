@@ -28,10 +28,8 @@ from app.routes.v5.socket.internal.attempt.types import (
     AttemptProceedData,
 )
 from app.routes.v5.tools.entries.attempt.create import create_attempt
-from app.routes.v5.tools.entries.attempt.refresh import refresh_attempt_internal
-from app.routes.v5.tools.entries.attempt_chat.refresh import (
-    refresh_attempt_chat_internal,
-)
+from app.routes.v5.tools.entries.attempt.refresh import refresh_attempt
+from app.routes.v5.tools.entries.attempt_chat.refresh import refresh_attempt_chat
 from app.routes.v5.tools.entries.attempt_home.create import create_attempt_home
 from app.routes.v5.tools.entries.attempt_practice.create import create_attempt_practice
 from app.routes.v5.tools.entries.calls.create import create_call
@@ -219,8 +217,8 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
 
         # Step 2: Refresh MVs so the attempt is visible immediately
         async with get_db_connection() as conn:
-            await refresh_attempt_internal(conn)
-            await refresh_attempt_chat_internal(conn)
+            await refresh_attempt(conn)
+            await refresh_attempt_chat(conn)
 
         # Step 3: Delegate to attempt_proceed
         await internal_sio.emit(
