@@ -1,0 +1,50 @@
+"""Tests for get_messages_completions_docs."""
+
+import pytest
+
+from app.routes.v5.tools.entries.messages_completions.docs import (
+    get_messages_completions_docs,
+)
+
+pytestmark = pytest.mark.asyncio
+
+
+async def test_returns_docs_response(conn):
+    result = await get_messages_completions_docs(conn)
+
+    assert result.name == "messages_completions"
+    assert result.type == "entry"
+    assert len(result.description) > 0
+
+
+async def test_no_materialized_view(conn):
+    result = await get_messages_completions_docs(conn)
+
+    assert result.materialized_view is None
+
+
+async def test_includes_source_tables(conn):
+    result = await get_messages_completions_docs(conn)
+
+    table_names = [t.name for t in result.tables]
+    assert "messages_completions_entry" in table_names
+
+
+async def test_includes_all_operations(conn):
+    result = await get_messages_completions_docs(conn)
+
+    op_names = [op.name for op in result.operations]
+    assert "create_messages_completions_entry_internal" in op_names
+    assert "get_messages_completions_entries_internal" in op_names
+
+
+async def test_create_operation_has_params(conn):
+    result = await get_messages_completions_docs(conn)
+
+    create_op = next(
+        op
+        for op in result.operations
+        if op.name == "create_messages_completions_entry_internal"
+    )
+    param_names = [p.name for p in create_op.params]
+    assert len(param_names) > 0
