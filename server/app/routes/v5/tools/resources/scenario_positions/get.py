@@ -1,80 +1,72 @@
-"""scenario_positions/get internal — reusable data-access layer."""
+"""Scenario Positions Resource GET — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    GetScenarioPositionsSqlParams,
-    GetScenarioPositionsSqlRow,
-    QGetScenarioPositionsV4Item,
+from app.routes.v5.tools.resources.scenario_positions.types import (
+    GetScenarioPositionResponse,
 )
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = (
-    "app/sql/queries/resources/scenario_positions/get_scenario_positions_complete.sql"
-)
 
 
-async def get_scenario_positions_internal(
+async def get_scenario_positions(
     conn: asyncpg.Connection,
     ids: list[UUID],
+    redis: Redis,
     bypass_cache: bool = False,
-) -> list[QGetScenarioPositionsV4Item]:
-    """Internal function for parallel fetching from artifact endpoint.
-
-    Args:
-        conn: Database connection
-        ids: List of scenario position resource IDs
-        bypass_cache: Whether to bypass cache
-
-    Returns:
-        List of scenario position items
-    """
+) -> list[GetScenarioPositionResponse]:
+    """Fetch scenario_positions_resource entries by IDs."""
     if not ids:
         return []
 
-    # Generate cache key
-    cache_key_val = cache_key(
-        "scenario_positions/get",
-        {
-            "ids": sorted([str(id) for id in ids]),
-        },
+    tags = ["resources", "scenario_positions"]
+    key = cache_key(
+        "/api/v5/resources/scenario_positions/get",
+        {"ids": [str(id) for id in ids]},
     )
 
-    # Try cache (unless bypassed)
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetScenarioPositionsV4Item.model_validate(item)
-                for item in cached.get("data", [])
+                GetScenarioPositionResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
-    # Execute SQL
-    params = GetScenarioPositionsSqlParams(ids=ids)
-    result = cast(
-        GetScenarioPositionsSqlRow,
-        await execute_sql_typed(
-            conn,
-            SQL_PATH,
-            params=params,
-        ),
+    rows = await conn.fetch(
+        """
+        SELECT id, scenario_id, value,
+               created_at, active, mcp, generated
+        FROM scenario_positions_resource
+        WHERE id = ANY($1)
+        ORDER BY array_position($1, id)
+    """,
+        ids,
     )
 
-    items = result.items or []
+    items = [
+        GetScenarioPositionResponse(
+            id=r["id"],
+            scenario_id=r["scenario_id"],
+            value=r["value"],
+            created_at=r["created_at"],
+            active=r["active"],
+            mcp=r["mcp"],
+            generated=r["generated"],
+        )
+        for r in rows
+    ]
 
-    # Cache response
-    await set_cached(
-        cache_key_val,
-        {"data": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=["scenario_positions"],
-        redis=get_redis_client(),
-    )
-
+    if not bypass_cache:
+        await set_cached(
+            key,
+            {"items": [i.model_dump(mode="json") for i in items]},
+            60,
+            tags,
+            redis=redis,
+        )
     return items

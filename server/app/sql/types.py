@@ -5860,112 +5860,6 @@ class SearchAttemptMessageTreeEntriesApiResponse(BaseModel):
 
 
 
-# Generated from: create_attempt_mutes_entries
-
-class CreateAttemptMutesEntriesSqlParams(BaseModel):
-
-    run_id: UUID
-    conversation_id: UUID
-    muted: bool | None = False
-    tool_id: UUID | None = None
-    upload_id: UUID | None = None
-    session_id: UUID | None = None
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.run_id,
-            self.conversation_id,
-            self.muted,
-            self.tool_id,
-            self.upload_id,
-            self.session_id,
-            self.mcp,
-        )
-
-class CreateAttemptMutesEntriesSqlRow(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-class CreateAttemptMutesEntriesApiRequest(BaseModel):
-
-    run_id: UUID
-    conversation_id: UUID
-    muted: bool | None = False
-    tool_id: UUID | None = None
-    upload_id: UUID | None = None
-    session_id: UUID | None = None
-    mcp: bool | None = False
-
-class CreateAttemptMutesEntriesApiResponse(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-
-
-# Generated from: get_attempt_mutes_entries
-
-class GetAttemptMutesEntriesSqlParams(BaseModel):
-
-    ids: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.ids,
-        )
-
-class GetAttemptMutesEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class GetAttemptMutesEntriesApiRequest(BaseModel):
-
-    ids: list[UUID]
-
-class GetAttemptMutesEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
-# Generated from: search_attempt_mutes_entries
-
-class SearchAttemptMutesEntriesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    conversation_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.conversation_id,
-        )
-
-class SearchAttemptMutesEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class SearchAttemptMutesEntriesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    conversation_id: UUID | None = None
-
-class SearchAttemptMutesEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
 # Generated from: create_attempt_practice_entries
 
 class CreateAttemptPracticeEntriesSqlParams(BaseModel):
@@ -9098,6 +8992,112 @@ class SearchModelDraftsEntriesApiRequest(BaseModel):
     group_id: UUID | None = None
 
 class SearchModelDraftsEntriesApiResponse(BaseModel):
+
+    items: Any | None = None
+
+
+
+# Generated from: create_mutes_entries
+
+class CreateMutesEntriesSqlParams(BaseModel):
+
+    run_id: UUID
+    conversation_id: UUID
+    muted: bool | None = False
+    tool_id: UUID | None = None
+    upload_id: UUID | None = None
+    session_id: UUID | None = None
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+            self.conversation_id,
+            self.muted,
+            self.tool_id,
+            self.upload_id,
+            self.session_id,
+            self.mcp,
+        )
+
+class CreateMutesEntriesSqlRow(BaseModel):
+
+    id: UUID | None = None
+    call_id: UUID | None = None
+    message_id: UUID | None = None
+
+class CreateMutesEntriesApiRequest(BaseModel):
+
+    run_id: UUID
+    conversation_id: UUID
+    muted: bool | None = False
+    tool_id: UUID | None = None
+    upload_id: UUID | None = None
+    session_id: UUID | None = None
+    mcp: bool | None = False
+
+class CreateMutesEntriesApiResponse(BaseModel):
+
+    id: UUID | None = None
+    call_id: UUID | None = None
+    message_id: UUID | None = None
+
+
+
+# Generated from: get_mutes_entries
+
+class GetMutesEntriesSqlParams(BaseModel):
+
+    ids: list[UUID]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.ids,
+        )
+
+class GetMutesEntriesSqlRow(BaseModel):
+
+    items: Any | None = None
+
+class GetMutesEntriesApiRequest(BaseModel):
+
+    ids: list[UUID]
+
+class GetMutesEntriesApiResponse(BaseModel):
+
+    items: Any | None = None
+
+
+
+# Generated from: search_mutes_entries
+
+class SearchMutesEntriesSqlParams(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    conversation_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.search,
+            self.limit_count,
+            self.offset_count,
+            self.conversation_id,
+        )
+
+class SearchMutesEntriesSqlRow(BaseModel):
+
+    items: Any | None = None
+
+class SearchMutesEntriesApiRequest(BaseModel):
+
+    search: str | None = None
+    limit_count: int | None = 20
+    offset_count: int | None = 0
+    conversation_id: UUID | None = None
+
+class SearchMutesEntriesApiResponse(BaseModel):
 
     items: Any | None = None
 
@@ -33372,24 +33372,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchAttemptMessageTreeEntriesApiRequest",
         "SearchAttemptMessageTreeEntriesApiResponse",
     ),
-    "app/sql/queries/entries/attempt_mutes/create_attempt_mutes_entries_complete.sql": (
-        "CreateAttemptMutesEntriesSqlParams",
-        "CreateAttemptMutesEntriesSqlRow",
-        "CreateAttemptMutesEntriesApiRequest",
-        "CreateAttemptMutesEntriesApiResponse",
-    ),
-    "app/sql/queries/entries/attempt_mutes/get_attempt_mutes_entries_complete.sql": (
-        "GetAttemptMutesEntriesSqlParams",
-        "GetAttemptMutesEntriesSqlRow",
-        "GetAttemptMutesEntriesApiRequest",
-        "GetAttemptMutesEntriesApiResponse",
-    ),
-    "app/sql/queries/entries/attempt_mutes/search_attempt_mutes_entries_complete.sql": (
-        "SearchAttemptMutesEntriesSqlParams",
-        "SearchAttemptMutesEntriesSqlRow",
-        "SearchAttemptMutesEntriesApiRequest",
-        "SearchAttemptMutesEntriesApiResponse",
-    ),
     "app/sql/queries/entries/attempt_practice/create_attempt_practice_entries_complete.sql": (
         "CreateAttemptPracticeEntriesSqlParams",
         "CreateAttemptPracticeEntriesSqlRow",
@@ -33941,6 +33923,24 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchModelDraftsEntriesSqlRow",
         "SearchModelDraftsEntriesApiRequest",
         "SearchModelDraftsEntriesApiResponse",
+    ),
+    "app/sql/queries/entries/mutes/create_mutes_entries_complete.sql": (
+        "CreateMutesEntriesSqlParams",
+        "CreateMutesEntriesSqlRow",
+        "CreateMutesEntriesApiRequest",
+        "CreateMutesEntriesApiResponse",
+    ),
+    "app/sql/queries/entries/mutes/get_mutes_entries_complete.sql": (
+        "GetMutesEntriesSqlParams",
+        "GetMutesEntriesSqlRow",
+        "GetMutesEntriesApiRequest",
+        "GetMutesEntriesApiResponse",
+    ),
+    "app/sql/queries/entries/mutes/search_mutes_entries_complete.sql": (
+        "SearchMutesEntriesSqlParams",
+        "SearchMutesEntriesSqlRow",
+        "SearchMutesEntriesApiRequest",
+        "SearchMutesEntriesApiResponse",
     ),
     "app/sql/queries/entries/parameter_drafts/create_parameter_drafts_entries_complete.sql": (
         "CreateParameterDraftsEntriesSqlParams",
@@ -38196,21 +38196,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/entries/attempt_mutes/create_attempt_mutes_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/entries/attempt_mutes/get_attempt_mutes_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/entries/attempt_mutes/search_attempt_mutes_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/entries/attempt_practice/create_attempt_practice_entries_complete.sql"]
     ) -> SqlString: ...
 
@@ -38667,6 +38652,21 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/entries/model_drafts/search_model_drafts_entries_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/queries/entries/mutes/create_mutes_entries_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/queries/entries/mutes/get_mutes_entries_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/queries/entries/mutes/search_mutes_entries_complete.sql"]
     ) -> SqlString: ...
 
     @overload

@@ -5,7 +5,7 @@
 
 
 -- Entry resource
-INSERT INTO public.entries_resource (id, entry, created_at, active, generated, mcp) VALUES ('edc90721-a6eb-43be-ad61-ccf625f5ae9e', 'mutes', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.entries_resource (id, entry, created_at, active, generated, mcp) VALUES ('edc90721-a6eb-43be-ad61-ccf625f5ae9e', 'attempt_mutes', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Resource rows
 INSERT INTO public.args_resource (id, name, description, field_type, required, default_value, created_at, active, generated, mcp) VALUES ('49a1315a-936c-4cb4-892a-a1b47a473fee', 'call_id', '', 'string', false, '', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;

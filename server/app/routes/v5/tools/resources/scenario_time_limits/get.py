@@ -1,78 +1,67 @@
-"""scenario_time_limits/get internal — reusable data-access layer."""
+"""Scenario Time Limits Resource GET — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    GetScenarioTimeLimitsSqlParams,
-    GetScenarioTimeLimitsSqlRow,
-    QGetScenarioTimeLimitsV4Item,
-)
+from app.routes.v5.tools.resources.scenario_time_limits.types import GetScenarioTimeLimitResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/resources/scenario_time_limits/get_scenario_time_limits_complete.sql"
 
 
-async def get_scenario_time_limits_internal(
+async def get_scenario_time_limits(
     conn: asyncpg.Connection,
     ids: list[UUID],
+    redis: Redis,
     bypass_cache: bool = False,
-) -> list[QGetScenarioTimeLimitsV4Item]:
-    """Internal function for parallel fetching from artifact endpoint.
-
-    Args:
-        conn: Database connection
-        ids: List of scenario time limit resource IDs
-        bypass_cache: Whether to bypass cache
-
-    Returns:
-        List of scenario time limit items
-    """
+) -> list[GetScenarioTimeLimitResponse]:
+    """Fetch scenario_time_limits_resource entries by IDs."""
     if not ids:
         return []
 
-    # Generate cache key
-    cache_key_val = cache_key(
-        "scenario_time_limits/get",
-        {
-            "ids": sorted([str(id) for id in ids]),
-        },
-    )
+    tags = ["resources", "scenario_time_limits"]
+    key = cache_key("/api/v5/resources/scenario_time_limits/get", {"ids": [str(id) for id in ids]})
 
-    # Try cache (unless bypassed)
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetScenarioTimeLimitsV4Item.model_validate(item)
-                for item in cached.get("data", [])
+                GetScenarioTimeLimitResponse.model_validate(item) for item in cached.get("items", [])
             ]
 
-    # Execute SQL
-    params = GetScenarioTimeLimitsSqlParams(ids=ids)
-    result = cast(
-        GetScenarioTimeLimitsSqlRow,
-        await execute_sql_typed(
-            conn,
-            SQL_PATH,
-            params=params,
-        ),
+    rows = await conn.fetch(
+        """
+        SELECT id, scenario_id, time_limit_seconds, negative,
+               created_at, active, mcp, generated
+        FROM scenario_time_limits_resource
+        WHERE id = ANY($1)
+        ORDER BY array_position($1, id)
+    """,
+        ids,
     )
 
-    items = result.items or []
+    items = [
+        GetScenarioTimeLimitResponse(
+            id=r["id"],
+            scenario_id=r["scenario_id"],
+            time_limit_seconds=r["time_limit_seconds"],
+            negative=r["negative"],
+            created_at=r["created_at"],
+            active=r["active"],
+            mcp=r["mcp"],
+            generated=r["generated"],
+        )
+        for r in rows
+    ]
 
-    # Cache response
-    await set_cached(
-        cache_key_val,
-        {"data": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=["scenario_time_limits"],
-        redis=get_redis_client(),
-    )
-
+    if not bypass_cache:
+        await set_cached(
+            key,
+            {"items": [i.model_dump(mode="json") for i in items]},
+            60,
+            tags,
+            redis=redis,
+        )
     return items

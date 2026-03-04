@@ -1,63 +1,71 @@
-"""options/get internal — reusable data-access layer."""
+"""Options Resource GET — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    GetOptionsSqlParams,
-    GetOptionsSqlRow,
-    QGetOptionsV4Item,
-)
+from app.routes.v5.tools.resources.options.types import GetOptionResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-BATCH_SQL_PATH = "app/sql/queries/resources/options/get_options_complete.sql"
 
 
-async def get_options_internal(
+async def get_options(
     conn: asyncpg.Connection,
     ids: list[UUID],
+    redis: Redis,
     bypass_cache: bool = False,
-) -> list[QGetOptionsV4Item]:
-    """Internal function for batch fetching options by IDs.
-
-    This is a simple fetch without active flag check.
-    """
+) -> list[GetOptionResponse]:
+    """Fetch options_resource entries by IDs."""
     if not ids:
         return []
 
     tags = ["resources", "options"]
-    cache_key_val = cache_key(
-        "/api/v5/resources/options/get-batch",
+    key = cache_key(
+        "/api/v5/resources/options/get",
         {"ids": [str(id) for id in ids]},
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetOptionsV4Item.model_validate(item)
+                GetOptionResponse.model_validate(item)
                 for item in cached.get("items", [])
             ]
 
-    params = GetOptionsSqlParams(p_ids=ids)
-    result = cast(
-        GetOptionsSqlRow,
-        await execute_sql_typed(conn, BATCH_SQL_PATH, params=params),
+    rows = await conn.fetch(
+        """
+        SELECT id, option_text, is_correct, question_id,
+               created_at, active, mcp, generated
+        FROM options_resource
+        WHERE id = ANY($1)
+        ORDER BY array_position($1, id)
+    """,
+        ids,
     )
 
-    items: list[QGetOptionsV4Item] = result.items if result and result.items else []
+    items = [
+        GetOptionResponse(
+            id=r["id"],
+            option_text=r["option_text"],
+            is_correct=r["is_correct"],
+            question_id=r["question_id"],
+            created_at=r["created_at"],
+            active=r["active"],
+            mcp=r["mcp"],
+            generated=r["generated"],
+        )
+        for r in rows
+    ]
 
-    await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
+    if not bypass_cache:
+        await set_cached(
+            key,
+            {"items": [i.model_dump(mode="json") for i in items]},
+            60,
+            tags,
+            redis=redis,
+        )
     return items

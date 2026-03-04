@@ -1,84 +1,66 @@
-"""simulation_positions/get internal — reusable data-access layer."""
+"""Simulation Positions Resource GET — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.routes.v5.api.resources.simulation_positions.types import (
-    GetSimulationPositionsSqlParams,
-    GetSimulationPositionsSqlRow,
-    GetSimulationPositionsV4Item,
-)
+from app.routes.v5.tools.resources.simulation_positions.types import GetSimulationPositionResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/resources/simulation_positions/get_simulation_positions_complete.sql"
 
 
-async def get_simulation_positions_internal(
+async def get_simulation_positions(
     conn: asyncpg.Connection,
-    simulation_ids: list[UUID],
+    ids: list[UUID],
+    redis: Redis,
     bypass_cache: bool = False,
-) -> list[GetSimulationPositionsV4Item]:
-    """Internal function for parallel fetching from cohort endpoint.
-
-    Args:
-        conn: Database connection
-        simulation_ids: List of simulation IDs to fetch positions for
-        bypass_cache: Whether to bypass cache
-
-    Returns:
-        List of simulation position items
-    """
-    if not simulation_ids:
-        return []
-    # Normalize to UUIDs (SQL function expects uuid[])
-    simulation_ids = [
-        UUID(sid) if isinstance(sid, str) else sid
-        for sid in simulation_ids
-        if sid is not None
-    ]
-    if not simulation_ids:
+) -> list[GetSimulationPositionResponse]:
+    """Fetch simulation_positions_resource entries by IDs."""
+    if not ids:
         return []
 
-    # Generate cache key
-    cache_key_val = cache_key(
-        "simulation_positions/get",
-        {"simulation_ids": [str(id) for id in simulation_ids]},
-    )
+    tags = ["resources", "simulation_positions"]
+    key = cache_key("/api/v5/resources/simulation_positions/get", {"ids": [str(id) for id in ids]})
 
-    # Try cache (unless bypassed)
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetSimulationPositionsV4Item.model_validate(item)
-                for item in cached.get("data", [])
+                GetSimulationPositionResponse.model_validate(item) for item in cached.get("items", [])
             ]
 
-    # Execute SQL
-    params = GetSimulationPositionsSqlParams(simulation_ids=simulation_ids)
-    result = cast(
-        GetSimulationPositionsSqlRow,
-        await execute_sql_typed(
-            conn,
-            SQL_PATH,
-            params=params,
-        ),
+    rows = await conn.fetch(
+        """
+        SELECT id, simulation_id, value,
+               created_at, active, mcp, generated
+        FROM simulation_positions_resource
+        WHERE id = ANY($1)
+        ORDER BY array_position($1, id)
+    """,
+        ids,
     )
 
-    items = result.items or []
+    items = [
+        GetSimulationPositionResponse(
+            id=r["id"],
+            simulation_id=r["simulation_id"],
+            value=r["value"],
+            created_at=r["created_at"],
+            active=r["active"],
+            mcp=r["mcp"],
+            generated=r["generated"],
+        )
+        for r in rows
+    ]
 
-    # Cache response
-    await set_cached(
-        cache_key_val,
-        {"data": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=["simulation_positions"],
-        redis=get_redis_client(),
-    )
-
+    if not bypass_cache:
+        await set_cached(
+            key,
+            {"items": [i.model_dump(mode="json") for i in items]},
+            60,
+            tags,
+            redis=redis,
+        )
     return items

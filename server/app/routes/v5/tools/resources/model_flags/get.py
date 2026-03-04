@@ -1,78 +1,66 @@
-"""model_flags/get internal — reusable data-access layer."""
+"""Model Flags Resource GET — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    GetModelFlagsSqlParams,
-    GetModelFlagsSqlRow,
-    QGetModelFlagsV4Item,
-)
+from app.routes.v5.tools.resources.model_flags.types import GetModelFlagResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/resources/model_flags/get_model_flags_complete.sql"
 
 
-async def get_model_flags_internal(
+async def get_model_flags(
     conn: asyncpg.Connection,
     ids: list[UUID],
+    redis: Redis,
     bypass_cache: bool = False,
-) -> list[QGetModelFlagsV4Item]:
-    """Internal function for parallel fetching from artifact endpoint.
-
-    Args:
-        conn: Database connection
-        ids: List of model flag resource IDs
-        bypass_cache: Whether to bypass cache
-
-    Returns:
-        List of model flag items
-    """
+) -> list[GetModelFlagResponse]:
+    """Fetch model_flags_resource entries by IDs."""
     if not ids:
         return []
 
-    # Generate cache key
-    cache_key_val = cache_key(
-        "model_flags/get",
-        {
-            "ids": sorted([str(id) for id in ids]),
-        },
-    )
+    tags = ["resources", "model_flags"]
+    key = cache_key("/api/v5/resources/model_flags/get", {"ids": [str(id) for id in ids]})
 
-    # Try cache (unless bypassed)
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetModelFlagsV4Item.model_validate(item)
-                for item in cached.get("data", [])
+                GetModelFlagResponse.model_validate(item) for item in cached.get("items", [])
             ]
 
-    # Execute SQL
-    params = GetModelFlagsSqlParams(ids=ids)
-    result = cast(
-        GetModelFlagsSqlRow,
-        await execute_sql_typed(
-            conn,
-            SQL_PATH,
-            params=params,
-        ),
+    rows = await conn.fetch(
+        """
+        SELECT id, model_id, flag_id,
+               created_at, active, mcp, generated
+        FROM model_flags_resource
+        WHERE id = ANY($1)
+        ORDER BY array_position($1, id)
+    """,
+        ids,
     )
 
-    items = result.items or []
+    items = [
+        GetModelFlagResponse(
+            id=r["id"],
+            model_id=r["model_id"],
+            flag_id=r["flag_id"],
+            created_at=r["created_at"],
+            active=r["active"],
+            mcp=r["mcp"],
+            generated=r["generated"],
+        )
+        for r in rows
+    ]
 
-    # Cache response
-    await set_cached(
-        cache_key_val,
-        {"data": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=["model_flags"],
-        redis=get_redis_client(),
-    )
-
+    if not bypass_cache:
+        await set_cached(
+            key,
+            {"items": [i.model_dump(mode="json") for i in items]},
+            60,
+            tags,
+            redis=redis,
+        )
     return items
