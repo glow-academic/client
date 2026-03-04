@@ -20,7 +20,7 @@ from app.routes.auth.route_permissions import (
 from app.routes.auth.types import AuthProfileInternalData, GetAuthProfileApiResponse
 from app.routes.v5.tools.resources.cohorts.get import get_cohorts_internal
 from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.roles.get import get_roles_internal
+from app.routes.v5.tools.resources.roles.get import get_roles
 from app.utils.error.handle_route_error import handle_route_error
 from app.infra.sessions.get import get_session_internal
 from app.infra.globals import get_db, get_pool, get_redis_client
@@ -64,7 +64,7 @@ async def get_auth_profile_internal(
 
     async def fetch_roles():
         async with pool.acquire() as c:
-            return await get_roles_internal(c, bypass_cache=bypass_cache)
+            return await get_roles(c, None, get_redis_client(), bypass_cache=bypass_cache)
 
     async def fetch_session():
         if not profile_id:

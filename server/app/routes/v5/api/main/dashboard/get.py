@@ -62,7 +62,7 @@ from app.routes.v5.tools.entries.attempt.get import (
 from app.routes.v5.tools.entries.attempt.search import get_attempt_list_internal
 from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
 from app.routes.v5.tools.resources.documents.get import get_documents_internal
-from app.routes.v5.tools.resources.fields.get import get_fields_internal
+from app.routes.v5.tools.resources.fields.get import get_fields
 from app.routes.v5.tools.resources.parameter_fields.get import (
     get_parameter_fields_internal,
 )
@@ -801,8 +801,8 @@ async def get_dashboard_internal(
 
     async def _get_fields() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_fields_internal(
-                conn=c, ids=list(field_ids_set), bypass_cache=bypass_cache
+            return await get_fields(
+                c, list(field_ids_set), get_redis_client(), bypass_cache=bypass_cache
             )
 
     parameters, fields_list = await asyncio.gather(

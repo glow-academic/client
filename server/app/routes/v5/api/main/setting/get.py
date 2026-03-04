@@ -102,7 +102,7 @@ from app.routes.v5.tools.resources.provider_keys.search import (
     search_provider_keys_internal,
 )
 from app.routes.v5.tools.resources.providers.get import get_providers
-from app.routes.v5.tools.resources.roles.get import get_roles_internal
+from app.routes.v5.tools.resources.roles.get import get_roles
 from app.routes.v5.tools.resources.roles.search import search_roles_internal
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.sql.types import (
@@ -429,7 +429,7 @@ async def get_setting_internal(
 
     async def fetch_roles():
         async with pool.acquire() as c:
-            all_roles = await get_roles_internal(c, bypass_cache=bypass_cache)
+            all_roles = await get_roles(c, None, get_redis_client(), bypass_cache=bypass_cache)
             suggestions = await search_roles_internal(
                 c,
                 None,
@@ -511,7 +511,7 @@ async def get_setting_internal(
     auth_item_keys = _dedupe_by_id(
         auth_item_keys_selected + auth_item_keys_suggestions, "id"
     )
-    # Roles: get_roles_internal returns all, so just use suggestions for consistency
+    # Roles: get_roles returns all, so just use suggestions for consistency
     roles = _dedupe_by_id(roles_suggestions, "role") if roles_suggestions else roles_all
 
     # Find selected resources (single-select)

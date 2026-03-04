@@ -29,7 +29,7 @@ from app.routes.v5.api.main.persona.types import (
 )
 from app.routes.v5.api.types import ListFilterOption, ListFilterSection
 from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.fields.get import get_fields_internal
+from app.routes.v5.tools.resources.fields.get import get_fields
 from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
 from app.sql.types import (
     GetPersonasListApiRequest,
@@ -302,8 +302,8 @@ async def get_persona_list(
                 if not field_ids_to_fetch:
                     return []
                 async with pool.acquire() as c:
-                    return await get_fields_internal(
-                        c, field_ids_to_fetch, bypass_cache
+                    return await get_fields(
+                        c, field_ids_to_fetch, get_redis_client(), bypass_cache
                     )
 
             async def fetch_departments() -> list:
