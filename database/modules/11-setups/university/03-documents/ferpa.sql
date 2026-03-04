@@ -40,5 +40,5 @@ INSERT INTO public.document_parameter_fields_junction (document_id, parameter_fi
 -- document_parameters_junction
 INSERT INTO public.document_parameters_junction (document_id, parameter_id, type, created_at, active, generated, mcp) VALUES ('019b3be4-324b-73d4-b4a8-bfeec508838d', '019bb25e-e621-7018-96b0-6fa0d0ec3d1d', 'direct', '2025-12-07T20:44:58.161092+00:00', true, false, false) ON CONFLICT (document_id, parameter_id, type) DO NOTHING;
 INSERT INTO public.document_parameters_junction (document_id, parameter_id, type, created_at, active, generated, mcp) VALUES ('019b3be4-324b-73d4-b4a8-bfeec508838d', '019bb25e-e621-7027-abc4-9b86171ee17b', 'direct', '2025-12-04T13:22:00.014150+00:00', true, false, false) ON CONFLICT (document_id, parameter_id, type) DO NOTHING;
--- document_uploads_junction
-INSERT INTO public.document_uploads_junction (active, created_at, uploads_id, document_id, generated, mcp) VALUES (true, '2025-12-02T21:29:26.457679+00:00', '019bcc94-efb5-7817-954e-38e6c05e1d7a', '019b3be4-324b-73d4-b4a8-bfeec508838d', false, false) ON CONFLICT (document_id, uploads_id) DO NOTHING;
+-- document_files_junction
+INSERT INTO public.document_files_junction (active, created_at, files_id, document_id, generated, mcp) VALUES (true, '2025-12-02T21:29:26.457679+00:00', '019bcc94-efb5-7817-954e-38e6c05e1d7a', '019b3be4-324b-73d4-b4a8-bfeec508838d', false, false) ON CONFLICT (document_id, files_id) DO NOTHING;

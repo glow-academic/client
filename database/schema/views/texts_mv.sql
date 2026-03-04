@@ -8,7 +8,7 @@
 CREATE MATERIALIZED VIEW public.texts_mv AS
  SELECT tr.id AS texts_id,
     te.id AS text_id,
-    ur.id AS uploads_id,
+    ur.id AS files_id,
     ue.file_path,
     ue.mime_type,
     te.created_at

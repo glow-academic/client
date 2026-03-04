@@ -24,5 +24,5 @@ INSERT INTO public.document_flags_junction (document_id, flag_id, value, created
 INSERT INTO public.document_flags_junction (document_id, flag_id, value, created_at, generated, mcp, active) VALUES ('019b3be4-324b-7f84-8679-0b395c7c5ddb', '019be334-bfc4-7b69-96a1-6cf5422bba50', true, '2025-12-12T13:44:32.428979+00:00', false, false, true) ON CONFLICT (document_id, flag_id) DO NOTHING;
 -- document_names_junction
 INSERT INTO public.document_names_junction (document_id, name_id, created_at, generated, mcp, active) VALUES ('019b3be4-324b-7f84-8679-0b395c7c5ddb', '019b995c-8e8e-7a22-a285-9726b43ab391', '2025-12-12T13:44:32.428979+00:00', false, false, true) ON CONFLICT (document_id, name_id) DO NOTHING;
--- document_uploads_junction
-INSERT INTO public.document_uploads_junction (active, created_at, uploads_id, document_id, generated, mcp) VALUES (true, '2025-12-12T13:44:32.428979+00:00', '019bcc94-efb5-7ac7-a390-938a31051739', '019b3be4-324b-7f84-8679-0b395c7c5ddb', false, false) ON CONFLICT (document_id, uploads_id) DO NOTHING;
+-- document_files_junction
+INSERT INTO public.document_files_junction (active, created_at, files_id, document_id, generated, mcp) VALUES (true, '2025-12-12T13:44:32.428979+00:00', '019bcc94-efb5-7ac7-a390-938a31051739', '019b3be4-324b-7f84-8679-0b395c7c5ddb', false, false) ON CONFLICT (document_id, files_id) DO NOTHING;

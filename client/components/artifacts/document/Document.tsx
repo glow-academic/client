@@ -81,7 +81,7 @@ const DOCUMENT_RESOURCES: ResourceConfig[] = [
   {
     key: "uploads",
     formKey: "upload_ids",
-    flushKey: "uploads_id",
+    flushKey: "files_id",
     type: "multi",
   },
   {
@@ -219,7 +219,7 @@ function DocumentComponent({
           .filter((x): x is string => x != null) ?? ([] as string[]),
       upload_ids:
         documentDetail.uploads?.current
-          ?.map((u) => u.uploads_id ?? u.upload_id)
+          ?.map((u) => u.files_id ?? u.upload_id)
           .filter((x): x is string => x != null) ?? ([] as string[]),
       image_ids:
         documentDetail.images?.current
@@ -1262,7 +1262,7 @@ export default React.memo(DocumentComponent, (prevProps, nextProps) => {
     department_ids: prevDetail?.departments?.current?.map((d) => d.department_id),
     field_ids: prevDetail?.fields?.current?.map((f) => f.field_id),
     upload_ids: prevDetail?.uploads?.current?.map(
-      (u) => u.uploads_id ?? u.upload_id,
+      (u) => u.files_id ?? u.upload_id,
     ),
     image_ids: prevDetail?.images?.current?.map((i) => i.image_id),
     text_ids: prevDetail?.texts?.current?.map((t) => t.texts_id),
@@ -1274,7 +1274,7 @@ export default React.memo(DocumentComponent, (prevProps, nextProps) => {
     department_ids: nextDetail?.departments?.current?.map((d) => d.department_id),
     field_ids: nextDetail?.fields?.current?.map((f) => f.field_id),
     upload_ids: nextDetail?.uploads?.current?.map(
-      (u) => u.uploads_id ?? u.upload_id,
+      (u) => u.files_id ?? u.upload_id,
     ),
     image_ids: nextDetail?.images?.current?.map((i) => i.image_id),
     text_ids: nextDetail?.texts?.current?.map((t) => t.texts_id),
