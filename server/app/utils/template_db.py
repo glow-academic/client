@@ -141,11 +141,16 @@ async def create_fresh_db(admin_conn: asyncpg.Connection, db_name: str) -> None:
 
 
 async def cleanup_old_templates(
-    admin_conn: asyncpg.Connection, keep_count: int = 3
+    admin_conn: asyncpg.Connection,
+    keep_count: int = 3,
+    preserve: str | None = None,
 ) -> None:
     """Drop old ``template_glow_*`` databases, keeping the *keep_count* newest.
 
     Also cleans up stale ``build_glow_*`` and ``test_glow_*`` databases.
+
+    *preserve*, if given, is a template name that must never be dropped
+    (e.g. the one just saved in this session).
     """
     # Clean up templates (keep newest N)
     rows = await admin_conn.fetch(
@@ -155,7 +160,7 @@ async def cleanup_old_templates(
         ORDER BY datname DESC
         """
     )
-    to_drop = [r["datname"] for r in rows[keep_count:]]
+    to_drop = [r["datname"] for r in rows[keep_count:] if r["datname"] != preserve]
     for name in to_drop:
         try:
             await admin_conn.execute(f'ALTER DATABASE "{name}" IS_TEMPLATE false')

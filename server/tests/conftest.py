@@ -261,7 +261,7 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
             print(f"💾 Template saved: {template_name}")
 
             # Clean up old templates (this drops build_glow_* too)
-            await cleanup_old_templates(admin_conn)
+            await cleanup_old_templates(admin_conn, preserve=template_name)
 
             # Clone from the freshly saved template for the test run
             await clone_from_template(admin_conn, template_name, clone_name)
