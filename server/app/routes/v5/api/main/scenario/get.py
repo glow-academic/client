@@ -92,7 +92,7 @@ from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.descriptions.search import (
     search_descriptions_internal,
 )
-from app.routes.v5.tools.resources.documents.get import get_documents_internal
+from app.routes.v5.tools.resources.documents.get import get_documents
 from app.routes.v5.tools.resources.documents.search import search_documents_internal
 from app.routes.v5.tools.resources.fields.search import search_fields_internal
 from app.routes.v5.tools.resources.flags.get import get_flags
@@ -110,9 +110,9 @@ from app.routes.v5.tools.resources.parameter_fields.get import (
 from app.routes.v5.tools.resources.parameter_fields.search import (
     search_parameter_fields_internal,
 )
-from app.routes.v5.tools.resources.parameters.get import get_parameters_internal
+from app.routes.v5.tools.resources.parameters.get import get_parameters
 from app.routes.v5.tools.resources.parameters.search import search_parameters_internal
-from app.routes.v5.tools.resources.personas.get import get_personas_internal
+from app.routes.v5.tools.resources.personas.get import get_personas
 from app.routes.v5.tools.resources.personas.search import search_personas_internal
 from app.routes.v5.tools.resources.problem_statements.get import (
     get_problem_statements,
@@ -567,8 +567,8 @@ async def get_scenario_internal(
 
     async def fetch_personas():
         async with pool.acquire() as c:
-            selected = await get_personas_internal(
-                c, selected_persona_ids, bypass_cache
+            selected = await get_personas(
+                c, selected_persona_ids, get_redis_client(), bypass_cache
             )
             suggestions = await search_personas_internal(
                 c,
@@ -586,8 +586,8 @@ async def get_scenario_internal(
 
     async def fetch_documents():
         async with pool.acquire() as c:
-            selected = await get_documents_internal(
-                c, selected_document_ids, bypass_cache
+            selected = await get_documents(
+                c, selected_document_ids, get_redis_client(), bypass_cache
             )
             suggestions = await search_documents_internal(
                 c,
@@ -605,11 +605,11 @@ async def get_scenario_internal(
 
     async def fetch_parameters():
         async with pool.acquire() as c:
-            selected = await get_parameters_internal(
+            selected = await get_parameters(
                 c,
                 selected_parameter_ids,
+                get_redis_client(),
                 bypass_cache,
-                scenario_parameter=True,
             )
             suggestions = await search_parameters_internal(
                 c,
@@ -858,8 +858,8 @@ async def get_scenario_internal(
     ]
     if missing_conditional_ids:
         async with pool.acquire() as c:
-            conditional_params = await get_parameters_internal(
-                c, missing_conditional_ids, bypass_cache
+            conditional_params = await get_parameters(
+                c, missing_conditional_ids, get_redis_client(), bypass_cache
             )
             parameters = _dedupe_by_id(parameters + conditional_params, "parameter_id")
     parameter_fields = _dedupe_by_id(

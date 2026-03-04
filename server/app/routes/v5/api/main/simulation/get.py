@@ -408,10 +408,10 @@ async def get_simulation_internal(
             return (selected, suggestions)
 
     async def fetch_scenarios():
-        from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
+        from app.routes.v5.tools.resources.scenarios.get import get_scenarios
 
         async with pool.acquire() as c:
-            selected = await get_scenarios_internal(c, scenario_ids, bypass_cache)
+            selected = await get_scenarios(c, scenario_ids, get_redis_client(), bypass_cache)
             suggestions = await search_scenarios_internal(
                 c,
                 search=scenario_search,

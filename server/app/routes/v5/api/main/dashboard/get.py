@@ -61,15 +61,15 @@ from app.routes.v5.tools.entries.attempt.get import (
 )
 from app.routes.v5.tools.entries.attempt.search import get_attempt_list_internal
 from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
-from app.routes.v5.tools.resources.documents.get import get_documents_internal
+from app.routes.v5.tools.resources.documents.get import get_documents
 from app.routes.v5.tools.resources.fields.get import get_fields
 from app.routes.v5.tools.resources.parameter_fields.get import (
     get_parameter_fields,
 )
-from app.routes.v5.tools.resources.parameters.get import get_parameters_internal
-from app.routes.v5.tools.resources.personas.get import get_personas_internal
+from app.routes.v5.tools.resources.parameters.get import get_parameters
+from app.routes.v5.tools.resources.personas.get import get_personas
 from app.routes.v5.tools.resources.profiles.get import get_profiles
-from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
+from app.routes.v5.tools.resources.scenarios.get import get_scenarios
 from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -372,8 +372,8 @@ async def fetch_dashboard_history_data(
         if not h_persona_ids:
             return []
         async with pool.acquire() as c:
-            return await get_personas_internal(
-                c, list(h_persona_ids), bypass_cache=bypass_cache
+            return await get_personas(
+                c, list(h_persona_ids), get_redis_client(), bypass_cache=bypass_cache
             )
 
     async def _h_scenarios():
@@ -646,8 +646,8 @@ async def get_dashboard_internal(
 
     async def _get_personas() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_personas_internal(
-                conn=c, ids=list(persona_ids_set), bypass_cache=bypass_cache
+            return await get_personas(
+                conn=c, ids=list(persona_ids_set), redis=get_redis_client(), bypass_cache=bypass_cache
             )
 
     async def _get_scenarios() -> list[Any]:
@@ -761,8 +761,8 @@ async def get_dashboard_internal(
             document_ids_set.add(doc_id)
 
     async with pool.acquire() as c:
-        documents = await get_documents_internal(
-            conn=c, ids=list(document_ids_set), bypass_cache=bypass_cache
+        documents = await get_documents(
+            conn=c, ids=list(document_ids_set), redis=get_redis_client(), bypass_cache=bypass_cache
         )
 
     # Phase 4d — Hydrate parameter_fields, then parameters + fields
@@ -795,8 +795,8 @@ async def get_dashboard_internal(
 
     async def _get_parameters() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_parameters_internal(
-                conn=c, ids=list(parameter_ids_set), bypass_cache=bypass_cache
+            return await get_parameters(
+                conn=c, ids=list(parameter_ids_set), redis=get_redis_client(), bypass_cache=bypass_cache
             )
 
     async def _get_fields() -> list[Any]:

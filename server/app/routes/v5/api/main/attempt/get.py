@@ -106,12 +106,12 @@ from app.routes.v5.tools.entries.uploads.get import get_upload_list_view_interna
 from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.documents.get import get_documents_internal
+from app.routes.v5.tools.resources.documents.get import get_documents
 from app.routes.v5.tools.resources.images.get import get_images
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.objectives.get import get_objectives
 from app.routes.v5.tools.resources.options.get import get_options
-from app.routes.v5.tools.resources.personas.get import get_personas_internal
+from app.routes.v5.tools.resources.personas.get import get_personas
 from app.routes.v5.tools.resources.problem_statements.get import (
     get_problem_statements,
 )
@@ -119,7 +119,7 @@ from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.questions.get import get_questions
 from app.routes.v5.tools.resources.rubrics.get import get_rubrics_batch_internal
-from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
+from app.routes.v5.tools.resources.scenarios.get import get_scenarios
 from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
 from app.routes.v5.tools.resources.standard_groups.get import (
     get_standard_groups,
@@ -415,8 +415,8 @@ async def get_attempt_internal(
 
                 # Fetch scenarios
                 if scenario_ids:
-                    items = await get_scenarios_internal(
-                        c, scenario_ids, bypass_cache=bypass_cache
+                    items = await get_scenarios(
+                        c, scenario_ids, get_redis_client(), bypass_cache=bypass_cache
                     )
                     for item in items:
                         if item.scenario_id:

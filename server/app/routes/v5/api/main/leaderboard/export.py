@@ -167,7 +167,7 @@ async def export_leaderboard(
 
         # Hydrate profile names
         from app.routes.v5.tools.resources.profiles.get import get_profiles
-        from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
+        from app.routes.v5.tools.resources.scenarios.get import get_scenarios
         from app.routes.v5.tools.resources.simulations.get import (
             get_simulations_internal,
         )
@@ -195,8 +195,8 @@ async def export_leaderboard(
 
         async def fetch_scenarios() -> list:
             async with pool.acquire() as c:
-                return await get_scenarios_internal(
-                    conn=c, ids=list(scenario_id_set), bypass_cache=True
+                return await get_scenarios(
+                    conn=c, ids=list(scenario_id_set), redis=get_redis_client(), bypass_cache=True
                 )
 
         profiles, simulations, scenarios = await asyncio.gather(

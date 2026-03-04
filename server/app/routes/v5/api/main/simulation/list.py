@@ -10,7 +10,7 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool, get_redis_client
 from app.routes.v5.api.main.simulation.permissions import (
     compute_can_delete,
     compute_can_duplicate,
@@ -172,15 +172,15 @@ async def get_simulation_list(
         # 2. Fetch scenarios via cached resource function
         # Deferred import to avoid circular import:
         # resources/scenarios/get → artifacts/simulation/types → __init__ → list → resources/scenarios/get
-        from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
+        from app.routes.v5.tools.resources.scenarios.get import get_scenarios
 
         scenarios_data: list[QGetScenariosV4Item] = []
         if scenario_id_set:
             pool = get_pool()
             if pool:
                 async with pool.acquire() as c:
-                    scenarios_data = await get_scenarios_internal(
-                        c, list(scenario_id_set), bypass_cache
+                    scenarios_data = await get_scenarios(
+                        c, list(scenario_id_set), get_redis_client(), bypass_cache
                     )
 
         # 3. Collect persona_ids from scenario results
@@ -190,15 +190,15 @@ async def get_simulation_list(
                 persona_id_set.add(pid)
 
         # 4. Fetch personas via cached resource function
-        from app.routes.v5.tools.resources.personas.get import get_personas_internal
+        from app.routes.v5.tools.resources.personas.get import get_personas
 
         persona_map: dict[UUID, str] = {}
         if persona_id_set:
             pool = get_pool()
             if pool:
                 async with pool.acquire() as c:
-                    personas_data = await get_personas_internal(
-                        c, list(persona_id_set), bypass_cache
+                    personas_data = await get_personas(
+                        c, list(persona_id_set), get_redis_client(), bypass_cache
                     )
                     persona_map = {
                         p.persona_id: p.color or ""

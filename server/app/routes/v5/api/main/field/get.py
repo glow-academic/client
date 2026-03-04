@@ -64,7 +64,7 @@ from app.routes.v5.tools.resources.flags.search import search_flags_internal
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
-from app.routes.v5.tools.resources.parameters.get import get_parameters_internal
+from app.routes.v5.tools.resources.parameters.get import get_parameters
 from app.routes.v5.tools.resources.parameters.search import search_parameters_internal
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
@@ -337,8 +337,8 @@ async def get_field_internal(
                 else selected_conditional_parameter_ids
             )
             return (
-                await get_parameters_internal(
-                    c, selected_conditional_parameter_ids, bypass_cache
+                await get_parameters(
+                    c, selected_conditional_parameter_ids, get_redis_client(), bypass_cache
                 ),
                 await search_parameters_internal(
                     c,

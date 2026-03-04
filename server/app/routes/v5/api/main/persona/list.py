@@ -15,7 +15,7 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool, get_redis_client
 from app.routes.auth.profile import get_auth_profile_internal
 from app.routes.v5.api.main.persona.permissions import (
     compute_can_delete,
@@ -30,7 +30,7 @@ from app.routes.v5.api.main.persona.types import (
 from app.routes.v5.api.types import ListFilterOption, ListFilterSection
 from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.fields.get import get_fields
-from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
+from app.routes.v5.tools.resources.scenarios.get import get_scenarios
 from app.sql.types import (
     GetPersonasListApiRequest,
     GetPersonasListSqlParams,
@@ -294,8 +294,8 @@ async def get_persona_list(
                 if not scenario_ids_to_fetch:
                     return []
                 async with pool.acquire() as c:
-                    return await get_scenarios_internal(
-                        c, scenario_ids_to_fetch, bypass_cache
+                    return await get_scenarios(
+                        c, scenario_ids_to_fetch, get_redis_client(), bypass_cache
                     )
 
             async def fetch_fields() -> list:

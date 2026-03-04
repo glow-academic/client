@@ -39,7 +39,7 @@ from app.routes.v5.tools.resources.cohorts.get import get_cohorts_internal
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
-from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
+from app.routes.v5.tools.resources.scenarios.get import get_scenarios
 from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
 from app.sql.types import (
     GetActiveSettingsSqlParams,
@@ -389,9 +389,10 @@ async def get_reports(
                 redis=get_redis_client(),
                 bypass_cache=bypass_cache,
             )
-            scenarios = await get_scenarios_internal(
+            scenarios = await get_scenarios(
                 conn=c,
                 ids=[UUID(scenario_id) for scenario_id in scenario_ids],
+                redis=get_redis_client(),
                 bypass_cache=bypass_cache,
             )
             cohorts = await get_cohorts_internal(

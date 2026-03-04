@@ -8,12 +8,14 @@ from typing import Annotated, Any
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
+from app.infra.globals import get_db, get_redis_client
 from app.routes.v5.api.main.simulation.types import (
     GetScenariosApiRequest,
     GetScenariosApiResponse,
 )
-from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
+from app.routes.v5.tools.resources.scenarios.get import (
+    get_scenarios as get_scenarios_resource,
+)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -59,7 +61,7 @@ async def get_scenarios(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        items = await get_scenarios_internal(conn, request.ids, bypass_cache)
+        items = await get_scenarios_resource(conn, request.ids, get_redis_client(), bypass_cache)
 
         # Create response
         response_data = GetScenariosApiResponse(items=items)

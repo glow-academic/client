@@ -95,7 +95,7 @@ async def sync_cohort_entries(
     from app.routes.v5.tools.resources.scenario_time_limits.get import (
         get_scenario_time_limits,
     )
-    from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
+    from app.routes.v5.tools.resources.scenarios.get import get_scenarios
     from app.routes.v5.tools.resources.simulation_availability.get import (
         get_simulation_availability,
     )
@@ -143,7 +143,7 @@ async def sync_cohort_entries(
     # asyncpg "another operation is in progress" on concurrent queries.
     async def _fetch_scenarios() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_scenarios_internal(c, all_scenario_ids, bypass_cache=True)
+            return await get_scenarios(c, all_scenario_ids, get_redis_client(), bypass_cache=True)
 
     async def _fetch_scenario_rubrics() -> list[Any]:
         async with pool.acquire() as c:
