@@ -1,5 +1,6 @@
 """Tests for get_names."""
 
+from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
 import pytest
@@ -9,13 +10,14 @@ from app.routes.v5.tools.resources.names.get import get_names
 pytestmark = pytest.mark.asyncio
 
 
-async def test_gets_created_name(conn):
+async def test_gets_created_name(conn: object) -> None:
     name_id = await conn.fetchval("""
         INSERT INTO names_resource (name) VALUES ('test-name-for-get')
         RETURNING id
     """)
 
-    items = await get_names(conn, [name_id])
+    redis = AsyncMock()
+    items = await get_names(conn, [name_id], redis)
 
     assert len(items) == 1
     assert items[0].id == name_id
@@ -23,56 +25,53 @@ async def test_gets_created_name(conn):
     assert items[0].active is True
 
 
-async def test_returns_empty_for_missing_name(conn):
-    items = await get_names(conn, [uuid4()])
+async def test_returns_empty_for_missing_name(conn: object) -> None:
+    redis = AsyncMock()
+    items = await get_names(conn, [uuid4()], redis)
 
     assert items == []
 
 
-async def test_returns_empty_for_empty_ids(conn):
-    items = await get_names(conn, [])
+async def test_returns_empty_for_empty_ids(conn: object) -> None:
+    redis = AsyncMock()
+    items = await get_names(conn, [], redis)
 
     assert items == []
 
 
-async def test_cache_hit_skips_db(conn):
+async def test_cache_hit_skips_db(conn: object) -> None:
     name_id = await conn.fetchval("""
         INSERT INTO names_resource (name) VALUES ('test-name-cache-hit')
         RETURNING id
     """)
     cached_items = [{"id": str(name_id), "name": "cached_name", "created_at": "2024-01-01T00:00:00Z", "active": True, "mcp": False, "generated": False}]
 
-    async def mock_get(key):
-        return {"items": cached_items}
+    redis = AsyncMock()
 
-    async def mock_set(key, data, ttl, tags):
-        pass
-
-    items = await get_names(conn, [name_id], cache=(mock_get, mock_set))
+    with patch("app.routes.v5.tools.resources.names.get.get_cached", new_callable=AsyncMock, return_value={"items": cached_items}):
+        items = await get_names(conn, [name_id], redis)
 
     assert len(items) == 1
     assert items[0].name == "cached_name"
 
 
-async def test_cache_miss_calls_set(conn):
+async def test_cache_miss_calls_set(conn: object) -> None:
     name_id = await conn.fetchval("""
         INSERT INTO names_resource (name) VALUES ('test-name-cache-miss')
         RETURNING id
     """)
-    stored = {}
 
-    async def mock_get(key):
-        return None
+    redis = AsyncMock()
 
-    async def mock_set(key, data, ttl, tags):
-        stored["data"] = data
-        stored["ttl"] = ttl
-        stored["tags"] = list(tags)
-
-    items = await get_names(conn, [name_id], cache=(mock_get, mock_set))
+    mock_set = AsyncMock()
+    with patch("app.routes.v5.tools.resources.names.get.get_cached", new_callable=AsyncMock, return_value=None):
+        with patch("app.routes.v5.tools.resources.names.get.set_cached", mock_set):
+            items = await get_names(conn, [name_id], redis)
 
     assert len(items) == 1
     assert items[0].name == "test-name-cache-miss"
-    assert stored["ttl"] == 60
-    assert stored["tags"] == ["resources", "names"]
-    assert len(stored["data"]["items"]) == 1
+    mock_set.assert_called_once()
+    call_args = mock_set.call_args
+    assert call_args.kwargs["redis"] is redis
+    assert call_args.args[2] == 60  # ttl
+    assert list(call_args.args[3]) == ["resources", "names"]  # tags

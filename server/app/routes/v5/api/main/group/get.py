@@ -393,7 +393,7 @@ async def get_group(
         all_name_ids = list(all_model_ids | all_agent_ids | all_profile_ids)
         name_items, tool_items = await asyncio.gather(
             get_names(conn, all_name_ids, get_redis_client(), bypass_cache=bypass_cache),
-            get_tools(conn, list(all_tool_ids), cache),
+            get_tools(conn, list(all_tool_ids), get_redis_client(), bypass_cache=bypass_cache),
         )
         name_map = {item.id: item.name for item in name_items if item.id and item.name}
         tool_name_map: dict[UUID, str] = {
