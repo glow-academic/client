@@ -1,0 +1,41 @@
+"""Pricing CREATE — reusable data-access layer."""
+from uuid import UUID
+
+import asyncpg  # type: ignore
+from redis.asyncio import Redis
+
+from app.routes.v5.tools.resources.pricing.get import get_pricing
+from app.routes.v5.tools.resources.pricing.types import GetPricingResponse
+from app.utils.cache.invalidate_tags import invalidate_tags
+
+
+async def create_pricing(
+    conn: asyncpg.Connection,
+    pricing_type: str,
+    price: float,
+    unit_name: str,
+    unit_category: str,
+    unit_value: int,
+    redis: Redis,
+    mcp: bool = False,
+    group_id: UUID | None = None,
+    tool_id: UUID | None = None,
+) -> GetPricingResponse:
+    """Create a pricing resource (plain INSERT, no unique constraint)."""
+    pricing_id = await conn.fetchval(
+        """
+        INSERT INTO pricing_resource
+            (pricing_type, price, unit_name, unit_category, unit_value, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, true, $6, $6)
+        RETURNING id
+        """,
+        pricing_type,
+        price,
+        unit_name,
+        unit_category,
+        unit_value,
+        mcp,
+    )
+    await invalidate_tags(["resources", "pricing"], redis=redis)
+    items = await get_pricing(conn, [pricing_id], redis, bypass_cache=True)
+    return items[0]
