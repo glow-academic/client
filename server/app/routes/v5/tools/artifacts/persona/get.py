@@ -1,0 +1,100 @@
+"""Persona artifact GET — reusable data-access layer."""
+
+from uuid import UUID
+
+import asyncpg
+
+from app.routes.v5.tools.artifacts.persona.types import GetPersonasResponse
+
+TABLE = "persona_artifact"
+
+# (flag_name, junction_table, junction_column, response_field)
+JUNCTIONS: list[tuple[str, str, str, str]] = [
+    ("names", "persona_names_junction", "name_id", "name_ids"),
+    ("descriptions", "persona_descriptions_junction", "description_id", "description_ids"),
+    ("colors", "persona_colors_junction", "color_id", "color_ids"),
+    ("departments", "persona_departments_junction", "department_id", "department_ids"),
+    ("examples", "persona_examples_junction", "example_id", "example_ids"),
+    ("flags", "persona_flags_junction", "flag_id", "flag_ids"),
+    ("icons", "persona_icons_junction", "icon_id", "icon_ids"),
+    ("instructions", "persona_instructions_junction", "instruction_id", "instruction_ids"),
+    ("parameter_fields", "persona_parameter_fields_junction", "parameter_field_id", "parameter_field_ids"),
+    ("personas", "persona_personas_junction", "personas_id", "persona_ids"),
+    ("voices", "persona_voices_junction", "voice_id", "voice_ids"),
+]
+
+
+async def get_personas(
+    conn: asyncpg.Connection,
+    ids: list[UUID],
+    *,
+    names: bool = False,
+    descriptions: bool = False,
+    colors: bool = False,
+    departments: bool = False,
+    examples: bool = False,
+    flags: bool = False,
+    icons: bool = False,
+    instructions: bool = False,
+    parameter_fields: bool = False,
+    personas: bool = False,
+    voices: bool = False,
+) -> list[GetPersonasResponse]:
+    """Get persona artifacts by IDs with optional junction ID fetching."""
+    if not ids:
+        return []
+
+    flags_map = {
+        "names": names,
+        "descriptions": descriptions,
+        "colors": colors,
+        "departments": departments,
+        "examples": examples,
+        "flags": flags,
+        "icons": icons,
+        "instructions": instructions,
+        "parameter_fields": parameter_fields,
+        "personas": personas,
+        "voices": voices,
+    }
+
+    active = [(table, col, field) for flag, table, col, field in JUNCTIONS if flags_map[flag]]
+
+    # Build dynamic query
+    columns = ["p.id", "p.created_at", "p.updated_at", "p.generated", "p.mcp", "p.active"]
+    joins: list[str] = []
+
+    for i, (table, col, field) in enumerate(active):
+        alias = f"j{i}"
+        joins.append(f"LEFT JOIN {table} {alias} ON {alias}.persona_id = p.id AND {alias}.active = true")
+        columns.append(
+            f"ARRAY_AGG(DISTINCT {alias}.{col}) FILTER (WHERE {alias}.{col} IS NOT NULL) AS {field}"
+        )
+
+    query = f"""
+        SELECT {', '.join(columns)}
+        FROM {TABLE} p
+        {' '.join(joins)}
+        WHERE p.id = ANY($1) AND p.active = true
+        GROUP BY p.id, p.created_at, p.updated_at, p.generated, p.mcp, p.active
+    """
+
+    rows = await conn.fetch(query, ids)
+
+    results = []
+    for r in rows:
+        data: dict = {
+            "id": r["id"],
+            "created_at": r["created_at"],
+            "updated_at": r["updated_at"],
+            "generated": r["generated"],
+            "mcp": r["mcp"],
+            "active": r["active"],
+        }
+        for _, _, _, field in JUNCTIONS:
+            if field in dict(r):
+                data[field] = r[field] or []
+            # else stays None (default)
+        results.append(GetPersonasResponse(**data))
+
+    return results
