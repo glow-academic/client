@@ -23,7 +23,8 @@ CREATE OR REPLACE FUNCTION api_create_texts_v4(
     upload_id uuid,
     mcp boolean DEFAULT false,
     group_id uuid DEFAULT NULL,
-    tool_id uuid DEFAULT NULL
+    tool_id uuid DEFAULT NULL,
+    session_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     texts_id uuid
@@ -45,8 +46,8 @@ BEGIN
     LIMIT 1;
 
     IF v_text_entry_id IS NULL THEN
-        INSERT INTO texts_entry (id, active, generated, mcp, created_at, updated_at)
-        VALUES (uuidv7(), true, false, mcp, NOW(), NOW())
+        INSERT INTO texts_entry (id, session_id, active, generated, mcp, created_at, updated_at)
+        VALUES (uuidv7(), api_create_texts_v4.session_id, true, false, mcp, NOW(), NOW())
         RETURNING id INTO v_text_entry_id;
 
         -- Link upload to text entry

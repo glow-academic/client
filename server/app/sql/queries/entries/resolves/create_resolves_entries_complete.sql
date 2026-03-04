@@ -20,6 +20,7 @@ CREATE OR REPLACE FUNCTION public.api_create_resolves_entry_v4(
     resolved bool DEFAULT false,
     tool_id uuid DEFAULT NULL,
     upload_id uuid DEFAULT NULL,
+    session_id uuid DEFAULT NULL,
     mcp boolean DEFAULT false
 ) RETURNS TABLE (id uuid, call_id uuid, message_id uuid)
 LANGUAGE plpgsql AS $$
@@ -30,8 +31,8 @@ DECLARE
     v_message_id uuid;
 BEGIN
     -- 1. Create text record
-    INSERT INTO texts_entry (generated, mcp)
-    VALUES (true, api_create_resolves_entry_v4.mcp)
+    INSERT INTO texts_entry (session_id, generated, mcp)
+    VALUES (api_create_resolves_entry_v4.session_id, true, api_create_resolves_entry_v4.mcp)
     RETURNING texts_entry.id INTO v_text_id;
 
     -- Link upload to text entry

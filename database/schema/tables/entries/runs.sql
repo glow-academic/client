@@ -11,7 +11,7 @@ CREATE TABLE public.runs_entry (
     id uuid DEFAULT uuidv7() CONSTRAINT runs_id_v7_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT runs_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT runs_mcp_not_null NOT NULL,
-    group_id uuid,
+    group_id uuid NOT NULL,
     session_id uuid
 );
 

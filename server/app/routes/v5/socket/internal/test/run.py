@@ -86,6 +86,12 @@ async def test_run_handler(data: dict[str, Any]) -> None:
                 new_run_id,
             )
 
+            # Fetch session_id from the original run for texts_entry
+            session_id = await conn.fetchval(
+                "SELECT session_id FROM runs_entry WHERE id = $1",
+                original_run_id,
+            )
+
             # Step 3: Fetch all messages from original run, ordered by creation
             original_messages = await conn.fetch(
                 """SELECT
@@ -129,7 +135,8 @@ async def test_run_handler(data: dict[str, Any]) -> None:
 
                 # Create text entry
                 text_id = await conn.fetchval(
-                    """INSERT INTO texts_entry DEFAULT VALUES RETURNING id""",
+                    """INSERT INTO texts_entry (session_id) VALUES ($1) RETURNING id""",
+                    session_id,
                 )
 
                 # Link upload to text entry

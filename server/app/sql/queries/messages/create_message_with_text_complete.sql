@@ -6,10 +6,11 @@ WITH existing_text AS (
 ),
 inserted_text AS (
     INSERT INTO texts_entry (
+        session_id,
         created_at,
         updated_at
     )
-    SELECT NOW(), NOW()
+    SELECT (SELECT session_id FROM runs_entry WHERE id = $1::uuid), NOW(), NOW()
     WHERE NOT EXISTS (SELECT 1 FROM existing_text)
     RETURNING id
 ),

@@ -34,14 +34,6 @@ CREATE INDEX idx_messages_entry_run_id ON public.messages_entry USING btree (run
 
 --
 
--- Name: idx_messages_entry_session_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_messages_entry_session_id ON public.messages_entry USING btree (session_id);
-
-
---
-
 -- Name: messages_completions_entry_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 

@@ -11,7 +11,7 @@ class CreateTextResponse(BaseModel):
 
 class GetTextResponse(BaseModel):
     id: UUID
-    session_id: UUID | None
+    session_id: UUID
     active: bool
     mcp: bool
     generated: bool

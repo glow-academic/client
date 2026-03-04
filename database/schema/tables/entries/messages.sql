@@ -13,8 +13,7 @@ CREATE TABLE public.messages_entry (
     role public.message_type NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    session_id uuid
+    active boolean DEFAULT true NOT NULL
 );
 
 
