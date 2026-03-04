@@ -32,7 +32,7 @@ async def attempt_audio_mute(sid: str, data: dict[str, Any]) -> None:
         try:
             async with get_db_connection() as conn:
                 await conn.execute(
-                    """INSERT INTO mutes_entry (conversation_id, muted)
+                    """INSERT INTO attempt_mutes_entry (conversation_id, muted)
                     VALUES ($1, $2)""",
                     uuid_mod.UUID(session.conversation_id),
                     muted,

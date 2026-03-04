@@ -165,7 +165,7 @@ ENTRY_MODALITIES: dict[tuple[str, str], frozenset[str]] = {
     ("create", "messages"): _CALL,
     ("create", "messages_completions"): _CALL,
     ("create", "metrics"): _CALL,
-    ("create", "mutes"): _CALL,
+    ("create", "attempt_mutes"): _CALL,
     ("create", "problems"): _CALL,
     ("create", "replacements"): _CALL,
     ("create", "reports"): _CALL,

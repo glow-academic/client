@@ -509,7 +509,7 @@ RESOURCE_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
 #   metrics        → get_metric_list_view_internal
 #   practice       → get_practice_context_view_internal
 #   problems       → get_problem_list_view_internal
-#   responses      → get_simulation_responses_internal
+#   attempt_responses → get_simulation_responses_internal
 # ---------------------------------------------------------------------------
 
 _E = "app.routes.v5.api.entries"
@@ -585,7 +585,7 @@ ENTRY_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
     **_ent("messages_completions"),
     **_ent("metrics", get_fn="get_metric_list_view_internal"),
     **_ent("model_drafts"),
-    **_ent("mutes", create=True),
+    **_ent("attempt_mutes", create=True),
     **_ent("parameter_drafts"),
     **_ent("persona"),
     **_ent("persona_drafts"),
@@ -596,7 +596,7 @@ ENTRY_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
     **_ent("provider_drafts"),
     **_ent("reports", create=True),
     **_ent("resolves", create=True),
-    **_ent("responses", get_fn="get_simulation_responses_internal", create=True),
+    **_ent("attempt_responses", get_fn="get_simulation_responses_internal", create=True),
     **_ent("rubric_drafts"),
     **_ent("run_pricing"),
     **_ent("runs"),

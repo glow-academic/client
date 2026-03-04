@@ -223,6 +223,40 @@ CREATE TABLE public.attempt_message_entry (
 
 --
 
+-- Name: attempt_conversation_completions_entry; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.attempt_conversation_completions_entry (
+    id uuid DEFAULT uuidv7() CONSTRAINT conversations_completions_entry_id_not_null NOT NULL,
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT conversations_completions_entry_created_at_not_null NOT NULL,
+    generated boolean DEFAULT false CONSTRAINT conversations_completions_entry_generated_not_null NOT NULL,
+    mcp boolean DEFAULT false CONSTRAINT conversations_completions_entry_mcp_not_null NOT NULL,
+    active boolean DEFAULT true CONSTRAINT conversations_completions_entry_active_not_null NOT NULL,
+    conversation_id uuid CONSTRAINT conversations_completions_entry_conversation_id_not_null NOT NULL,
+    end_reason text DEFAULT ''::text CONSTRAINT conversations_completions_entry_end_reason_not_null NOT NULL,
+    call_id uuid
+);
+
+
+--
+
+-- Name: attempt_conversations_entry; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.attempt_conversations_entry (
+    id uuid DEFAULT uuidv7() CONSTRAINT conversations_entry_id_not_null NOT NULL,
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT conversations_entry_created_at_not_null NOT NULL,
+    generated boolean DEFAULT false CONSTRAINT conversations_entry_generated_not_null NOT NULL,
+    mcp boolean DEFAULT false CONSTRAINT conversations_entry_mcp_not_null NOT NULL,
+    active boolean DEFAULT true CONSTRAINT conversations_entry_active_not_null NOT NULL,
+    chat_id uuid CONSTRAINT conversations_entry_chat_id_not_null NOT NULL,
+    run_id uuid,
+    call_id uuid
+);
+
+
+--
+
 -- Name: attempt_feedback_entry; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -336,6 +370,23 @@ CREATE TABLE public.attempt_message_tree_entry (
 
 --
 
+-- Name: attempt_mutes_entry; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.attempt_mutes_entry (
+    id uuid DEFAULT uuidv7() CONSTRAINT mutes_entry_id_not_null NOT NULL,
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT mutes_entry_created_at_not_null NOT NULL,
+    generated boolean DEFAULT false CONSTRAINT mutes_entry_generated_not_null NOT NULL,
+    mcp boolean DEFAULT false CONSTRAINT mutes_entry_mcp_not_null NOT NULL,
+    active boolean DEFAULT true CONSTRAINT mutes_entry_active_not_null NOT NULL,
+    conversation_id uuid CONSTRAINT mutes_entry_conversation_id_not_null NOT NULL,
+    muted boolean CONSTRAINT mutes_entry_muted_not_null NOT NULL,
+    call_id uuid
+);
+
+
+--
+
 -- Name: attempt_replacement_entry; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -356,6 +407,23 @@ CREATE TABLE public.attempt_replacement_entry (
 
 --
 
+-- Name: attempt_responses_entry; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.attempt_responses_entry (
+    id uuid DEFAULT uuidv7() CONSTRAINT responses_entry_id_not_null NOT NULL,
+    chat_id uuid CONSTRAINT responses_entry_chat_id_not_null NOT NULL,
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT responses_entry_created_at_not_null NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() CONSTRAINT responses_entry_updated_at_not_null NOT NULL,
+    generated boolean DEFAULT false CONSTRAINT responses_entry_generated_not_null NOT NULL,
+    mcp boolean DEFAULT false CONSTRAINT responses_entry_mcp_not_null NOT NULL,
+    active boolean DEFAULT true CONSTRAINT responses_entry_active_not_null NOT NULL,
+    call_id uuid
+);
+
+
+--
+
 -- Name: attempt_chat_bridge_entry attempt_chat_bridge_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -370,6 +438,24 @@ ALTER TABLE ONLY public.attempt_chat_bridge_entry
 
 ALTER TABLE ONLY public.attempt_chat_entry
     ADD CONSTRAINT attempt_chat_entry_pkey PRIMARY KEY (id);
+
+
+--
+
+-- Name: attempt_conversation_completions_entry attempt_conversation_completions_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_conversation_completions_entry
+    ADD CONSTRAINT attempt_conversation_completions_entry_pkey PRIMARY KEY (id);
+
+
+--
+
+-- Name: attempt_conversations_entry attempt_conversations_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_conversations_entry
+    ADD CONSTRAINT attempt_conversations_entry_pkey PRIMARY KEY (id);
 
 
 --
@@ -401,11 +487,29 @@ ALTER TABLE ONLY public.attempt_message_entry
 
 --
 
+-- Name: attempt_mutes_entry attempt_mutes_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_mutes_entry
+    ADD CONSTRAINT attempt_mutes_entry_pkey PRIMARY KEY (id);
+
+
+--
+
 -- Name: attempt_practice_entry attempt_practice_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.attempt_practice_entry
     ADD CONSTRAINT attempt_practice_entry_pkey PRIMARY KEY (attempt_id, practice_id);
+
+
+--
+
+-- Name: attempt_responses_entry attempt_responses_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_responses_entry
+    ADD CONSTRAINT attempt_responses_entry_pkey PRIMARY KEY (id);
 
 
 --

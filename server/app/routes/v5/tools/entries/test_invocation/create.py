@@ -1,71 +1,46 @@
-"""test_invocation/create internal — reusable data-access layer."""
+"""Test invocation CREATE — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.infra.tools.call_args import record_call_args, resolve_tool_for_entry
-from app.routes.v5.api.entries.test_invocation.types import (
-    CreateTestInvocationEntryResponse,
-    CreateTestInvocationEntrySqlParams,
-    CreateTestInvocationEntrySqlRow,
+from app.routes.v5.tools.entries.test_invocation.types import (
+    CreateTestInvocationResponse,
 )
-from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.sql_helper import execute_sql_typed
-from app.utils.storage.file_writer import write_text_file
-
-SQL_PATH = "app/sql/queries/entries/test_invocation/create_test_invocation_entries_complete.sql"
-
-ENTRY_TYPE = "test_invocations"
 
 
-async def create_test_invocation_entry_internal(
+async def create_test_invocation(
     conn: asyncpg.Connection,
-    request_dict: dict,
+    test_id: UUID | None = None,
+    call_id: UUID | None = None,
+    title: str = "",
+    group_id: UUID | None = None,
+    use_custom: bool = False,
+    position: int = 0,
+    config_signature: str | None = None,
     mcp: bool = False,
-    run_id: UUID | None = None,
-    tool_id: UUID | None = None,
-) -> CreateTestInvocationEntryResponse:
-    """Internal function to create test_invocation entry.
-
-    Internal callers can pass run_id and tool_id directly.
-    If not provided, tool is resolved from settings via operation + entry type.
-    """
-    tags = ["entries", "test_invocation"]
-
-    # Resolve tool if not provided
-    tool_info = None
-    if tool_id is None:
-        tool_info = await resolve_tool_for_entry(conn, "create", ENTRY_TYPE)
-        if tool_info:
-            tool_id = tool_info.tool_id
-
-    async with conn.transaction():
-        request_dict["mcp"] = mcp
-        request_dict["upload_id"] = await write_text_file(
-            conn, None, "Created test invocation entry"
+) -> CreateTestInvocationResponse:
+    """Create a test_invocation_entry row."""
+    entry_id = await conn.fetchval(
+        """
+        INSERT INTO test_invocation_entry (
+            test_id, call_id, title, group_id,
+            use_custom, "position", config_signature, mcp, generated
         )
-        request_dict["tool_id"] = tool_id
-        if run_id is not None:
-            request_dict["run_id"] = run_id
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)
+        RETURNING id
+        """,
+        test_id,
+        call_id,
+        title,
+        group_id,
+        use_custom,
+        position,
+        config_signature,
+        mcp,
+    )
 
-        params = CreateTestInvocationEntrySqlParams(**request_dict)
+    if entry_id is None:
+        raise ValueError("Failed to create test_invocation entry")
 
-        result = cast(
-            CreateTestInvocationEntrySqlRow,
-            await execute_sql_typed(conn, SQL_PATH, params=params),
-        )
-
-        if not result or not result.id:
-            raise ValueError("Failed to create test_invocation entry")
-
-        # Record arg values via connection pattern
-        if tool_info is None and tool_id is not None:
-            tool_info = await resolve_tool_for_entry(conn, "create", ENTRY_TYPE)
-        if tool_info:
-            await record_call_args(conn, result.call_id, tool_info, request_dict, mcp)
-
-    await invalidate_tags(tags, redis=get_redis_client())
-
-    return CreateTestInvocationEntryResponse.model_validate(result.model_dump())
+    return CreateTestInvocationResponse(id=entry_id)

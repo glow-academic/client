@@ -1,4 +1,4 @@
--- Search conversations_completions entries from conversations_completions_mv
+-- Search attempt_conversation_completions entries from attempt_conversation_completions_mv
 
 DO $$
 DECLARE
@@ -38,7 +38,7 @@ BEGIN
             'conversation_id', m.conversation_id,
             'end_reason', m.end_reason
         ) AS row_data
-        FROM conversations_completions_mv m
+        FROM attempt_conversation_completions_mv m
         WHERE true
           AND (conversation_id IS NULL OR m.conversation_id = conversation_id)
         ORDER BY m.created_at DESC

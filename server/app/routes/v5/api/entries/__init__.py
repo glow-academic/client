@@ -67,7 +67,7 @@ from app.routes.v5.api.entries.messages_completions import (
 )
 from app.routes.v5.api.entries.metrics import router as metrics_router
 from app.routes.v5.api.entries.model_drafts import router as model_drafts_router
-from app.routes.v5.api.entries.mutes import router as mutes_router
+from app.routes.v5.api.entries.attempt_mutes import router as attempt_mutes_router
 from app.routes.v5.api.entries.parameter_drafts import router as parameter_drafts_router
 from app.routes.v5.api.entries.persona import router as persona_router
 from app.routes.v5.api.entries.persona_drafts import router as persona_drafts_router
@@ -81,7 +81,7 @@ from app.routes.v5.api.entries.profile_drafts import router as profile_drafts_ro
 from app.routes.v5.api.entries.provider_drafts import router as provider_drafts_router
 from app.routes.v5.api.entries.reports import router as reports_router
 from app.routes.v5.api.entries.resolves import router as resolves_router
-from app.routes.v5.api.entries.responses import router as responses_router
+from app.routes.v5.api.entries.attempt_responses import router as attempt_responses_router
 from app.routes.v5.api.entries.rubric_drafts import router as rubric_drafts_router
 from app.routes.v5.api.entries.run_pricing import router as run_pricing_router
 from app.routes.v5.api.entries.runs import router as runs_router
@@ -164,7 +164,7 @@ router.include_router(messages_router)
 router.include_router(messages_completions_router)
 router.include_router(metrics_router)
 router.include_router(model_drafts_router)
-router.include_router(mutes_router)
+router.include_router(attempt_mutes_router)
 router.include_router(parameter_drafts_router)
 router.include_router(persona_router)
 router.include_router(persona_drafts_router)
@@ -176,7 +176,7 @@ router.include_router(profile_drafts_router)
 router.include_router(provider_drafts_router)
 router.include_router(reports_router)
 router.include_router(resolves_router)
-router.include_router(responses_router)
+router.include_router(attempt_responses_router)
 router.include_router(rubric_drafts_router)
 router.include_router(run_pricing_router)
 router.include_router(runs_router)

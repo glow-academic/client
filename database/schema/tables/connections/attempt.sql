@@ -257,6 +257,34 @@ CREATE TABLE public.attempt_chat_videos_connection (
 
 --
 
+-- Name: attempt_responses_options_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.attempt_responses_options_connection (
+    responses_id uuid CONSTRAINT responses_options_connection_responses_id_not_null NOT NULL,
+    option_id uuid CONSTRAINT responses_options_connection_option_id_not_null NOT NULL,
+    active boolean DEFAULT true CONSTRAINT responses_options_connection_active_not_null NOT NULL,
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT responses_options_connection_created_at_not_null NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() CONSTRAINT responses_options_connection_updated_at_not_null NOT NULL
+);
+
+
+--
+
+-- Name: attempt_responses_questions_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.attempt_responses_questions_connection (
+    responses_id uuid CONSTRAINT responses_questions_connection_responses_id_not_null NOT NULL,
+    question_id uuid CONSTRAINT responses_questions_connection_question_id_not_null NOT NULL,
+    active boolean DEFAULT true CONSTRAINT responses_questions_connection_active_not_null NOT NULL,
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT responses_questions_connection_created_at_not_null NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() CONSTRAINT responses_questions_connection_updated_at_not_null NOT NULL
+);
+
+
+--
+
 -- Name: attempt_chat_departments_connection attempt_chat_departments_connection_pk; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -406,6 +434,24 @@ ALTER TABLE ONLY public.attempt_chat_videos_connection
 
 ALTER TABLE ONLY public.attempt_profiles_connection
     ADD CONSTRAINT attempt_profiles_connection_pkey PRIMARY KEY (attempt_id, profiles_id);
+
+
+--
+
+-- Name: attempt_responses_options_connection attempt_responses_options_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_responses_options_connection
+    ADD CONSTRAINT attempt_responses_options_connection_pkey PRIMARY KEY (responses_id, option_id);
+
+
+--
+
+-- Name: attempt_responses_questions_connection attempt_responses_questions_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_responses_questions_connection
+    ADD CONSTRAINT attempt_responses_questions_connection_pkey PRIMARY KEY (responses_id, question_id);
 
 
 --

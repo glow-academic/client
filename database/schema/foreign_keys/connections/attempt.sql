@@ -209,6 +209,42 @@ ALTER TABLE ONLY public.attempt_profiles_connection
 
 --
 
+-- Name: attempt_responses_options_connection attempt_responses_options_connection_option_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_responses_options_connection
+    ADD CONSTRAINT attempt_responses_options_connection_option_id_fkey FOREIGN KEY (option_id) REFERENCES public.options_resource(id) ON DELETE CASCADE;
+
+
+--
+
+-- Name: attempt_responses_options_connection attempt_responses_options_connection_responses_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_responses_options_connection
+    ADD CONSTRAINT attempt_responses_options_connection_responses_id_fkey FOREIGN KEY (responses_id) REFERENCES public.attempt_responses_entry(id) ON DELETE CASCADE;
+
+
+--
+
+-- Name: attempt_responses_questions_connection attempt_responses_questions_connection_question_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_responses_questions_connection
+    ADD CONSTRAINT attempt_responses_questions_connection_question_id_fkey FOREIGN KEY (question_id) REFERENCES public.questions_resource(id) ON DELETE CASCADE;
+
+
+--
+
+-- Name: attempt_responses_questions_connection attempt_responses_questions_connection_responses_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_responses_questions_connection
+    ADD CONSTRAINT attempt_responses_questions_connection_responses_id_fkey FOREIGN KEY (responses_id) REFERENCES public.attempt_responses_entry(id) ON DELETE CASCADE;
+
+
+--
+
 -- Name: attempt_chat_documents_connection chat_resolved_documents_connection_documents_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 

@@ -9057,7 +9057,7 @@ class SearchModelDraftsEntriesApiResponse(BaseModel):
     items: Any | None = None
 
 
-# Generated from: create_mutes_entries
+# Generated from: create_attempt_mutes_entries
 
 
 class CreateMutesEntriesSqlParams(BaseModel):
@@ -9103,7 +9103,7 @@ class CreateMutesEntriesApiResponse(BaseModel):
     message_id: UUID | None = None
 
 
-# Generated from: get_mutes_entries
+# Generated from: get_attempt_mutes_entries
 
 
 class GetMutesEntriesSqlParams(BaseModel):
@@ -9125,7 +9125,7 @@ class GetMutesEntriesApiResponse(BaseModel):
     items: Any | None = None
 
 
-# Generated from: search_mutes_entries
+# Generated from: search_attempt_mutes_entries
 
 
 class SearchMutesEntriesSqlParams(BaseModel):
@@ -33553,19 +33553,19 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchModelDraftsEntriesApiRequest",
         "SearchModelDraftsEntriesApiResponse",
     ),
-    "app/sql/queries/entries/mutes/create_mutes_entries_complete.sql": (
+    "app/sql/queries/entries/attempt_mutes/create_attempt_mutes_entries_complete.sql": (
         "CreateMutesEntriesSqlParams",
         "CreateMutesEntriesSqlRow",
         "CreateMutesEntriesApiRequest",
         "CreateMutesEntriesApiResponse",
     ),
-    "app/sql/queries/entries/mutes/get_mutes_entries_complete.sql": (
+    "app/sql/queries/entries/attempt_mutes/get_attempt_mutes_entries_complete.sql": (
         "GetMutesEntriesSqlParams",
         "GetMutesEntriesSqlRow",
         "GetMutesEntriesApiRequest",
         "GetMutesEntriesApiResponse",
     ),
-    "app/sql/queries/entries/mutes/search_mutes_entries_complete.sql": (
+    "app/sql/queries/entries/attempt_mutes/search_attempt_mutes_entries_complete.sql": (
         "SearchMutesEntriesSqlParams",
         "SearchMutesEntriesSqlRow",
         "SearchMutesEntriesApiRequest",
@@ -38818,21 +38818,21 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal[
-            "app/sql/queries/entries/mutes/create_mutes_entries_complete.sql"
+            "app/sql/queries/entries/attempt_mutes/create_attempt_mutes_entries_complete.sql"
         ],
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal[
-            "app/sql/queries/entries/mutes/get_mutes_entries_complete.sql"
+            "app/sql/queries/entries/attempt_mutes/get_attempt_mutes_entries_complete.sql"
         ],
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal[
-            "app/sql/queries/entries/mutes/search_mutes_entries_complete.sql"
+            "app/sql/queries/entries/attempt_mutes/search_attempt_mutes_entries_complete.sql"
         ],
     ) -> SqlString: ...
 

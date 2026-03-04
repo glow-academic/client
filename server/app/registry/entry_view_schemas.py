@@ -6,7 +6,7 @@ which represent the table columns tools write to.
 
 Differences from ENTRY_SCHEMAS:
 - IDs renamed: entry.id → {type}_id (e.g. analysis_id, content_id)
-- Joined columns added (e.g. standard_id on feedbacks, question_id/option_id on responses)
+- Joined columns added (e.g. standard_id on feedbacks, question_id/option_id on attempt_responses)
 - Computed columns (e.g. idx via ROW_NUMBER on contents/hints)
 - Type casts (e.g. total::float on feedbacks, score::float on grades)
 - Internal columns dropped (e.g. call_id, updated_at filtered out by most MVs)
@@ -21,7 +21,7 @@ MV name mapping:
   hints          → attempt_hint_mv
   improvements   → attempt_improvement_mv
   replacements   → attempt_replacement_mv
-  responses      → responses_mv
+  attempt_responses → attempt_responses_mv
   strengths      → attempt_strength_mv
 
 Type strings: text, int, float, numeric, bool, uuid, array, enum, timestamp
@@ -100,7 +100,7 @@ ENTRY_VIEW_SCHEMAS: dict[str, dict[str, str]] = {
         "idx": "int",
         "created_at": "timestamp",
     },
-    "responses": {
+    "attempt_responses": {
         "response_id": "uuid",
         "chat_id": "uuid",
         "question_id": "uuid",

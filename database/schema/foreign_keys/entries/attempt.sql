@@ -128,6 +128,51 @@ ALTER TABLE ONLY public.attempt_content_entry
 
 --
 
+-- Name: attempt_conversation_completions_entry attempt_conversation_completions_entry_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_conversation_completions_entry
+    ADD CONSTRAINT attempt_conversation_completions_entry_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls_entry(id);
+
+
+--
+
+-- Name: attempt_conversation_completions_entry attempt_conversation_completions_entry_conversation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_conversation_completions_entry
+    ADD CONSTRAINT attempt_conversation_completions_entry_conversation_id_fkey FOREIGN KEY (conversation_id) REFERENCES public.attempt_conversations_entry(id) ON DELETE CASCADE;
+
+
+--
+
+-- Name: attempt_conversations_entry attempt_conversations_entry_attempt_chat_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_conversations_entry
+    ADD CONSTRAINT attempt_conversations_entry_attempt_chat_id_fkey FOREIGN KEY (chat_id) REFERENCES public.attempt_chat_entry(id) ON DELETE CASCADE;
+
+
+--
+
+-- Name: attempt_conversations_entry attempt_conversations_entry_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_conversations_entry
+    ADD CONSTRAINT attempt_conversations_entry_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls_entry(id);
+
+
+--
+
+-- Name: attempt_conversations_entry attempt_conversations_entry_run_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_conversations_entry
+    ADD CONSTRAINT attempt_conversations_entry_run_id_fkey FOREIGN KEY (run_id) REFERENCES public.runs_entry(id);
+
+
+--
+
 -- Name: attempt_entry attempt_entry_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -326,6 +371,24 @@ ALTER TABLE ONLY public.attempt_message_tree_entry
 
 --
 
+-- Name: attempt_mutes_entry attempt_mutes_entry_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_mutes_entry
+    ADD CONSTRAINT attempt_mutes_entry_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls_entry(id);
+
+
+--
+
+-- Name: attempt_mutes_entry attempt_mutes_entry_conversation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_mutes_entry
+    ADD CONSTRAINT attempt_mutes_entry_conversation_id_fkey FOREIGN KEY (conversation_id) REFERENCES public.attempt_conversations_entry(id) ON DELETE CASCADE;
+
+
+--
+
 -- Name: attempt_practice_entry attempt_practice_entry_attempt_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -358,6 +421,24 @@ ALTER TABLE ONLY public.attempt_replacement_entry
 
 ALTER TABLE ONLY public.attempt_replacement_entry
     ADD CONSTRAINT attempt_replacement_entry_improvement_id_fkey FOREIGN KEY (improvement_id) REFERENCES public.attempt_improvement_entry(id) ON DELETE CASCADE;
+
+
+--
+
+-- Name: attempt_responses_entry attempt_responses_entry_attempt_chat_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_responses_entry
+    ADD CONSTRAINT attempt_responses_entry_attempt_chat_id_fkey FOREIGN KEY (chat_id) REFERENCES public.attempt_chat_entry(id) ON DELETE CASCADE;
+
+
+--
+
+-- Name: attempt_responses_entry attempt_responses_entry_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.attempt_responses_entry
+    ADD CONSTRAINT attempt_responses_entry_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls_entry(id);
 
 
 --

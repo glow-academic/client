@@ -1,56 +1,46 @@
-"""benchmark/get internal — reusable data-access layer."""
+"""Benchmark get — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    GetBenchmarkEntriesSqlParams,
-    GetBenchmarkEntriesSqlRow,
-)
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
+from app.routes.v5.tools.entries.benchmark.types import GetBenchmarkResponse
 
-SQL_PATH = "app/sql/queries/entries/benchmark/get_benchmark_entries_complete.sql"
+MV_NAME = "benchmark_mv"
 
 
-async def get_benchmark_entries_internal(
+async def get_benchmarks(
     conn: asyncpg.Connection,
     ids: list[UUID],
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to fetch benchmark entries by IDs."""
+) -> list[GetBenchmarkResponse]:
+    """Fetch benchmark entries by IDs from the MV."""
     if not ids:
         return []
 
-    tags = ["entries", "benchmark"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/benchmark/get",
-        {"ids": [str(id) for id in ids]},
+    rows = await conn.fetch(
+        f"""
+        SELECT
+            benchmark_id, use_groups, dynamic,
+            eval_ids, profile_ids, department_ids,
+            invocation_entry_ids, created_at, updated_at, active
+        FROM {MV_NAME}
+        WHERE benchmark_id = ANY($1)
+        """,
+        ids,
     )
 
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    params = GetBenchmarkEntriesSqlParams(ids=ids)
-    result = cast(
-        GetBenchmarkEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
+    return [
+        GetBenchmarkResponse(
+            benchmark_id=r["benchmark_id"],
+            use_groups=r["use_groups"],
+            dynamic=r["dynamic"],
+            eval_ids=r["eval_ids"],
+            profile_ids=r["profile_ids"],
+            department_ids=r["department_ids"],
+            invocation_entry_ids=r["invocation_entry_ids"],
+            created_at=r["created_at"],
+            updated_at=r["updated_at"],
+            active=r["active"],
+        )
+        for r in rows
+    ]

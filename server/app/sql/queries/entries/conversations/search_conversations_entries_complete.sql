@@ -1,4 +1,4 @@
--- Search conversations entries from conversations_mv
+-- Search conversations entries from attempt_conversations_mv
 
 DO $$
 DECLARE
@@ -37,7 +37,7 @@ BEGIN
             'active', m.active,
             'chat_id', m.chat_id
         ) AS row_data
-        FROM conversations_mv m
+        FROM attempt_conversations_mv m
         WHERE true
           AND (chat_id IS NULL OR m.chat_id = chat_id)
         ORDER BY m.created_at DESC

@@ -1,4 +1,4 @@
--- Get conversations entries by IDs from conversations_mv
+-- Get conversations entries by IDs from attempt_conversations_mv
 
 DO $$
 DECLARE
@@ -33,7 +33,7 @@ BEGIN
             'chat_id', m.chat_id
         )
     ) AS items
-    FROM conversations_mv m
+    FROM attempt_conversations_mv m
     WHERE m.id = ANY(ids);
 END;
 $$;

@@ -13,10 +13,10 @@ from .db import get_connection, query_rows
 
 # Convention: entry_key → MV name
 # Most follow: attempt_{singular}_mv
-# Exceptions: debug_info_mv, responses_mv
+# Exceptions: debug_info_mv, attempt_responses_mv
 _MV_NAME_OVERRIDES: dict[str, str] = {
     "debug_info": "debug_info_mv",
-    "responses": "responses_mv",
+    "attempt_responses": "attempt_responses_mv",
 }
 
 # Singular forms for entry keys (for MV name convention)

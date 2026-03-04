@@ -10,6 +10,6 @@ ENTRY_VIEW_NAMES: dict[str, str] = {
     "hints": "attempt_hint_mv",
     "improvements": "attempt_improvement_mv",
     "replacements": "attempt_replacement_mv",
-    "responses": "responses_mv",
+    "attempt_responses": "attempt_responses_mv",
     "strengths": "attempt_strength_mv",
 }

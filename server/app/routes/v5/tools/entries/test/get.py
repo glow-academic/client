@@ -1,56 +1,47 @@
-"""test/get internal — reusable data-access layer."""
+"""Test get — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    GetTestEntriesSqlParams,
-    GetTestEntriesSqlRow,
-)
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
+from app.routes.v5.tools.entries.test.types import GetTestResponse
 
-SQL_PATH = "app/sql/queries/entries/test/get_test_entries_complete.sql"
+MV_NAME = "test_mv"
 
 
-async def get_test_entries_internal(
+async def get_tests(
     conn: asyncpg.Connection,
     ids: list[UUID],
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to fetch test entries by IDs."""
+) -> list[GetTestResponse]:
+    """Fetch test entries by IDs from the MV."""
     if not ids:
         return []
 
-    tags = ["entries", "test"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/test/get",
-        {"ids": [str(id) for id in ids]},
+    rows = await conn.fetch(
+        f"""
+        SELECT
+            test_id, eval_id, profile_id, department_ids,
+            benchmark_id, test_name, test_description,
+            num_invocations, infinite_mode, archived, test_created_at
+        FROM {MV_NAME}
+        WHERE test_id = ANY($1)
+        """,
+        ids,
     )
 
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    params = GetTestEntriesSqlParams(ids=ids)
-    result = cast(
-        GetTestEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
+    return [
+        GetTestResponse(
+            test_id=r["test_id"],
+            eval_id=r["eval_id"],
+            profile_id=r["profile_id"],
+            department_ids=r["department_ids"],
+            benchmark_id=r["benchmark_id"],
+            test_name=r["test_name"],
+            test_description=r["test_description"],
+            num_invocations=r["num_invocations"],
+            infinite_mode=r["infinite_mode"],
+            archived=r["archived"],
+            test_created_at=r["test_created_at"],
+        )
+        for r in rows
+    ]

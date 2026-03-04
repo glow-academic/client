@@ -31,7 +31,7 @@ ENTRY_TABLE_TO_KEY: dict[str, str] = {
     "attempt_hint_entry": "hints",
     "attempt_improvement_entry": "improvements",
     "attempt_replacement_entry": "replacements",
-    "responses_entry": "responses",
+    "attempt_responses_entry": "attempt_responses",
     "attempt_strength_entry": "strengths",
 }
 
@@ -94,7 +94,7 @@ TOOL_ENTRY_TYPES: dict[str, str] = {
     "019b71cc-0154-7343-b89d-96d865c3b7b8": "debug_info",
     "019c16d8-a128-7352-b010-39432de8e0dc": "highlights",
     "019c16d8-a128-7f6f-a6f8-c9c5aa236504": "replacements",
-    "019b916f-f5c8-7e4e-8412-3e3fb1a9ce5c": "responses",
+    "019b916f-f5c8-7e4e-8412-3e3fb1a9ce5c": "attempt_responses",
 }
 
 # ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
--- Get conversations_completions entries by IDs from conversations_completions_mv
+-- Get attempt_conversation_completions entries by IDs from attempt_conversation_completions_mv
 
 DO $$
 DECLARE
@@ -34,7 +34,7 @@ BEGIN
             'end_reason', m.end_reason
         )
     ) AS items
-    FROM conversations_completions_mv m
+    FROM attempt_conversation_completions_mv m
     WHERE m.id = ANY(ids);
 END;
 $$;

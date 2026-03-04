@@ -6,14 +6,10 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import get_db
-from app.routes.v5.tools.entries.benchmark.get import (
-    SQL_PATH,
-    get_benchmark_entries_internal,
-)
+from app.routes.v5.tools.entries.benchmark.get import get_benchmarks
 from app.sql.types import (
     GetBenchmarkEntriesApiRequest,
     GetBenchmarkEntriesApiResponse,
-    load_sql_query,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -32,12 +28,13 @@ async def get_benchmark_entries(
 ) -> GetBenchmarkEntriesApiResponse:
     """Get benchmark entries by IDs."""
     tags = ["entries", "benchmark"]
-    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_benchmark_entries_internal(conn, request.ids, bypass_cache)
+        items = await get_benchmarks(conn, request.ids)
         response.headers["X-Cache-Tags"] = ",".join(tags)
-        return GetBenchmarkEntriesApiResponse(items=items)
+        return GetBenchmarkEntriesApiResponse(
+            items=[item.model_dump(mode="json") for item in items]
+        )
     except HTTPException:
         raise
     except ValueError as e:
@@ -47,7 +44,7 @@ async def get_benchmark_entries(
             error=e,
             route_path=http_request.url.path,
             operation="get_benchmark_entries",
-            sql_query=load_sql_query(SQL_PATH),
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )

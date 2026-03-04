@@ -70,7 +70,7 @@ ENTRY_SCHEMAS: dict[str, dict[str, str]] = {
         "idx": "int",
         "updated_at": "timestamp",
     },
-    "responses": {
+    "attempt_responses": {
         "chat_id": "uuid",
         "updated_at": "timestamp",
         "call_id": "uuid",

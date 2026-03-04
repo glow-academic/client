@@ -1,4 +1,4 @@
--- Search responses entries from responses_mv
+-- Search responses entries from attempt_responses_mv
 
 DO $$
 DECLARE
@@ -38,7 +38,7 @@ BEGIN
             'option_id', m.option_id,
             'created_at', m.created_at
         ) AS row_data
-        FROM responses_mv m
+        FROM attempt_responses_mv m
         WHERE true
           AND (chat_id IS NULL OR m.chat_id = chat_id)
           AND (question_id IS NULL OR m.question_id = question_id)

@@ -1,4 +1,4 @@
--- Get responses entries by IDs from responses_mv
+-- Get responses entries by IDs from attempt_responses_mv
 
 DO $$
 DECLARE
@@ -32,7 +32,7 @@ BEGIN
             'created_at', m.created_at
         )
     ) AS items
-    FROM responses_mv m
+    FROM attempt_responses_mv m
     WHERE m.response_id = ANY(ids);
 END;
 $$;
