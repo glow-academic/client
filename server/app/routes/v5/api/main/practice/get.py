@@ -360,8 +360,8 @@ async def _fetch_practice_history_data(
         if not h_profile_ids:
             return []
         async with pool.acquire() as c:
-            return await get_profiles_internal(
-                c, list(h_profile_ids), bypass_cache=bypass_cache
+            return await get_profiles(
+                c, list(h_profile_ids), get_redis_client(), bypass_cache=bypass_cache
             )
 
     async def _h_personas() -> list[Any]:
@@ -897,7 +897,7 @@ async def get_practice_websocket(
 
     async def fetch_config_profile():
         async with pool.acquire() as conn:
-            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+            return await get_profiles(conn, [profile_id], get_redis_client(), bypass_cache)
 
     async def fetch_runs_today():
         from datetime import UTC, datetime

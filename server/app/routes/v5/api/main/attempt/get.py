@@ -715,8 +715,8 @@ async def get_attempt_internal(
             if not prof_id:
                 return None
             async with pool.acquire() as c:
-                items = await get_profiles_internal(
-                    c, [prof_id], bypass_cache=bypass_cache
+                items = await get_profiles(
+                    c, [prof_id], get_redis_client(), bypass_cache=bypass_cache
                 )
                 if items and items[0].name:
                     return items[0].name
@@ -843,8 +843,8 @@ async def get_attempt_internal(
                 if not config_model_resource_ids:
                     return None
                 async with pool.acquire() as c:
-                    return await get_models_internal(
-                        c, config_model_resource_ids, bypass_cache=bypass_cache
+                    return await get_models(
+                        c, config_model_resource_ids, get_redis_client(), bypass_cache=bypass_cache
                     )
 
             (
@@ -1698,7 +1698,7 @@ async def get_attempt_websocket(
         if not pool:
             return None
         async with pool.acquire() as c:
-            return await get_profiles_internal(c, [profile_id], bypass_cache)
+            return await get_profiles(c, [profile_id], get_redis_client(), bypass_cache)
 
     async def fetch_runs_today():
         if not pool:

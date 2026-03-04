@@ -23,7 +23,7 @@ from app.routes.v5.tools.entries.runs.search import (
 )
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.models.get import get_models_internal
+from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.sql.types import (
@@ -81,8 +81,8 @@ async def get_record_internal(
     config_models: list[Any] = []
     if config_model_resource_ids:
         async with pool.acquire() as conn:
-            config_models = await get_models_internal(
-                conn, config_model_resource_ids, bypass_cache
+            config_models = await get_models(
+                conn, config_model_resource_ids, get_redis_client(), bypass_cache
             )
 
     config_provider_resource_ids = list(
@@ -96,7 +96,7 @@ async def get_record_internal(
     # 2. Fetch config profile and today's runs in parallel
     async def fetch_config_profile() -> list[QGetProfilesV4Item]:
         async with pool.acquire() as c:
-            return await get_profiles_internal(c, [profile_id], bypass_cache)
+            return await get_profiles(c, [profile_id], get_redis_client(), bypass_cache)
 
     async def fetch_runs_today() -> GetRunListViewResponse:
         today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)

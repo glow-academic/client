@@ -551,7 +551,7 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
         config_models = []
         if model_ids and pool:
             async with pool.acquire() as c:
-                config_models = await get_models_internal(c, model_ids, bypass_cache)
+                config_models = await get_models(c, model_ids, get_redis_client(), bypass_cache)
         models_by_id = {m.id: m for m in config_models if m.id}
 
         provider_ids = list(

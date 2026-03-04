@@ -182,8 +182,8 @@ async def export_practice(
             if not profile_ids_set:
                 return []
             async with pool.acquire() as c:
-                return await get_profiles_internal(
-                    c, list(profile_ids_set), bypass_cache=True
+                return await get_profiles(
+                    c, list(profile_ids_set), get_redis_client(), bypass_cache=True
                 )
 
         async def _get_personas() -> list[Any]:

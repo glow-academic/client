@@ -353,8 +353,8 @@ async def get_setting_internal(
 
     async def fetch_profiles():
         async with pool.acquire() as c:
-            selected = await get_profiles_internal(
-                c, selected_profile_ids, bypass_cache
+            selected = await get_profiles(
+                c, selected_profile_ids, get_redis_client(), bypass_cache
             )
             suggestions = await search_profiles_internal(
                 c,
@@ -435,7 +435,7 @@ async def get_setting_internal(
 
     async def fetch_config_models():
         async with pool.acquire() as c:
-            return await get_models_internal(c, config_model_resource_ids, bypass_cache)
+            return await get_models(c, config_model_resource_ids, get_redis_client(), bypass_cache)
 
     # === PARALLEL FETCH ===
     (
@@ -712,7 +712,7 @@ async def get_setting_websocket(
         if not pool:
             return None
         async with pool.acquire() as conn:
-            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+            return await get_profiles(conn, [profile_id], get_redis_client(), bypass_cache)
 
     async def fetch_runs_today():
         if not pool:

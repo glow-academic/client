@@ -240,8 +240,8 @@ async def get_cohort_list(
                 if not profile_id_set:
                     return []
                 async with pool.acquire() as c:
-                    return await get_profiles_internal(
-                        c, list(profile_id_set), bypass_cache
+                    return await get_profiles(
+                        c, list(profile_id_set), get_redis_client(), bypass_cache
                     )
 
             async def fetch_simulations() -> list:

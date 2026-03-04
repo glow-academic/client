@@ -120,7 +120,7 @@ def _filter_by_ids(items: list[T], ids: list[UUID], id_attr: str) -> list[T]:
 # Resource key -> (view_data attr for IDs, get_*_internal func, id_attr for filtering)
 RESOURCE_CONFIG: list[tuple[str, str, Any, str]] = [
     ("departments", "department_ids", get_departments, "department_id"),
-    ("models", "model_ids", get_models_internal, "id"),
+    ("models", "model_ids", get_models, "id"),
     ("prompts", "prompt_ids", get_prompts, "id"),
     ("instructions", "instruction_ids", get_instructions, "id"),
     ("voices", "voice_ids", get_voices, "id"),
@@ -244,8 +244,8 @@ async def get_invocation_internal(
     config_models: list[Any] = []
     if config_model_ids:
         async with pool.acquire() as conn:
-            config_models = await get_models_internal(
-                conn, config_model_ids, bypass_cache
+            config_models = await get_models(
+                conn, config_model_ids, get_redis_client(), bypass_cache
             )
 
     config_provider_ids = list(
@@ -363,7 +363,7 @@ async def get_invocation_websocket(
 
     async def fetch_config_profile():
         async with pool.acquire() as conn:
-            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+            return await get_profiles(conn, [profile_id], get_redis_client(), bypass_cache)
 
     async def fetch_runs_today():
         from datetime import UTC, datetime

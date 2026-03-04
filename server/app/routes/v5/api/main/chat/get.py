@@ -400,8 +400,8 @@ async def get_chat_internal(
     config_models: list[Any] = []
     if config_model_resource_ids:
         async with pool.acquire() as conn:
-            config_models = await get_models_internal(
-                conn, config_model_resource_ids, bypass_cache
+            config_models = await get_models(
+                conn, config_model_resource_ids, get_redis_client(), bypass_cache
             )
 
     config_provider_resource_ids = list(
@@ -499,7 +499,7 @@ async def get_chat_websocket(
 
     async def fetch_config_profile():
         async with pool.acquire() as conn:
-            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+            return await get_profiles(conn, [profile_id], get_redis_client(), bypass_cache)
 
     async def fetch_runs_today():
         from datetime import UTC, datetime

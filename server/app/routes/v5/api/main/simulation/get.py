@@ -740,7 +740,7 @@ async def get_simulation_internal(
     )
     if model_ids:
         async with pool.acquire() as c:
-            config_models_result = await get_models_internal(c, model_ids, bypass_cache)
+            config_models_result = await get_models(c, model_ids, get_redis_client(), bypass_cache)
     provider_ids = list(
         dict.fromkeys(
             [
@@ -812,7 +812,7 @@ async def get_simulation_websocket(
         if not pool:
             return None
         async with pool.acquire() as conn:
-            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+            return await get_profiles(conn, [profile_id], get_redis_client(), bypass_cache)
 
     async def fetch_runs_today():
         if not pool:

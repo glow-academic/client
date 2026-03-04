@@ -364,8 +364,8 @@ async def fetch_dashboard_history_data(
         if not h_profile_ids:
             return []
         async with pool.acquire() as c:
-            return await get_profiles_internal(
-                c, list(h_profile_ids), bypass_cache=bypass_cache
+            return await get_profiles(
+                c, list(h_profile_ids), get_redis_client(), bypass_cache=bypass_cache
             )
 
     async def _h_personas():
@@ -711,9 +711,10 @@ async def get_dashboard_internal(
         if not request.target_profile_id:
             return []
         async with pool.acquire() as c:
-            return await get_profiles_internal(
+            return await get_profiles(
                 conn=c,
                 ids=[UUID(str(request.target_profile_id))],
+                redis=get_redis_client(),
                 bypass_cache=bypass_cache,
             )
 
@@ -1031,7 +1032,7 @@ async def get_dashboard_websocket(
     from app.routes.auth.settings import get_auth_settings_internal
     from app.routes.v5.api.permissions import resolve_agents_for_artifact
     from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
-    from app.routes.v5.tools.resources.models.get import get_models_internal
+    from app.routes.v5.tools.resources.models.get import get_models
     from app.routes.v5.tools.resources.providers.get import get_providers
 
     # 1. Fetch settings-based agent config
@@ -1052,8 +1053,8 @@ async def get_dashboard_websocket(
     config_models: list[Any] = []
     if config_model_ids:
         async with pool.acquire() as conn:
-            config_models = await get_models_internal(
-                conn, config_model_ids, bypass_cache
+            config_models = await get_models(
+                conn, config_model_ids, get_redis_client(), bypass_cache
             )
 
     config_provider_ids = list(
@@ -1067,7 +1068,7 @@ async def get_dashboard_websocket(
     # 3. Fetch config profile + runs today in parallel
     async def _fetch_config_profile() -> list[Any]:
         async with pool.acquire() as conn:
-            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+            return await get_profiles(conn, [profile_id], get_redis_client(), bypass_cache)
 
     async def _fetch_runs_today() -> GetRunListViewResponse:
         from datetime import UTC

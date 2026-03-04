@@ -162,8 +162,8 @@ async def export_dashboard(
         # Phase 3: Parallel resource hydration + message stats
         async def _get_profiles() -> list[Any]:
             async with pool.acquire() as c:
-                return await get_profiles_internal(
-                    conn=c, ids=list(profile_ids_set), bypass_cache=True
+                return await get_profiles(
+                    conn=c, ids=list(profile_ids_set), redis=get_redis_client(), bypass_cache=True
                 )
 
         async def _get_simulations() -> list[Any]:

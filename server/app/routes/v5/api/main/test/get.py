@@ -38,7 +38,7 @@ from app.routes.v5.tools.resources.agents.get import get_agents_internal
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.evals.get import get_evals_internal
-from app.routes.v5.tools.resources.models.get import get_models_internal
+from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.rubrics.get import get_rubrics_batch_internal
@@ -129,8 +129,8 @@ async def get_test_internal(
                 if not p_model_id:
                     return None
                 async with pool.acquire() as c:
-                    return await get_models_internal(
-                        c, [p_model_id], bypass_cache=bypass_cache
+                    return await get_models(
+                        c, [p_model_id], get_redis_client(), bypass_cache=bypass_cache
                     )
 
             async def fetch_providers() -> Any:
@@ -520,7 +520,7 @@ async def get_test_websocket(
         if not pool or not profile_id:
             return None
         async with pool.acquire() as c:
-            return await get_profiles_internal(c, [profile_id], cache)
+            return await get_profiles(c, [profile_id], get_redis_client(), cache)
 
     async def fetch_runs_today():
         if not pool or not profile_id:

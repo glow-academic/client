@@ -463,8 +463,8 @@ async def get_tool_internal(
             )
     if config_model_ids:
         async with pool.acquire() as c:
-            config_model_resources = await get_models_internal(
-                c, config_model_ids, bypass_cache
+            config_model_resources = await get_models(
+                c, config_model_ids, get_redis_client(), bypass_cache
             )
         provider_ids = list(
             {
@@ -531,7 +531,7 @@ async def get_tool_websocket(
         if not pool:
             return None
         async with pool.acquire() as conn:
-            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+            return await get_profiles(conn, [profile_id], get_redis_client(), bypass_cache)
 
     async def fetch_runs_today():
         if not pool:

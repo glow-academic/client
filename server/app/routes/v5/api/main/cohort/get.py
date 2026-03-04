@@ -507,7 +507,7 @@ async def get_cohort_internal(
     async def fetch_profiles() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
             selected = (
-                await get_profiles_internal(c, profile_ids, bypass_cache=bypass_cache)
+                await get_profiles(c, profile_ids, get_redis_client(), bypass_cache=bypass_cache)
                 if profile_ids
                 else []
             )
@@ -786,8 +786,8 @@ async def get_cohort_internal(
             )
             if model_ids:
                 async with pool.acquire() as c:
-                    config_models_result = await get_models_internal(
-                        c, model_ids, bypass_cache
+                    config_models_result = await get_models(
+                        c, model_ids, get_redis_client(), bypass_cache
                     )
             provider_ids = list(
                 dict.fromkeys(
@@ -897,7 +897,7 @@ async def get_cohort_websocket(
         if not pool:
             return None
         async with pool.acquire() as conn:
-            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+            return await get_profiles(conn, [profile_id], get_redis_client(), bypass_cache)
 
     async def fetch_runs_today():
         if not pool:

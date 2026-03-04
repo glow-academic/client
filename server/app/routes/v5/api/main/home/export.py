@@ -81,7 +81,7 @@ async def _compute_certificate_scores(
     # Pass 2 — Parallel resource hydration
     async def fetch_profiles(ids: list[UUID]) -> list[Any]:
         async with pool.acquire() as conn:
-            return await get_profiles_internal(conn=conn, ids=ids)
+            return await get_profiles(conn=conn, ids=ids, redis=get_redis_client())
 
     async def fetch_cohorts(ids: list[UUID]) -> list[Any]:
         async with pool.acquire() as conn:

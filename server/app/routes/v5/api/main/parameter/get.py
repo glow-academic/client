@@ -69,7 +69,7 @@ from app.routes.v5.tools.resources.descriptions.search import (
 )
 from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags_internal
-from app.routes.v5.tools.resources.models.get import get_models_internal
+from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.tools.resources.parameter_fields.get import (
@@ -476,8 +476,8 @@ async def get_parameter_internal(
             )
     if config_model_resource_ids:
         async with pool.acquire() as c:
-            config_models = await get_models_internal(
-                c, config_model_resource_ids, bypass_cache
+            config_models = await get_models(
+                c, config_model_resource_ids, get_redis_client(), bypass_cache
             )
         provider_ids = list(
             dict.fromkeys(m.provider_id for m in config_models if m.provider_id)
@@ -546,7 +546,7 @@ async def get_parameter_websocket(
         if not pool:
             return None
         async with pool.acquire() as conn:
-            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+            return await get_profiles(conn, [profile_id], get_redis_client(), bypass_cache)
 
     async def fetch_runs_today():
         if not pool:

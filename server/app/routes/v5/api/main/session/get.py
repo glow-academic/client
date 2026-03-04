@@ -94,8 +94,8 @@ async def get_session_internal(
     config_models: list[Any] = []
     if config_model_resource_ids:
         async with pool.acquire() as conn:
-            config_models = await get_models_internal(
-                conn, config_model_resource_ids, bypass_cache
+            config_models = await get_models(
+                conn, config_model_resource_ids, get_redis_client(), bypass_cache
             )
 
     config_provider_resource_ids = list(
@@ -145,7 +145,7 @@ async def get_session_internal(
 
     async def fetch_config_profile() -> list[QGetProfilesV4Item]:
         async with pool.acquire() as c:
-            return await get_profiles_internal(c, [profile_id], bypass_cache)
+            return await get_profiles(c, [profile_id], get_redis_client(), bypass_cache)
 
     async def fetch_runs_today() -> GetRunListViewResponse:
         today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)

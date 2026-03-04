@@ -101,7 +101,7 @@ from app.routes.v5.tools.resources.instructions.get import get_instructions
 from app.routes.v5.tools.resources.instructions.search import (
     search_instructions_internal,
 )
-from app.routes.v5.tools.resources.models.get import get_models_internal
+from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.tools.resources.parameter_fields.get import (
@@ -621,7 +621,7 @@ async def get_persona_internal(
 
     async def fetch_config_models():
         async with pool.acquire() as c:
-            return await get_models_internal(c, config_model_resource_ids, bypass_cache)
+            return await get_models(c, config_model_resource_ids, get_redis_client(), bypass_cache)
 
     # === PARALLEL FETCH (all resources at once) ===
     # Fields are now a top-level catalog resource. Parameters carry field_ids and
@@ -968,7 +968,7 @@ async def get_persona_websocket(
         if not pool:
             return None
         async with pool.acquire() as conn:
-            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+            return await get_profiles(conn, [profile_id], get_redis_client(), bypass_cache)
 
     async def fetch_runs_today():
         if not pool:

@@ -1130,8 +1130,8 @@ async def get_scenario_internal(
             )
             if model_ids:
                 async with pool.acquire() as c:
-                    config_models_result = await get_models_internal(
-                        c, model_ids, bypass_cache
+                    config_models_result = await get_models(
+                        c, model_ids, get_redis_client(), bypass_cache
                     )
             provider_ids = list(
                 dict.fromkeys(
@@ -1259,7 +1259,7 @@ async def get_scenario_websocket(
 
     async def fetch_config_profile():
         async with pool.acquire() as conn:
-            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+            return await get_profiles(conn, [profile_id], get_redis_client(), bypass_cache)
 
     async def fetch_runs_today():
         from datetime import UTC, datetime
@@ -1654,7 +1654,7 @@ async def get_scenario(
         )
 
 
-from app.routes.v5.tools.resources.models.get import get_models_internal
+from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached

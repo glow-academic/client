@@ -445,7 +445,7 @@ async def get_profile_internal(
         async with pool.acquire() as c:
             agents = await get_agents_internal(c, config_agent_ids, bypass_cache)
             models = (
-                await get_models_internal(c, config_model_ids, bypass_cache)
+                await get_models(c, config_model_ids, get_redis_client(), bypass_cache)
                 if config_model_ids
                 else []
             )
@@ -670,7 +670,7 @@ async def get_profile_websocket(
         if not pool:
             return None
         async with pool.acquire() as conn:
-            return await get_profiles_internal(conn, [profile_id], cache)
+            return await get_profiles(conn, [profile_id], get_redis_client(), cache)
 
     async def fetch_runs_today():
         if not pool:

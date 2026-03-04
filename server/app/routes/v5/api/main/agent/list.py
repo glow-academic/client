@@ -5,7 +5,7 @@ Two-pass architecture:
 2. Python computes permissions (can_edit, can_delete, can_duplicate)
 
 Filter option names resolved in SQL via ListFilterSection pattern.
-Model names for per-agent display hydrated from cached get_models_internal().
+Model names for per-agent display hydrated from cached get_models().
 """
 
 from typing import Annotated, Any, cast
@@ -163,8 +163,8 @@ async def get_agent_list(
         # Hydrate model_name and model_description per agent from cached models
         if pool and agent_model_ids:
             async with pool.acquire() as c:
-                models_data = await get_models_internal(
-                    c, list(agent_model_ids), bypass_cache
+                models_data = await get_models(
+                    c, list(agent_model_ids), get_redis_client(), bypass_cache
                 )
             model_lookup: dict[UUID, tuple[str | None, str | None]] = {}
             for m in models_data:

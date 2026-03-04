@@ -585,9 +585,10 @@ async def get_rubric_internal(
             )
     if config_model_resource_ids:
         async with pool.acquire() as c:
-            config_models = await get_models_internal(
+            config_models = await get_models(
                 c,
                 config_model_resource_ids,
+                get_redis_client(),
                 bypass_cache=bypass_cache,
             )
     provider_ids = list(
@@ -724,7 +725,7 @@ async def get_rubric_websocket(
         if not pool:
             return None
         async with pool.acquire() as conn:
-            return await get_profiles_internal(conn, [profile_id], cache)
+            return await get_profiles(conn, [profile_id], get_redis_client(), cache)
 
     async def fetch_runs_today():
         if not pool:

@@ -101,11 +101,11 @@ async def get_group_internal(
         if not config_model_resource_ids:
             return []
         async with pool.acquire() as c:
-            return await get_models_internal(c, config_model_resource_ids, bypass_cache)
+            return await get_models(c, config_model_resource_ids, get_redis_client(), bypass_cache)
 
     async def fetch_config_profile() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_profiles_internal(c, [profile_id], bypass_cache)
+            return await get_profiles(c, [profile_id], get_redis_client(), bypass_cache)
 
     async def fetch_runs_today() -> GetRunListViewResponse:
         today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)

@@ -93,7 +93,7 @@ from app.routes.v5.tools.resources.descriptions.search import (
 from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags_internal
 from app.routes.v5.tools.resources.modalities.get import get_modalities_internal
-from app.routes.v5.tools.resources.models.get import get_models_internal
+from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.tools.resources.pricing.get import get_pricing_internal
@@ -713,8 +713,8 @@ async def get_model_internal(
             )
     if config_model_resource_ids:
         async with pool.acquire() as c:
-            config_models_result = await get_models_internal(
-                c, config_model_resource_ids, bypass_cache
+            config_models_result = await get_models(
+                c, config_model_resource_ids, get_redis_client(), bypass_cache
             )
     provider_ids_for_config = list(
         dict.fromkeys(
@@ -808,7 +808,7 @@ async def get_model_websocket(
         if not pool:
             return None
         async with pool.acquire() as conn:
-            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+            return await get_profiles(conn, [profile_id], get_redis_client(), bypass_cache)
 
     async def fetch_runs_today():
         if not pool:

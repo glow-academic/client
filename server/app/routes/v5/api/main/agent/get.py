@@ -449,7 +449,7 @@ async def get_agent_internal(
 
     async def fetch_models():
         async with pool.acquire() as c:
-            selected = await get_models_internal(c, model_ids, bypass_cache)
+            selected = await get_models(c, model_ids, get_redis_client(), bypass_cache)
             suggestions = await search_models_internal(
                 c,
                 search=None,
@@ -816,7 +816,7 @@ async def get_agent_websocket(
         if not pool:
             return None
         async with pool.acquire() as conn:
-            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+            return await get_profiles(conn, [profile_id], get_redis_client(), bypass_cache)
 
     async def fetch_runs_today():
         if not pool:
