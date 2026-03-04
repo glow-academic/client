@@ -24,7 +24,7 @@ from app.infra.generation.media_context import (
     post_process_media_sentinels,
     wrap_media_entries,
 )
-from app.infra.globals import get_internal_sio, get_pool
+from app.infra.globals import get_internal_sio, get_pool, get_redis_client
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.generation_tracker import (
     init_generation,
@@ -43,9 +43,9 @@ from app.routes.v5.socket.internal.generate_artifact import GenerateArtifactPayl
 from app.routes.v5.socket.internal.generation_types import GenerationStartedData
 from app.routes.v5.socket.types import GenerateErrorApiRequest
 from app.routes.v5.tools.resources.agents.get import get_agents_internal
-from app.routes.v5.tools.resources.instructions.get import get_instructions_internal
+from app.routes.v5.tools.resources.instructions.get import get_instructions
 from app.routes.v5.tools.resources.models.get import get_models_internal
-from app.routes.v5.tools.resources.prompts.get import get_prompts_internal
+from app.routes.v5.tools.resources.prompts.get import get_prompts
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
@@ -868,7 +868,7 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
                     if not pid:
                         return ""
                     async with pool.acquire() as c:  # type: ignore[union-attr]
-                        prompts = await get_prompts_internal(c, [pid])
+                        prompts = await get_prompts(c, [pid], get_redis_client())
                         if prompts and prompts[0].system_prompt:
                             return prompts[0].system_prompt
                         return ""
@@ -878,7 +878,7 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
                     if not iids:
                         return []
                     async with pool.acquire() as c:  # type: ignore[union-attr]
-                        instructions = await get_instructions_internal(c, iids)
+                        instructions = await get_instructions(c, iids, get_redis_client())
                         return [inst.template for inst in instructions if inst.template]
 
                 system_prompt, developer_instruction_templates = await asyncio.gather(

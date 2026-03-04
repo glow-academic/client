@@ -17,7 +17,7 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool, get_redis_client
 from app.routes.v5.api.main.simulation.permissions import (
     SIMULATION_RESOURCES,
     compute_can_edit,
@@ -81,11 +81,11 @@ from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.departments.search import search_departments_internal
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions_internal
+from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.descriptions.search import (
     search_descriptions_internal,
 )
-from app.routes.v5.tools.resources.flags.get import get_flags_internal
+from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags_internal
 from app.routes.v5.tools.resources.models.get import get_models_internal
 from app.routes.v5.tools.resources.names.get import get_names
@@ -351,7 +351,7 @@ async def get_simulation_internal(
 
     async def fetch_descriptions():
         async with pool.acquire() as c:
-            selected = await get_descriptions_internal(c, description_ids, cache)
+            selected = await get_descriptions(c, description_ids, get_redis_client(), cache)
             suggestions = await search_descriptions_internal(
                 c,
                 None,
@@ -369,7 +369,7 @@ async def get_simulation_internal(
 
     async def fetch_flags():
         async with pool.acquire() as c:
-            selected = await get_flags_internal(c, flag_ids, bypass_cache)
+            selected = await get_flags(c, flag_ids, get_redis_client(), bypass_cache)
             all_flags = await search_flags_internal(
                 c,
                 search=None,

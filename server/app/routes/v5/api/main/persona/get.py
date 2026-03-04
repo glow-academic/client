@@ -17,7 +17,7 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool, get_redis_client
 from app.routes.auth.profile import get_auth_profile_internal
 from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.persona.permissions import (
@@ -82,22 +82,22 @@ from app.routes.v5.tools.entries.runs.search import get_run_list_entries_interna
 from app.routes.v5.tools.resources.agents.get import get_agents_internal
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.colors.get import get_colors_internal
+from app.routes.v5.tools.resources.colors.get import get_colors
 from app.routes.v5.tools.resources.colors.search import search_colors_internal
 from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.departments.search import search_departments_internal
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions_internal
+from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.descriptions.search import (
     search_descriptions_internal,
 )
 from app.routes.v5.tools.resources.examples.get import get_examples_internal
 from app.routes.v5.tools.resources.examples.search import search_examples_internal
 from app.routes.v5.tools.resources.fields.search import search_fields_internal
-from app.routes.v5.tools.resources.flags.get import get_flags_internal
+from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags_internal
-from app.routes.v5.tools.resources.icons.get import get_icons_internal
+from app.routes.v5.tools.resources.icons.get import get_icons
 from app.routes.v5.tools.resources.icons.search import search_icons_internal
-from app.routes.v5.tools.resources.instructions.get import get_instructions_internal
+from app.routes.v5.tools.resources.instructions.get import get_instructions
 from app.routes.v5.tools.resources.instructions.search import (
     search_instructions_internal,
 )
@@ -115,7 +115,7 @@ from app.routes.v5.tools.resources.parameters.search import search_parameters_in
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.tools.get import get_tools
-from app.routes.v5.tools.resources.voices.get import get_voices_internal
+from app.routes.v5.tools.resources.voices.get import get_voices
 from app.routes.v5.tools.resources.voices.search import search_voices_internal
 from app.sql.types import (
     GetPersonaAccessSqlParams,
@@ -423,7 +423,7 @@ async def get_persona_internal(
 
     async def fetch_descriptions():
         async with pool.acquire() as c:
-            selected = await get_descriptions_internal(c, description_ids, cache)
+            selected = await get_descriptions(c, description_ids, get_redis_client(), cache)
             suggestions = await search_descriptions_internal(
                 c,
                 descriptions_search,
@@ -439,7 +439,7 @@ async def get_persona_internal(
 
     async def fetch_colors():
         async with pool.acquire() as c:
-            selected = await get_colors_internal(c, color_ids, bypass_cache)
+            selected = await get_colors(c, color_ids, get_redis_client(), bypass_cache)
             suggestions = await search_colors_internal(
                 c,
                 color_search,
@@ -455,7 +455,7 @@ async def get_persona_internal(
 
     async def fetch_icons():
         async with pool.acquire() as c:
-            selected = await get_icons_internal(c, icon_ids, bypass_cache)
+            selected = await get_icons(c, icon_ids, get_redis_client(), bypass_cache)
             suggestions = await search_icons_internal(
                 c,
                 icon_search,
@@ -471,8 +471,8 @@ async def get_persona_internal(
 
     async def fetch_instructions():
         async with pool.acquire() as c:
-            selected = await get_instructions_internal(
-                c, instructions_ids, bypass_cache
+            selected = await get_instructions(
+                c, instructions_ids, get_redis_client(), bypass_cache
             )
             suggestions = await search_instructions_internal(
                 c,
@@ -492,7 +492,7 @@ async def get_persona_internal(
 
     async def fetch_flags():
         async with pool.acquire() as c:
-            selected = await get_flags_internal(c, flag_ids, bypass_cache)
+            selected = await get_flags(c, flag_ids, get_redis_client(), bypass_cache)
             all_flags = await search_flags_internal(
                 c,
                 None,
@@ -604,7 +604,7 @@ async def get_persona_internal(
 
     async def fetch_voices():
         async with pool.acquire() as c:
-            selected = await get_voices_internal(c, voice_ids_list, bypass_cache)
+            selected = await get_voices(c, voice_ids_list, get_redis_client(), bypass_cache)
             suggestions = await search_voices_internal(
                 c,
                 None,

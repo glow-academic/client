@@ -15,7 +15,7 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool, get_redis_client
 from app.routes.auth.profile import get_auth_profile_internal
 from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.auth.permissions import (
@@ -57,21 +57,21 @@ from app.routes.v5.tools.entries.runs.search import get_run_list_entries_interna
 from app.routes.v5.tools.resources.agents.get import get_agents_internal
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions_internal
+from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.descriptions.search import (
     search_descriptions_internal,
 )
-from app.routes.v5.tools.resources.flags.get import get_flags_internal
+from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags_internal
 from app.routes.v5.tools.resources.items.get import get_items_internal
 from app.routes.v5.tools.resources.models.get import get_models_internal
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
-from app.routes.v5.tools.resources.protocols.get import get_protocols_internal
+from app.routes.v5.tools.resources.protocols.get import get_protocols
 from app.routes.v5.tools.resources.protocols.search import search_protocols_internal
 from app.routes.v5.tools.resources.providers.get import get_providers
-from app.routes.v5.tools.resources.slugs.get import get_slugs_internal
+from app.routes.v5.tools.resources.slugs.get import get_slugs
 from app.routes.v5.tools.resources.slugs.search import search_slugs_internal
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.sql.types import (
@@ -302,7 +302,7 @@ async def get_auth_internal(
 
     async def fetch_descriptions() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_descriptions_internal(c, description_ids, cache)
+            selected = await get_descriptions(c, description_ids, get_redis_client(), cache)
             suggestions = await search_descriptions_internal(
                 c,
                 None,
@@ -320,7 +320,7 @@ async def get_auth_internal(
 
     async def fetch_flags() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_flags_internal(c, flag_ids, bypass_cache)
+            selected = await get_flags(c, flag_ids, get_redis_client(), bypass_cache)
             all_flags = await search_flags_internal(
                 c,
                 None,
@@ -335,8 +335,8 @@ async def get_auth_internal(
 
     async def fetch_protocols() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_protocols_internal(
-                c, selected_protocol_ids, bypass_cache
+            selected = await get_protocols(
+                c, selected_protocol_ids, get_redis_client(), bypass_cache
             )
             suggestions = await search_protocols_internal(
                 c,
@@ -353,7 +353,7 @@ async def get_auth_internal(
 
     async def fetch_slugs() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_slugs_internal(c, selected_slug_ids, bypass_cache)
+            selected = await get_slugs(c, selected_slug_ids, get_redis_client(), bypass_cache)
             suggestions = await search_slugs_internal(
                 c,
                 None,

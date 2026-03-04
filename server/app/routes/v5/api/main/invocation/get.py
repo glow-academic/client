@@ -14,7 +14,7 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, HTTPException, Request
 
-from app.infra.globals import get_pool
+from app.infra.globals import get_pool, get_redis_client
 from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.invocation.types import (
     BaseSuiteSection,
@@ -40,11 +40,11 @@ from app.routes.v5.tools.entries.suite.get import get_suite_view_internal
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.instructions.get import get_instructions_internal
+from app.routes.v5.tools.resources.instructions.get import get_instructions
 from app.routes.v5.tools.resources.keys.get import get_keys
 from app.routes.v5.tools.resources.models.get import get_models_internal
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
-from app.routes.v5.tools.resources.prompts.get import get_prompts_internal
+from app.routes.v5.tools.resources.prompts.get import get_prompts
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.reasoning_levels.get import (
     get_reasoning_levels_internal,
@@ -53,7 +53,7 @@ from app.routes.v5.tools.resources.temperature_levels.get import (
     get_temperature_levels_internal,
 )
 from app.routes.v5.tools.resources.tools.get import get_tools
-from app.routes.v5.tools.resources.voices.get import get_voices_internal
+from app.routes.v5.tools.resources.voices.get import get_voices
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
@@ -121,9 +121,9 @@ def _filter_by_ids(items: list[T], ids: list[UUID], id_attr: str) -> list[T]:
 RESOURCE_CONFIG: list[tuple[str, str, Any, str]] = [
     ("departments", "department_ids", get_departments, "department_id"),
     ("models", "model_ids", get_models_internal, "id"),
-    ("prompts", "prompt_ids", get_prompts_internal, "id"),
-    ("instructions", "instruction_ids", get_instructions_internal, "id"),
-    ("voices", "voice_ids", get_voices_internal, "id"),
+    ("prompts", "prompt_ids", get_prompts, "id"),
+    ("instructions", "instruction_ids", get_instructions, "id"),
+    ("voices", "voice_ids", get_voices, "id"),
     (
         "temperature_levels",
         "temperature_level_ids",

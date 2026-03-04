@@ -8,12 +8,11 @@ from typing import Annotated
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
-from app.routes.v5.tools.resources.texts.get import BATCH_SQL_PATH, get_texts_internal
+from app.infra.globals import get_db, get_redis_client
+from app.routes.v5.tools.resources.texts.get import get_texts as get_texts_resource
 from app.sql.types import (
     GetTextsApiRequest,
     GetTextsApiResponse,
-    load_sql_query,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -42,7 +41,7 @@ async def get_texts(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_texts_internal(conn, request.p_ids or [], bypass_cache)
+        items = await get_texts_resource(conn, request.p_ids or [], get_redis_client(), bypass_cache)
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetTextsApiResponse(items=items)
     except HTTPException:
@@ -54,7 +53,7 @@ async def get_texts(
             error=e,
             route_path=http_request.url.path,
             operation="get_texts",
-            sql_query=load_sql_query(BATCH_SQL_PATH),
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )
