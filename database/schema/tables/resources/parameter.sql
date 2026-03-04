@@ -13,8 +13,7 @@ CREATE TABLE public.parameter_fields_resource (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     parameter_id uuid,
-    conditional_parameter_id uuid,
-    conditional_parameter_ids uuid[] DEFAULT '{}'::uuid[]
+    mcp boolean DEFAULT false NOT NULL
 );
 
 

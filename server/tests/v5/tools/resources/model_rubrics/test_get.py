@@ -10,7 +10,7 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_created_model_rubric(conn, redis_client):
-    model_id = await conn.fetchval("INSERT INTO models_resource DEFAULT VALUES RETURNING id")
+    model_id = await conn.fetchval("INSERT INTO models_resource (value) VALUES ('test-model') RETURNING id")
     rubric_id = await conn.fetchval("""
         INSERT INTO rubrics_resource (name, description)
         VALUES ('test-rubric', 'desc')
@@ -44,7 +44,7 @@ async def test_returns_empty_for_empty_ids(conn, redis_client):
 
 
 async def test_cache_hit_skips_db(conn, redis_client):
-    model_id = await conn.fetchval("INSERT INTO models_resource DEFAULT VALUES RETURNING id")
+    model_id = await conn.fetchval("INSERT INTO models_resource (value) VALUES ('test-model') RETURNING id")
     rubric_id = await conn.fetchval("""
         INSERT INTO rubrics_resource (name, description)
         VALUES ('test-rubric', 'desc')
@@ -67,7 +67,7 @@ async def test_cache_hit_skips_db(conn, redis_client):
 
 
 async def test_bypass_cache_skips_read_and_write(conn, redis_client):
-    model_id = await conn.fetchval("INSERT INTO models_resource DEFAULT VALUES RETURNING id")
+    model_id = await conn.fetchval("INSERT INTO models_resource (value) VALUES ('test-model') RETURNING id")
     rubric_id = await conn.fetchval("""
         INSERT INTO rubrics_resource (name, description)
         VALUES ('test-rubric', 'desc')

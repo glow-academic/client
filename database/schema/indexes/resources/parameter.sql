@@ -10,14 +10,6 @@ CREATE INDEX idx_parameter_fields_resource_active ON public.parameter_fields_res
 
 --
 
--- Name: idx_parameter_fields_resource_conditional_parameter_ids; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_parameter_fields_resource_conditional_parameter_ids ON public.parameter_fields_resource USING gin (conditional_parameter_ids);
-
-
---
-
 -- Name: idx_parameter_fields_resource_field_id; Type: INDEX; Schema: public; Owner: -
 --
 

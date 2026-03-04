@@ -11,10 +11,10 @@ CREATE TABLE public.fields_resource (
     generated boolean DEFAULT false CONSTRAINT fields_generated_not_null1 NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT fields_mcp_not_null1 NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT fields_id_new_not_null NOT NULL,
-    name text,
-    description text,
-    value text,
-    department_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    name text DEFAULT ''::text NOT NULL,
+    description text DEFAULT ''::text NOT NULL,
+    value text DEFAULT ''::text NOT NULL,
+    department_ids uuid[] DEFAULT ARRAY[]::uuid[] NOT NULL,
     conditional_parameter_ids uuid[] DEFAULT ARRAY[]::uuid[] NOT NULL
 );
 

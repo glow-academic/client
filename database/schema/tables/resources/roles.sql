@@ -16,7 +16,7 @@ CREATE TABLE public.roles_resource (
     description text DEFAULT ''::text NOT NULL,
     icon_id uuid,
     color_id uuid,
-    artifacts text[] DEFAULT '{}'::text[] NOT NULL
+    artifacts public.artifact_type[] DEFAULT '{}'::public.artifact_type[] NOT NULL
 );
 
 

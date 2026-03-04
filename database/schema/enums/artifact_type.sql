@@ -38,7 +38,9 @@ CREATE TYPE public.artifact_type AS ENUM (
     'record',
     'suite',
     'chat',
-    'invocation'
+    'invocation',
+    'group',
+    'session'
 );
 
 

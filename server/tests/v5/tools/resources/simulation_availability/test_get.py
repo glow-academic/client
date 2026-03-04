@@ -15,7 +15,7 @@ async def test_gets_created_simulation_availability(conn, redis_client):
     )
     row_id = await conn.fetchval("""
         INSERT INTO simulation_availability_resource (simulation_id, time, type)
-        VALUES ($1, NOW(), 'open')
+        VALUES ($1, NOW(), 'start')
         RETURNING id
     """, simulation_id)
 
@@ -46,7 +46,7 @@ async def test_cache_hit_skips_db(conn, redis_client):
     )
     row_id = await conn.fetchval("""
         INSERT INTO simulation_availability_resource (simulation_id, time, type)
-        VALUES ($1, NOW(), 'open')
+        VALUES ($1, NOW(), 'start')
         RETURNING id
     """, simulation_id)
 
@@ -66,7 +66,7 @@ async def test_bypass_cache_skips_read_and_write(conn, redis_client):
     )
     row_id = await conn.fetchval("""
         INSERT INTO simulation_availability_resource (simulation_id, time, type)
-        VALUES ($1, NOW(), 'open')
+        VALUES ($1, NOW(), 'start')
         RETURNING id
     """, simulation_id)
 
