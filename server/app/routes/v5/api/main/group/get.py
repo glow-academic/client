@@ -14,7 +14,7 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool, get_redis_client
 from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main._shared.pricing import compute_costs_from_runs
 from app.routes.v5.api.main.group.types import (
@@ -41,7 +41,7 @@ from app.routes.v5.tools.entries.runs.search import (
     GetRunListViewResponse,
     get_run_list_entries_internal,
 )
-from app.routes.v5.tools.resources.agents.get import get_agents_internal
+from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.models.get import get_models_internal
@@ -95,7 +95,7 @@ async def get_group_internal(
         if not config_agent_resource_ids:
             return []
         async with pool.acquire() as c:
-            return await get_agents_internal(c, config_agent_resource_ids, bypass_cache)
+            return await get_agents(c, config_agent_resource_ids, get_redis_client(), bypass_cache)
 
     async def fetch_config_models() -> list[Any]:
         if not config_model_resource_ids:

@@ -22,14 +22,14 @@ async def _run(conn):
 
 async def test_returns_id(conn):
     session, run = await _run(conn)
-    result = await create_token(conn, run_id=run.id)
+    result = await create_token(conn, run_id=run.id, session_id=session.id)
 
     assert result.id is not None
 
 
 async def test_visible_via_get_after_refresh(conn):
     session, run = await _run(conn)
-    result = await create_token(conn, run_id=run.id)
+    result = await create_token(conn, run_id=run.id, session_id=session.id)
     await refresh_tokens(conn)
 
     items = await get_tokens(conn, [result.id])
@@ -43,7 +43,7 @@ async def test_visible_via_get_after_refresh(conn):
 
 async def test_passes_mcp_flag(conn):
     session, run = await _run(conn)
-    result = await create_token(conn, run_id=run.id, mcp=True)
+    result = await create_token(conn, run_id=run.id, session_id=session.id, mcp=True)
     await refresh_tokens(conn)
 
     items = await get_tokens(conn, [result.id])
@@ -54,7 +54,7 @@ async def test_passes_mcp_flag(conn):
 
 async def test_stores_input_tokens(conn):
     session, run = await _run(conn)
-    result = await create_token(conn, run_id=run.id, input_tokens=100)
+    result = await create_token(conn, run_id=run.id, session_id=session.id, input_tokens=100)
     await refresh_tokens(conn)
 
     items = await get_tokens(conn, [result.id])
@@ -65,7 +65,7 @@ async def test_stores_input_tokens(conn):
 
 async def test_stores_output_tokens(conn):
     session, run = await _run(conn)
-    result = await create_token(conn, run_id=run.id, output_tokens=200)
+    result = await create_token(conn, run_id=run.id, session_id=session.id, output_tokens=200)
     await refresh_tokens(conn)
 
     items = await get_tokens(conn, [result.id])
@@ -76,7 +76,7 @@ async def test_stores_output_tokens(conn):
 
 async def test_stores_cached_input_tokens(conn):
     session, run = await _run(conn)
-    result = await create_token(conn, run_id=run.id, cached_input_tokens=50)
+    result = await create_token(conn, run_id=run.id, session_id=session.id, cached_input_tokens=50)
     await refresh_tokens(conn)
 
     items = await get_tokens(conn, [result.id])
@@ -94,14 +94,3 @@ async def test_stores_session_id(conn):
 
     assert len(items) == 1
     assert items[0].session_id == session.id
-
-
-async def test_session_id_nullable(conn):
-    session, run = await _run(conn)
-    result = await create_token(conn, run_id=run.id, session_id=None)
-    await refresh_tokens(conn)
-
-    items = await get_tokens(conn, [result.id])
-
-    assert len(items) == 1
-    assert items[0].session_id is None

@@ -19,7 +19,7 @@ from app.routes.auth.profile import get_auth_profile_internal
 from app.routes.v5.api.main.home.types import ExportHomeApiResponse
 from app.routes.v5.tools.entries.attempt_chat.get import get_chats_internal
 from app.routes.v5.tools.resources.cohorts.get import get_cohorts_internal
-from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
 from app.sql.types import InsertUploadSqlParams, InsertUploadSqlRow
 from app.utils.error.handle_route_error import handle_route_error

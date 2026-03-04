@@ -17,12 +17,12 @@ async def _run(conn):
     session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
     group = await create_group(conn, session_id=session.id)
     run = await create_run(conn, session_id=session.id, group_id=group.id)
-    return run
+    return session, run
 
 
 async def test_appears_after_refresh(conn):
-    run = await _run(conn)
-    result = await create_token(conn, run_id=run.id)
+    session, run = await _run(conn)
+    result = await create_token(conn, run_id=run.id, session_id=session.id)
     await refresh_tokens(conn)
 
     items = await get_tokens(conn, [result.id])
@@ -32,8 +32,8 @@ async def test_appears_after_refresh(conn):
 
 
 async def test_not_visible_before_refresh(conn):
-    run = await _run(conn)
-    result = await create_token(conn, run_id=run.id)
+    session, run = await _run(conn)
+    result = await create_token(conn, run_id=run.id, session_id=session.id)
 
     items = await get_tokens(conn, [result.id])
 

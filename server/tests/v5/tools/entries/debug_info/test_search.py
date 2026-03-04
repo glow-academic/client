@@ -17,12 +17,8 @@ from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 pytestmark = pytest.mark.asyncio
 
 
-async def _session(conn):
-    return await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
-
-
 async def _call(conn):
-    session = await _session(conn)
+    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
     group = await create_group(conn, session_id=session.id)
     run = await create_run(conn, group_id=group.id, session_id=session.id)
     call = await create_call(conn, run_id=run.id, session_id=session.id)
@@ -31,7 +27,7 @@ async def _call(conn):
 
 async def test_finds_created_debug_info(conn):
     run, call = await _call(conn)
-    result = await create_debug_info(conn, call_id=call.id, content="debug output")
+    result = await create_debug_info(conn, call_id=call.id, content="debug output", run_id=run.id)
     await refresh_debug_info(conn)
 
     items = await search_debug_info(conn, call_id=call.id)
@@ -41,8 +37,8 @@ async def test_finds_created_debug_info(conn):
 
 
 async def test_filters_by_call_id(conn):
-    _, call = await _call(conn)
-    await create_debug_info(conn, call_id=call.id, content="debug output")
+    run, call = await _call(conn)
+    await create_debug_info(conn, call_id=call.id, content="debug output", run_id=run.id)
     await refresh_debug_info(conn)
 
     items = await search_debug_info(conn, call_id=uuid4())
@@ -62,9 +58,9 @@ async def test_filters_by_run_id(conn):
 
 
 async def test_filters_by_mcp(conn):
-    _, call = await _call(conn)
-    r_mcp = await create_debug_info(conn, call_id=call.id, content="mcp debug", mcp=True)
-    r_normal = await create_debug_info(conn, call_id=call.id, content="normal debug", mcp=False)
+    run, call = await _call(conn)
+    r_mcp = await create_debug_info(conn, call_id=call.id, content="mcp debug", run_id=run.id, mcp=True)
+    r_normal = await create_debug_info(conn, call_id=call.id, content="normal debug", run_id=run.id, mcp=False)
     await refresh_debug_info(conn)
 
     items = await search_debug_info(conn, mcp=True)
@@ -75,8 +71,8 @@ async def test_filters_by_mcp(conn):
 
 
 async def test_filters_by_date_from(conn):
-    _, call = await _call(conn)
-    result = await create_debug_info(conn, call_id=call.id, content="debug output")
+    run, call = await _call(conn)
+    result = await create_debug_info(conn, call_id=call.id, content="debug output", run_id=run.id)
     await refresh_debug_info(conn)
 
     future = datetime.now(UTC) + timedelta(days=1)
@@ -87,8 +83,8 @@ async def test_filters_by_date_from(conn):
 
 
 async def test_filters_by_date_to(conn):
-    _, call = await _call(conn)
-    result = await create_debug_info(conn, call_id=call.id, content="debug output")
+    run, call = await _call(conn)
+    result = await create_debug_info(conn, call_id=call.id, content="debug output", run_id=run.id)
     await refresh_debug_info(conn)
 
     past = datetime.now(UTC) - timedelta(days=1)
@@ -99,9 +95,9 @@ async def test_filters_by_date_to(conn):
 
 
 async def test_pagination_limit(conn):
-    _, call = await _call(conn)
-    await create_debug_info(conn, call_id=call.id, content="debug output 1")
-    await create_debug_info(conn, call_id=call.id, content="debug output 2")
+    run, call = await _call(conn)
+    await create_debug_info(conn, call_id=call.id, content="debug output 1", run_id=run.id)
+    await create_debug_info(conn, call_id=call.id, content="debug output 2", run_id=run.id)
     await refresh_debug_info(conn)
 
     items = await search_debug_info(conn, call_id=call.id, limit=1)
@@ -110,8 +106,8 @@ async def test_pagination_limit(conn):
 
 
 async def test_returns_all_without_filter(conn):
-    _, call = await _call(conn)
-    await create_debug_info(conn, call_id=call.id, content="debug output")
+    run, call = await _call(conn)
+    await create_debug_info(conn, call_id=call.id, content="debug output", run_id=run.id)
     await refresh_debug_info(conn)
 
     items = await search_debug_info(conn)
@@ -120,8 +116,8 @@ async def test_returns_all_without_filter(conn):
 
 
 async def test_bypass_mv(conn):
-    _, call = await _call(conn)
-    result = await create_debug_info(conn, call_id=call.id, content="debug output")
+    run, call = await _call(conn)
+    result = await create_debug_info(conn, call_id=call.id, content="debug output", run_id=run.id)
 
     items = await search_debug_info(conn, call_id=call.id, bypass_mv=True)
 

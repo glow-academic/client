@@ -38,7 +38,7 @@ from app.routes.v5.tools.entries.runs.search import (
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.models.get import get_models_internal
-from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
 from app.routes.v5.tools.resources.simulations.get import get_simulations_internal

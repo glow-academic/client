@@ -42,7 +42,7 @@ from app.routes.v5.socket.client.types import (
 from app.routes.v5.socket.internal.generate_artifact import GenerateArtifactPayload
 from app.routes.v5.socket.internal.generation_types import GenerationStartedData
 from app.routes.v5.socket.types import GenerateErrorApiRequest
-from app.routes.v5.tools.resources.agents.get import get_agents_internal
+from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.instructions.get import get_instructions
 from app.routes.v5.tools.resources.models.get import get_models_internal
 from app.routes.v5.tools.resources.prompts.get import get_prompts
@@ -528,8 +528,8 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
             }
             if system_agent_ids and pool:
                 async with pool.acquire() as c:
-                    config_agents = await get_agents_internal(
-                        c, list(system_agent_ids), bypass_cache
+                    config_agents = await get_agents(
+                        c, list(system_agent_ids), get_redis_client(), bypass_cache
                     )
 
         if not config_agents:

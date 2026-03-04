@@ -64,7 +64,7 @@ from app.routes.v5.tools.entries.document_drafts.get import (
     get_document_drafts_entries_internal,
 )
 from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
-from app.routes.v5.tools.resources.agents.get import get_agents_internal
+from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments
@@ -651,8 +651,8 @@ async def get_document_internal(
     config_providers_result: list[Any] = []
     if config_agent_resource_ids:
         async with pool.acquire() as c:
-            config_agents_result = await get_agents_internal(
-                c, config_agent_resource_ids, bypass_cache
+            config_agents_result = await get_agents(
+                c, config_agent_resource_ids, get_redis_client(), bypass_cache
             )
     if config_model_resource_ids:
         async with pool.acquire() as c:

@@ -28,7 +28,7 @@ from app.routes.v5.api.main.cohort.types import (
 )
 from app.routes.v5.api.types import ListFilterSection
 from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
 from app.sql.types import (
     GetCohortsListApiRequest,

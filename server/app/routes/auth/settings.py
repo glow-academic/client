@@ -20,7 +20,7 @@ from app.routes.auth.types import (
     GetAuthSettingsApiResponse,
     SettingsAgentToolEntry,
 )
-from app.routes.v5.tools.resources.agents.get import get_agents_internal
+from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.settings.get import get_settings
 from app.routes.v5.tools.resources.systems.get import get_systems
 from app.routes.v5.tools.resources.tools.get import get_tools
@@ -87,7 +87,7 @@ async def get_auth_settings_internal(
         if not settings_agent_ids:
             return []
         async with pool.acquire() as c:
-            return await get_agents_internal(c, settings_agent_ids, bypass_cache)
+            return await get_agents(c, settings_agent_ids, get_redis_client(), bypass_cache)
 
     async def fetch_systems():
         if not settings_system_ids:

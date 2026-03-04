@@ -4,6 +4,7 @@ from uuid import uuid4
 
 import pytest
 
+from app.routes.v5.tools.entries.grants.create import create_grant
 from app.routes.v5.tools.entries.emulations.create import create_emulation
 from app.routes.v5.tools.entries.emulations.get import get_emulations
 from app.routes.v5.tools.entries.emulations.refresh import refresh_emulations
@@ -17,15 +18,16 @@ async def _session(conn):
     return await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
 
 
-async def _grant(conn):
-    return await conn.fetchval(
-        "INSERT INTO grants_entry (expires_at) VALUES (now() + interval '1 hour') RETURNING id"
+async def _grant(conn, session_id):
+    result = await create_grant(
+        conn, session_id=session_id, expires_at="now() + interval '1 hour'"
     )
+    return result.id
 
 
 async def test_returns_emulation_by_id(conn):
     session = await _session(conn)
-    grant_id = await _grant(conn)
+    grant_id = await _grant(conn, session.id)
     result = await create_emulation(conn, grant_id=grant_id, session_id=session.id)
     await refresh_emulations(conn)
 
@@ -41,7 +43,7 @@ async def test_returns_emulation_by_id(conn):
 
 async def test_returns_multiple(conn):
     session = await _session(conn)
-    grant_id = await _grant(conn)
+    grant_id = await _grant(conn, session.id)
     r1 = await create_emulation(conn, grant_id=grant_id, session_id=session.id)
     r2 = await create_emulation(conn, grant_id=grant_id, session_id=session.id)
     await refresh_emulations(conn)
@@ -68,7 +70,7 @@ async def test_returns_empty_for_empty_ids(conn):
 
 async def test_bypass_mv_returns_without_refresh(conn):
     session = await _session(conn)
-    grant_id = await _grant(conn)
+    grant_id = await _grant(conn, session.id)
     result = await create_emulation(conn, grant_id=grant_id, session_id=session.id)
 
     items = await get_emulations(conn, [result.id], bypass_mv=True)

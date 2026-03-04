@@ -8,12 +8,11 @@ from typing import Annotated
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
-from app.routes.v5.tools.resources.profiles.get import SQL_PATH, get_profiles_internal
+from app.infra.globals import get_db, get_redis_client
+from app.routes.v5.tools.resources.profiles.get import get_profiles as get_profiles_resource
 from app.sql.types import (
     GetProfilesApiRequest,
     GetProfilesApiResponse,
-    load_sql_query,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -46,7 +45,7 @@ async def get_profiles(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_profiles_internal(conn, request.p_ids or [], bypass_cache)
+        items = await get_profiles_resource(conn, request.p_ids or [], get_redis_client(), bypass_cache)
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetProfilesApiResponse(items=items)
     except HTTPException:
@@ -58,7 +57,7 @@ async def get_profiles(
             error=e,
             route_path=http_request.url.path,
             operation="get_profiles",
-            sql_query=load_sql_query(SQL_PATH),
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )

@@ -25,7 +25,7 @@ async def _run(conn):
 
 async def test_finds_created_token(conn):
     session, run = await _run(conn)
-    result = await create_token(conn, run_id=run.id)
+    result = await create_token(conn, run_id=run.id, session_id=session.id)
     await refresh_tokens(conn)
 
     items = await search_tokens(conn, run_id=run.id)
@@ -36,7 +36,7 @@ async def test_finds_created_token(conn):
 
 async def test_filters_by_run_id(conn):
     session, run = await _run(conn)
-    await create_token(conn, run_id=run.id)
+    await create_token(conn, run_id=run.id, session_id=session.id)
     await refresh_tokens(conn)
 
     items = await search_tokens(conn, run_id=uuid4())
@@ -67,7 +67,7 @@ async def test_filters_by_session_id_no_match(conn):
 
 async def test_filters_by_date_from(conn):
     session, run = await _run(conn)
-    result = await create_token(conn, run_id=run.id)
+    result = await create_token(conn, run_id=run.id, session_id=session.id)
     await refresh_tokens(conn)
 
     future = datetime.now(UTC) + timedelta(days=1)
@@ -79,7 +79,7 @@ async def test_filters_by_date_from(conn):
 
 async def test_filters_by_date_to(conn):
     session, run = await _run(conn)
-    result = await create_token(conn, run_id=run.id)
+    result = await create_token(conn, run_id=run.id, session_id=session.id)
     await refresh_tokens(conn)
 
     past = datetime.now(UTC) - timedelta(days=1)
@@ -91,8 +91,8 @@ async def test_filters_by_date_to(conn):
 
 async def test_filters_by_mcp(conn):
     session, run = await _run(conn)
-    r_mcp = await create_token(conn, run_id=run.id, mcp=True)
-    r_normal = await create_token(conn, run_id=run.id, mcp=False)
+    r_mcp = await create_token(conn, run_id=run.id, session_id=session.id, mcp=True)
+    r_normal = await create_token(conn, run_id=run.id, session_id=session.id, mcp=False)
     await refresh_tokens(conn)
 
     items = await search_tokens(conn, mcp=True)
@@ -104,8 +104,8 @@ async def test_filters_by_mcp(conn):
 
 async def test_pagination_limit(conn):
     session, run = await _run(conn)
-    await create_token(conn, run_id=run.id)
-    await create_token(conn, run_id=run.id)
+    await create_token(conn, run_id=run.id, session_id=session.id)
+    await create_token(conn, run_id=run.id, session_id=session.id)
     await refresh_tokens(conn)
 
     items = await search_tokens(conn, run_id=run.id, limit=1)
@@ -115,7 +115,7 @@ async def test_pagination_limit(conn):
 
 async def test_returns_all_without_filter(conn):
     session, run = await _run(conn)
-    await create_token(conn, run_id=run.id)
+    await create_token(conn, run_id=run.id, session_id=session.id)
     await refresh_tokens(conn)
 
     items = await search_tokens(conn)
@@ -125,7 +125,7 @@ async def test_returns_all_without_filter(conn):
 
 async def test_bypass_mv_finds_without_refresh(conn):
     session, run = await _run(conn)
-    result = await create_token(conn, run_id=run.id)
+    result = await create_token(conn, run_id=run.id, session_id=session.id)
 
     items = await search_tokens(conn, run_id=run.id, bypass_mv=True)
 

@@ -80,7 +80,7 @@ from app.routes.v5.tools.entries.agent_drafts.get import (
     get_agent_drafts_entries_internal,
 )
 from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
-from app.routes.v5.tools.resources.agents.get import get_agents_internal
+from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments
@@ -756,8 +756,8 @@ async def get_agent_internal(
     config_agents: list[QGetAgentsV4Item] = []
     if config_agent_resource_ids:
         async with pool.acquire() as c:
-            config_agents = await get_agents_internal(
-                c, config_agent_resource_ids, bypass_cache
+            config_agents = await get_agents(
+                c, config_agent_resource_ids, get_redis_client(), bypass_cache
             )
     provider_ids = list({m.provider_id for m in models if m.provider_id is not None})
     config_providers: list[QGetProvidersV4Item] = []

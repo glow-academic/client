@@ -60,7 +60,7 @@ from app.routes.v5.tools.entries.parameter_drafts.get import (
     get_parameter_drafts_entries_internal,
 )
 from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
-from app.routes.v5.tools.resources.agents.get import get_agents_internal
+from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.departments.search import search_departments_internal
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
@@ -471,8 +471,8 @@ async def get_parameter_internal(
     config_providers: list[Any] = []
     if config_agent_resource_ids:
         async with pool.acquire() as c:
-            config_agents = await get_agents_internal(
-                c, config_agent_resource_ids, bypass_cache
+            config_agents = await get_agents(
+                c, config_agent_resource_ids, get_redis_client(), bypass_cache
             )
     if config_model_resource_ids:
         async with pool.acquire() as c:

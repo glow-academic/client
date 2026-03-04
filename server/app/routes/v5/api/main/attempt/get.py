@@ -21,7 +21,7 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool, get_redis_client
 from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.attempt.permissions import (
     check_attempt_access,
@@ -103,7 +103,7 @@ from app.routes.v5.tools.entries.attempt_strength.get import (
 )
 from app.routes.v5.tools.entries.responses.get import get_simulation_responses_internal
 from app.routes.v5.tools.entries.uploads.get import get_upload_list_view_internal
-from app.routes.v5.tools.resources.agents.get import get_agents_internal
+from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.documents.get import get_documents_internal
@@ -115,7 +115,7 @@ from app.routes.v5.tools.resources.personas.get import get_personas_internal
 from app.routes.v5.tools.resources.problem_statements.get import (
     get_problem_statements_internal,
 )
-from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.questions.get import get_questions_internal
 from app.routes.v5.tools.resources.rubrics.get import get_rubrics_batch_internal
@@ -835,8 +835,8 @@ async def get_attempt_internal(
 
             async def fetch_config_agents() -> Any:
                 async with pool.acquire() as c:
-                    return await get_agents_internal(
-                        c, config_agent_resource_ids, bypass_cache=bypass_cache
+                    return await get_agents(
+                        c, config_agent_resource_ids, get_redis_client(), bypass_cache=bypass_cache
                     )
 
             async def fetch_config_models() -> Any:

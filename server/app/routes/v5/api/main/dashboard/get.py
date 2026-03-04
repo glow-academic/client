@@ -68,7 +68,7 @@ from app.routes.v5.tools.resources.parameter_fields.get import (
 )
 from app.routes.v5.tools.resources.parameters.get import get_parameters_internal
 from app.routes.v5.tools.resources.personas.get import get_personas_internal
-from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
 from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
 from app.utils.error.handle_route_error import handle_route_error

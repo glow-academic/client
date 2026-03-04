@@ -14,12 +14,8 @@ from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 pytestmark = pytest.mark.asyncio
 
 
-async def _session(conn):
-    return await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
-
-
 async def _call(conn):
-    session = await _session(conn)
+    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
     group = await create_group(conn, session_id=session.id)
     run = await create_run(conn, group_id=group.id, session_id=session.id)
     call = await create_call(conn, run_id=run.id, session_id=session.id)
@@ -27,15 +23,15 @@ async def _call(conn):
 
 
 async def test_returns_id(conn):
-    _, _, call = await _call(conn)
-    result = await create_debug_info(conn, call_id=call.id, content="debug output")
+    _, run, call = await _call(conn)
+    result = await create_debug_info(conn, call_id=call.id, content="debug output", run_id=run.id)
 
     assert result.id is not None
 
 
 async def test_visible_via_get_after_refresh(conn):
-    _, _, call = await _call(conn)
-    result = await create_debug_info(conn, call_id=call.id, content="debug output")
+    _, run, call = await _call(conn)
+    result = await create_debug_info(conn, call_id=call.id, content="debug output", run_id=run.id)
     await refresh_debug_info(conn)
 
     items = await get_debug_info(conn, [result.id])
@@ -48,8 +44,8 @@ async def test_visible_via_get_after_refresh(conn):
 
 
 async def test_passes_mcp_flag(conn):
-    _, _, call = await _call(conn)
-    result = await create_debug_info(conn, call_id=call.id, content="debug output", mcp=True)
+    _, run, call = await _call(conn)
+    result = await create_debug_info(conn, call_id=call.id, content="debug output", run_id=run.id, mcp=True)
     await refresh_debug_info(conn)
 
     items = await get_debug_info(conn, [result.id])
@@ -59,8 +55,8 @@ async def test_passes_mcp_flag(conn):
 
 
 async def test_passes_content(conn):
-    _, _, call = await _call(conn)
-    result = await create_debug_info(conn, call_id=call.id, content="specific debug content")
+    _, run, call = await _call(conn)
+    result = await create_debug_info(conn, call_id=call.id, content="specific debug content", run_id=run.id)
     await refresh_debug_info(conn)
 
     items = await get_debug_info(conn, [result.id])

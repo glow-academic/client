@@ -14,21 +14,17 @@ from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 pytestmark = pytest.mark.asyncio
 
 
-async def _session(conn):
-    return await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
-
-
 async def _call(conn):
-    session = await _session(conn)
+    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
     group = await create_group(conn, session_id=session.id)
     run = await create_run(conn, group_id=group.id, session_id=session.id)
     call = await create_call(conn, run_id=run.id, session_id=session.id)
-    return call
+    return run, call
 
 
 async def test_appears_after_refresh(conn):
-    call = await _call(conn)
-    result = await create_debug_info(conn, call_id=call.id, content="debug output")
+    run, call = await _call(conn)
+    result = await create_debug_info(conn, call_id=call.id, content="debug output", run_id=run.id)
     await refresh_debug_info(conn)
 
     items = await get_debug_info(conn, [result.id])
@@ -38,8 +34,8 @@ async def test_appears_after_refresh(conn):
 
 
 async def test_not_visible_before_refresh(conn):
-    call = await _call(conn)
-    result = await create_debug_info(conn, call_id=call.id, content="debug output")
+    run, call = await _call(conn)
+    result = await create_debug_info(conn, call_id=call.id, content="debug output", run_id=run.id)
 
     items = await get_debug_info(conn, [result.id])
 

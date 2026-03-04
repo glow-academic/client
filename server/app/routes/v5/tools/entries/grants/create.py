@@ -1,37 +1,31 @@
-"""grants/create internal — reusable data-access layer."""
+"""Grants CREATE — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.routes.v5.api.entries.grants.types import (
-    CreateGrantsEntryResponse,
-    CreateGrantsEntrySqlParams,
-    CreateGrantsEntrySqlRow,
-)
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/entries/grants/create_grants_entries_complete.sql"
+from app.routes.v5.tools.entries.grants.types import CreateGrantResponse
 
 
-async def create_grants_entry_internal(
+async def create_grant(
     conn: asyncpg.Connection,
     session_id: UUID,
-    expires_at: str,
+    expires_at: str = "2099-12-31T23:59:59Z",
     mcp: bool = False,
-) -> CreateGrantsEntryResponse:
-    """Create a grants entry. Internal only — no HTTP route."""
-    params = CreateGrantsEntrySqlParams(
-        session_id=session_id, expires_at=expires_at, mcp=mcp
+) -> CreateGrantResponse:
+    """Create a grants entry."""
+    grant_id = await conn.fetchval(
+        """
+        INSERT INTO grants_entry (session_id, expires_at, mcp, generated)
+        VALUES ($1, $2::timestamptz, $3, true)
+        RETURNING id
+        """,
+        session_id,
+        expires_at,
+        mcp,
     )
 
-    result = cast(
-        CreateGrantsEntrySqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    if not result or not result.id:
+    if grant_id is None:
         raise ValueError("Failed to create grants entry")
 
-    return CreateGrantsEntryResponse.model_validate(result.model_dump())
+    return CreateGrantResponse(id=grant_id)

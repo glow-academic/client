@@ -50,7 +50,7 @@ from app.routes.v5.tools.entries.field_drafts.get import (
     get_field_drafts_entries_internal,
 )
 from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
-from app.routes.v5.tools.resources.agents.get import get_agents_internal
+from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments
@@ -454,8 +454,8 @@ async def get_field_internal(
     config_tools: list[Any] = []
     if config_agent_resource_ids:
         async with pool.acquire() as config_conn:
-            config_agents = await get_agents_internal(
-                config_conn, config_agent_resource_ids, bypass_cache
+            config_agents = await get_agents(
+                config_conn, config_agent_resource_ids, get_redis_client(), bypass_cache
             )
     if config_model_resource_ids:
         async with pool.acquire() as config_conn:

@@ -5,6 +5,7 @@ from uuid import uuid4
 
 import pytest
 
+from app.routes.v5.tools.entries.grants.create import create_grant
 from app.routes.v5.tools.entries.emulations.create import create_emulation
 from app.routes.v5.tools.entries.emulations.refresh import refresh_emulations
 from app.routes.v5.tools.entries.emulations.search import search_emulations
@@ -18,15 +19,16 @@ async def _session(conn):
     return await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
 
 
-async def _grant(conn):
-    return await conn.fetchval(
-        "INSERT INTO grants_entry (expires_at) VALUES (now() + interval '1 hour') RETURNING id"
+async def _grant(conn, session_id):
+    result = await create_grant(
+        conn, session_id=session_id, expires_at="now() + interval '1 hour'"
     )
+    return result.id
 
 
 async def test_finds_created_emulation(conn):
     session = await _session(conn)
-    grant_id = await _grant(conn)
+    grant_id = await _grant(conn, session.id)
     result = await create_emulation(conn, grant_id=grant_id, session_id=session.id)
     await refresh_emulations(conn)
 
@@ -38,7 +40,7 @@ async def test_finds_created_emulation(conn):
 
 async def test_filters_by_session(conn):
     session = await _session(conn)
-    grant_id = await _grant(conn)
+    grant_id = await _grant(conn, session.id)
     await create_emulation(conn, grant_id=grant_id, session_id=session.id)
     await refresh_emulations(conn)
 
@@ -49,7 +51,7 @@ async def test_filters_by_session(conn):
 
 async def test_filters_by_grant(conn):
     session = await _session(conn)
-    grant_id = await _grant(conn)
+    grant_id = await _grant(conn, session.id)
     result = await create_emulation(conn, grant_id=grant_id, session_id=session.id)
     await refresh_emulations(conn)
 
@@ -61,7 +63,7 @@ async def test_filters_by_grant(conn):
 
 async def test_filters_by_wrong_grant(conn):
     session = await _session(conn)
-    grant_id = await _grant(conn)
+    grant_id = await _grant(conn, session.id)
     await create_emulation(conn, grant_id=grant_id, session_id=session.id)
     await refresh_emulations(conn)
 
@@ -72,7 +74,7 @@ async def test_filters_by_wrong_grant(conn):
 
 async def test_filters_by_profile(conn):
     session = await _session(conn)
-    grant_id = await _grant(conn)
+    grant_id = await _grant(conn, session.id)
     result = await create_emulation(
         conn,
         grant_id=grant_id,
@@ -89,7 +91,7 @@ async def test_filters_by_profile(conn):
 
 async def test_filters_by_date_from(conn):
     session = await _session(conn)
-    grant_id = await _grant(conn)
+    grant_id = await _grant(conn, session.id)
     result = await create_emulation(conn, grant_id=grant_id, session_id=session.id)
     await refresh_emulations(conn)
 
@@ -102,7 +104,7 @@ async def test_filters_by_date_from(conn):
 
 async def test_filters_by_date_to(conn):
     session = await _session(conn)
-    grant_id = await _grant(conn)
+    grant_id = await _grant(conn, session.id)
     result = await create_emulation(conn, grant_id=grant_id, session_id=session.id)
     await refresh_emulations(conn)
 
@@ -115,7 +117,7 @@ async def test_filters_by_date_to(conn):
 
 async def test_filters_by_mcp(conn):
     session = await _session(conn)
-    grant_id = await _grant(conn)
+    grant_id = await _grant(conn, session.id)
     r_mcp = await create_emulation(conn, grant_id=grant_id, session_id=session.id, mcp=True)
     r_normal = await create_emulation(conn, grant_id=grant_id, session_id=session.id, mcp=False)
     await refresh_emulations(conn)
@@ -129,7 +131,7 @@ async def test_filters_by_mcp(conn):
 
 async def test_pagination_limit(conn):
     session = await _session(conn)
-    grant_id = await _grant(conn)
+    grant_id = await _grant(conn, session.id)
     await create_emulation(conn, grant_id=grant_id, session_id=session.id)
     await create_emulation(conn, grant_id=grant_id, session_id=session.id)
     await refresh_emulations(conn)
@@ -141,7 +143,7 @@ async def test_pagination_limit(conn):
 
 async def test_returns_all_without_filter(conn):
     session = await _session(conn)
-    grant_id = await _grant(conn)
+    grant_id = await _grant(conn, session.id)
     await create_emulation(conn, grant_id=grant_id, session_id=session.id)
     await refresh_emulations(conn)
 
@@ -152,7 +154,7 @@ async def test_returns_all_without_filter(conn):
 
 async def test_bypass_mv_finds_without_refresh(conn):
     session = await _session(conn)
-    grant_id = await _grant(conn)
+    grant_id = await _grant(conn, session.id)
     result = await create_emulation(conn, grant_id=grant_id, session_id=session.id)
 
     items = await search_emulations(conn, session_id=session.id, bypass_mv=True)

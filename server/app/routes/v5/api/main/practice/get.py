@@ -57,7 +57,7 @@ from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.cohorts.get import get_cohorts_internal
 from app.routes.v5.tools.resources.personas.get import get_personas_internal
-from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.rubrics.get import get_rubrics_internal
 from app.routes.v5.tools.resources.scenario_time_limits.get import (
     get_scenario_time_limits_internal,

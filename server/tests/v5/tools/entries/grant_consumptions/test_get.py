@@ -8,7 +8,7 @@ from app.routes.v5.tools.entries.grant_consumptions.create import (
     create_grant_consumption,
 )
 from app.routes.v5.tools.entries.grant_consumptions.get import get_grant_consumptions
-from app.routes.v5.tools.entries.grants.create import create_grants_entry_internal
+from app.routes.v5.tools.entries.grants.create import create_grant
 from app.routes.v5.tools.entries.sessions.create import create_session
 from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 
@@ -17,7 +17,7 @@ pytestmark = pytest.mark.asyncio
 
 async def _grant(conn):
     session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
-    grant = await create_grants_entry_internal(
+    grant = await create_grant(
         conn, session_id=session.id, expires_at="2099-12-31T23:59:59Z"
     )
     return grant
