@@ -1,4 +1,4 @@
-"""Types for get_images."""
+"""Types for images resource."""
 
 from datetime import datetime
 from uuid import UUID
@@ -6,7 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 
-class ImageItem(BaseModel):
+class GetImageResponse(BaseModel):
     id: UUID
     name: str
     description: str

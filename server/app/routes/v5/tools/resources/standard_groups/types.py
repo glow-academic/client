@@ -1,4 +1,4 @@
-"""Types for get_standard_groups."""
+"""Types for standard_groups resource."""
 
 from datetime import datetime
 from uuid import UUID
@@ -6,7 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 
-class StandardGroupItem(BaseModel):
+class GetStandardGroupResponse(BaseModel):
     id: UUID
     name: str
     short_name: str

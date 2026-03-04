@@ -1,4 +1,4 @@
-"""Types for get_simulation_availability."""
+"""Types for simulation_availability resource."""
 
 from datetime import datetime
 from uuid import UUID
@@ -6,7 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 
-class SimulationAvailabilityItem(BaseModel):
+class GetSimulationAvailabilityResponse(BaseModel):
     id: UUID
     simulation_id: UUID
     time: datetime

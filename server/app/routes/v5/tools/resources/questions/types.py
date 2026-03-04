@@ -1,4 +1,4 @@
-"""Types for get_questions."""
+"""Types for questions resource."""
 
 from datetime import datetime
 from uuid import UUID
@@ -6,7 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 
-class QuestionItem(BaseModel):
+class GetQuestionResponse(BaseModel):
     id: UUID
     question_text: str
     allow_multiple: bool

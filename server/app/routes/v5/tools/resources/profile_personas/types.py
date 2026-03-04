@@ -1,4 +1,4 @@
-"""Types for get_profile_personas."""
+"""Types for profile_personas resource."""
 
 from datetime import datetime
 from uuid import UUID
@@ -6,7 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 
-class ProfilePersonaItem(BaseModel):
+class GetProfilePersonaResponse(BaseModel):
     id: UUID
     profile_id: UUID
     persona_id: UUID

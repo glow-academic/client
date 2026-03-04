@@ -1,4 +1,4 @@
-"""Types for get_conditional_parameters."""
+"""Types for conditional_parameters resource."""
 
 from datetime import datetime
 from uuid import UUID
@@ -6,7 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 
-class ConditionalParameterItem(BaseModel):
+class GetConditionalParameterResponse(BaseModel):
     id: UUID
     parameter_id: UUID
     created_at: datetime

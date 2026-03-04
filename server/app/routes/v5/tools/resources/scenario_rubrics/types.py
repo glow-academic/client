@@ -1,4 +1,4 @@
-"""Types for get_scenario_rubrics."""
+"""Types for scenario_rubrics resource."""
 
 from datetime import datetime
 from uuid import UUID
@@ -6,7 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 
-class ScenarioRubricItem(BaseModel):
+class GetScenarioRubricResponse(BaseModel):
     id: UUID
     rubric_id: UUID
     scenario_id: UUID

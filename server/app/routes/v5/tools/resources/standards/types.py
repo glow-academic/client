@@ -1,4 +1,4 @@
-"""Types for get_standards."""
+"""Types for standards resource."""
 
 from datetime import datetime
 from uuid import UUID
@@ -6,7 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 
-class StandardItem(BaseModel):
+class GetStandardResponse(BaseModel):
     id: UUID
     name: str
     description: str
