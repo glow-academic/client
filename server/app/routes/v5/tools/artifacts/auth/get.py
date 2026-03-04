@@ -1,0 +1,90 @@
+"""Auth artifact GET — reusable data-access layer."""
+
+from uuid import UUID
+
+import asyncpg
+
+from app.routes.v5.tools.artifacts.auth.types import GetAuthsResponse
+
+TABLE = "auth_artifact"
+ARTIFACT_FK = "auth_id"
+
+# (flag_name, junction_table, junction_column, response_field)
+JUNCTIONS: list[tuple[str, str, str, str]] = [
+    ("names", "auth_names_junction", "name_id", "name_ids"),
+    ("descriptions", "auth_descriptions_junction", "description_id", "description_ids"),
+    ("departments", "auth_departments_junction", "department_id", "department_ids"),
+    ("flags", "auth_flags_junction", "flag_id", "flag_ids"),
+    ("items", "auth_items_junction", "item_id", "item_ids"),
+    ("protocols", "auth_protocols_junction", "protocol_id", "protocol_ids"),
+    ("slugs", "auth_slugs_junction", "slug_id", "slug_ids"),
+    ("auths", "auth_auths_junction", "auths_id", "auth_ids"),
+]
+
+
+async def get_auths(
+    conn: asyncpg.Connection,
+    ids: list[UUID],
+    *,
+    names: bool = False,
+    descriptions: bool = False,
+    departments: bool = False,
+    flags: bool = False,
+    items: bool = False,
+    protocols: bool = False,
+    slugs: bool = False,
+    auths: bool = False,
+) -> list[GetAuthsResponse]:
+    """Get auth artifacts by IDs with optional junction ID fetching."""
+    if not ids:
+        return []
+
+    flags_map = {
+        "names": names,
+        "descriptions": descriptions,
+        "departments": departments,
+        "flags": flags,
+        "items": items,
+        "protocols": protocols,
+        "slugs": slugs,
+        "auths": auths,
+    }
+
+    active = [(table, col, field) for flag, table, col, field in JUNCTIONS if flags_map[flag]]
+
+    # Build dynamic query
+    columns = ["p.id", "p.created_at", "p.updated_at", "p.generated", "p.mcp"]
+    joins: list[str] = []
+
+    for i, (table, col, field) in enumerate(active):
+        alias = f"j{i}"
+        joins.append(f"LEFT JOIN {table} {alias} ON {alias}.{ARTIFACT_FK} = p.id AND {alias}.active = true")
+        columns.append(
+            f"ARRAY_AGG(DISTINCT {alias}.{col}) FILTER (WHERE {alias}.{col} IS NOT NULL) AS {field}"
+        )
+
+    query = f"""
+        SELECT {', '.join(columns)}
+        FROM {TABLE} p
+        {' '.join(joins)}
+        WHERE p.id = ANY($1)
+        GROUP BY p.id, p.created_at, p.updated_at, p.generated, p.mcp
+    """
+
+    rows = await conn.fetch(query, ids)
+
+    results = []
+    for r in rows:
+        data: dict = {
+            "id": r["id"],
+            "created_at": r["created_at"],
+            "updated_at": r["updated_at"],
+            "generated": r["generated"],
+            "mcp": r["mcp"],
+        }
+        for _, _, _, field in JUNCTIONS:
+            if field in dict(r):
+                data[field] = r[field] or []
+        results.append(GetAuthsResponse(**data))
+
+    return results

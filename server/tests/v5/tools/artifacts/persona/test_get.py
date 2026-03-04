@@ -3,19 +3,17 @@
 import pytest
 
 from app.routes.v5.tools.artifacts.persona.get import get_personas
+from tests.seed_ids import SEED_PERSONA_ARTIFACT_ID
 
 pytestmark = pytest.mark.asyncio
 
-# Seed persona from university module
-SEED_PERSONA_ID = "019b3be4-36e2-7738-a817-5d50f4432a37"
-
 
 async def test_returns_base_columns(conn):
-    items = await get_personas(conn, [SEED_PERSONA_ID])
+    items = await get_personas(conn, [SEED_PERSONA_ARTIFACT_ID])
 
     assert len(items) == 1
     p = items[0]
-    assert str(p.id) == SEED_PERSONA_ID
+    assert p.id == SEED_PERSONA_ARTIFACT_ID
     assert p.active is True
     # No junctions requested — all should be None
     assert p.name_ids is None
@@ -36,7 +34,7 @@ async def test_returns_empty_for_empty_ids(conn):
 
 
 async def test_fetches_name_ids_when_requested(conn):
-    items = await get_personas(conn, [SEED_PERSONA_ID], names=True)
+    items = await get_personas(conn, [SEED_PERSONA_ARTIFACT_ID], names=True)
 
     assert len(items) == 1
     p = items[0]
@@ -49,7 +47,7 @@ async def test_fetches_name_ids_when_requested(conn):
 async def test_fetches_multiple_junctions(conn):
     items = await get_personas(
         conn,
-        [SEED_PERSONA_ID],
+        [SEED_PERSONA_ARTIFACT_ID],
         names=True,
         descriptions=True,
         colors=True,
@@ -67,7 +65,7 @@ async def test_fetches_multiple_junctions(conn):
 
 
 async def test_no_junctions_when_all_false(conn):
-    items = await get_personas(conn, [SEED_PERSONA_ID])
+    items = await get_personas(conn, [SEED_PERSONA_ARTIFACT_ID])
 
     p = items[0]
     for field in [
