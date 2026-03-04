@@ -1,5 +1,6 @@
 """Sessions search — filtered/paginated query against sessions_mv."""
 
+from datetime import datetime
 from uuid import UUID
 
 import asyncpg  # type: ignore
@@ -10,17 +11,25 @@ from app.routes.v5.tools.entries.sessions.types import GetSessionResponse
 async def search_sessions(
     conn: asyncpg.Connection,
     profile_id: UUID | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
+    active: bool | None = None,
+    mcp: bool | None = None,
     limit: int = 20,
     offset: int = 0,
 ) -> list[GetSessionResponse]:
-    """Search sessions from sessions_mv with optional profile filter."""
+    """Search sessions from sessions_mv with declarative filters."""
     rows = await conn.fetch("""
-        SELECT session_id, profile_id, session_created_at, active
+        SELECT session_id, profile_id, session_created_at, active, mcp
         FROM sessions_mv
         WHERE ($1::uuid IS NULL OR profile_id = $1)
+          AND ($2::timestamptz IS NULL OR session_created_at >= $2)
+          AND ($3::timestamptz IS NULL OR session_created_at <= $3)
+          AND ($4::boolean IS NULL OR active = $4)
+          AND ($5::boolean IS NULL OR mcp = $5)
         ORDER BY session_created_at DESC
-        LIMIT $2 OFFSET $3
-    """, profile_id, limit, offset)
+        LIMIT $6 OFFSET $7
+    """, profile_id, date_from, date_to, active, mcp, limit, offset)
 
     return [
         GetSessionResponse(
@@ -28,6 +37,7 @@ async def search_sessions(
             profile_id=r["profile_id"],
             created_at=r["session_created_at"],
             active=r["active"],
+            mcp=r["mcp"],
         )
         for r in rows
     ]

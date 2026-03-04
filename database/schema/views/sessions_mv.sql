@@ -21,7 +21,10 @@ SELECT
     s.created_at AS session_created_at,
 
     -- Active flag
-    s.active
+    s.active,
+
+    -- MCP flag
+    s.mcp
 
 FROM sessions_entry s
 JOIN profiles_sessions_connection psc ON psc.session_id = s.id

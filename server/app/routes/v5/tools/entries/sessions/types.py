@@ -15,3 +15,4 @@ class GetSessionResponse(BaseModel):
     profile_id: UUID
     created_at: datetime
     active: bool
+    mcp: bool

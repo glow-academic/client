@@ -16,7 +16,7 @@ async def get_sessions(
         return []
 
     rows = await conn.fetch("""
-        SELECT session_id, profile_id, session_created_at, active
+        SELECT session_id, profile_id, session_created_at, active, mcp
         FROM sessions_mv
         WHERE session_id = ANY($1)
     """, ids)
@@ -27,6 +27,7 @@ async def get_sessions(
             profile_id=r["profile_id"],
             created_at=r["session_created_at"],
             active=r["active"],
+            mcp=r["mcp"],
         )
         for r in rows
     ]

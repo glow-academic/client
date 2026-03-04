@@ -3,6 +3,8 @@
 import pytest
 
 from app.routes.v5.tools.entries.sessions.create import create_session
+from app.routes.v5.tools.entries.sessions.get import get_sessions
+from app.routes.v5.tools.entries.sessions.refresh import refresh_sessions
 from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 
 pytestmark = pytest.mark.asyncio
@@ -14,35 +16,26 @@ async def test_returns_id(conn):
     assert result.id is not None
 
 
-async def test_inserts_into_base_table(conn):
+async def test_visible_via_get_after_refresh(conn):
     result = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+    await refresh_sessions(conn)
 
-    row = await conn.fetchrow(
-        "SELECT id, active, mcp, generated FROM sessions_entry WHERE id = $1",
-        result.id,
-    )
-    assert row is not None
-    assert row["active"] is True
-    assert row["generated"] is True
+    items = await get_sessions(conn, [result.id])
 
-
-async def test_creates_profile_connection(conn):
-    result = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
-
-    row = await conn.fetchrow(
-        "SELECT profiles_id FROM profiles_sessions_connection WHERE session_id = $1",
-        result.id,
-    )
-    assert row is not None
-    assert row["profiles_id"] == SUPERADMIN_PROFILES_RESOURCE_ID
+    assert len(items) == 1
+    assert items[0].id == result.id
+    assert items[0].profile_id == SUPERADMIN_PROFILES_RESOURCE_ID
+    assert items[0].active is True
+    assert items[0].mcp is False
 
 
 async def test_passes_mcp_flag(conn):
     result = await create_session(
         conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID, mcp=True,
     )
+    await refresh_sessions(conn)
 
-    row = await conn.fetchrow(
-        "SELECT mcp FROM sessions_entry WHERE id = $1", result.id,
-    )
-    assert row["mcp"] is True
+    items = await get_sessions(conn, [result.id])
+
+    assert len(items) == 1
+    assert items[0].mcp is True
