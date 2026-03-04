@@ -380,10 +380,6 @@ if $output_mode; then
     echo ""
     echo "DO \$\$ BEGIN EXECUTE 'SET session_replication_role = replica'; EXCEPTION WHEN insufficient_privilege THEN NULL; END \$\$;"
     echo ""
-    echo "-- Temporarily drop circular FK: reasoning_levels_resource → model_artifact"
-    echo "-- (reasoning_levels must load before models for junction FKs, but has FK to model_artifact)"
-    echo "ALTER TABLE reasoning_levels_resource DROP CONSTRAINT IF EXISTS reasoning_levels_reasoning_level_id_fkey;"
-    echo ""
     for f in "${sql_parts[@]}"; do
       echo "-- ================================================================"
       echo "-- File: $(basename "$f")"
@@ -391,9 +387,6 @@ if $output_mode; then
       cat "$f"
       echo ""
     done
-    echo ""
-    echo "-- Restore circular FK"
-    echo "ALTER TABLE reasoning_levels_resource ADD CONSTRAINT reasoning_levels_reasoning_level_id_fkey FOREIGN KEY (reasoning_level_id) REFERENCES model_artifact(id);"
     echo ""
     echo "DO \$\$ BEGIN EXECUTE 'SET session_replication_role = DEFAULT'; EXCEPTION WHEN insufficient_privilege THEN NULL; END \$\$;"
   } > "$output_file"
@@ -405,12 +398,10 @@ else
   echo "Loading into database: $DB_NAME ..."
   {
     echo "DO \$\$ BEGIN EXECUTE 'SET session_replication_role = replica'; EXCEPTION WHEN insufficient_privilege THEN NULL; END \$\$;"
-    echo "ALTER TABLE reasoning_levels_resource DROP CONSTRAINT IF EXISTS reasoning_levels_reasoning_level_id_fkey;"
     for f in "${sql_parts[@]}"; do
       cat "$f"
       echo ""
     done
-    echo "ALTER TABLE reasoning_levels_resource ADD CONSTRAINT reasoning_levels_reasoning_level_id_fkey FOREIGN KEY (reasoning_level_id) REFERENCES model_artifact(id);"
     echo "DO \$\$ BEGIN EXECUTE 'SET session_replication_role = DEFAULT'; EXCEPTION WHEN insufficient_privilege THEN NULL; END \$\$;"
   } | psql "$DB_URL" -v ON_ERROR_STOP=0 --quiet 2>&1 | grep -v "^$" || true
 

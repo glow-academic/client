@@ -81,7 +81,7 @@ async def sync_cohort_entries(
     2. Parallel fetch all sub-resources
     3. Build composite tuples and call SQL function
     """
-    from app.infra.globals import get_pool
+    from app.infra.globals import get_pool, get_redis_client
     from app.routes.v5.tools.resources.rubrics.get import get_rubrics_internal
     from app.routes.v5.tools.resources.scenario_flags.get import (
         get_scenario_flags,
@@ -153,26 +153,26 @@ async def sync_cohort_entries(
 
     async def _fetch_scenario_flags() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_scenario_flags_internal(
-                c, all_scenario_flag_ids, bypass_cache=True
+            return await get_scenario_flags(
+                c, all_scenario_flag_ids, get_redis_client(), bypass_cache=True
             )
 
     async def _fetch_scenario_positions() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_scenario_positions_internal(
-                c, all_scenario_position_ids, bypass_cache=True
+            return await get_scenario_positions(
+                c, all_scenario_position_ids, get_redis_client(), bypass_cache=True
             )
 
     async def _fetch_scenario_time_limits() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_scenario_time_limits_internal(
-                c, all_scenario_time_limit_ids, bypass_cache=True
+            return await get_scenario_time_limits(
+                c, all_scenario_time_limit_ids, get_redis_client(), bypass_cache=True
             )
 
     async def _fetch_sim_positions() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_simulation_positions_internal(
-                c, simulation_position_ids, bypass_cache=True
+            return await get_simulation_positions(
+                c, simulation_position_ids, get_redis_client(), bypass_cache=True
             )
 
     async def _fetch_sim_availability() -> list[Any]:

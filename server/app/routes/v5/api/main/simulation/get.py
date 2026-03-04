@@ -93,9 +93,9 @@ from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.rubrics.get import get_rubrics_internal
-from app.routes.v5.tools.resources.scenario_flags.get import get_scenario_flags_internal
+from app.routes.v5.tools.resources.scenario_flags.get import get_scenario_flags
 from app.routes.v5.tools.resources.scenario_positions.get import (
-    get_scenario_positions_internal,
+    get_scenario_positions,
 )
 from app.routes.v5.tools.resources.scenario_positions.search import (
     search_scenario_positions_internal,
@@ -107,7 +107,7 @@ from app.routes.v5.tools.resources.scenario_rubrics.search import (
     search_scenario_rubrics_internal,
 )
 from app.routes.v5.tools.resources.scenario_time_limits.get import (
-    get_scenario_time_limits_internal,
+    get_scenario_time_limits,
 )
 from app.routes.v5.tools.resources.scenario_time_limits.search import (
     search_scenario_time_limits_internal,
@@ -443,8 +443,8 @@ async def get_simulation_internal(
 
     async def fetch_scenario_flags():
         async with pool.acquire() as c:
-            selected = await get_scenario_flags_internal(
-                c, scenario_flag_ids, bypass_cache
+            selected = await get_scenario_flags(
+                c, scenario_flag_ids, get_redis_client(), bypass_cache
             )
             # Also fetch all flag types for cross-product (built after scenarios are known)
             all_flags = await search_flags_internal(
@@ -465,8 +465,8 @@ async def get_simulation_internal(
 
     async def fetch_scenario_positions():
         async with pool.acquire() as c:
-            selected = await get_scenario_positions_internal(
-                c, scenario_position_ids, bypass_cache
+            selected = await get_scenario_positions(
+                c, scenario_position_ids, get_redis_client(), bypass_cache
             )
             suggestions = await search_scenario_positions_internal(
                 c, effective_scenario_ids, bypass_cache=bypass_cache
@@ -485,8 +485,8 @@ async def get_simulation_internal(
 
     async def fetch_scenario_time_limits():
         async with pool.acquire() as c:
-            selected = await get_scenario_time_limits_internal(
-                c, scenario_time_limit_ids, bypass_cache
+            selected = await get_scenario_time_limits(
+                c, scenario_time_limit_ids, get_redis_client(), bypass_cache
             )
             suggestions = await search_scenario_time_limits_internal(
                 c, effective_scenario_ids, bypass_cache=bypass_cache

@@ -204,17 +204,16 @@ new_developer_messages_data AS (
     WHERE NOT EXISTS (SELECT 1 FROM existing_developer_messages e WHERE e.hash = dmh.hash)
 ),
 new_developer_messages AS (
-    INSERT INTO messages_entry (role, run_id, created_at, updated_at)
-    SELECT 'developer'::message_type, nd.run_id, NOW(), NOW()
+    INSERT INTO messages_entry (role, run_id, created_at)
+    SELECT 'developer'::message_type, nd.run_id, NOW()
     FROM new_developer_messages_data nd
-    RETURNING id, run_id, created_at, updated_at
+    RETURNING id, run_id, created_at
 ),
 new_developer_messages_numbered AS (
     SELECT
         id as message_id,
         run_id,
         created_at,
-        updated_at,
         ROW_NUMBER() OVER (ORDER BY created_at) as rn
     FROM new_developer_messages
 ),

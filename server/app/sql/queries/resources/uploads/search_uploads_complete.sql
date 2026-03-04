@@ -35,7 +35,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.files_id, q.upload_id, q.generated)::types.q_get_uploads_v4_item
+        (q.files_id, q.generated)::types.q_get_uploads_v4_item
         ORDER BY q.created_at DESC, q.files_id
     ),
     ARRAY[]::types.q_get_uploads_v4_item[]

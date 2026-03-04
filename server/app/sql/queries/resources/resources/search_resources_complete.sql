@@ -47,7 +47,6 @@ FROM (
       AND (search IS NULL OR search = '' OR LOWER(r.resource::text) LIKE '%' || LOWER(search) || '%')
       AND (exclude_ids IS NULL OR NOT (r.id = ANY(exclude_ids)))
       AND (api_search_resources_v4.resource IS NULL OR r.resource::text = api_search_resources_v4.resource)
-      AND (creatable IS NULL OR r.creatable = creatable)
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT tool OR EXISTS (SELECT 1 FROM tool_resources_junction j WHERE j.resource_id = r.id AND j.active = true))
     ORDER BY r.resource::text

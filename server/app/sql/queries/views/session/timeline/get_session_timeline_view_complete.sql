@@ -47,8 +47,8 @@ AS $$
         SELECT
             'group'::text AS event_type,
             g.group_id AS entity_id,
-            g.group_name AS entity_name,
-            g.group_created_at AS created_at,
+            g.name AS entity_name,
+            g.created_at AS created_at,
             NULL::text AS extra_1,
             NULL::text AS extra_2
         FROM groups_mv g

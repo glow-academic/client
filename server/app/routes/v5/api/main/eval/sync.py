@@ -58,10 +58,10 @@ async def sync_benchmark_entries(
     2. Group sub-resources by model_id
     3. Build composite tuples and call SQL function
     """
-    from app.infra.globals import get_pool
-    from app.routes.v5.tools.resources.model_flags.get import get_model_flags_internal
+    from app.infra.globals import get_pool, get_redis_client
+    from app.routes.v5.tools.resources.model_flags.get import get_model_flags
     from app.routes.v5.tools.resources.model_positions.get import (
-        get_model_positions_internal,
+        get_model_positions,
     )
     from app.routes.v5.tools.resources.model_rubrics.get import (
         get_model_rubrics_internal,
@@ -77,7 +77,7 @@ async def sync_benchmark_entries(
     # ── Pass 1: Parallel fetch all sub-resources ──
     async def _fetch_model_flags() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_model_flags_internal(c, model_flag_ids, bypass_cache=True)
+            return await get_model_flags(c, model_flag_ids, get_redis_client(), bypass_cache=True)
 
     async def _fetch_model_rubrics() -> list[Any]:
         async with pool.acquire() as c:
@@ -87,8 +87,8 @@ async def sync_benchmark_entries(
 
     async def _fetch_model_positions() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_model_positions_internal(
-                c, model_position_ids, bypass_cache=True
+            return await get_model_positions(
+                c, model_position_ids, get_redis_client(), bypass_cache=True
             )
 
     gather_results = await asyncio.gather(
