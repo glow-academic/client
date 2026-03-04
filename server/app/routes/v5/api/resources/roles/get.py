@@ -5,12 +5,12 @@ from typing import Annotated
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
+from app.infra.globals import get_db, get_redis_client
 from app.routes.v5.api.resources.roles.types import (
     GetRolesApiRequest,
     GetRolesApiResponse,
 )
-from app.routes.v5.tools.resources.roles.get import get_roles_internal
+from app.routes.v5.tools.resources.roles.get import get_roles as get_roles_resource
 from app.utils.error.handle_route_error import handle_route_error
 
 # Load SQL with types at module level
@@ -43,7 +43,7 @@ async def get_roles(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_roles_internal(conn, request.ids or [], bypass_cache)
+        items = await get_roles_resource(conn=conn, ids=request.ids or [], redis=get_redis_client(), bypass_cache=bypass_cache)
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetRolesApiResponse(items=items)
     except HTTPException:

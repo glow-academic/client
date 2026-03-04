@@ -1,74 +1,81 @@
-"""roles/get internal — reusable data-access layer."""
+"""Roles Resource GET — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.routes.v5.api.resources.roles.types import (
-    GetRolesSqlParams,
-    GetRolesSqlRow,
-    QGetRolesV4Item,
-)
+from app.routes.v5.tools.resources.roles.types import GetRoleResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/resources/roles/get_roles_complete.sql"
 
 
-async def get_roles_internal(
+async def get_roles(
     conn: asyncpg.Connection,
-    ids: list[UUID] | None = None,
+    ids: list[UUID] | None,
+    redis: Redis,
     bypass_cache: bool = False,
-) -> list[QGetRolesV4Item]:
-    """Internal function to fetch roles by IDs (empty/None = all).
-
-    Can be called directly from other routes without HTTP overhead.
-    """
-    effective_ids = ids or []
-    if not effective_ids:
+) -> list[GetRoleResponse]:
+    """Fetch roles_resource entries by IDs, or all if ids is None."""
+    if ids is not None and not ids:
         return []
-    tags = ["resources", "roles"]
-    cache_key_val = cache_key(
-        "/api/v5/resources/roles/get",
-        {"ids": sorted(str(i) for i in effective_ids)},
-    )
 
-    # Try cache (unless bypassed)
+    tags = ["resources", "roles"]
+    cache_ids = sorted(str(i) for i in ids) if ids else ["__all__"]
+    key = cache_key("/api/v5/resources/roles/get", {"ids": cache_ids})
+
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetRolesV4Item.model_validate(item) for item in cached.get("items", [])
+                GetRoleResponse.model_validate(item) for item in cached.get("items", [])
             ]
 
-    # Execute SQL
-    params = GetRolesSqlParams(ids=effective_ids)
-    result = cast(
-        GetRolesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
+    if ids is not None:
+        rows = await conn.fetch(
+            """
+            SELECT id, role, name, description, icon_id, color_id,
+                   artifacts, created_at, active, generated, mcp
+            FROM roles_resource
+            WHERE id = ANY($1)
+            ORDER BY array_position($1, id)
+        """,
+            ids,
+        )
+    else:
+        rows = await conn.fetch(
+            """
+            SELECT id, role, name, description, icon_id, color_id,
+                   artifacts, created_at, active, generated, mcp
+            FROM roles_resource
+            ORDER BY created_at
+        """,
+        )
 
-    items: list[QGetRolesV4Item] = (
-        [
-            QGetRolesV4Item.model_validate(
-                item.model_dump() if hasattr(item, "model_dump") else item
-            )
-            for item in (result.items or [])
-        ]
-        if result
-        else []
-    )
+    items = [
+        GetRoleResponse(
+            id=r["id"],
+            role=r["role"],
+            name=r["name"],
+            description=r["description"],
+            icon_id=r["icon_id"],
+            color_id=r["color_id"],
+            artifacts=[str(a) for a in (r["artifacts"] or [])],
+            created_at=r["created_at"],
+            active=r["active"],
+            generated=r["generated"],
+            mcp=r["mcp"],
+        )
+        for r in rows
+    ]
 
-    # Cache result
-    await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=300,  # Roles change infrequently, cache longer
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
+    if not bypass_cache:
+        await set_cached(
+            key,
+            {"items": [i.model_dump(mode="json") for i in items]},
+            300,
+            tags,
+            redis=redis,
+        )
     return items
