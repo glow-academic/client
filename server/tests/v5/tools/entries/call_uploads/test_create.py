@@ -22,31 +22,32 @@ async def _deps(conn):
     upload = await create_upload(
         conn, session_id=session.id, file_path="test/response.json", mime_type="application/json", size=512,
     )
-    return call, upload
+    return session, call, upload
 
 
 async def test_creates_call_upload_entry(conn):
-    call, upload = await _deps(conn)
-    result = await create_call_upload(conn, call_id=call.id, upload_id=upload.id)
+    session, call, upload = await _deps(conn)
+    result = await create_call_upload(conn, call_id=call.id, upload_id=upload.id, session_id=session.id)
 
     assert result.id is not None
 
 
 async def test_call_upload_exists_in_table(conn):
-    call, upload = await _deps(conn)
-    result = await create_call_upload(conn, call_id=call.id, upload_id=upload.id)
+    session, call, upload = await _deps(conn)
+    result = await create_call_upload(conn, call_id=call.id, upload_id=upload.id, session_id=session.id)
 
     row = await get_call_upload(conn, result.id)
 
     assert row is not None
     assert row.call_id == call.id
     assert row.upload_id == upload.id
+    assert row.session_id == session.id
     assert row.active is True
 
 
 async def test_passes_mcp_flag(conn):
-    call, upload = await _deps(conn)
-    result = await create_call_upload(conn, call_id=call.id, upload_id=upload.id, mcp=True)
+    session, call, upload = await _deps(conn)
+    result = await create_call_upload(conn, call_id=call.id, upload_id=upload.id, session_id=session.id, mcp=True)
 
     row = await get_call_upload(conn, result.id)
 

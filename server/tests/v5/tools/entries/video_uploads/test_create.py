@@ -18,31 +18,32 @@ async def _deps(conn):
     upload = await create_upload(
         conn, session_id=session.id, file_path="test/clip.mp4", mime_type="video/mp4", size=8192,
     )
-    return video, upload
+    return session, video, upload
 
 
 async def test_creates_video_upload_entry(conn):
-    video, upload = await _deps(conn)
-    result = await create_video_upload(conn, video_id=video.id, upload_id=upload.id)
+    session, video, upload = await _deps(conn)
+    result = await create_video_upload(conn, video_id=video.id, upload_id=upload.id, session_id=session.id)
 
     assert result.id is not None
 
 
 async def test_video_upload_exists_in_table(conn):
-    video, upload = await _deps(conn)
-    result = await create_video_upload(conn, video_id=video.id, upload_id=upload.id)
+    session, video, upload = await _deps(conn)
+    result = await create_video_upload(conn, video_id=video.id, upload_id=upload.id, session_id=session.id)
 
     row = await get_video_upload(conn, result.id)
 
     assert row is not None
     assert row.video_id == video.id
     assert row.upload_id == upload.id
+    assert row.session_id == session.id
     assert row.active is True
 
 
 async def test_passes_mcp_flag(conn):
-    video, upload = await _deps(conn)
-    result = await create_video_upload(conn, video_id=video.id, upload_id=upload.id, mcp=True)
+    session, video, upload = await _deps(conn)
+    result = await create_video_upload(conn, video_id=video.id, upload_id=upload.id, session_id=session.id, mcp=True)
 
     row = await get_video_upload(conn, result.id)
 

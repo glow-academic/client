@@ -22,31 +22,32 @@ async def _deps(conn):
     upload = await create_upload(
         conn, session_id=session.id, file_path="test/attachment.pdf", mime_type="application/pdf", size=2048,
     )
-    return message, upload
+    return session, message, upload
 
 
 async def test_creates_message_upload_entry(conn):
-    message, upload = await _deps(conn)
-    result = await create_message_upload(conn, message_id=message.id, upload_id=upload.id)
+    session, message, upload = await _deps(conn)
+    result = await create_message_upload(conn, message_id=message.id, upload_id=upload.id, session_id=session.id)
 
     assert result.id is not None
 
 
 async def test_message_upload_exists_in_table(conn):
-    message, upload = await _deps(conn)
-    result = await create_message_upload(conn, message_id=message.id, upload_id=upload.id)
+    session, message, upload = await _deps(conn)
+    result = await create_message_upload(conn, message_id=message.id, upload_id=upload.id, session_id=session.id)
 
     row = await get_message_upload(conn, result.id)
 
     assert row is not None
     assert row.message_id == message.id
     assert row.upload_id == upload.id
+    assert row.session_id == session.id
     assert row.active is True
 
 
 async def test_passes_mcp_flag(conn):
-    message, upload = await _deps(conn)
-    result = await create_message_upload(conn, message_id=message.id, upload_id=upload.id, mcp=True)
+    session, message, upload = await _deps(conn)
+    result = await create_message_upload(conn, message_id=message.id, upload_id=upload.id, session_id=session.id, mcp=True)
 
     row = await get_message_upload(conn, result.id)
 

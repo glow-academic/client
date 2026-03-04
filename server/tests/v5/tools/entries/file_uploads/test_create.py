@@ -18,31 +18,32 @@ async def _deps(conn):
     upload = await create_upload(
         conn, session_id=session.id, file_path="test/doc.pdf", mime_type="application/pdf", size=3072,
     )
-    return file, upload
+    return session, file, upload
 
 
 async def test_creates_file_upload_entry(conn):
-    file, upload = await _deps(conn)
-    result = await create_file_upload(conn, file_id=file.id, upload_id=upload.id)
+    session, file, upload = await _deps(conn)
+    result = await create_file_upload(conn, file_id=file.id, upload_id=upload.id, session_id=session.id)
 
     assert result.id is not None
 
 
 async def test_file_upload_exists_in_table(conn):
-    file, upload = await _deps(conn)
-    result = await create_file_upload(conn, file_id=file.id, upload_id=upload.id)
+    session, file, upload = await _deps(conn)
+    result = await create_file_upload(conn, file_id=file.id, upload_id=upload.id, session_id=session.id)
 
     row = await get_file_upload(conn, result.id)
 
     assert row is not None
     assert row.file_id == file.id
     assert row.upload_id == upload.id
+    assert row.session_id == session.id
     assert row.active is True
 
 
 async def test_passes_mcp_flag(conn):
-    file, upload = await _deps(conn)
-    result = await create_file_upload(conn, file_id=file.id, upload_id=upload.id, mcp=True)
+    session, file, upload = await _deps(conn)
+    result = await create_file_upload(conn, file_id=file.id, upload_id=upload.id, session_id=session.id, mcp=True)
 
     row = await get_file_upload(conn, result.id)
 

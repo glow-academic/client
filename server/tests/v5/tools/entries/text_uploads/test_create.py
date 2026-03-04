@@ -18,31 +18,32 @@ async def _deps(conn):
     upload = await create_upload(
         conn, session_id=session.id, file_path="test/file.txt", mime_type="text/plain", size=1024,
     )
-    return text, upload
+    return session, text, upload
 
 
 async def test_creates_text_upload_entry(conn):
-    text, upload = await _deps(conn)
-    result = await create_text_upload(conn, text_id=text.id, upload_id=upload.id)
+    session, text, upload = await _deps(conn)
+    result = await create_text_upload(conn, text_id=text.id, upload_id=upload.id, session_id=session.id)
 
     assert result.id is not None
 
 
 async def test_text_upload_exists_in_table(conn):
-    text, upload = await _deps(conn)
-    result = await create_text_upload(conn, text_id=text.id, upload_id=upload.id)
+    session, text, upload = await _deps(conn)
+    result = await create_text_upload(conn, text_id=text.id, upload_id=upload.id, session_id=session.id)
 
     row = await get_text_upload(conn, result.id)
 
     assert row is not None
     assert row.text_id == text.id
     assert row.upload_id == upload.id
+    assert row.session_id == session.id
     assert row.active is True
 
 
 async def test_passes_mcp_flag(conn):
-    text, upload = await _deps(conn)
-    result = await create_text_upload(conn, text_id=text.id, upload_id=upload.id, mcp=True)
+    session, text, upload = await _deps(conn)
+    result = await create_text_upload(conn, text_id=text.id, upload_id=upload.id, session_id=session.id, mcp=True)
 
     row = await get_text_upload(conn, result.id)
 

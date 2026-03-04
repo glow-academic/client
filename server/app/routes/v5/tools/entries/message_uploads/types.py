@@ -14,6 +14,7 @@ class GetMessageUploadResponse(BaseModel):
     id: UUID
     message_id: UUID
     upload_id: UUID
+    session_id: UUID
     created_at: datetime
     active: bool
     mcp: bool

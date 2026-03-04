@@ -13,7 +13,7 @@ async def get_image_upload(
 ) -> GetImageUploadResponse | None:
     """Get an image_uploads entry by ID."""
     row = await conn.fetchrow("""
-        SELECT id, image_id, upload_id,
+        SELECT id, image_id, upload_id, session_id,
                created_at, active, mcp, generated
         FROM image_uploads_entry
         WHERE id = $1
@@ -26,6 +26,7 @@ async def get_image_upload(
         id=row["id"],
         image_id=row["image_id"],
         upload_id=row["upload_id"],
+        session_id=row["session_id"],
         created_at=row["created_at"],
         active=row["active"],
         mcp=row["mcp"],

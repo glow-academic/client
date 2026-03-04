@@ -18,31 +18,32 @@ async def _deps(conn):
     upload = await create_upload(
         conn, session_id=session.id, file_path="test/photo.jpg", mime_type="image/jpeg", size=4096,
     )
-    return image, upload
+    return session, image, upload
 
 
 async def test_creates_image_upload_entry(conn):
-    image, upload = await _deps(conn)
-    result = await create_image_upload(conn, image_id=image.id, upload_id=upload.id)
+    session, image, upload = await _deps(conn)
+    result = await create_image_upload(conn, image_id=image.id, upload_id=upload.id, session_id=session.id)
 
     assert result.id is not None
 
 
 async def test_image_upload_exists_in_table(conn):
-    image, upload = await _deps(conn)
-    result = await create_image_upload(conn, image_id=image.id, upload_id=upload.id)
+    session, image, upload = await _deps(conn)
+    result = await create_image_upload(conn, image_id=image.id, upload_id=upload.id, session_id=session.id)
 
     row = await get_image_upload(conn, result.id)
 
     assert row is not None
     assert row.image_id == image.id
     assert row.upload_id == upload.id
+    assert row.session_id == session.id
     assert row.active is True
 
 
 async def test_passes_mcp_flag(conn):
-    image, upload = await _deps(conn)
-    result = await create_image_upload(conn, image_id=image.id, upload_id=upload.id, mcp=True)
+    session, image, upload = await _deps(conn)
+    result = await create_image_upload(conn, image_id=image.id, upload_id=upload.id, session_id=session.id, mcp=True)
 
     row = await get_image_upload(conn, result.id)
 

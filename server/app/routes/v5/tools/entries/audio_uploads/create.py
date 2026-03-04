@@ -11,14 +11,15 @@ async def create_audio_upload(
     conn: asyncpg.Connection,
     audio_id: UUID,
     upload_id: UUID,
+    session_id: UUID,
     mcp: bool = False,
 ) -> CreateAudioUploadResponse:
     """Create an audio_uploads entry."""
     row_id = await conn.fetchval("""
-        INSERT INTO audio_uploads_entry (audio_id, upload_id, mcp, generated)
-        VALUES ($1, $2, $3, true)
+        INSERT INTO audio_uploads_entry (audio_id, upload_id, session_id, mcp, generated)
+        VALUES ($1, $2, $3, $4, true)
         RETURNING id
-    """, audio_id, upload_id, mcp)
+    """, audio_id, upload_id, session_id, mcp)
 
     if row_id is None:
         raise ValueError("Failed to create audio_uploads entry")

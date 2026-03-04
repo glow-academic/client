@@ -12,7 +12,8 @@ CREATE TABLE public.audio_uploads_entry (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL
+    mcp boolean DEFAULT false NOT NULL,
+    session_id uuid NOT NULL
 );
 
 

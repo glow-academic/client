@@ -11,14 +11,15 @@ async def create_video_upload(
     conn: asyncpg.Connection,
     video_id: UUID,
     upload_id: UUID,
+    session_id: UUID,
     mcp: bool = False,
 ) -> CreateVideoUploadResponse:
     """Create a video_uploads entry."""
     row_id = await conn.fetchval("""
-        INSERT INTO video_uploads_entry (video_id, upload_id, mcp, generated)
-        VALUES ($1, $2, $3, true)
+        INSERT INTO video_uploads_entry (video_id, upload_id, session_id, mcp, generated)
+        VALUES ($1, $2, $3, $4, true)
         RETURNING id
-    """, video_id, upload_id, mcp)
+    """, video_id, upload_id, session_id, mcp)
 
     if row_id is None:
         raise ValueError("Failed to create video_uploads entry")

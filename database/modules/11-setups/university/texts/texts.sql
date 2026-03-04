@@ -27,14 +27,14 @@ INSERT INTO public.uploads_entry (id, file_path, mime_type, size, created_at, ac
 INSERT INTO public.uploads_entry (id, file_path, mime_type, size, created_at, active, generated, mcp, session_id) VALUES ('cb5d6544-a8d3-4e1f-8e48-b5126dd58656', 'text/5ac95858-9590-4164-b7d3-ca4285f1e0bf.txt', 'text/plain', 9828, '2026-02-14T06:26:38.435028+00:00', true, false, false, '019c29d6-0000-7000-8000-000000000001') ON CONFLICT (id) DO NOTHING;
 
 -- text_uploads_entry (junction)
-INSERT INTO public.text_uploads_entry (text_id, upload_id) VALUES ('019c29d6-003a-7f3d-9c60-a6c537f708ce', '56956ca9-c215-4196-97ac-d4a36edcfe90') ON CONFLICT (text_id, upload_id) DO NOTHING;
-INSERT INTO public.text_uploads_entry (text_id, upload_id) VALUES ('019c29d6-003a-7541-984b-5374263aa03b', '5080c553-9d16-427d-8881-0db2626bbbbb') ON CONFLICT (text_id, upload_id) DO NOTHING;
-INSERT INTO public.text_uploads_entry (text_id, upload_id) VALUES ('019c29d6-003b-71b1-bfa5-69ef5f636751', '3f02d38c-94ad-42ae-bfca-2d7ef620661f') ON CONFLICT (text_id, upload_id) DO NOTHING;
-INSERT INTO public.text_uploads_entry (text_id, upload_id) VALUES ('019c29d6-003a-731f-b918-64b6c99d0464', 'a4bc542b-44da-4fc8-948f-7d8d8fda71e1') ON CONFLICT (text_id, upload_id) DO NOTHING;
-INSERT INTO public.text_uploads_entry (text_id, upload_id) VALUES ('019c29d6-003a-740e-8854-4d9ee26d34a6', '2b0efa76-7d9c-4d52-9a63-37a8d9ba8793') ON CONFLICT (text_id, upload_id) DO NOTHING;
-INSERT INTO public.text_uploads_entry (text_id, upload_id) VALUES ('019c29d6-003b-7026-b46a-5def99ec275a', '9e9640a9-33b8-424a-bc55-dbaf96732118') ON CONFLICT (text_id, upload_id) DO NOTHING;
-INSERT INTO public.text_uploads_entry (text_id, upload_id) VALUES ('019c29d6-003a-7647-aa7f-b9baebd83bf3', 'b082252d-5959-4124-8e45-9aec5a491378') ON CONFLICT (text_id, upload_id) DO NOTHING;
-INSERT INTO public.text_uploads_entry (text_id, upload_id) VALUES ('019c5ad4-73da-75a6-a9bf-5c4c5e79178e', 'cb5d6544-a8d3-4e1f-8e48-b5126dd58656') ON CONFLICT (text_id, upload_id) DO NOTHING;
+INSERT INTO public.text_uploads_entry (text_id, upload_id, session_id) VALUES ('019c29d6-003a-7f3d-9c60-a6c537f708ce', '56956ca9-c215-4196-97ac-d4a36edcfe90', '019c29d6-0000-7000-8000-000000000001') ON CONFLICT (text_id, upload_id) DO NOTHING;
+INSERT INTO public.text_uploads_entry (text_id, upload_id, session_id) VALUES ('019c29d6-003a-7541-984b-5374263aa03b', '5080c553-9d16-427d-8881-0db2626bbbbb', '019c29d6-0000-7000-8000-000000000001') ON CONFLICT (text_id, upload_id) DO NOTHING;
+INSERT INTO public.text_uploads_entry (text_id, upload_id, session_id) VALUES ('019c29d6-003b-71b1-bfa5-69ef5f636751', '3f02d38c-94ad-42ae-bfca-2d7ef620661f', '019c29d6-0000-7000-8000-000000000001') ON CONFLICT (text_id, upload_id) DO NOTHING;
+INSERT INTO public.text_uploads_entry (text_id, upload_id, session_id) VALUES ('019c29d6-003a-731f-b918-64b6c99d0464', 'a4bc542b-44da-4fc8-948f-7d8d8fda71e1', '019c29d6-0000-7000-8000-000000000001') ON CONFLICT (text_id, upload_id) DO NOTHING;
+INSERT INTO public.text_uploads_entry (text_id, upload_id, session_id) VALUES ('019c29d6-003a-740e-8854-4d9ee26d34a6', '2b0efa76-7d9c-4d52-9a63-37a8d9ba8793', '019c29d6-0000-7000-8000-000000000001') ON CONFLICT (text_id, upload_id) DO NOTHING;
+INSERT INTO public.text_uploads_entry (text_id, upload_id, session_id) VALUES ('019c29d6-003b-7026-b46a-5def99ec275a', '9e9640a9-33b8-424a-bc55-dbaf96732118', '019c29d6-0000-7000-8000-000000000001') ON CONFLICT (text_id, upload_id) DO NOTHING;
+INSERT INTO public.text_uploads_entry (text_id, upload_id, session_id) VALUES ('019c29d6-003a-7647-aa7f-b9baebd83bf3', 'b082252d-5959-4124-8e45-9aec5a491378', '019c29d6-0000-7000-8000-000000000001') ON CONFLICT (text_id, upload_id) DO NOTHING;
+INSERT INTO public.text_uploads_entry (text_id, upload_id, session_id) VALUES ('019c5ad4-73da-75a6-a9bf-5c4c5e79178e', 'cb5d6544-a8d3-4e1f-8e48-b5126dd58656', '019c29d6-0000-7000-8000-000000000001') ON CONFLICT (text_id, upload_id) DO NOTHING;
 
 -- texts_texts_connection
 INSERT INTO public.texts_texts_connection (texts_id, text_id, active, created_at, updated_at) VALUES ('019c29d6-005b-7e73-92cf-45f8bfca8d76', '019c29d6-003a-7f3d-9c60-a6c537f708ce', true, '2026-02-04T18:06:56.587632+00:00', '2026-02-04T18:06:56.587632+00:00') ON CONFLICT (texts_id, text_id) DO NOTHING;
