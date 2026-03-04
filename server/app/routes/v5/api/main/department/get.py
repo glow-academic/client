@@ -69,7 +69,7 @@ from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
 from app.routes.v5.tools.resources.providers.get import get_providers_internal
-from app.routes.v5.tools.resources.settings.get import get_settings_internal
+from app.routes.v5.tools.resources.settings.get import get_settings
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.sql.types import (
     GetDepartmentAccessSqlParams,
@@ -356,8 +356,8 @@ async def get_department_internal(
 
     async def fetch_settings() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_settings_internal(
-                c, selected_settings_ids, bypass_cache
+            selected = await get_settings(
+                c, selected_settings_ids, get_redis_client(), bypass_cache=bypass_cache
             )
             # No search for settings - they're fetched by ID
             return (selected, [])

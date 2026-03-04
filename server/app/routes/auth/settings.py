@@ -21,7 +21,7 @@ from app.routes.auth.types import (
     SettingsAgentToolEntry,
 )
 from app.routes.v5.tools.resources.agents.get import get_agents_internal
-from app.routes.v5.tools.resources.settings.get import get_settings_internal
+from app.routes.v5.tools.resources.settings.get import get_settings
 from app.routes.v5.tools.resources.systems.get import get_systems_internal
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.utils.error.handle_route_error import handle_route_error
@@ -78,7 +78,9 @@ async def get_auth_settings_internal(
         if not settings_id:
             return None
         async with pool.acquire() as c:
-            items = await get_settings_internal(c, [settings_id], bypass_cache)
+            items = await get_settings(
+                c, [settings_id], get_redis_client(), bypass_cache=bypass_cache
+            )
             return items[0] if items else None
 
     async def fetch_agents():

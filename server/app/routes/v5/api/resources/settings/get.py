@@ -5,12 +5,12 @@ from typing import Annotated
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
+from app.infra.globals import get_db, get_redis_client
 from app.routes.v5.api.resources.settings.types import (
     GetSettingsApiRequest,
     GetSettingsApiResponse,
 )
-from app.routes.v5.tools.resources.settings.get import get_settings_internal
+from app.routes.v5.tools.resources.settings.get import get_settings
 from app.utils.error.handle_route_error import handle_route_error
 
 # Load SQL with types at module level
@@ -43,7 +43,9 @@ async def get_settings(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_settings_internal(conn, request.ids or [], bypass_cache)
+        items = await get_settings(
+            conn, request.ids or [], get_redis_client(), bypass_cache=bypass_cache
+        )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetSettingsApiResponse(items=items)
     except HTTPException:
