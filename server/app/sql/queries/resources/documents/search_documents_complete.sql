@@ -81,8 +81,7 @@ FROM (
               AND draft_id IS NOT NULL
               AND EXISTS (
                   SELECT 1 FROM (
-                      SELECT documents_id, draft_id FROM document_drafts_documents_connection WHERE active = true
-                      UNION ALL SELECT documents_id, draft_id FROM scenario_drafts_documents_connection WHERE active = true
+                      SELECT documents_id, draft_id FROM scenario_drafts_documents_connection WHERE active = true
                       UNION ALL SELECT documents_id, draft_id FROM chat_drafts_documents_connection WHERE active = true
                   ) dc
                   WHERE dc.documents_id = d.id

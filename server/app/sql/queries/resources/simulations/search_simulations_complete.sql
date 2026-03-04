@@ -83,7 +83,6 @@ FROM (
               AND EXISTS (
                   SELECT 1 FROM (
                       SELECT simulations_id, draft_id FROM cohort_drafts_simulations_connection WHERE active = true
-                      UNION ALL SELECT simulations_id, draft_id FROM simulation_drafts_simulations_connection WHERE active = true
                   ) dc
                   WHERE dc.simulations_id = s.id
                     AND dc.draft_id = api_search_simulations_v4.draft_id

@@ -561,26 +561,26 @@ drafts_data AS (
         d.version,
         d.updated_at
     FROM profile_profiles_junction ppj
-    JOIN profile_drafts_profiles_connection pdc ON pdc.profiles_id = ppj.profiles_id
-    JOIN (SELECT id, 'agent'::text as artifact, version, created_at as updated_at FROM agent_drafts_entry
-     UNION ALL SELECT id, 'auth', version, created_at FROM auth_drafts_entry
-     UNION ALL SELECT id, 'cohort', version, created_at FROM cohort_drafts_entry
-     UNION ALL SELECT id, 'department', version, created_at FROM department_drafts_entry
-     UNION ALL SELECT id, 'document', version, created_at FROM document_drafts_entry
-     UNION ALL SELECT id, 'eval', version, created_at FROM eval_drafts_entry
-     UNION ALL SELECT id, 'field', version, created_at FROM field_drafts_entry
-     UNION ALL SELECT id, 'model', version, created_at FROM model_drafts_entry
-     UNION ALL SELECT id, 'parameter', version, created_at FROM parameter_drafts_entry
-     UNION ALL SELECT id, 'persona', version, created_at FROM persona_drafts_entry
-     UNION ALL SELECT id, 'profile', version, created_at FROM profile_drafts_entry
-     UNION ALL SELECT id, 'provider', version, created_at FROM provider_drafts_entry
-     UNION ALL SELECT id, 'rubric', version, created_at FROM rubric_drafts_entry
-     UNION ALL SELECT id, 'scenario', version, created_at FROM scenario_drafts_entry
-     UNION ALL SELECT id, 'setting', version, created_at FROM setting_drafts_entry
-     UNION ALL SELECT id, 'simulation', version, created_at FROM simulation_drafts_entry
-     UNION ALL SELECT id, 'suite', version, created_at FROM invocation_drafts_entry
-     UNION ALL SELECT id, 'tool', version, created_at FROM tool_drafts_entry
-     UNION ALL SELECT id, 'training', version, created_at FROM chat_drafts_entry) d ON d.id = pdc.draft_id
+    JOIN profiles_sessions_connection psc ON psc.profiles_id = ppj.profiles_id
+    JOIN (SELECT id, 'agent'::text as artifact, version, session_id, created_at as updated_at FROM agent_drafts_entry WHERE active = true
+     UNION ALL SELECT id, 'auth', version, session_id, created_at FROM auth_drafts_entry WHERE active = true
+     UNION ALL SELECT id, 'cohort', version, session_id, created_at FROM cohort_drafts_entry WHERE active = true
+     UNION ALL SELECT id, 'department', version, session_id, created_at FROM department_drafts_entry WHERE active = true
+     UNION ALL SELECT id, 'document', version, session_id, created_at FROM document_drafts_entry WHERE active = true
+     UNION ALL SELECT id, 'eval', version, session_id, created_at FROM eval_drafts_entry WHERE active = true
+     UNION ALL SELECT id, 'field', version, session_id, created_at FROM field_drafts_entry WHERE active = true
+     UNION ALL SELECT id, 'model', version, session_id, created_at FROM model_drafts_entry WHERE active = true
+     UNION ALL SELECT id, 'parameter', version, session_id, created_at FROM parameter_drafts_entry WHERE active = true
+     UNION ALL SELECT id, 'persona', version, session_id, created_at FROM persona_drafts_entry WHERE active = true
+     UNION ALL SELECT id, 'profile', version, session_id, created_at FROM profile_drafts_entry WHERE active = true
+     UNION ALL SELECT id, 'provider', version, session_id, created_at FROM provider_drafts_entry WHERE active = true
+     UNION ALL SELECT id, 'rubric', version, session_id, created_at FROM rubric_drafts_entry WHERE active = true
+     UNION ALL SELECT id, 'scenario', version, session_id, created_at FROM scenario_drafts_entry WHERE active = true
+     UNION ALL SELECT id, 'setting', version, session_id, created_at FROM setting_drafts_entry WHERE active = true
+     UNION ALL SELECT id, 'simulation', version, session_id, created_at FROM simulation_drafts_entry WHERE active = true
+     UNION ALL SELECT id, 'suite', version, session_id, created_at FROM invocation_drafts_entry WHERE active = true
+     UNION ALL SELECT id, 'tool', version, session_id, created_at FROM tool_drafts_entry WHERE active = true
+     UNION ALL SELECT id, 'training', version, session_id, created_at FROM chat_drafts_entry WHERE active = true) d ON d.session_id = psc.session_id
     WHERE ppj.profile_id = (SELECT profile_id FROM params)
 ),
 drafts_aggregated AS (
@@ -596,11 +596,13 @@ drafts_aggregated AS (
     FROM drafts_data dd
 ),
 session_resolution AS (
-    SELECT id as session_id
-    FROM sessions_entry
-    WHERE profile_id = (SELECT profile_id FROM params)
-      AND active = true
-    ORDER BY created_at DESC
+    SELECT s.id as session_id
+    FROM sessions_entry s
+    JOIN profiles_sessions_connection psc ON psc.session_id = s.id
+    JOIN profile_profiles_junction ppj ON ppj.profiles_id = psc.profiles_id
+    WHERE ppj.profile_id = (SELECT profile_id FROM params)
+      AND s.active = true
+    ORDER BY s.created_at DESC
     LIMIT 1
 )
 SELECT

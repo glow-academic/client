@@ -1,101 +1,22 @@
-"""attempt_analysis/get internal — reusable data-access layer."""
+"""Entry get — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
-import asyncpg  # type: ignore
+import asyncpg
 
-from app.sql.types import (
-    GetAttemptAnalysisEntriesSqlParams,
-    GetAttemptAnalysisEntriesSqlRow,
-    QGetSimulationAnalysesViewV4Item,
-)
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = (
-    "app/sql/queries/entries/attempt_analysis/get_attempt_analysis_entries_complete.sql"
+from app.routes.v5.tools.entries.attempt_analysis.types import (
+    GetAttemptAnalysisResponse,
 )
 
-VIEW_SQL_PATH = "app/sql/queries/views/simulation/analyses/get_simulation_analyses_view_complete.sql"
+MV_NAME = "attempt_analysis_mv"
 
 
-async def get_attempt_analysis_entries_internal(
-    conn: asyncpg.Connection,
-    ids: list[UUID],
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to fetch attempt_analysis entries by IDs."""
+async def get_attempt_analyses(
+    conn: asyncpg.Connection, ids: list[UUID]
+) -> list[GetAttemptAnalysisResponse]:
     if not ids:
         return []
-
-    tags = ["entries", "attempt_analysis"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/attempt_analysis/get",
-        {"ids": [str(id) for id in ids]},
+    rows = await conn.fetch(
+        f"SELECT * FROM {MV_NAME} WHERE analysis_id = ANY($1)", ids
     )
-
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    params = GetAttemptAnalysisEntriesSqlParams(ids=ids)
-    result = cast(
-        GetAttemptAnalysisEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
-
-
-async def get_attempt_analysis_internal(
-    conn: asyncpg.Connection,
-    grade_ids: list[UUID],
-    bypass_cache: bool = False,
-) -> list[QGetSimulationAnalysesViewV4Item]:
-    """Internal function for fetching analyses data."""
-    from app.sql.types import GetSimulationAnalysesViewSqlParams
-
-    cache_key_val = cache_key(
-        "entries/attempt_analysis/view",
-        {
-            "grade_ids": [str(x) for x in grade_ids],
-        },
-    )
-
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return [
-                QGetSimulationAnalysesViewV4Item.model_validate(item)
-                for item in cached["items"]
-            ]
-
-    params = GetSimulationAnalysesViewSqlParams(grade_ids_filter=grade_ids)
-    result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
-
-    items: list[QGetSimulationAnalysesViewV4Item] = (
-        list(result.items) if result and result.items else []
-    )
-
-    await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=["entries", "attempt_analysis"],
-        redis=get_redis_client(),
-    )
-    return items
+    return [GetAttemptAnalysisResponse(**dict(r)) for r in rows]

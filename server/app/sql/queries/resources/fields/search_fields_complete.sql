@@ -73,8 +73,7 @@ FROM (
               AND draft_id IS NOT NULL
               AND EXISTS (
                   SELECT 1 FROM (
-                      SELECT fields_id, draft_id FROM field_drafts_fields_connection WHERE active = true
-                      UNION ALL SELECT fields_id, draft_id FROM parameter_drafts_fields_connection WHERE active = true
+                      SELECT fields_id, draft_id FROM parameter_drafts_fields_connection WHERE active = true
                       UNION ALL SELECT fields_id, draft_id FROM chat_drafts_fields_connection WHERE active = true
                   ) dc
                   WHERE dc.fields_id = f.id

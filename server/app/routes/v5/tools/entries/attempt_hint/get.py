@@ -1,101 +1,21 @@
-"""attempt_hint/get internal — reusable data-access layer."""
+"""Entry get — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    GetAttemptHintEntriesSqlParams,
-    GetAttemptHintEntriesSqlRow,
-    QGetSimulationHintsViewV4Item,
-)
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
+from app.routes.v5.tools.entries.attempt_hint.types import GetAttemptHintResponse
 
-SQL_PATH = "app/sql/queries/entries/attempt_hint/get_attempt_hint_entries_complete.sql"
-
-VIEW_SQL_PATH = (
-    "app/sql/queries/views/simulation/hints/get_simulation_hints_view_complete.sql"
-)
+MV_NAME = "attempt_hint_mv"
 
 
-async def get_attempt_hint_entries_internal(
-    conn: asyncpg.Connection,
-    ids: list[UUID],
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to fetch attempt_hint entries by IDs."""
+async def get_attempt_hints(
+    conn: asyncpg.Connection, ids: list[UUID]
+) -> list[GetAttemptHintResponse]:
+    """Fetch attempt hints by hint IDs."""
     if not ids:
         return []
-
-    tags = ["entries", "attempt_hint"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/attempt_hint/get",
-        {"ids": [str(id) for id in ids]},
+    rows = await conn.fetch(
+        f"SELECT * FROM {MV_NAME} WHERE hint_id = ANY($1)", ids
     )
-
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    params = GetAttemptHintEntriesSqlParams(ids=ids)
-    result = cast(
-        GetAttemptHintEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
-
-
-async def get_attempt_hint_internal(
-    conn: asyncpg.Connection,
-    message_ids: list[UUID],
-    bypass_cache: bool = False,
-) -> list[QGetSimulationHintsViewV4Item]:
-    """Internal function for fetching hints data."""
-    from app.sql.types import GetSimulationHintsViewSqlParams
-
-    cache_key_val = cache_key(
-        "entries/attempt_hint/view",
-        {
-            "message_ids": [str(x) for x in message_ids],
-        },
-    )
-
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return [
-                QGetSimulationHintsViewV4Item.model_validate(item)
-                for item in cached["items"]
-            ]
-
-    params = GetSimulationHintsViewSqlParams(message_ids_filter=message_ids)
-    result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
-
-    items: list[QGetSimulationHintsViewV4Item] = (
-        list(result.items) if result and result.items else []
-    )
-
-    await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=["entries", "attempt_hint"],
-        redis=get_redis_client(),
-    )
-    return items
+    return [GetAttemptHintResponse(**dict(r)) for r in rows]

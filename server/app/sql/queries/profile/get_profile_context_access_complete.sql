@@ -221,27 +221,28 @@ draft_ids_data AS (
         ARRAY[]::uuid[]
     ) as draft_ids
     FROM profile_profiles_junction ppj
-    JOIN profile_drafts_profiles_connection pdc ON pdc.profiles_id = ppj.profiles_id
-    JOIN (SELECT id, group_id, created_at, active FROM agent_drafts_entry
-     UNION ALL SELECT id, group_id, created_at, active FROM auth_drafts_entry
-     UNION ALL SELECT id, group_id, created_at, active FROM cohort_drafts_entry
-     UNION ALL SELECT id, group_id, created_at, active FROM department_drafts_entry
-     UNION ALL SELECT id, group_id, created_at, active FROM document_drafts_entry
-     UNION ALL SELECT id, group_id, created_at, active FROM eval_drafts_entry
-     UNION ALL SELECT id, group_id, created_at, active FROM field_drafts_entry
-     UNION ALL SELECT id, group_id, created_at, active FROM model_drafts_entry
-     UNION ALL SELECT id, group_id, created_at, active FROM parameter_drafts_entry
-     UNION ALL SELECT id, group_id, created_at, active FROM persona_drafts_entry
-     UNION ALL SELECT id, group_id, created_at, active FROM profile_drafts_entry
-     UNION ALL SELECT id, group_id, created_at, active FROM provider_drafts_entry
-     UNION ALL SELECT id, group_id, created_at, active FROM rubric_drafts_entry
-     UNION ALL SELECT id, group_id, created_at, active FROM scenario_drafts_entry
-     UNION ALL SELECT id, group_id, created_at, active FROM setting_drafts_entry
-     UNION ALL SELECT id, group_id, created_at, active FROM simulation_drafts_entry
-     UNION ALL SELECT id, group_id, created_at, active FROM invocation_drafts_entry
-     UNION ALL SELECT id, group_id, created_at, active FROM tool_drafts_entry
-     UNION ALL SELECT id, group_id, created_at, active FROM chat_drafts_entry) d ON d.id = pdc.draft_id
+    JOIN profiles_sessions_connection psc ON psc.profiles_id = ppj.profiles_id
+    JOIN (SELECT id, session_id, created_at, active FROM agent_drafts_entry
+     UNION ALL SELECT id, session_id, created_at, active FROM auth_drafts_entry
+     UNION ALL SELECT id, session_id, created_at, active FROM cohort_drafts_entry
+     UNION ALL SELECT id, session_id, created_at, active FROM department_drafts_entry
+     UNION ALL SELECT id, session_id, created_at, active FROM document_drafts_entry
+     UNION ALL SELECT id, session_id, created_at, active FROM eval_drafts_entry
+     UNION ALL SELECT id, session_id, created_at, active FROM field_drafts_entry
+     UNION ALL SELECT id, session_id, created_at, active FROM model_drafts_entry
+     UNION ALL SELECT id, session_id, created_at, active FROM parameter_drafts_entry
+     UNION ALL SELECT id, session_id, created_at, active FROM persona_drafts_entry
+     UNION ALL SELECT id, session_id, created_at, active FROM profile_drafts_entry
+     UNION ALL SELECT id, session_id, created_at, active FROM provider_drafts_entry
+     UNION ALL SELECT id, session_id, created_at, active FROM rubric_drafts_entry
+     UNION ALL SELECT id, session_id, created_at, active FROM scenario_drafts_entry
+     UNION ALL SELECT id, session_id, created_at, active FROM setting_drafts_entry
+     UNION ALL SELECT id, session_id, created_at, active FROM simulation_drafts_entry
+     UNION ALL SELECT id, session_id, created_at, active FROM invocation_drafts_entry
+     UNION ALL SELECT id, session_id, created_at, active FROM tool_drafts_entry
+     UNION ALL SELECT id, session_id, created_at, active FROM chat_drafts_entry) d ON d.session_id = psc.session_id
     WHERE ppj.profile_id = (SELECT profile_id FROM params)
+      AND d.active = true
 ),
 settings_agent_ids_data AS (
     SELECT COALESCE(

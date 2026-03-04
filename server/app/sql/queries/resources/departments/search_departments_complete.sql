@@ -88,7 +88,7 @@ FROM (
                   FROM (SELECT departments_id, draft_id FROM agent_drafts_departments_connection WHERE active = true
                    UNION ALL SELECT departments_id, draft_id FROM auth_drafts_departments_connection WHERE active = true
                    UNION ALL SELECT departments_id, draft_id FROM cohort_drafts_departments_connection WHERE active = true
-                   UNION ALL SELECT departments_id, draft_id FROM department_drafts_departments_connection WHERE active = true
+
                    UNION ALL SELECT departments_id, draft_id FROM document_drafts_departments_connection WHERE active = true
                    UNION ALL SELECT departments_id, draft_id FROM eval_drafts_departments_connection WHERE active = true
                    UNION ALL SELECT departments_id, draft_id FROM field_drafts_departments_connection WHERE active = true
