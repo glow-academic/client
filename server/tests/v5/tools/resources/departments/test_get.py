@@ -4,22 +4,19 @@ from uuid import uuid4
 
 import pytest
 
+from app.routes.v5.tools.resources.departments.create import create_department
 from app.routes.v5.tools.resources.departments.get import get_departments
 
 pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_created_department(conn, redis_client):
-    dept_id = await conn.fetchval("""
-        INSERT INTO departments_resource (name, description)
-        VALUES ('test-dept', 'Test dept desc')
-        RETURNING id
-    """)
+    created = await create_department(conn, "test-dept", "Test dept desc", redis_client)
 
-    items = await get_departments(conn, [dept_id], redis_client)
+    items = await get_departments(conn, [created.id], redis_client)
 
     assert len(items) == 1
-    assert items[0].id == dept_id
+    assert items[0].id == created.id
     assert items[0].name == "test-dept"
     assert items[0].description == "Test dept desc"
     assert items[0].department_ids == []
@@ -27,7 +24,7 @@ async def test_gets_created_department(conn, redis_client):
     assert items[0].active is True
 
 
-async def test_returns_empty_for_missing_department(conn, redis_client):
+async def test_returns_empty_for_missing_id(conn, redis_client):
     items = await get_departments(conn, [uuid4()], redis_client)
 
     assert items == []
@@ -40,33 +37,27 @@ async def test_returns_empty_for_empty_ids(conn, redis_client):
 
 
 async def test_cache_hit_skips_db(conn, redis_client):
-    dept_id = await conn.fetchval("""
-        INSERT INTO departments_resource (name) VALUES ('test-dept-cache-hit')
-        RETURNING id
-    """)
+    created = await create_department(conn, "test-dept-cache-hit", redis=redis_client)
 
     # First call populates cache
-    items = await get_departments(conn, [dept_id], redis_client)
+    items = await get_departments(conn, [created.id], redis_client)
     assert len(items) == 1
 
     # Second call serves from cache
-    items2 = await get_departments(conn, [dept_id], redis_client)
+    items2 = await get_departments(conn, [created.id], redis_client)
     assert len(items2) == 1
     assert items2[0].name == "test-dept-cache-hit"
 
 
 async def test_bypass_cache_skips_read_and_write(conn, redis_client):
-    dept_id = await conn.fetchval("""
-        INSERT INTO departments_resource (name) VALUES ('test-dept-bypass')
-        RETURNING id
-    """)
+    created = await create_department(conn, "test-dept-bypass", redis=redis_client)
 
-    items = await get_departments(conn, [dept_id], redis_client, bypass_cache=True)
+    items = await get_departments(conn, [created.id], redis_client, bypass_cache=True)
     assert len(items) == 1
 
     from app.utils.cache.cache_key import cache_key
     from app.utils.cache.get_cached import get_cached
 
-    key = cache_key("/api/v5/resources/departments/get", {"ids": [str(dept_id)]})
+    key = cache_key("/api/v5/resources/departments/get", {"ids": [str(created.id)]})
     cached = await get_cached(key, redis=redis_client)
     assert cached is None
