@@ -8,10 +8,12 @@
 CREATE MATERIALIZED VIEW public.groups_mv AS
  SELECT id AS group_id,
     session_id,
-    created_at AS group_created_at,
-    name AS group_name,
-    active
-   FROM public.groups_entry g
+    created_at,
+    name,
+    active,
+    mcp,
+    generated
+   FROM public.groups_entry
   WHERE (active = true)
   WITH NO DATA;
 

@@ -1,34 +1,44 @@
-"""Groups GET — reusable data-access layer."""
+"""Groups GET — batch get from groups_mv."""
 
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
+from app.infra.docs.resolve_mv_source import resolve_mv_source
 from app.routes.v5.tools.entries.groups.types import GetGroupResponse
 
+MV_NAME = "groups_mv"
 
-async def get_group(
+
+async def get_groups(
     conn: asyncpg.Connection,
-    group_id: UUID,
-) -> GetGroupResponse | None:
-    """Get a groups entry by ID."""
-    row = await conn.fetchrow(
-        """
-        SELECT id, session_id, name, active, mcp, generated
-        FROM groups_entry
-        WHERE id = $1
-    """,
-        group_id,
+    ids: list[UUID],
+    bypass_mv: bool = False,
+) -> list[GetGroupResponse]:
+    """Get groups by IDs from groups_mv."""
+    if not ids:
+        return []
+
+    source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
+
+    rows = await conn.fetch(
+        f"""
+        SELECT group_id, session_id, created_at, name, active, mcp, generated
+        FROM {source}
+        WHERE group_id = ANY($1)
+        """,
+        ids,
     )
 
-    if row is None:
-        return None
-
-    return GetGroupResponse(
-        id=row["id"],
-        session_id=row["session_id"],
-        name=row["name"],
-        active=row["active"],
-        mcp=row["mcp"],
-        generated=row["generated"],
-    )
+    return [
+        GetGroupResponse(
+            id=r["group_id"],
+            session_id=r["session_id"],
+            created_at=r["created_at"],
+            name=r["name"],
+            active=r["active"],
+            mcp=r["mcp"],
+            generated=r["generated"],
+        )
+        for r in rows
+    ]
