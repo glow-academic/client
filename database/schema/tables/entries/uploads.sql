@@ -13,7 +13,7 @@ CREATE TABLE public.uploads_completions_entry (
     active boolean DEFAULT true NOT NULL,
     upload_id uuid NOT NULL,
     end_reason text DEFAULT ''::text NOT NULL,
-    session_id uuid
+    session_id uuid NOT NULL
 );
 
 
@@ -24,7 +24,6 @@ CREATE TABLE public.uploads_completions_entry (
 
 CREATE TABLE public.uploads_entry (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT uploads_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT uploads_updated_at_not_null NOT NULL,
     file_path text CONSTRAINT uploads_file_path_not_null NOT NULL,
     mime_type text CONSTRAINT uploads_mime_type_not_null NOT NULL,
     size bigint CONSTRAINT uploads_size_not_null NOT NULL,
@@ -32,7 +31,7 @@ CREATE TABLE public.uploads_entry (
     generated boolean DEFAULT false CONSTRAINT uploads_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT uploads_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT uploads_active_not_null NOT NULL,
-    session_id uuid
+    session_id uuid NOT NULL
 );
 
 
