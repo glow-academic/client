@@ -15,9 +15,7 @@ pytestmark = pytest.mark.asyncio
 
 async def _grant(conn):
     session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
-    grant = await create_grant(
-        conn, session_id=session.id, expires_at="2099-12-31T23:59:59Z"
-    )
+    grant = await create_grant(conn, session_id=session.id)
     return grant
 
 

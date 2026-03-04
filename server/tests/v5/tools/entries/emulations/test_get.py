@@ -20,7 +20,7 @@ async def _session(conn):
 
 async def _grant(conn, session_id):
     result = await create_grant(
-        conn, session_id=session_id, expires_at="now() + interval '1 hour'"
+        conn, session_id=session_id
     )
     return result.id
 
