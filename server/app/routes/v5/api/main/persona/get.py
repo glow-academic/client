@@ -90,7 +90,7 @@ from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.descriptions.search import (
     search_descriptions_internal,
 )
-from app.routes.v5.tools.resources.examples.get import get_examples_internal
+from app.routes.v5.tools.resources.examples.get import get_examples
 from app.routes.v5.tools.resources.examples.search import search_examples_internal
 from app.routes.v5.tools.resources.fields.search import search_fields_internal
 from app.routes.v5.tools.resources.flags.get import get_flags
@@ -565,7 +565,7 @@ async def get_persona_internal(
 
     async def fetch_examples():
         async with pool.acquire() as c:
-            selected = await get_examples_internal(c, example_ids, bypass_cache)
+            selected = await get_examples(c, example_ids, get_redis_client(), bypass_cache)
             suggestions = await search_examples_internal(
                 c,
                 None,

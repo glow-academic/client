@@ -47,10 +47,10 @@ from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.prompts.get import get_prompts
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.reasoning_levels.get import (
-    get_reasoning_levels_internal,
+    get_reasoning_levels,
 )
 from app.routes.v5.tools.resources.temperature_levels.get import (
-    get_temperature_levels_internal,
+    get_temperature_levels,
 )
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.routes.v5.tools.resources.voices.get import get_voices
@@ -127,13 +127,13 @@ RESOURCE_CONFIG: list[tuple[str, str, Any, str]] = [
     (
         "temperature_levels",
         "temperature_level_ids",
-        get_temperature_levels_internal,
+        get_temperature_levels,
         "id",
     ),
     (
         "reasoning_levels",
         "reasoning_level_ids",
-        get_reasoning_levels_internal,
+        get_reasoning_levels,
         "id",
     ),
     ("tools", "tool_ids", get_tools, "id"),

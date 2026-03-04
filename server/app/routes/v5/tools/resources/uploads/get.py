@@ -1,60 +1,65 @@
-"""uploads/get internal — reusable data-access layer."""
+"""Uploads Resource GET — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    GetUploadsSqlParams,
-    GetUploadsSqlRow,
-    QGetUploadsV4Item,
-)
+from app.routes.v5.tools.resources.uploads.types import GetUploadResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/resources/uploads/get_uploads_complete.sql"
 
 
-async def get_uploads_internal(
+async def get_uploads(
     conn: asyncpg.Connection,
     ids: list[UUID],
+    redis: Redis,
     bypass_cache: bool = False,
-) -> list[QGetUploadsV4Item]:
-    """Internal function to fetch uploads by IDs."""
+) -> list[GetUploadResponse]:
+    """Fetch files_resource entries by IDs."""
     if not ids:
         return []
 
     tags = ["resources", "uploads"]
-    cache_key_val = cache_key(
-        "/api/v5/resources/uploads/get",
-        {"ids": [str(id) for id in ids]},
-    )
+    key = cache_key("/api/v5/resources/uploads/get", {"ids": [str(id) for id in ids]})
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetUploadsV4Item.model_validate(item)
+                GetUploadResponse.model_validate(item)
                 for item in cached.get("items", [])
             ]
 
-    params = GetUploadsSqlParams(ids=ids)
-    result = cast(
-        GetUploadsSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
+    rows = await conn.fetch(
+        """
+        SELECT id,
+               created_at, active, mcp, generated
+        FROM files_resource
+        WHERE id = ANY($1)
+        ORDER BY array_position($1, id)
+    """,
+        ids,
     )
 
-    items: list[QGetUploadsV4Item] = result.items if result and result.items else []
+    items = [
+        GetUploadResponse(
+            id=r["id"],
+            created_at=r["created_at"],
+            active=r["active"],
+            mcp=r["mcp"],
+            generated=r["generated"],
+        )
+        for r in rows
+    ]
 
-    await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
+    if not bypass_cache:
+        await set_cached(
+            key,
+            {"items": [i.model_dump(mode="json") for i in items]},
+            60,
+            tags,
+            redis=redis,
+        )
     return items

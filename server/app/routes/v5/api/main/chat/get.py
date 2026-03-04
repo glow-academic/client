@@ -57,7 +57,7 @@ from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.documents.get import get_documents_internal
 from app.routes.v5.tools.resources.images.get import get_images_internal
 from app.routes.v5.tools.resources.models.get import get_models
-from app.routes.v5.tools.resources.objectives.get import get_objectives_internal
+from app.routes.v5.tools.resources.objectives.get import get_objectives
 from app.routes.v5.tools.resources.options.get import get_options_internal
 from app.routes.v5.tools.resources.parameter_fields.get import (
     get_parameter_fields_internal,
@@ -259,7 +259,7 @@ RESOURCE_CONFIG: list[tuple[str, str, str, Any, str]] = [
         "objectives",
         "objective_ids",
         "objective_ids",
-        get_objectives_internal,
+        get_objectives,
         "objective_id",
     ),
 ]

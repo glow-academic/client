@@ -1,60 +1,69 @@
-"""modalities/get internal — reusable data-access layer."""
+"""Modalities Resource GET — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    GetModalitiesSqlParams,
-    GetModalitiesSqlRow,
-    QGetModalitiesV4Item,
-)
+from app.routes.v5.tools.resources.modalities.types import GetModalityResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/resources/modalities/get_modalities_complete.sql"
 
 
-async def get_modalities_internal(
+async def get_modalities(
     conn: asyncpg.Connection,
     ids: list[UUID],
+    redis: Redis,
     bypass_cache: bool = False,
-) -> list[QGetModalitiesV4Item]:
-    """Internal function to fetch modalities by IDs."""
+) -> list[GetModalityResponse]:
+    """Fetch modalities_resource entries by IDs."""
     if not ids:
         return []
 
     tags = ["resources", "modalities"]
-    cache_key_val = cache_key(
-        "/api/v5/resources/modalities/get",
-        {"ids": [str(id) for id in ids]},
+    key = cache_key(
+        "/api/v5/resources/modalities/get", {"ids": [str(id) for id in ids]}
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetModalitiesV4Item.model_validate(item)
+                GetModalityResponse.model_validate(item)
                 for item in cached.get("items", [])
             ]
 
-    params = GetModalitiesSqlParams(ids=ids)
-    result = cast(
-        GetModalitiesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
+    rows = await conn.fetch(
+        """
+        SELECT id, modality, is_input,
+               created_at, active, mcp, generated
+        FROM modalities_resource
+        WHERE id = ANY($1)
+        ORDER BY array_position($1, id)
+    """,
+        ids,
     )
 
-    items: list[QGetModalitiesV4Item] = result.items if result and result.items else []
+    items = [
+        GetModalityResponse(
+            id=r["id"],
+            modality=r["modality"],
+            is_input=r["is_input"],
+            created_at=r["created_at"],
+            active=r["active"],
+            mcp=r["mcp"],
+            generated=r["generated"],
+        )
+        for r in rows
+    ]
 
-    await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
+    if not bypass_cache:
+        await set_cached(
+            key,
+            {"items": [i.model_dump(mode="json") for i in items]},
+            60,
+            tags,
+            redis=redis,
+        )
     return items

@@ -104,13 +104,13 @@ from app.routes.v5.tools.resources.prompts.get import get_prompts
 from app.routes.v5.tools.resources.prompts.search import search_prompts_internal
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.reasoning_levels.get import (
-    get_reasoning_levels_internal,
+    get_reasoning_levels,
 )
 from app.routes.v5.tools.resources.reasoning_levels.search import (
     search_reasoning_levels_internal,
 )
 from app.routes.v5.tools.resources.temperature_levels.get import (
-    get_temperature_levels_internal,
+    get_temperature_levels,
 )
 from app.routes.v5.tools.resources.temperature_levels.search import (
     search_temperature_levels_internal,
@@ -543,8 +543,8 @@ async def get_agent_internal(
 
     async def fetch_temperature_levels():
         async with pool.acquire() as c:
-            selected = await get_temperature_levels_internal(
-                c, temperature_level_ids, cache
+            selected = await get_temperature_levels(
+                c, temperature_level_ids, get_redis_client(), cache
             )
             suggestions = await search_temperature_levels_internal(
                 c, None, 20, 0, temperature_level_ids, bypass_cache
@@ -553,8 +553,8 @@ async def get_agent_internal(
 
     async def fetch_reasoning_levels():
         async with pool.acquire() as c:
-            selected = await get_reasoning_levels_internal(
-                c, reasoning_level_ids, bypass_cache
+            selected = await get_reasoning_levels(
+                c, reasoning_level_ids, get_redis_client(), bypass_cache
             )
             suggestions = await search_reasoning_levels_internal(
                 c, None, 20, 0, reasoning_level_ids, bypass_cache

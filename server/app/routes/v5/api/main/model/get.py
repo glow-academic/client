@@ -92,19 +92,19 @@ from app.routes.v5.tools.resources.descriptions.search import (
 )
 from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags_internal
-from app.routes.v5.tools.resources.modalities.get import get_modalities_internal
+from app.routes.v5.tools.resources.modalities.get import get_modalities
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
-from app.routes.v5.tools.resources.pricing.get import get_pricing_internal
+from app.routes.v5.tools.resources.pricing.get import get_pricing
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
-from app.routes.v5.tools.resources.qualities.get import get_qualities_internal
+from app.routes.v5.tools.resources.qualities.get import get_qualities
 from app.routes.v5.tools.resources.reasoning_levels.get import (
-    get_reasoning_levels_internal,
+    get_reasoning_levels,
 )
 from app.routes.v5.tools.resources.temperature_levels.get import (
-    get_temperature_levels_internal,
+    get_temperature_levels,
 )
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.routes.v5.tools.resources.values.get import get_values
@@ -502,34 +502,34 @@ async def get_model_internal(
 
     async def fetch_modalities():
         async with pool.acquire() as c:
-            selected = await get_modalities_internal(
-                c, selected_modality_ids, bypass_cache
+            selected = await get_modalities(
+                c, selected_modality_ids, get_redis_client(), bypass_cache
             )
             return (selected, [])
 
     async def fetch_temperature_levels():
         async with pool.acquire() as c:
-            selected = await get_temperature_levels_internal(
-                c, selected_temperature_level_ids, bypass_cache
+            selected = await get_temperature_levels(
+                c, selected_temperature_level_ids, get_redis_client(), bypass_cache
             )
             return (selected, [])
 
     async def fetch_pricing():
         async with pool.acquire() as c:
-            selected = await get_pricing_internal(c, selected_pricing_ids, bypass_cache)
+            selected = await get_pricing(c, selected_pricing_ids, get_redis_client(), bypass_cache)
             return (selected, [])
 
     async def fetch_reasoning_levels():
         async with pool.acquire() as c:
-            selected = await get_reasoning_levels_internal(
-                c, selected_reasoning_level_ids, bypass_cache
+            selected = await get_reasoning_levels(
+                c, selected_reasoning_level_ids, get_redis_client(), bypass_cache
             )
             return (selected, [])
 
     async def fetch_qualities():
         async with pool.acquire() as c:
-            selected = await get_qualities_internal(
-                c, selected_quality_ids, bypass_cache
+            selected = await get_qualities(
+                c, selected_quality_ids, get_redis_client(), bypass_cache
             )
             return (selected, [])
 

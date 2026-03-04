@@ -80,7 +80,7 @@ from app.routes.v5.tools.resources.flags.search import search_flags_internal
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
-from app.routes.v5.tools.resources.points.get import get_points_internal
+from app.routes.v5.tools.resources.points.get import get_points
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.standard_groups.get import (
@@ -441,11 +441,11 @@ async def get_rubric_internal(
 
     async def fetch_points() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_points_internal(c, total_points_ids, bypass_cache)
+            return await get_points(c, total_points_ids, get_redis_client(), bypass_cache)
 
     async def fetch_pass_points() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_points_internal(c, pass_points_ids, bypass_cache)
+            return await get_points(c, pass_points_ids, get_redis_client(), bypass_cache)
 
     async def fetch_standard_groups() -> list[Any]:
         async with pool.acquire() as c:

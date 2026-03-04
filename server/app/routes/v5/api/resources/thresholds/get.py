@@ -5,15 +5,13 @@ from typing import Annotated
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
+from app.infra.globals import get_db, get_redis_client
 from app.routes.v5.tools.resources.thresholds.get import (
-    SQL_PATH,
-    get_thresholds_internal,
+    get_thresholds as get_thresholds_resource,
 )
 from app.sql.types import (
     GetThresholdsApiRequest,
     GetThresholdsApiResponse,
-    load_sql_query,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -39,7 +37,7 @@ async def get_thresholds(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_thresholds_internal(conn, request.ids, bypass_cache)
+        items = await get_thresholds_resource(conn, request.ids, get_redis_client(), bypass_cache)
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetThresholdsApiResponse(items=items)
     except HTTPException:
@@ -51,7 +49,7 @@ async def get_thresholds(
             error=e,
             route_path=http_request.url.path,
             operation="get_thresholds",
-            sql_query=load_sql_query(SQL_PATH),
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )

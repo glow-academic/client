@@ -72,7 +72,7 @@ from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
-from app.routes.v5.tools.resources.request_limits.get import get_request_limits_internal
+from app.routes.v5.tools.resources.request_limits.get import get_request_limits
 from app.routes.v5.tools.resources.request_limits.search import (
     search_request_limits_internal,
 )
@@ -388,8 +388,8 @@ async def get_profile_internal(
 
     async def fetch_request_limits():
         async with pool.acquire() as c:
-            selected = await get_request_limits_internal(
-                c, request_limit_ids, bypass_cache
+            selected = await get_request_limits(
+                c, request_limit_ids, get_redis_client(), bypass_cache
             )
             suggestions = await search_request_limits_internal(
                 c,

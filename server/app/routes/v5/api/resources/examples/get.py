@@ -5,12 +5,11 @@ from typing import Annotated
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
-from app.routes.v5.tools.resources.examples.get import SQL_PATH, get_examples_internal
+from app.infra.globals import get_db, get_redis_client
+from app.routes.v5.tools.resources.examples.get import get_examples as get_examples_resource
 from app.sql.types import (
     GetExamplesApiRequest,
     GetExamplesApiResponse,
-    load_sql_query,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -36,7 +35,7 @@ async def get_examples(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_examples_internal(conn, request.ids, bypass_cache)
+        items = await get_examples_resource(conn, request.ids, get_redis_client(), bypass_cache)
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetExamplesApiResponse(items=items)
     except HTTPException:
@@ -48,7 +47,7 @@ async def get_examples(
             error=e,
             route_path=http_request.url.path,
             operation="get_examples",
-            sql_query=load_sql_query(SQL_PATH),
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )
