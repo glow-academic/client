@@ -84,23 +84,23 @@ async def sync_cohort_entries(
     from app.infra.globals import get_pool
     from app.routes.v5.tools.resources.rubrics.get import get_rubrics_internal
     from app.routes.v5.tools.resources.scenario_flags.get import (
-        get_scenario_flags_internal,
+        get_scenario_flags,
     )
     from app.routes.v5.tools.resources.scenario_positions.get import (
-        get_scenario_positions_internal,
+        get_scenario_positions,
     )
     from app.routes.v5.tools.resources.scenario_rubrics.get import (
         get_scenario_rubrics_internal,
     )
     from app.routes.v5.tools.resources.scenario_time_limits.get import (
-        get_scenario_time_limits_internal,
+        get_scenario_time_limits,
     )
     from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
     from app.routes.v5.tools.resources.simulation_availability.get import (
         get_simulation_availability_internal,
     )
     from app.routes.v5.tools.resources.simulation_positions.get import (
-        get_simulation_positions_internal,
+        get_simulation_positions,
     )
     from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
     from app.routes.v5.tools.resources.standards.search import search_standards_internal

@@ -27,7 +27,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-INSERT INTO uploads_entry (file_path, mime_type, size, created_at, updated_at)
-VALUES (file_path, mime_type, size, NOW(), NOW())
+INSERT INTO uploads_entry (file_path, mime_type, size, created_at)
+VALUES (file_path, mime_type, size, NOW())
 RETURNING id::text as id
 $$;

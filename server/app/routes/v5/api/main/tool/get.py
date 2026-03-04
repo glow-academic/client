@@ -51,7 +51,7 @@ from app.routes.v5.api.permissions import (
 from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
 from app.routes.v5.tools.entries.tool_drafts.get import get_tool_drafts_entries_internal
 from app.routes.v5.tools.resources.agents.get import get_agents
-from app.routes.v5.tools.resources.arg_positions.get import get_arg_positions_internal
+from app.routes.v5.tools.resources.arg_positions.get import get_arg_positions
 from app.routes.v5.tools.resources.arg_positions.search import (
     search_arg_positions_internal,
 )
@@ -281,9 +281,10 @@ async def get_tool_internal(
 
     async def fetch_arg_positions() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_arg_positions_internal(
+            selected = await get_arg_positions(
                 c,
                 selected_arg_position_ids,
+                get_redis_client(),
                 bypass_cache,
             )
             suggestions = await search_arg_positions_internal(

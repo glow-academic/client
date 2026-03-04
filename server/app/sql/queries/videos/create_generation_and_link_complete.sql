@@ -42,8 +42,8 @@ WITH params AS (
         api_create_generation_and_link_v4.run_id as run_id
 ),
 insert_upload AS (
-    INSERT INTO uploads_entry (file_path, mime_type, size, created_at, updated_at)
-    SELECT file_path, mime_type, 0, NOW(), NOW()
+    INSERT INTO uploads_entry (file_path, mime_type, size, created_at)
+    SELECT file_path, mime_type, 0, NOW()
     FROM params
     WHERE upload_id IS NULL
     RETURNING id as new_upload_id

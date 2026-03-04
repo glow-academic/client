@@ -103,7 +103,7 @@ from app.routes.v5.tools.resources.simulation_availability.get import (
     get_simulation_availability_internal,
 )
 from app.routes.v5.tools.resources.simulation_positions.get import (
-    get_simulation_positions_internal,
+    get_simulation_positions,
 )
 from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
 from app.routes.v5.tools.resources.simulations.search import search_simulations_internal
@@ -474,8 +474,8 @@ async def get_cohort_internal(
 
     async def fetch_simulation_positions() -> list[CohortSimulationPosition]:
         async with pool.acquire() as c:
-            items = await get_simulation_positions_internal(
-                c, simulation_ids, bypass_cache=bypass_cache
+            items = await get_simulation_positions(
+                c, simulation_ids, get_redis_client(), bypass_cache=bypass_cache
             )
             return [
                 CohortSimulationPosition(

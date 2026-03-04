@@ -52,8 +52,8 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH inserted_upload AS (
-        INSERT INTO uploads_entry (file_path, mime_type, size, created_at, updated_at)
-        VALUES (upload_file_path, content_type, file_size, NOW(), NOW())
+        INSERT INTO uploads_entry (file_path, mime_type, size, created_at)
+        VALUES (upload_file_path, content_type, file_size, NOW())
         RETURNING id
     ),
     actor_info AS (

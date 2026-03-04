@@ -134,7 +134,6 @@ BEGIN
             INSERT INTO groups_entry (created_at, session_id)
             VALUES (
                 NOW(),
-                NOW(),
                 (
                     SELECT s.id
                     FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id
@@ -171,7 +170,6 @@ BEGIN
         IF v_group_id IS NULL THEN
             INSERT INTO groups_entry (created_at, session_id)
             VALUES (
-                NOW(),
                 NOW(),
                 (
                     SELECT s.id

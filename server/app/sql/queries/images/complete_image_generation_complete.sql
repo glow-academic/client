@@ -32,8 +32,8 @@ LANGUAGE sql
 VOLATILE
 AS $$
 WITH upload_row AS (
-    INSERT INTO uploads_entry (file_path, mime_type, size, created_at, updated_at)
-    VALUES (file_path, mime_type, file_size, NOW(), NOW())
+    INSERT INTO uploads_entry (file_path, mime_type, size, created_at)
+    VALUES (file_path, mime_type, file_size, NOW())
     RETURNING id
 ),
 insert_image_entry AS (

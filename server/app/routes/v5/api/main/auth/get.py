@@ -63,7 +63,7 @@ from app.routes.v5.tools.resources.descriptions.search import (
 )
 from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags_internal
-from app.routes.v5.tools.resources.items.get import get_items_internal
+from app.routes.v5.tools.resources.items.get import get_items
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
@@ -375,7 +375,7 @@ async def get_auth_internal(
         if not auth_item_ids:
             return []
         async with pool.acquire() as c:
-            items = await get_items_internal(c, auth_item_ids, bypass_cache)
+            items = await get_items(c, auth_item_ids, get_redis_client(), bypass_cache)
             return [
                 AuthItemResource(
                     auth_item_id=item.id,

@@ -102,7 +102,7 @@ from app.routes.v5.tools.resources.images.search import search_images_internal
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.tools.resources.objectives.get import get_objectives
-from app.routes.v5.tools.resources.options.get import get_options_internal
+from app.routes.v5.tools.resources.options.get import get_options
 from app.routes.v5.tools.resources.options.search import search_options_internal
 from app.routes.v5.tools.resources.parameter_fields.get import (
     get_parameter_fields_internal,
@@ -115,7 +115,7 @@ from app.routes.v5.tools.resources.parameters.search import search_parameters_in
 from app.routes.v5.tools.resources.personas.get import get_personas_internal
 from app.routes.v5.tools.resources.personas.search import search_personas_internal
 from app.routes.v5.tools.resources.problem_statements.get import (
-    get_problem_statements_internal,
+    get_problem_statements,
 )
 from app.routes.v5.tools.resources.problem_statements.search import (
     search_problem_statements_internal,
@@ -488,8 +488,8 @@ async def get_scenario_internal(
 
     async def fetch_problem_statements():
         async with pool.acquire() as c:
-            selected = await get_problem_statements_internal(
-                c, selected_problem_statement_ids, bypass_cache
+            selected = await get_problem_statements(
+                c, selected_problem_statement_ids, get_redis_client(), bypass_cache
             )
             suggestions = await search_problem_statements_internal(
                 c,
@@ -701,7 +701,7 @@ async def get_scenario_internal(
 
     async def fetch_options():
         async with pool.acquire() as c:
-            selected = await get_options_internal(c, selected_option_ids, bypass_cache)
+            selected = await get_options(c, selected_option_ids, get_redis_client(), bypass_cache)
             suggestions = await search_options_internal(
                 c,
                 option_search,

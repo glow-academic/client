@@ -60,7 +60,7 @@ from app.routes.v5.tools.resources.personas.get import get_personas_internal
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.rubrics.get import get_rubrics_internal
 from app.routes.v5.tools.resources.scenario_time_limits.get import (
-    get_scenario_time_limits_internal,
+    get_scenario_time_limits,
 )
 from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
 from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
@@ -608,8 +608,8 @@ async def get_practice_internal(
         if not time_limit_ids_list:
             return []
         async with pool.acquire() as c:
-            return await get_scenario_time_limits_internal(
-                c, time_limit_ids_list, bypass_cache=bypass_cache
+            return await get_scenario_time_limits(
+                c, time_limit_ids_list, get_redis_client(), bypass_cache=bypass_cache
             )
 
     (

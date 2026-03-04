@@ -135,7 +135,6 @@ BEGIN
             INSERT INTO groups_entry (created_at, session_id)
             VALUES (
                 NOW(),
-                NOW(),
                 (
                     SELECT id
                     FROM sessions_entry
@@ -174,7 +173,6 @@ BEGIN
         IF v_group_id IS NULL THEN
             INSERT INTO groups_entry (created_at, session_id)
             VALUES (
-                NOW(),
                 NOW(),
                 (
                     SELECT id

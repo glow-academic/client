@@ -76,7 +76,7 @@ from app.routes.v5.tools.entries.setting_drafts.get import (
 from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.auth_item_keys.get import get_auth_item_keys_internal
+from app.routes.v5.tools.resources.auth_item_keys.get import get_auth_item_keys
 from app.routes.v5.tools.resources.auth_item_keys.search import (
     search_auth_item_keys_internal,
 )
@@ -413,8 +413,8 @@ async def get_setting_internal(
 
     async def fetch_auth_item_keys():
         async with pool.acquire() as c:
-            selected = await get_auth_item_keys_internal(
-                c, selected_auth_item_key_ids, bypass_cache
+            selected = await get_auth_item_keys(
+                c, selected_auth_item_key_ids, get_redis_client(), bypass_cache
             )
             suggestions = await search_auth_item_keys_internal(
                 c,

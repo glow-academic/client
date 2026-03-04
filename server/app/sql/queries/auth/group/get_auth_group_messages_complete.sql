@@ -70,8 +70,8 @@ AS $$
     WITH group_info AS (
         SELECT
             g.group_id,
-            g.group_name,
-            g.group_created_at,
+            g.name AS group_name,
+            g.created_at AS group_created_at,
             g.session_id
         FROM groups_mv g
         WHERE g.group_id = group_id_param

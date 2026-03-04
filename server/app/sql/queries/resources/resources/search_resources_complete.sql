@@ -24,7 +24,6 @@ CREATE OR REPLACE FUNCTION api_search_resources_v4(
     offset_count int DEFAULT 0,
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
     resource text DEFAULT NULL,
-    creatable boolean DEFAULT NULL,
     -- Artifact boolean filters: when true, only return resources linked to that artifact type
     tool boolean DEFAULT false
 )
@@ -36,13 +35,13 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.id, q.resource, q.creatable, q.generated)::types.q_get_resources_v4_item
+        (q.id, q.resource, q.generated)::types.q_get_resources_v4_item
         ORDER BY q.resource
     ),
     ARRAY[]::types.q_get_resources_v4_item[]
 ) as items
 FROM (
-    SELECT r.id, r.resource::text, COALESCE(r.creatable, false) AS creatable, COALESCE(r.generated, false) AS generated
+    SELECT r.id, r.resource::text, COALESCE(r.generated, false) AS generated
     FROM resources_resource r
     WHERE r.active = true
       AND (search IS NULL OR search = '' OR LOWER(r.resource::text) LIKE '%' || LOWER(search) || '%')

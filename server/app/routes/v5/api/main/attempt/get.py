@@ -110,10 +110,10 @@ from app.routes.v5.tools.resources.documents.get import get_documents_internal
 from app.routes.v5.tools.resources.images.get import get_images_internal
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.objectives.get import get_objectives
-from app.routes.v5.tools.resources.options.get import get_options_internal
+from app.routes.v5.tools.resources.options.get import get_options
 from app.routes.v5.tools.resources.personas.get import get_personas_internal
 from app.routes.v5.tools.resources.problem_statements.get import (
-    get_problem_statements_internal,
+    get_problem_statements,
 )
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
@@ -391,8 +391,8 @@ async def get_attempt_internal(
 
                 # Fetch options
                 if option_ids:
-                    items = await get_options_internal(
-                        c, option_ids, bypass_cache=bypass_cache
+                    items = await get_options(
+                        c, option_ids, get_redis_client(), bypass_cache=bypass_cache
                     )
                     for item in items:
                         if item.option_id:
@@ -404,8 +404,8 @@ async def get_attempt_internal(
 
                 # Fetch problem statements
                 if problem_statement_ids:
-                    items = await get_problem_statements_internal(
-                        c, problem_statement_ids, bypass_cache=bypass_cache
+                    items = await get_problem_statements(
+                        c, problem_statement_ids, get_redis_client(), bypass_cache=bypass_cache
                     )
                     for item in items:
                         if item.problem_statement_id:

@@ -36,7 +36,6 @@ END $$;
 -- Create composite type for file item (upload_id denormalized on resource)
 CREATE TYPE types.q_get_uploads_v4_item AS (
     files_id uuid,
-    upload_id uuid,
     generated boolean
 );
 
@@ -52,7 +51,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (ur.id, ur.upload_id, COALESCE(ur.generated, false))::types.q_get_uploads_v4_item
+        (ur.id, COALESCE(ur.generated, false))::types.q_get_uploads_v4_item
         ORDER BY array_position(ids, ur.id)
     ),
     ARRAY[]::types.q_get_uploads_v4_item[]

@@ -51,7 +51,6 @@ END $$;
 CREATE TYPE types.q_get_resources_v4_item AS (
     id uuid,
     resource text,
-    creatable boolean,
     generated boolean
 );
 
@@ -67,7 +66,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (r.id, r.resource::text, COALESCE(r.creatable, false), COALESCE(r.generated, false))::types.q_get_resources_v4_item
+        (r.id, r.resource::text, COALESCE(r.generated, false))::types.q_get_resources_v4_item
         ORDER BY array_position(ids, r.id)
     ),
     ARRAY[]::types.q_get_resources_v4_item[]

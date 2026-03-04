@@ -65,8 +65,8 @@ messages_data AS (
     CROSS JOIN unnest(p.message_ids) AS msg_id
     JOIN messages_entry m ON m.id = msg_id
     LEFT JOIN first_content fc ON fc.message_id = m.id
-    LEFT JOIN audios_entry ar ON ar.message_id = m.id AND ar.active = true
-    LEFT JOIN audio_uploads_entry aue ON aue.audio_id = ar.id AND aue.active = true
+    LEFT JOIN message_uploads_entry mue ON mue.message_id = m.id AND mue.active = true
+    LEFT JOIN audio_uploads_entry aue ON aue.upload_id = mue.upload_id AND aue.active = true
     LEFT JOIN LATERAL (
         SELECT message_id FROM messages_completions_entry
         WHERE message_id = m.id AND active = TRUE ORDER BY created_at DESC LIMIT 1

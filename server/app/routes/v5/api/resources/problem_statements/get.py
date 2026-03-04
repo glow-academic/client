@@ -8,17 +8,13 @@ from typing import Annotated
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
+from app.infra.globals import get_db, get_redis_client
 from app.routes.v5.api.resources.problem_statements.types import (
     GetProblemStatementApiRequest,
     GetProblemStatementApiResponse,
 )
 from app.routes.v5.tools.resources.problem_statements.get import (
-    SQL_PATH,
-    get_problem_statement_internal,
-)
-from app.sql.types import (
-    load_sql_query,
+    get_problem_statements as get_problem_statements_resource,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -48,7 +44,8 @@ async def get_problem_statement(
 
     try:
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-        item = await get_problem_statement_internal(conn, request.id, bypass_cache)
+        items = await get_problem_statements_resource(conn, [request.id], get_redis_client(), bypass_cache)
+        item = items[0] if items else None
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetProblemStatementApiResponse(item=item)
     except HTTPException:
@@ -60,7 +57,7 @@ async def get_problem_statement(
             error=e,
             route_path=http_request.url.path,
             operation="get_problem_statement",
-            sql_query=load_sql_query(SQL_PATH),
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )

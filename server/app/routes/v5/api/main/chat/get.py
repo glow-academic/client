@@ -58,14 +58,14 @@ from app.routes.v5.tools.resources.documents.get import get_documents_internal
 from app.routes.v5.tools.resources.images.get import get_images_internal
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.objectives.get import get_objectives
-from app.routes.v5.tools.resources.options.get import get_options_internal
+from app.routes.v5.tools.resources.options.get import get_options
 from app.routes.v5.tools.resources.parameter_fields.get import (
     get_parameter_fields_internal,
 )
 from app.routes.v5.tools.resources.parameters.get import get_parameters_internal
 from app.routes.v5.tools.resources.personas.get import get_personas_internal
 from app.routes.v5.tools.resources.problem_statements.get import (
-    get_problem_statements_internal,
+    get_problem_statements,
 )
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
@@ -245,14 +245,14 @@ RESOURCE_CONFIG: list[tuple[str, str, str, Any, str]] = [
         get_questions_internal,
         "question_id",
     ),
-    ("options", "option_ids", "option_ids", get_options_internal, "option_id"),
+    ("options", "option_ids", "option_ids", get_options, "option_id"),
     ("videos", "video_ids", "video_ids", get_videos_internal, "video_id"),
     ("images", "image_ids", "image_ids", get_images_internal, "image_id"),
     (
         "problem_statements",
         "problem_statement_ids",
         "problem_statement_ids",
-        get_problem_statements_internal,
+        get_problem_statements,
         "problem_statement_id",
     ),
     (
