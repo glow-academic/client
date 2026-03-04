@@ -3,19 +3,16 @@
 import asyncio
 from collections.abc import Iterable
 
-from app.infra.globals import get_redis_client
+from redis.asyncio import Redis
+
 from app.utils.cache.tag_set_name import tag_set_name
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 
 
-async def invalidate_tags(tags: Iterable[str]) -> None:
+async def invalidate_tags(tags: Iterable[str], *, redis: Redis) -> None:
     """Invalidate all cache entries for given tags."""
-    redis_client = get_redis_client()
-    if not redis_client:
-        return
-
     try:
         # Convert tags to list to allow multiple iterations
         tags_list = list(tags)
@@ -25,12 +22,12 @@ async def invalidate_tags(tags: Iterable[str]) -> None:
         # Fetch all tag keys in parallel
         set_names = [tag_set_name(tag) for tag in tags_list]
         keys_results = await asyncio.gather(
-            *[redis_client.smembers(set_name) for set_name in set_names],  # type: ignore[misc]
+            *[redis.smembers(set_name) for set_name in set_names],  # type: ignore[misc]
             return_exceptions=True,
         )
 
         # Build pipeline with all delete operations
-        pipe = redis_client.pipeline()
+        pipe = redis.pipeline()
         for tag, set_name, keys_result in zip(tags_list, set_names, keys_results):
             # Handle exceptions from smembers
             if isinstance(keys_result, Exception):

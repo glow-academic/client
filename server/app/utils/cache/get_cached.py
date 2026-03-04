@@ -3,21 +3,17 @@
 import json
 from typing import Any
 
-from app.infra.globals import get_redis_client
+from redis.asyncio import Redis
+
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 
 
-async def get_cached(key: str) -> dict[str, Any] | None:
+async def get_cached(key: str, *, redis: Redis) -> dict[str, Any] | None:
     """Get cached HTTP response from Redis."""
-    redis_client = get_redis_client()
-    if not redis_client:
-        logger.info("Redis client not available, skipping cache read")
-        return None
-
     try:
-        raw = await redis_client.get(key)
+        raw = await redis.get(key)
         if raw:
             if isinstance(raw, bytes):
                 raw = raw.decode("utf-8")

@@ -5,14 +5,12 @@ from typing import Annotated
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
+from app.infra.globals import get_db, get_redis_client
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.sql.types import (
     GetArgsOutputsApiRequest,
     GetArgsOutputsApiResponse,
 )
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
@@ -30,10 +28,9 @@ async def get_args_outputs_endpoint(
     """Get args_outputs resources by IDs."""
     tags = ["resources", "args_outputs"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-    cache = None if bypass_cache else (get_cached, set_cached)
 
     try:
-        items = await get_args_outputs(conn, request.ids, cache)
+        items = await get_args_outputs(conn, request.ids, get_redis_client(), bypass_cache=bypass_cache)
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetArgsOutputsApiResponse(items=items)
     except HTTPException:

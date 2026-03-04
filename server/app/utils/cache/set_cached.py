@@ -4,7 +4,8 @@ import json
 from collections.abc import Iterable
 from typing import Any
 
-from app.infra.globals import get_redis_client
+from redis.asyncio import Redis
+
 from app.utils.cache.tag_set_name import tag_set_name
 from app.utils.logging.db_logger import get_logger
 
@@ -16,15 +17,12 @@ async def set_cached(
     data: dict[str, Any],
     ttl: int,
     tags: Iterable[str],
+    *,
+    redis: Redis,
 ) -> None:
     """Store HTTP response in Redis with tag tracking."""
-    redis_client = get_redis_client()
-    if not redis_client:
-        logger.info("Redis client not available, skipping cache write")
-        return
-
     try:
-        pipe = redis_client.pipeline()
+        pipe = redis.pipeline()
         # Store response data
         pipe.setex(key, ttl, json.dumps(data))
         # Track which keys belong to each tag

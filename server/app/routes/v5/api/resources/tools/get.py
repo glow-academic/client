@@ -5,14 +5,12 @@ from typing import Annotated
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
+from app.infra.globals import get_db, get_redis_client
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.sql.types import (
     GetToolsApiRequest,
     GetToolsApiResponse,
 )
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
@@ -30,10 +28,9 @@ async def get_tools_endpoint(
     """Get tools resources by IDs."""
     tags = ["resources", "tools"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-    cache = None if bypass_cache else (get_cached, set_cached)
 
     try:
-        items = await get_tools(conn, request.ids, cache)
+        items = await get_tools(conn, request.ids, get_redis_client(), bypass_cache=bypass_cache)
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetToolsApiResponse(items=items)
     except HTTPException:
