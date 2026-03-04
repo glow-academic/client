@@ -26,13 +26,15 @@ BEGIN
     SELECT jsonb_agg(
         jsonb_build_object(
             'problem_id', m.problem_id,
+            'profile_id', m.profile_id,
+            'session_id', m.session_id,
             'type', m.type,
             'message', m.message,
             'resolved', m.resolved,
-            'session_id', m.session_id,
-            'problem_created_at', m.problem_created_at,
-            'problem_updated_at', m.problem_updated_at,
-            'profile_id', m.profile_id
+            'created_at', m.created_at,
+            'active', m.active,
+            'mcp', m.mcp,
+            'generated', m.generated
         )
     ) AS items
     FROM problems_mv m

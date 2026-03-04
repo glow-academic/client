@@ -5,12 +5,11 @@ from typing import Annotated
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
-from app.routes.v5.tools.resources.slugs.get import SQL_PATH, get_slugs_internal
+from app.infra.globals import get_db, get_redis_client
+from app.routes.v5.tools.resources.slugs.get import get_slugs as get_slugs_resource
 from app.sql.types import (
     GetSlugsApiRequest,
     GetSlugsApiResponse,
-    load_sql_query,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -32,7 +31,7 @@ async def get_slugs(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_slugs_internal(conn, request.ids, bypass_cache)
+        items = await get_slugs_resource(conn, request.ids, get_redis_client(), bypass_cache)
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetSlugsApiResponse(items=items)
     except HTTPException:
@@ -44,7 +43,7 @@ async def get_slugs(
             error=e,
             route_path=http_request.url.path,
             operation="get_slugs",
-            sql_query=load_sql_query(SQL_PATH),
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )

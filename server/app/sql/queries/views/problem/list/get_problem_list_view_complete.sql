@@ -53,13 +53,15 @@ END $$;
 
 CREATE TYPE types.q_get_problem_list_view_v4_item AS (
     problem_id uuid,
+    profile_id uuid,
+    session_id uuid,
     type text,
     message text,
     resolved boolean,
-    session_id uuid,
-    problem_created_at timestamptz,
-    problem_updated_at timestamptz,
-    profile_id uuid
+    created_at timestamptz,
+    active boolean,
+    mcp boolean,
+    generated boolean
 );
 
 -- ============================================================================
@@ -89,8 +91,8 @@ AS $$
         WHERE
             (profile_id_filter IS NULL OR mv.profile_id = profile_id_filter)
             AND (resolved_filter IS NULL OR mv.resolved = resolved_filter)
-            AND mv.problem_created_at >= date_from
-            AND mv.problem_created_at <= date_to
+            AND mv.created_at >= date_from
+            AND mv.created_at <= date_to
     ),
     counted AS (
         SELECT COUNT(*)::int AS total FROM filtered
@@ -99,8 +101,8 @@ AS $$
         SELECT *
         FROM filtered
         ORDER BY
-            CASE WHEN sort_order_field = 'asc' THEN problem_created_at END ASC,
-            CASE WHEN sort_order_field != 'asc' THEN problem_created_at END DESC
+            CASE WHEN sort_order_field = 'asc' THEN created_at END ASC,
+            CASE WHEN sort_order_field != 'asc' THEN created_at END DESC
         LIMIT page_limit_val
         OFFSET page_offset_val
     ),
@@ -109,17 +111,19 @@ AS $$
             ARRAY_AGG(
                 (
                     problem_id,
+                    profile_id,
+                    session_id,
                     type,
                     message,
                     resolved,
-                    session_id,
-                    problem_created_at,
-                    problem_updated_at,
-                    profile_id
+                    created_at,
+                    active,
+                    mcp,
+                    generated
                 )::types.q_get_problem_list_view_v4_item
                 ORDER BY
-                    CASE WHEN sort_order_field = 'asc' THEN problem_created_at END ASC,
-                    CASE WHEN sort_order_field != 'asc' THEN problem_created_at END DESC
+                    CASE WHEN sort_order_field = 'asc' THEN created_at END ASC,
+                    CASE WHEN sort_order_field != 'asc' THEN created_at END DESC
             ),
             ARRAY[]::types.q_get_problem_list_view_v4_item[]
         ) AS items

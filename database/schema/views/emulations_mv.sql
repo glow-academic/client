@@ -6,12 +6,17 @@
 --
 
 CREATE MATERIALIZED VIEW public.emulations_mv AS
- SELECT id,
-    grant_id,
-    created_at,
-    updated_at,
-    session_id
-   FROM public.emulations_entry
+ SELECT e.id AS emulation_id,
+    pec.profiles_id AS profile_id,
+    e.grant_id,
+    e.session_id,
+    e.created_at,
+    e.active,
+    e.mcp,
+    e.generated
+   FROM (public.emulations_entry e
+     LEFT JOIN public.profiles_emulations_connection pec ON (((pec.emulation_id = e.id) AND (pec.active = true))))
+  WHERE (e.active = true)
   WITH NO DATA;
 
 

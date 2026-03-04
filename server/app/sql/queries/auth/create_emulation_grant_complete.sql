@@ -160,11 +160,13 @@ link_grant_actor AS (
 ),
 -- Create emulation entry linked to grant
 emulation_insert AS (
-    INSERT INTO emulations_entry (grant_id, created_at, updated_at)
+    INSERT INTO emulations_entry (grant_id, session_id)
     SELECT
         gi.id,
-        NOW(),
-        NOW()
+        (SELECT s.id FROM sessions_entry s
+         JOIN profiles_sessions_connection psc ON psc.session_id = s.id
+         WHERE psc.profiles_id = (SELECT target_profile_id FROM params) AND s.active = true
+         ORDER BY s.created_at DESC LIMIT 1)
     FROM grant_insert gi
     RETURNING id
 ),

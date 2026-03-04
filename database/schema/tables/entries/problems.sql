@@ -13,7 +13,6 @@ CREATE TABLE public.problems_entry (
     generated boolean DEFAULT false CONSTRAINT problems_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT problems_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT problems_active_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT problems_updated_at_not_null NOT NULL,
     session_id uuid NOT NULL,
     call_id uuid
 );

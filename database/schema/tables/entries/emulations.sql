@@ -9,8 +9,10 @@ CREATE TABLE public.emulations_entry (
     id uuid DEFAULT uuidv7() NOT NULL,
     grant_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    session_id uuid NOT NULL
+    session_id uuid NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 

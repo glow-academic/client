@@ -7,13 +7,15 @@
 
 CREATE MATERIALIZED VIEW public.problems_mv AS
  SELECT pe.id AS problem_id,
+    ppc.profiles_id AS profile_id,
+    pe.session_id,
     (pe.type)::text AS type,
     pe.message,
     COALESCE(re.resolved, false) AS resolved,
-    pe.session_id,
-    pe.created_at AS problem_created_at,
-    pe.updated_at AS problem_updated_at,
-    ppc.profiles_id AS profile_id
+    pe.created_at,
+    pe.active,
+    pe.mcp,
+    pe.generated
    FROM ((public.problems_entry pe
      LEFT JOIN public.profiles_problems_connection ppc ON ((ppc.problem_id = pe.id)))
      LEFT JOIN LATERAL ( SELECT resolves_entry.resolved
@@ -21,6 +23,7 @@ CREATE MATERIALIZED VIEW public.problems_mv AS
           WHERE ((resolves_entry.problem_id = pe.id) AND (resolves_entry.active = true))
           ORDER BY resolves_entry.created_at DESC
          LIMIT 1) re ON (true))
+  WHERE (pe.active = true)
   WITH NO DATA;
 
 

@@ -32,19 +32,21 @@ BEGIN
     FROM (
         SELECT jsonb_build_object(
             'problem_id', m.problem_id,
+            'profile_id', m.profile_id,
+            'session_id', m.session_id,
             'type', m.type,
             'message', m.message,
             'resolved', m.resolved,
-            'session_id', m.session_id,
-            'problem_created_at', m.problem_created_at,
-            'problem_updated_at', m.problem_updated_at,
-            'profile_id', m.profile_id
+            'created_at', m.created_at,
+            'active', m.active,
+            'mcp', m.mcp,
+            'generated', m.generated
         ) AS row_data
         FROM problems_mv m
         WHERE true
           AND (session_id IS NULL OR m.session_id = session_id)
           AND (profile_id IS NULL OR m.profile_id = profile_id)
-        ORDER BY m.problem_created_at DESC
+        ORDER BY m.created_at DESC
         LIMIT limit_count
         OFFSET offset_count
     ) sub;

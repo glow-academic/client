@@ -16,7 +16,7 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool, get_redis_client
 from app.routes.auth.profile import get_auth_profile_internal
 from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.setting.permissions import (
@@ -82,15 +82,15 @@ from app.routes.v5.tools.resources.auth_item_keys.search import (
 )
 from app.routes.v5.tools.resources.auths.get import get_auths
 from app.routes.v5.tools.resources.auths.search import search_auths_internal
-from app.routes.v5.tools.resources.colors.get import get_colors_internal
+from app.routes.v5.tools.resources.colors.get import get_colors
 from app.routes.v5.tools.resources.colors.search import search_colors_internal
 from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.departments.search import search_departments_internal
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions_internal
+from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.descriptions.search import (
     search_descriptions_internal,
 )
-from app.routes.v5.tools.resources.flags.get import get_flags_internal
+from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags_internal
 from app.routes.v5.tools.resources.models.get import get_models_internal
 from app.routes.v5.tools.resources.names.get import get_names
@@ -290,7 +290,7 @@ async def get_setting_internal(
 
     async def fetch_descriptions():
         async with pool.acquire() as c:
-            selected = await get_descriptions_internal(c, description_ids, cache)
+            selected = await get_descriptions(c, description_ids, get_redis_client(), cache)
             suggestions = await search_descriptions_internal(
                 c,
                 None,
@@ -306,7 +306,7 @@ async def get_setting_internal(
 
     async def fetch_colors():
         async with pool.acquire() as c:
-            selected = await get_colors_internal(c, selected_color_ids, bypass_cache)
+            selected = await get_colors(c, selected_color_ids, get_redis_client(), bypass_cache)
             suggestions = await search_colors_internal(
                 c,
                 color_search,
@@ -322,7 +322,7 @@ async def get_setting_internal(
 
     async def fetch_flags():
         async with pool.acquire() as c:
-            selected = await get_flags_internal(c, flag_ids, bypass_cache)
+            selected = await get_flags(c, flag_ids, get_redis_client(), bypass_cache)
             all_flags = await search_flags_internal(
                 c,
                 None,
