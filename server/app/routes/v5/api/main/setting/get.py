@@ -84,7 +84,7 @@ from app.routes.v5.tools.resources.auths.get import get_auths
 from app.routes.v5.tools.resources.auths.search import search_auths_internal
 from app.routes.v5.tools.resources.colors.get import get_colors_internal
 from app.routes.v5.tools.resources.colors.search import search_colors_internal
-from app.routes.v5.tools.resources.departments.get import get_departments_internal
+from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.departments.search import search_departments_internal
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions_internal
 from app.routes.v5.tools.resources.descriptions.search import (
@@ -97,11 +97,11 @@ from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
 from app.routes.v5.tools.resources.profiles.search import search_profiles_internal
-from app.routes.v5.tools.resources.provider_keys.get import get_provider_keys_internal
+from app.routes.v5.tools.resources.provider_keys.get import get_provider_keys
 from app.routes.v5.tools.resources.provider_keys.search import (
     search_provider_keys_internal,
 )
-from app.routes.v5.tools.resources.providers.get import get_providers_internal
+from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.roles.get import get_roles_internal
 from app.routes.v5.tools.resources.roles.search import search_roles_internal
 from app.routes.v5.tools.resources.tools.get import get_tools
@@ -337,9 +337,7 @@ async def get_setting_internal(
 
     async def fetch_departments():
         async with pool.acquire() as c:
-            selected = await get_departments_internal(
-                c, selected_department_ids, bypass_cache
-            )
+            selected = await get_departments(                c, selected_department_ids, get_redis_client(), bypass_cache=bypass_cache            )
             suggestions = await search_departments_internal(
                 c,
                 search=None,
@@ -387,8 +385,8 @@ async def get_setting_internal(
 
     async def fetch_provider_keys():
         async with pool.acquire() as c:
-            selected = await get_provider_keys_internal(
-                c, selected_provider_key_ids, bypass_cache
+            selected = await get_provider_keys(
+                c, selected_provider_key_ids, get_redis_client(), bypass_cache=bypass_cache
             )
             suggestions = await search_provider_keys_internal(
                 c,
@@ -477,9 +475,7 @@ async def get_setting_internal(
     config_providers_result: list[Any] = []
     if config_provider_ids:
         async with pool.acquire() as c:
-            config_providers_result = await get_providers_internal(
-                c, config_provider_ids, bypass_cache
-            )
+            config_providers_result = await get_providers(                c, config_provider_ids, get_redis_client(), bypass_cache=bypass_cache            )
 
     # Dedupe selected + suggestions
     names = _dedupe_by_id(names_selected + names_suggestions, "id")

@@ -1,59 +1,68 @@
-"""keys/get internal — reusable data-access layer."""
+"""Keys Resource GET — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    GetKeysSqlParams,
-    GetKeysSqlRow,
-    QGetKeysV4Item,
-)
+from app.routes.v5.tools.resources.keys.types import GetKeyResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/resources/keys/get_keys_complete.sql"
 
 
-async def get_keys_internal(
+async def get_keys(
     conn: asyncpg.Connection,
     ids: list[UUID],
+    redis: Redis,
     bypass_cache: bool = False,
-) -> list[QGetKeysV4Item]:
-    """Internal function to fetch keys by IDs."""
+) -> list[GetKeyResponse]:
+    """Fetch keys_resource entries by IDs."""
     if not ids:
         return []
 
     tags = ["resources", "keys"]
-    cache_key_val = cache_key(
-        "/api/v5/resources/keys/get",
-        {"ids": [str(id) for id in ids]},
-    )
+    key = cache_key("/api/v5/resources/keys/get", {"ids": [str(id) for id in ids]})
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetKeysV4Item.model_validate(item) for item in cached.get("items", [])
+                GetKeyResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
-    params = GetKeysSqlParams(ids=ids)
-    result = cast(
-        GetKeysSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
+    rows = await conn.fetch(
+        """
+        SELECT id, key, name, description,
+               created_at, active, mcp, generated
+        FROM keys_resource
+        WHERE id = ANY($1)
+        ORDER BY array_position($1, id)
+    """,
+        ids,
     )
 
-    items: list[QGetKeysV4Item] = result.items if result and result.items else []
+    items = [
+        GetKeyResponse(
+            id=r["id"],
+            key=r["key"],
+            name=r["name"],
+            description=r["description"],
+            created_at=r["created_at"],
+            active=r["active"],
+            mcp=r["mcp"],
+            generated=r["generated"],
+        )
+        for r in rows
+    ]
 
-    await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
+    if not bypass_cache:
+        await set_cached(
+            key,
+            {"items": [i.model_dump(mode="json") for i in items]},
+            60,
+            tags,
+            redis=redis,
+        )
     return items

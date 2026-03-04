@@ -36,7 +36,7 @@ from app.routes.v5.api.main.scenario.types import (
 )
 from app.routes.v5.api.types import ListFilterSection
 from app.routes.v5.tools.resources.cohorts.get import get_cohorts_internal
-from app.routes.v5.tools.resources.departments.get import get_departments_internal
+from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.fields.get import get_fields_internal
 from app.routes.v5.tools.resources.objectives.get import get_objectives_internal
 from app.routes.v5.tools.resources.personas.get import get_personas_internal
@@ -300,9 +300,7 @@ async def get_scenario_list(
                 if not department_id_set:
                     return []
                 async with pool.acquire() as c:
-                    return await get_departments_internal(
-                        c, list(department_id_set), bypass_cache
-                    )
+                    return await get_departments(                        c, list(department_id_set), get_redis_client(), bypass_cache=bypass_cache                    )
 
             async def fetch_objectives() -> list:
                 if not objective_id_set:

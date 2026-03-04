@@ -39,13 +39,13 @@ from app.routes.v5.tools.entries.runs.search import get_run_list_entries_interna
 from app.routes.v5.tools.entries.suite.get import get_suite_view_internal
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.departments.get import get_departments_internal
+from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.instructions.get import get_instructions_internal
-from app.routes.v5.tools.resources.keys.get import get_keys_internal
+from app.routes.v5.tools.resources.keys.get import get_keys
 from app.routes.v5.tools.resources.models.get import get_models_internal
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
 from app.routes.v5.tools.resources.prompts.get import get_prompts_internal
-from app.routes.v5.tools.resources.providers.get import get_providers_internal
+from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.reasoning_levels.get import (
     get_reasoning_levels_internal,
 )
@@ -119,7 +119,7 @@ def _filter_by_ids(items: list[T], ids: list[UUID], id_attr: str) -> list[T]:
 
 # Resource key -> (view_data attr for IDs, get_*_internal func, id_attr for filtering)
 RESOURCE_CONFIG: list[tuple[str, str, Any, str]] = [
-    ("departments", "department_ids", get_departments_internal, "department_id"),
+    ("departments", "department_ids", get_departments, "department_id"),
     ("models", "model_ids", get_models_internal, "id"),
     ("prompts", "prompt_ids", get_prompts_internal, "id"),
     ("instructions", "instruction_ids", get_instructions_internal, "id"),
@@ -137,7 +137,7 @@ RESOURCE_CONFIG: list[tuple[str, str, Any, str]] = [
         "id",
     ),
     ("tools", "tool_ids", get_tools, "id"),
-    ("keys", "key_ids", get_keys_internal, "id"),
+    ("keys", "key_ids", get_keys, "id"),
 ]
 
 # =============================================================================
@@ -209,7 +209,7 @@ async def get_invocation_internal(
         if not all_ids:
             return (resource_key, [])
         async with pool.acquire() as conn:
-            return (resource_key, await fetch_fn(conn, all_ids, bypass_cache))
+            return (resource_key, await fetch_fn(conn, all_ids, get_redis_client(), bypass_cache=bypass_cache))
 
     fetch_tasks = [_fetch_resource(rk, va, fn) for rk, va, fn, _ia in RESOURCE_CONFIG]
     fetch_results = await asyncio.gather(*fetch_tasks)
@@ -254,9 +254,7 @@ async def get_invocation_internal(
     config_providers: list[Any] = []
     if config_provider_ids:
         async with pool.acquire() as conn:
-            config_providers = await get_providers_internal(
-                conn, config_provider_ids, bypass_cache
-            )
+            config_providers = await get_providers(                conn, config_provider_ids, get_redis_client(), bypass_cache=bypass_cache            )
 
     return SuiteInternalData(
         suite_entry_id=view_data.suite_entry_id,

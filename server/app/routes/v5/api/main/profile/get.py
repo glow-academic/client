@@ -61,7 +61,7 @@ from app.routes.v5.tools.entries.runs.search import get_run_list_entries_interna
 from app.routes.v5.tools.resources.agents.get import get_agents_internal
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.departments.get import get_departments_internal
+from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.departments.search import search_departments_internal
 from app.routes.v5.tools.resources.emails.get import get_emails_internal
 from app.routes.v5.tools.resources.emails.search import search_emails_internal
@@ -71,7 +71,7 @@ from app.routes.v5.tools.resources.models.get import get_models_internal
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
-from app.routes.v5.tools.resources.providers.get import get_providers_internal
+from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.request_limits.get import get_request_limits_internal
 from app.routes.v5.tools.resources.request_limits.search import (
     search_request_limits_internal,
@@ -420,7 +420,7 @@ async def get_profile_internal(
 
     async def fetch_departments():
         async with pool.acquire() as c:
-            selected = await get_departments_internal(c, department_ids, bypass_cache)
+            selected = await get_departments(c, department_ids, get_redis_client(), bypass_cache=bypass_cache)
             suggestions = await search_departments_internal(
                 c,
                 search=None,
@@ -457,7 +457,7 @@ async def get_profile_internal(
                 }
             )
             providers = (
-                await get_providers_internal(c, provider_ids, bypass_cache)
+                await get_providers(c, provider_ids, get_redis_client(), bypass_cache=bypass_cache)
                 if provider_ids
                 else []
             )

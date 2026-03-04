@@ -14,7 +14,7 @@ CREATE TABLE public.attempt_analysis_entry (
     generated boolean DEFAULT false CONSTRAINT simulation_analyses_entry_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT simulation_analyses_entry_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT simulation_analyses_entry_active_not_null NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL
 );
 
 
@@ -31,7 +31,7 @@ CREATE TABLE public.attempt_archive_entry (
     active boolean DEFAULT true CONSTRAINT simulation_archives_entry_active_not_null NOT NULL,
     attempt_id uuid CONSTRAINT simulation_archives_entry_attempt_id_not_null NOT NULL,
     archived boolean CONSTRAINT simulation_archives_entry_archived_not_null NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL
 );
 
 
@@ -47,7 +47,7 @@ CREATE TABLE public.attempt_chat_bridge_entry (
     active boolean DEFAULT true CONSTRAINT attempt_chat_entry_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT attempt_chat_entry_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT attempt_chat_entry_mcp_not_null NOT NULL,
-    session_id uuid
+    session_id uuid NOT NULL
 );
 
 
@@ -88,7 +88,7 @@ CREATE TABLE public.attempt_chat_entry (
     images_enabled boolean DEFAULT false NOT NULL,
     questions_enabled boolean DEFAULT false NOT NULL,
     assistant_persona_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    call_id uuid
+    call_id uuid NOT NULL
 );
 
 
@@ -105,7 +105,7 @@ CREATE TABLE public.attempt_completion_entry (
     active boolean DEFAULT true CONSTRAINT simulation_completions_entry_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT simulation_completions_entry_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT simulation_completions_entry_mcp_not_null NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL
 );
 
 
@@ -124,7 +124,7 @@ CREATE TABLE public.attempt_entry (
     active boolean DEFAULT true NOT NULL,
     num_chats integer DEFAULT 1 NOT NULL,
     user_persona_id uuid,
-    call_id uuid,
+    call_id uuid NOT NULL,
     name text,
     description text,
     practice boolean DEFAULT false NOT NULL
@@ -148,7 +148,7 @@ CREATE TABLE public.attempt_grade_entry (
     generated boolean DEFAULT false CONSTRAINT simulation_grades_entry_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT simulation_grades_entry_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT simulation_grades_entry_active_not_null NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL
 );
 
 
@@ -164,7 +164,7 @@ CREATE TABLE public.attempt_home_entry (
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
-    session_id uuid
+    session_id uuid NOT NULL
 );
 
 
@@ -180,7 +180,7 @@ CREATE TABLE public.attempt_practice_entry (
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
-    session_id uuid
+    session_id uuid NOT NULL
 );
 
 
@@ -195,7 +195,7 @@ CREATE TABLE public.attempt_content_entry (
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_contents_entry_updated_at_not_null1 NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT simulation_contents_entry_id_not_null NOT NULL,
     content text CONSTRAINT simulation_contents_entry_content_not_null NOT NULL,
-    call_id uuid,
+    call_id uuid NOT NULL,
     generated boolean DEFAULT false CONSTRAINT simulation_contents_entry_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT simulation_contents_entry_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT simulation_contents_entry_active_not_null NOT NULL,
@@ -214,7 +214,10 @@ CREATE TABLE public.attempt_message_entry (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     message_id uuid,
-    call_id uuid
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    active boolean DEFAULT true NOT NULL
 );
 
 
@@ -233,7 +236,7 @@ CREATE TABLE public.attempt_feedback_entry (
     generated boolean DEFAULT false CONSTRAINT simulation_feedbacks_entry_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT simulation_feedbacks_entry_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT simulation_feedbacks_entry_active_not_null NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL
 );
 
 
@@ -252,7 +255,7 @@ CREATE TABLE public.attempt_highlight_entry (
     generated boolean DEFAULT false CONSTRAINT simulation_highlights_entry_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT simulation_highlights_entry_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT simulation_highlights_entry_active_not_null NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL
 );
 
 
@@ -272,7 +275,7 @@ CREATE TABLE public.attempt_strength_entry (
     generated boolean DEFAULT false CONSTRAINT simulation_strengths_entry_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT simulation_strengths_entry_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT simulation_strengths_entry_active_not_null NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL
 );
 
 
@@ -290,7 +293,7 @@ CREATE TABLE public.attempt_hint_entry (
     generated boolean DEFAULT false CONSTRAINT simulation_hints_entry_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT simulation_hints_entry_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT simulation_hints_entry_active_not_null NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL
 );
 
 
@@ -310,7 +313,7 @@ CREATE TABLE public.attempt_improvement_entry (
     generated boolean DEFAULT false CONSTRAINT simulation_improvements_entry_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT simulation_improvements_entry_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT simulation_improvements_entry_active_not_null NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL
 );
 
 
@@ -327,7 +330,7 @@ CREATE TABLE public.attempt_message_tree_entry (
     active boolean DEFAULT true CONSTRAINT simulation_message_tree_entry_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT simulation_message_tree_entry_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT simulation_message_tree_entry_mcp_not_null NOT NULL,
-    session_id uuid
+    session_id uuid NOT NULL
 );
 
 
@@ -347,7 +350,7 @@ CREATE TABLE public.attempt_replacement_entry (
     generated boolean DEFAULT false CONSTRAINT simulation_replacements_entry_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT simulation_replacements_entry_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT simulation_replacements_entry_active_not_null NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL
 );
 
 

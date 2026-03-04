@@ -70,7 +70,7 @@ from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
 from app.routes.v5.tools.resources.protocols.get import get_protocols_internal
 from app.routes.v5.tools.resources.protocols.search import search_protocols_internal
-from app.routes.v5.tools.resources.providers.get import get_providers_internal
+from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.slugs.get import get_slugs_internal
 from app.routes.v5.tools.resources.slugs.search import search_slugs_internal
 from app.routes.v5.tools.resources.tools.get import get_tools
@@ -496,9 +496,7 @@ async def get_auth_internal(
         )
         if provider_ids:
             async with pool.acquire() as c:
-                config_providers = await get_providers_internal(
-                    c, provider_ids, bypass_cache=bypass_cache
-                )
+                config_providers = await get_providers(                    c, provider_ids, get_redis_client(), bypass_cache=bypass_cache                )
     tool_ids: list[UUID] = []
     for agent in config_agents:
         raw = getattr(agent, "tool_ids", None) or []

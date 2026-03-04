@@ -53,7 +53,7 @@ from app.routes.v5.tools.entries.training_drafts.get import (
 )
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.departments.get import get_departments_internal
+from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.documents.get import get_documents_internal
 from app.routes.v5.tools.resources.images.get import get_images_internal
 from app.routes.v5.tools.resources.models.get import get_models_internal
@@ -68,7 +68,7 @@ from app.routes.v5.tools.resources.problem_statements.get import (
     get_problem_statements_internal,
 )
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
-from app.routes.v5.tools.resources.providers.get import get_providers_internal
+from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.questions.get import get_questions_internal
 from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
 from app.routes.v5.tools.resources.videos.get import get_videos_internal
@@ -212,7 +212,7 @@ RESOURCE_CONFIG: list[tuple[str, str, str, Any, str]] = [
         "departments",
         "department_ids",
         "department_ids",
-        get_departments_internal,
+        get_departments,
         "department_id",
     ),
     ("personas", "persona_ids", "persona_ids", get_personas_internal, "persona_id"),
@@ -410,9 +410,7 @@ async def get_chat_internal(
     config_providers: list[Any] = []
     if config_provider_resource_ids:
         async with pool.acquire() as conn:
-            config_providers = await get_providers_internal(
-                conn, config_provider_resource_ids, bypass_cache
-            )
+            config_providers = await get_providers(                conn, config_provider_resource_ids, get_redis_client(), bypass_cache=bypass_cache            )
 
     # 9. Simulation/scenario context (from chat websocket)
     selected_department_ids = selected_ids.get("departments", [])

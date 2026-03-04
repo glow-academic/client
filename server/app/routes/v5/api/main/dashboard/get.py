@@ -1032,7 +1032,7 @@ async def get_dashboard_websocket(
     from app.routes.v5.api.permissions import resolve_agents_for_artifact
     from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
     from app.routes.v5.tools.resources.models.get import get_models_internal
-    from app.routes.v5.tools.resources.providers.get import get_providers_internal
+    from app.routes.v5.tools.resources.providers.get import get_providers
 
     # 1. Fetch settings-based agent config
     async with pool.acquire() as conn:
@@ -1062,9 +1062,7 @@ async def get_dashboard_websocket(
     config_providers: list[Any] = []
     if config_provider_ids:
         async with pool.acquire() as conn:
-            config_providers = await get_providers_internal(
-                conn, config_provider_ids, bypass_cache
-            )
+            config_providers = await get_providers(                conn, config_provider_ids, get_redis_client(), bypass_cache=bypass_cache            )
 
     # 3. Fetch config profile + runs today in parallel
     async def _fetch_config_profile() -> list[Any]:

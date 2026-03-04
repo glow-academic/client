@@ -38,7 +38,7 @@ from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.cohorts.get import get_cohorts_internal
 from app.routes.v5.tools.resources.models.get import get_models_internal
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
-from app.routes.v5.tools.resources.providers.get import get_providers_internal
+from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
 from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
 from app.sql.types import (
@@ -112,9 +112,7 @@ async def get_reports_internal(
     config_providers: list[Any] = []
     if config_provider_resource_ids:
         async with pool.acquire() as conn:
-            config_providers = await get_providers_internal(
-                conn, config_provider_resource_ids, bypass_cache
-            )
+            config_providers = await get_providers(                conn, config_provider_resource_ids, get_redis_client(), bypass_cache=bypass_cache            )
 
     # 2. Fetch config profile and today's runs in parallel
     async def fetch_config_profile() -> list[QGetProfilesV4Item]:

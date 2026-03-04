@@ -27,7 +27,7 @@ from app.routes.v5.api.main.cohort.types import (
     ListCohortApiSimulation,
 )
 from app.routes.v5.api.types import ListFilterSection
-from app.routes.v5.tools.resources.departments.get import get_departments_internal
+from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
 from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
 from app.sql.types import (
@@ -256,9 +256,7 @@ async def get_cohort_list(
                 if not department_id_set:
                     return []
                 async with pool.acquire() as c:
-                    return await get_departments_internal(
-                        c, list(department_id_set), bypass_cache
-                    )
+                    return await get_departments(                        c, list(department_id_set), get_redis_client(), bypass_cache=bypass_cache                    )
 
             profiles_data, simulations_data, departments_data = await asyncio.gather(
                 fetch_profiles(), fetch_simulations(), fetch_departments()

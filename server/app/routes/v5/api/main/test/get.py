@@ -40,7 +40,7 @@ from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.evals.get import get_evals_internal
 from app.routes.v5.tools.resources.models.get import get_models_internal
 from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.providers.get import get_providers_internal
+from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.rubrics.get import get_rubrics_batch_internal
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.utils.cache.cache_key import cache_key
@@ -137,9 +137,7 @@ async def get_test_internal(
                 if not p_provider_id:
                     return None
                 async with pool.acquire() as c:
-                    return await get_providers_internal(
-                        c, [p_provider_id], bypass_cache=bypass_cache
-                    )
+                    return await get_providers(                        c, [p_provider_id], get_redis_client(), bypass_cache=bypass_cache                    )
 
             return await asyncio.gather(
                 fetch_agents(), fetch_models(), fetch_providers()

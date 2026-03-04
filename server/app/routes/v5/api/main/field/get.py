@@ -53,7 +53,7 @@ from app.routes.v5.tools.entries.runs.search import get_run_list_entries_interna
 from app.routes.v5.tools.resources.agents.get import get_agents_internal
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.departments.get import get_departments_internal
+from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.departments.search import search_departments_internal
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions_internal
 from app.routes.v5.tools.resources.descriptions.search import (
@@ -67,7 +67,7 @@ from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.tools.resources.parameters.get import get_parameters_internal
 from app.routes.v5.tools.resources.parameters.search import search_parameters_internal
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
-from app.routes.v5.tools.resources.providers.get import get_providers_internal
+from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.sql.types import (
     GetFieldAccessSqlParams,
@@ -310,9 +310,7 @@ async def get_field_internal(
     async def fetch_departments():
         async with pool.acquire() as c:
             return (
-                await get_departments_internal(
-                    c, selected_department_ids, bypass_cache
-                ),
+                await get_departments(                    c, selected_department_ids, get_redis_client(), bypass_cache=bypass_cache                ),
                 await search_departments_internal(
                     c,
                     search=None,
@@ -472,9 +470,7 @@ async def get_field_internal(
                 }
             )
             if provider_ids:
-                config_providers = await get_providers_internal(
-                    config_conn, provider_ids, bypass_cache
-                )
+                config_providers = await get_providers(                    config_conn, provider_ids, get_redis_client(), bypass_cache=bypass_cache                )
     tool_ids: list[UUID] = []
     for agent in config_agents:
         raw = getattr(agent, "tool_ids", None) or []

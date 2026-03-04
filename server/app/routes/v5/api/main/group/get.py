@@ -47,7 +47,7 @@ from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.models.get import get_models_internal
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
-from app.routes.v5.tools.resources.providers.get import get_providers_internal
+from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.sql.types import GetCallListViewSqlRow, GetMessageListViewSqlRow
 from app.utils.cache.cache_key import cache_key
@@ -141,9 +141,7 @@ async def get_group_internal(
     config_providers_result: list[Any] = []
     if config_provider_ids:
         async with pool.acquire() as c:
-            config_providers_result = await get_providers_internal(
-                c, config_provider_ids, bypass_cache
-            )
+            config_providers_result = await get_providers(                c, config_provider_ids, get_redis_client(), bypass_cache=bypass_cache            )
 
     # Fetch tools from config agent (sequential — needs agent results)
     config_tools_result: list[Any] = []

@@ -13,7 +13,7 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool, get_redis_client
 from app.routes.v5.api.main.benchmark.types import (
     BenchmarkDepartmentItem,
     BenchmarkEvalCard,
@@ -27,7 +27,7 @@ from app.routes.v5.api.main.types import (
     TestHistoryResponse,
 )
 from app.routes.v5.tools.entries.test.search import get_test_list_internal
-from app.routes.v5.tools.resources.departments.get import get_departments_internal
+from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.evals.get import get_evals_internal
 from app.sql.types import QGetTestListViewV4Item
 from app.utils.error.handle_route_error import handle_route_error
@@ -318,8 +318,8 @@ async def get_benchmark(
 
         async def fetch_departments() -> list:
             async with pool.acquire() as c:
-                return await get_departments_internal(
-                    c, list(all_department_ids), bypass_cache=bypass_cache
+                return await get_departments(
+                    c, list(all_department_ids), get_redis_client(), bypass_cache=bypass_cache
                 )
 
         evals_list, departments = await asyncio.gather(

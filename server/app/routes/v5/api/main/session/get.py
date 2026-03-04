@@ -42,7 +42,7 @@ from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.models.get import get_models_internal
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
-from app.routes.v5.tools.resources.providers.get import get_providers_internal
+from app.routes.v5.tools.resources.providers.get import get_providers
 from app.sql.types import (
     GetGroupListViewSqlRow,
     GetSessionTimelineViewSqlRow,
@@ -104,9 +104,7 @@ async def get_session_internal(
     config_providers: list[Any] = []
     if config_provider_resource_ids:
         async with pool.acquire() as conn:
-            config_providers = await get_providers_internal(
-                conn, config_provider_resource_ids, bypass_cache
-            )
+            config_providers = await get_providers(                conn, config_provider_resource_ids, get_redis_client(), bypass_cache=bypass_cache            )
 
     # 2. Resolve actor context
     from app.routes.auth.profile import get_auth_profile_internal

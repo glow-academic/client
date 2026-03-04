@@ -116,7 +116,7 @@ from app.routes.v5.tools.resources.problem_statements.get import (
     get_problem_statements_internal,
 )
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
-from app.routes.v5.tools.resources.providers.get import get_providers_internal
+from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.questions.get import get_questions_internal
 from app.routes.v5.tools.resources.rubrics.get import get_rubrics_batch_internal
 from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
@@ -864,9 +864,7 @@ async def get_attempt_internal(
                 )
                 if config_provider_ids:
                     async with pool.acquire() as c:
-                        config_provider_resources = await get_providers_internal(
-                            c, config_provider_ids, bypass_cache=bypass_cache
-                        )
+                        config_provider_resources = await get_providers(                            c, config_provider_ids, get_redis_client(), bypass_cache=bypass_cache                        )
 
         # === COMPUTE TIME LIMIT FROM CHATS ===
         time_limit_seconds = sum(

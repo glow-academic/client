@@ -22,10 +22,10 @@ from app.routes.auth.types import (
 )
 from app.routes.v5.tools.resources.agents.get import get_agents_internal
 from app.routes.v5.tools.resources.settings.get import get_settings
-from app.routes.v5.tools.resources.systems.get import get_systems_internal
+from app.routes.v5.tools.resources.systems.get import get_systems
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool, get_redis_client
 from app.sql.types import (
     GetProfileContextApiRequest,
     GetSettingsThemeDataSqlParams,
@@ -93,7 +93,7 @@ async def get_auth_settings_internal(
         if not settings_system_ids:
             return []
         async with pool.acquire() as c:
-            return await get_systems_internal(c, settings_system_ids, bypass_cache)
+            return await get_systems(c, settings_system_ids, get_redis_client(), bypass_cache=bypass_cache)
 
     (
         settings_theme,

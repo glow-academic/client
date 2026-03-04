@@ -46,7 +46,7 @@ from app.routes.v5.tools.resources.agents.get import get_agents_internal
 from app.routes.v5.tools.resources.instructions.get import get_instructions_internal
 from app.routes.v5.tools.resources.models.get import get_models_internal
 from app.routes.v5.tools.resources.prompts.get import get_prompts_internal
-from app.routes.v5.tools.resources.providers.get import get_providers_internal
+from app.routes.v5.tools.resources.providers.get import get_providers
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 from app.utils.storage.file_writer import write_text_file
@@ -564,9 +564,7 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
         config_providers = []
         if provider_ids and pool:
             async with pool.acquire() as c:
-                config_providers = await get_providers_internal(
-                    c, provider_ids, bypass_cache
-                )
+                config_providers = await get_providers(                    c, provider_ids, get_redis_client(), bypass_cache=bypass_cache                )
         providers_by_id = {p.id: p for p in config_providers if getattr(p, "id", None)}
 
         # Step 6b: Build agent_groups from systems first, then legacy resource_agent_ids

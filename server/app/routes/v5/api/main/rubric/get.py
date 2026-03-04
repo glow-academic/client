@@ -69,7 +69,7 @@ from app.routes.v5.tools.entries.runs.search import get_run_list_entries_interna
 from app.routes.v5.tools.resources.agents.get import get_agents_internal
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.departments.get import get_departments_internal
+from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.departments.search import search_departments_internal
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions_internal
 from app.routes.v5.tools.resources.descriptions.search import (
@@ -82,7 +82,7 @@ from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.tools.resources.points.get import get_points_internal
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
-from app.routes.v5.tools.resources.providers.get import get_providers_internal
+from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.standard_groups.get import (
     get_standard_groups_internal,
 )
@@ -421,7 +421,7 @@ async def get_rubric_internal(
 
     async def fetch_departments() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_departments_internal(c, department_ids, bypass_cache)
+            selected = await get_departments(c, department_ids, get_redis_client(), bypass_cache=bypass_cache)
             suggestions = await search_departments_internal(
                 c,
                 search=None,
@@ -597,10 +597,8 @@ async def get_rubric_internal(
     )
     if provider_ids:
         async with pool.acquire() as c:
-            config_providers = await get_providers_internal(
-                c,
-                provider_ids,
-                bypass_cache=bypass_cache,
+            config_providers = await get_providers(
+                c, provider_ids, get_redis_client(), bypass_cache=bypass_cache
             )
     tool_ids: list[UUID] = []
     for agent in config_agents:

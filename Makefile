@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run test test-cov cleanup generate-tests generate-test-schema stop stop-keycloak install-client restore-db migrate-db migrate-db-only migrate-db-all connect-db fresh-db bootstrap-keys build-test-seed typecheck-client build-client openapi-gen gen-client-types sql-compile sql-format watch-sql-types configure deploy deploy-clean
+.PHONY: help setup install clean format lint typecheck run test test-cov cleanup generate-tests stop stop-keycloak install-client restore-db migrate-db migrate-db-only migrate-db-all connect-db fresh-db bootstrap-keys build-test-seed typecheck-client build-client openapi-gen gen-client-types sql-compile sql-format watch-sql-types configure deploy deploy-clean
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -122,11 +122,6 @@ generate-tests: check-venv
 	@$(VENV_PYTHON) server/scripts/generate_pytest_tests.py
 	@echo "✅ Tests generated"
 
-# Generate consolidated test schema SQL file
-generate-test-schema:
-	@echo "Generating test schema with seed data..."
-	@cd database && yarn generate-test-schema
-	@echo "✅ Test schema generated at server/tests/test-schema.sql"
 
 # Run all tests
 test: check-venv

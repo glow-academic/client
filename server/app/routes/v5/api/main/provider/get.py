@@ -57,7 +57,7 @@ from app.routes.v5.tools.entries.runs.search import get_run_list_entries_interna
 from app.routes.v5.tools.resources.agents.get import get_agents_internal
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.departments.get import get_departments_internal
+from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.departments.search import search_departments_internal
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions_internal
 from app.routes.v5.tools.resources.descriptions.search import (
@@ -66,12 +66,12 @@ from app.routes.v5.tools.resources.descriptions.search import (
 from app.routes.v5.tools.resources.endpoints.get import get_endpoints_internal
 from app.routes.v5.tools.resources.flags.get import get_flags_internal
 from app.routes.v5.tools.resources.flags.search import search_flags_internal
-from app.routes.v5.tools.resources.keys.get import get_keys_internal
+from app.routes.v5.tools.resources.keys.get import get_keys
 from app.routes.v5.tools.resources.models.get import get_models_internal
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
-from app.routes.v5.tools.resources.providers.get import get_providers_internal
+from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.routes.v5.tools.resources.values.get import get_values_internal
 from app.routes.v5.tools.resources.values.search import search_values_internal
@@ -292,7 +292,7 @@ async def get_provider_internal(
 
     async def fetch_departments():
         async with pool.acquire() as c:
-            selected = await get_departments_internal(c, department_ids, bypass_cache)
+            selected = await get_departments(c, department_ids, get_redis_client(), bypass_cache=bypass_cache)
             suggestions = await search_departments_internal(
                 c,
                 search=None,
@@ -332,8 +332,8 @@ async def get_provider_internal(
 
     async def fetch_keys():
         async with pool.acquire() as c:
-            selected = await get_keys_internal(c, key_ids, bypass_cache)
-            suggestions = await get_keys_internal(c, key_suggestion_ids, bypass_cache)
+            selected = await get_keys(c, key_ids, get_redis_client(), bypass_cache=bypass_cache)
+            suggestions = await get_keys(c, key_suggestion_ids, get_redis_client(), bypass_cache=bypass_cache)
             return (selected, suggestions)
 
     (
@@ -453,9 +453,7 @@ async def get_provider_internal(
     )
     if provider_ids_for_config:
         async with pool.acquire() as c:
-            config_providers_result = await get_providers_internal(
-                c, provider_ids_for_config, bypass_cache
-            )
+            config_providers_result = await get_providers(                c, provider_ids_for_config, get_redis_client(), bypass_cache=bypass_cache            )
 
     if provider_id is not None and not name_resource:
         raise HTTPException(

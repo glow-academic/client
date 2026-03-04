@@ -5,7 +5,7 @@ Two-pass architecture:
 2. Python computes permissions (can_edit, can_delete, can_duplicate)
 
 Filter option names resolved in SQL via ListFilterSection pattern.
-Provider names for per-model display hydrated from cached get_providers_internal().
+Provider names for per-model display hydrated from cached get_providers().
 """
 
 from typing import Annotated, Any, cast
@@ -26,7 +26,7 @@ from app.routes.v5.api.main.model.types import (
     ListModelApiResponse,
 )
 from app.routes.v5.api.types import ListFilterSection
-from app.routes.v5.tools.resources.providers.get import get_providers_internal
+from app.routes.v5.tools.resources.providers.get import get_providers
 from app.sql.types import (
     ListModelsApiRequest,
     ListModelsSqlParams,
@@ -172,9 +172,7 @@ async def get_model_list(
         # Hydrate provider_name per model from cached providers
         if pool and model_provider_ids:
             async with pool.acquire() as c:
-                providers_data = await get_providers_internal(
-                    c, list(model_provider_ids), bypass_cache
-                )
+                providers_data = await get_providers(                    c, list(model_provider_ids), get_redis_client(), bypass_cache=bypass_cache                )
             provider_map: dict[UUID, Any] = {}
             for p in providers_data:
                 p_id = getattr(p, "id", None)

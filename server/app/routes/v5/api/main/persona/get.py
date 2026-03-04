@@ -84,7 +84,7 @@ from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.colors.get import get_colors_internal
 from app.routes.v5.tools.resources.colors.search import search_colors_internal
-from app.routes.v5.tools.resources.departments.get import get_departments_internal
+from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.departments.search import search_departments_internal
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions_internal
 from app.routes.v5.tools.resources.descriptions.search import (
@@ -113,7 +113,7 @@ from app.routes.v5.tools.resources.parameter_fields.search import (
 from app.routes.v5.tools.resources.parameters.get import get_parameters_internal
 from app.routes.v5.tools.resources.parameters.search import search_parameters_internal
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
-from app.routes.v5.tools.resources.providers.get import get_providers_internal
+from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.routes.v5.tools.resources.voices.get import get_voices_internal
 from app.routes.v5.tools.resources.voices.search import search_voices_internal
@@ -508,7 +508,7 @@ async def get_persona_internal(
 
     async def fetch_departments():
         async with pool.acquire() as c:
-            selected = await get_departments_internal(c, department_ids, bypass_cache)
+            selected = await get_departments(c, department_ids, get_redis_client(), bypass_cache=bypass_cache)
             # Always use "all" to show all available departments the user has access to
             # This ensures users can see all options when editing, not just recently used ones
             suggestions = await search_departments_internal(
@@ -667,9 +667,7 @@ async def get_persona_internal(
     config_providers_result: list[Any] = []
     if config_provider_ids:
         async with pool.acquire() as c:
-            config_providers_result = await get_providers_internal(
-                c, config_provider_ids, bypass_cache
-            )
+            config_providers_result = await get_providers(                c, config_provider_ids, get_redis_client(), bypass_cache=bypass_cache            )
 
     names = _dedupe_by_id(names_selected + names_suggestions, "id")
     descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
