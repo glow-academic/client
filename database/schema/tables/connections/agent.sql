@@ -104,6 +104,23 @@ CREATE TABLE public.agent_drafts_names_connection (
 
 --
 
+-- Name: agent_drafts_tools_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.agent_drafts_tools_connection (
+    draft_id uuid NOT NULL,
+    tools_id uuid NOT NULL,
+    version integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    active boolean DEFAULT true NOT NULL
+);
+
+
+--
+
 -- Name: agent_drafts_profiles_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -144,23 +161,6 @@ CREATE TABLE public.agent_drafts_reasoning_levels_connection (
 CREATE TABLE public.agent_drafts_temperature_levels_connection (
     draft_id uuid NOT NULL,
     temperature_levels_id uuid CONSTRAINT agent_drafts_temperature_levels__temperature_levels_id_not_null NOT NULL,
-    version integer DEFAULT 0 NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL,
-    active boolean DEFAULT true NOT NULL
-);
-
-
---
-
--- Name: agent_drafts_tools_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.agent_drafts_tools_connection (
-    draft_id uuid NOT NULL,
-    tools_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,

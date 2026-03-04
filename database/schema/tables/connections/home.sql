@@ -32,12 +32,12 @@ CREATE TABLE public.home_departments_connection (
 
 --
 
--- Name: home_profiles_connection; Type: TABLE; Schema: public; Owner: -
+-- Name: home_simulations_connection; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.home_profiles_connection (
+CREATE TABLE public.home_simulations_connection (
     home_id uuid NOT NULL,
-    profiles_id uuid NOT NULL,
+    simulations_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
@@ -47,12 +47,12 @@ CREATE TABLE public.home_profiles_connection (
 
 --
 
--- Name: home_simulations_connection; Type: TABLE; Schema: public; Owner: -
+-- Name: home_profiles_connection; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.home_simulations_connection (
+CREATE TABLE public.home_profiles_connection (
     home_id uuid NOT NULL,
-    simulations_id uuid NOT NULL,
+    profiles_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,

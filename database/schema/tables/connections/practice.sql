@@ -32,12 +32,12 @@ CREATE TABLE public.practice_departments_connection (
 
 --
 
--- Name: practice_profiles_connection; Type: TABLE; Schema: public; Owner: -
+-- Name: practice_simulations_connection; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.practice_profiles_connection (
+CREATE TABLE public.practice_simulations_connection (
     practice_id uuid NOT NULL,
-    profiles_id uuid NOT NULL,
+    simulations_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
@@ -47,12 +47,12 @@ CREATE TABLE public.practice_profiles_connection (
 
 --
 
--- Name: practice_simulations_connection; Type: TABLE; Schema: public; Owner: -
+-- Name: practice_profiles_connection; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.practice_simulations_connection (
+CREATE TABLE public.practice_profiles_connection (
     practice_id uuid NOT NULL,
-    simulations_id uuid NOT NULL,
+    profiles_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,

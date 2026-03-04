@@ -111,25 +111,6 @@ CREATE TABLE public.attempt_completion_entry (
 
 --
 
--- Name: attempt_content_entry; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.attempt_content_entry (
-    message_id uuid CONSTRAINT simulation_contents_entry_simulation_message_id_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_contents_entry_created_at_not_null1 NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_contents_entry_updated_at_not_null1 NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT simulation_contents_entry_id_not_null NOT NULL,
-    content text CONSTRAINT simulation_contents_entry_content_not_null NOT NULL,
-    call_id uuid,
-    generated boolean DEFAULT false CONSTRAINT simulation_contents_entry_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT simulation_contents_entry_mcp_not_null NOT NULL,
-    active boolean DEFAULT true CONSTRAINT simulation_contents_entry_active_not_null NOT NULL,
-    persona_id uuid
-);
-
-
---
-
 -- Name: attempt_entry; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -147,25 +128,6 @@ CREATE TABLE public.attempt_entry (
     name text,
     description text,
     practice boolean DEFAULT false NOT NULL
-);
-
-
---
-
--- Name: attempt_feedback_entry; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.attempt_feedback_entry (
-    id uuid DEFAULT uuidv7() CONSTRAINT simulation_feedbacks_entry_id_not_null NOT NULL,
-    grade_id uuid CONSTRAINT simulation_feedbacks_entry_grade_id_not_null NOT NULL,
-    total integer CONSTRAINT simulation_feedbacks_entry_total_not_null NOT NULL,
-    feedback text DEFAULT 'No feedback provided'::text CONSTRAINT simulation_feedbacks_entry_feedback_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_feedbacks_entry_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_feedbacks_entry_updated_at_not_null NOT NULL,
-    generated boolean DEFAULT false CONSTRAINT simulation_feedbacks_entry_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT simulation_feedbacks_entry_mcp_not_null NOT NULL,
-    active boolean DEFAULT true CONSTRAINT simulation_feedbacks_entry_active_not_null NOT NULL,
-    call_id uuid
 );
 
 
@@ -192,20 +154,52 @@ CREATE TABLE public.attempt_grade_entry (
 
 --
 
--- Name: attempt_highlight_entry; Type: TABLE; Schema: public; Owner: -
+-- Name: attempt_home_entry; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.attempt_highlight_entry (
-    id uuid DEFAULT uuidv7() CONSTRAINT simulation_highlights_entry_id_not_null NOT NULL,
-    strength_id uuid CONSTRAINT simulation_highlights_entry_strength_id_not_null NOT NULL,
-    section text CONSTRAINT simulation_highlights_entry_section_not_null NOT NULL,
-    idx integer DEFAULT 0 CONSTRAINT simulation_highlights_entry_idx_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_highlights_entry_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_highlights_entry_updated_at_not_null NOT NULL,
-    generated boolean DEFAULT false CONSTRAINT simulation_highlights_entry_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT simulation_highlights_entry_mcp_not_null NOT NULL,
-    active boolean DEFAULT true CONSTRAINT simulation_highlights_entry_active_not_null NOT NULL,
-    call_id uuid
+CREATE TABLE public.attempt_home_entry (
+    attempt_id uuid NOT NULL,
+    home_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    session_id uuid
+);
+
+
+--
+
+-- Name: attempt_practice_entry; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.attempt_practice_entry (
+    attempt_id uuid NOT NULL,
+    practice_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    session_id uuid
+);
+
+
+--
+
+-- Name: attempt_content_entry; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.attempt_content_entry (
+    message_id uuid CONSTRAINT simulation_contents_entry_simulation_message_id_not_null NOT NULL,
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_contents_entry_created_at_not_null1 NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_contents_entry_updated_at_not_null1 NOT NULL,
+    id uuid DEFAULT uuidv7() CONSTRAINT simulation_contents_entry_id_not_null NOT NULL,
+    content text CONSTRAINT simulation_contents_entry_content_not_null NOT NULL,
+    call_id uuid,
+    generated boolean DEFAULT false CONSTRAINT simulation_contents_entry_generated_not_null NOT NULL,
+    mcp boolean DEFAULT false CONSTRAINT simulation_contents_entry_mcp_not_null NOT NULL,
+    active boolean DEFAULT true CONSTRAINT simulation_contents_entry_active_not_null NOT NULL,
+    persona_id uuid
 );
 
 
@@ -220,6 +214,44 @@ CREATE TABLE public.attempt_message_entry (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     message_id uuid,
+    call_id uuid
+);
+
+
+--
+
+-- Name: attempt_feedback_entry; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.attempt_feedback_entry (
+    id uuid DEFAULT uuidv7() CONSTRAINT simulation_feedbacks_entry_id_not_null NOT NULL,
+    grade_id uuid CONSTRAINT simulation_feedbacks_entry_grade_id_not_null NOT NULL,
+    total integer CONSTRAINT simulation_feedbacks_entry_total_not_null NOT NULL,
+    feedback text DEFAULT 'No feedback provided'::text CONSTRAINT simulation_feedbacks_entry_feedback_not_null NOT NULL,
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_feedbacks_entry_created_at_not_null NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_feedbacks_entry_updated_at_not_null NOT NULL,
+    generated boolean DEFAULT false CONSTRAINT simulation_feedbacks_entry_generated_not_null NOT NULL,
+    mcp boolean DEFAULT false CONSTRAINT simulation_feedbacks_entry_mcp_not_null NOT NULL,
+    active boolean DEFAULT true CONSTRAINT simulation_feedbacks_entry_active_not_null NOT NULL,
+    call_id uuid
+);
+
+
+--
+
+-- Name: attempt_highlight_entry; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.attempt_highlight_entry (
+    id uuid DEFAULT uuidv7() CONSTRAINT simulation_highlights_entry_id_not_null NOT NULL,
+    strength_id uuid CONSTRAINT simulation_highlights_entry_strength_id_not_null NOT NULL,
+    section text CONSTRAINT simulation_highlights_entry_section_not_null NOT NULL,
+    idx integer DEFAULT 0 CONSTRAINT simulation_highlights_entry_idx_not_null NOT NULL,
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_highlights_entry_created_at_not_null NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_highlights_entry_updated_at_not_null NOT NULL,
+    generated boolean DEFAULT false CONSTRAINT simulation_highlights_entry_generated_not_null NOT NULL,
+    mcp boolean DEFAULT false CONSTRAINT simulation_highlights_entry_mcp_not_null NOT NULL,
+    active boolean DEFAULT true CONSTRAINT simulation_highlights_entry_active_not_null NOT NULL,
     call_id uuid
 );
 
@@ -264,22 +296,6 @@ CREATE TABLE public.attempt_hint_entry (
 
 --
 
--- Name: attempt_home_entry; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.attempt_home_entry (
-    attempt_id uuid NOT NULL,
-    home_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL,
-    session_id uuid
-);
-
-
---
-
 -- Name: attempt_improvement_entry; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -311,22 +327,6 @@ CREATE TABLE public.attempt_message_tree_entry (
     active boolean DEFAULT true CONSTRAINT simulation_message_tree_entry_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT simulation_message_tree_entry_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT simulation_message_tree_entry_mcp_not_null NOT NULL,
-    session_id uuid
-);
-
-
---
-
--- Name: attempt_practice_entry; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.attempt_practice_entry (
-    attempt_id uuid NOT NULL,
-    practice_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL,
     session_id uuid
 );
 

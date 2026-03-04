@@ -168,23 +168,6 @@ CREATE TABLE public.invocation_drafts_names_connection (
 
 --
 
--- Name: invocation_drafts_profiles_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.invocation_drafts_profiles_connection (
-    draft_id uuid NOT NULL,
-    profiles_id uuid NOT NULL,
-    version integer DEFAULT 0 NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL,
-    active boolean DEFAULT true NOT NULL
-);
-
-
---
-
 -- Name: invocation_drafts_reasoning_levels_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -231,6 +214,23 @@ CREATE TABLE public.invocation_drafts_voices_connection (
     generated boolean DEFAULT false CONSTRAINT suite_drafts_voices_connection_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT suite_drafts_voices_connection_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT suite_drafts_voices_connection_active_not_null NOT NULL
+);
+
+
+--
+
+-- Name: invocation_drafts_profiles_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.invocation_drafts_profiles_connection (
+    draft_id uuid NOT NULL,
+    profiles_id uuid NOT NULL,
+    version integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    active boolean DEFAULT true NOT NULL
 );
 
 
@@ -356,21 +356,6 @@ CREATE TABLE public.invocation_names_connection (
 
 --
 
--- Name: invocation_qualities_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.invocation_qualities_connection (
-    invocation_id uuid NOT NULL,
-    qualities_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL
-);
-
-
---
-
 -- Name: invocation_reasoning_levels_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -411,6 +396,21 @@ CREATE TABLE public.invocation_voices_connection (
     active boolean DEFAULT true CONSTRAINT benchmark_bundle_voices_connection_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT benchmark_bundle_voices_connection_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT benchmark_bundle_voices_connection_mcp_not_null NOT NULL
+);
+
+
+--
+
+-- Name: invocation_qualities_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.invocation_qualities_connection (
+    invocation_id uuid NOT NULL,
+    qualities_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 

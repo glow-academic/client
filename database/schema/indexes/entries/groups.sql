@@ -18,14 +18,6 @@ CREATE INDEX groups_entry_session_id_idx ON public.groups_entry USING btree (ses
 
 --
 
--- Name: groups_trace_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX groups_trace_id_idx ON public.groups_entry USING btree (trace_id);
-
-
---
-
 -- Name: idx_groups_generated; Type: INDEX; Schema: public; Owner: -
 --
 

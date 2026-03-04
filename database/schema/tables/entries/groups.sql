@@ -8,7 +8,6 @@
 CREATE TABLE public.groups_entry (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT groups_created_at_not_null NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT groups_id_v7_not_null NOT NULL,
-    trace_id text DEFAULT public.gen_trace_id() CONSTRAINT groups_trace_id_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT groups_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT groups_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT groups_active_not_null NOT NULL,
