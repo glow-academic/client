@@ -64,8 +64,8 @@ original_description_id AS (
     LIMIT 1
 ),
 new_model_group AS (
-    INSERT INTO groups_entry (id, created_at, updated_at)
-    SELECT uuidv7(), NOW(), NOW()
+    INSERT INTO groups_entry (id, created_at)
+    SELECT uuidv7(), NOW()
     FROM source_model sm
     CROSS JOIN model_exists_check mec
     WHERE mec.model_exists = true

@@ -81,8 +81,8 @@ description_resource AS (
     LIMIT 1
 ),
 new_group AS (
-    INSERT INTO groups_entry (created_at, updated_at, session_id)
-    VALUES (NOW(), NOW(), session_id)
+    INSERT INTO groups_entry (created_at, session_id)
+    VALUES (NOW(), session_id)
     RETURNING id
 ),
 new_cohort AS (

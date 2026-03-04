@@ -8,18 +8,14 @@ from typing import Annotated
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
+from app.infra.globals import get_db, get_redis_client
 from app.routes.v5.api.resources.options.types import (
     GetOptionsApiRequest,
     GetOptionsApiResponse,
     GetOptionV4Item,
 )
 from app.routes.v5.tools.resources.options.get import (
-    BATCH_SQL_PATH,
-    get_options_internal,
-)
-from app.sql.types import (
-    load_sql_query,
+    get_options as get_options_resource,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -49,7 +45,7 @@ async def get_options(
 
     try:
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-        items = await get_options_internal(conn, request.ids, bypass_cache)
+        items = await get_options_resource(conn, request.ids, get_redis_client(), bypass_cache)
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetOptionsApiResponse(
             items=[
@@ -71,7 +67,7 @@ async def get_options(
             error=e,
             route_path=http_request.url.path,
             operation="get_options",
-            sql_query=load_sql_query(BATCH_SQL_PATH),
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )

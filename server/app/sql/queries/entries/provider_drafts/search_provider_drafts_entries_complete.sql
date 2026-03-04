@@ -1,4 +1,4 @@
--- Search provider_drafts entries from provider_drafts_mv
+-- Search provider_drafts entries from provider_drafts_entry
 
 DO $$
 DECLARE
@@ -47,8 +47,9 @@ BEGIN
             'provider_ids', m.provider_ids,
             'value_ids', m.value_ids
         ) AS row_data
-        FROM provider_drafts_mv m
+        FROM provider_drafts_entry m
         WHERE true
+          AND m.active = true
           AND (group_id IS NULL OR m.group_id = group_id)
         ORDER BY m.created_at DESC
         LIMIT limit_count

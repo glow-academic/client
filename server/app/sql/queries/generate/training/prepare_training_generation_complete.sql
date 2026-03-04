@@ -177,8 +177,8 @@ selected_agent AS (
 ),
 -- Create new group for training generation
 create_group AS (
-    INSERT INTO groups_entry (created_at, updated_at, session_id)
-    SELECT NOW(), NOW(), (
+    INSERT INTO groups_entry (created_at, session_id)
+    SELECT NOW(), (
         SELECT s.id FROM sessions_entry s
         JOIN profiles_sessions_connection psc ON psc.session_id = s.id
         WHERE psc.profiles_id = p_profile_id

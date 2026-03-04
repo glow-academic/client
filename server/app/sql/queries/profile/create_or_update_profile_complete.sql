@@ -103,8 +103,8 @@ existing_profile AS (
     LIMIT 1
 ),
 new_group AS (
-    INSERT INTO groups_entry (id, created_at, updated_at)
-    SELECT uuidv7(), NOW(), NOW()
+    INSERT INTO groups_entry (id, created_at)
+    SELECT uuidv7(), NOW()
     WHERE NOT EXISTS (SELECT 1 FROM existing_profile)
       AND EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
     RETURNING id

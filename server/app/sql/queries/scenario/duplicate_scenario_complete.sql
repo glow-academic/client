@@ -131,16 +131,16 @@ get_problem_statement_enabled_flag AS (
 ),
 -- Handle group
 ensure_group AS (
-    INSERT INTO groups_entry (id, created_at, updated_at, session_id)
-    SELECT p.group_id, NOW(), NOW(), session_id
+    INSERT INTO groups_entry (id, created_at, session_id)
+    SELECT p.group_id, NOW(), session_id
     FROM params p
     WHERE p.group_id IS NOT NULL
       AND NOT EXISTS (SELECT 1 FROM groups_entry g WHERE g.id = p.group_id)
     RETURNING id
 ),
 new_group AS (
-    INSERT INTO groups_entry (created_at, updated_at, session_id)
-    SELECT NOW(), NOW(), session_id
+    INSERT INTO groups_entry (created_at, session_id)
+    SELECT NOW(), session_id
     FROM params p
     WHERE p.group_id IS NULL
     RETURNING id

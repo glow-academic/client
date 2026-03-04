@@ -1,4 +1,4 @@
--- Search agent_drafts entries from agent_drafts_mv
+-- Search agent_drafts entries from agent_drafts_entry
 
 DO $$
 DECLARE
@@ -51,8 +51,9 @@ BEGIN
             'tool_ids', m.tool_ids,
             'voice_ids', m.voice_ids
         ) AS row_data
-        FROM agent_drafts_mv m
+        FROM agent_drafts_entry m
         WHERE true
+          AND m.active = true
           AND (group_id IS NULL OR m.group_id = group_id)
         ORDER BY m.created_at DESC
         LIMIT limit_count

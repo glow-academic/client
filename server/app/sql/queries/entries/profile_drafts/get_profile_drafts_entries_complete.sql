@@ -1,4 +1,4 @@
--- Get profile_drafts entries by IDs from profile_drafts_mv
+-- Get profile_drafts entries by IDs from profile_drafts_entry
 
 DO $$
 DECLARE
@@ -53,8 +53,9 @@ STABLE
 AS $$
     WITH mv_data AS (
         SELECT mv.*
-        FROM profile_drafts_mv mv
+        FROM profile_drafts_entry mv
         WHERE mv.draft_id = ANY(ids)
+          AND mv.active = true
     ),
     items_agg AS (
         SELECT COALESCE(

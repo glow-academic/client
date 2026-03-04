@@ -62,8 +62,8 @@ auth_exists_check AS (
 ),
 -- Create a new group if no draft_group_id provided (guarantees group_id is always returned)
 ensure_group AS (
-    INSERT INTO groups_entry (created_at, updated_at)
-    SELECT NOW(), NOW()
+    INSERT INTO groups_entry (created_at)
+    SELECT NOW()
     WHERE draft_group_id IS NULL
     RETURNING id
 ),

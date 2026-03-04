@@ -1,4 +1,4 @@
--- Search invocation_drafts entries from invocation_drafts_mv
+-- Search invocation_drafts entries from invocation_drafts_entry
 
 DO $$
 DECLARE
@@ -52,8 +52,9 @@ BEGIN
             'tool_ids', m.tool_ids,
             'voice_ids', m.voice_ids
         ) AS row_data
-        FROM invocation_drafts_mv m
+        FROM invocation_drafts_entry m
         WHERE true
+          AND m.active = true
           AND (group_id IS NULL OR m.group_id = group_id)
         ORDER BY m.created_at DESC
         LIMIT limit_count

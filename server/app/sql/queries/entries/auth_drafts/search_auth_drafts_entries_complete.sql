@@ -1,4 +1,4 @@
--- Search auth_drafts entries from auth_drafts_mv
+-- Search auth_drafts entries from auth_drafts_entry
 
 DO $$
 DECLARE
@@ -47,8 +47,9 @@ BEGIN
             'protocol_ids', m.protocol_ids,
             'slug_ids', m.slug_ids
         ) AS row_data
-        FROM auth_drafts_mv m
+        FROM auth_drafts_entry m
         WHERE true
+          AND m.active = true
           AND (group_id IS NULL OR m.group_id = group_id)
         ORDER BY m.created_at DESC
         LIMIT limit_count

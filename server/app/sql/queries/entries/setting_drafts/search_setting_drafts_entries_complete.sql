@@ -1,4 +1,4 @@
--- Search setting_drafts entries from setting_drafts_mv
+-- Search setting_drafts entries from setting_drafts_entry
 
 DO $$
 DECLARE
@@ -54,8 +54,9 @@ BEGIN
             'settings_ids', m.settings_ids,
             'threshold_ids', m.threshold_ids
         ) AS row_data
-        FROM setting_drafts_mv m
+        FROM setting_drafts_entry m
         WHERE true
+          AND m.active = true
           AND (group_id IS NULL OR m.group_id = group_id)
         ORDER BY m.created_at DESC
         LIMIT limit_count

@@ -1,4 +1,4 @@
--- Search simulation_drafts entries from simulation_drafts_mv
+-- Search simulation_drafts entries from simulation_drafts_entry
 
 DO $$
 DECLARE
@@ -50,8 +50,9 @@ BEGIN
             'scenario_ids', m.scenario_ids,
             'simulation_ids', m.simulation_ids
         ) AS row_data
-        FROM simulation_drafts_mv m
+        FROM simulation_drafts_entry m
         WHERE true
+          AND m.active = true
           AND (group_id IS NULL OR m.group_id = group_id)
         ORDER BY m.created_at DESC
         LIMIT limit_count

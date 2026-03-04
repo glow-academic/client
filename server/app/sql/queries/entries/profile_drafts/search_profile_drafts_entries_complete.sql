@@ -1,4 +1,4 @@
--- Search profile_drafts entries from profile_drafts_mv
+-- Search profile_drafts entries from profile_drafts_entry
 
 DO $$
 DECLARE
@@ -48,8 +48,9 @@ BEGIN
             'role_ids', m.role_ids,
             'route_ids', m.route_ids
         ) AS row_data
-        FROM profile_drafts_mv m
+        FROM profile_drafts_entry m
         WHERE true
+          AND m.active = true
           AND (group_id IS NULL OR m.group_id = group_id)
         ORDER BY m.created_at DESC
         LIMIT limit_count

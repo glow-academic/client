@@ -60,8 +60,8 @@ existing_result AS (
 ),
 -- Only proceed with creation if profile doesn't exist
 new_group AS (
-    INSERT INTO groups_entry (id, created_at, updated_at)
-    SELECT uuidv7(), NOW(), NOW()
+    INSERT INTO groups_entry (id, created_at)
+    SELECT uuidv7(), NOW()
     WHERE NOT EXISTS (SELECT 1 FROM existing_profile)
     RETURNING id
 ),

@@ -155,7 +155,7 @@ BEGIN
 
     IF v_draft_id IS NULL THEN
         IF v_group_id IS NULL THEN
-            INSERT INTO groups_entry (created_at, updated_at, session_id)
+            INSERT INTO groups_entry (created_at, session_id)
             VALUES (
                 NOW(),
                 NOW(),

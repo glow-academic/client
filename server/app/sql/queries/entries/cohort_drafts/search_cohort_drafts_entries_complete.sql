@@ -1,4 +1,4 @@
--- Search cohort_drafts entries from cohort_drafts_mv
+-- Search cohort_drafts entries from cohort_drafts_entry
 
 DO $$
 DECLARE
@@ -46,8 +46,9 @@ BEGIN
             'simulation_position_ids', m.simulation_position_ids,
             'simulation_ids', m.simulation_ids
         ) AS row_data
-        FROM cohort_drafts_mv m
+        FROM cohort_drafts_entry m
         WHERE true
+          AND m.active = true
           AND (group_id IS NULL OR m.group_id = group_id)
         ORDER BY m.created_at DESC
         LIMIT limit_count

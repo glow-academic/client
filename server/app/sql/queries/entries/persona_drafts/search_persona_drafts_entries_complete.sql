@@ -1,4 +1,4 @@
--- Search persona_drafts entries from persona_drafts_mv
+-- Search persona_drafts entries from persona_drafts_entry
 
 DO $$
 DECLARE
@@ -50,8 +50,9 @@ BEGIN
             'parameter_ids', m.parameter_ids,
             'persona_ids', m.persona_ids
         ) AS row_data
-        FROM persona_drafts_mv m
+        FROM persona_drafts_entry m
         WHERE true
+          AND m.active = true
           AND (group_id IS NULL OR m.group_id = group_id)
         ORDER BY m.created_at DESC
         LIMIT limit_count

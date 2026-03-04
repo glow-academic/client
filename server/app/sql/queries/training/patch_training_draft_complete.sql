@@ -107,8 +107,8 @@ BEGIN
         SELECT group_id INTO v_group_id FROM chat_drafts_entry WHERE id = input_draft_id;
 
         IF v_group_id IS NULL THEN
-            INSERT INTO groups_entry (created_at, updated_at, session_id)
-            VALUES (NOW(), NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profiles_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1))
+            INSERT INTO groups_entry (created_at, session_id)
+            VALUES (NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profiles_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1))
             RETURNING id INTO v_group_id;
         END IF;
 
@@ -226,8 +226,8 @@ BEGIN
 
     -- Create new draft if update failed or input_draft_id was NULL
     IF v_draft_id IS NULL THEN
-        INSERT INTO groups_entry (created_at, updated_at, session_id)
-        VALUES (NOW(), NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profiles_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1))
+        INSERT INTO groups_entry (created_at, session_id)
+        VALUES (NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profiles_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1))
         RETURNING id INTO v_group_id;
 
         INSERT INTO chat_drafts_entry (group_id)

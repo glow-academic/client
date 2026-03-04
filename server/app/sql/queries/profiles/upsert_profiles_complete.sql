@@ -171,8 +171,8 @@ new_groups AS (
     WHERE pwi.will_create = true
 ),
 insert_groups AS (
-    INSERT INTO groups_entry (id, created_at, updated_at, session_id)
-    SELECT ng.group_id, NOW(), NOW(), session_id
+    INSERT INTO groups_entry (id, created_at, session_id)
+    SELECT ng.group_id, NOW(), session_id
     FROM new_groups ng
     RETURNING id
 ),

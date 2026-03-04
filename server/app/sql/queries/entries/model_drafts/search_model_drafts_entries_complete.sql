@@ -1,4 +1,4 @@
--- Search model_drafts entries from model_drafts_mv
+-- Search model_drafts entries from model_drafts_entry
 
 DO $$
 DECLARE
@@ -52,8 +52,9 @@ BEGIN
             'value_ids', m.value_ids,
             'voice_ids', m.voice_ids
         ) AS row_data
-        FROM model_drafts_mv m
+        FROM model_drafts_entry m
         WHERE true
+          AND m.active = true
           AND (group_id IS NULL OR m.group_id = group_id)
         ORDER BY m.created_at DESC
         LIMIT limit_count

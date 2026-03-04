@@ -1,4 +1,4 @@
--- Search rubric_drafts entries from rubric_drafts_mv
+-- Search rubric_drafts entries from rubric_drafts_entry
 
 DO $$
 DECLARE
@@ -47,8 +47,9 @@ BEGIN
             'standard_group_ids', m.standard_group_ids,
             'standard_ids', m.standard_ids
         ) AS row_data
-        FROM rubric_drafts_mv m
+        FROM rubric_drafts_entry m
         WHERE true
+          AND m.active = true
           AND (group_id IS NULL OR m.group_id = group_id)
         ORDER BY m.created_at DESC
         LIMIT limit_count

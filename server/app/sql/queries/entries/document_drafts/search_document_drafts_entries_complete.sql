@@ -1,4 +1,4 @@
--- Search document_drafts entries from document_drafts_mv
+-- Search document_drafts entries from document_drafts_entry
 
 DO $$
 DECLARE
@@ -49,8 +49,9 @@ BEGIN
             'text_ids', m.text_ids,
             'upload_ids', m.upload_ids
         ) AS row_data
-        FROM document_drafts_mv m
+        FROM document_drafts_entry m
         WHERE true
+          AND m.active = true
           AND (group_id IS NULL OR m.group_id = group_id)
         ORDER BY m.created_at DESC
         LIMIT limit_count

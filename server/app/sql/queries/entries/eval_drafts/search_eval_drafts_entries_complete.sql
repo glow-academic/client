@@ -1,4 +1,4 @@
--- Search eval_drafts entries from eval_drafts_mv
+-- Search eval_drafts entries from eval_drafts_entry
 
 DO $$
 DECLARE
@@ -50,8 +50,9 @@ BEGIN
             'run_rubric_ids', m.run_rubric_ids,
             'run_ids', m.run_ids
         ) AS row_data
-        FROM eval_drafts_mv m
+        FROM eval_drafts_entry m
         WHERE true
+          AND m.active = true
           AND (group_id IS NULL OR m.group_id = group_id)
         ORDER BY m.created_at DESC
         LIMIT limit_count

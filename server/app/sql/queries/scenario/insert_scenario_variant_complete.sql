@@ -68,8 +68,8 @@ get_flag_ids AS (
         (SELECT id FROM flags_resource WHERE name = 'images_enabled' LIMIT 1) as images_enabled_flag_id
 ),
 new_group AS (
-    INSERT INTO groups_entry (created_at, updated_at)
-    VALUES (NOW(), NOW())
+    INSERT INTO groups_entry (created_at)
+    VALUES (NOW())
     RETURNING id
 ),
 new_scenario AS (

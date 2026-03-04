@@ -1,4 +1,4 @@
--- Search department_drafts entries from department_drafts_mv
+-- Search department_drafts entries from department_drafts_entry
 
 DO $$
 DECLARE
@@ -44,8 +44,9 @@ BEGIN
             'name_ids', m.name_ids,
             'settings_ids', m.settings_ids
         ) AS row_data
-        FROM department_drafts_mv m
+        FROM department_drafts_entry m
         WHERE true
+          AND m.active = true
           AND (group_id IS NULL OR m.group_id = group_id)
         ORDER BY m.created_at DESC
         LIMIT limit_count

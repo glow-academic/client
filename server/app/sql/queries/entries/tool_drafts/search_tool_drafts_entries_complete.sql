@@ -1,4 +1,4 @@
--- Search tool_drafts entries from tool_drafts_mv
+-- Search tool_drafts entries from tool_drafts_entry
 
 DO $$
 DECLARE
@@ -49,8 +49,9 @@ BEGIN
             'name_ids', m.name_ids,
             'tool_ids', m.tool_ids
         ) AS row_data
-        FROM tool_drafts_mv m
+        FROM tool_drafts_entry m
         WHERE true
+          AND m.active = true
           AND (group_id IS NULL OR m.group_id = group_id)
         ORDER BY m.created_at DESC
         LIMIT limit_count

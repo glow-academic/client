@@ -1,4 +1,4 @@
--- Search field_drafts entries from field_drafts_mv
+-- Search field_drafts entries from field_drafts_entry
 
 DO $$
 DECLARE
@@ -45,8 +45,9 @@ BEGIN
             'flag_ids', m.flag_ids,
             'name_ids', m.name_ids
         ) AS row_data
-        FROM field_drafts_mv m
+        FROM field_drafts_entry m
         WHERE true
+          AND m.active = true
           AND (group_id IS NULL OR m.group_id = group_id)
         ORDER BY m.created_at DESC
         LIMIT limit_count
