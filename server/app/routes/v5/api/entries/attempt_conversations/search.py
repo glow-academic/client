@@ -31,7 +31,7 @@ async def search_conversations_entries(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SearchConversationsEntriesApiResponse:
     """Search conversations entries."""
-    tags = ["entries", "conversations"]
+    tags = ["entries", "attempt_conversations"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:

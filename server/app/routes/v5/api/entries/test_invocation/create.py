@@ -10,11 +10,9 @@ from app.routes.v5.api.entries.test_invocation.types import (
     CreateTestInvocationEntryRequest,
     CreateTestInvocationEntryResponse,
 )
-from app.routes.v5.tools.entries.test_invocation.create import (
-    SQL_PATH,
-    create_test_invocation_entry_internal,
-)
-from app.sql.types import load_sql_query
+from app.routes.v5.tools.entries.calls.create import create_call
+from app.routes.v5.tools.entries.messages.create import create_message
+from app.routes.v5.tools.entries.test_invocation.create import create_test_invocation
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
@@ -31,7 +29,6 @@ async def create_test_invocation_entry(
 ) -> CreateTestInvocationEntryResponse:
     """Create test_invocation entry."""
     tags = ["entries", "test_invocation"]
-    sql_query = load_sql_query(SQL_PATH)
 
     try:
         profile_id = http_request.state.profile_id
@@ -41,23 +38,37 @@ async def create_test_invocation_entry(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        if not request.run_id:
+            raise HTTPException(status_code=400, detail="run_id is required")
+
         mcp = getattr(http_request.state, "mcp", False) or False
-        request_dict = request.model_dump()
 
-        # API caller does not pass run_id — resolved internally
-        if "run_id" not in request_dict or request_dict.get("run_id") is None:
-            raise HTTPException(
-                status_code=400,
-                detail="run_id is required",
+        async with conn.transaction():
+            session_id = getattr(http_request.state, "session_id", None)
+            call = await create_call(
+                conn,
+                run_id=request.run_id,
+                session_id=session_id or request.run_id,
+                mcp=mcp,
             )
-
-        api_response = await create_test_invocation_entry_internal(
-            conn, request_dict, mcp
-        )
+            result = await create_test_invocation(
+                conn,
+                test_id=request.test_id,
+                call_id=call.id,
+                title=request.title,
+                group_id=request.group_id,
+                config_signature=request.config_signature,
+                mcp=mcp,
+            )
+            message = await create_message(
+                conn, run_id=request.run_id, role="assistant", mcp=mcp
+            )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return api_response
+        return CreateTestInvocationEntryResponse(
+            id=result.id, call_id=call.id, message_id=message.id
+        )
     except HTTPException:
         raise
     except ValueError as e:
@@ -67,7 +78,7 @@ async def create_test_invocation_entry(
             error=e,
             route_path=http_request.url.path,
             operation="create_test_invocation_entry",
-            sql_query=sql_query,
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )

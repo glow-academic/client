@@ -6,7 +6,7 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import get_db
-from app.routes.v5.tools.entries.conversations_completions.get import (
+from app.routes.v5.tools.entries.attempt_conversation_completions.get import (
     SQL_PATH,
     get_conversations_completions_entries_internal,
 )
@@ -21,7 +21,7 @@ router = APIRouter()
 
 
 @router.post(
-    "/conversations_completions/get",
+    "/attempt_conversation_completions/get",
     response_model=GetConversationsCompletionsEntriesApiResponse,
 )
 async def get_conversations_completions_entries(
@@ -31,7 +31,7 @@ async def get_conversations_completions_entries(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetConversationsCompletionsEntriesApiResponse:
     """Get conversations_completions entries by IDs."""
-    tags = ["entries", "conversations_completions"]
+    tags = ["entries", "attempt_conversation_completions"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:

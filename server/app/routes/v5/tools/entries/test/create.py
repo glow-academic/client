@@ -10,7 +10,7 @@ from app.routes.v5.tools.entries.test.types import CreateTestResponse
 async def create_test(
     conn: asyncpg.Connection,
     call_id: UUID,
-    profiles_id: UUID,
+    profiles_id: UUID | None = None,
     name: str = "",
     description: str = "",
     num_invocations: int = 0,
@@ -38,14 +38,15 @@ async def create_test(
     if test_id is None:
         raise ValueError("Failed to create test entry")
 
-    # test_profiles_connection (LEFT JOIN in test_mv but needed for access)
-    await conn.execute(
-        """
-        INSERT INTO test_profiles_connection (attempt_id, profiles_id, generated)
-        VALUES ($1, $2, true)
-        """,
-        test_id,
-        profiles_id,
-    )
+    # test_profiles_connection (LEFT JOIN in test_mv — optional)
+    if profiles_id is not None:
+        await conn.execute(
+            """
+            INSERT INTO test_profiles_connection (attempt_id, profiles_id, generated)
+            VALUES ($1, $2, true)
+            """,
+            test_id,
+            profiles_id,
+        )
 
     return CreateTestResponse(id=test_id)

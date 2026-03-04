@@ -40,9 +40,11 @@ from app.routes.v5.api.entries.benchmark import router as benchmark_router
 from app.routes.v5.api.entries.calls import router as calls_router
 from app.routes.v5.api.entries.certificates import router as certificates_router
 from app.routes.v5.api.entries.cohort_drafts import router as cohort_drafts_router
-from app.routes.v5.api.entries.conversations import router as conversations_router
-from app.routes.v5.api.entries.conversations_completions import (
-    router as conversations_completions_router,
+from app.routes.v5.api.entries.attempt_conversations import (
+    router as attempt_conversations_router,
+)
+from app.routes.v5.api.entries.attempt_conversation_completions import (
+    router as attempt_conversation_completions_router,
 )
 from app.routes.v5.api.entries.debug_info import router as debug_info_router
 from app.routes.v5.api.entries.department_drafts import (
@@ -143,8 +145,8 @@ router.include_router(benchmark_router)
 router.include_router(calls_router)
 router.include_router(certificates_router)
 router.include_router(cohort_drafts_router)
-router.include_router(conversations_router)
-router.include_router(conversations_completions_router)
+router.include_router(attempt_conversations_router)
+router.include_router(attempt_conversation_completions_router)
 router.include_router(debug_info_router)
 router.include_router(department_drafts_router)
 router.include_router(document_drafts_router)

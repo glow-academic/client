@@ -6,11 +6,11 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import get_db
-from app.routes.v5.api.entries.conversations.types import (
+from app.routes.v5.api.entries.attempt_conversations.types import (
     CreateConversationsEntryRequest,
     CreateConversationsEntryResponse,
 )
-from app.routes.v5.tools.entries.conversations.create import (
+from app.routes.v5.tools.entries.attempt_conversations.create import (
     SQL_PATH,
     create_conversations_entry_internal,
 )
@@ -20,7 +20,7 @@ from app.utils.error.handle_route_error import handle_route_error
 router = APIRouter()
 
 
-@router.post("/conversations/create", response_model=CreateConversationsEntryResponse)
+@router.post("/attempt_conversations/create", response_model=CreateConversationsEntryResponse)
 async def create_conversations_entry(
     request: CreateConversationsEntryRequest,
     http_request: Request,
@@ -28,7 +28,7 @@ async def create_conversations_entry(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateConversationsEntryResponse:
     """Create conversations entry."""
-    tags = ["entries", "conversations"]
+    tags = ["entries", "attempt_conversations"]
     sql_query = load_sql_query(SQL_PATH)
 
     try:
