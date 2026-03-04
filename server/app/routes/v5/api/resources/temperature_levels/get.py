@@ -20,6 +20,7 @@ from app.utils.error.handle_route_error import handle_route_error
 # Load SQL with types at module level
 router = APIRouter()
 
+
 @router.post(
     "/temperature_levels/get",
     response_model=GetTemperatureLevelsApiResponse,

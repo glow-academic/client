@@ -22,6 +22,7 @@ TRAINING_CONFIG_SQL = (
     "app/sql/queries/views/chat/training_config/get_training_config_complete.sql"
 )
 
+
 class GradeItem(BaseModel):
     """Grade composite type."""
 
@@ -30,6 +31,7 @@ class GradeItem(BaseModel):
     time_taken: int | None = None
     total_points: int | None = None
     pass_points: int | None = None
+
 
 class TrainingConfig(BaseModel):
     """Training department config flags + resource ID arrays."""
@@ -57,6 +59,7 @@ class TrainingConfig(BaseModel):
     standard_group_ids: list[UUID] | None = None
     standard_ids: list[UUID] | None = None
 
+
 class ChatViewItem(BaseModel):
     """Single chat from attempt chats."""
 
@@ -80,7 +83,6 @@ class ChatViewItem(BaseModel):
     completed: bool = False
     grade: GradeItem | None = None
     persona_ids: list[UUID] | None = None
-    persona_refs: list[dict] | None = None  # [{personas_id, personas_entry_id}]
     objective_ids: list[UUID] | None = None
     question_ids: list[UUID] | None = None
     option_ids: list[UUID] | None = None
@@ -89,6 +91,7 @@ class ChatViewItem(BaseModel):
     document_ids: list[UUID] | None = None
     standard_group_ids: list[UUID] | None = None
     standard_ids: list[UUID] | None = None
+
 
 class AttemptMessageViewItem(BaseModel):
     """Single message from attempt messages."""
@@ -105,6 +108,7 @@ class AttemptMessageViewItem(BaseModel):
     parent_message_id: UUID | None = None
     sibling_index: int | None = None
     sibling_count: int | None = None
+
 
 async def _fetch_training_config(
     conn: asyncpg.Connection,
@@ -185,6 +189,7 @@ async def _fetch_training_config(
 
     return configs
 
+
 async def get_attempt_entries_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],
@@ -222,6 +227,7 @@ async def get_attempt_entries_internal(
     )
 
     return items
+
 
 async def get_attempt_chats_internal(
     conn: asyncpg.Connection,
@@ -312,16 +318,7 @@ async def get_attempt_chats_internal(
                 created_at=chat.chat_created_at,
                 completed=chat.completed,
                 grade=grade,
-                persona_ids=[
-                    UUID(r["personas_id"])
-                    if isinstance(r.get("personas_id"), str)
-                    else r["personas_id"]
-                    for r in chat.persona_refs
-                    if r.get("personas_id")
-                ]
-                if chat.persona_refs
-                else None,
-                persona_refs=chat.persona_refs if chat.persona_refs else None,
+                persona_ids=chat.persona_ids,
                 objective_ids=config.objective_ids if config else None,
                 question_ids=config.question_ids if config else None,
                 option_ids=config.option_ids if config else None,
@@ -343,9 +340,11 @@ async def get_attempt_chats_internal(
 
     return items
 
+
 MESSAGES_SQL_PATH = (
     "app/sql/queries/views/attempt/messages/get_attempt_messages_view_complete.sql"
 )
+
 
 async def get_attempt_messages_internal(
     conn: asyncpg.Connection,

@@ -21,6 +21,7 @@ SQL_PATH = (
 
 ENTRY_TYPE = "certificates"
 
+
 async def create_certificates_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,

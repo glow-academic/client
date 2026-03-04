@@ -12,11 +12,14 @@ async def get_audio(
     audio_id: UUID,
 ) -> GetAudioResponse | None:
     """Get an audios entry by ID."""
-    row = await conn.fetchrow("""
+    row = await conn.fetchrow(
+        """
         SELECT id, session_id, length_seconds, active, mcp, generated
         FROM audios_entry
         WHERE id = $1
-    """, audio_id)
+    """,
+        audio_id,
+    )
 
     if row is None:
         return None

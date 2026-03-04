@@ -20,11 +20,14 @@ class LinkSimulationAvailabilityApiRequest(BaseModel):
     group_id: UUID
     tool_id: UUID
 
+
 class LinkSimulationAvailabilityApiResponse(BaseModel):
     success: bool = True
     simulation_availability_id: UUID | None = None
 
+
 router = APIRouter()
+
 
 @router.post(
     "/simulation_availability/link",

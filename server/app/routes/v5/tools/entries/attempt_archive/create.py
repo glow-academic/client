@@ -19,6 +19,7 @@ SQL_PATH = "app/sql/queries/entries/attempt_archive/create_attempt_archive_entri
 
 ENTRY_TYPE = "attempt_archives"
 
+
 async def create_attempt_archive_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,

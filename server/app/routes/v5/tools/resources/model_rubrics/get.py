@@ -17,6 +17,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/resources/model_rubrics/get_model_rubrics_complete.sql"
 
+
 async def get_model_rubrics_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],

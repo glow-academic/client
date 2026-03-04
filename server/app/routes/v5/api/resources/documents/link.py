@@ -20,11 +20,14 @@ class LinkDocumentsApiRequest(BaseModel):
     group_id: UUID
     tool_id: UUID
 
+
 class LinkDocumentsApiResponse(BaseModel):
     success: bool = True
     documents_id: UUID | None = None
 
+
 router = APIRouter()
+
 
 @router.post(
     "/documents/link",

@@ -20,11 +20,14 @@ class LinkFieldsApiRequest(BaseModel):
     group_id: UUID
     tool_id: UUID
 
+
 class LinkFieldsApiResponse(BaseModel):
     success: bool = True
     fields_id: UUID | None = None
 
+
 router = APIRouter()
+
 
 @router.post(
     "/fields/link",

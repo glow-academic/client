@@ -19,6 +19,7 @@ SQL_PATH = (
     "app/sql/queries/resources/profile_personas/search_profile_personas_complete.sql"
 )
 
+
 async def search_profile_personas_internal(
     conn: asyncpg.Connection,
     profile_ids: list[UUID],

@@ -9,6 +9,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/resources/link_voices_complete.sql"
 
+
 class LinkVoicesSqlParams(BaseModel):
     resource_id: UUID
     group_id: UUID
@@ -17,8 +18,10 @@ class LinkVoicesSqlParams(BaseModel):
     def to_tuple(self) -> tuple:
         return (self.resource_id, self.group_id, self.tool_id)
 
+
 class LinkVoicesSqlRow(BaseModel):
     voices_id: UUID | None = None
+
 
 async def link_voices_internal(
     conn: asyncpg.Connection,

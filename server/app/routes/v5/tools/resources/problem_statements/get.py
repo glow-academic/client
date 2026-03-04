@@ -24,7 +24,10 @@ SQL_PATH = (
     "app/sql/queries/resources/problem_statements/get_problem_statement_complete.sql"
 )
 
-BATCH_SQL_PATH = "app/sql/queries/resources/problem_statements/get_problem_statements_complete.sql"
+BATCH_SQL_PATH = (
+    "app/sql/queries/resources/problem_statements/get_problem_statements_complete.sql"
+)
+
 
 async def get_problem_statement_internal(
     conn: asyncpg.Connection,
@@ -60,6 +63,7 @@ async def get_problem_statement_internal(
     )
 
     return item
+
 
 async def get_problem_statements_internal(
     conn: asyncpg.Connection,

@@ -23,6 +23,7 @@ CONDITIONAL_SQL_PATH = (
     "app/sql/queries/resources/parameters/search_conditional_parameters_complete.sql"
 )
 
+
 async def search_parameters_internal(
     conn: asyncpg.Connection,
     search: str | None = None,
@@ -109,6 +110,7 @@ async def search_parameters_internal(
     )
 
     return items
+
 
 async def search_conditional_parameters_internal(
     conn: asyncpg.Connection,

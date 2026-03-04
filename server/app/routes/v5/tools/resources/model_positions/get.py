@@ -15,9 +15,8 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = (
-    "app/sql/queries/resources/model_positions/get_model_positions_complete.sql"
-)
+SQL_PATH = "app/sql/queries/resources/model_positions/get_model_positions_complete.sql"
+
 
 async def get_model_positions_internal(
     conn: asyncpg.Connection,

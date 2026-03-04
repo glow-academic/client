@@ -11,6 +11,7 @@ from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
+
 @router.post("/sessions/refresh")
 async def refresh_sessions_endpoint(
     http_request: Request,

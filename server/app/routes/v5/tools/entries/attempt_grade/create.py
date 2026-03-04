@@ -21,6 +21,7 @@ SQL_PATH = (
 
 ENTRY_TYPE = "attempt_grades"
 
+
 async def create_attempt_grade_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,

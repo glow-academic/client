@@ -18,6 +18,7 @@ SQL_PATH = (
     "app/sql/queries/entries/cohort_drafts/search_cohort_drafts_entries_complete.sql"
 )
 
+
 async def search_cohort_drafts_entries_internal(
     conn: asyncpg.Connection,
     search: str | None = None,

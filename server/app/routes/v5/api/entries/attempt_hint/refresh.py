@@ -13,6 +13,7 @@ from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
+
 @router.post("/attempt_hint/refresh")
 async def refresh_attempt_hint(
     http_request: Request,

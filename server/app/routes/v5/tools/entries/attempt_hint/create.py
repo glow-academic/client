@@ -21,6 +21,7 @@ SQL_PATH = (
 
 ENTRY_TYPE = "hints"
 
+
 async def create_attempt_hint_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,

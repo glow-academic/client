@@ -19,6 +19,7 @@ SQL_PATH = "app/sql/queries/entries/attempt_improvement/get_attempt_improvement_
 
 VIEW_SQL_PATH = "app/sql/queries/views/simulation/improvements/get_simulation_improvements_view_complete.sql"
 
+
 async def get_attempt_improvement_entries_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],
@@ -56,6 +57,7 @@ async def get_attempt_improvement_entries_internal(
     )
 
     return items
+
 
 async def get_attempt_improvement_internal(
     conn: asyncpg.Connection,

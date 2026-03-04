@@ -12,12 +12,15 @@ async def get_message_upload(
     message_upload_id: UUID,
 ) -> GetMessageUploadResponse | None:
     """Get a message_uploads entry by ID."""
-    row = await conn.fetchrow("""
+    row = await conn.fetchrow(
+        """
         SELECT id, message_id, upload_id, session_id,
                created_at, active, mcp, generated
         FROM message_uploads_entry
         WHERE id = $1
-    """, message_upload_id)
+    """,
+        message_upload_id,
+    )
 
     if row is None:
         return None

@@ -24,6 +24,7 @@ SQL_PATH = "app/sql/queries/resources/questions/get_question_complete.sql"
 
 BATCH_SQL_PATH = "app/sql/queries/resources/questions/get_questions_complete.sql"
 
+
 async def get_question_internal(
     conn: asyncpg.Connection,
     id: UUID,
@@ -58,6 +59,7 @@ async def get_question_internal(
     )
 
     return item
+
 
 async def get_questions_internal(
     conn: asyncpg.Connection,

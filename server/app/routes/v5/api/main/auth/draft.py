@@ -27,9 +27,7 @@ from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import execute_sql_typed
 
 # SQL paths — reuse duplicate access check (just needs user_role)
-ACCESS_CHECK_SQL_PATH = (
-    "app/sql/queries/auth/check_auth_duplicate_access_complete.sql"
-)
+ACCESS_CHECK_SQL_PATH = "app/sql/queries/auth/check_auth_duplicate_access_complete.sql"
 SQL_PATH = "app/sql/queries/auth/patch_auth_draft_complete.sql"
 
 router = APIRouter()

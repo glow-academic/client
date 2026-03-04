@@ -19,6 +19,7 @@ SQL_PATH = "app/sql/queries/entries/attempt_replacement/get_attempt_replacement_
 
 VIEW_SQL_PATH = "app/sql/queries/views/simulation/replacements/get_simulation_replacements_view_complete.sql"
 
+
 async def get_attempt_replacement_entries_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],
@@ -56,6 +57,7 @@ async def get_attempt_replacement_entries_internal(
     )
 
     return items
+
 
 async def get_attempt_replacement_internal(
     conn: asyncpg.Connection,

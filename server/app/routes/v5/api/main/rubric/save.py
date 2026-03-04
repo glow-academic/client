@@ -35,9 +35,7 @@ from app.utils.sql_helper import execute_sql_typed
 logger = get_logger(__name__)
 
 # SQL paths
-ACCESS_CHECK_SQL_PATH = (
-    "app/sql/queries/rubrics/check_rubric_save_access_complete.sql"
-)
+ACCESS_CHECK_SQL_PATH = "app/sql/queries/rubrics/check_rubric_save_access_complete.sql"
 SQL_PATH = "app/sql/queries/rubrics/save_rubric_complete.sql"
 
 router = APIRouter()

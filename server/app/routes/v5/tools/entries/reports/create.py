@@ -19,6 +19,7 @@ SQL_PATH = "app/sql/queries/entries/reports/create_reports_entries_complete.sql"
 
 ENTRY_TYPE = "reports"
 
+
 async def create_reports_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,

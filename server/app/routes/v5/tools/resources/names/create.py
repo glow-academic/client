@@ -25,26 +25,34 @@ async def create_name(
             tool_id = tool_info.tool_id
 
     # Check if name already exists
-    existing = await conn.fetchrow("""
+    existing = await conn.fetchrow(
+        """
         SELECT id FROM names_resource WHERE name = $1 LIMIT 1
-    """, name)
+    """,
+        name,
+    )
 
     if existing:
         return CreateNameResponse(name_id=existing["id"])
 
     # Insert new name
-    row = await conn.fetchrow("""
+    row = await conn.fetchrow(
+        """
         INSERT INTO names_resource (name, active, mcp, generated)
         VALUES ($1, true, $2, $2)
         RETURNING id
-    """, name, mcp)
+    """,
+        name,
+        mcp,
+    )
 
     name_id = row["id"]
 
     # Create tracking records if tool_id and group_id provided
     call_id = None
     if tool_id is not None and group_id is not None:
-        call_id = await conn.fetchval("""
+        call_id = await conn.fetchval(
+            """
             WITH new_run AS (
                 INSERT INTO runs_entry (id, group_id, created_at, updated_at)
                 VALUES (uuidv7(), $1, NOW(), NOW())
@@ -65,7 +73,11 @@ async def create_name(
                 SELECT $3, new_call.id FROM new_call
             )
             SELECT new_call.id FROM new_call
-        """, group_id, tool_id, name_id)
+        """,
+            group_id,
+            tool_id,
+            name_id,
+        )
 
     # Record arg values
     if tool_info is None and tool_id is not None:

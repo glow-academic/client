@@ -17,6 +17,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/resources/descriptions/search_descriptions_complete.sql"
 
+
 async def search_descriptions_internal(
     conn: asyncpg.Connection,
     search: str | None = None,

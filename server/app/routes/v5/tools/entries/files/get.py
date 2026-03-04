@@ -12,11 +12,14 @@ async def get_file(
     file_id: UUID,
 ) -> GetFileResponse | None:
     """Get a files entry by ID."""
-    row = await conn.fetchrow("""
+    row = await conn.fetchrow(
+        """
         SELECT id, session_id, active, mcp, generated
         FROM files_entry
         WHERE id = $1
-    """, file_id)
+    """,
+        file_id,
+    )
 
     if row is None:
         return None

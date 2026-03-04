@@ -19,6 +19,7 @@ SQL_PATH = (
     "app/sql/queries/resources/scenario_rubrics/search_scenario_rubrics_complete.sql"
 )
 
+
 async def search_scenario_rubrics_internal(
     conn: asyncpg.Connection,
     scenario_ids: list[UUID],

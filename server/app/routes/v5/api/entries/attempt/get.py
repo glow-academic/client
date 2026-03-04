@@ -45,6 +45,7 @@ CHATS_SQL_PATH = None  # Uses get_chats_internal, no direct SQL
 # Router handler
 # ---------------------------------------------------------------------------
 
+
 @router.post(
     "/attempt/get",
     response_model=GetAttemptEntriesApiResponse,

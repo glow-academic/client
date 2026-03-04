@@ -19,6 +19,7 @@ from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
+
 @router.post("/attempt-hint/create", response_model=CreateAttemptHintEntryResponse)
 async def create_attempt_hint_entry(
     request: CreateAttemptHintEntryRequest,

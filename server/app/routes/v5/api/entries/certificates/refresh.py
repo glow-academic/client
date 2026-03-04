@@ -13,6 +13,7 @@ from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
+
 @router.post("/certificates/refresh")
 async def refresh_certificates(
     http_request: Request,

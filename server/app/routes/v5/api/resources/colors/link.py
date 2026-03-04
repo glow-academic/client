@@ -20,11 +20,14 @@ class LinkColorsApiRequest(BaseModel):
     group_id: UUID
     tool_id: UUID
 
+
 class LinkColorsApiResponse(BaseModel):
     success: bool = True
     color_id: UUID | None = None
 
+
 router = APIRouter()
+
 
 @router.post(
     "/colors/link",

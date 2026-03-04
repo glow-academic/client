@@ -30,6 +30,7 @@ router = APIRouter()
 # HTTP Endpoint
 # =============================================================================
 
+
 @router.post(
     "/model_rubrics/get",
     response_model=GetModelRubricsApiResponse,

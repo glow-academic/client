@@ -26,6 +26,7 @@ router = APIRouter()
 # HTTP Endpoint
 # =============================================================================
 
+
 @router.post(
     "/profile_personas/search",
     response_model=SearchProfilePersonasApiResponse,

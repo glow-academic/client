@@ -18,6 +18,7 @@ SQL_PATH = (
     "app/sql/queries/entries/field_drafts/search_field_drafts_entries_complete.sql"
 )
 
+
 async def search_field_drafts_entries_internal(
     conn: asyncpg.Connection,
     search: str | None = None,

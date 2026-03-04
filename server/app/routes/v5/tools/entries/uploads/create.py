@@ -16,11 +16,18 @@ async def create_upload(
     mcp: bool = False,
 ) -> CreateUploadResponse:
     """Create an uploads entry."""
-    upload_id = await conn.fetchval("""
+    upload_id = await conn.fetchval(
+        """
         INSERT INTO uploads_entry (session_id, file_path, mime_type, size, mcp, generated)
         VALUES ($1, $2, $3, $4, $5, true)
         RETURNING id
-    """, session_id, file_path, mime_type, size, mcp)
+    """,
+        session_id,
+        file_path,
+        mime_type,
+        size,
+        mcp,
+    )
 
     if upload_id is None:
         raise ValueError("Failed to create uploads entry")

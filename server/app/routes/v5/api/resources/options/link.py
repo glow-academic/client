@@ -20,11 +20,14 @@ class LinkOptionsApiRequest(BaseModel):
     group_id: UUID
     tool_id: UUID
 
+
 class LinkOptionsApiResponse(BaseModel):
     success: bool = True
     options_id: UUID | None = None
 
+
 router = APIRouter()
+
 
 @router.post(
     "/options/link",

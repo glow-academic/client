@@ -20,11 +20,14 @@ class LinkObjectivesApiRequest(BaseModel):
     group_id: UUID
     tool_id: UUID
 
+
 class LinkObjectivesApiResponse(BaseModel):
     success: bool = True
     objectives_id: UUID | None = None
 
+
 router = APIRouter()
+
 
 @router.post(
     "/objectives/link",

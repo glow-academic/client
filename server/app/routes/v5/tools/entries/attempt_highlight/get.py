@@ -19,6 +19,7 @@ SQL_PATH = "app/sql/queries/entries/attempt_highlight/get_attempt_highlight_entr
 
 VIEW_SQL_PATH = "app/sql/queries/views/simulation/highlights/get_simulation_highlights_view_complete.sql"
 
+
 async def get_attempt_highlight_entries_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],
@@ -56,6 +57,7 @@ async def get_attempt_highlight_entries_internal(
     )
 
     return items
+
 
 async def get_attempt_highlight_internal(
     conn: asyncpg.Connection,

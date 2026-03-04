@@ -19,6 +19,7 @@ PROFILE_SUMMARY_SQL_PATH = (
     "get_profile_summary_view_complete.sql"
 )
 
+
 async def get_profile_summary_view_internal(
     conn: asyncpg.Connection,
     profile_id_filter: UUID | None = None,

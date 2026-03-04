@@ -25,9 +25,7 @@ from app.utils.sql_helper import execute_sql_typed, load_sql
 
 logger = get_logger(__name__)
 
-ACTIVE_SETTINGS_SQL_PATH = (
-    "app/sql/queries/settings/get_active_settings_complete.sql"
-)
+ACTIVE_SETTINGS_SQL_PATH = "app/sql/queries/settings/get_active_settings_complete.sql"
 GET_DOCUMENT_AGENTS_SQL_PATH = (
     "app/sql/queries/infrastructure/documents/get_document_agents_complete.sql"
 )
@@ -206,9 +204,7 @@ async def create_dynamic_document(
     upload_id = upload_row["id"]
 
     # Link document to upload (regular upload, not template upload)
-    sql_link_upload = load_sql(
-        "app/sql/queries/documents/insert_document_upload.sql"
-    )
+    sql_link_upload = load_sql("app/sql/queries/documents/insert_document_upload.sql")
     await conn.execute(
         sql_link_upload,
         str(child_document_id),

@@ -17,9 +17,8 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/entries/training/get_training_entries_complete.sql"
 
-VIEW_SQL_PATH = (
-    "app/sql/queries/views/training/bundle/get_training_view_complete.sql"
-)
+VIEW_SQL_PATH = "app/sql/queries/views/training/bundle/get_training_view_complete.sql"
+
 
 async def get_training_entries_internal(
     conn: asyncpg.Connection,
@@ -58,6 +57,7 @@ async def get_training_entries_internal(
     )
 
     return items
+
 
 async def get_training_view_internal(
     conn: asyncpg.Connection,

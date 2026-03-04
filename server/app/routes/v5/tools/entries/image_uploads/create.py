@@ -15,11 +15,17 @@ async def create_image_upload(
     mcp: bool = False,
 ) -> CreateImageUploadResponse:
     """Create an image_uploads entry."""
-    row_id = await conn.fetchval("""
+    row_id = await conn.fetchval(
+        """
         INSERT INTO image_uploads_entry (image_id, upload_id, session_id, mcp, generated)
         VALUES ($1, $2, $3, $4, true)
         RETURNING id
-    """, image_id, upload_id, session_id, mcp)
+    """,
+        image_id,
+        upload_id,
+        session_id,
+        mcp,
+    )
 
     if row_id is None:
         raise ValueError("Failed to create image_uploads entry")

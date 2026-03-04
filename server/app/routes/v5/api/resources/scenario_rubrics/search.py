@@ -26,6 +26,7 @@ router = APIRouter()
 # HTTP Endpoint
 # =============================================================================
 
+
 @router.post(
     "/scenario_rubrics/search",
     response_model=SearchScenarioRubricsApiResponse,

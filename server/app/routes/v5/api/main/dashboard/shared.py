@@ -19,9 +19,7 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-ACTIVE_SETTINGS_SQL_PATH = (
-    "app/sql/queries/settings/get_active_settings_complete.sql"
-)
+ACTIVE_SETTINGS_SQL_PATH = "app/sql/queries/settings/get_active_settings_complete.sql"
 
 SQL_PATH_RUBRIC_SCORES = (
     "app/sql/queries/views/chat/rubric_scores/get_rubric_scores_complete.sql"

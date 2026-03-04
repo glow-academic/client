@@ -14,6 +14,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/entries/responses/create_responses_entries_complete.sql"
 
+
 async def create_responses_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,

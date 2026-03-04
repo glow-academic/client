@@ -17,6 +17,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/resources/simulation_positions/get_simulation_positions_complete.sql"
 
+
 async def get_simulation_positions_internal(
     conn: asyncpg.Connection,
     simulation_ids: list[UUID],

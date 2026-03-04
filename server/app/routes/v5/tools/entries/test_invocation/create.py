@@ -19,6 +19,7 @@ SQL_PATH = "app/sql/queries/entries/test_invocation/create_test_invocation_entri
 
 ENTRY_TYPE = "test_invocations"
 
+
 async def create_test_invocation_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,

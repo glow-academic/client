@@ -23,6 +23,7 @@ router = APIRouter()
 # HTTP Endpoint
 # =============================================================================
 
+
 @router.post(
     "/texts/get",
     response_model=GetTextsApiResponse,

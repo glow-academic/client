@@ -16,6 +16,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/entries/scenario_drafts/search_scenario_drafts_entries_complete.sql"
 
+
 async def search_scenario_drafts_entries_internal(
     conn: asyncpg.Connection,
     search: str | None = None,

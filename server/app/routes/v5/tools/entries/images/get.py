@@ -12,11 +12,14 @@ async def get_image(
     image_id: UUID,
 ) -> GetImageResponse | None:
     """Get an images entry by ID."""
-    row = await conn.fetchrow("""
+    row = await conn.fetchrow(
+        """
         SELECT id, session_id, active, mcp, generated
         FROM images_entry
         WHERE id = $1
-    """, image_id)
+    """,
+        image_id,
+    )
 
     if row is None:
         return None

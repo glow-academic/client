@@ -11,6 +11,7 @@ from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
+
 @router.post("/debug_info/refresh")
 async def refresh_debug_info(
     http_request: Request,

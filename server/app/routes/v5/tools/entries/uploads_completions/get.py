@@ -4,7 +4,9 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.routes.v5.tools.entries.uploads_completions.types import GetUploadCompletionResponse
+from app.routes.v5.tools.entries.uploads_completions.types import (
+    GetUploadCompletionResponse,
+)
 
 
 async def get_upload_completion(
@@ -12,12 +14,15 @@ async def get_upload_completion(
     completion_id: UUID,
 ) -> GetUploadCompletionResponse | None:
     """Get an uploads_completions entry by ID."""
-    row = await conn.fetchrow("""
+    row = await conn.fetchrow(
+        """
         SELECT id, upload_id, session_id,
                created_at, active, mcp, generated
         FROM uploads_completions_entry
         WHERE id = $1
-    """, completion_id)
+    """,
+        completion_id,
+    )
 
     if row is None:
         return None

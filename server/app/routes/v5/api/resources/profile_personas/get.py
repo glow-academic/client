@@ -30,6 +30,7 @@ router = APIRouter()
 # HTTP Endpoint
 # =============================================================================
 
+
 @router.post(
     "/profile_personas/get",
     response_model=GetProfilePersonasApiResponse,

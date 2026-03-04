@@ -12,11 +12,14 @@ async def get_text(
     text_id: UUID,
 ) -> GetTextResponse | None:
     """Get a texts entry by ID."""
-    row = await conn.fetchrow("""
+    row = await conn.fetchrow(
+        """
         SELECT id, session_id, active, mcp, generated
         FROM texts_entry
         WHERE id = $1
-    """, text_id)
+    """,
+        text_id,
+    )
 
     if row is None:
         return None

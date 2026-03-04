@@ -20,11 +20,14 @@ class LinkScenarioRubricsApiRequest(BaseModel):
     group_id: UUID
     tool_id: UUID
 
+
 class LinkScenarioRubricsApiResponse(BaseModel):
     success: bool = True
     scenario_rubrics_id: UUID | None = None
 
+
 router = APIRouter()
+
 
 @router.post(
     "/scenario_rubrics/link",

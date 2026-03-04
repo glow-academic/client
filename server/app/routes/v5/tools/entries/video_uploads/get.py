@@ -12,12 +12,15 @@ async def get_video_upload(
     video_upload_id: UUID,
 ) -> GetVideoUploadResponse | None:
     """Get a video_uploads entry by ID."""
-    row = await conn.fetchrow("""
+    row = await conn.fetchrow(
+        """
         SELECT id, video_id, upload_id, session_id,
                created_at, active, mcp, generated
         FROM video_uploads_entry
         WHERE id = $1
-    """, video_upload_id)
+    """,
+        video_upload_id,
+    )
 
     if row is None:
         return None

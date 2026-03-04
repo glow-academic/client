@@ -19,7 +19,8 @@ async def search_sessions(
     offset: int = 0,
 ) -> list[GetSessionResponse]:
     """Search sessions from sessions_mv with declarative filters."""
-    rows = await conn.fetch("""
+    rows = await conn.fetch(
+        """
         SELECT session_id, profile_id, session_created_at, active, mcp
         FROM sessions_mv
         WHERE ($1::uuid IS NULL OR profile_id = $1)
@@ -29,7 +30,15 @@ async def search_sessions(
           AND ($5::boolean IS NULL OR mcp = $5)
         ORDER BY session_created_at DESC
         LIMIT $6 OFFSET $7
-    """, profile_id, date_from, date_to, active, mcp, limit, offset)
+    """,
+        profile_id,
+        date_from,
+        date_to,
+        active,
+        mcp,
+        limit,
+        offset,
+    )
 
     return [
         GetSessionResponse(

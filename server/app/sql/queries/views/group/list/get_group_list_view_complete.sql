@@ -55,7 +55,6 @@ CREATE TYPE types.q_get_group_list_view_v4_item AS (
     group_id uuid,
     session_id uuid,
     group_created_at timestamptz,
-    trace_id text,
     group_name text,
     active boolean
 );
@@ -115,7 +114,6 @@ AS $$
                     group_id,
                     session_id,
                     group_created_at,
-                    trace_id,
                     group_name,
                     active
                 )::types.q_get_group_list_view_v4_item

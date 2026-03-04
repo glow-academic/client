@@ -15,11 +15,10 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import execute_sql_typed
 from app.utils.storage.file_writer import write_text_file
 
-SQL_PATH = (
-    "app/sql/queries/entries/test_grade/create_test_grade_entries_complete.sql"
-)
+SQL_PATH = "app/sql/queries/entries/test_grade/create_test_grade_entries_complete.sql"
 
 ENTRY_TYPE = "test_grades"
+
 
 async def create_test_grade_entry_internal(
     conn: asyncpg.Connection,

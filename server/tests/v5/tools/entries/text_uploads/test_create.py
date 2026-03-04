@@ -16,21 +16,29 @@ async def _deps(conn):
     session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
     text = await create_text(conn, session_id=session.id)
     upload = await create_upload(
-        conn, session_id=session.id, file_path="test/file.txt", mime_type="text/plain", size=1024,
+        conn,
+        session_id=session.id,
+        file_path="test/file.txt",
+        mime_type="text/plain",
+        size=1024,
     )
     return session, text, upload
 
 
 async def test_creates_text_upload_entry(conn):
     session, text, upload = await _deps(conn)
-    result = await create_text_upload(conn, text_id=text.id, upload_id=upload.id, session_id=session.id)
+    result = await create_text_upload(
+        conn, text_id=text.id, upload_id=upload.id, session_id=session.id
+    )
 
     assert result.id is not None
 
 
 async def test_text_upload_exists_in_table(conn):
     session, text, upload = await _deps(conn)
-    result = await create_text_upload(conn, text_id=text.id, upload_id=upload.id, session_id=session.id)
+    result = await create_text_upload(
+        conn, text_id=text.id, upload_id=upload.id, session_id=session.id
+    )
 
     row = await get_text_upload(conn, result.id)
 
@@ -43,7 +51,9 @@ async def test_text_upload_exists_in_table(conn):
 
 async def test_passes_mcp_flag(conn):
     session, text, upload = await _deps(conn)
-    result = await create_text_upload(conn, text_id=text.id, upload_id=upload.id, session_id=session.id, mcp=True)
+    result = await create_text_upload(
+        conn, text_id=text.id, upload_id=upload.id, session_id=session.id, mcp=True
+    )
 
     row = await get_text_upload(conn, result.id)
 

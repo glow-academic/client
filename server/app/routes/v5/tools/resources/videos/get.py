@@ -24,6 +24,7 @@ SQL_PATH = "app/sql/queries/resources/videos/get_video_complete.sql"
 
 BATCH_SQL_PATH = "app/sql/queries/resources/videos/get_videos_complete.sql"
 
+
 async def get_video_internal(
     conn: asyncpg.Connection,
     id: UUID,
@@ -58,6 +59,7 @@ async def get_video_internal(
     )
 
     return item
+
 
 async def get_videos_internal(
     conn: asyncpg.Connection,

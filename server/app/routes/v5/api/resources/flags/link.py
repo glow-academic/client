@@ -20,11 +20,14 @@ class LinkFlagsApiRequest(BaseModel):
     group_id: UUID
     tool_id: UUID
 
+
 class LinkFlagsApiResponse(BaseModel):
     success: bool = True
     flag_id: UUID | None = None
 
+
 router = APIRouter()
+
 
 @router.post(
     "/flags/link",

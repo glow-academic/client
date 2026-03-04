@@ -33,7 +33,6 @@ BEGIN
             'group_id', m.group_id,
             'session_id', m.session_id,
             'group_created_at', m.group_created_at,
-            'trace_id', m.trace_id,
             'group_name', m.group_name,
             'active', m.active
         ) AS row_data

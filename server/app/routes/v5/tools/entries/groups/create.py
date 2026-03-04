@@ -14,11 +14,16 @@ async def create_group(
     mcp: bool = False,
 ) -> CreateGroupResponse:
     """Create a groups entry."""
-    group_id = await conn.fetchval("""
+    group_id = await conn.fetchval(
+        """
         INSERT INTO groups_entry (session_id, name, mcp, generated)
         VALUES ($1, $2, $3, true)
         RETURNING id
-    """, session_id, name, mcp)
+    """,
+        session_id,
+        name,
+        mcp,
+    )
 
     if group_id is None:
         raise ValueError("Failed to create groups entry")

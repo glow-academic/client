@@ -86,7 +86,10 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
         "get": ("app.routes.v5.api.main.dashboard.get", "get_dashboard"),
         "header": ("app.routes.v5.api.main.dashboard.header", "get_dashboard_header"),
         "footer": ("app.routes.v5.api.main.dashboard.footer", "get_dashboard_footer"),
-        "primary": ("app.routes.v5.api.main.dashboard.primary", "get_dashboard_primary"),
+        "primary": (
+            "app.routes.v5.api.main.dashboard.primary",
+            "get_dashboard_primary",
+        ),
         "secondary": (
             "app.routes.v5.api.main.dashboard.secondary",
             "get_dashboard_secondary",
@@ -225,7 +228,10 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
         "list": ("app.routes.v5.api.main.scenario.list", "get_scenario_list"),
         "save": ("app.routes.v5.api.main.scenario.save", "save_scenario"),
         "delete": ("app.routes.v5.api.main.scenario.delete", "delete_scenario"),
-        "duplicate": ("app.routes.v5.api.main.scenario.duplicate", "duplicate_scenario"),
+        "duplicate": (
+            "app.routes.v5.api.main.scenario.duplicate",
+            "duplicate_scenario",
+        ),
         "draft": ("app.routes.v5.api.main.scenario.draft", "patch_scenario_draft"),
         "docs": ("app.routes.v5.api.main.scenario.docs", "get_scenarios_docs"),
     },
@@ -535,7 +541,10 @@ ENTRY_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {}
 for _name in _ALL_ENTRIES:
     _entry: dict[str, tuple[str, str]] = {
         "get": (f"app.routes.v5.api.entries.{_name}.get", f"get_{_name}_entries"),
-        "search": (f"app.routes.v5.api.entries.{_name}.search", f"search_{_name}_entries"),
+        "search": (
+            f"app.routes.v5.api.entries.{_name}.search",
+            f"search_{_name}_entries",
+        ),
     }
     if _name in _ENTRIES_WITH_CREATE_ROUTE:
         _entry["create"] = (

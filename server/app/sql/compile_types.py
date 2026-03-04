@@ -230,19 +230,13 @@ def _sort_sql_files(sql_file: Path, server_root: Path) -> tuple[int, str]:
         return (11, sql_path)
 
     # Settings detail must come before active settings (type dependency)
-    if (
-        sql_path
-        == "app/sql/queries/settings/get_settings_detail_complete.sql"
-    ):
+    if sql_path == "app/sql/queries/settings/get_settings_detail_complete.sql":
         return (
             12,
             "a_" + sql_path,
         )  # 'a_' prefix ensures it sorts before 'get_active_'
 
-    if (
-        sql_path
-        == "app/sql/queries/settings/get_active_settings_complete.sql"
-    ):
+    if sql_path == "app/sql/queries/settings/get_active_settings_complete.sql":
         return (13, "b_" + sql_path)  # 'b_' prefix ensures it sorts after detail
 
     # Profile: get_profile_complete creates types.q_get_profile_v4_role_resource
@@ -1478,9 +1472,7 @@ async def compile_sql_types(
             td for td in type_definitions if td[0].startswith("app/sql/")
         ]
         test_type_definitions = [
-            td
-            for td in type_definitions
-            if td[0].startswith("tests/sql/integration/")
+            td for td in type_definitions if td[0].startswith("tests/sql/integration/")
         ]
 
         # In incremental mode, merge with existing types for files not processed

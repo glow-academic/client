@@ -36,9 +36,7 @@ from app.utils.sql_helper import execute_sql_typed
 logger = get_logger(__name__)
 
 # SQL paths
-ACCESS_CHECK_SQL_PATH = (
-    "app/sql/queries/profile/check_profile_save_access_complete.sql"
-)
+ACCESS_CHECK_SQL_PATH = "app/sql/queries/profile/check_profile_save_access_complete.sql"
 SQL_PATH = "app/sql/queries/profile/save_profile_complete.sql"
 
 router = APIRouter()

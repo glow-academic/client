@@ -19,6 +19,7 @@ SQL_PATH = "app/sql/queries/entries/attempt_highlight/create_attempt_highlight_e
 
 ENTRY_TYPE = "highlights"
 
+
 async def create_attempt_highlight_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,

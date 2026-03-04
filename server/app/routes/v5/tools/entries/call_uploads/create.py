@@ -15,11 +15,17 @@ async def create_call_upload(
     mcp: bool = False,
 ) -> CreateCallUploadResponse:
     """Create a call_uploads entry."""
-    row_id = await conn.fetchval("""
+    row_id = await conn.fetchval(
+        """
         INSERT INTO call_uploads_entry (call_id, upload_id, session_id, mcp, generated)
         VALUES ($1, $2, $3, $4, true)
         RETURNING id
-    """, call_id, upload_id, session_id, mcp)
+    """,
+        call_id,
+        upload_id,
+        session_id,
+        mcp,
+    )
 
     if row_id is None:
         raise ValueError("Failed to create call_uploads entry")

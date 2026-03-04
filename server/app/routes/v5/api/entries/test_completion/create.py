@@ -19,6 +19,7 @@ from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
+
 @router.post(
     "/test-completion/create", response_model=CreateTestCompletionEntryResponse
 )

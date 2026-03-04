@@ -18,6 +18,7 @@ SQL_PATH = (
     "app/sql/queries/entries/certificates/search_certificates_entries_complete.sql"
 )
 
+
 async def search_certificates_entries_internal(
     conn: asyncpg.Connection,
     search: str | None = None,

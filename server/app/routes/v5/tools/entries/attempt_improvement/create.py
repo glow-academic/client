@@ -19,6 +19,7 @@ SQL_PATH = "app/sql/queries/entries/attempt_improvement/create_attempt_improveme
 
 ENTRY_TYPE = "improvements"
 
+
 async def create_attempt_improvement_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,

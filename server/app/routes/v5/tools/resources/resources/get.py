@@ -17,6 +17,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/resources/resources/get_resources_complete.sql"
 
+
 async def get_resources_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],

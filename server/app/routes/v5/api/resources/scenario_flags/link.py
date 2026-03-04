@@ -20,11 +20,14 @@ class LinkScenarioFlagsApiRequest(BaseModel):
     group_id: UUID
     tool_id: UUID
 
+
 class LinkScenarioFlagsApiResponse(BaseModel):
     success: bool = True
     scenario_flags_id: UUID | None = None
 
+
 router = APIRouter()
+
 
 @router.post(
     "/scenario_flags/link",

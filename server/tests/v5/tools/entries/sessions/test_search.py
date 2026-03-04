@@ -58,8 +58,12 @@ async def test_filters_by_date_to(conn):
 
 
 async def test_filters_by_mcp(conn):
-    r_mcp = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID, mcp=True)
-    r_normal = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID, mcp=False)
+    r_mcp = await create_session(
+        conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID, mcp=True
+    )
+    r_normal = await create_session(
+        conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID, mcp=False
+    )
     await refresh_sessions(conn)
 
     items = await search_sessions(conn, mcp=True)
@@ -75,7 +79,9 @@ async def test_pagination_limit(conn):
     await refresh_sessions(conn)
 
     items = await search_sessions(
-        conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID, limit=1,
+        conn,
+        profile_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+        limit=1,
     )
 
     assert len(items) == 1

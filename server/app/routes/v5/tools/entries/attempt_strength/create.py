@@ -19,6 +19,7 @@ SQL_PATH = "app/sql/queries/entries/attempt_strength/create_attempt_strength_ent
 
 ENTRY_TYPE = "strengths"
 
+
 async def create_attempt_strength_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,

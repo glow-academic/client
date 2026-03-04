@@ -15,9 +15,12 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/queries/entries/attempt_message/get_attempt_message_entries_complete.sql"
+SQL_PATH = (
+    "app/sql/queries/entries/attempt_message/get_attempt_message_entries_complete.sql"
+)
 
 VIEW_SQL_PATH = "app/sql/queries/views/simulation/messages/get_simulation_messages_view_complete.sql"
+
 
 async def get_attempt_message_entries_internal(
     conn: asyncpg.Connection,
@@ -56,6 +59,7 @@ async def get_attempt_message_entries_internal(
     )
 
     return items
+
 
 async def get_attempt_message_internal(
     conn: asyncpg.Connection,

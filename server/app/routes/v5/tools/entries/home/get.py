@@ -17,9 +17,8 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/entries/home/get_home_entries_complete.sql"
 
-VIEW_SQL_PATH = (
-    "app/sql/queries/views/home/context/get_home_context_view_complete.sql"
-)
+VIEW_SQL_PATH = "app/sql/queries/views/home/context/get_home_context_view_complete.sql"
+
 
 async def get_home_context_view_internal(
     conn: asyncpg.Connection,
@@ -57,6 +56,7 @@ async def get_home_context_view_internal(
     )
 
     return response
+
 
 async def get_home_entries_internal(
     conn: asyncpg.Connection,

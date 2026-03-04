@@ -4,13 +4,12 @@
 #
 # Load order:
 #   1. extensions.sql
-#   2. functions.sql (prerequisite functions for table defaults)
-#   3. enums/*.sql
-#   4. tables/ (artifacts, entries, resources, junctions, connections)
-#   5. indexes/ (same subfolder structure as tables/)
-#   6. foreign_keys/ (same subfolder structure)
-#   7. views/*.sql (materialized views — pure CREATE ... WITH NO DATA)
-#   8. indexes/views/*.sql (MV indexes)
+#   2. enums/*.sql
+#   3. tables/ (artifacts, entries, resources, junctions, connections)
+#   4. indexes/ (same subfolder structure as tables/)
+#   5. foreign_keys/ (same subfolder structure)
+#   6. views/*.sql (materialized views — pure CREATE ... WITH NO DATA)
+#   7. indexes/views/*.sql (MV indexes)
 #
 # Usage:
 #   bash database/scripts/concat_schema.sh [output_path]
@@ -31,12 +30,6 @@ TABLE_SUBFOLDERS="artifacts entries resources junctions connections"
 
 {
     cat "$SCHEMA_DIR/extensions.sql"
-
-    # Prerequisite functions (needed by table DEFAULT clauses)
-    if [ -f "$SCHEMA_DIR/functions.sql" ]; then
-        echo ""
-        cat "$SCHEMA_DIR/functions.sql"
-    fi
 
     # Enums
     for f in $(find "$SCHEMA_DIR/enums" -name '*.sql' | sort); do

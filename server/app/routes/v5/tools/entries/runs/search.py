@@ -20,12 +20,14 @@ SEARCH_SQL_PATH = "app/sql/queries/entries/runs/search_runs_entries_complete.sql
 
 LIST_SQL_PATH = "app/sql/queries/views/run/list/get_run_list_view_complete.sql"
 
+
 class RunPricingItem(BaseModel):
     """Single pricing entry for a run. Cost computed at runtime."""
 
     pricing_type: str | None = None
     count: int = 0
     pricing_id: UUID | None = None
+
 
 class RunViewItem(BaseModel):
     """Single run from the run list."""
@@ -41,11 +43,13 @@ class RunViewItem(BaseModel):
     provider_ids: list[UUID] | None = None
     pricing: list[RunPricingItem] = Field(default_factory=list)
 
+
 class GetRunListViewResponse(BaseModel):
     """Response containing run list data."""
 
     items: list[RunViewItem] = Field(default_factory=list, description="Run data items")
     total_count: int = Field(default=0, description="Total count before pagination")
+
 
 async def search_runs_entries_internal(
     conn: asyncpg.Connection,
@@ -113,6 +117,7 @@ async def search_runs_entries_internal(
 
     return items
 
+
 def _build_pricing_list(item: object) -> list[RunPricingItem]:
     """Build pricing list from flat columns."""
     pricing: list[RunPricingItem] = []
@@ -141,6 +146,7 @@ def _build_pricing_list(item: object) -> list[RunPricingItem]:
             )
         )
     return pricing
+
 
 async def get_run_list_entries_internal(
     conn: asyncpg.Connection,

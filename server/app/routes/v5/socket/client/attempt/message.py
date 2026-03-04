@@ -183,10 +183,14 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
                 role="assistant",
             )
             if chat_id is not None:
-                await conn.execute("""
+                await conn.execute(
+                    """
                     INSERT INTO attempt_message_entry (id, chat_id)
                     VALUES ($1, $2)
-                """, assistant_result.id, chat_id)
+                """,
+                    assistant_result.id,
+                    chat_id,
+                )
             assistant_message_id = assistant_result.id
             created_at = assistant_result.created_at
 

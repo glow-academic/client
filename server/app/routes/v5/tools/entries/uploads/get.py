@@ -12,12 +12,15 @@ async def get_upload(
     upload_id: UUID,
 ) -> GetUploadResponse | None:
     """Get an uploads entry by ID."""
-    row = await conn.fetchrow("""
+    row = await conn.fetchrow(
+        """
         SELECT id, session_id, file_path, mime_type, size,
                created_at, active, mcp, generated
         FROM uploads_entry
         WHERE id = $1
-    """, upload_id)
+    """,
+        upload_id,
+    )
 
     if row is None:
         return None

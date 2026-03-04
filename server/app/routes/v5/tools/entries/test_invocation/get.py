@@ -15,9 +15,14 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/queries/entries/test_invocation/get_test_invocation_entries_complete.sql"
+SQL_PATH = (
+    "app/sql/queries/entries/test_invocation/get_test_invocation_entries_complete.sql"
+)
 
-VIEW_SQL_PATH = "app/sql/queries/views/benchmark/invocations/get_test_invocation_view_complete.sql"
+VIEW_SQL_PATH = (
+    "app/sql/queries/views/benchmark/invocations/get_test_invocation_view_complete.sql"
+)
+
 
 async def get_test_invocation_entries_internal(
     conn: asyncpg.Connection,
@@ -56,6 +61,7 @@ async def get_test_invocation_entries_internal(
     )
 
     return items
+
 
 async def get_test_invocation_internal(
     conn: asyncpg.Connection,

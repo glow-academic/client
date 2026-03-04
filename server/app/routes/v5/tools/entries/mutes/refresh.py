@@ -8,6 +8,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 MV_NAME = "mutes_mv"
 
+
 async def refresh_mutes_internal(
     conn: asyncpg.Connection,
 ) -> dict:

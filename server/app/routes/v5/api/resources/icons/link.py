@@ -20,11 +20,14 @@ class LinkIconsApiRequest(BaseModel):
     group_id: UUID
     tool_id: UUID
 
+
 class LinkIconsApiResponse(BaseModel):
     success: bool = True
     icon_id: UUID | None = None
 
+
 router = APIRouter()
+
 
 @router.post(
     "/icons/link",

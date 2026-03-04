@@ -18,6 +18,7 @@ TIMELINE_SQL_PATH = (
     "app/sql/queries/views/session/timeline/get_session_timeline_view_complete.sql"
 )
 
+
 async def get_session_timeline_view_internal(
     conn: asyncpg.Connection,
     session_id: UUID,

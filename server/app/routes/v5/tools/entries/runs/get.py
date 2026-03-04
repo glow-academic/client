@@ -12,11 +12,14 @@ async def get_run(
     run_id: UUID,
 ) -> GetRunResponse | None:
     """Get a runs entry by ID."""
-    row = await conn.fetchrow("""
+    row = await conn.fetchrow(
+        """
         SELECT id, session_id, group_id, mcp, generated
         FROM runs_entry
         WHERE id = $1
-    """, run_id)
+    """,
+        run_id,
+    )
 
     if row is None:
         return None

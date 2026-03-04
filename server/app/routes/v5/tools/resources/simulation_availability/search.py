@@ -17,6 +17,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/resources/simulation_availability/search_simulation_availability_complete.sql"
 
+
 async def search_simulation_availability_internal(
     conn: asyncpg.Connection,
     simulation_ids: list[UUID] | None = None,

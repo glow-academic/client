@@ -18,6 +18,7 @@ SQL_PATH = (
     "app/sql/queries/entries/conversations/get_conversations_entries_complete.sql"
 )
 
+
 async def get_conversations_entries_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],

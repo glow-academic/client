@@ -23,6 +23,7 @@ router = APIRouter()
 # MCP mode: Return metadata from uploads_mv
 # ============================================================================
 
+
 @router.post(
     "/uploads/get",
     response_model=GetUploadsEntriesApiResponse,

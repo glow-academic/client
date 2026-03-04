@@ -18,6 +18,7 @@ SQL_PATH = (
     "app/sql/queries/entries/test_feedback/get_test_feedback_entries_complete.sql"
 )
 
+
 async def get_test_feedback_entries_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],

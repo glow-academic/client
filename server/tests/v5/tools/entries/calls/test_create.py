@@ -40,7 +40,9 @@ async def test_call_exists_in_table(conn):
 
 async def test_passes_external_call_id(conn):
     session, run = await _run(conn)
-    result = await create_call(conn, run_id=run.id, session_id=session.id, external_call_id="test_call_123")
+    result = await create_call(
+        conn, run_id=run.id, session_id=session.id, external_call_id="test_call_123"
+    )
 
     call = await get_call(conn, result.id)
 

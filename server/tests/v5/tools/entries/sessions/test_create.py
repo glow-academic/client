@@ -31,7 +31,9 @@ async def test_visible_via_get_after_refresh(conn):
 
 async def test_passes_mcp_flag(conn):
     result = await create_session(
-        conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID, mcp=True,
+        conn,
+        profile_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+        mcp=True,
     )
     await refresh_sessions(conn)
 

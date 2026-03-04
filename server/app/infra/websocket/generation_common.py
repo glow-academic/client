@@ -13,7 +13,9 @@ from app.utils.sql_helper import load_sql
 internal_sio = get_internal_sio()
 
 CREATE_RUN_SQL_PATH = "app/sql/queries/generate/start/get_generation_run_context_and_create_run_complete.sql"
-TEXT_RUN_CONTEXT_SQL_PATH = "app/sql/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"
+TEXT_RUN_CONTEXT_SQL_PATH = (
+    "app/sql/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"
+)
 
 
 def _normalize_key(value: str | None) -> str:
@@ -142,7 +144,6 @@ async def emit_generate_artifact(
 
     run_id = str(create_run_row["run_id"])
     run_group_id = create_run_row.get("group_id") or group_id
-    trace_id = create_run_row.get("trace_id")
 
     run_context_sql = load_sql(TEXT_RUN_CONTEXT_SQL_PATH)
     run_context_row = await conn.fetchrow(

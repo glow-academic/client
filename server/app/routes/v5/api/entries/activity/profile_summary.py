@@ -1,4 +1,1 @@
 """Profile summary view internal."""
-
-
-

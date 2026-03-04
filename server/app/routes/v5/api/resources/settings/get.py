@@ -24,6 +24,7 @@ router = APIRouter()
 # HTTP Endpoint
 # =============================================================================
 
+
 @router.post(
     "/settings/get",
     response_model=GetSettingsApiResponse,

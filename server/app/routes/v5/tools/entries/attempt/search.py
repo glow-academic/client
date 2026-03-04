@@ -19,6 +19,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/entries/attempt/search_attempt_entries_complete.sql"
 
+
 async def search_attempt_entries_internal(
     conn: asyncpg.Connection,
     search: str | None = None,
@@ -79,9 +80,9 @@ async def search_attempt_entries_internal(
 
     return items
 
-LIST_SQL_PATH = (
-    "app/sql/queries/views/attempt/list/get_attempt_list_view_complete.sql"
-)
+
+LIST_SQL_PATH = "app/sql/queries/views/attempt/list/get_attempt_list_view_complete.sql"
+
 
 async def get_attempt_list_internal(
     conn: asyncpg.Connection,

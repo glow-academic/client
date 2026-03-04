@@ -24,9 +24,7 @@ from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import execute_sql_typed
 
 # SQL paths
-ACCESS_CHECK_SQL_PATH = (
-    "app/sql/queries/tools/check_tool_duplicate_access_complete.sql"
-)
+ACCESS_CHECK_SQL_PATH = "app/sql/queries/tools/check_tool_duplicate_access_complete.sql"
 DUPLICATE_SQL_PATH = "app/sql/queries/tools/duplicate_tool_complete.sql"
 
 router = APIRouter()

@@ -22,6 +22,7 @@ SQL_PATH = "app/sql/queries/entries/test/search_test_entries_complete.sql"
 
 LIST_SQL_PATH = "app/sql/queries/views/test/list/get_test_list_view_complete.sql"
 
+
 async def search_test_entries_internal(
     conn: asyncpg.Connection,
     search: str | None = None,
@@ -75,6 +76,7 @@ async def search_test_entries_internal(
     )
 
     return items
+
 
 async def get_test_list_internal(
     conn: asyncpg.Connection,

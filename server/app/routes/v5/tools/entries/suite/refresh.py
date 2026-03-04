@@ -8,6 +8,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 MV_NAME = "suite_mv"
 
+
 async def refresh_suite_internal(
     conn: asyncpg.Connection,
 ) -> dict:

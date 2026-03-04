@@ -14,11 +14,16 @@ async def create_audio(
     mcp: bool = False,
 ) -> CreateAudioResponse:
     """Create an audios entry."""
-    audio_id = await conn.fetchval("""
+    audio_id = await conn.fetchval(
+        """
         INSERT INTO audios_entry (session_id, length_seconds, mcp, generated)
         VALUES ($1, $2, $3, true)
         RETURNING id
-    """, session_id, length_seconds, mcp)
+    """,
+        session_id,
+        length_seconds,
+        mcp,
+    )
 
     if audio_id is None:
         raise ValueError("Failed to create audios entry")

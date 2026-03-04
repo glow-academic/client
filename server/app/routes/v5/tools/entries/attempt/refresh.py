@@ -8,6 +8,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 MV_NAME = "attempt_mv"
 
+
 async def refresh_attempt_internal(
     conn: asyncpg.Connection,
 ) -> dict:

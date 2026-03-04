@@ -47,9 +47,7 @@ def _scan_api_dirs(server_dir: Path) -> set[str]:
 
 def _scan_view_endpoints(server_dir: Path, artifact_name: str) -> frozenset[str]:
     """Scan a view artifact's __init__.py for endpoint function names."""
-    init_file = (
-        server_dir / "app" / "v5" / "main" / artifact_name / "__init__.py"
-    )
+    init_file = server_dir / "app" / "v5" / "main" / artifact_name / "__init__.py"
     if not init_file.exists():
         return frozenset()
 

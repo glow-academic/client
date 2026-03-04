@@ -17,6 +17,7 @@ SQL_PATH = (
     "app/sql/queries/entries/rubric_drafts/get_rubric_drafts_entries_complete.sql"
 )
 
+
 async def get_rubric_drafts_entries_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],

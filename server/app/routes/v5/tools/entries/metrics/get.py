@@ -20,6 +20,7 @@ SQL_PATH = "app/sql/queries/entries/metrics/get_metrics_entries_complete.sql"
 
 VIEW_SQL_PATH = "app/sql/queries/views/metric/list/get_metric_list_view_complete.sql"
 
+
 async def get_metric_list_view_internal(
     conn: asyncpg.Connection,
     date_from: datetime | None = None,
@@ -72,6 +73,7 @@ async def get_metric_list_view_internal(
     )
 
     return response
+
 
 async def get_metrics_entries_internal(
     conn: asyncpg.Connection,

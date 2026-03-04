@@ -19,6 +19,7 @@ SQL_PATH = (
     "app/sql/queries/resources/standard_groups/search_standard_groups_complete.sql"
 )
 
+
 async def search_standard_groups_internal(
     conn: asyncpg.Connection,
     search: str | None = None,

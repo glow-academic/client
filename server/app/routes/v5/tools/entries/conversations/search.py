@@ -18,6 +18,7 @@ SQL_PATH = (
     "app/sql/queries/entries/conversations/search_conversations_entries_complete.sql"
 )
 
+
 async def search_conversations_entries_internal(
     conn: asyncpg.Connection,
     search: str | None = None,

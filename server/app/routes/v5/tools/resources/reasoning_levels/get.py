@@ -19,6 +19,7 @@ SQL_PATH = (
     "app/sql/queries/resources/reasoning_levels/get_reasoning_levels_complete.sql"
 )
 
+
 async def get_reasoning_levels_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],

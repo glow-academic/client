@@ -15,6 +15,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/entries/home/search_home_entries_complete.sql"
 
+
 async def search_home_entries_internal(
     conn: asyncpg.Connection,
     search: str | None = None,

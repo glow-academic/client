@@ -16,6 +16,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/entries/training_department/get_training_department_entries_complete.sql"
 
+
 async def get_training_department_entries_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],

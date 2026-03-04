@@ -27,6 +27,7 @@ router = APIRouter()
 # HTTP Endpoint
 # =============================================================================
 
+
 @router.post(
     "/rubrics/get",
     response_model=GetRubricsApiResponse,

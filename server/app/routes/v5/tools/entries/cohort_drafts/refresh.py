@@ -8,6 +8,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 MV_NAME = "cohort_drafts_mv"
 
+
 async def refresh_cohort_drafts_internal(
     conn: asyncpg.Connection,
 ) -> dict:

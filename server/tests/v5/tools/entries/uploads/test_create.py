@@ -17,7 +17,11 @@ async def _session(conn):
 async def test_creates_upload_entry(conn):
     session = await _session(conn)
     result = await create_upload(
-        conn, session_id=session.id, file_path="test/file.txt", mime_type="text/plain", size=1024,
+        conn,
+        session_id=session.id,
+        file_path="test/file.txt",
+        mime_type="text/plain",
+        size=1024,
     )
 
     assert result.id is not None
@@ -26,7 +30,11 @@ async def test_creates_upload_entry(conn):
 async def test_upload_exists_in_table(conn):
     session = await _session(conn)
     result = await create_upload(
-        conn, session_id=session.id, file_path="test/file.txt", mime_type="text/plain", size=1024,
+        conn,
+        session_id=session.id,
+        file_path="test/file.txt",
+        mime_type="text/plain",
+        size=1024,
     )
 
     upload = await get_upload(conn, result.id)
@@ -42,7 +50,12 @@ async def test_upload_exists_in_table(conn):
 async def test_passes_mcp_flag(conn):
     session = await _session(conn)
     result = await create_upload(
-        conn, session_id=session.id, file_path="test/file.txt", mime_type="text/plain", size=512, mcp=True,
+        conn,
+        session_id=session.id,
+        file_path="test/file.txt",
+        mime_type="text/plain",
+        size=512,
+        mcp=True,
     )
 
     upload = await get_upload(conn, result.id)

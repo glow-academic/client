@@ -16,9 +16,8 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = (
-    "app/sql/queries/entries/attempt_chat/get_attempt_chat_entries_complete.sql"
-)
+SQL_PATH = "app/sql/queries/entries/attempt_chat/get_attempt_chat_entries_complete.sql"
+
 
 class ChatItem(BaseModel):
     """Single chat row from attempt_chat_mv."""
@@ -38,7 +37,7 @@ class ChatItem(BaseModel):
     department_id: UUID | None = None
     simulation_id: UUID
     scenario_id: UUID | None = None
-    persona_refs: list[dict] | None = None  # [{personas_id, personas_entry_id}]
+    persona_ids: list[UUID] | None = None
     rubric_id: UUID | None = None
 
     # Grade measures (raw values — consumers compute grade_percent)
@@ -83,28 +82,15 @@ class ChatItem(BaseModel):
         return self.grade_passed
 
     @property
-    def persona_ids(self) -> list[UUID]:
-        """Extract resource-level persona IDs from persona_refs."""
-        if not self.persona_refs:
-            return []
-        return [
-            UUID(r["personas_id"])
-            if isinstance(r.get("personas_id"), str)
-            else r["personas_id"]
-            for r in self.persona_refs
-            if r.get("personas_id")
-        ]
-
-    @property
     def persona_id(self) -> UUID | None:
         """First persona_id for compat with old *FactsItem types."""
-        ids = self.persona_ids
-        return ids[0] if ids else None
+        return self.persona_ids[0] if self.persona_ids else None
 
     @property
     def time_taken_seconds(self) -> int | None:
         """Alias for grade_time_taken (compat with old *FactsItem types)."""
         return self.grade_time_taken
+
 
 class FilterOption(BaseModel):
     """Filter option for dropdowns."""
@@ -112,6 +98,7 @@ class FilterOption(BaseModel):
     value: str
     label: str
     count: int = 0
+
 
 class GetChatsResponse(BaseModel):
     """Response with chat items and pagination info."""
@@ -135,6 +122,7 @@ class GetChatsResponse(BaseModel):
     persona_options: list[FilterOption] | None = Field(
         default=None, description="Available persona filter options"
     )
+
 
 async def get_attempt_chat_entries_internal(
     conn: asyncpg.Connection,
@@ -174,7 +162,9 @@ async def get_attempt_chat_entries_internal(
 
     return items
 
+
 CHATS_VIEW_SQL_PATH = "app/sql/queries/views/chat/get_chat_view_complete.sql"
+
 
 async def get_chats_internal(
     conn: asyncpg.Connection,
@@ -263,15 +253,7 @@ async def get_chats_internal(
                     department_id=item.department_id,
                     simulation_id=item.simulation_id,
                     scenario_id=item.scenario_id,
-                    persona_refs=[
-                        {
-                            "personas_id": ref.personas_id,
-                            "personas_entry_id": ref.personas_entry_id,
-                        }
-                        for ref in item.persona_refs
-                    ]
-                    if item.persona_refs
-                    else None,
+                    persona_ids=list(item.persona_ids) if item.persona_ids else None,
                     rubric_id=item.rubric_id,
                     grade_score=item.grade_score,
                     grade_total_points=item.grade_total_points,

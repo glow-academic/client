@@ -49,7 +49,7 @@ AS $$
             g.group_id AS entity_id,
             g.group_name AS entity_name,
             g.group_created_at AS created_at,
-            g.trace_id AS extra_1,
+            NULL::text AS extra_1,
             NULL::text AS extra_2
         FROM groups_mv g
         WHERE g.session_id = session_id_filter

@@ -17,6 +17,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 BATCH_SQL_PATH = "app/sql/queries/resources/texts/get_texts_complete.sql"
 
+
 async def get_texts_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],

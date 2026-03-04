@@ -19,6 +19,7 @@ SQL_PATH = (
     "app/sql/queries/resources/parameter_fields/search_parameter_fields_complete.sql"
 )
 
+
 async def search_parameter_fields_internal(
     conn: asyncpg.Connection,
     parameter_ids: list[UUID],

@@ -13,11 +13,15 @@ async def create_text(
     mcp: bool = False,
 ) -> CreateTextResponse:
     """Create a texts entry."""
-    text_id = await conn.fetchval("""
+    text_id = await conn.fetchval(
+        """
         INSERT INTO texts_entry (session_id, mcp, generated)
         VALUES ($1, $2, true)
         RETURNING id
-    """, session_id, mcp)
+    """,
+        session_id,
+        mcp,
+    )
 
     if text_id is None:
         raise ValueError("Failed to create texts entry")

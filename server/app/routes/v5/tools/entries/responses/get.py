@@ -19,6 +19,7 @@ SQL_PATH = "app/sql/queries/entries/responses/get_responses_entries_complete.sql
 
 VIEW_SQL_PATH = "app/sql/queries/views/simulation/responses/get_simulation_responses_view_complete.sql"
 
+
 async def get_simulation_responses_internal(
     conn: asyncpg.Connection,
     chat_ids: list[UUID],
@@ -57,6 +58,7 @@ async def get_simulation_responses_internal(
         redis=get_redis_client(),
     )
     return items
+
 
 async def get_responses_entries_internal(
     conn: asyncpg.Connection,

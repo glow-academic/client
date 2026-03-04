@@ -19,6 +19,7 @@ SQL_PATH = "app/sql/queries/entries/persona/create_persona_entries_complete.sql"
 
 ENTRY_TYPE = "personas"
 
+
 async def create_persona_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,

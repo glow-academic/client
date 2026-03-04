@@ -24,9 +24,7 @@ from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import execute_sql_typed
 
 # SQL paths
-ACCESS_CHECK_SQL_PATH = (
-    "app/sql/queries/models/check_model_delete_access_complete.sql"
-)
+ACCESS_CHECK_SQL_PATH = "app/sql/queries/models/check_model_delete_access_complete.sql"
 DELETE_SQL_PATH = "app/sql/queries/models/delete_model_complete.sql"
 
 router = APIRouter()

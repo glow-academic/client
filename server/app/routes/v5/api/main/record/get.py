@@ -165,7 +165,10 @@ async def get_record_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), get_redis_client(), bypass_cache=bypass_cache
+                        c,
+                        list(set(all_args_ids)),
+                        get_redis_client(),
+                        bypass_cache=bypass_cache,
                     )
 
             async def fetch_args_outputs():
@@ -173,7 +176,10 @@ async def get_record_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), get_redis_client(), bypass_cache=bypass_cache
+                        c,
+                        list(set(all_args_output_ids)),
+                        get_redis_client(),
+                        bypass_cache=bypass_cache,
                     )
 
             config_args, config_args_outputs = await asyncio.gather(
@@ -197,5 +203,7 @@ async def get_record_websocket(
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
     )
+
+
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached

@@ -13,6 +13,7 @@ from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
+
 @router.post("/home_training/refresh")
 async def refresh_home_training(
     http_request: Request,

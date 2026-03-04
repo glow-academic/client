@@ -22,6 +22,7 @@ SQL_PATH = "app/sql/queries/personas/get_persona_resource_data_complete.sql"
 
 BATCH_SQL_PATH = "app/sql/queries/resources/personas/get_personas_complete.sql"
 
+
 async def get_persona_internal(
     conn: asyncpg.Connection,
     id: UUID,
@@ -65,6 +66,7 @@ async def get_persona_internal(
     )
 
     return item
+
 
 async def get_personas_internal(
     conn: asyncpg.Connection,

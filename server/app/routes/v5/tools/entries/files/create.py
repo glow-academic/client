@@ -13,11 +13,15 @@ async def create_file(
     mcp: bool = False,
 ) -> CreateFileResponse:
     """Create a files entry."""
-    file_id = await conn.fetchval("""
+    file_id = await conn.fetchval(
+        """
         INSERT INTO files_entry (session_id, mcp, generated)
         VALUES ($1, $2, true)
         RETURNING id
-    """, session_id, mcp)
+    """,
+        session_id,
+        mcp,
+    )
 
     if file_id is None:
         raise ValueError("Failed to create files entry")

@@ -14,6 +14,7 @@ SQL_PATH_PREPARE_START = (
     "app/sql/queries/generate/training/prepare_training_start_complete.sql"
 )
 
+
 async def prepare_training_start_internal(
     conn: asyncpg.Connection,
     profile_id: UUID,

@@ -19,6 +19,7 @@ from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
+
 @router.post("/responses/create", response_model=CreateResponsesEntriesApiResponse)
 async def create_responses_entry(
     request: CreateResponsesEntriesApiRequest,

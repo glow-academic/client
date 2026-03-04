@@ -19,9 +19,8 @@ SEARCH_SQL_PATH = (
     "app/sql/queries/entries/messages/search_messages_entries_complete.sql"
 )
 
-LIST_SQL_PATH = (
-    "app/sql/queries/views/message/list/get_message_list_view_complete.sql"
-)
+LIST_SQL_PATH = "app/sql/queries/views/message/list/get_message_list_view_complete.sql"
+
 
 async def search_messages_entries_internal(
     conn: asyncpg.Connection,
@@ -73,6 +72,7 @@ async def search_messages_entries_internal(
     )
 
     return items
+
 
 async def get_message_list_entries_internal(
     conn: asyncpg.Connection,

@@ -40,7 +40,9 @@ logger = logging.getLogger(__name__)
 # Upload directories
 # ---------------------------------------------------------------------------
 IN_DOCKER = os.getenv("DOCKER_ENV") == "1"
-PROJECT_ROOT = Path(__file__).resolve().parents[2]  # app/globals.py -> app -> server -> project root
+PROJECT_ROOT = (
+    Path(__file__).resolve().parents[2]
+)  # app/globals.py -> app -> server -> project root
 BASE_FOLDER = Path("/app") if IN_DOCKER else PROJECT_ROOT
 UPLOAD_FOLDER = BASE_FOLDER / "uploads"
 UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
@@ -73,6 +75,7 @@ class InternalBus:
         def decorator(fn: InternalHandler) -> InternalHandler:
             self._handlers.setdefault(event, []).append(fn)
             return fn
+
         return decorator
 
     async def emit(self, event: str, data: dict[str, Any]) -> None:
@@ -161,8 +164,13 @@ socket_owner: dict[str, str] = {}
 classification_results: dict[str, list[str]] = {}
 classification_progress: dict[str, bool] = {}
 DEFAULT_CATEGORIES = [
-    "homeworks", "projects", "quizzes", "midterms",
-    "labs", "lectures", "syllabi",
+    "homeworks",
+    "projects",
+    "quizzes",
+    "midterms",
+    "labs",
+    "lectures",
+    "syllabi",
 ]
 
 _voice_message_ids: dict[str, list[str]] = {}
@@ -229,7 +237,9 @@ def _try_reuse_container() -> str | None:
     try:
         result = subprocess.run(
             ["docker", "inspect", "-f", "{{.State.Running}}", container_id],
-            capture_output=True, text=True, timeout=5,
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         if result.returncode == 0 and result.stdout.strip() == "true":
             return db_url
@@ -313,7 +323,9 @@ async def init_db_pool() -> None:
 
     if using_pgbouncer and pgbouncer_pool_mode == "transaction":
         pool_config["statement_cache_size"] = 0
-        print("   ⚙️  PgBouncer detected (transaction mode): Disabling prepared statements")
+        print(
+            "   ⚙️  PgBouncer detected (transaction mode): Disabling prepared statements"
+        )
     elif using_pgbouncer and pgbouncer_pool_mode == "session":
         print("   ⚙️  PgBouncer detected (session mode): Using prepared statements")
     else:
@@ -353,6 +365,7 @@ async def expire_all_connections() -> None:
     if _db_pool:
         await _db_pool.expire_connections()
         from app.utils.sql_helper import _jit_created_functions
+
         _jit_created_functions.clear()
         print("🔄 All pooled connections expired (schema change detected)")
 

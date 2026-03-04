@@ -11,6 +11,7 @@ from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
+
 @router.post("/home/refresh")
 async def refresh_home(
     http_request: Request,

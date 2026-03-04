@@ -46,7 +46,6 @@ CREATE OR REPLACE FUNCTION socket_get_generation_run_context_and_create_run_v4(
 RETURNS TABLE (
     run_id text,
     group_id uuid,
-    trace_id text,
     message_ids uuid[],  -- Includes new user message ID (if created) + context message IDs
     output_modalities text[]  -- NEW: from model_modalities_junction
 )
@@ -95,9 +94,9 @@ agent_model_modalities AS (
       AND mm.active = true
       AND mr.active = true
 ),
--- Get or create group (for trace_id and group_id)
+-- Get or create group
 existing_group_from_param AS (
-    SELECT g.id as group_id, g.trace_id
+    SELECT g.id as group_id
     FROM params p
     JOIN groups_entry g ON g.id = p.group_id
     WHERE p.group_id IS NOT NULL
@@ -109,21 +108,16 @@ create_group_if_needed AS (
     SELECT NOW(), NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profiles_id = socket_get_generation_run_context_and_create_run_v4.profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1)
     FROM params p
     WHERE p.group_id IS NULL
-    RETURNING id as group_id, trace_id
+    RETURNING id as group_id
 ),
 group_data AS (
     -- Use existing group from param, newly created group, or fallback
-    SELECT 
+    SELECT
         COALESCE(
             (SELECT group_id FROM existing_group_from_param LIMIT 1),
             (SELECT group_id FROM create_group_if_needed LIMIT 1),
             gen_random_uuid()::uuid  -- Fallback if no group created
-        ) as group_id,
-        COALESCE(
-            (SELECT trace_id FROM existing_group_from_param LIMIT 1),
-            (SELECT trace_id FROM create_group_if_needed LIMIT 1),
-            gen_random_uuid()::text  -- Fallback trace_id
-        ) as trace_id
+        ) as group_id
 ),
 -- Create run with group_id directly
 create_run AS (
@@ -411,7 +405,6 @@ final_message_ids AS (
 SELECT 
     cr.run_id::text as run_id,
     gd.group_id,
-    gd.trace_id::text as trace_id,
     COALESCE(fmi.message_ids, ARRAY[]::uuid[]) as message_ids,
     COALESCE(
         (SELECT output_modalities FROM agent_model_modalities),

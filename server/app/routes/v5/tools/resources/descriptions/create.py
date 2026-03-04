@@ -15,6 +15,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/resources/descriptions_complete.sql"
 
+
 async def create_descriptions_internal(
     conn: asyncpg.Connection,
     description: str,

@@ -21,6 +21,7 @@ from app.utils.sql_helper import execute_sql_typed
 # Load SQL with types at module level - makes it clear what SQL file is used
 router = APIRouter()
 
+
 @router.post("/descriptions", response_model=DescriptionsApiResponse)
 async def create_descriptions(
     request: DescriptionsApiRequest,

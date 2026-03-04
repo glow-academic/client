@@ -18,6 +18,7 @@ SQL_PATH = (
     "app/sql/queries/entries/practice_chat/search_practice_chat_entries_complete.sql"
 )
 
+
 async def search_practice_chat_entries_internal(
     conn: asyncpg.Connection,
     search: str | None = None,

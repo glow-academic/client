@@ -18,7 +18,6 @@ class GroupListItem(BaseModel):
     profile_id: UUID | None = None
 
     group_name: str | None = None
-    trace_id: str | None = None
 
     first_run_at: datetime | None = None
     last_run_at: datetime | None = None

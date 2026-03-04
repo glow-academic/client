@@ -20,11 +20,14 @@ class LinkProblemStatementsApiRequest(BaseModel):
     group_id: UUID
     tool_id: UUID
 
+
 class LinkProblemStatementsApiResponse(BaseModel):
     success: bool = True
     problem_statements_id: UUID | None = None
 
+
 router = APIRouter()
+
 
 @router.post(
     "/problem_statements/link",

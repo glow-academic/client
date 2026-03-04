@@ -13,6 +13,7 @@ from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
+
 @router.post("/model_drafts/refresh")
 async def refresh_model_drafts(
     http_request: Request,

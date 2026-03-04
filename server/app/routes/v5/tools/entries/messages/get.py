@@ -12,11 +12,14 @@ async def get_message(
     message_id: UUID,
 ) -> GetMessageResponse | None:
     """Get a messages entry by ID."""
-    row = await conn.fetchrow("""
+    row = await conn.fetchrow(
+        """
         SELECT id, run_id, role, created_at, active, mcp, generated
         FROM messages_entry
         WHERE id = $1
-    """, message_id)
+    """,
+        message_id,
+    )
 
     if row is None:
         return None

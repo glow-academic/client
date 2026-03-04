@@ -14,9 +14,8 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = (
-    "app/sql/queries/entries/run_pricing/search_run_pricing_entries_complete.sql"
-)
+SQL_PATH = "app/sql/queries/entries/run_pricing/search_run_pricing_entries_complete.sql"
+
 
 async def search_run_pricing_entries_internal(
     conn: asyncpg.Connection,

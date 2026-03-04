@@ -26,7 +26,6 @@ CREATE OR REPLACE FUNCTION socket_prepare_tool_generation_v4(
 RETURNS TABLE (
     run_id uuid,
     group_id uuid,
-    trace_id text,
     config_id uuid
 )
 LANGUAGE plpgsql
@@ -35,13 +34,12 @@ AS $$
 #variable_conflict use_column
 DECLARE
     v_group_id uuid;
-    v_trace_id text;
     v_config_id uuid;
     v_run_id uuid;
 BEGIN
     -- Get or create group
     IF p_group_id IS NOT NULL THEN
-        SELECT g.id, g.trace_id INTO v_group_id, v_trace_id
+        SELECT g.id INTO v_group_id
         FROM groups_entry g
         WHERE g.id = p_group_id
         LIMIT 1;
@@ -50,13 +48,12 @@ BEGIN
     IF v_group_id IS NULL THEN
         INSERT INTO groups_entry (created_at, updated_at, session_id)
         VALUES (NOW(), NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profiles_id = p_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1))
-        RETURNING id, groups_entry.trace_id INTO v_group_id, v_trace_id;
+        RETURNING id INTO v_group_id;
     END IF;
 
     -- Fallback if group creation somehow failed
     IF v_group_id IS NULL THEN
         v_group_id := gen_random_uuid();
-        v_trace_id := gen_random_uuid()::text;
     END IF;
 
     -- Create run first (no config_id column anymore)
@@ -78,6 +75,6 @@ BEGIN
     WHERE ppj.profile_id = p_profile_id
     LIMIT 1;
 
-    RETURN QUERY SELECT v_run_id, v_group_id, v_trace_id::text, v_config_id;
+    RETURN QUERY SELECT v_run_id, v_group_id, v_config_id;
 END;
 $$;

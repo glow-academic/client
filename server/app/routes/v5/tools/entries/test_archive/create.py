@@ -21,6 +21,7 @@ SQL_PATH = (
 
 ENTRY_TYPE = "test_archives"
 
+
 async def create_test_archive_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,

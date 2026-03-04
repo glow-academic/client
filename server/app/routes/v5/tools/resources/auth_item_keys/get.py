@@ -17,6 +17,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/resources/auth_item_keys/get_auth_item_keys_complete.sql"
 
+
 async def get_auth_item_keys_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],

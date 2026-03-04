@@ -12,11 +12,14 @@ async def get_video(
     video_id: UUID,
 ) -> GetVideoResponse | None:
     """Get a videos entry by ID."""
-    row = await conn.fetchrow("""
+    row = await conn.fetchrow(
+        """
         SELECT id, session_id, length_seconds, active, mcp, generated
         FROM videos_entry
         WHERE id = $1
-    """, video_id)
+    """,
+        video_id,
+    )
 
     if row is None:
         return None

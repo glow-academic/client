@@ -15,7 +15,10 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/queries/resources/temperature_levels/get_temperature_levels_complete.sql"
+SQL_PATH = (
+    "app/sql/queries/resources/temperature_levels/get_temperature_levels_complete.sql"
+)
+
 
 async def get_temperature_levels_internal(
     conn: asyncpg.Connection,

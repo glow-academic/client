@@ -159,9 +159,9 @@ async def _resolve_simulation_values(
     # --- Create resources (always create new) ---
 
     if item.name is not None and item.name_id is None:
-        item.name_id = (await create_name(
-            conn, item.name, **_tool_args("names")
-        )).name_id
+        item.name_id = (
+            await create_name(conn, item.name, **_tool_args("names"))
+        ).name_id
 
     if item.description is not None and item.description_id is None:
         item.description_id = await create_descriptions_internal(

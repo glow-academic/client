@@ -13,6 +13,7 @@ from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
+
 @router.post("/messages_completions/refresh")
 async def refresh_messages_completions(
     http_request: Request,

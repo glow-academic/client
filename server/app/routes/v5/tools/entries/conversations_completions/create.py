@@ -19,6 +19,7 @@ SQL_PATH = "app/sql/queries/entries/conversations_completions/create_conversatio
 
 ENTRY_TYPE = "conversations_completions"
 
+
 async def create_conversations_completions_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,

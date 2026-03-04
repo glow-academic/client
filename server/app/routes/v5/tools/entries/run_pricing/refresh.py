@@ -8,6 +8,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 MV_NAME = "run_pricing_mv"
 
+
 async def refresh_run_pricing_internal(
     conn: asyncpg.Connection,
 ) -> dict:

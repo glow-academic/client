@@ -21,6 +21,7 @@ SQL_PATH = (
 
 ENTRY_TYPE = "conversations"
 
+
 async def create_conversations_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,

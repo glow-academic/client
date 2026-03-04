@@ -356,7 +356,9 @@ async def get_profile_internal(
 
     async def fetch_names():
         async with pool.acquire() as c:
-            selected = await get_names(c, name_ids, get_redis_client(), bypass_cache=bypass_cache)
+            selected = await get_names(
+                c, name_ids, get_redis_client(), bypass_cache=bypass_cache
+            )
             suggestions = await search_names_internal(
                 c,
                 None,
@@ -463,7 +465,11 @@ async def get_profile_internal(
                 {tid for a in agents for tid in (a.tool_ids or []) if tid is not None}
             )
             tools = (
-                await get_tools(c, tool_ids, get_redis_client(), bypass_cache=bypass_cache) if tool_ids else []
+                await get_tools(
+                    c, tool_ids, get_redis_client(), bypass_cache=bypass_cache
+                )
+                if tool_ids
+                else []
             )
             return (agents or None, models or None, providers or None, tools or None)
 
@@ -712,7 +718,10 @@ async def get_profile_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), get_redis_client(), bypass_cache=bypass_cache
+                        c,
+                        list(set(all_args_ids)),
+                        get_redis_client(),
+                        bypass_cache=bypass_cache,
                     )
 
             async def fetch_args_outputs():
@@ -720,7 +729,10 @@ async def get_profile_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), get_redis_client(), bypass_cache=bypass_cache
+                        c,
+                        list(set(all_args_output_ids)),
+                        get_redis_client(),
+                        bypass_cache=bypass_cache,
                     )
 
             config_args, config_args_outputs = await asyncio.gather(
@@ -911,5 +923,7 @@ async def get_profile(
             sql_params=None,
             request=http_request,
         )
+
+
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached

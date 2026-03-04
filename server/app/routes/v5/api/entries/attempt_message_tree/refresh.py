@@ -13,6 +13,7 @@ from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
+
 @router.post("/attempt_message_tree/refresh")
 async def refresh_attempt_message_tree(
     http_request: Request,

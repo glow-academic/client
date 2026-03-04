@@ -9,6 +9,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/resources/link_fields_complete.sql"
 
+
 class LinkFieldsSqlParams(BaseModel):
     resource_id: UUID
     group_id: UUID
@@ -17,8 +18,10 @@ class LinkFieldsSqlParams(BaseModel):
     def to_tuple(self) -> tuple:
         return (self.resource_id, self.group_id, self.tool_id)
 
+
 class LinkFieldsSqlRow(BaseModel):
     fields_id: UUID | None = None
+
 
 async def link_fields_internal(
     conn: asyncpg.Connection,

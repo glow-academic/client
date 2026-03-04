@@ -9,6 +9,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/resources/link_simulation_positions_complete.sql"
 
+
 class LinkSimulationPositionsSqlParams(BaseModel):
     resource_id: UUID
     group_id: UUID
@@ -17,8 +18,10 @@ class LinkSimulationPositionsSqlParams(BaseModel):
     def to_tuple(self) -> tuple:
         return (self.resource_id, self.group_id, self.tool_id)
 
+
 class LinkSimulationPositionsSqlRow(BaseModel):
     simulation_positions_id: UUID | None = None
+
 
 async def link_simulation_positions_internal(
     conn: asyncpg.Connection,

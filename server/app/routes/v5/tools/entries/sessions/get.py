@@ -15,11 +15,14 @@ async def get_sessions(
     if not ids:
         return []
 
-    rows = await conn.fetch("""
+    rows = await conn.fetch(
+        """
         SELECT session_id, profile_id, session_created_at, active, mcp
         FROM sessions_mv
         WHERE session_id = ANY($1)
-    """, ids)
+    """,
+        ids,
+    )
 
     return [
         GetSessionResponse(

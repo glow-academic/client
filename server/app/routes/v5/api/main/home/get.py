@@ -1072,7 +1072,10 @@ async def get_home_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), get_redis_client(), bypass_cache=bypass_cache
+                        c,
+                        list(set(all_args_ids)),
+                        get_redis_client(),
+                        bypass_cache=bypass_cache,
                     )
 
             async def fetch_args_outputs():
@@ -1080,7 +1083,10 @@ async def get_home_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), get_redis_client(), bypass_cache=bypass_cache
+                        c,
+                        list(set(all_args_output_ids)),
+                        get_redis_client(),
+                        bypass_cache=bypass_cache,
                     )
 
             config_args, config_args_outputs = await asyncio.gather(

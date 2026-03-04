@@ -13,7 +13,10 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/queries/entries/parameter_drafts/get_parameter_drafts_entries_complete.sql"
+SQL_PATH = (
+    "app/sql/queries/entries/parameter_drafts/get_parameter_drafts_entries_complete.sql"
+)
+
 
 async def get_parameter_drafts_entries_internal(
     conn: asyncpg.Connection,

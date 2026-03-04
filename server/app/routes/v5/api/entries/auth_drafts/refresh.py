@@ -11,6 +11,7 @@ from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
+
 @router.post("/auth_drafts/refresh")
 async def refresh_auth_drafts(
     http_request: Request,

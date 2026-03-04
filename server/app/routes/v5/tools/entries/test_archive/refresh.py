@@ -8,6 +8,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 MV_NAME = "test_archive_mv"
 
+
 async def refresh_test_archive_internal(
     conn: asyncpg.Connection,
 ) -> dict:

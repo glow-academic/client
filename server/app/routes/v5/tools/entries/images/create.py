@@ -13,11 +13,15 @@ async def create_image(
     mcp: bool = False,
 ) -> CreateImageResponse:
     """Create an images entry."""
-    image_id = await conn.fetchval("""
+    image_id = await conn.fetchval(
+        """
         INSERT INTO images_entry (session_id, mcp, generated)
         VALUES ($1, $2, true)
         RETURNING id
-    """, session_id, mcp)
+    """,
+        session_id,
+        mcp,
+    )
 
     if image_id is None:
         raise ValueError("Failed to create images entry")

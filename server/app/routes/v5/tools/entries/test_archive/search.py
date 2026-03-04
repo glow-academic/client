@@ -18,6 +18,7 @@ SQL_PATH = (
     "app/sql/queries/entries/test_archive/search_test_archive_entries_complete.sql"
 )
 
+
 async def search_test_archive_entries_internal(
     conn: asyncpg.Connection,
     search: str | None = None,

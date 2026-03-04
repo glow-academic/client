@@ -464,7 +464,6 @@ class ChatData(BaseModel):
     problem_statement_id: UUID | None = None
     objective_ids: list[UUID] | None = None
     persona_ids: list[UUID] | None = None
-    persona_refs: list[dict] | None = None  # [{personas_id, personas_entry_id}]
     image_ids: list[UUID] | None = None
 
     # --- Video/Quiz View resource IDs ---

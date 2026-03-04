@@ -13,6 +13,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/entries/attempt_message_tree/create_attempt_message_tree_entries_complete.sql"
 
+
 async def create_attempt_message_tree_entry_internal(
     conn: asyncpg.Connection,
     parent_id: UUID,

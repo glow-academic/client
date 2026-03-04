@@ -12,12 +12,15 @@ async def get_call(
     call_id: UUID,
 ) -> GetCallResponse | None:
     """Get a calls entry by ID."""
-    row = await conn.fetchrow("""
+    row = await conn.fetchrow(
+        """
         SELECT id, run_id, session_id, external_call_id,
                created_at, active, mcp, generated
         FROM calls_entry
         WHERE id = $1
-    """, call_id)
+    """,
+        call_id,
+    )
 
     if row is None:
         return None

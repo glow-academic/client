@@ -31,6 +31,7 @@ router = APIRouter()
 # Router handler
 # ---------------------------------------------------------------------------
 
+
 @router.post(
     "/attempt/search",
     response_model=SearchAttemptEntriesApiResponse,

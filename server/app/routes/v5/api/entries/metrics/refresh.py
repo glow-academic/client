@@ -11,6 +11,7 @@ from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
+
 @router.post("/metrics/refresh")
 async def refresh_metrics(
     http_request: Request,

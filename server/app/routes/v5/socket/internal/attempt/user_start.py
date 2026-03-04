@@ -36,10 +36,14 @@ async def handle_user_received_start(data: dict[str, Any]) -> None:
                 run_id=uuid.UUID(run_id),
                 role="user",
             )
-            await conn.execute("""
+            await conn.execute(
+                """
                 INSERT INTO attempt_message_entry (id, chat_id)
                 VALUES ($1, $2)
-            """, result.id, uuid.UUID(chat_id))
+            """,
+                result.id,
+                uuid.UUID(chat_id),
+            )
 
         await internal_sio.emit(
             "attempt_user_start",

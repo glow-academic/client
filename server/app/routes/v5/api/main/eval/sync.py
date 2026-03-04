@@ -16,9 +16,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
-SQL_PATH = (
-    "app/sql/queries/entries/benchmark_sync/sync_benchmark_entries_complete.sql"
-)
+SQL_PATH = "app/sql/queries/entries/benchmark_sync/sync_benchmark_entries_complete.sql"
 
 
 class SyncBenchmarkEntriesSqlParams(BaseModel):

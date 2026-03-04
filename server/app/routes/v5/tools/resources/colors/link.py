@@ -9,6 +9,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/resources/link_colors_complete.sql"
 
+
 class LinkColorsSqlParams(BaseModel):
     resource_id: UUID
     group_id: UUID
@@ -17,8 +18,10 @@ class LinkColorsSqlParams(BaseModel):
     def to_tuple(self) -> tuple:
         return (self.resource_id, self.group_id, self.tool_id)
 
+
 class LinkColorsSqlRow(BaseModel):
     color_id: UUID | None = None
+
 
 async def link_colors_internal(
     conn: asyncpg.Connection,

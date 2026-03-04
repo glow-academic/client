@@ -16,21 +16,29 @@ async def _deps(conn):
     session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
     file = await create_file(conn, session_id=session.id)
     upload = await create_upload(
-        conn, session_id=session.id, file_path="test/doc.pdf", mime_type="application/pdf", size=3072,
+        conn,
+        session_id=session.id,
+        file_path="test/doc.pdf",
+        mime_type="application/pdf",
+        size=3072,
     )
     return session, file, upload
 
 
 async def test_creates_file_upload_entry(conn):
     session, file, upload = await _deps(conn)
-    result = await create_file_upload(conn, file_id=file.id, upload_id=upload.id, session_id=session.id)
+    result = await create_file_upload(
+        conn, file_id=file.id, upload_id=upload.id, session_id=session.id
+    )
 
     assert result.id is not None
 
 
 async def test_file_upload_exists_in_table(conn):
     session, file, upload = await _deps(conn)
-    result = await create_file_upload(conn, file_id=file.id, upload_id=upload.id, session_id=session.id)
+    result = await create_file_upload(
+        conn, file_id=file.id, upload_id=upload.id, session_id=session.id
+    )
 
     row = await get_file_upload(conn, result.id)
 
@@ -43,7 +51,9 @@ async def test_file_upload_exists_in_table(conn):
 
 async def test_passes_mcp_flag(conn):
     session, file, upload = await _deps(conn)
-    result = await create_file_upload(conn, file_id=file.id, upload_id=upload.id, session_id=session.id, mcp=True)
+    result = await create_file_upload(
+        conn, file_id=file.id, upload_id=upload.id, session_id=session.id, mcp=True
+    )
 
     row = await get_file_upload(conn, result.id)
 

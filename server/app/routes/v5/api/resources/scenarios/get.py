@@ -22,6 +22,7 @@ from app.utils.error.handle_route_error import handle_route_error
 # SQL path for scenarios get
 router = APIRouter()
 
+
 @router.post("/scenarios/get", response_model=GetScenariosApiResponse)
 async def get_scenarios(
     request: GetScenariosApiRequest,

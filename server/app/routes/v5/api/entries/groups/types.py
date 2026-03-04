@@ -10,7 +10,6 @@ class GroupsEntryData(BaseModel):
 
     created_at: str | None = None
     id: str | None = None
-    trace_id: str | None = None
     session_id: str | None = None
     name: str | None = None
     custom_model: bool | None = None

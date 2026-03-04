@@ -27,14 +27,19 @@ async def get_names(
     if not bypass_cache:
         cached = await get_cached(key, redis=redis)
         if cached:
-            return [GetNameResponse.model_validate(item) for item in cached.get("items", [])]
+            return [
+                GetNameResponse.model_validate(item) for item in cached.get("items", [])
+            ]
 
-    rows = await conn.fetch("""
+    rows = await conn.fetch(
+        """
         SELECT id, name, created_at, active, mcp, generated
         FROM names_resource
         WHERE id = ANY($1)
         ORDER BY array_position($1, id)
-    """, ids)
+    """,
+        ids,
+    )
 
     items = [
         GetNameResponse(
@@ -49,5 +54,11 @@ async def get_names(
     ]
 
     if not bypass_cache:
-        await set_cached(key, {"items": [i.model_dump(mode="json") for i in items]}, 60, tags, redis=redis)
+        await set_cached(
+            key,
+            {"items": [i.model_dump(mode="json") for i in items]},
+            60,
+            tags,
+            redis=redis,
+        )
     return items

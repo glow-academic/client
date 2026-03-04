@@ -16,20 +16,30 @@ async def create_call(
     mcp: bool = False,
 ) -> CreateCallResponse:
     """Create a calls entry with optional tool link."""
-    call_id = await conn.fetchval("""
+    call_id = await conn.fetchval(
+        """
         INSERT INTO calls_entry (run_id, session_id, external_call_id, mcp, generated)
         VALUES ($1, $2, $3, $4, true)
         RETURNING id
-    """, run_id, session_id, external_call_id, mcp)
+    """,
+        run_id,
+        session_id,
+        external_call_id,
+        mcp,
+    )
 
     if call_id is None:
         raise ValueError("Failed to create calls entry")
 
     # Link call → tools_resource
     if tool_id is not None:
-        await conn.execute("""
+        await conn.execute(
+            """
             INSERT INTO tools_calls_connection (tools_id, call_id)
             VALUES ($1, $2)
-        """, tool_id, call_id)
+        """,
+            tool_id,
+            call_id,
+        )
 
     return CreateCallResponse(id=call_id)

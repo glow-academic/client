@@ -15,6 +15,7 @@ from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
+
 @router.post(
     "/args_outputs/get",
     response_model=GetArgsOutputsApiResponse,
@@ -30,7 +31,9 @@ async def get_args_outputs_endpoint(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_args_outputs(conn, request.ids, get_redis_client(), bypass_cache=bypass_cache)
+        items = await get_args_outputs(
+            conn, request.ids, get_redis_client(), bypass_cache=bypass_cache
+        )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetArgsOutputsApiResponse(items=items)
     except HTTPException:

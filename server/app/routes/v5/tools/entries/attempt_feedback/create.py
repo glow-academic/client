@@ -19,6 +19,7 @@ SQL_PATH = "app/sql/queries/entries/attempt_feedback/create_attempt_feedback_ent
 
 ENTRY_TYPE = "feedbacks"
 
+
 async def create_attempt_feedback_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,

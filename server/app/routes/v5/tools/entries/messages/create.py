@@ -14,11 +14,16 @@ async def create_message(
     mcp: bool = False,
 ) -> CreateMessageResponse:
     """Create a messages entry."""
-    row = await conn.fetchrow("""
+    row = await conn.fetchrow(
+        """
         INSERT INTO messages_entry (run_id, role, mcp, generated)
         VALUES ($1, $2::message_type, $3, true)
         RETURNING id, created_at
-    """, run_id, role, mcp)
+    """,
+        run_id,
+        role,
+        mcp,
+    )
 
     if row is None:
         raise ValueError("Failed to create messages entry")

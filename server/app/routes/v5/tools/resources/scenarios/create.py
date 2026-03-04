@@ -10,6 +10,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/resources/scenarios/create_scenarios_complete.sql"
 
+
 class CreateScenariosSqlParams(BaseModel):
     """SQL parameters for creating a denormalized scenarios_resource."""
 
@@ -53,6 +54,7 @@ class CreateScenariosSqlParams(BaseModel):
             self.questions_enabled,
             self.mcp,
         )
+
 
 async def create_scenarios_internal(
     conn: asyncpg.Connection,

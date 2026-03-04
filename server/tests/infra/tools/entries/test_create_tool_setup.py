@@ -22,10 +22,18 @@ async def _deps(conn):
     session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
     group = await create_group(conn, session_id=session.id)
     text_upload = await create_upload(
-        conn, session_id=session.id, file_path="test/file.txt", mime_type="text/plain", size=1024,
+        conn,
+        session_id=session.id,
+        file_path="test/file.txt",
+        mime_type="text/plain",
+        size=1024,
     )
     call_upload = await create_upload(
-        conn, session_id=session.id, file_path="test/response.json", mime_type="application/json", size=512,
+        conn,
+        session_id=session.id,
+        file_path="test/response.json",
+        mime_type="application/json",
+        size=512,
     )
     return session, group, text_upload, call_upload
 

@@ -20,11 +20,14 @@ class LinkScenarioTimeLimitsApiRequest(BaseModel):
     group_id: UUID
     tool_id: UUID
 
+
 class LinkScenarioTimeLimitsApiResponse(BaseModel):
     success: bool = True
     scenario_time_limits_id: UUID | None = None
 
+
 router = APIRouter()
+
 
 @router.post(
     "/scenario_time_limits/link",

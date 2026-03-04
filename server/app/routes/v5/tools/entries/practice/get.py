@@ -21,6 +21,7 @@ VIEW_SQL_PATH = (
     "app/sql/queries/views/practice/context/get_practice_context_view_complete.sql"
 )
 
+
 async def get_practice_context_view_internal(
     conn: asyncpg.Connection,
     profile_id: UUID,
@@ -57,6 +58,7 @@ async def get_practice_context_view_internal(
     )
 
     return response
+
 
 async def get_practice_entries_internal(
     conn: asyncpg.Connection,

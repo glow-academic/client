@@ -19,6 +19,7 @@ SQL_PATH = "app/sql/queries/entries/problems/create_problems_entries_complete.sq
 
 ENTRY_TYPE = "problems"
 
+
 async def create_problems_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,

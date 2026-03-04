@@ -27,6 +27,7 @@ router = APIRouter()
 # Search (original search.py)
 # ---------------------------------------------------------------------------
 
+
 @router.post(
     "/runs/search",
     response_model=SearchRunsEntriesApiResponse,
@@ -64,6 +65,7 @@ async def search_runs_entries(
             sql_params=None,
             request=http_request,
         )
+
 
 # ---------------------------------------------------------------------------
 # List (merged from list.py)

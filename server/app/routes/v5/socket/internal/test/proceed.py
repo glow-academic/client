@@ -99,7 +99,9 @@ async def test_proceed_handler(data: dict[str, Any]) -> None:
                     test_id,
                 )
                 await conn.execute("REFRESH MATERIALIZED VIEW test_invocation_mv")
-            await invalidate_tags(["test", "tests", "benchmark"], redis=get_redis_client())
+            await invalidate_tags(
+                ["test", "tests", "benchmark"], redis=get_redis_client()
+            )
 
             await internal_sio.emit(
                 "test_ended",

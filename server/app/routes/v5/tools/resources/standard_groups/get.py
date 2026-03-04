@@ -19,6 +19,7 @@ BATCH_SQL_PATH = (
     "app/sql/queries/resources/standard_groups/get_standard_groups_complete.sql"
 )
 
+
 async def get_standard_groups_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],

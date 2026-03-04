@@ -1,4 +1,1 @@
 """Session timeline view internal."""
-
-
-

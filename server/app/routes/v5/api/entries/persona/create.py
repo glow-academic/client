@@ -19,6 +19,7 @@ from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
+
 @router.post("/persona/create", response_model=CreatePersonaEntryResponse)
 async def create_persona_entry(
     request: CreatePersonaEntryRequest,

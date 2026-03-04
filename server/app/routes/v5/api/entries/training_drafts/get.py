@@ -19,6 +19,7 @@ from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
+
 @router.post(
     "/training_drafts/get",
     response_model=GetTrainingDraftsEntriesApiResponse,

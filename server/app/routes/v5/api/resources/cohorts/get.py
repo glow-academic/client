@@ -24,6 +24,7 @@ router = APIRouter()
 # HTTP Endpoint
 # =============================================================================
 
+
 @router.post(
     "/cohorts/get",
     response_model=GetCohortsApiResponse,

@@ -19,6 +19,7 @@ from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
+
 @router.post(
     "/conversations-completions/create",
     response_model=CreateConversationsCompletionsEntryResponse,

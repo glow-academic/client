@@ -16,6 +16,7 @@ from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
+
 @router.post(
     "/videos/search",
     response_model=SearchVideosApiResponse,

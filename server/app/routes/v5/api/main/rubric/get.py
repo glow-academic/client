@@ -370,7 +370,9 @@ async def get_rubric_internal(
 
     async def fetch_names() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_names(c, name_ids, get_redis_client(), bypass_cache=bypass_cache)
+            selected = await get_names(
+                c, name_ids, get_redis_client(), bypass_cache=bypass_cache
+            )
             suggestions = await search_names_internal(
                 c,
                 None,
@@ -610,7 +612,8 @@ async def get_rubric_internal(
             config_tools = await get_tools(
                 c,
                 tool_ids,
-                get_redis_client(), bypass_cache=bypass_cache,
+                get_redis_client(),
+                bypass_cache=bypass_cache,
             )
 
     # Build show_ai_generate map
@@ -747,9 +750,7 @@ async def get_rubric_websocket(
         if not agent_resource or not agent_resource.tool_ids:
             return []
         async with pool.acquire() as c:
-            return await get_tools(
-                c, list(agent_resource.tool_ids), cache
-            )
+            return await get_tools(c, list(agent_resource.tool_ids), cache)
 
     (
         draft_rubric,
@@ -782,7 +783,10 @@ async def get_rubric_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), get_redis_client(), bypass_cache=bypass_cache
+                        c,
+                        list(set(all_args_ids)),
+                        get_redis_client(),
+                        bypass_cache=bypass_cache,
                     )
 
             async def fetch_args_outputs():
@@ -790,7 +794,10 @@ async def get_rubric_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), get_redis_client(), bypass_cache=bypass_cache
+                        c,
+                        list(set(all_args_output_ids)),
+                        get_redis_client(),
+                        bypass_cache=bypass_cache,
                     )
 
             config_args, config_args_outputs = await asyncio.gather(
@@ -1012,5 +1019,7 @@ async def get_rubric(
             sql_params=None,
             request=http_request,
         )
+
+
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached

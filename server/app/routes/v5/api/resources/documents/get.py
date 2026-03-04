@@ -27,6 +27,7 @@ router = APIRouter()
 # HTTP Endpoint
 # =============================================================================
 
+
 @router.post(
     "/documents/get",
     response_model=GetDocumentResourceApiResponse,

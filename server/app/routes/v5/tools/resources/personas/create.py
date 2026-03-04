@@ -10,6 +10,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/resources/personas/create_personas_complete.sql"
 
+
 class CreatePersonasSqlParams(BaseModel):
     """SQL parameters for creating a denormalized personas_resource."""
 
@@ -35,6 +36,7 @@ class CreatePersonasSqlParams(BaseModel):
             self.parameter_field_ids or [],
             self.mcp,
         )
+
 
 async def create_personas_internal(
     conn: asyncpg.Connection,

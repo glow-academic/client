@@ -19,6 +19,7 @@ SQL_PATH = (
     "app/sql/queries/resources/reasoning_levels/search_reasoning_levels_complete.sql"
 )
 
+
 async def search_reasoning_levels_internal(
     conn: asyncpg.Connection,
     search: str | None = None,

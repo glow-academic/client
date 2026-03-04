@@ -19,6 +19,7 @@ from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
+
 @router.post("/certificates/create", response_model=CreateCertificatesEntryResponse)
 async def create_certificates_entry(
     request: CreateCertificatesEntryRequest,

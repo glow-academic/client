@@ -31,6 +31,7 @@ router = APIRouter()
 # Types for get_chats_internal (views-layer analytics from attempt_chat_mv)
 # ---------------------------------------------------------------------------
 
+
 class GetChatsRequest(BaseModel):
     """Request for getting chats with filters and pagination."""
 
@@ -73,6 +74,7 @@ class GetChatsRequest(BaseModel):
     page_limit: int = Field(default=10000, description="Items per page", ge=1, le=50000)
     page_offset: int = Field(default=0, description="Pagination offset", ge=0)
 
+
 @router.post(
     "/attempt_chat/get",
     response_model=GetAttemptChatEntriesApiResponse,
@@ -104,6 +106,7 @@ async def get_attempt_chat_entries(
             sql_params=None,
             request=http_request,
         )
+
 
 # ---------------------------------------------------------------------------
 # Views-layer: get_chats_internal (analytics query from attempt_chat_mv)

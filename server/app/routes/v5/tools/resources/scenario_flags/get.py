@@ -17,6 +17,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/resources/scenario_flags/get_scenario_flags_complete.sql"
 
+
 async def get_scenario_flags_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],

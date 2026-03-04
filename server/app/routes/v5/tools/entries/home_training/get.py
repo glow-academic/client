@@ -18,6 +18,7 @@ SQL_PATH = (
     "app/sql/queries/entries/home_training/get_home_training_entries_complete.sql"
 )
 
+
 async def get_home_training_entries_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],

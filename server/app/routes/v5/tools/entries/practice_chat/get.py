@@ -18,6 +18,7 @@ SQL_PATH = (
     "app/sql/queries/entries/practice_chat/get_practice_chat_entries_complete.sql"
 )
 
+
 async def get_practice_chat_entries_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],

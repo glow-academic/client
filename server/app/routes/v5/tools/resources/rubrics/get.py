@@ -22,6 +22,7 @@ SQL_PATH = "app/sql/queries/resources/rubrics/get_rubrics_complete.sql"
 
 BATCH_SQL_PATH = "app/sql/queries/resources/rubrics/get_rubrics_batch_complete.sql"
 
+
 async def get_rubrics_batch_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],
@@ -73,6 +74,7 @@ async def get_rubrics_batch_internal(
     )
 
     return items
+
 
 async def get_rubrics_internal(
     conn: asyncpg.Connection,

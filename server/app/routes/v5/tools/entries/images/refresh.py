@@ -8,6 +8,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 MV_NAME = "images_mv"
 
+
 async def refresh_images_internal(
     conn: asyncpg.Connection,
 ) -> dict:

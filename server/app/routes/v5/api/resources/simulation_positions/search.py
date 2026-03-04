@@ -27,6 +27,7 @@ router = APIRouter()
 # HTTP Endpoint
 # =============================================================================
 
+
 @router.post(
     "/simulation_positions/search", response_model=SearchSimulationPositionsApiResponse
 )

@@ -19,6 +19,7 @@ SQL_PATH = "app/sql/queries/entries/attempt_chat_bridge/create_attempt_chat_brid
 
 ENTRY_TYPE = "attempt_chat_bridges"
 
+
 async def create_attempt_chat_bridge_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,

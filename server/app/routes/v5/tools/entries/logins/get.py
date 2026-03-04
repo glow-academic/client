@@ -20,6 +20,7 @@ SQL_PATH = "app/sql/queries/entries/logins/get_logins_entries_complete.sql"
 
 VIEW_SQL_PATH = "app/sql/queries/views/login/list/get_login_list_view_complete.sql"
 
+
 async def get_login_list_view_internal(
     conn: asyncpg.Connection,
     profile_id_filter: UUID | None = None,
@@ -78,6 +79,7 @@ async def get_login_list_view_internal(
     )
 
     return response
+
 
 async def get_logins_entries_internal(
     conn: asyncpg.Connection,

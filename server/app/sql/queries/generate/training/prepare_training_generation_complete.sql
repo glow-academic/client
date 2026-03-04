@@ -50,7 +50,6 @@ CREATE OR REPLACE FUNCTION socket_prepare_training_generation_v4(
 RETURNS TABLE (
     run_id uuid,
     group_id uuid,
-    trace_id text,
     scenario_id uuid,
     -- Agent context
     agent_name text,
@@ -188,18 +187,14 @@ create_group AS (
         LIMIT 1
     )
     FROM params p
-    RETURNING id as group_id, trace_id
+    RETURNING id as group_id
 ),
 group_data AS (
     SELECT
         COALESCE(
             (SELECT group_id FROM create_group LIMIT 1),
             gen_random_uuid()::uuid
-        ) as group_id,
-        COALESCE(
-            (SELECT trace_id FROM create_group LIMIT 1),
-            gen_random_uuid()::text
-        ) as trace_id
+        ) as group_id
 ),
 -- Create run with group_id
 create_run AS (
@@ -501,7 +496,6 @@ context_data AS (
 SELECT
     cr.run_id,
     gd.group_id,
-    gd.trace_id::text as trace_id,
     rs.scenario_id,
     -- Agent context
     cd.agent_name,

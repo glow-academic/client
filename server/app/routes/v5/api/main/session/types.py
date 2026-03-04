@@ -15,7 +15,6 @@ class ArtifactSessionGroup(BaseModel):
 
     group_id: UUID
     group_name: str | None = None
-    trace_id: str | None = None
     first_run_at: datetime | None = None
     last_run_at: datetime | None = None
     run_count: int = 0

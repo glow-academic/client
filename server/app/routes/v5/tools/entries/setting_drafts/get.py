@@ -17,6 +17,7 @@ SQL_PATH = (
     "app/sql/queries/entries/setting_drafts/get_setting_drafts_entries_complete.sql"
 )
 
+
 async def get_setting_drafts_entries_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],

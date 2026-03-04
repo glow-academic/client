@@ -18,9 +18,8 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/entries/problems/get_problems_entries_complete.sql"
 
-VIEW_SQL_PATH = (
-    "app/sql/queries/views/problem/list/get_problem_list_view_complete.sql"
-)
+VIEW_SQL_PATH = "app/sql/queries/views/problem/list/get_problem_list_view_complete.sql"
+
 
 async def get_problem_list_view_internal(
     conn: asyncpg.Connection,
@@ -80,6 +79,7 @@ async def get_problem_list_view_internal(
     )
 
     return response
+
 
 async def get_problems_entries_internal(
     conn: asyncpg.Connection,

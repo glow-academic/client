@@ -20,11 +20,14 @@ class LinkVideosApiRequest(BaseModel):
     group_id: UUID
     tool_id: UUID
 
+
 class LinkVideosApiResponse(BaseModel):
     success: bool = True
     videos_id: UUID | None = None
 
+
 router = APIRouter()
+
 
 @router.post(
     "/videos/link",

@@ -23,6 +23,7 @@ router = APIRouter()
 # Search (original search.py)
 # ---------------------------------------------------------------------------
 
+
 @router.post(
     "/messages/search",
     response_model=SearchMessagesEntriesApiResponse,
@@ -60,6 +61,7 @@ async def search_messages_entries(
             sql_params=None,
             request=http_request,
         )
+
 
 # ---------------------------------------------------------------------------
 # List (merged from list.py)

@@ -12,11 +12,14 @@ async def get_group(
     group_id: UUID,
 ) -> GetGroupResponse | None:
     """Get a groups entry by ID."""
-    row = await conn.fetchrow("""
+    row = await conn.fetchrow(
+        """
         SELECT id, session_id, name, active, mcp, generated
         FROM groups_entry
         WHERE id = $1
-    """, group_id)
+    """,
+        group_id,
+    )
 
     if row is None:
         return None

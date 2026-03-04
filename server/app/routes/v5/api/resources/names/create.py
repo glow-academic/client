@@ -7,7 +7,10 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import get_db
 from app.routes.v5.tools.resources.names.create import create_name
-from app.routes.v5.tools.resources.names.types import CreateNameRequest, CreateNameResponse
+from app.routes.v5.tools.resources.names.types import (
+    CreateNameRequest,
+    CreateNameResponse,
+)
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

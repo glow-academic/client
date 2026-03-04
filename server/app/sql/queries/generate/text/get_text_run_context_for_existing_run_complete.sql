@@ -56,7 +56,6 @@ RETURNS TABLE (
     runs_today_count bigint,
     earliest_run_created_at timestamptz,
     group_id uuid,
-    trace_id text,
     tools types.i_get_text_run_context_and_create_run_v4_tool[],
     developer_instruction_templates text[],  -- Changed to array
     context jsonb,  -- Added: whitelisted resources for Jinja templating
@@ -80,24 +79,16 @@ WITH params AS (
 existing_run AS (
     SELECT
         r.id as run_id,
-        gd.group_id,
-        gd.trace_id
+        COALESCE(r.group_id, p.group_id) as group_id
     FROM runs_entry r
     CROSS JOIN params p
-    LEFT JOIN groups_entry g ON g.id = r.group_id
-    LEFT JOIN LATERAL (
-        SELECT
-            COALESCE(r.group_id, p.group_id) as group_id,
-            COALESCE(g.trace_id, gen_random_uuid()::text) as trace_id
-    ) gd ON true
     WHERE r.id = p.run_id
     LIMIT 1
 ),
--- Get group_id and trace_id
+-- Get group_id
 group_data AS (
-    SELECT 
-        er.group_id,
-        er.trace_id
+    SELECT
+        er.group_id
     FROM existing_run er
 ),
 -- Get agent
@@ -544,9 +535,8 @@ SELECT
     cd.req_per_day,
     cd.runs_today_count,
     cd.earliest_run_created_at,
-    -- Group ID and trace_id (from groups_entry table)
+    -- Group ID
     gd.group_id,
-    gd.trace_id::text as trace_id,
     -- Tools array
     cd.tools,
     -- Developer instruction templates (array)

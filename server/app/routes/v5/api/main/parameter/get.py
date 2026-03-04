@@ -262,7 +262,9 @@ async def get_parameter_internal(
 
     async def fetch_names():
         async with pool.acquire() as c:
-            selected = await get_names(c, name_ids, get_redis_client(), bypass_cache=bypass_cache)
+            selected = await get_names(
+                c, name_ids, get_redis_client(), bypass_cache=bypass_cache
+            )
             suggestions = await search_names_internal(
                 c,
                 None,
@@ -736,5 +738,7 @@ async def get_parameter(
             sql_params=None,
             request=http_request,
         )
+
+
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached

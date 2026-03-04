@@ -192,7 +192,10 @@ async def get_pricing_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), get_redis_client(), bypass_cache=bypass_cache
+                        c,
+                        list(set(all_args_ids)),
+                        get_redis_client(),
+                        bypass_cache=bypass_cache,
                     )
 
             async def fetch_args_outputs():
@@ -200,7 +203,10 @@ async def get_pricing_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), get_redis_client(), bypass_cache=bypass_cache
+                        c,
+                        list(set(all_args_output_ids)),
+                        get_redis_client(),
+                        bypass_cache=bypass_cache,
                     )
 
             config_args, config_args_outputs = await asyncio.gather(
@@ -327,7 +333,9 @@ async def get_group_list_internal(
     # Fetch names via resource layer
     all_name_ids = list(all_agent_ids | all_model_ids | all_profile_ids)
     name_items = (
-        await get_names(conn, all_name_ids, get_redis_client(), bypass_cache=bypass_cache)
+        await get_names(
+            conn, all_name_ids, get_redis_client(), bypass_cache=bypass_cache
+        )
         if all_name_ids
         else []
     )
@@ -350,7 +358,6 @@ async def get_group_list_internal(
                 session_id=view_item.session_id,
                 profile_id=None,
                 group_name=view_item.group_name,
-                trace_id=view_item.trace_id,
                 first_run_at=stats.get("first_run_at"),
                 last_run_at=stats.get("last_run_at"),
                 run_count=stats.get("run_count", 0),

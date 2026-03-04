@@ -3,8 +3,8 @@
 Split database/schema.sql (pg_dump output) into structured files under database/schema/.
 
 Parses pg_dump section markers (-- Name: ...; Type: ...; Schema: ...) and routes
-each section to the appropriate output file. Skips functions, composite types
-(types schema), and materialized views (hand-maintained in database/schema/views/).
+each section to the appropriate output file. Skips functions and composite types
+(types schema).
 
 Output structure:
     database/schema/
@@ -21,11 +21,13 @@ Output structure:
         artifacts/<domain>.sql   — CREATE INDEX (parallel to tables/)
         entries/<domain>.sql
         ...
+        views/<mv_name>.sql      — MV indexes grouped by MV name
       foreign_keys/
         artifacts/<domain>.sql   — ALTER TABLE ... ADD CONSTRAINT ... FK
         entries/<domain>.sql
         ...
-      views/                     — NOT generated here (hand-maintained MV definitions)
+      views/
+        <mv_name>.sql            — one file per materialized view
 
 Usage:
     python database/scripts/split_schema.py [path/to/schema.sql]
@@ -67,6 +69,7 @@ TABLE_SUFFIXES = {
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def get_table_suffix_and_domain(table_name: str) -> tuple[str, str]:
     """Extract (suffix_folder, domain_prefix) from a table name."""
     for suffix, folder in TABLE_SUFFIXES.items():
@@ -102,6 +105,7 @@ def is_mv_table(table_name: str) -> bool:
 # Section types
 # ---------------------------------------------------------------------------
 
+
 def classify_section(sec_type: str, schema: str) -> str | None:
     """Return a broad category or None to skip."""
     t = sec_type.strip()
@@ -125,13 +129,16 @@ def classify_section(sec_type: str, schema: str) -> str | None:
         return "indexes"
     if t == "FK CONSTRAINT" and s == "public":
         return "foreign_keys"
-    # Skip FUNCTION, MATERIALIZED VIEW, etc.
+    if t == "MATERIALIZED VIEW" and s == "public":
+        return "materialized_views"
+    # Skip FUNCTION, etc.
     return None
 
 
 # ---------------------------------------------------------------------------
 # Parsing
 # ---------------------------------------------------------------------------
+
 
 class Section:
     __slots__ = ("name", "sec_type", "schema", "header_lines", "body_lines")
@@ -189,6 +196,7 @@ def parse_sections(schema_path: str) -> tuple[list[str], list[Section]]:
 # Writing
 # ---------------------------------------------------------------------------
 
+
 def write_file(path: str, header: str, content: str) -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
@@ -204,11 +212,12 @@ def write_file(path: str, header: str, content: str) -> None:
 # Main split logic
 # ---------------------------------------------------------------------------
 
+
 def write_split_files(schema_path: str, output_dir: str) -> dict:
     """Parse schema.sql, classify sections, write structured files."""
 
     # Clean output dir (preserve hand-maintained files)
-    PRESERVE = {"views", "functions.sql"}
+    PRESERVE: set[str] = set()
     if os.path.exists(output_dir):
         for item in os.listdir(output_dir):
             if item in PRESERVE:
@@ -228,11 +237,19 @@ def write_split_files(schema_path: str, output_dir: str) -> dict:
     enum_parts: dict[str, list[str]] = {}
     # tables_parts[suffix_folder][domain] = [section texts]
     # constraints get inlined here too
-    tables_parts: dict[str, dict[str, list[str]]] = defaultdict(lambda: defaultdict(list))
+    tables_parts: dict[str, dict[str, list[str]]] = defaultdict(
+        lambda: defaultdict(list)
+    )
     # indexes_parts[suffix_folder][domain] = [section texts]  (parallel to tables)
-    indexes_parts: dict[str, dict[str, list[str]]] = defaultdict(lambda: defaultdict(list))
+    indexes_parts: dict[str, dict[str, list[str]]] = defaultdict(
+        lambda: defaultdict(list)
+    )
     # foreign_keys_parts[suffix_folder][domain] = [section texts]
     fk_parts: dict[str, dict[str, list[str]]] = defaultdict(lambda: defaultdict(list))
+    # views_parts[mv_name] = [section texts]  (one file per materialized view)
+    views_parts: dict[str, list[str]] = {}
+    # mv_indexes_parts[mv_name] = [section texts]  (MV indexes grouped by MV name)
+    mv_indexes_parts: dict[str, list[str]] = defaultdict(list)
 
     orphan_sets: list[str] = []
     counts: dict[str, int] = defaultdict(int)
@@ -318,8 +335,9 @@ def write_split_files(schema_path: str, output_dir: str) -> dict:
         elif key == "indexes":
             table_name = extract_table_from_index_body(sec.body_lines)
             if table_name and is_mv_table(table_name):
-                counts["mv_indexes_skipped"] += 1
-                continue  # MV indexes handled by views
+                mv_indexes_parts[table_name].append(text)
+                counts["mv_indexes"] += 1
+                continue
             if table_name:
                 suffix_folder, domain = get_table_suffix_and_domain(table_name)
             else:
@@ -328,6 +346,11 @@ def write_split_files(schema_path: str, output_dir: str) -> dict:
                 indexes_parts[suffix_folder][domain].append(orphan_prefix.rstrip())
             indexes_parts[suffix_folder][domain].append(text)
             counts["indexes"] += 1
+
+        elif key == "materialized_views":
+            mv_name = sec.name
+            views_parts[mv_name] = [orphan_prefix + text] if orphan_prefix else [text]
+            counts["materialized_views"] += 1
 
         elif key == "foreign_keys":
             table_name = extract_table_from_constraint_name(sec.name)
@@ -359,7 +382,11 @@ def write_split_files(schema_path: str, output_dir: str) -> dict:
         )
 
     # tables/ — suffix subfolders with domain files (includes inline constraints)
-    file_counts: dict[str, dict[str, int]] = {"tables": {}, "indexes": {}, "foreign_keys": {}}
+    file_counts: dict[str, dict[str, int]] = {
+        "tables": {},
+        "indexes": {},
+        "foreign_keys": {},
+    }
     for suffix_folder in sorted(tables_parts):
         domains = tables_parts[suffix_folder]
         file_counts["tables"][suffix_folder] = len(domains)
@@ -387,10 +414,28 @@ def write_split_files(schema_path: str, output_dir: str) -> dict:
         file_counts["foreign_keys"][suffix_folder] = len(domains)
         for domain in sorted(domains):
             write_file(
-                os.path.join(output_dir, "foreign_keys", suffix_folder, f"{domain}.sql"),
+                os.path.join(
+                    output_dir, "foreign_keys", suffix_folder, f"{domain}.sql"
+                ),
                 f"Foreign keys: {domain}_*",
                 "\n\n".join(domains[domain]) + "\n",
             )
+
+    # views/ — one file per materialized view
+    for mv_name in sorted(views_parts):
+        write_file(
+            os.path.join(output_dir, "views", f"{mv_name}.sql"),
+            f"Materialized view: {mv_name}",
+            "\n\n".join(views_parts[mv_name]) + "\n",
+        )
+
+    # indexes/views/ — MV indexes grouped by MV name
+    for mv_name in sorted(mv_indexes_parts):
+        write_file(
+            os.path.join(output_dir, "indexes", "views", f"{mv_name}.sql"),
+            f"MV indexes: {mv_name}",
+            "\n\n".join(mv_indexes_parts[mv_name]) + "\n",
+        )
 
     return dict(counts), file_counts
 
@@ -399,7 +444,9 @@ def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     db_dir = os.path.dirname(script_dir)
 
-    schema_path = sys.argv[1] if len(sys.argv) > 1 else os.path.join(db_dir, "schema.sql")
+    schema_path = (
+        sys.argv[1] if len(sys.argv) > 1 else os.path.join(db_dir, "schema.sql")
+    )
     output_dir = os.path.join(db_dir, "schema")
 
     if not os.path.exists(schema_path):
@@ -413,25 +460,29 @@ def main():
     print(f"  extensions.sql              {counts.get('extensions', 0):5d} sections")
     print(f"  enums/                      {counts.get('enums', 0):5d} files")
 
-    total_tables = counts.get('tables', 0)
-    total_constraints = counts.get('constraints', 0)
-    total_comments = counts.get('table_comments', 0)
-    print(f"  tables/                     {total_tables:5d} tables + {total_constraints} constraints + {total_comments} comments (inlined)")
+    total_tables = counts.get("tables", 0)
+    total_constraints = counts.get("constraints", 0)
+    total_comments = counts.get("table_comments", 0)
+    print(
+        f"  tables/                     {total_tables:5d} tables + {total_constraints} constraints + {total_comments} comments (inlined)"
+    )
     for folder, n in sorted(file_counts.get("tables", {}).items()):
         print(f"    {folder + '/':26s}{n:3d} domain files")
 
-    print(f"  indexes/                    {counts.get('indexes', 0):5d} indexes ({counts.get('mv_indexes_skipped', 0)} MV indexes skipped)")
+    print(f"  indexes/                    {counts.get('indexes', 0):5d} indexes")
     for folder, n in sorted(file_counts.get("indexes", {}).items()):
         print(f"    {folder + '/':26s}{n:3d} domain files")
 
-    print(f"  foreign_keys/               {counts.get('foreign_keys', 0):5d} FK constraints")
+    print(
+        f"  foreign_keys/               {counts.get('foreign_keys', 0):5d} FK constraints"
+    )
     for folder, n in sorted(file_counts.get("foreign_keys", {}).items()):
         print(f"    {folder + '/':26s}{n:3d} domain files")
 
-    views_dir = os.path.join(output_dir, "views")
-    if os.path.exists(views_dir):
-        view_count = sum(1 for _ in _rglob_sql(views_dir))
-        print(f"  views/                      {view_count:5d} MV files (hand-maintained)")
+    print(
+        f"  views/                      {counts.get('materialized_views', 0):5d} materialized views"
+    )
+    print(f"  indexes/views/              {counts.get('mv_indexes', 0):5d} MV indexes")
 
 
 def _rglob_sql(d: str):

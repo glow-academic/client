@@ -15,9 +15,8 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = (
-    "app/sql/queries/resources/auth_item_keys/search_auth_item_keys_complete.sql"
-)
+SQL_PATH = "app/sql/queries/resources/auth_item_keys/search_auth_item_keys_complete.sql"
+
 
 async def search_auth_item_keys_internal(
     conn: asyncpg.Connection,

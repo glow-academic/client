@@ -19,6 +19,7 @@ SQL_PATH = "app/sql/queries/entries/mutes/create_mutes_entries_complete.sql"
 
 ENTRY_TYPE = "mutes"
 
+
 async def create_mutes_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,

@@ -21,6 +21,7 @@ SQL_PATH = (
 
 ENTRY_TYPE = "test_feedbacks"
 
+
 async def create_test_feedback_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,

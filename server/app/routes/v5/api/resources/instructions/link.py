@@ -20,11 +20,14 @@ class LinkInstructionsApiRequest(BaseModel):
     group_id: UUID
     tool_id: UUID
 
+
 class LinkInstructionsApiResponse(BaseModel):
     success: bool = True
     instruction_id: UUID | None = None
 
+
 router = APIRouter()
+
 
 @router.post(
     "/instructions/link",

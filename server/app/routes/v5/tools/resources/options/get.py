@@ -17,6 +17,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 BATCH_SQL_PATH = "app/sql/queries/resources/options/get_options_complete.sql"
 
+
 async def get_options_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],

@@ -10,6 +10,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/resources/simulations/create_simulations_complete.sql"
 
+
 class CreateSimulationsSqlParams(BaseModel):
     """SQL parameters for creating a denormalized simulations_resource."""
 
@@ -37,6 +38,7 @@ class CreateSimulationsSqlParams(BaseModel):
             self.mcp,
             self.practice,
         )
+
 
 async def create_simulations_internal(
     conn: asyncpg.Connection,

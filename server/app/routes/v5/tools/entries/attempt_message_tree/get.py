@@ -19,6 +19,7 @@ SQL_PATH = "app/sql/queries/entries/attempt_message_tree/get_attempt_message_tre
 
 VIEW_SQL_PATH = "app/sql/queries/views/simulation/message_tree/get_simulation_message_tree_view_complete.sql"
 
+
 async def get_attempt_message_tree_entries_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],
@@ -56,6 +57,7 @@ async def get_attempt_message_tree_entries_internal(
     )
 
     return items
+
 
 async def get_attempt_message_tree_internal(
     conn: asyncpg.Connection,

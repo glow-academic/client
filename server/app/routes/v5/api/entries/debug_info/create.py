@@ -19,6 +19,7 @@ from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
+
 @router.post("/debug-info/create", response_model=CreateDebugInfoEntryResponse)
 async def create_debug_info_entry(
     request: CreateDebugInfoEntryRequest,

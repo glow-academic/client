@@ -8,6 +8,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 MV_NAME = "scenario_drafts_mv"
 
+
 async def refresh_scenario_drafts_internal(
     conn: asyncpg.Connection,
 ) -> dict:

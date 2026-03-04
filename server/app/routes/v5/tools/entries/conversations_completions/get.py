@@ -16,6 +16,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/entries/conversations_completions/get_conversations_completions_entries_complete.sql"
 
+
 async def get_conversations_completions_entries_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],

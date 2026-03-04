@@ -24,6 +24,7 @@ SQL_PATH = "app/sql/queries/resources/objectives/get_objective_complete.sql"
 
 BATCH_SQL_PATH = "app/sql/queries/resources/objectives/get_objectives_complete.sql"
 
+
 async def get_objective_internal(
     conn: asyncpg.Connection,
     id: UUID,
@@ -58,6 +59,7 @@ async def get_objective_internal(
     )
 
     return item
+
 
 async def get_objectives_internal(
     conn: asyncpg.Connection,

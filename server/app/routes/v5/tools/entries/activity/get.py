@@ -22,6 +22,7 @@ VIEW_SQL_PATH = (
     "app/sql/queries/views/activity/list/get_activity_list_view_complete.sql"
 )
 
+
 async def get_activity_entries_internal(
     conn: asyncpg.Connection,
     ids: list[UUID],
@@ -59,6 +60,7 @@ async def get_activity_entries_internal(
     )
 
     return items
+
 
 async def get_activity_list_view_internal(
     conn: asyncpg.Connection,

@@ -20,11 +20,14 @@ class LinkImagesApiRequest(BaseModel):
     group_id: UUID
     tool_id: UUID
 
+
 class LinkImagesApiResponse(BaseModel):
     success: bool = True
     images_id: UUID | None = None
 
+
 router = APIRouter()
+
 
 @router.post(
     "/images/link",

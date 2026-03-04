@@ -20,11 +20,14 @@ class LinkPersonasApiRequest(BaseModel):
     group_id: UUID
     tool_id: UUID
 
+
 class LinkPersonasApiResponse(BaseModel):
     success: bool = True
     personas_id: UUID | None = None
 
+
 router = APIRouter()
+
 
 @router.post(
     "/personas/link",

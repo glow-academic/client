@@ -19,6 +19,7 @@ SQL_PATH = (
     "app/sql/queries/resources/model_positions/search_model_positions_complete.sql"
 )
 
+
 async def search_model_positions_internal(
     conn: asyncpg.Connection,
     model_ids: list[UUID],

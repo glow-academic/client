@@ -18,6 +18,7 @@ SQL_PATH = (
     "app/sql/queries/entries/attempt_chat/search_attempt_chat_entries_complete.sql"
 )
 
+
 async def search_attempt_chat_entries_internal(
     conn: asyncpg.Connection,
     search: str | None = None,

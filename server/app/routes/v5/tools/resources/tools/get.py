@@ -27,9 +27,12 @@ async def get_tools(
     if not bypass_cache:
         cached = await get_cached(key, redis=redis)
         if cached:
-            return [GetToolResponse.model_validate(item) for item in cached.get("items", [])]
+            return [
+                GetToolResponse.model_validate(item) for item in cached.get("items", [])
+            ]
 
-    rows = await conn.fetch("""
+    rows = await conn.fetch(
+        """
         SELECT id, name, description, operation,
                department_ids, args_ids, args_output_ids,
                resources, entries, artifacts,
@@ -37,7 +40,9 @@ async def get_tools(
         FROM tools_resource
         WHERE id = ANY($1)
         ORDER BY array_position($1, id)
-    """, ids)
+    """,
+        ids,
+    )
 
     items = [
         GetToolResponse(
@@ -60,5 +65,11 @@ async def get_tools(
     ]
 
     if not bypass_cache:
-        await set_cached(key, {"items": [i.model_dump(mode="json") for i in items]}, 60, tags, redis=redis)
+        await set_cached(
+            key,
+            {"items": [i.model_dump(mode="json") for i in items]},
+            60,
+            tags,
+            redis=redis,
+        )
     return items

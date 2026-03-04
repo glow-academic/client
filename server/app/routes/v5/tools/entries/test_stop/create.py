@@ -19,6 +19,7 @@ SQL_PATH = "app/sql/queries/entries/test_stop/create_test_stop_entries_complete.
 
 ENTRY_TYPE = "test_stops"
 
+
 async def create_test_stop_entry_internal(
     conn: asyncpg.Connection,
     request_dict: dict,
