@@ -1,63 +1,68 @@
-"""standards/get internal — reusable data-access layer."""
+"""Standards Resource GET — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    GetStandardsSqlParams,
-    GetStandardsSqlRow,
-    QGetStandardsV4Item,
-)
+from app.routes.v5.tools.resources.standards.types import GetStandardResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-BATCH_SQL_PATH = "app/sql/queries/resources/standards/get_standards_complete.sql"
 
 
-async def get_standards_internal(
+async def get_standards(
     conn: asyncpg.Connection,
     ids: list[UUID],
+    redis: Redis,
     bypass_cache: bool = False,
-) -> list[QGetStandardsV4Item]:
-    """Internal function for batch fetching standards by IDs.
-
-    This is a simple fetch with active flag check.
-    """
+) -> list[GetStandardResponse]:
+    """Fetch standards_resource entries by IDs."""
     if not ids:
         return []
 
     tags = ["resources", "standards"]
-    cache_key_val = cache_key(
-        "/api/v5/resources/standards/get-batch",
-        {"ids": [str(id) for id in ids]},
-    )
+    key = cache_key("/api/v5/resources/standards/get", {"ids": [str(id) for id in ids]})
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetStandardsV4Item.model_validate(item)
-                for item in cached.get("items", [])
+                GetStandardResponse.model_validate(item) for item in cached.get("items", [])
             ]
 
-    params = GetStandardsSqlParams(p_ids=ids)
-    result = cast(
-        GetStandardsSqlRow,
-        await execute_sql_typed(conn, BATCH_SQL_PATH, params=params),
+    rows = await conn.fetch(
+        """
+        SELECT id, name, description, points, standard_group_id,
+               created_at, active, generated, mcp
+        FROM standards_resource
+        WHERE id = ANY($1)
+        ORDER BY array_position($1, id)
+    """,
+        ids,
     )
 
-    items: list[QGetStandardsV4Item] = result.items if result and result.items else []
+    items = [
+        GetStandardResponse(
+            id=r["id"],
+            name=r["name"],
+            description=r["description"],
+            points=r["points"],
+            standard_group_id=r["standard_group_id"],
+            created_at=r["created_at"],
+            active=r["active"],
+            generated=r["generated"],
+            mcp=r["mcp"],
+        )
+        for r in rows
+    ]
 
-    await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
+    if not bypass_cache:
+        await set_cached(
+            key,
+            {"items": [i.model_dump(mode="json") for i in items]},
+            60,
+            tags,
+            redis=redis,
+        )
     return items

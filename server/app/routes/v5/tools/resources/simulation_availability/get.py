@@ -1,62 +1,68 @@
-"""simulation_availability/get internal — reusable data-access layer."""
+"""Simulation Availability Resource GET — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
-import asyncpg
+import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.routes.v5.api.resources.simulation_availability.types import (
-    GetSimulationAvailabilitySqlParams,
-    GetSimulationAvailabilitySqlRow,
-    SimulationAvailabilityV4Item,
-)
+from app.routes.v5.tools.resources.simulation_availability.types import GetSimulationAvailabilityResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/resources/simulation_availability/get_simulation_availability_complete.sql"
 
 
-async def get_simulation_availability_internal(
+async def get_simulation_availability(
     conn: asyncpg.Connection,
     ids: list[UUID],
+    redis: Redis,
     bypass_cache: bool = False,
-) -> list[SimulationAvailabilityV4Item]:
+) -> list[GetSimulationAvailabilityResponse]:
+    """Fetch simulation_availability_resource entries by IDs."""
     if not ids:
         return []
 
-    ids = [UUID(sid) if isinstance(sid, str) else sid for sid in ids if sid is not None]
-    if not ids:
-        return []
-
-    cache_key_val = cache_key(
-        "simulation_availability/get",
-        {"ids": sorted([str(id) for id in ids])},
-    )
+    tags = ["resources", "simulation_availability"]
+    key = cache_key("/api/v5/resources/simulation_availability/get", {"ids": [str(id) for id in ids]})
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                SimulationAvailabilityV4Item.model_validate(item)
-                for item in cached.get("data", [])
+                GetSimulationAvailabilityResponse.model_validate(item) for item in cached.get("items", [])
             ]
 
-    params = GetSimulationAvailabilitySqlParams(ids=ids)
-    result = cast(
-        GetSimulationAvailabilitySqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
+    rows = await conn.fetch(
+        """
+        SELECT id, simulation_id, time, type,
+               created_at, updated_at, active, generated, mcp
+        FROM simulation_availability_resource
+        WHERE id = ANY($1)
+        ORDER BY array_position($1, id)
+    """,
+        ids,
     )
 
-    items = result.items or []
+    items = [
+        GetSimulationAvailabilityResponse(
+            id=r["id"],
+            simulation_id=r["simulation_id"],
+            time=r["time"],
+            type=r["type"],
+            created_at=r["created_at"],
+            updated_at=r["updated_at"],
+            active=r["active"],
+            generated=r["generated"],
+            mcp=r["mcp"],
+        )
+        for r in rows
+    ]
 
-    await set_cached(
-        cache_key_val,
-        {"data": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=["simulation_availability"],
-        redis=get_redis_client(),
-    )
-
+    if not bypass_cache:
+        await set_cached(
+            key,
+            {"items": [i.model_dump(mode="json") for i in items]},
+            60,
+            tags,
+            redis=redis,
+        )
     return items

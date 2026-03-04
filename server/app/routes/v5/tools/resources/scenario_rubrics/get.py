@@ -1,80 +1,66 @@
-"""scenario_rubrics/get internal — reusable data-access layer."""
+"""Scenario Rubrics Resource GET — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    GetScenarioRubricsSqlParams,
-    GetScenarioRubricsSqlRow,
-    QGetScenarioRubricsV4Item,
-)
+from app.routes.v5.tools.resources.scenario_rubrics.types import GetScenarioRubricResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = (
-    "app/sql/queries/resources/scenario_rubrics/get_scenario_rubrics_complete.sql"
-)
 
 
-async def get_scenario_rubrics_internal(
+async def get_scenario_rubrics(
     conn: asyncpg.Connection,
     ids: list[UUID],
+    redis: Redis,
     bypass_cache: bool = False,
-) -> list[QGetScenarioRubricsV4Item]:
-    """Internal function for parallel fetching from artifact endpoint.
-
-    Args:
-        conn: Database connection
-        ids: List of scenario rubric resource IDs
-        bypass_cache: Whether to bypass cache
-
-    Returns:
-        List of scenario rubric items
-    """
+) -> list[GetScenarioRubricResponse]:
+    """Fetch scenario_rubrics_resource entries by IDs."""
     if not ids:
         return []
 
-    # Generate cache key
-    cache_key_val = cache_key(
-        "scenario_rubrics/get",
-        {
-            "ids": sorted([str(id) for id in ids]),
-        },
-    )
+    tags = ["resources", "scenario_rubrics"]
+    key = cache_key("/api/v5/resources/scenario_rubrics/get", {"ids": [str(id) for id in ids]})
 
-    # Try cache (unless bypassed)
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetScenarioRubricsV4Item.model_validate(item)
-                for item in cached.get("data", [])
+                GetScenarioRubricResponse.model_validate(item) for item in cached.get("items", [])
             ]
 
-    # Execute SQL
-    params = GetScenarioRubricsSqlParams(ids=ids)
-    result = cast(
-        GetScenarioRubricsSqlRow,
-        await execute_sql_typed(
-            conn,
-            SQL_PATH,
-            params=params,
-        ),
+    rows = await conn.fetch(
+        """
+        SELECT id, rubric_id, scenario_id,
+               created_at, active, generated, mcp
+        FROM scenario_rubrics_resource
+        WHERE id = ANY($1)
+        ORDER BY array_position($1, id)
+    """,
+        ids,
     )
 
-    items = result.items or []
+    items = [
+        GetScenarioRubricResponse(
+            id=r["id"],
+            rubric_id=r["rubric_id"],
+            scenario_id=r["scenario_id"],
+            created_at=r["created_at"],
+            active=r["active"],
+            generated=r["generated"],
+            mcp=r["mcp"],
+        )
+        for r in rows
+    ]
 
-    # Cache response
-    await set_cached(
-        cache_key_val,
-        {"data": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=["scenario_rubrics"],
-        redis=get_redis_client(),
-    )
-
+    if not bypass_cache:
+        await set_cached(
+            key,
+            {"items": [i.model_dump(mode="json") for i in items]},
+            60,
+            tags,
+            redis=redis,
+        )
     return items

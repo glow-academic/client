@@ -1,67 +1,69 @@
-"""standard_groups/get internal — reusable data-access layer."""
+"""Standard Groups Resource GET — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    GetStandardGroupsSqlParams,
-    GetStandardGroupsSqlRow,
-    QGetStandardGroupsV4Item,
-)
+from app.routes.v5.tools.resources.standard_groups.types import GetStandardGroupResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-BATCH_SQL_PATH = (
-    "app/sql/queries/resources/standard_groups/get_standard_groups_complete.sql"
-)
 
 
-async def get_standard_groups_internal(
+async def get_standard_groups(
     conn: asyncpg.Connection,
     ids: list[UUID],
+    redis: Redis,
     bypass_cache: bool = False,
-) -> list[QGetStandardGroupsV4Item]:
-    """Internal function for batch fetching standard_groups by IDs.
-
-    This is a simple fetch with active flag check.
-    """
+) -> list[GetStandardGroupResponse]:
+    """Fetch standard_groups_resource entries by IDs."""
     if not ids:
         return []
 
     tags = ["resources", "standard_groups"]
-    cache_key_val = cache_key(
-        "/api/v5/resources/standard_groups/get-batch",
-        {"ids": [str(id) for id in ids]},
-    )
+    key = cache_key("/api/v5/resources/standard_groups/get", {"ids": [str(id) for id in ids]})
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetStandardGroupsV4Item.model_validate(item)
-                for item in cached.get("items", [])
+                GetStandardGroupResponse.model_validate(item) for item in cached.get("items", [])
             ]
 
-    params = GetStandardGroupsSqlParams(p_ids=ids)
-    result = cast(
-        GetStandardGroupsSqlRow,
-        await execute_sql_typed(conn, BATCH_SQL_PATH, params=params),
+    rows = await conn.fetch(
+        """
+        SELECT id, name, short_name, description, points, pass_points,
+               created_at, active, generated, mcp
+        FROM standard_groups_resource
+        WHERE id = ANY($1)
+        ORDER BY array_position($1, id)
+    """,
+        ids,
     )
 
-    items: list[QGetStandardGroupsV4Item] = (
-        result.items if result and result.items else []
-    )
+    items = [
+        GetStandardGroupResponse(
+            id=r["id"],
+            name=r["name"],
+            short_name=r["short_name"],
+            description=r["description"],
+            points=r["points"],
+            pass_points=r["pass_points"],
+            created_at=r["created_at"],
+            active=r["active"],
+            generated=r["generated"],
+            mcp=r["mcp"],
+        )
+        for r in rows
+    ]
 
-    await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
+    if not bypass_cache:
+        await set_cached(
+            key,
+            {"items": [i.model_dump(mode="json") for i in items]},
+            60,
+            tags,
+            redis=redis,
+        )
     return items

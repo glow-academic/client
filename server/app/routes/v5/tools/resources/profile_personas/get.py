@@ -1,80 +1,66 @@
-"""profile_personas/get internal — reusable data-access layer."""
+"""Profile Personas Resource GET — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    GetProfilePersonasSqlParams,
-    GetProfilePersonasSqlRow,
-    QGetProfilePersonasV4Item,
-)
+from app.routes.v5.tools.resources.profile_personas.types import GetProfilePersonaResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = (
-    "app/sql/queries/resources/profile_personas/get_profile_personas_complete.sql"
-)
 
 
-async def get_profile_personas_internal(
+async def get_profile_personas(
     conn: asyncpg.Connection,
     ids: list[UUID],
+    redis: Redis,
     bypass_cache: bool = False,
-) -> list[QGetProfilePersonasV4Item]:
-    """Internal function for parallel fetching from artifact endpoint.
-
-    Args:
-        conn: Database connection
-        ids: List of profile persona resource IDs
-        bypass_cache: Whether to bypass cache
-
-    Returns:
-        List of profile persona items
-    """
+) -> list[GetProfilePersonaResponse]:
+    """Fetch profile_personas_resource entries by IDs."""
     if not ids:
         return []
 
-    # Generate cache key
-    cache_key_val = cache_key(
-        "profile_personas/get",
-        {
-            "ids": sorted([str(id) for id in ids]),
-        },
-    )
+    tags = ["resources", "profile_personas"]
+    key = cache_key("/api/v5/resources/profile_personas/get", {"ids": [str(id) for id in ids]})
 
-    # Try cache (unless bypassed)
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetProfilePersonasV4Item.model_validate(item)
-                for item in cached.get("data", [])
+                GetProfilePersonaResponse.model_validate(item) for item in cached.get("items", [])
             ]
 
-    # Execute SQL
-    params = GetProfilePersonasSqlParams(ids=ids)
-    result = cast(
-        GetProfilePersonasSqlRow,
-        await execute_sql_typed(
-            conn,
-            SQL_PATH,
-            params=params,
-        ),
+    rows = await conn.fetch(
+        """
+        SELECT id, profile_id, persona_id,
+               created_at, active, generated, mcp
+        FROM profile_personas_resource
+        WHERE id = ANY($1)
+        ORDER BY array_position($1, id)
+    """,
+        ids,
     )
 
-    items = result.items or []
+    items = [
+        GetProfilePersonaResponse(
+            id=r["id"],
+            profile_id=r["profile_id"],
+            persona_id=r["persona_id"],
+            created_at=r["created_at"],
+            active=r["active"],
+            generated=r["generated"],
+            mcp=r["mcp"],
+        )
+        for r in rows
+    ]
 
-    # Cache response
-    await set_cached(
-        cache_key_val,
-        {"data": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=["profile_personas"],
-        redis=get_redis_client(),
-    )
-
+    if not bypass_cache:
+        await set_cached(
+            key,
+            {"items": [i.model_dump(mode="json") for i in items]},
+            60,
+            tags,
+            redis=redis,
+        )
     return items
