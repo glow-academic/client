@@ -105,7 +105,7 @@ from app.routes.v5.tools.resources.simulation_availability.get import (
 from app.routes.v5.tools.resources.simulation_positions.get import (
     get_simulation_positions,
 )
-from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
+from app.routes.v5.tools.resources.simulations.get import get_simulations
 from app.routes.v5.tools.resources.simulations.search import search_simulations_internal
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.sql.types import (
@@ -455,8 +455,8 @@ async def get_cohort_internal(
 
     async def fetch_simulations() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_simulations_internal(
-                c, simulation_ids, bypass_cache=bypass_cache
+            selected = await get_simulations(
+                c, simulation_ids, get_redis_client(), bypass_cache=bypass_cache
             )
             # Search for suggestions
             suggestions = await search_simulations_internal(

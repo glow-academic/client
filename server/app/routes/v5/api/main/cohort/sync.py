@@ -82,7 +82,7 @@ async def sync_cohort_entries(
     3. Build composite tuples and call SQL function
     """
     from app.infra.globals import get_pool, get_redis_client
-    from app.routes.v5.tools.resources.rubrics.get import get_rubrics_internal
+    from app.routes.v5.tools.resources.rubrics.get import get_rubrics
     from app.routes.v5.tools.resources.scenario_flags.get import (
         get_scenario_flags,
     )
@@ -102,7 +102,7 @@ async def sync_cohort_entries(
     from app.routes.v5.tools.resources.simulation_positions.get import (
         get_simulation_positions,
     )
-    from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
+    from app.routes.v5.tools.resources.simulations.get import get_simulations
     from app.routes.v5.tools.resources.standards.search import search_standards_internal
 
     if not simulation_ids:
@@ -113,8 +113,8 @@ async def sync_cohort_entries(
         raise RuntimeError("Database pool not initialized")
 
     # ── Pass 1: Fetch simulations ──
-    simulations = await get_simulations_internal(
-        conn, simulation_ids, bypass_cache=True
+    simulations = await get_simulations(
+        conn, simulation_ids, get_redis_client(), bypass_cache=True
     )
 
     if not simulations:
@@ -210,8 +210,8 @@ async def sync_cohort_entries(
     standards: list[Any] = []
     if all_rubric_ids:
         async with pool.acquire() as rub_conn:
-            rubrics = await get_rubrics_internal(
-                rub_conn, all_rubric_ids, bypass_cache=True
+            rubrics = await get_rubrics(
+                rub_conn, all_rubric_ids, get_redis_client(), bypass_cache=True
             )
 
         # Collect all standard_group_ids from rubrics

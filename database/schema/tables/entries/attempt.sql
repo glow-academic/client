@@ -139,12 +139,12 @@ CREATE TABLE public.attempt_entry (
 CREATE TABLE public.attempt_grade_entry (
     id uuid DEFAULT uuidv7() CONSTRAINT simulation_grades_entry_id_not_null NOT NULL,
     chat_id uuid CONSTRAINT simulation_grades_entry_chat_id_not_null NOT NULL,
-    run_id uuid,
+    run_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_grades_entry_created_at_not_null NOT NULL,
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_grades_entry_updated_at_not_null NOT NULL,
     passed boolean CONSTRAINT simulation_grades_entry_passed_not_null NOT NULL,
     score integer CONSTRAINT simulation_grades_entry_score_not_null NOT NULL,
-    time_taken integer,
+    time_taken integer NOT NULL,
     generated boolean DEFAULT false CONSTRAINT simulation_grades_entry_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT simulation_grades_entry_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT simulation_grades_entry_active_not_null NOT NULL,
@@ -199,7 +199,7 @@ CREATE TABLE public.attempt_content_entry (
     generated boolean DEFAULT false CONSTRAINT simulation_contents_entry_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT simulation_contents_entry_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT simulation_contents_entry_active_not_null NOT NULL,
-    persona_id uuid
+    persona_id uuid NOT NULL
 );
 
 
@@ -234,7 +234,7 @@ CREATE TABLE public.attempt_conversation_completions_entry (
     active boolean DEFAULT true CONSTRAINT conversations_completions_entry_active_not_null NOT NULL,
     conversation_id uuid CONSTRAINT conversations_completions_entry_conversation_id_not_null NOT NULL,
     end_reason text DEFAULT ''::text CONSTRAINT conversations_completions_entry_end_reason_not_null NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL
 );
 
 
@@ -250,8 +250,8 @@ CREATE TABLE public.attempt_conversations_entry (
     mcp boolean DEFAULT false CONSTRAINT conversations_entry_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT conversations_entry_active_not_null NOT NULL,
     chat_id uuid CONSTRAINT conversations_entry_chat_id_not_null NOT NULL,
-    run_id uuid,
-    call_id uuid
+    run_id uuid NOT NULL,
+    call_id uuid NOT NULL
 );
 
 
@@ -381,7 +381,7 @@ CREATE TABLE public.attempt_mutes_entry (
     active boolean DEFAULT true CONSTRAINT mutes_entry_active_not_null NOT NULL,
     conversation_id uuid CONSTRAINT mutes_entry_conversation_id_not_null NOT NULL,
     muted boolean CONSTRAINT mutes_entry_muted_not_null NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL
 );
 
 
@@ -418,7 +418,7 @@ CREATE TABLE public.attempt_responses_entry (
     generated boolean DEFAULT false CONSTRAINT responses_entry_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT responses_entry_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT responses_entry_active_not_null NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL
 );
 
 

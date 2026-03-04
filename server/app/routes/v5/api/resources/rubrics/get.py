@@ -8,12 +8,13 @@ from typing import Annotated, Any
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
-from app.routes.v5.tools.resources.rubrics.get import SQL_PATH, get_rubrics_internal
+from app.infra.globals import get_db, get_redis_client
+from app.routes.v5.tools.resources.rubrics.get import (
+    get_rubrics as get_rubrics_resource,
+)
 from app.sql.types import (
     GetRubricsApiRequest,
     GetRubricsApiResponse,
-    load_sql_query,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -41,7 +42,6 @@ async def get_rubrics(
     """Get rubrics by simulation ID."""
     tags = ["resources", "rubrics"]
 
-    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -54,9 +54,10 @@ async def get_rubrics(
 
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
-        items = await get_rubrics_internal(
+        items = await get_rubrics_resource(
             conn=conn,
             ids=request.ids if hasattr(request, "ids") else [],
+            redis=get_redis_client(),
             bypass_cache=bypass_cache,
         )
 
@@ -71,7 +72,7 @@ async def get_rubrics(
             error=e,
             route_path=http_request.url.path,
             operation="get_rubrics",
-            sql_query=sql_query,
+            sql_query=None,
             sql_params=sql_params,
             request=http_request,
         )

@@ -61,7 +61,7 @@ from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.cohorts.get import get_cohorts
 from app.routes.v5.tools.resources.personas.get import get_personas
 from app.routes.v5.tools.resources.profiles.get import get_profiles
-from app.routes.v5.tools.resources.rubrics.get import get_rubrics_internal
+from app.routes.v5.tools.resources.rubrics.get import get_rubrics
 from app.routes.v5.tools.resources.scenario_time_limits.get import (
     get_scenario_time_limits,
 )
@@ -682,8 +682,8 @@ async def get_home_internal(
 
     async def fetch_rubrics() -> list:
         async with pool.acquire() as c:
-            return await get_rubrics_internal(
-                c, rubric_ids_list, bypass_cache=bypass_cache
+            return await get_rubrics(
+                c, rubric_ids_list, get_redis_client(), bypass_cache=bypass_cache
             )
 
     async def fetch_time_limits() -> list:

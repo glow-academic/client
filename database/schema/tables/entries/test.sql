@@ -13,7 +13,7 @@ CREATE TABLE public.test_archive_entry (
     active boolean DEFAULT true CONSTRAINT benchmark_archives_entry_active_not_null NOT NULL,
     test_id uuid CONSTRAINT benchmark_archives_entry_test_id_not_null NOT NULL,
     archived boolean CONSTRAINT benchmark_archives_entry_archived_not_null NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL
 );
 
 
@@ -46,7 +46,7 @@ CREATE TABLE public.test_completion_entry (
     active boolean DEFAULT true CONSTRAINT benchmark_completions_entry_active_not_null NOT NULL,
     invocation_id uuid CONSTRAINT benchmark_completions_entry_invocation_id_not_null NOT NULL,
     end_reason text DEFAULT ''::text CONSTRAINT benchmark_completions_entry_end_reason_not_null NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL
 );
 
 
@@ -85,9 +85,9 @@ CREATE TABLE public.test_feedback_entry (
     generated boolean DEFAULT false CONSTRAINT benchmark_feedbacks_entry_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT benchmark_feedbacks_entry_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT benchmark_feedbacks_entry_active_not_null NOT NULL,
-    call_id uuid,
-    total_points integer,
-    pass_points integer
+    call_id uuid NOT NULL,
+    total_points integer NOT NULL,
+    pass_points integer NOT NULL
 );
 
 
@@ -99,16 +99,16 @@ CREATE TABLE public.test_feedback_entry (
 CREATE TABLE public.test_grade_entry (
     id uuid DEFAULT uuidv7() CONSTRAINT benchmark_grades_entry_id_not_null NOT NULL,
     invocation_id uuid CONSTRAINT benchmark_grades_entry_chat_id_not_null NOT NULL,
-    run_id uuid,
+    run_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT benchmark_grades_entry_created_at_not_null NOT NULL,
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT benchmark_grades_entry_updated_at_not_null NOT NULL,
     passed boolean CONSTRAINT benchmark_grades_entry_passed_not_null NOT NULL,
     score integer CONSTRAINT benchmark_grades_entry_score_not_null NOT NULL,
-    time_taken integer,
+    time_taken integer NOT NULL,
     generated boolean DEFAULT false CONSTRAINT benchmark_grades_entry_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT benchmark_grades_entry_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT benchmark_grades_entry_active_not_null NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL
 );
 
 
@@ -195,7 +195,7 @@ CREATE TABLE public.test_stop_entry (
     active boolean DEFAULT true CONSTRAINT benchmark_stops_entry_active_not_null NOT NULL,
     invocation_id uuid CONSTRAINT benchmark_stops_entry_invocation_id_not_null NOT NULL,
     stopped boolean CONSTRAINT benchmark_stops_entry_stopped_not_null NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL
 );
 
 
