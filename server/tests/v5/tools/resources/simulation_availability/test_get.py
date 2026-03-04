@@ -24,7 +24,7 @@ async def test_gets_created_simulation_availability(conn, redis_client):
     assert len(items) == 1
     assert items[0].id == row_id
     assert items[0].simulation_id == simulation_id
-    assert items[0].type == "open"
+    assert items[0].type == "start"
     assert items[0].active is True
 
 

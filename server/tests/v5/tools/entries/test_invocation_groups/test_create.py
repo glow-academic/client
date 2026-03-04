@@ -11,6 +11,12 @@ from app.routes.v5.tools.entries.test_invocation.create import create_test_invoc
 from app.routes.v5.tools.entries.test_invocation_groups.create import (
     create_test_invocation_groups,
 )
+from app.routes.v5.tools.entries.test_invocation_groups.get import (
+    get_test_invocation_groups,
+)
+from app.routes.v5.tools.entries.test_invocation_groups.refresh import (
+    refresh_test_invocation_groups,
+)
 from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 
 pytestmark = pytest.mark.asyncio
@@ -40,14 +46,12 @@ async def test_returns_id(conn):
     assert result.id is not None
 
 
-async def test_row_exists(conn):
+async def test_visible_via_get_after_refresh(conn):
     result = await _test_invocation_groups(conn)
 
-    row = await conn.fetchrow(
-        "SELECT * FROM test_invocation_groups_entry WHERE id = $1",
-        result.id,
-    )
-    assert row is not None
+    await refresh_test_invocation_groups(conn)
+    items = await get_test_invocation_groups(conn, [result.id])
+    assert len(items) == 1
 
 
 async def test_passes_mcp_flag(conn):
