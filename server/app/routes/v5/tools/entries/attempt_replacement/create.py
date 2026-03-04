@@ -1,71 +1,35 @@
-"""attempt_replacement/create internal — reusable data-access layer."""
+"""Entry CREATE — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
-import asyncpg  # type: ignore
+import asyncpg
 
-from app.infra.tools.call_args import record_call_args, resolve_tool_for_entry
-from app.routes.v5.api.entries.attempt_replacement.types import (
-    CreateAttemptReplacementEntryResponse,
-    CreateAttemptReplacementEntrySqlParams,
-    CreateAttemptReplacementEntrySqlRow,
+from app.routes.v5.tools.entries.attempt_replacement.types import (
+    CreateAttemptReplacementResponse,
 )
-from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.sql_helper import execute_sql_typed
-from app.utils.storage.file_writer import write_text_file
-
-SQL_PATH = "app/sql/queries/entries/attempt_replacement/create_attempt_replacement_entries_complete.sql"
-
-ENTRY_TYPE = "replacements"
 
 
-async def create_attempt_replacement_entry_internal(
+async def create_attempt_replacement(
     conn: asyncpg.Connection,
-    request_dict: dict,
+    improvement_id: UUID,
+    call_id: UUID,
+    section: str,
+    replace: str,
+    idx: int = 0,
     mcp: bool = False,
-    run_id: UUID | None = None,
-    tool_id: UUID | None = None,
-) -> CreateAttemptReplacementEntryResponse:
-    """Internal function to create attempt_replacement entry.
-
-    Internal callers can pass run_id and tool_id directly.
-    If not provided, tool is resolved from settings via operation + entry type.
-    """
-    tags = ["entries", "attempt_replacement"]
-
-    # Resolve tool if not provided
-    tool_info = None
-    if tool_id is None:
-        tool_info = await resolve_tool_for_entry(conn, "create", ENTRY_TYPE)
-        if tool_info:
-            tool_id = tool_info.tool_id
-
-    async with conn.transaction():
-        request_dict["mcp"] = mcp
-        request_dict["upload_id"] = await write_text_file(
-            conn, None, "Created attempt replacement entry"
-        )
-        request_dict["tool_id"] = tool_id
-        if run_id is not None:
-            request_dict["run_id"] = run_id
-
-        params = CreateAttemptReplacementEntrySqlParams(**request_dict)
-
-        result = cast(
-            CreateAttemptReplacementEntrySqlRow,
-            await execute_sql_typed(conn, SQL_PATH, params=params),
-        )
-
-        if not result or not result.id:
-            raise ValueError("Failed to create attempt_replacement entry")
-
-        # Record arg values via connection pattern
-        if tool_info is None and tool_id is not None:
-            tool_info = await resolve_tool_for_entry(conn, "create", ENTRY_TYPE)
-        if tool_info:
-            await record_call_args(conn, result.call_id, tool_info, request_dict, mcp)
-
-    await invalidate_tags(tags, redis=get_redis_client())
-
-    return CreateAttemptReplacementEntryResponse.model_validate(result.model_dump())
+) -> CreateAttemptReplacementResponse:
+    """Create an attempt_replacement entry."""
+    entry_id = await conn.fetchval(
+        """
+        INSERT INTO attempt_replacement_entry (improvement_id, call_id, section, "replace", idx, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, $6, true)
+        RETURNING id
+        """,
+        improvement_id,
+        call_id,
+        section,
+        replace,
+        idx,
+        mcp,
+    )
+    return CreateAttemptReplacementResponse(id=entry_id)

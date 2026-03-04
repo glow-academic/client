@@ -1,71 +1,33 @@
-"""attempt_highlight/create internal — reusable data-access layer."""
+"""Entry CREATE — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
-import asyncpg  # type: ignore
+import asyncpg
 
-from app.infra.tools.call_args import record_call_args, resolve_tool_for_entry
-from app.routes.v5.api.entries.attempt_highlight.types import (
-    CreateAttemptHighlightEntryResponse,
-    CreateAttemptHighlightEntrySqlParams,
-    CreateAttemptHighlightEntrySqlRow,
+from app.routes.v5.tools.entries.attempt_highlight.types import (
+    CreateAttemptHighlightResponse,
 )
-from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.sql_helper import execute_sql_typed
-from app.utils.storage.file_writer import write_text_file
-
-SQL_PATH = "app/sql/queries/entries/attempt_highlight/create_attempt_highlight_entries_complete.sql"
-
-ENTRY_TYPE = "highlights"
 
 
-async def create_attempt_highlight_entry_internal(
+async def create_attempt_highlight(
     conn: asyncpg.Connection,
-    request_dict: dict,
+    strength_id: UUID,
+    call_id: UUID,
+    section: str,
+    idx: int = 0,
     mcp: bool = False,
-    run_id: UUID | None = None,
-    tool_id: UUID | None = None,
-) -> CreateAttemptHighlightEntryResponse:
-    """Internal function to create attempt_highlight entry.
-
-    Internal callers can pass run_id and tool_id directly.
-    If not provided, tool is resolved from settings via operation + entry type.
-    """
-    tags = ["entries", "attempt_highlight"]
-
-    # Resolve tool if not provided
-    tool_info = None
-    if tool_id is None:
-        tool_info = await resolve_tool_for_entry(conn, "create", ENTRY_TYPE)
-        if tool_info:
-            tool_id = tool_info.tool_id
-
-    async with conn.transaction():
-        request_dict["mcp"] = mcp
-        request_dict["upload_id"] = await write_text_file(
-            conn, None, "Created attempt highlight entry"
-        )
-        request_dict["tool_id"] = tool_id
-        if run_id is not None:
-            request_dict["run_id"] = run_id
-
-        params = CreateAttemptHighlightEntrySqlParams(**request_dict)
-
-        result = cast(
-            CreateAttemptHighlightEntrySqlRow,
-            await execute_sql_typed(conn, SQL_PATH, params=params),
-        )
-
-        if not result or not result.id:
-            raise ValueError("Failed to create attempt_highlight entry")
-
-        # Record arg values via connection pattern
-        if tool_info is None and tool_id is not None:
-            tool_info = await resolve_tool_for_entry(conn, "create", ENTRY_TYPE)
-        if tool_info:
-            await record_call_args(conn, result.call_id, tool_info, request_dict, mcp)
-
-    await invalidate_tags(tags, redis=get_redis_client())
-
-    return CreateAttemptHighlightEntryResponse.model_validate(result.model_dump())
+) -> CreateAttemptHighlightResponse:
+    """Create an attempt_highlight entry."""
+    entry_id = await conn.fetchval(
+        """
+        INSERT INTO attempt_highlight_entry (strength_id, call_id, section, idx, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, true)
+        RETURNING id
+        """,
+        strength_id,
+        call_id,
+        section,
+        idx,
+        mcp,
+    )
+    return CreateAttemptHighlightResponse(id=entry_id)
