@@ -58,14 +58,6 @@ CREATE INDEX idx_provider_drafts_profiles_resource_id ON public.provider_drafts_
 
 --
 
--- Name: idx_provider_drafts_providers_resource_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_provider_drafts_providers_resource_id ON public.provider_drafts_providers_connection USING btree (providers_id);
-
-
---
-
 -- Name: idx_provider_drafts_values_resource_id; Type: INDEX; Schema: public; Owner: -
 --
 

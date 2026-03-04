@@ -10,7 +10,6 @@ CREATE TABLE public.document_drafts_departments_connection (
     departments_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -27,24 +26,6 @@ CREATE TABLE public.document_drafts_descriptions_connection (
     descriptions_id uuid CONSTRAINT document_drafts_descriptions_connectio_descriptions_id_not_null NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL,
-    active boolean DEFAULT true NOT NULL
-);
-
-
---
-
--- Name: document_drafts_documents_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.document_drafts_documents_connection (
-    draft_id uuid NOT NULL,
-    documents_id uuid NOT NULL,
-    version integer DEFAULT 0 NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -61,7 +42,6 @@ CREATE TABLE public.document_drafts_files_connection (
     files_id uuid CONSTRAINT document_drafts_uploads_connection_uploads_id_not_null NOT NULL,
     version integer DEFAULT 0 CONSTRAINT document_drafts_uploads_connection_version_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT document_drafts_uploads_connection_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT document_drafts_uploads_connection_updated_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT document_drafts_uploads_connection_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT document_drafts_uploads_connection_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT document_drafts_uploads_connection_active_not_null NOT NULL
@@ -78,7 +58,6 @@ CREATE TABLE public.document_drafts_flags_connection (
     flags_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -95,7 +74,6 @@ CREATE TABLE public.document_drafts_images_connection (
     images_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -112,7 +90,6 @@ CREATE TABLE public.document_drafts_names_connection (
     names_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -129,7 +106,6 @@ CREATE TABLE public.document_drafts_parameter_fields_connection (
     parameter_fields_id uuid CONSTRAINT document_drafts_parameter_fields_c_parameter_fields_id_not_null NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -146,7 +122,6 @@ CREATE TABLE public.document_drafts_parameters_connection (
     parameters_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -163,7 +138,6 @@ CREATE TABLE public.document_drafts_profiles_connection (
     profiles_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -180,7 +154,6 @@ CREATE TABLE public.document_drafts_texts_connection (
     texts_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -203,15 +176,6 @@ ALTER TABLE ONLY public.document_drafts_departments_connection
 
 ALTER TABLE ONLY public.document_drafts_descriptions_connection
     ADD CONSTRAINT document_drafts_descriptions_connection_pkey PRIMARY KEY (draft_id, descriptions_id);
-
-
---
-
--- Name: document_drafts_documents_connection document_drafts_documents_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.document_drafts_documents_connection
-    ADD CONSTRAINT document_drafts_documents_connection_pkey PRIMARY KEY (draft_id, documents_id);
 
 
 --

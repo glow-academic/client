@@ -18,14 +18,6 @@ CREATE INDEX idx_document_drafts_descriptions_resource_id ON public.document_dra
 
 --
 
--- Name: idx_document_drafts_documents_resource_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_document_drafts_documents_resource_id ON public.document_drafts_documents_connection USING btree (documents_id);
-
-
---
-
 -- Name: idx_document_drafts_files_resource_id; Type: INDEX; Schema: public; Owner: -
 --
 

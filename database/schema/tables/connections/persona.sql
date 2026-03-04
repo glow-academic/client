@@ -10,7 +10,6 @@ CREATE TABLE public.persona_drafts_colors_connection (
     colors_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -27,7 +26,6 @@ CREATE TABLE public.persona_drafts_departments_connection (
     departments_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -44,7 +42,6 @@ CREATE TABLE public.persona_drafts_descriptions_connection (
     descriptions_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -61,7 +58,6 @@ CREATE TABLE public.persona_drafts_examples_connection (
     examples_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -78,7 +74,6 @@ CREATE TABLE public.persona_drafts_flags_connection (
     flags_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -95,7 +90,6 @@ CREATE TABLE public.persona_drafts_icons_connection (
     icons_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -112,7 +106,6 @@ CREATE TABLE public.persona_drafts_instructions_connection (
     instructions_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -129,7 +122,6 @@ CREATE TABLE public.persona_drafts_names_connection (
     names_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -146,24 +138,6 @@ CREATE TABLE public.persona_drafts_parameter_fields_connection (
     parameter_fields_id uuid CONSTRAINT persona_drafts_parameter_fields_co_parameter_fields_id_not_null NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL,
-    active boolean DEFAULT true NOT NULL
-);
-
-
---
-
--- Name: persona_drafts_personas_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.persona_drafts_personas_connection (
-    draft_id uuid NOT NULL,
-    personas_id uuid NOT NULL,
-    version integer DEFAULT 0 NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -180,7 +154,6 @@ CREATE TABLE public.persona_drafts_profiles_connection (
     profiles_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -197,7 +170,6 @@ CREATE TABLE public.persona_drafts_voices_connection (
     voices_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -283,15 +255,6 @@ ALTER TABLE ONLY public.persona_drafts_names_connection
 
 ALTER TABLE ONLY public.persona_drafts_parameter_fields_connection
     ADD CONSTRAINT persona_drafts_parameter_fields_connection_pkey PRIMARY KEY (draft_id, parameter_fields_id);
-
-
---
-
--- Name: persona_drafts_personas_connection persona_drafts_personas_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.persona_drafts_personas_connection
-    ADD CONSTRAINT persona_drafts_personas_connection_pkey PRIMARY KEY (draft_id, personas_id);
 
 
 --

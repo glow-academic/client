@@ -236,24 +236,6 @@ ALTER TABLE ONLY public.scenario_drafts_questions_connection
 
 --
 
--- Name: scenario_drafts_scenarios_connection scenario_drafts_scenarios_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.scenario_drafts_scenarios_connection
-    ADD CONSTRAINT scenario_drafts_scenarios_connection_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.scenario_drafts_entry(id) ON DELETE CASCADE;
-
-
---
-
--- Name: scenario_drafts_scenarios_connection scenario_drafts_scenarios_connection_scenarios_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.scenario_drafts_scenarios_connection
-    ADD CONSTRAINT scenario_drafts_scenarios_connection_scenarios_id_fkey FOREIGN KEY (scenarios_id) REFERENCES public.scenarios_resource(id);
-
-
---
-
 -- Name: scenario_drafts_videos_connection scenario_drafts_videos_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 

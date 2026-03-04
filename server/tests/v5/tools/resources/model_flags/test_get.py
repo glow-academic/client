@@ -10,10 +10,10 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_created_model_flag(conn, redis_client):
-    model_id = await conn.fetchval("INSERT INTO model_artifact DEFAULT VALUES RETURNING id")
+    model_id = await conn.fetchval("INSERT INTO models_resource (value) VALUES ('test-model') RETURNING id")
     flag_id = await conn.fetchval("""
-        INSERT INTO flags_resource (name, description, type, icon)
-        VALUES ('test', 'desc', 'tool_flag', 'icon')
+        INSERT INTO flags_resource (name, description, icon)
+        VALUES ('test-flag', 'desc', 'icon')
         RETURNING id
     """)
     row_id = await conn.fetchval("""
@@ -44,10 +44,10 @@ async def test_returns_empty_for_empty_ids(conn, redis_client):
 
 
 async def test_cache_hit_skips_db(conn, redis_client):
-    model_id = await conn.fetchval("INSERT INTO model_artifact DEFAULT VALUES RETURNING id")
+    model_id = await conn.fetchval("INSERT INTO models_resource (value) VALUES ('test-model') RETURNING id")
     flag_id = await conn.fetchval("""
-        INSERT INTO flags_resource (name, description, type, icon)
-        VALUES ('test-cache-hit', 'desc', 'tool_flag', 'icon')
+        INSERT INTO flags_resource (name, description, icon)
+        VALUES ('test-flag', 'desc', 'icon')
         RETURNING id
     """)
     row_id = await conn.fetchval("""
@@ -67,10 +67,10 @@ async def test_cache_hit_skips_db(conn, redis_client):
 
 
 async def test_bypass_cache_skips_read_and_write(conn, redis_client):
-    model_id = await conn.fetchval("INSERT INTO model_artifact DEFAULT VALUES RETURNING id")
+    model_id = await conn.fetchval("INSERT INTO models_resource (value) VALUES ('test-model') RETURNING id")
     flag_id = await conn.fetchval("""
-        INSERT INTO flags_resource (name, description, type, icon)
-        VALUES ('test-bypass', 'desc', 'tool_flag', 'icon')
+        INSERT INTO flags_resource (name, description, icon)
+        VALUES ('test-flag', 'desc', 'icon')
         RETURNING id
     """)
     row_id = await conn.fetchval("""

@@ -200,24 +200,6 @@ ALTER TABLE ONLY public.setting_drafts_provider_keys_connection
 
 --
 
--- Name: setting_drafts_settings_connection setting_drafts_settings_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.setting_drafts_settings_connection
-    ADD CONSTRAINT setting_drafts_settings_connection_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.setting_drafts_entry(id) ON DELETE CASCADE;
-
-
---
-
--- Name: setting_drafts_settings_connection setting_drafts_settings_connection_settings_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.setting_drafts_settings_connection
-    ADD CONSTRAINT setting_drafts_settings_connection_settings_id_fkey FOREIGN KEY (settings_id) REFERENCES public.settings_resource(id);
-
-
---
-
 -- Name: setting_drafts_thresholds_connection setting_drafts_thresholds_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 

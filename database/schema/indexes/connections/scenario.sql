@@ -106,14 +106,6 @@ CREATE INDEX idx_scenario_drafts_questions_resource_id ON public.scenario_drafts
 
 --
 
--- Name: idx_scenario_drafts_scenarios_resource_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_scenario_drafts_scenarios_resource_id ON public.scenario_drafts_scenarios_connection USING btree (scenarios_id);
-
-
---
-
 -- Name: idx_scenario_drafts_videos_resource_id; Type: INDEX; Schema: public; Owner: -
 --
 

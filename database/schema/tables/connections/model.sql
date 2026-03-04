@@ -10,7 +10,6 @@ CREATE TABLE public.model_drafts_departments_connection (
     departments_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -27,7 +26,6 @@ CREATE TABLE public.model_drafts_descriptions_connection (
     descriptions_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -44,7 +42,6 @@ CREATE TABLE public.model_drafts_flags_connection (
     flags_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -61,24 +58,6 @@ CREATE TABLE public.model_drafts_modalities_connection (
     modalities_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL,
-    active boolean DEFAULT true NOT NULL
-);
-
-
---
-
--- Name: model_drafts_models_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.model_drafts_models_connection (
-    draft_id uuid NOT NULL,
-    models_id uuid NOT NULL,
-    version integer DEFAULT 0 NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -95,7 +74,6 @@ CREATE TABLE public.model_drafts_names_connection (
     names_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -112,7 +90,6 @@ CREATE TABLE public.model_drafts_pricing_connection (
     pricing_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -129,7 +106,6 @@ CREATE TABLE public.model_drafts_profiles_connection (
     profiles_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -146,7 +122,6 @@ CREATE TABLE public.model_drafts_providers_connection (
     providers_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -163,7 +138,6 @@ CREATE TABLE public.model_drafts_qualities_connection (
     qualities_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -180,7 +154,6 @@ CREATE TABLE public.model_drafts_reasoning_levels_connection (
     reasoning_levels_id uuid CONSTRAINT model_drafts_reasoning_levels_conn_reasoning_levels_id_not_null NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -197,7 +170,6 @@ CREATE TABLE public.model_drafts_temperature_levels_connection (
     temperature_levels_id uuid CONSTRAINT model_drafts_temperature_levels__temperature_levels_id_not_null NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -214,7 +186,6 @@ CREATE TABLE public.model_drafts_values_connection (
     values_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -231,7 +202,6 @@ CREATE TABLE public.model_drafts_voices_connection (
     voices_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -272,15 +242,6 @@ ALTER TABLE ONLY public.model_drafts_flags_connection
 
 ALTER TABLE ONLY public.model_drafts_modalities_connection
     ADD CONSTRAINT model_drafts_modalities_connection_pkey PRIMARY KEY (draft_id, modalities_id);
-
-
---
-
--- Name: model_drafts_models_connection model_drafts_models_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.model_drafts_models_connection
-    ADD CONSTRAINT model_drafts_models_connection_pkey PRIMARY KEY (draft_id, models_id);
 
 
 --

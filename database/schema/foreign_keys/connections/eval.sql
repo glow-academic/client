@@ -38,24 +38,6 @@ ALTER TABLE ONLY public.eval_drafts_descriptions_connection
 
 --
 
--- Name: eval_drafts_evals_connection eval_drafts_evals_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.eval_drafts_evals_connection
-    ADD CONSTRAINT eval_drafts_evals_connection_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.eval_drafts_entry(id) ON DELETE CASCADE;
-
-
---
-
--- Name: eval_drafts_evals_connection eval_drafts_evals_connection_evals_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.eval_drafts_evals_connection
-    ADD CONSTRAINT eval_drafts_evals_connection_evals_id_fkey FOREIGN KEY (evals_id) REFERENCES public.evals_resource(id);
-
-
---
-
 -- Name: eval_drafts_flags_connection eval_drafts_flags_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 

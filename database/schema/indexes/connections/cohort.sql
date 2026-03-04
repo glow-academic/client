@@ -10,14 +10,6 @@ CREATE INDEX cohort_drafts_simulation_availability_connection_draft_id_idx ON pu
 
 --
 
--- Name: idx_cohort_drafts_cohorts_resource_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_cohort_drafts_cohorts_resource_id ON public.cohort_drafts_cohorts_connection USING btree (cohorts_id);
-
-
---
-
 -- Name: idx_cohort_drafts_departments_resource_id; Type: INDEX; Schema: public; Owner: -
 --
 

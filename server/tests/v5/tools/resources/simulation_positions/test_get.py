@@ -10,7 +10,7 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_created_simulation_position(conn, redis_client):
-    simulation_id = await conn.fetchval("INSERT INTO simulation_artifact DEFAULT VALUES RETURNING id")
+    simulation_id = await conn.fetchval("INSERT INTO simulations_resource DEFAULT VALUES RETURNING id")
     row_id = await conn.fetchval("""
         INSERT INTO simulation_positions_resource (simulation_id, value)
         VALUES ($1, 1)
@@ -38,7 +38,7 @@ async def test_returns_empty_for_empty_ids(conn, redis_client):
 
 
 async def test_cache_hit_skips_db(conn, redis_client):
-    simulation_id = await conn.fetchval("INSERT INTO simulation_artifact DEFAULT VALUES RETURNING id")
+    simulation_id = await conn.fetchval("INSERT INTO simulations_resource DEFAULT VALUES RETURNING id")
     row_id = await conn.fetchval("""
         INSERT INTO simulation_positions_resource (simulation_id, value)
         VALUES ($1, 2)
@@ -56,7 +56,7 @@ async def test_cache_hit_skips_db(conn, redis_client):
 
 
 async def test_bypass_cache_skips_read_and_write(conn, redis_client):
-    simulation_id = await conn.fetchval("INSERT INTO simulation_artifact DEFAULT VALUES RETURNING id")
+    simulation_id = await conn.fetchval("INSERT INTO simulations_resource DEFAULT VALUES RETURNING id")
     row_id = await conn.fetchval("""
         INSERT INTO simulation_positions_resource (simulation_id, value)
         VALUES ($1, 3)

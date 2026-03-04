@@ -10,7 +10,6 @@ CREATE TABLE public.scenario_drafts_departments_connection (
     departments_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -27,7 +26,6 @@ CREATE TABLE public.scenario_drafts_descriptions_connection (
     descriptions_id uuid CONSTRAINT scenario_drafts_descriptions_connectio_descriptions_id_not_null NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -44,7 +42,6 @@ CREATE TABLE public.scenario_drafts_documents_connection (
     documents_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -61,7 +58,6 @@ CREATE TABLE public.scenario_drafts_flags_connection (
     flags_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -78,7 +74,6 @@ CREATE TABLE public.scenario_drafts_images_connection (
     images_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -95,7 +90,6 @@ CREATE TABLE public.scenario_drafts_names_connection (
     names_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -112,7 +106,6 @@ CREATE TABLE public.scenario_drafts_objectives_connection (
     objectives_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -129,7 +122,6 @@ CREATE TABLE public.scenario_drafts_options_connection (
     options_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -146,7 +138,6 @@ CREATE TABLE public.scenario_drafts_parameter_fields_connection (
     parameter_fields_id uuid CONSTRAINT scenario_drafts_parameter_fields_c_parameter_fields_id_not_null NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -163,7 +154,6 @@ CREATE TABLE public.scenario_drafts_personas_connection (
     personas_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -180,7 +170,6 @@ CREATE TABLE public.scenario_drafts_problem_statements_connection (
     problem_statements_id uuid CONSTRAINT scenario_drafts_problem_statemen_problem_statements_id_not_null NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT scenario_drafts_problem_statements_connecti_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT scenario_drafts_problem_statements_connecti_updated_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT scenario_drafts_problem_statements_connectio_generated_not_null NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -197,7 +186,6 @@ CREATE TABLE public.scenario_drafts_profiles_connection (
     profiles_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -214,24 +202,6 @@ CREATE TABLE public.scenario_drafts_questions_connection (
     questions_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL,
-    active boolean DEFAULT true NOT NULL
-);
-
-
---
-
--- Name: scenario_drafts_scenarios_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.scenario_drafts_scenarios_connection (
-    draft_id uuid NOT NULL,
-    scenarios_id uuid NOT NULL,
-    version integer DEFAULT 0 NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -248,7 +218,6 @@ CREATE TABLE public.scenario_drafts_videos_connection (
     videos_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -426,15 +395,6 @@ ALTER TABLE ONLY public.scenario_drafts_profiles_connection
 
 ALTER TABLE ONLY public.scenario_drafts_questions_connection
     ADD CONSTRAINT scenario_drafts_questions_connection_pkey PRIMARY KEY (draft_id, questions_id);
-
-
---
-
--- Name: scenario_drafts_scenarios_connection scenario_drafts_scenarios_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.scenario_drafts_scenarios_connection
-    ADD CONSTRAINT scenario_drafts_scenarios_connection_pkey PRIMARY KEY (draft_id, scenarios_id);
 
 
 --

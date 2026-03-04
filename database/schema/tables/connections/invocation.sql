@@ -40,7 +40,6 @@ CREATE TABLE public.invocation_drafts_departments_connection (
     departments_id uuid CONSTRAINT suite_drafts_departments_connection_departments_id_not_null NOT NULL,
     version integer DEFAULT 0 CONSTRAINT suite_drafts_departments_connection_version_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT suite_drafts_departments_connection_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT suite_drafts_departments_connection_updated_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT suite_drafts_departments_connection_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT suite_drafts_departments_connection_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT suite_drafts_departments_connection_active_not_null NOT NULL
@@ -57,7 +56,6 @@ CREATE TABLE public.invocation_drafts_descriptions_connection (
     descriptions_id uuid CONSTRAINT suite_drafts_descriptions_connection_descriptions_id_not_null NOT NULL,
     version integer DEFAULT 0 CONSTRAINT suite_drafts_descriptions_connection_version_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT suite_drafts_descriptions_connection_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT suite_drafts_descriptions_connection_updated_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT suite_drafts_descriptions_connection_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT suite_drafts_descriptions_connection_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT suite_drafts_descriptions_connection_active_not_null NOT NULL
@@ -74,7 +72,6 @@ CREATE TABLE public.invocation_drafts_flags_connection (
     flags_id uuid CONSTRAINT suite_drafts_flags_connection_flags_id_not_null NOT NULL,
     version integer DEFAULT 0 CONSTRAINT suite_drafts_flags_connection_version_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT suite_drafts_flags_connection_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT suite_drafts_flags_connection_updated_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT suite_drafts_flags_connection_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT suite_drafts_flags_connection_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT suite_drafts_flags_connection_active_not_null NOT NULL
@@ -91,7 +88,6 @@ CREATE TABLE public.invocation_drafts_keys_connection (
     keys_id uuid CONSTRAINT suite_drafts_keys_connection_keys_id_not_null NOT NULL,
     version integer DEFAULT 0 CONSTRAINT suite_drafts_keys_connection_version_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT suite_drafts_keys_connection_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT suite_drafts_keys_connection_updated_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT suite_drafts_keys_connection_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT suite_drafts_keys_connection_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT suite_drafts_keys_connection_active_not_null NOT NULL
@@ -108,7 +104,6 @@ CREATE TABLE public.invocation_drafts_model_flags_connection (
     model_flags_id uuid CONSTRAINT invocation_drafts_model_flags_connectio_model_flags_id_not_null NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -125,7 +120,6 @@ CREATE TABLE public.invocation_drafts_model_positions_connection (
     model_positions_id uuid CONSTRAINT invocation_drafts_model_positions_c_model_positions_id_not_null NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT invocation_drafts_model_positions_connectio_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT invocation_drafts_model_positions_connectio_updated_at_not_null NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -142,7 +136,6 @@ CREATE TABLE public.invocation_drafts_model_rubrics_connection (
     model_rubrics_id uuid CONSTRAINT invocation_drafts_model_rubrics_conne_model_rubrics_id_not_null NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -159,7 +152,6 @@ CREATE TABLE public.invocation_drafts_names_connection (
     names_id uuid CONSTRAINT suite_drafts_names_connection_names_id_not_null NOT NULL,
     version integer DEFAULT 0 CONSTRAINT suite_drafts_names_connection_version_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT suite_drafts_names_connection_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT suite_drafts_names_connection_updated_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT suite_drafts_names_connection_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT suite_drafts_names_connection_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT suite_drafts_names_connection_active_not_null NOT NULL
@@ -176,7 +168,6 @@ CREATE TABLE public.invocation_drafts_profiles_connection (
     profiles_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -193,7 +184,6 @@ CREATE TABLE public.invocation_drafts_reasoning_levels_connection (
     reasoning_levels_id uuid CONSTRAINT suite_drafts_reasoning_levels_conn_reasoning_levels_id_not_null NOT NULL,
     version integer DEFAULT 0 CONSTRAINT suite_drafts_reasoning_levels_connection_version_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT suite_drafts_reasoning_levels_connection_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT suite_drafts_reasoning_levels_connection_updated_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT suite_drafts_reasoning_levels_connection_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT suite_drafts_reasoning_levels_connection_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT suite_drafts_reasoning_levels_connection_active_not_null NOT NULL
@@ -210,7 +200,6 @@ CREATE TABLE public.invocation_drafts_temperature_levels_connection (
     temperature_levels_id uuid CONSTRAINT suite_drafts_temperature_levels__temperature_levels_id_not_null NOT NULL,
     version integer DEFAULT 0 CONSTRAINT suite_drafts_temperature_levels_connection_version_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT suite_drafts_temperature_levels_connection_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT suite_drafts_temperature_levels_connection_updated_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT suite_drafts_temperature_levels_connection_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT suite_drafts_temperature_levels_connection_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT suite_drafts_temperature_levels_connection_active_not_null NOT NULL
@@ -227,7 +216,6 @@ CREATE TABLE public.invocation_drafts_voices_connection (
     voices_id uuid CONSTRAINT suite_drafts_voices_connection_voices_id_not_null NOT NULL,
     version integer DEFAULT 0 CONSTRAINT suite_drafts_voices_connection_version_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT suite_drafts_voices_connection_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT suite_drafts_voices_connection_updated_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT suite_drafts_voices_connection_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT suite_drafts_voices_connection_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT suite_drafts_voices_connection_active_not_null NOT NULL

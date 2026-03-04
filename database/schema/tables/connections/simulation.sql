@@ -24,7 +24,6 @@ CREATE TABLE public.simulation_drafts_departments_connection (
     departments_id uuid CONSTRAINT simulation_drafts_departments_connectio_departments_id_not_null NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -41,7 +40,6 @@ CREATE TABLE public.simulation_drafts_descriptions_connection (
     descriptions_id uuid CONSTRAINT simulation_drafts_descriptions_connect_descriptions_id_not_null NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -58,7 +56,6 @@ CREATE TABLE public.simulation_drafts_flags_connection (
     flags_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -75,7 +72,6 @@ CREATE TABLE public.simulation_drafts_names_connection (
     names_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -92,7 +88,6 @@ CREATE TABLE public.simulation_drafts_profiles_connection (
     profiles_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -109,7 +104,6 @@ CREATE TABLE public.simulation_drafts_scenario_flags_connection (
     scenario_flags_id uuid CONSTRAINT simulation_drafts_scenario_flags_con_scenario_flags_id_not_null NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -126,7 +120,6 @@ CREATE TABLE public.simulation_drafts_scenario_positions_connection (
     scenario_positions_id uuid CONSTRAINT simulation_drafts_scenario_posit_scenario_positions_id_not_null NOT NULL,
     version integer DEFAULT 0 CONSTRAINT simulation_drafts_scenario_positions_connectio_version_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_drafts_scenario_positions_connec_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_drafts_scenario_positions_connec_updated_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT simulation_drafts_scenario_positions_connect_generated_not_null NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -143,7 +136,6 @@ CREATE TABLE public.simulation_drafts_scenario_rubrics_connection (
     scenario_rubrics_id uuid CONSTRAINT simulation_drafts_scenario_rubrics_scenario_rubrics_id_not_null NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_drafts_scenario_rubrics_connecti_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_drafts_scenario_rubrics_connecti_updated_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT simulation_drafts_scenario_rubrics_connectio_generated_not_null NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -160,7 +152,6 @@ CREATE TABLE public.simulation_drafts_scenario_time_limits_connection (
     scenario_time_limits_id uuid CONSTRAINT simulation_drafts_scenario_tim_scenario_time_limits_id_not_null NOT NULL,
     version integer DEFAULT 0 CONSTRAINT simulation_drafts_scenario_time_limits_connect_version_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_drafts_scenario_time_limits_conn_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_drafts_scenario_time_limits_conn_updated_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT simulation_drafts_scenario_time_limits_conne_generated_not_null NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true CONSTRAINT simulation_drafts_scenario_time_limits_connecti_active_not_null NOT NULL
@@ -177,24 +168,6 @@ CREATE TABLE public.simulation_drafts_scenarios_connection (
     scenarios_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL,
-    active boolean DEFAULT true NOT NULL
-);
-
-
---
-
--- Name: simulation_drafts_simulations_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.simulation_drafts_simulations_connection (
-    draft_id uuid NOT NULL,
-    simulations_id uuid CONSTRAINT simulation_drafts_simulations_connectio_simulations_id_not_null NOT NULL,
-    version integer DEFAULT 0 NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -312,15 +285,6 @@ ALTER TABLE ONLY public.simulation_drafts_scenario_time_limits_connection
 
 ALTER TABLE ONLY public.simulation_drafts_scenarios_connection
     ADD CONSTRAINT simulation_drafts_scenarios_connection_pkey PRIMARY KEY (draft_id, scenarios_id);
-
-
---
-
--- Name: simulation_drafts_simulations_connection simulation_drafts_simulations_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.simulation_drafts_simulations_connection
-    ADD CONSTRAINT simulation_drafts_simulations_connection_pkey PRIMARY KEY (draft_id, simulations_id);
 
 
 --

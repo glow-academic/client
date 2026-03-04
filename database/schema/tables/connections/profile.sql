@@ -10,7 +10,6 @@ CREATE TABLE public.profile_drafts_departments_connection (
     departments_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -27,7 +26,6 @@ CREATE TABLE public.profile_drafts_emails_connection (
     emails_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -44,7 +42,6 @@ CREATE TABLE public.profile_drafts_flags_connection (
     flags_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -61,24 +58,6 @@ CREATE TABLE public.profile_drafts_names_connection (
     names_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL,
-    active boolean DEFAULT true NOT NULL
-);
-
-
---
-
--- Name: profile_drafts_profiles_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.profile_drafts_profiles_connection (
-    draft_id uuid NOT NULL,
-    profiles_id uuid NOT NULL,
-    version integer DEFAULT 0 NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -95,7 +74,6 @@ CREATE TABLE public.profile_drafts_request_limits_connection (
     request_limits_id uuid CONSTRAINT profile_drafts_request_limits_connec_request_limits_id_not_null NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -112,7 +90,6 @@ CREATE TABLE public.profile_drafts_roles_connection (
     roles_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -167,15 +144,6 @@ ALTER TABLE ONLY public.profile_drafts_flags_connection
 
 ALTER TABLE ONLY public.profile_drafts_names_connection
     ADD CONSTRAINT profile_drafts_names_connection_pkey PRIMARY KEY (draft_id, names_id);
-
-
---
-
--- Name: profile_drafts_profiles_connection profile_drafts_profiles_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.profile_drafts_profiles_connection
-    ADD CONSTRAINT profile_drafts_profiles_connection_pkey PRIMARY KEY (draft_id, profiles_id);
 
 
 --

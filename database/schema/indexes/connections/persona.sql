@@ -74,14 +74,6 @@ CREATE INDEX idx_persona_drafts_parameter_fields_resource_id ON public.persona_d
 
 --
 
--- Name: idx_persona_drafts_personas_resource_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_persona_drafts_personas_resource_id ON public.persona_drafts_personas_connection USING btree (personas_id);
-
-
---
-
 -- Name: idx_persona_drafts_profiles_resource_id; Type: INDEX; Schema: public; Owner: -
 --
 

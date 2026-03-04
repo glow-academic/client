@@ -90,14 +90,6 @@ CREATE INDEX idx_setting_drafts_provider_keys_resource_id ON public.setting_draf
 
 --
 
--- Name: idx_setting_drafts_settings_resource_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_setting_drafts_settings_resource_id ON public.setting_drafts_settings_connection USING btree (settings_id);
-
-
---
-
 -- Name: idx_setting_drafts_thresholds_resource_id; Type: INDEX; Schema: public; Owner: -
 --
 

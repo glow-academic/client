@@ -81,11 +81,3 @@ CREATE INDEX idx_tool_drafts_resources_resource_id ON public.tool_drafts_resourc
 
 
 --
-
--- Name: idx_tool_drafts_tools_resource_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_tool_drafts_tools_resource_id ON public.tool_drafts_tools_connection USING btree (tools_id);
-
-
---

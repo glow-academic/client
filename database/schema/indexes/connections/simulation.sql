@@ -82,14 +82,6 @@ CREATE INDEX idx_simulation_drafts_scenarios_resource_id ON public.simulation_dr
 
 --
 
--- Name: idx_simulation_drafts_simulations_resource_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_simulation_drafts_simulations_resource_id ON public.simulation_drafts_simulations_connection USING btree (simulations_id);
-
-
---
-
 -- Name: simulation_availability_calls_connection_call_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 

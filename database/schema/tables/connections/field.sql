@@ -10,7 +10,6 @@ CREATE TABLE public.field_drafts_conditional_parameters_connection (
     conditional_parameters_id uuid CONSTRAINT field_drafts_conditional_par_conditional_parameters_id_not_null NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT field_drafts_conditional_parameters_connect_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT field_drafts_conditional_parameters_connect_updated_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT field_drafts_conditional_parameters_connecti_generated_not_null NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -27,7 +26,6 @@ CREATE TABLE public.field_drafts_departments_connection (
     departments_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -44,24 +42,6 @@ CREATE TABLE public.field_drafts_descriptions_connection (
     descriptions_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL,
-    active boolean DEFAULT true NOT NULL
-);
-
-
---
-
--- Name: field_drafts_fields_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.field_drafts_fields_connection (
-    draft_id uuid NOT NULL,
-    fields_id uuid NOT NULL,
-    version integer DEFAULT 0 NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -78,7 +58,6 @@ CREATE TABLE public.field_drafts_flags_connection (
     flags_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -95,7 +74,6 @@ CREATE TABLE public.field_drafts_names_connection (
     names_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -112,7 +90,6 @@ CREATE TABLE public.field_drafts_profiles_connection (
     profiles_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL
@@ -144,15 +121,6 @@ ALTER TABLE ONLY public.field_drafts_departments_connection
 
 ALTER TABLE ONLY public.field_drafts_descriptions_connection
     ADD CONSTRAINT field_drafts_descriptions_connection_pkey PRIMARY KEY (draft_id, descriptions_id);
-
-
---
-
--- Name: field_drafts_fields_connection field_drafts_fields_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.field_drafts_fields_connection
-    ADD CONSTRAINT field_drafts_fields_connection_pkey PRIMARY KEY (draft_id, fields_id);
 
 
 --

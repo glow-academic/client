@@ -18,14 +18,6 @@ CREATE INDEX auth_item_keys_calls_connection_id_idx ON public.auth_item_keys_cal
 
 --
 
--- Name: idx_auth_drafts_auths_resource_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_auth_drafts_auths_resource_id ON public.auth_drafts_auths_connection USING btree (auths_id);
-
-
---
-
 -- Name: idx_auth_drafts_departments_resource_id; Type: INDEX; Schema: public; Owner: -
 --
 

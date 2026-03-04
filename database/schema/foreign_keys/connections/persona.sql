@@ -164,24 +164,6 @@ ALTER TABLE ONLY public.persona_drafts_parameter_fields_connection
 
 --
 
--- Name: persona_drafts_personas_connection persona_drafts_personas_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.persona_drafts_personas_connection
-    ADD CONSTRAINT persona_drafts_personas_connection_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.persona_drafts_entry(id) ON DELETE CASCADE;
-
-
---
-
--- Name: persona_drafts_personas_connection persona_drafts_personas_connection_personas_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.persona_drafts_personas_connection
-    ADD CONSTRAINT persona_drafts_personas_connection_personas_id_fkey FOREIGN KEY (personas_id) REFERENCES public.personas_resource(id);
-
-
---
-
 -- Name: persona_drafts_profiles_connection persona_drafts_profiles_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 

@@ -10,10 +10,10 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_created_scenario_flag(conn, redis_client):
-    scenario_id = await conn.fetchval("INSERT INTO scenario_artifact DEFAULT VALUES RETURNING id")
+    scenario_id = await conn.fetchval("INSERT INTO scenarios_resource DEFAULT VALUES RETURNING id")
     flag_id = await conn.fetchval("""
-        INSERT INTO flags_resource (name, description, type, icon)
-        VALUES ('test', 'desc', 'tool_flag', 'icon')
+        INSERT INTO flags_resource (name, description, icon)
+        VALUES ('test-flag', 'desc', 'icon')
         RETURNING id
     """)
     row_id = await conn.fetchval("""
@@ -44,10 +44,10 @@ async def test_returns_empty_for_empty_ids(conn, redis_client):
 
 
 async def test_cache_hit_skips_db(conn, redis_client):
-    scenario_id = await conn.fetchval("INSERT INTO scenario_artifact DEFAULT VALUES RETURNING id")
+    scenario_id = await conn.fetchval("INSERT INTO scenarios_resource DEFAULT VALUES RETURNING id")
     flag_id = await conn.fetchval("""
-        INSERT INTO flags_resource (name, description, type, icon)
-        VALUES ('test-cache-hit', 'desc', 'tool_flag', 'icon')
+        INSERT INTO flags_resource (name, description, icon)
+        VALUES ('test-flag', 'desc', 'icon')
         RETURNING id
     """)
     row_id = await conn.fetchval("""
@@ -67,10 +67,10 @@ async def test_cache_hit_skips_db(conn, redis_client):
 
 
 async def test_bypass_cache_skips_read_and_write(conn, redis_client):
-    scenario_id = await conn.fetchval("INSERT INTO scenario_artifact DEFAULT VALUES RETURNING id")
+    scenario_id = await conn.fetchval("INSERT INTO scenarios_resource DEFAULT VALUES RETURNING id")
     flag_id = await conn.fetchval("""
-        INSERT INTO flags_resource (name, description, type, icon)
-        VALUES ('test-bypass', 'desc', 'tool_flag', 'icon')
+        INSERT INTO flags_resource (name, description, icon)
+        VALUES ('test-flag', 'desc', 'icon')
         RETURNING id
     """)
     row_id = await conn.fetchval("""

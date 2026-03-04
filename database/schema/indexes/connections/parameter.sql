@@ -42,14 +42,6 @@ CREATE INDEX idx_parameter_drafts_names_resource_id ON public.parameter_drafts_n
 
 --
 
--- Name: idx_parameter_drafts_parameters_resource_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_parameter_drafts_parameters_resource_id ON public.parameter_drafts_parameters_connection USING btree (parameters_id);
-
-
---
-
 -- Name: idx_parameter_drafts_profiles_resource_id; Type: INDEX; Schema: public; Owner: -
 --
 

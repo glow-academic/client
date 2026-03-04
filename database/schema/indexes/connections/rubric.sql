@@ -50,14 +50,6 @@ CREATE INDEX idx_rubric_drafts_profiles_resource_id ON public.rubric_drafts_prof
 
 --
 
--- Name: idx_rubric_drafts_rubrics_resource_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_rubric_drafts_rubrics_resource_id ON public.rubric_drafts_rubrics_connection USING btree (rubrics_id);
-
-
---
-
 -- Name: idx_rubric_drafts_standard_groups_resource_id; Type: INDEX; Schema: public; Owner: -
 --
 

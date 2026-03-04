@@ -18,14 +18,6 @@ CREATE INDEX idx_eval_drafts_descriptions_resource_id ON public.eval_drafts_desc
 
 --
 
--- Name: idx_eval_drafts_evals_resource_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_eval_drafts_evals_resource_id ON public.eval_drafts_evals_connection USING btree (evals_id);
-
-
---
-
 -- Name: idx_eval_drafts_flags_resource_id; Type: INDEX; Schema: public; Owner: -
 --
 

@@ -92,24 +92,6 @@ ALTER TABLE ONLY public.parameter_drafts_names_connection
 
 --
 
--- Name: parameter_drafts_parameters_connection parameter_drafts_parameters_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.parameter_drafts_parameters_connection
-    ADD CONSTRAINT parameter_drafts_parameters_connection_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.parameter_drafts_entry(id) ON DELETE CASCADE;
-
-
---
-
--- Name: parameter_drafts_parameters_connection parameter_drafts_parameters_connection_parameters_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.parameter_drafts_parameters_connection
-    ADD CONSTRAINT parameter_drafts_parameters_connection_parameters_id_fkey FOREIGN KEY (parameters_id) REFERENCES public.parameters_resource(id);
-
-
---
-
 -- Name: parameter_drafts_profiles_connection parameter_drafts_profiles_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 

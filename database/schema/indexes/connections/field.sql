@@ -26,14 +26,6 @@ CREATE INDEX idx_field_drafts_descriptions_resource_id ON public.field_drafts_de
 
 --
 
--- Name: idx_field_drafts_fields_resource_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_field_drafts_fields_resource_id ON public.field_drafts_fields_connection USING btree (fields_id);
-
-
---
-
 -- Name: idx_field_drafts_flags_resource_id; Type: INDEX; Schema: public; Owner: -
 --
 

@@ -34,14 +34,6 @@ CREATE INDEX idx_profile_drafts_names_resource_id ON public.profile_drafts_names
 
 --
 
--- Name: idx_profile_drafts_profiles_resource_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_profile_drafts_profiles_resource_id ON public.profile_drafts_profiles_connection USING btree (profiles_id);
-
-
---
-
 -- Name: idx_profile_drafts_request_limits_resource_id; Type: INDEX; Schema: public; Owner: -
 --
 

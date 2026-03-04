@@ -181,21 +181,3 @@ ALTER TABLE ONLY public.tool_drafts_resources_connection
 
 
 --
-
--- Name: tool_drafts_tools_connection tool_drafts_tools_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.tool_drafts_tools_connection
-    ADD CONSTRAINT tool_drafts_tools_connection_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.tool_drafts_entry(id) ON DELETE CASCADE;
-
-
---
-
--- Name: tool_drafts_tools_connection tool_drafts_tools_connection_tools_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.tool_drafts_tools_connection
-    ADD CONSTRAINT tool_drafts_tools_connection_tools_id_fkey FOREIGN KEY (tools_id) REFERENCES public.tools_resource(id);
-
-
---

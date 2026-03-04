@@ -34,14 +34,6 @@ CREATE INDEX idx_model_drafts_modalities_resource_id ON public.model_drafts_moda
 
 --
 
--- Name: idx_model_drafts_models_resource_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_model_drafts_models_resource_id ON public.model_drafts_models_connection USING btree (models_id);
-
-
---
-
 -- Name: idx_model_drafts_names_resource_id; Type: INDEX; Schema: public; Owner: -
 --
 

@@ -56,24 +56,6 @@ ALTER TABLE ONLY public.field_drafts_descriptions_connection
 
 --
 
--- Name: field_drafts_fields_connection field_drafts_fields_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.field_drafts_fields_connection
-    ADD CONSTRAINT field_drafts_fields_connection_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.field_drafts_entry(id) ON DELETE CASCADE;
-
-
---
-
--- Name: field_drafts_fields_connection field_drafts_fields_connection_fields_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.field_drafts_fields_connection
-    ADD CONSTRAINT field_drafts_fields_connection_fields_id_fkey FOREIGN KEY (fields_id) REFERENCES public.fields_resource(id);
-
-
---
-
 -- Name: field_drafts_flags_connection field_drafts_flags_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 

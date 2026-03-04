@@ -74,24 +74,6 @@ ALTER TABLE ONLY public.model_drafts_modalities_connection
 
 --
 
--- Name: model_drafts_models_connection model_drafts_models_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.model_drafts_models_connection
-    ADD CONSTRAINT model_drafts_models_connection_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.model_drafts_entry(id) ON DELETE CASCADE;
-
-
---
-
--- Name: model_drafts_models_connection model_drafts_models_connection_models_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.model_drafts_models_connection
-    ADD CONSTRAINT model_drafts_models_connection_models_id_fkey FOREIGN KEY (models_id) REFERENCES public.models_resource(id);
-
-
---
-
 -- Name: model_drafts_names_connection model_drafts_names_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 

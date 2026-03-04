@@ -200,24 +200,6 @@ ALTER TABLE ONLY public.simulation_drafts_scenarios_connection
 
 --
 
--- Name: simulation_drafts_simulations_connection simulation_drafts_simulations_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.simulation_drafts_simulations_connection
-    ADD CONSTRAINT simulation_drafts_simulations_connection_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.simulation_drafts_entry(id) ON DELETE CASCADE;
-
-
---
-
--- Name: simulation_drafts_simulations_connection simulation_drafts_simulations_connection_simulations_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.simulation_drafts_simulations_connection
-    ADD CONSTRAINT simulation_drafts_simulations_connection_simulations_id_fkey FOREIGN KEY (simulations_id) REFERENCES public.simulations_resource(id);
-
-
---
-
 -- Name: simulation_positions_calls_connection simulation_positions_calls_connection_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 

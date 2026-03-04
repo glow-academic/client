@@ -110,24 +110,6 @@ ALTER TABLE ONLY public.rubric_drafts_profiles_connection
 
 --
 
--- Name: rubric_drafts_rubrics_connection rubric_drafts_rubrics_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.rubric_drafts_rubrics_connection
-    ADD CONSTRAINT rubric_drafts_rubrics_connection_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.rubric_drafts_entry(id) ON DELETE CASCADE;
-
-
---
-
--- Name: rubric_drafts_rubrics_connection rubric_drafts_rubrics_connection_rubrics_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.rubric_drafts_rubrics_connection
-    ADD CONSTRAINT rubric_drafts_rubrics_connection_rubrics_id_fkey FOREIGN KEY (rubrics_id) REFERENCES public.rubrics_resource(id);
-
-
---
-
 -- Name: rubric_drafts_standard_groups_connection rubric_drafts_standard_groups_connectio_standard_groups_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 

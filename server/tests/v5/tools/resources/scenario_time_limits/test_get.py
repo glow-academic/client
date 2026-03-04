@@ -10,7 +10,7 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_created_scenario_time_limit(conn, redis_client):
-    scenario_id = await conn.fetchval("INSERT INTO scenario_artifact DEFAULT VALUES RETURNING id")
+    scenario_id = await conn.fetchval("INSERT INTO scenarios_resource DEFAULT VALUES RETURNING id")
     row_id = await conn.fetchval("""
         INSERT INTO scenario_time_limits_resource (scenario_id, time_limit_seconds)
         VALUES ($1, 300)
@@ -39,7 +39,7 @@ async def test_returns_empty_for_empty_ids(conn, redis_client):
 
 
 async def test_cache_hit_skips_db(conn, redis_client):
-    scenario_id = await conn.fetchval("INSERT INTO scenario_artifact DEFAULT VALUES RETURNING id")
+    scenario_id = await conn.fetchval("INSERT INTO scenarios_resource DEFAULT VALUES RETURNING id")
     row_id = await conn.fetchval("""
         INSERT INTO scenario_time_limits_resource (scenario_id, time_limit_seconds)
         VALUES ($1, 600)
@@ -57,7 +57,7 @@ async def test_cache_hit_skips_db(conn, redis_client):
 
 
 async def test_bypass_cache_skips_read_and_write(conn, redis_client):
-    scenario_id = await conn.fetchval("INSERT INTO scenario_artifact DEFAULT VALUES RETURNING id")
+    scenario_id = await conn.fetchval("INSERT INTO scenarios_resource DEFAULT VALUES RETURNING id")
     row_id = await conn.fetchval("""
         INSERT INTO scenario_time_limits_resource (scenario_id, time_limit_seconds)
         VALUES ($1, 900)
