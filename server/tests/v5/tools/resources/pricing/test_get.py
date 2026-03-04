@@ -12,7 +12,7 @@ pytestmark = pytest.mark.asyncio
 async def test_gets_created_pricing(conn, redis_client):
     row_id = await conn.fetchval("""
         INSERT INTO pricing_resource (pricing_type, price, unit_name, unit_category, unit_value)
-        VALUES ('input', 0.5, 'tokens', 'token', 1000)
+        VALUES ('input', 0.5, 'tokens', 'tokens', 1000)
         RETURNING id
     """)
 
@@ -23,7 +23,7 @@ async def test_gets_created_pricing(conn, redis_client):
     assert items[0].pricing_type == "input"
     assert items[0].price == pytest.approx(0.5)
     assert items[0].unit_name == "tokens"
-    assert items[0].unit_category == "token"
+    assert items[0].unit_category == "tokens"
     assert items[0].unit_value == 1000
     assert items[0].active is True
 
@@ -43,7 +43,7 @@ async def test_returns_empty_for_empty_ids(conn, redis_client):
 async def test_cache_hit_skips_db(conn, redis_client):
     row_id = await conn.fetchval("""
         INSERT INTO pricing_resource (pricing_type, price, unit_name, unit_category, unit_value)
-        VALUES ('input', 0.5, 'tokens', 'token', 1000)
+        VALUES ('input', 0.5, 'tokens', 'tokens', 1000)
         RETURNING id
     """)
 
@@ -61,7 +61,7 @@ async def test_cache_hit_skips_db(conn, redis_client):
 async def test_bypass_cache_skips_read_and_write(conn, redis_client):
     row_id = await conn.fetchval("""
         INSERT INTO pricing_resource (pricing_type, price, unit_name, unit_category, unit_value)
-        VALUES ('input', 0.5, 'tokens', 'token', 1000)
+        VALUES ('input', 0.5, 'tokens', 'tokens', 1000)
         RETURNING id
     """)
 

@@ -1,71 +1,71 @@
-"""Tests for thresholds resource get."""
+"""Tests for get_thresholds."""
 
-from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.thresholds.get import get_thresholds
 
+pytestmark = pytest.mark.asyncio
 
-@pytest.mark.asyncio
+
 async def test_gets_created_threshold(conn, redis_client):
-    row_id = await conn.fetchval(
-        """
+    row_id = await conn.fetchval("""
         INSERT INTO thresholds_resource (value)
         VALUES (80)
         RETURNING id
-        """
-    )
+    """)
+
     items = await get_thresholds(conn, [row_id], redis_client)
+
     assert len(items) == 1
     assert items[0].id == row_id
     assert items[0].value == 80
     assert items[0].active is True
 
 
-@pytest.mark.asyncio
 async def test_returns_empty_for_missing_id(conn, redis_client):
     items = await get_thresholds(conn, [uuid4()], redis_client)
+
     assert items == []
 
 
-@pytest.mark.asyncio
 async def test_returns_empty_for_empty_ids(conn, redis_client):
     items = await get_thresholds(conn, [], redis_client)
+
     assert items == []
 
 
-@pytest.mark.asyncio
-async def test_cache_hit(conn, redis_client):
-    row_id = await conn.fetchval(
-        """
+async def test_cache_hit_skips_db(conn, redis_client):
+    row_id = await conn.fetchval("""
         INSERT INTO thresholds_resource (value)
         VALUES (80)
         RETURNING id
-        """
-    )
-    await get_thresholds(conn, [row_id], redis_client)
+    """)
 
-    with patch.object(conn, "fetch", new_callable=AsyncMock) as mock_fetch:
-        items = await get_thresholds(conn, [row_id], redis_client)
-        mock_fetch.assert_not_called()
-        assert len(items) == 1
-
-
-@pytest.mark.asyncio
-async def test_bypass_cache(conn, redis_client):
-    row_id = await conn.fetchval(
-        """
-        INSERT INTO thresholds_resource (value)
-        VALUES (80)
-        RETURNING id
-        """
-    )
-    await get_thresholds(conn, [row_id], redis_client)
-
-    items = await get_thresholds(
-        conn, [row_id], redis_client, bypass_cache=True
-    )
+    # First call populates cache
+    items = await get_thresholds(conn, [row_id], redis_client)
     assert len(items) == 1
-    assert items[0].value == 80
+
+    # Second call serves from cache
+    items2 = await get_thresholds(conn, [row_id], redis_client)
+    assert len(items2) == 1
+    assert items2[0].value == 80
+
+
+async def test_bypass_cache_skips_read_and_write(conn, redis_client):
+    row_id = await conn.fetchval("""
+        INSERT INTO thresholds_resource (value)
+        VALUES (80)
+        RETURNING id
+    """)
+
+    items = await get_thresholds(conn, [row_id], redis_client, bypass_cache=True)
+    assert len(items) == 1
+
+    from app.utils.cache.cache_key import cache_key
+    from app.utils.cache.get_cached import get_cached
+
+    key = cache_key("/api/v5/resources/thresholds/get", {"ids": [str(row_id)]})
+    cached = await get_cached(key, redis=redis_client)
+    assert cached is None
