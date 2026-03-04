@@ -1,37 +1,42 @@
-"""emulations/create internal — reusable data-access layer."""
+"""Emulations CREATE — insert into emulations_entry with profile link."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.routes.v5.api.entries.emulations.types import (
-    CreateEmulationsEntryResponse,
-    CreateEmulationsEntrySqlParams,
-    CreateEmulationsEntrySqlRow,
-)
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/entries/emulations/create_emulations_entries_complete.sql"
+from app.routes.v5.tools.entries.emulations.types import CreateEmulationResponse
 
 
-async def create_emulations_entry_internal(
+async def create_emulation(
     conn: asyncpg.Connection,
-    session_id: UUID,
     grant_id: UUID,
+    session_id: UUID,
+    profile_id: UUID | None = None,
     mcp: bool = False,
-) -> CreateEmulationsEntryResponse:
-    """Create a emulations entry. Internal only — no HTTP route."""
-    params = CreateEmulationsEntrySqlParams(
-        session_id=session_id, grant_id=grant_id, mcp=mcp
+) -> CreateEmulationResponse:
+    """Create an emulation entry and optionally link to a profile."""
+    emulation_id = await conn.fetchval(
+        """
+        INSERT INTO emulations_entry (grant_id, session_id, mcp, generated)
+        VALUES ($1, $2, $3, true)
+        RETURNING id
+        """,
+        grant_id,
+        session_id,
+        mcp,
     )
 
-    result = cast(
-        CreateEmulationsEntrySqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
+    if emulation_id is None:
+        raise ValueError("Failed to create emulation entry")
 
-    if not result or not result.id:
-        raise ValueError("Failed to create emulations entry")
+    if profile_id is not None:
+        await conn.execute(
+            """
+            INSERT INTO profiles_emulations_connection (profiles_id, emulation_id)
+            VALUES ($1, $2)
+            """,
+            profile_id,
+            emulation_id,
+        )
 
-    return CreateEmulationsEntryResponse.model_validate(result.model_dump())
+    return CreateEmulationResponse(id=emulation_id)
