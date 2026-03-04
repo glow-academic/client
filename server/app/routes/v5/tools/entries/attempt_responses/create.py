@@ -1,40 +1,57 @@
-"""attempt_responses/create internal — reusable data-access layer."""
+"""Entry CREATE — reusable data-access layer."""
 
-from typing import cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    CreateResponsesEntriesApiResponse,
-    CreateResponsesEntriesSqlParams,
-    CreateResponsesEntriesSqlRow,
+from app.routes.v5.tools.entries.attempt_responses.types import (
+    CreateAttemptResponsesResponse,
 )
-from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/entries/responses/create_responses_entries_complete.sql"
 
 
-async def create_responses_entry_internal(
+async def create_attempt_responses(
     conn: asyncpg.Connection,
-    request_dict: dict,
+    chat_id: UUID,
+    call_id: UUID,
+    question_ids: list[UUID] | None = None,
+    option_ids: list[UUID] | None = None,
     mcp: bool = False,
-) -> CreateResponsesEntriesApiResponse:
-    """Internal function to create responses entry."""
-    tags = ["entries", "attempt_responses"]
+) -> CreateAttemptResponsesResponse:
+    """Create an attempt_responses entry."""
+    entry_id = await conn.fetchval(
+        """
+        INSERT INTO attempt_responses_entry
+            (chat_id, call_id, mcp, generated)
+        VALUES ($1, $2, $3, true)
+        RETURNING id
+        """,
+        chat_id,
+        call_id,
+        mcp,
+    )
 
-    async with conn.transaction():
-        request_dict["mcp"] = mcp
-        params = CreateResponsesEntriesSqlParams(**request_dict)
+    if question_ids:
+        for question_id in question_ids:
+            await conn.execute(
+                """
+                INSERT INTO attempt_responses_questions_connection
+                    (responses_id, question_id)
+                VALUES ($1, $2)
+                """,
+                entry_id,
+                question_id,
+            )
 
-        result = cast(
-            CreateResponsesEntriesSqlRow,
-            await execute_sql_typed(conn, SQL_PATH, params=params),
-        )
+    if option_ids:
+        for option_id in option_ids:
+            await conn.execute(
+                """
+                INSERT INTO attempt_responses_options_connection
+                    (responses_id, option_id)
+                VALUES ($1, $2)
+                """,
+                entry_id,
+                option_id,
+            )
 
-        if not result or not result.id:
-            raise ValueError("Failed to create responses entry")
-
-    await invalidate_tags(tags, redis=get_redis_client())
-
-    return CreateResponsesEntriesApiResponse.model_validate(result.model_dump())
+    return CreateAttemptResponsesResponse(id=entry_id)

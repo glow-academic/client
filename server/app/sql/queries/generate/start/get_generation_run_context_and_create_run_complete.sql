@@ -233,7 +233,7 @@ new_developer_messages_matched AS (
         n.run_id,
         nd.hash,
         n.created_at,
-        n.updated_at
+        n.created_at AS updated_at
     FROM new_developer_messages_numbered n
     JOIN new_developer_messages_data_numbered nd ON n.rn = nd.rn
 ),
@@ -337,7 +337,7 @@ new_user_messages_matched AS (
         n.run_id,
         nd.hash,
         n.created_at,
-        n.updated_at
+        n.created_at AS updated_at
     FROM new_user_messages_numbered n
     JOIN new_user_messages_data_numbered nd ON n.rn = nd.rn
 ),
