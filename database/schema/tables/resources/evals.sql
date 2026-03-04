@@ -11,13 +11,13 @@ CREATE TABLE public.evals_resource (
     generated boolean DEFAULT false CONSTRAINT evals_generated_not_null1 NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT evals_mcp_not_null1 NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT evals_id_new_not_null NOT NULL,
-    name text,
-    description text,
-    department_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    model_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    model_rubric_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    model_flag_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    model_position_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    name text DEFAULT ''::text NOT NULL,
+    description text DEFAULT ''::text NOT NULL,
+    department_ids uuid[] DEFAULT ARRAY[]::uuid[] NOT NULL,
+    model_ids uuid[] DEFAULT ARRAY[]::uuid[] NOT NULL,
+    model_rubric_ids uuid[] DEFAULT ARRAY[]::uuid[] NOT NULL,
+    model_flag_ids uuid[] DEFAULT ARRAY[]::uuid[] NOT NULL,
+    model_position_ids uuid[] DEFAULT ARRAY[]::uuid[] NOT NULL
 );
 
 

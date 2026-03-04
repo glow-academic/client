@@ -11,12 +11,12 @@ CREATE TABLE public.cohorts_resource (
     generated boolean DEFAULT false CONSTRAINT cohorts_generated_not_null1 NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT cohorts_mcp_not_null1 NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT cohorts_id_new_not_null NOT NULL,
-    name text,
-    description text,
-    department_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    simulation_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    profile_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    profile_persona_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    name text DEFAULT ''::text NOT NULL,
+    description text DEFAULT ''::text NOT NULL,
+    department_ids uuid[] DEFAULT ARRAY[]::uuid[] NOT NULL,
+    simulation_ids uuid[] DEFAULT ARRAY[]::uuid[] NOT NULL,
+    profile_ids uuid[] DEFAULT ARRAY[]::uuid[] NOT NULL,
+    profile_persona_ids uuid[] DEFAULT ARRAY[]::uuid[] NOT NULL,
     simulation_position_ids uuid[] DEFAULT '{}'::uuid[] NOT NULL,
     simulation_availability_ids uuid[] DEFAULT '{}'::uuid[] NOT NULL
 );

@@ -11,15 +11,15 @@ CREATE TABLE public.personas_resource (
     generated boolean DEFAULT false CONSTRAINT personas_generated_not_null1 NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT personas_mcp_not_null1 NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT personas_id_new_not_null NOT NULL,
-    name text,
-    description text,
-    icon text,
-    color text,
-    department_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    instructions text,
-    examples text[] DEFAULT ARRAY[]::text[],
-    parameter_ids uuid[] DEFAULT '{}'::uuid[],
-    parameter_field_ids uuid[] DEFAULT '{}'::uuid[]
+    name text DEFAULT ''::text NOT NULL,
+    description text DEFAULT ''::text NOT NULL,
+    icon text DEFAULT ''::text NOT NULL,
+    color text DEFAULT ''::text NOT NULL,
+    department_ids uuid[] DEFAULT ARRAY[]::uuid[] NOT NULL,
+    instructions text DEFAULT ''::text NOT NULL,
+    examples text[] DEFAULT ARRAY[]::text[] NOT NULL,
+    parameter_ids uuid[] DEFAULT '{}'::uuid[] NOT NULL,
+    parameter_field_ids uuid[] DEFAULT '{}'::uuid[] NOT NULL
 );
 
 

@@ -11,15 +11,15 @@ CREATE TABLE public.documents_resource (
     generated boolean DEFAULT false CONSTRAINT documents_generated_not_null1 NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT documents_mcp_not_null1 NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT documents_id_new_not_null NOT NULL,
-    name text,
-    description text,
-    department_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    name text DEFAULT ''::text NOT NULL,
+    description text DEFAULT ''::text NOT NULL,
+    department_ids uuid[] DEFAULT ARRAY[]::uuid[] NOT NULL,
     upload_id uuid,
     text_id uuid,
     image_ids uuid[] DEFAULT '{}'::uuid[] NOT NULL,
     template boolean DEFAULT false NOT NULL,
-    parameter_ids uuid[] DEFAULT '{}'::uuid[],
-    parameter_field_ids uuid[] DEFAULT '{}'::uuid[]
+    parameter_ids uuid[] DEFAULT '{}'::uuid[] NOT NULL,
+    parameter_field_ids uuid[] DEFAULT '{}'::uuid[] NOT NULL
 );
 
 
