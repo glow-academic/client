@@ -7,7 +7,6 @@
 
 CREATE TABLE public.runs_entry (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT runs_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT runs_updated_at_not_null NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT runs_id_v7_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT runs_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT runs_mcp_not_null NOT NULL,
