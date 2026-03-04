@@ -6,8 +6,9 @@ from typing import Any
 
 from redis.asyncio import Redis
 
-from app.utils.cache.tag_set_name import tag_set_name
 from app.utils.logging.db_logger import get_logger
+
+TAG_PREFIX = "http:tag:"
 
 logger = get_logger(__name__)
 
@@ -27,8 +28,8 @@ async def set_cached(
         pipe.setex(key, ttl, json.dumps(data))
         # Track which keys belong to each tag
         for tag in tags:
-            pipe.sadd(tag_set_name(tag), key)
-            pipe.expire(tag_set_name(tag), ttl)  # Expire tag set with cache
+            pipe.sadd(f"{TAG_PREFIX}{tag}", key)
+            pipe.expire(f"{TAG_PREFIX}{tag}", ttl)  # Expire tag set with cache
         await pipe.execute()
         logger.info(
             f"Cache written successfully: key={key[:50]}..., ttl={ttl}, tags={list(tags)}"

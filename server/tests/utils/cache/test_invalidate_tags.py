@@ -2,10 +2,9 @@
 
 import pytest
 
+from app.utils.cache.get_cached import get_cached
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.cache.set_cached import set_cached
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.tag_set_name import tag_set_name
 
 pytestmark = pytest.mark.asyncio
 
@@ -25,7 +24,7 @@ async def test_deletes_tag_set_itself(redis_client):
 
     await invalidate_tags(["names"], redis=redis_client)
 
-    exists = await redis_client.exists(tag_set_name("names"))
+    exists = await redis_client.exists("http:tag:names")
     assert exists == 0
 
 

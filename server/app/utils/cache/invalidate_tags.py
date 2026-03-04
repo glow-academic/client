@@ -5,8 +5,9 @@ from collections.abc import Iterable
 
 from redis.asyncio import Redis
 
-from app.utils.cache.tag_set_name import tag_set_name
 from app.utils.logging.db_logger import get_logger
+
+TAG_PREFIX = "http:tag:"
 
 logger = get_logger(__name__)
 
@@ -20,7 +21,7 @@ async def invalidate_tags(tags: Iterable[str], *, redis: Redis) -> None:
             return
 
         # Fetch all tag keys in parallel
-        set_names = [tag_set_name(tag) for tag in tags_list]
+        set_names = [f"{TAG_PREFIX}{tag}" for tag in tags_list]
         keys_results = await asyncio.gather(
             *[redis.smembers(set_name) for set_name in set_names],  # type: ignore[misc]
             return_exceptions=True,
