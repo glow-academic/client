@@ -12,7 +12,6 @@ CREATE TABLE public.uploads_completions_entry (
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL,
     upload_id uuid NOT NULL,
-    end_reason text DEFAULT ''::text NOT NULL,
     session_id uuid NOT NULL
 );
 

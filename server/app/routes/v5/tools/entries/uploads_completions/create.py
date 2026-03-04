@@ -1,37 +1,26 @@
-"""uploads_completions/create internal — reusable data-access layer."""
+"""Uploads Completions CREATE — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.routes.v5.api.entries.uploads_completions.types import (
-    CreateUploadsCompletionsEntryResponse,
-    CreateUploadsCompletionsEntrySqlParams,
-    CreateUploadsCompletionsEntrySqlRow,
-)
-from app.utils.sql_helper import execute_sql_typed
+from app.routes.v5.tools.entries.uploads_completions.types import CreateUploadCompletionResponse
 
-SQL_PATH = "app/sql/queries/entries/uploads_completions/create_uploads_completions_entries_complete.sql"
 
-async def create_uploads_completions_entry_internal(
+async def create_upload_completion(
     conn: asyncpg.Connection,
-    session_id: UUID,
     upload_id: UUID,
-    end_reason: str = "",
+    session_id: UUID,
     mcp: bool = False,
-) -> CreateUploadsCompletionsEntryResponse:
-    """Create a uploads_completions entry. Internal only — no HTTP route."""
-    params = CreateUploadsCompletionsEntrySqlParams(
-        session_id=session_id, upload_id=upload_id, end_reason=end_reason, mcp=mcp
-    )
+) -> CreateUploadCompletionResponse:
+    """Create an uploads_completions entry."""
+    completion_id = await conn.fetchval("""
+        INSERT INTO uploads_completions_entry (upload_id, session_id, mcp, generated)
+        VALUES ($1, $2, $3, true)
+        RETURNING id
+    """, upload_id, session_id, mcp)
 
-    result = cast(
-        CreateUploadsCompletionsEntrySqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    if not result or not result.id:
+    if completion_id is None:
         raise ValueError("Failed to create uploads_completions entry")
 
-    return CreateUploadsCompletionsEntryResponse.model_validate(result.model_dump())
+    return CreateUploadCompletionResponse(id=completion_id)
