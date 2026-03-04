@@ -105,12 +105,12 @@ from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.tools.resources.parameter_fields.get import (
-    get_parameter_fields_internal,
+    get_parameter_fields,
 )
 from app.routes.v5.tools.resources.parameter_fields.search import (
     search_parameter_fields_internal,
 )
-from app.routes.v5.tools.resources.parameters.get import get_parameters_internal
+from app.routes.v5.tools.resources.parameters.get import get_parameters
 from app.routes.v5.tools.resources.parameters.search import search_parameters_internal
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
@@ -529,8 +529,8 @@ async def get_persona_internal(
 
     async def fetch_parameter_fields():
         async with pool.acquire() as c:
-            selected = await get_parameter_fields_internal(
-                c, parameter_field_ids, bypass_cache
+            selected = await get_parameter_fields(
+                c, parameter_field_ids, get_redis_client(), bypass_cache
             )
             # Fetch available fields for the currently expanded parameters (from URL)
             available: list[QGetParameterFieldsV4Item] = []
@@ -584,9 +584,10 @@ async def get_persona_internal(
     async def fetch_parameters():
         async with pool.acquire() as c:
             # Fetch parameters for the URL-expanded IDs (includes conditional params)
-            selected = await get_parameters_internal(
+            selected = await get_parameters(
                 c,
                 parameter_ids,
+                get_redis_client(),
                 bypass_cache,
             )
             # Suggest persona_parameter=true params not yet expanded
@@ -704,8 +705,8 @@ async def get_persona_internal(
     ]
     if missing_conditional_ids:
         async with pool.acquire() as c:
-            conditional_params = await get_parameters_internal(
-                c, missing_conditional_ids, bypass_cache
+            conditional_params = await get_parameters(
+                c, missing_conditional_ids, get_redis_client(), bypass_cache
             )
             parameters = _dedupe_by_id(parameters + conditional_params, "parameter_id")
     voices = _dedupe_by_id(voices_selected + voices_suggestions, "id")

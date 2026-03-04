@@ -73,7 +73,7 @@ from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.tools.resources.parameter_fields.get import (
-    get_parameter_fields_internal,
+    get_parameter_fields,
 )
 from app.routes.v5.tools.resources.parameter_fields.search import (
     search_parameter_fields_internal,
@@ -331,7 +331,7 @@ async def get_parameter_internal(
 
     async def fetch_fields():
         async with pool.acquire() as c:
-            selected = await get_parameter_fields_internal(c, field_ids, bypass_cache)
+            selected = await get_parameter_fields(c, field_ids, get_redis_client(), bypass_cache)
             available = await search_parameter_fields_internal(c, [], bypass_cache)
             return (selected, available)
 

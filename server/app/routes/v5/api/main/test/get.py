@@ -37,7 +37,7 @@ from app.routes.v5.tools.entries.test_invocation.get import get_test_invocation_
 from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.evals.get import get_evals_internal
+from app.routes.v5.tools.resources.evals.get import get_evals
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.providers.get import get_providers
@@ -277,8 +277,8 @@ async def get_test_internal(
             if not test.eval_id:
                 return None, None
             async with pool.acquire() as c:
-                evals = await get_evals_internal(
-                    c, [test.eval_id], bypass_cache=bypass_cache
+                evals = await get_evals(
+                    c, [test.eval_id], get_redis_client(), bypass_cache=bypass_cache
                 )
                 if evals and evals[0]:
                     return evals[0].name, evals[0].description

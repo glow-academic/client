@@ -1,0 +1,83 @@
+"""Tests for text_uploads search."""
+
+from uuid import uuid4
+
+import pytest
+
+from app.routes.v5.tools.entries.text_uploads.create import create_text_upload
+from app.routes.v5.tools.entries.text_uploads.search import search_text_uploads
+from app.routes.v5.tools.entries.texts.create import create_text
+from app.routes.v5.tools.entries.uploads.create import create_upload
+from app.routes.v5.tools.entries.sessions.create import create_session
+from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
+
+pytestmark = pytest.mark.asyncio
+
+
+async def _deps(conn):
+    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+    text = await create_text(conn, session_id=session.id)
+    upload = await create_upload(
+        conn,
+        session_id=session.id,
+        file_path="test/file.txt",
+        mime_type="text/plain",
+        size=1024,
+    )
+    return session, text, upload
+
+
+async def test_search_finds_created(conn):
+    session, text, upload = await _deps(conn)
+    await create_text_upload(
+        conn, text_id=text.id, upload_id=upload.id, session_id=session.id
+    )
+
+    results = await search_text_uploads(conn, text_id=text.id)
+
+    assert len(results) == 1
+    assert results[0].text_id == text.id
+    assert results[0].upload_id == upload.id
+
+
+async def test_search_filters_by_text_id(conn):
+    session, text, upload = await _deps(conn)
+    await create_text_upload(
+        conn, text_id=text.id, upload_id=upload.id, session_id=session.id
+    )
+
+    results = await search_text_uploads(conn, text_id=uuid4())
+
+    assert len(results) == 0
+
+
+async def test_search_filters_by_upload_id(conn):
+    session, text, upload = await _deps(conn)
+    await create_text_upload(
+        conn, text_id=text.id, upload_id=upload.id, session_id=session.id
+    )
+
+    results = await search_text_uploads(conn, upload_id=uuid4())
+
+    assert len(results) == 0
+
+
+async def test_search_pagination(conn):
+    session, text, upload1 = await _deps(conn)
+    upload2 = await create_upload(
+        conn,
+        session_id=session.id,
+        file_path="test/file2.txt",
+        mime_type="text/plain",
+        size=1024,
+    )
+    await create_text_upload(
+        conn, text_id=text.id, upload_id=upload1.id, session_id=session.id
+    )
+    await create_text_upload(
+        conn, text_id=text.id, upload_id=upload2.id, session_id=session.id
+    )
+
+    results = await search_text_uploads(conn, text_id=text.id, limit=1)
+
+    assert len(results) == 1

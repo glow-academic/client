@@ -105,7 +105,7 @@ from app.routes.v5.tools.resources.objectives.get import get_objectives
 from app.routes.v5.tools.resources.options.get import get_options
 from app.routes.v5.tools.resources.options.search import search_options_internal
 from app.routes.v5.tools.resources.parameter_fields.get import (
-    get_parameter_fields_internal,
+    get_parameter_fields,
 )
 from app.routes.v5.tools.resources.parameter_fields.search import (
     search_parameter_fields_internal,
@@ -628,8 +628,8 @@ async def get_scenario_internal(
 
     async def fetch_parameter_fields():
         async with pool.acquire() as c:
-            selected = await get_parameter_fields_internal(
-                c, selected_parameter_field_ids, bypass_cache
+            selected = await get_parameter_fields(
+                c, selected_parameter_field_ids, get_redis_client(), bypass_cache
             )
             available: list = []
             conditional_param_ids: list[UUID] = []

@@ -28,7 +28,7 @@ from app.routes.v5.api.main.types import (
 )
 from app.routes.v5.tools.entries.test.search import get_test_list_internal
 from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.evals.get import get_evals_internal
+from app.routes.v5.tools.resources.evals.get import get_evals
 from app.sql.types import QGetTestListViewV4Item
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -173,8 +173,8 @@ async def _fetch_test_history(
             eval_ids_set.add(item.eval_id)
 
     # Batch resolve names via evals resource
-    evals = await get_evals_internal(
-        conn, list(eval_ids_set), bypass_cache=bypass_cache
+    evals = await get_evals(
+        conn, list(eval_ids_set), get_redis_client(), bypass_cache=bypass_cache
     )
 
     eval_name_map: dict[UUID, str | None] = {}
@@ -312,8 +312,8 @@ async def get_benchmark(
         # --- Phase 3: Batch hydrate resources ---
         async def fetch_evals() -> list:
             async with pool.acquire() as c:
-                return await get_evals_internal(
-                    c, list(eval_ids), bypass_cache=bypass_cache
+                return await get_evals(
+                    c, list(eval_ids), get_redis_client(), bypass_cache=bypass_cache
                 )
 
         async def fetch_departments() -> list:

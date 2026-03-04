@@ -64,7 +64,7 @@ from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
 from app.routes.v5.tools.resources.documents.get import get_documents_internal
 from app.routes.v5.tools.resources.fields.get import get_fields
 from app.routes.v5.tools.resources.parameter_fields.get import (
-    get_parameter_fields_internal,
+    get_parameter_fields,
 )
 from app.routes.v5.tools.resources.parameters.get import get_parameters_internal
 from app.routes.v5.tools.resources.personas.get import get_personas_internal
@@ -778,8 +778,8 @@ async def get_dashboard_internal(
             all_pf_ids.add(pfid)
 
     async with pool.acquire() as c:
-        parameter_fields = await get_parameter_fields_internal(
-            conn=c, ids=list(all_pf_ids), bypass_cache=bypass_cache
+        parameter_fields = await get_parameter_fields(
+            conn=c, ids=list(all_pf_ids), redis=get_redis_client(), bypass_cache=bypass_cache
         )
 
     parameter_ids_set: set[UUID] = set()

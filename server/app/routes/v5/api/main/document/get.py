@@ -82,7 +82,7 @@ from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.tools.resources.parameter_fields.get import (
-    get_parameter_fields_internal,
+    get_parameter_fields,
 )
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
@@ -423,7 +423,7 @@ async def get_document_internal(
 
     async def fetch_fields():
         async with pool.acquire() as c:
-            selected = await get_parameter_fields_internal(c, field_ids, bypass_cache)
+            selected = await get_parameter_fields(c, field_ids, get_redis_client(), bypass_cache)
             # Search for available fields scoped to user departments
             suggestions = await search_fields_internal(
                 c,

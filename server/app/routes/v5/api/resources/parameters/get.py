@@ -5,15 +5,13 @@ from typing import Annotated
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
+from app.infra.globals import get_db, get_redis_client
 from app.routes.v5.tools.resources.parameters.get import (
-    SQL_PATH,
-    get_parameters_internal,
+    get_parameters as get_parameters_resource,
 )
 from app.sql.types import (
     GetParametersApiRequest,
     GetParametersApiResponse,
-    load_sql_query,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -39,15 +37,7 @@ async def get_parameters(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_parameters_internal(
-            conn,
-            request.ids,
-            bypass_cache,
-            request.p_persona_parameter,
-            request.p_document_parameter,
-            request.p_scenario_parameter,
-            request.p_video_parameter,
-        )
+        items = await get_parameters_resource(conn, request.ids, get_redis_client(), bypass_cache)
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetParametersApiResponse(items=items)
     except HTTPException:
@@ -59,7 +49,7 @@ async def get_parameters(
             error=e,
             route_path=http_request.url.path,
             operation="get_parameters",
-            sql_query=load_sql_query(SQL_PATH),
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )
