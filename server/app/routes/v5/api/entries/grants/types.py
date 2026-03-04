@@ -10,10 +10,11 @@ class GrantsEntryData(BaseModel):
 
     id: str | None = None
     expires_at: str | None = None
-    used_at: str | None = None
-    revoked_at: str | None = None
     created_at: str | None = None
     session_id: str | None = None
+    active: bool | None = None
+    mcp: bool | None = None
+    generated: bool | None = None
 
 
 class CreateGrantsEntrySqlParams(BaseModel):

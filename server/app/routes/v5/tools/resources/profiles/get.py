@@ -1,69 +1,75 @@
-"""profiles/get internal — reusable data-access layer."""
+"""Profiles Resource GET — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    GetProfilesSqlParams,
-    GetProfilesSqlRow,
-    QGetProfilesV4Item,
-)
+from app.routes.v5.tools.resources.profiles.types import GetProfileResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/resources/profiles/get_profiles_complete.sql"
 
 
-async def get_profiles_internal(
+async def get_profiles(
     conn: asyncpg.Connection,
     ids: list[UUID],
+    redis: Redis,
     bypass_cache: bool = False,
-) -> list[QGetProfilesV4Item]:
-    """Internal function for batch fetching profiles by IDs.
-
-    Args:
-        conn: Database connection
-        ids: List of profile IDs to fetch
-        bypass_cache: Whether to bypass cache
-
-    Returns:
-        List of profile items
-    """
+) -> list[GetProfileResponse]:
+    """Fetch profiles_resource entries by IDs."""
     if not ids:
         return []
 
     tags = ["resources", "profiles"]
-    cache_key_val = cache_key(
-        "/api/v5/resources/profiles/get",
-        {"ids": [str(id) for id in ids]},
-    )
+    key = cache_key("/api/v5/resources/profiles/get", {"ids": [str(id) for id in ids]})
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetProfilesV4Item.model_validate(item)
+                GetProfileResponse.model_validate(item)
                 for item in cached.get("items", [])
             ]
 
-    params = GetProfilesSqlParams(p_ids=ids)
-    result = cast(
-        GetProfilesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
+    rows = await conn.fetch(
+        """
+        SELECT id, name, description, role, department_ids,
+               role_id, emails, primary_email, requests_per_day,
+               last_login, created_at, active, mcp, generated
+        FROM profiles_resource
+        WHERE id = ANY($1)
+        ORDER BY array_position($1, id)
+    """,
+        ids,
     )
 
-    items: list[QGetProfilesV4Item] = result.items if result and result.items else []
+    items = [
+        GetProfileResponse(
+            id=r["id"],
+            name=r["name"],
+            description=r["description"],
+            role=r["role"],
+            department_ids=r["department_ids"] or [],
+            role_id=r["role_id"],
+            emails=r["emails"] or [],
+            primary_email=r["primary_email"],
+            requests_per_day=r["requests_per_day"],
+            last_login=r["last_login"],
+            created_at=r["created_at"],
+            active=r["active"],
+            mcp=r["mcp"],
+            generated=r["generated"],
+        )
+        for r in rows
+    ]
 
-    await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
+    if not bypass_cache:
+        await set_cached(
+            key,
+            {"items": [i.model_dump(mode="json") for i in items]},
+            60,
+            tags,
+            redis=redis,
+        )
     return items

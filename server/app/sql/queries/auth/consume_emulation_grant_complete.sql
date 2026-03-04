@@ -1,5 +1,5 @@
 -- Consume emulation grant for default-idp flow
--- Uses safe drop/recreate pattern: drop function first, then recreate
+-- Append-only: inserts into grant_consumptions_entry instead of mutating grants_entry
 DO $$
 DECLARE
     r RECORD;
@@ -34,12 +34,18 @@ grant_row AS (
     FROM grants_entry eg
     WHERE eg.id = (SELECT grant_id FROM params)
 ),
+already_consumed AS (
+    SELECT EXISTS(
+        SELECT 1 FROM grant_consumptions_entry gc
+        WHERE gc.grant_id = (SELECT grant_id FROM params)
+          AND gc.active = true
+    ) as is_consumed
+),
 validity AS (
     SELECT
         CASE
             WHEN NOT EXISTS (SELECT 1 FROM grant_row) THEN false
-            WHEN (SELECT revoked_at FROM grant_row) IS NOT NULL THEN false
-            WHEN (SELECT used_at FROM grant_row) IS NOT NULL THEN false
+            WHEN (SELECT is_consumed FROM already_consumed) THEN false
             WHEN (SELECT expires_at FROM grant_row) <= NOW() THEN false
             ELSE true
         END as ok
@@ -48,23 +54,20 @@ reason_computed AS (
     SELECT
         CASE
             WHEN NOT EXISTS (SELECT 1 FROM grant_row) THEN 'Grant not found'::text
-            WHEN (SELECT revoked_at FROM grant_row) IS NOT NULL THEN 'Grant revoked'::text
-            WHEN (SELECT used_at FROM grant_row) IS NOT NULL THEN 'Grant already used'::text
+            WHEN (SELECT is_consumed FROM already_consumed) THEN 'Grant already used'::text
             WHEN (SELECT expires_at FROM grant_row) <= NOW() THEN 'Grant expired'::text
             ELSE NULL::text
         END as reason
 ),
 grant_consumed AS (
-    UPDATE grants_entry
-    SET used_at = NOW(),
-        updated_at = NOW()
-    WHERE id = (SELECT grant_id FROM params)
-      AND (SELECT ok FROM validity) = true
+    INSERT INTO grant_consumptions_entry (grant_id)
+    SELECT (SELECT grant_id FROM params)
+    WHERE (SELECT ok FROM validity) = true
     RETURNING id
 )
 SELECT
     (SELECT ok FROM validity) as ok,
     (SELECT reason FROM reason_computed) as reason,
-    (SELECT pgj.profiles_id FROM profiles_grants_connection pgj WHERE pgj.grant_id = (SELECT id FROM grant_consumed) LIMIT 1) as actor_profile_id,
-    (SELECT pej.profiles_id FROM emulations_entry em JOIN profiles_emulations_connection pej ON pej.emulation_id = em.id WHERE em.grant_id = (SELECT id FROM grant_consumed) LIMIT 1) as target_profile_id
+    (SELECT pgj.profiles_id FROM profiles_grants_connection pgj WHERE pgj.grant_id = (SELECT grant_id FROM params) LIMIT 1) as actor_profile_id,
+    (SELECT pej.profiles_id FROM emulations_entry em JOIN profiles_emulations_connection pej ON pej.emulation_id = em.id WHERE em.grant_id = (SELECT grant_id FROM params) LIMIT 1) as target_profile_id
 $$;

@@ -65,3 +65,11 @@ CREATE INDEX attempt_chat_mv_simulation_id_idx ON public.attempt_chat_mv USING b
 
 
 --
+
+-- Name: idx_attempt_chat_mv_chat_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_attempt_chat_mv_chat_id ON public.attempt_chat_mv USING btree (chat_id);
+
+
+--

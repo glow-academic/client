@@ -13,7 +13,7 @@ CREATE TABLE public.debug_info_entry (
     generated boolean DEFAULT false CONSTRAINT debug_info_generated_not_null NOT NULL,
     call_id uuid CONSTRAINT debug_info_call_id_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT debug_info_mcp_not_null NOT NULL,
-    run_id uuid
+    run_id uuid NOT NULL
 );
 
 

@@ -11,7 +11,7 @@ async def create_resolve(
     conn: asyncpg.Connection,
     problem_id: UUID,
     resolved: bool,
-    call_id: UUID | None = None,
+    call_id: UUID,
     mcp: bool = False,
 ) -> CreateResolveResponse:
     """Create a resolves entry."""

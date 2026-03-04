@@ -1,4 +1,4 @@
-"""home/refresh internal — reusable data-access layer."""
+"""home/refresh — reusable data-access layer."""
 
 import time
 
@@ -9,12 +9,17 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 MV_NAME = "home_mv"
 
 
+async def refresh_home(conn: asyncpg.Connection) -> None:
+    """Refresh home_mv concurrently."""
+    await conn.execute(f"REFRESH MATERIALIZED VIEW CONCURRENTLY {MV_NAME}")
+
+
 async def refresh_home_internal(
     conn: asyncpg.Connection,
 ) -> dict:
-    """Refresh home_mv concurrently."""
+    """Refresh home_mv concurrently with cache invalidation."""
     start_time = time.time()
-    await conn.execute(f"REFRESH MATERIALIZED VIEW CONCURRENTLY {MV_NAME}")
+    await refresh_home(conn)
     duration_ms = int((time.time() - start_time) * 1000)
     await invalidate_tags(["entries", "home"], redis=get_redis_client())
     return {

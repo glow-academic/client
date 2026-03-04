@@ -13,7 +13,7 @@ CREATE TABLE public.resolves_entry (
     active boolean DEFAULT true NOT NULL,
     problem_id uuid NOT NULL,
     resolved boolean NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL
 );
 
 

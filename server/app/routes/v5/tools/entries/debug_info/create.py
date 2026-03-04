@@ -11,7 +11,7 @@ async def create_debug_info(
     conn: asyncpg.Connection,
     call_id: UUID,
     content: str,
-    run_id: UUID | None = None,
+    run_id: UUID,
     mcp: bool = False,
 ) -> CreateDebugInfoResponse:
     """Create a debug_info entry."""

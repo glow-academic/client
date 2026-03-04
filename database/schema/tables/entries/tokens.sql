@@ -15,7 +15,7 @@ CREATE TABLE public.tokens_entry (
     input_tokens integer DEFAULT 0 NOT NULL,
     output_tokens integer DEFAULT 0 NOT NULL,
     cached_input_tokens integer DEFAULT 0 NOT NULL,
-    session_id uuid
+    session_id uuid NOT NULL
 );
 
 

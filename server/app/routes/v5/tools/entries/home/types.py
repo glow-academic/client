@@ -12,10 +12,12 @@ class CreateHomeResponse(BaseModel):
 
 class GetHomeResponse(BaseModel):
     id: UUID
-    session_id: UUID
-    position: int
-    start_time: datetime | None
-    end_time: datetime | None
+    simulation_ids: list[UUID]
+    cohort_ids: list[UUID]
+    department_ids: list[UUID]
+    profile_ids: list[UUID]
+    chat_ids: list[UUID]
+    scenario_ids: list[UUID]
+    created_at: datetime
+    updated_at: datetime
     active: bool
-    mcp: bool
-    generated: bool

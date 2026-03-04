@@ -1,10 +1,11 @@
-"""home/get internal — reusable data-access layer."""
+"""home/get — reusable data-access layer."""
 
 from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
+from app.routes.v5.tools.entries.home.types import GetHomeResponse
 from app.sql.types import (
     GetHomeContextViewSqlRow,
     GetHomeEntriesSqlParams,
@@ -14,6 +15,43 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
+
+MV_NAME = "home_mv"
+
+
+async def get_homes(
+    conn: asyncpg.Connection,
+    ids: list[UUID],
+) -> list[GetHomeResponse]:
+    """Get home entries by IDs from home_mv."""
+    if not ids:
+        return []
+
+    rows = await conn.fetch(
+        f"""
+        SELECT home_id, simulation_ids, cohort_ids, department_ids,
+               profile_ids, chat_ids, scenario_ids, created_at, updated_at, active
+        FROM {MV_NAME}
+        WHERE home_id = ANY($1)
+        """,
+        ids,
+    )
+
+    return [
+        GetHomeResponse(
+            id=r["home_id"],
+            simulation_ids=r["simulation_ids"],
+            cohort_ids=r["cohort_ids"],
+            department_ids=r["department_ids"],
+            profile_ids=r["profile_ids"],
+            chat_ids=r["chat_ids"],
+            scenario_ids=r["scenario_ids"],
+            created_at=r["created_at"],
+            updated_at=r["updated_at"],
+            active=r["active"],
+        )
+        for r in rows
+    ]
 
 SQL_PATH = "app/sql/queries/entries/home/get_home_entries_complete.sql"
 

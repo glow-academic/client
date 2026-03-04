@@ -138,13 +138,16 @@ grant_insert AS (
     INSERT INTO grants_entry (
         id,
         expires_at,
-        created_at,
-        updated_at
+        session_id,
+        created_at
     )
     SELECT
         uuidv7(),
         NOW() + ((SELECT ttl_minutes FROM params) || ' minutes')::interval,
-        NOW(),
+        (SELECT s.id FROM sessions_entry s
+         JOIN profiles_sessions_connection psc ON psc.session_id = s.id
+         WHERE psc.profiles_id = (SELECT requester_profile_id FROM params) AND s.active = true
+         ORDER BY s.created_at DESC LIMIT 1),
         NOW()
     WHERE (SELECT allowed FROM allowed_check) = true
     RETURNING id, expires_at

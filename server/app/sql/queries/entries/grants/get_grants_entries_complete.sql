@@ -32,9 +32,10 @@ BEGIN
             'grant_session_id', m.grant_session_id,
             'emulation_session_id', m.emulation_session_id,
             'expires_at', m.expires_at,
-            'used_at', m.used_at,
-            'revoked_at', m.revoked_at,
-            'created_at', m.created_at
+            'created_at', m.created_at,
+            'active', m.active,
+            'mcp', m.mcp,
+            'generated', m.generated
         )
     ) AS items
     FROM grants_mv m

@@ -8,11 +8,11 @@
 CREATE TABLE public.grants_entry (
     id uuid DEFAULT uuidv7() CONSTRAINT emulation_grants_id_not_null NOT NULL,
     expires_at timestamp with time zone CONSTRAINT emulation_grants_expires_at_not_null NOT NULL,
-    used_at timestamp with time zone,
-    revoked_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT emulation_grants_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT emulation_grants_updated_at_not_null NOT NULL,
-    session_id uuid NOT NULL
+    session_id uuid NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 

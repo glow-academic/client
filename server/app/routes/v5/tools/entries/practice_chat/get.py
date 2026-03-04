@@ -1,10 +1,11 @@
-"""practice_chat/get internal — reusable data-access layer."""
+"""practice_chat/get — reusable data-access layer."""
 
 from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
+from app.routes.v5.tools.entries.practice_chat.types import GetPracticeChatResponse
 from app.sql.types import (
     GetPracticeChatEntriesSqlParams,
     GetPracticeChatEntriesSqlRow,
@@ -14,9 +15,43 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
+MV_NAME = "practice_chat_mv"
+
 SQL_PATH = (
     "app/sql/queries/entries/practice_chat/get_practice_chat_entries_complete.sql"
 )
+
+
+async def get_practice_chats(
+    conn: asyncpg.Connection,
+    ids: list[UUID],
+) -> list[GetPracticeChatResponse]:
+    """Get practice_chat entries by IDs from practice_chat_mv."""
+    if not ids:
+        return []
+
+    rows = await conn.fetch(
+        f"""
+        SELECT id, practice_id, chat_id, created_at, active, generated, mcp, session_id
+        FROM {MV_NAME}
+        WHERE id = ANY($1)
+        """,
+        ids,
+    )
+
+    return [
+        GetPracticeChatResponse(
+            id=r["id"],
+            practice_id=r["practice_id"],
+            chat_id=r["chat_id"],
+            created_at=r["created_at"],
+            active=r["active"],
+            generated=r["generated"],
+            mcp=r["mcp"],
+            session_id=r["session_id"],
+        )
+        for r in rows
+    ]
 
 
 async def get_practice_chat_entries_internal(

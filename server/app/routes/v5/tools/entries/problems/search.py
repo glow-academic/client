@@ -33,7 +33,7 @@ async def search_problems(
         FROM {source}
         WHERE ($1::uuid IS NULL OR profile_id = $1)
           AND ($2::uuid IS NULL OR session_id = $2)
-          AND ($3::text IS NULL OR type = $3::public.feedback_type)
+          AND ($3::text IS NULL OR type = $3)
           AND ($4::boolean IS NULL OR resolved = $4)
           AND ($5::timestamptz IS NULL OR created_at >= $5)
           AND ($6::timestamptz IS NULL OR created_at <= $6)

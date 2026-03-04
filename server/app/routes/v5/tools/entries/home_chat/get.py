@@ -1,10 +1,11 @@
-"""home_chat/get internal — reusable data-access layer."""
+"""home_chat/get — reusable data-access layer."""
 
 from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
+from app.routes.v5.tools.entries.home_chat.types import GetHomeChatResponse
 from app.sql.types import (
     GetHomeChatEntriesSqlParams,
     GetHomeChatEntriesSqlRow,
@@ -14,7 +15,41 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
+MV_NAME = "home_chat_mv"
+
 SQL_PATH = "app/sql/queries/entries/home_chat/get_home_chat_entries_complete.sql"
+
+
+async def get_home_chats(
+    conn: asyncpg.Connection,
+    ids: list[UUID],
+) -> list[GetHomeChatResponse]:
+    """Get home_chat entries by IDs from home_chat_mv."""
+    if not ids:
+        return []
+
+    rows = await conn.fetch(
+        f"""
+        SELECT id, home_id, chat_id, created_at, active, generated, mcp, session_id
+        FROM {MV_NAME}
+        WHERE id = ANY($1)
+        """,
+        ids,
+    )
+
+    return [
+        GetHomeChatResponse(
+            id=r["id"],
+            home_id=r["home_id"],
+            chat_id=r["chat_id"],
+            created_at=r["created_at"],
+            active=r["active"],
+            generated=r["generated"],
+            mcp=r["mcp"],
+            session_id=r["session_id"],
+        )
+        for r in rows
+    ]
 
 
 async def get_home_chat_entries_internal(

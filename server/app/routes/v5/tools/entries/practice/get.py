@@ -1,10 +1,11 @@
-"""practice/get internal — reusable data-access layer."""
+"""practice/get — reusable data-access layer."""
 
 from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
+from app.routes.v5.tools.entries.practice.types import GetPracticeResponse
 from app.sql.types import (
     GetPracticeContextViewSqlRow,
     GetPracticeEntriesSqlParams,
@@ -14,6 +15,44 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
+
+MV_NAME = "practice_mv"
+
+
+async def get_practices(
+    conn: asyncpg.Connection,
+    ids: list[UUID],
+) -> list[GetPracticeResponse]:
+    """Get practice entries by IDs from practice_mv."""
+    if not ids:
+        return []
+
+    rows = await conn.fetch(
+        f"""
+        SELECT practice_id, simulation_ids, cohort_ids, department_ids,
+               profile_ids, chat_ids, scenario_ids,
+               created_at, updated_at, active
+        FROM {MV_NAME}
+        WHERE practice_id = ANY($1)
+        """,
+        ids,
+    )
+
+    return [
+        GetPracticeResponse(
+            id=r["practice_id"],
+            simulation_ids=r["simulation_ids"],
+            cohort_ids=r["cohort_ids"],
+            department_ids=r["department_ids"],
+            profile_ids=r["profile_ids"],
+            chat_ids=r["chat_ids"],
+            scenario_ids=r["scenario_ids"],
+            created_at=r["created_at"],
+            updated_at=r["updated_at"],
+            active=r["active"],
+        )
+        for r in rows
+    ]
 
 SQL_PATH = "app/sql/queries/entries/practice/get_practice_entries_complete.sql"
 

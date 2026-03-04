@@ -10,6 +10,7 @@ from app.routes.v5.tools.entries.problems.types import CreateProblemResponse
 async def create_problem(
     conn: asyncpg.Connection,
     session_id: UUID,
+    call_id: UUID,
     type: str,
     message: str = "No message provided",
     profile_id: UUID | None = None,
@@ -18,11 +19,12 @@ async def create_problem(
     """Create a problem entry and optionally link to a profile."""
     problem_id = await conn.fetchval(
         """
-        INSERT INTO problems_entry (session_id, type, message, mcp, generated)
-        VALUES ($1, $2::public.feedback_type, $3, $4, true)
+        INSERT INTO problems_entry (session_id, call_id, type, message, mcp, generated)
+        VALUES ($1, $2, $3::public.feedback_type, $4, $5, true)
         RETURNING id
         """,
         session_id,
+        call_id,
         type,
         message,
         mcp,

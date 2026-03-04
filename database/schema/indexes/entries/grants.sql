@@ -17,19 +17,3 @@ CREATE INDEX grants_expires_at_idx ON public.grants_entry USING btree (expires_a
 
 
 --
-
--- Name: grants_revoked_at_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX grants_revoked_at_idx ON public.grants_entry USING btree (revoked_at);
-
-
---
-
--- Name: grants_used_at_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX grants_used_at_idx ON public.grants_entry USING btree (used_at);
-
-
---

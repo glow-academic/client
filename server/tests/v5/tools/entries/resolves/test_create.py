@@ -2,38 +2,44 @@
 
 import pytest
 
+from app.routes.v5.tools.entries.calls.create import create_call
+from app.routes.v5.tools.entries.groups.create import create_group
+from app.routes.v5.tools.entries.problems.create import create_problem
 from app.routes.v5.tools.entries.resolves.create import create_resolve
 from app.routes.v5.tools.entries.resolves.get import get_resolves
 from app.routes.v5.tools.entries.resolves.refresh import refresh_resolves
+from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
 from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 
 pytestmark = pytest.mark.asyncio
 
 
-async def _session(conn):
-    return await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def _call(conn):
+    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+    group = await create_group(conn, session_id=session.id)
+    run = await create_run(conn, group_id=group.id, session_id=session.id)
+    call = await create_call(conn, run_id=run.id, session_id=session.id)
+    return session, call
 
 
-async def _problem_id(conn, session_id):
-    return await conn.fetchval(
-        "INSERT INTO problems_entry (session_id, type, generated) VALUES ($1, 'bug', true) RETURNING id",
-        session_id,
-    )
+async def _problem(conn, session, call):
+    result = await create_problem(conn, session_id=session.id, call_id=call.id, type="bug")
+    return result.id
 
 
 async def test_returns_id(conn):
-    session = await _session(conn)
-    problem_id = await _problem_id(conn, session.id)
-    result = await create_resolve(conn, problem_id=problem_id, resolved=False)
+    session, call = await _call(conn)
+    problem_id = await _problem(conn, session, call)
+    result = await create_resolve(conn, problem_id=problem_id, resolved=False, call_id=call.id)
 
     assert result.id is not None
 
 
 async def test_visible_via_get_after_refresh(conn):
-    session = await _session(conn)
-    problem_id = await _problem_id(conn, session.id)
-    result = await create_resolve(conn, problem_id=problem_id, resolved=True)
+    session, call = await _call(conn)
+    problem_id = await _problem(conn, session, call)
+    result = await create_resolve(conn, problem_id=problem_id, resolved=True, call_id=call.id)
     await refresh_resolves(conn)
 
     items = await get_resolves(conn, [result.id])
@@ -46,9 +52,9 @@ async def test_visible_via_get_after_refresh(conn):
 
 
 async def test_passes_resolved_flag(conn):
-    session = await _session(conn)
-    problem_id = await _problem_id(conn, session.id)
-    result = await create_resolve(conn, problem_id=problem_id, resolved=True)
+    session, call = await _call(conn)
+    problem_id = await _problem(conn, session, call)
+    result = await create_resolve(conn, problem_id=problem_id, resolved=True, call_id=call.id)
     await refresh_resolves(conn)
 
     items = await get_resolves(conn, [result.id])
@@ -58,9 +64,9 @@ async def test_passes_resolved_flag(conn):
 
 
 async def test_passes_mcp_flag(conn):
-    session = await _session(conn)
-    problem_id = await _problem_id(conn, session.id)
-    result = await create_resolve(conn, problem_id=problem_id, resolved=False, mcp=True)
+    session, call = await _call(conn)
+    problem_id = await _problem(conn, session, call)
+    result = await create_resolve(conn, problem_id=problem_id, resolved=False, call_id=call.id, mcp=True)
     await refresh_resolves(conn)
 
     items = await get_resolves(conn, [result.id])
@@ -70,15 +76,8 @@ async def test_passes_mcp_flag(conn):
 
 
 async def test_passes_call_id(conn):
-    session = await _session(conn)
-    problem_id = await _problem_id(conn, session.id)
-    from app.routes.v5.tools.entries.groups.create import create_group
-    from app.routes.v5.tools.entries.runs.create import create_run
-    from app.routes.v5.tools.entries.calls.create import create_call
-
-    group = await create_group(conn, session_id=session.id)
-    run = await create_run(conn, group_id=group.id, session_id=session.id)
-    call = await create_call(conn, run_id=run.id, session_id=session.id)
+    session, call = await _call(conn)
+    problem_id = await _problem(conn, session, call)
 
     result = await create_resolve(conn, problem_id=problem_id, resolved=False, call_id=call.id)
     await refresh_resolves(conn)

@@ -1,66 +1,77 @@
-"""models/get internal — reusable data-access layer."""
+"""Models Resource GET — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    GetModelsSqlParams,
-    GetModelsSqlRow,
-    QGetModelsV4Item,
-)
+from app.routes.v5.tools.resources.models.types import GetModelResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/resources/models/get_models_complete.sql"
 
 
-async def get_models_internal(
+async def get_models(
     conn: asyncpg.Connection,
     ids: list[UUID],
+    redis: Redis,
     bypass_cache: bool = False,
-) -> list[QGetModelsV4Item]:
-    """Internal function to fetch models by IDs.
-
-    Can be called directly from other routes without HTTP overhead.
-    """
+) -> list[GetModelResponse]:
+    """Fetch models_resource entries by IDs."""
     if not ids:
         return []
 
     tags = ["resources", "models"]
-    cache_key_val = cache_key(
-        "/api/v5/resources/models/get",
-        {"ids": [str(id) for id in ids]},
-    )
+    key = cache_key("/api/v5/resources/models/get", {"ids": [str(id) for id in ids]})
 
-    # Try cache (unless bypassed)
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetModelsV4Item.model_validate(item)
+                GetModelResponse.model_validate(item)
                 for item in cached.get("items", [])
             ]
 
-    # Execute SQL
-    params = GetModelsSqlParams(ids=ids)
-    result = cast(
-        GetModelsSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
+    rows = await conn.fetch(
+        """
+        SELECT id, name, description, value, provider_id,
+               department_ids, temperature_level_ids, reasoning_level_ids,
+               quality_ids, voice_ids, modality_ids,
+               created_at, active, mcp, generated
+        FROM models_resource
+        WHERE id = ANY($1)
+        ORDER BY array_position($1, id)
+    """,
+        ids,
     )
 
-    items: list[QGetModelsV4Item] = result.items if result and result.items else []
+    items = [
+        GetModelResponse(
+            id=r["id"],
+            name=r["name"],
+            description=r["description"],
+            value=r["value"],
+            provider_id=r["provider_id"],
+            department_ids=r["department_ids"] or [],
+            temperature_level_ids=r["temperature_level_ids"] or [],
+            reasoning_level_ids=r["reasoning_level_ids"] or [],
+            quality_ids=r["quality_ids"] or [],
+            voice_ids=r["voice_ids"] or [],
+            modality_ids=r["modality_ids"] or [],
+            created_at=r["created_at"],
+            active=r["active"],
+            mcp=r["mcp"],
+            generated=r["generated"],
+        )
+        for r in rows
+    ]
 
-    # Cache result
-    await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
+    if not bypass_cache:
+        await set_cached(
+            key,
+            {"items": [i.model_dump(mode="json") for i in items]},
+            60,
+            tags,
+            redis=redis,
+        )
     return items

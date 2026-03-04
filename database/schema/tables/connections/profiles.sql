@@ -32,21 +32,6 @@ CREATE TABLE public.profiles_emulations_connection (
 
 --
 
--- Name: profiles_grants_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.profiles_grants_connection (
-    profiles_id uuid NOT NULL,
-    grant_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL,
-    active boolean DEFAULT true NOT NULL
-);
-
-
---
-
 -- Name: profiles_logins_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -86,6 +71,21 @@ CREATE TABLE public.profiles_calls_connection (
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+
+-- Name: profiles_grants_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.profiles_grants_connection (
+    profiles_id uuid NOT NULL,
+    grant_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    active boolean DEFAULT true NOT NULL
 );
 
 

@@ -57,9 +57,10 @@ CREATE TYPE types.q_get_grant_list_view_v4_item AS (
     grant_session_id uuid,
     emulation_session_id uuid,
     expires_at timestamptz,
-    used_at timestamptz,
-    revoked_at timestamptz,
-    created_at timestamptz
+    created_at timestamptz,
+    active boolean,
+    mcp boolean,
+    generated boolean
 );
 
 -- ============================================================================
@@ -108,9 +109,10 @@ AS $$
                     grant_session_id,
                     emulation_session_id,
                     expires_at,
-                    used_at,
-                    revoked_at,
-                    created_at
+                    created_at,
+                    active,
+                    mcp,
+                    generated
                 )::types.q_get_grant_list_view_v4_item
                 ORDER BY created_at DESC
             ),

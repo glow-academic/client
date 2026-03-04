@@ -10,10 +10,10 @@ from app.routes.v5.tools.entries.tokens.types import CreateTokenResponse
 async def create_token(
     conn: asyncpg.Connection,
     run_id: UUID,
+    session_id: UUID,
     input_tokens: int = 0,
     output_tokens: int = 0,
     cached_input_tokens: int = 0,
-    session_id: UUID | None = None,
     mcp: bool = False,
 ) -> CreateTokenResponse:
     """Create a tokens entry."""
