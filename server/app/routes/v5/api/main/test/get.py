@@ -19,7 +19,7 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool, get_redis_client
 from app.routes.v5.api.main.test.permissions import compute_test_status
 from app.routes.v5.api.main.test.types import (
     GetTestArtifactRequest,
@@ -502,7 +502,7 @@ async def get_test_websocket(
     from datetime import UTC, datetime
 
     from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
-    from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+    from app.routes.v5.tools.resources.profiles.get import get_profiles
 
     data = await get_test_internal(
         conn=conn,

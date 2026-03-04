@@ -95,11 +95,11 @@ from app.routes.v5.tools.resources.instructions.get import get_instructions
 from app.routes.v5.tools.resources.instructions.search import (
     search_instructions_internal,
 )
-from app.routes.v5.tools.resources.models.get import get_models_internal
+from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.models.search import search_models_internal
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
-from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.prompts.get import get_prompts
 from app.routes.v5.tools.resources.prompts.search import search_prompts_internal
 from app.routes.v5.tools.resources.providers.get import get_providers

@@ -9,7 +9,7 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool, get_redis_client
 from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.leaderboard.permissions import (
     build_leaderboard_rows_v2,
@@ -37,7 +37,7 @@ from app.routes.v5.tools.entries.runs.search import (
 )
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.models.get import get_models_internal
+from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal

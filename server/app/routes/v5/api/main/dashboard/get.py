@@ -15,7 +15,7 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool, get_redis_client
 from app.routes.v5.api.main.chat.permissions import (
     compute_pass_pct,
     compute_score_status,

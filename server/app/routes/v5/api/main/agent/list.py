@@ -26,7 +26,7 @@ from app.routes.v5.api.main.agent.types import (
     ListAgentApiResponse,
 )
 from app.routes.v5.api.types import ListFilterSection
-from app.routes.v5.tools.resources.models.get import get_models_internal
+from app.routes.v5.tools.resources.models.get import get_models
 from app.sql.types import (
     GetAgentsListApiRequest,
     GetAgentsListSqlParams,

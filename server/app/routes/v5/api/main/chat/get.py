@@ -15,7 +15,7 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, HTTPException, Request
 
-from app.infra.globals import get_pool
+from app.infra.globals import get_pool, get_redis_client
 from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.chat.permissions import (
     CHAT_BUNDLE_RESOURCES,
@@ -56,7 +56,7 @@ from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.documents.get import get_documents_internal
 from app.routes.v5.tools.resources.images.get import get_images_internal
-from app.routes.v5.tools.resources.models.get import get_models_internal
+from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.objectives.get import get_objectives_internal
 from app.routes.v5.tools.resources.options.get import get_options_internal
 from app.routes.v5.tools.resources.parameter_fields.get import (
@@ -67,7 +67,7 @@ from app.routes.v5.tools.resources.personas.get import get_personas_internal
 from app.routes.v5.tools.resources.problem_statements.get import (
     get_problem_statements_internal,
 )
-from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.questions.get import get_questions_internal
 from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal

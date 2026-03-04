@@ -112,7 +112,7 @@ from app.routes.v5.tools.resources.parameter_fields.search import (
 )
 from app.routes.v5.tools.resources.parameters.get import get_parameters_internal
 from app.routes.v5.tools.resources.parameters.search import search_parameters_internal
-from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.routes.v5.tools.resources.voices.get import get_voices

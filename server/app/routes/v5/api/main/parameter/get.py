@@ -78,7 +78,7 @@ from app.routes.v5.tools.resources.parameter_fields.get import (
 from app.routes.v5.tools.resources.parameter_fields.search import (
     search_parameter_fields_internal,
 )
-from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.sql.types import (
     GetParameterAccessSqlParams,

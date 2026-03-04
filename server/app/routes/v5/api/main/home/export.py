@@ -14,7 +14,7 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from app.infra.globals import UPLOAD_FOLDER, get_db, get_pool
+from app.infra.globals import UPLOAD_FOLDER, get_db, get_pool, get_redis_client
 from app.routes.auth.profile import get_auth_profile_internal
 from app.routes.v5.api.main.home.types import ExportHomeApiResponse
 from app.routes.v5.tools.entries.attempt_chat.get import get_chats_internal

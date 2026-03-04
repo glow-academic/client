@@ -64,10 +64,10 @@ from app.routes.v5.tools.resources.descriptions.search import (
 from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags_internal
 from app.routes.v5.tools.resources.items.get import get_items_internal
-from app.routes.v5.tools.resources.models.get import get_models_internal
+from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
-from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.protocols.get import get_protocols
 from app.routes.v5.tools.resources.protocols.search import search_protocols_internal
 from app.routes.v5.tools.resources.providers.get import get_providers

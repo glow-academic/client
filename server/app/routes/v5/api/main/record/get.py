@@ -8,6 +8,7 @@ from uuid import UUID
 
 import asyncpg
 
+from app.infra.globals import get_redis_client
 from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.record.types import (
     GetRecordApiRequest,

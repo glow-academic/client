@@ -42,8 +42,8 @@ from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.instructions.get import get_instructions
 from app.routes.v5.tools.resources.keys.get import get_keys
-from app.routes.v5.tools.resources.models.get import get_models_internal
-from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.models.get import get_models
+from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.prompts.get import get_prompts
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.reasoning_levels.get import (

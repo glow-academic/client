@@ -108,7 +108,7 @@ from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.documents.get import get_documents_internal
 from app.routes.v5.tools.resources.images.get import get_images_internal
-from app.routes.v5.tools.resources.models.get import get_models_internal
+from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.objectives.get import get_objectives_internal
 from app.routes.v5.tools.resources.options.get import get_options_internal
 from app.routes.v5.tools.resources.personas.get import get_personas_internal

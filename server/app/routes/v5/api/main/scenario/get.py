@@ -120,7 +120,7 @@ from app.routes.v5.tools.resources.problem_statements.get import (
 from app.routes.v5.tools.resources.problem_statements.search import (
     search_problem_statements_internal,
 )
-from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
+from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.questions.get import get_questions_internal
 from app.routes.v5.tools.resources.questions.search import search_questions_internal
 from app.routes.v5.tools.resources.tools.get import get_tools

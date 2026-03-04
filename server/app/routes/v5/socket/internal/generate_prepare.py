@@ -44,7 +44,7 @@ from app.routes.v5.socket.internal.generation_types import GenerationStartedData
 from app.routes.v5.socket.types import GenerateErrorApiRequest
 from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.instructions.get import get_instructions
-from app.routes.v5.tools.resources.models.get import get_models_internal
+from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.prompts.get import get_prompts
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.utils.logging.db_logger import get_logger
