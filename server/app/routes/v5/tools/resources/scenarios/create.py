@@ -105,5 +105,5 @@ async def create_scenarios_internal(
     if not result or not result.scenarios_resource_id:
         raise ValueError("Failed to create scenarios resource")
 
-    await invalidate_tags(["resources", "scenarios"])
+    await invalidate_tags(["resources", "scenarios"], redis=get_redis_client())
     return result.scenarios_resource_id

@@ -30,7 +30,7 @@ async def get_session_timeline_view_internal(
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return GetSessionTimelineViewSqlRow.model_validate(cached)
 
@@ -49,6 +49,7 @@ async def get_session_timeline_view_internal(
         response.model_dump(mode="json"),
         ttl=60,
         tags=["views", "session", "timeline"],
+        redis=get_redis_client(),
     )
 
     return response

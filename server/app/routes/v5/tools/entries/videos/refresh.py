@@ -15,7 +15,7 @@ async def refresh_videos_internal(
     start_time = time.time()
     await conn.execute(f"REFRESH MATERIALIZED VIEW CONCURRENTLY {MV_NAME}")
     duration_ms = int((time.time() - start_time) * 1000)
-    await invalidate_tags(["entries", "videos"])
+    await invalidate_tags(["entries", "videos"], redis=get_redis_client())
     return {
         "success": True,
         "duration_ms": duration_ms,

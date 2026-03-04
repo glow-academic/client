@@ -152,7 +152,7 @@ async def get_attempt_chat_entries_internal(
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return list(cached.get("items", []))
 
@@ -169,6 +169,7 @@ async def get_attempt_chat_entries_internal(
         {"items": items if isinstance(items, list) else []},
         ttl=60,
         tags=tags,
+        redis=get_redis_client(),
     )
 
     return items
@@ -223,7 +224,7 @@ async def get_chats_internal(
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return GetChatsResponse.model_validate(cached)
 
@@ -323,6 +324,7 @@ async def get_chats_internal(
         response.model_dump(mode="json"),
         ttl=60,
         tags=["entries", "attempt_chat"],
+        redis=get_redis_client(),
     )
 
     return response

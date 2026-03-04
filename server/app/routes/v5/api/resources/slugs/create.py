@@ -74,7 +74,7 @@ async def create_slugs(
         api_response = SlugsApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
-        await invalidate_tags(tags)
+        await invalidate_tags(tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         return api_response

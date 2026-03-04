@@ -99,7 +99,7 @@ async def test_proceed_handler(data: dict[str, Any]) -> None:
                     test_id,
                 )
                 await conn.execute("REFRESH MATERIALIZED VIEW test_invocation_mv")
-            await invalidate_tags(["test", "tests", "benchmark"])
+            await invalidate_tags(["test", "tests", "benchmark"], redis=get_redis_client())
 
             await internal_sio.emit(
                 "test_ended",
@@ -197,7 +197,7 @@ async def test_proceed_handler(data: dict[str, Any]) -> None:
         # Step 7: Refresh MVs + emit test_invocation_started
         async with get_db_connection() as conn:
             await conn.execute("REFRESH MATERIALIZED VIEW test_invocation_mv")
-        await invalidate_tags(["test", "tests", "benchmark"])
+        await invalidate_tags(["test", "tests", "benchmark"], redis=get_redis_client())
 
         await internal_sio.emit(
             "test_invocation_started",

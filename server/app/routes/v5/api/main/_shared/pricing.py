@@ -40,7 +40,7 @@ async def _batch_fetch_pricing(
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return {
                 UUID(k): PricingInfo(Decimal(str(v["price"])), v["unit_value"])
@@ -63,6 +63,7 @@ async def _batch_fetch_pricing(
         },
         ttl=300,
         tags=["_shared", "pricing"],
+        redis=get_redis_client(),
     )
 
     return result

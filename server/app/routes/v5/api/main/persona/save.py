@@ -174,7 +174,7 @@ async def _save_persona_legacy(
             if not result_id:
                 return None
 
-        await invalidate_tags(["personas"])
+        await invalidate_tags(["personas"], redis=get_redis_client())
         return result_id
     except Exception as e:
         logger.exception(f"_save_persona_legacy failed: {e}")
@@ -566,7 +566,7 @@ async def save_persona(
 
         # Audit context
         # Invalidate cache after mutation
-        await invalidate_tags(tags)
+        await invalidate_tags(tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         return SavePersonaApiResponse(results=results)

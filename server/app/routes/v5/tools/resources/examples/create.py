@@ -52,5 +52,5 @@ async def create_examples_internal(
             conn, result.call_id, tool_info, {"example": example}, mcp
         )
 
-    await invalidate_tags(["resources", "examples"])
+    await invalidate_tags(["resources", "examples"], redis=get_redis_client())
     return result.example_id

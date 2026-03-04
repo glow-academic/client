@@ -73,5 +73,5 @@ async def create_simulations_internal(
     if not result or not result.simulations_resource_id:
         raise ValueError("Failed to create simulations resource")
 
-    await invalidate_tags(["resources", "simulations"])
+    await invalidate_tags(["resources", "simulations"], redis=get_redis_client())
     return result.simulations_resource_id

@@ -35,7 +35,7 @@ async def get_practice_context_view_internal(
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return GetPracticeContextViewSqlRow.model_validate(cached)
 
@@ -53,6 +53,7 @@ async def get_practice_context_view_internal(
         response.model_dump(mode="json"),
         ttl=60,
         tags=["views", "practice", "context"],
+        redis=get_redis_client(),
     )
 
     return response
@@ -73,7 +74,7 @@ async def get_practice_entries_internal(
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return list(cached.get("items", []))
 
@@ -90,6 +91,7 @@ async def get_practice_entries_internal(
         {"items": items if isinstance(items, list) else []},
         ttl=60,
         tags=tags,
+        redis=get_redis_client(),
     )
 
     return items

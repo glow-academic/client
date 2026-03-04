@@ -132,7 +132,7 @@ async def delete_auth(
         )
 
         # Invalidate cache after mutation
-        await invalidate_tags(tags)
+        await invalidate_tags(tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         # Trigger Keycloak sync (fire-and-forget)

@@ -65,6 +65,6 @@ async def create_attempt_highlight_entry_internal(
         if tool_info:
             await record_call_args(conn, result.call_id, tool_info, request_dict, mcp)
 
-    await invalidate_tags(tags)
+    await invalidate_tags(tags, redis=get_redis_client())
 
     return CreateAttemptHighlightEntryResponse.model_validate(result.model_dump())

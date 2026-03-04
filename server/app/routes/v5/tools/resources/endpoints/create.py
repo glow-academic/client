@@ -52,5 +52,5 @@ async def create_endpoints_internal(
             conn, result.call_id, tool_info, {"base_url": base_url}, mcp
         )
 
-    await invalidate_tags(["resources", "endpoints"])
+    await invalidate_tags(["resources", "endpoints"], redis=get_redis_client())
     return result.endpoints_id

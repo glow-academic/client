@@ -237,7 +237,7 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
             await refresh_attempt_message_tree_internal(conn)
 
         # Step 5c: Invalidate attempt caches so generate_prepare fetches fresh data
-        await invalidate_tags(["attempt", "messages"])
+        await invalidate_tags(["attempt", "messages"], redis=get_redis_client())
 
         # Step 6: Emit to generate pipeline
         await internal_sio.emit(

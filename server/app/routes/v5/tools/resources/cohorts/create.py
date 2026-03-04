@@ -69,5 +69,5 @@ async def create_cohorts_internal(
     if not result or not result.cohorts_resource_id:
         raise ValueError("Failed to create cohorts resource")
 
-    await invalidate_tags(["resources", "cohorts"])
+    await invalidate_tags(["resources", "cohorts"], redis=get_redis_client())
     return result.cohorts_resource_id

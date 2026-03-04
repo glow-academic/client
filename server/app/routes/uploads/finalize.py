@@ -123,7 +123,7 @@ async def finalize_upload(
         except Exception as e:
             logger.warning(f"Failed to clean up upload directory: {str(e)}")
 
-        await invalidate_tags(tags)
+        await invalidate_tags(tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         api_response = FinalizeUploadApiResponse.model_validate(sql_result.model_dump())

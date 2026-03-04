@@ -56,5 +56,5 @@ async def create_descriptions_internal(
             conn, result.call_id, tool_info, {"description": description}, mcp
         )
 
-    await invalidate_tags(["resources", "descriptions"])
+    await invalidate_tags(["resources", "descriptions"], redis=get_redis_client())
     return result.description_id

@@ -92,7 +92,7 @@ async def save_chat_internal(
                 rid,
             )
 
-        await invalidate_tags(["chat", "training", "attempt"])
+        await invalidate_tags(["chat", "training", "attempt"], redis=get_redis_client())
 
         return attempt_chat_id
 

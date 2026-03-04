@@ -62,7 +62,7 @@ async def patch_invocation_draft(
 
         api_response = PatchSuiteDraftApiResponse.model_validate(result.model_dump())
 
-        await invalidate_tags(tags)
+        await invalidate_tags(tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         return api_response

@@ -53,7 +53,7 @@ async def search_parameter_fields_internal(
 
     # Try cache (unless bypassed)
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return [
                 QGetParameterFieldsV4Item.model_validate(item)
@@ -84,6 +84,7 @@ async def search_parameter_fields_internal(
         {"items": [item.model_dump(mode="json") for item in items]},
         ttl=60,
         tags=tags,
+        redis=get_redis_client(),
     )
 
     return items

@@ -1072,7 +1072,7 @@ async def get_home_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), cache=cache
+                        c, list(set(all_args_ids)), get_redis_client(), bypass_cache=bypass_cache
                     )
 
             async def fetch_args_outputs():
@@ -1080,7 +1080,7 @@ async def get_home_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), cache=cache
+                        c, list(set(all_args_output_ids)), get_redis_client(), bypass_cache=bypass_cache
                     )
 
             config_args, config_args_outputs = await asyncio.gather(
@@ -1159,7 +1159,7 @@ async def home_get(
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             response.headers["X-Cache-Tags"] = ",".join(tags)
             response.headers["X-Cache-Hit"] = "1"
@@ -1193,6 +1193,7 @@ async def home_get(
             {"data": api_response.model_dump(mode="json")},
             ttl=300,
             tags=profile_specific_tags,
+            redis=get_redis_client(),
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"

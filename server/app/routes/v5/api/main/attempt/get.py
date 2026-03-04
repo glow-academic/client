@@ -1603,7 +1603,7 @@ async def get_attempt_client(
     cache_key_val = cache_key(cache_key_path, body_dict)
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return GetAttemptDetailResponse.model_validate(cached["data"]), True
 
@@ -1658,6 +1658,7 @@ async def get_attempt_client(
         {"data": api_response.model_dump(mode="json")},
         ttl=300,
         tags=tags,
+        redis=get_redis_client(),
     )
 
     return api_response, False
@@ -1728,7 +1729,7 @@ async def get_attempt_websocket(
             return None
         async with pool.acquire() as c:
             return await get_tools(
-                c, list(set(tool_ids)), cache=cache
+                c, list(set(tool_ids)), get_redis_client(), bypass_cache=bypass_cache
             )
 
     config_profile_result, runs_result, config_tools = await asyncio.gather(
@@ -1756,7 +1757,7 @@ async def get_attempt_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), cache=cache
+                        c, list(set(all_args_ids)), get_redis_client(), bypass_cache=bypass_cache
                     )
 
             async def fetch_args_outputs():
@@ -1764,7 +1765,7 @@ async def get_attempt_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), cache=cache
+                        c, list(set(all_args_output_ids)), get_redis_client(), bypass_cache=bypass_cache
                     )
 
             config_args, config_args_outputs = await asyncio.gather(

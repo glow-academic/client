@@ -48,5 +48,5 @@ async def create_values_internal(
     if tool_info and result.call_id is not None:
         await record_call_args(conn, result.call_id, tool_info, {"value": value}, mcp)
 
-    await invalidate_tags(["resources", "values"])
+    await invalidate_tags(["resources", "values"], redis=get_redis_client())
     return result.values_id

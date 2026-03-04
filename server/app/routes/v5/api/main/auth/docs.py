@@ -110,7 +110,7 @@ async def get_auth_docs_endpoint(
             await execute_sql_typed(conn, SQL_PATH, params=params),
         )
         if row and row.name_id:
-            names = await get_names(conn, [row.name_id])
+            names = await get_names(conn, [row.name_id], get_redis_client())
             if names:
                 entity_name = names[0].name
     return compute_docs_metadata(CONFIG.page_metadata, entity_name)

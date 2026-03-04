@@ -94,7 +94,7 @@ async def save_department_internal(
             if not result or not result.department_id:
                 return None
 
-        await invalidate_tags(["departments"])
+        await invalidate_tags(["departments"], redis=get_redis_client())
         return result.department_id
 
     except Exception as e:
@@ -218,7 +218,7 @@ async def save_department(
         )
 
         # Invalidate cache after mutation
-        await invalidate_tags(tags)
+        await invalidate_tags(tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         # Trigger Keycloak sync for the department

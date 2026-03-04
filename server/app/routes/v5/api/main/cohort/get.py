@@ -382,7 +382,7 @@ async def get_cohort_internal(
 
     async def fetch_names() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_names(c, name_ids, cache)
+            selected = await get_names(c, name_ids, get_redis_client(), bypass_cache=bypass_cache)
             suggestions = await search_names_internal(
                 c,
                 None,
@@ -927,7 +927,7 @@ async def get_cohort_websocket(
         if not deduped_tool_ids:
             return []
         async with pool.acquire() as conn:
-            return await get_tools(conn, deduped_tool_ids, cache)
+            return await get_tools(conn, deduped_tool_ids, get_redis_client(), bypass_cache=bypass_cache)
 
     (
         draft_view,
@@ -962,7 +962,7 @@ async def get_cohort_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), cache=cache
+                        c, list(set(all_args_ids)), get_redis_client(), bypass_cache=bypass_cache
                     )
 
             async def fetch_args_outputs():
@@ -970,7 +970,7 @@ async def get_cohort_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), cache=cache
+                        c, list(set(all_args_output_ids)), get_redis_client(), bypass_cache=bypass_cache
                     )
 
             config_args, config_args_outputs = await asyncio.gather(

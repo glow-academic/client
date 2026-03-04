@@ -48,5 +48,5 @@ async def create_voices_internal(
     if tool_info and result.call_id is not None:
         await record_call_args(conn, result.call_id, tool_info, {"voice": voice}, mcp)
 
-    await invalidate_tags(["resources", "voices"])
+    await invalidate_tags(["resources", "voices"], redis=get_redis_client())
     return result.voices_id

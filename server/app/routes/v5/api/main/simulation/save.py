@@ -124,7 +124,7 @@ async def save_simulation_internal(
             if not result or not result.simulation_id:
                 return None
 
-        await invalidate_tags(["simulations"])
+        await invalidate_tags(["simulations"], redis=get_redis_client())
         return result.simulation_id
 
     except Exception as e:
@@ -482,7 +482,7 @@ async def save_simulation(
 
         # Audit context
         # Invalidate cache after mutation
-        await invalidate_tags(tags)
+        await invalidate_tags(tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         return SaveSimulationApiResponse(results=results)

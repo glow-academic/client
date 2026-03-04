@@ -123,7 +123,7 @@ async def _fetch_training_config(
     )
 
     if not bypass_cache:
-        cached_val = await get_cached(tc_cache_key)
+        cached_val = await get_cached(tc_cache_key, redis=get_redis_client())
         if cached_val:
             configs: dict[UUID, TrainingConfig] = {}
             for key, val in cached_val.items():
@@ -180,6 +180,7 @@ async def _fetch_training_config(
         {str(k): v.model_dump(mode="json") for k, v in configs.items()},
         ttl=300,
         tags=["entries", "chat", "training_config"],
+        redis=get_redis_client(),
     )
 
     return configs
@@ -200,7 +201,7 @@ async def get_attempt_entries_internal(
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return list(cached.get("items", []))
 
@@ -217,6 +218,7 @@ async def get_attempt_entries_internal(
         {"items": items if isinstance(items, list) else []},
         ttl=60,
         tags=tags,
+        redis=get_redis_client(),
     )
 
     return items
@@ -242,7 +244,7 @@ async def get_attempt_chats_internal(
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return [ChatViewItem.model_validate(item) for item in cached["items"]]
 
@@ -336,6 +338,7 @@ async def get_attempt_chats_internal(
         {"items": [item.model_dump(mode="json") for item in items]},
         ttl=60,
         tags=["entries", "attempt", "chats"],
+        redis=get_redis_client(),
     )
 
     return items
@@ -358,7 +361,7 @@ async def get_attempt_messages_internal(
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return [
                 AttemptMessageViewItem.model_validate(item) for item in cached["items"]
@@ -392,6 +395,7 @@ async def get_attempt_messages_internal(
         {"items": [item.model_dump(mode="json") for item in items]},
         ttl=60,
         tags=["entries", "attempt", "messages"],
+        redis=get_redis_client(),
     )
 
     return items

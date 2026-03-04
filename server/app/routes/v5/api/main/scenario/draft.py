@@ -237,7 +237,7 @@ async def patch_scenario_draft(
         # Refresh MV so /auth/drafts can see the new draft immediately
         await refresh_scenario_drafts_internal(conn)
 
-        await invalidate_tags(tags)
+        await invalidate_tags(tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         return api_response

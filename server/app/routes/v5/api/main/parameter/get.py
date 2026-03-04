@@ -262,7 +262,7 @@ async def get_parameter_internal(
 
     async def fetch_names():
         async with pool.acquire() as c:
-            selected = await get_names(c, name_ids, cache)
+            selected = await get_names(c, name_ids, get_redis_client(), bypass_cache=bypass_cache)
             suggestions = await search_names_internal(
                 c,
                 None,

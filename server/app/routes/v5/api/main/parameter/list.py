@@ -62,7 +62,7 @@ async def get_parameter_list(
 
     # Try cache (unless bypassed)
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             response.headers["X-Cache-Tags"] = ",".join(tags)
             response.headers["X-Cache-Hit"] = "1"
@@ -191,6 +191,7 @@ async def get_parameter_list(
             {"data": api_response.model_dump(mode="json")},
             ttl=60,
             tags=tags,
+            redis=get_redis_client(),
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"

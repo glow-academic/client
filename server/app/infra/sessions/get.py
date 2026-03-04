@@ -50,7 +50,7 @@ async def get_session_internal(
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached is not None:
             sid = cached.get("session_id")
             return UUID(sid) if sid else None
@@ -68,6 +68,7 @@ async def get_session_internal(
         {"session_id": str(session_id) if session_id else None},
         ttl=60,
         tags=tags,
+        redis=get_redis_client(),
     )
 
     return session_id

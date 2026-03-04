@@ -202,7 +202,7 @@ async def handle_run_complete(data: dict[str, Any]) -> None:
             async with get_db_connection() as conn:
                 await conn.execute("REFRESH MATERIALIZED VIEW attempt_mv")
                 await conn.execute("REFRESH MATERIALIZED VIEW attempt_chat_mv")
-            await invalidate_tags(["attempt", "attempts"])
+            await invalidate_tags(["attempt", "attempts"], redis=get_redis_client())
 
             await internal_sio.emit(
                 "attempt_chat_started",

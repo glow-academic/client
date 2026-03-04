@@ -111,7 +111,7 @@ async def authorize_emulation(
 
         # Invalidate cache after authorization check (may affect profile context)
         tags = ["profile"]  # From router tags
-        await invalidate_tags(tags)
+        await invalidate_tags(tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         return api_response

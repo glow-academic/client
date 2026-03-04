@@ -123,7 +123,7 @@ async def patch_tool_draft(
             }
         )
 
-        await invalidate_tags(tags)
+        await invalidate_tags(tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         return api_response

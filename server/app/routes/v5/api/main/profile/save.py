@@ -97,7 +97,7 @@ async def save_profile_internal(
             if not result or not result.out_profile_id:
                 return None
 
-        await invalidate_tags(["profile"])
+        await invalidate_tags(["profile"], redis=get_redis_client())
         return result.out_profile_id
 
     except Exception as e:
@@ -223,7 +223,7 @@ async def save_profile(
         )
 
         # Invalidate cache after mutation
-        await invalidate_tags(tags)
+        await invalidate_tags(tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         return api_response

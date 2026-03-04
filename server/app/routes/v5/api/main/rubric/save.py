@@ -98,7 +98,7 @@ async def save_rubric_internal(
             if not result or not result.rubric_id:
                 return None
 
-        await invalidate_tags(["rubrics"])
+        await invalidate_tags(["rubrics"], redis=get_redis_client())
         return result.rubric_id
 
     except Exception as e:
@@ -224,7 +224,7 @@ async def save_rubric(
             }
         )
 
-        await invalidate_tags(tags)
+        await invalidate_tags(tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         return api_response

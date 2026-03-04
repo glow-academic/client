@@ -59,7 +59,7 @@ async def create_attempt_message_entry_internal(
         if not result or not result.entry_id:
             raise ValueError("Failed to create attempt_message entry")
 
-    await invalidate_tags(tags)
+    await invalidate_tags(tags, redis=get_redis_client())
 
     return CreateAttemptMessageEntryResponse(
         id=result.entry_id,

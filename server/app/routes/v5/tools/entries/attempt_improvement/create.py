@@ -59,7 +59,7 @@ async def create_attempt_improvement_entry_internal(
         if not result or not result.entry_id:
             raise ValueError("Failed to create attempt_improvement entry")
 
-    await invalidate_tags(tags)
+    await invalidate_tags(tags, redis=get_redis_client())
 
     return CreateAttemptImprovementEntryResponse(
         id=result.entry_id,

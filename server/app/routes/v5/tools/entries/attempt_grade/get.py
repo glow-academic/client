@@ -39,7 +39,7 @@ async def get_attempt_grade_entries_internal(
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return list(cached.get("items", []))
 
@@ -56,6 +56,7 @@ async def get_attempt_grade_entries_internal(
         {"items": items if isinstance(items, list) else []},
         ttl=60,
         tags=tags,
+        redis=get_redis_client(),
     )
 
     return items
@@ -76,7 +77,7 @@ async def get_attempt_grade_internal(
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return [
                 QGetAttemptGradeViewV4Item.model_validate(item)
@@ -95,5 +96,6 @@ async def get_attempt_grade_internal(
         {"items": [item.model_dump(mode="json") for item in items]},
         ttl=60,
         tags=["entries", "attempt_grade"],
+        redis=get_redis_client(),
     )
     return items

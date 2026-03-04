@@ -43,7 +43,7 @@ async def resolve_tool(
         scope: Which column to match — "entries", "resources", or "artifacts"
     """
     cache_key = f"tool_info:{scope}:{operation}:{target}"
-    cached = await get_cached(cache_key)
+    cached = await get_cached(cache_key, redis=get_redis_client())
     if cached:
         return ToolInfo(
             tool_id=UUID(cached["tool_id"]),
@@ -110,6 +110,7 @@ async def resolve_tool(
         },
         ttl=3600,
         tags=["tools"],
+        redis=get_redis_client(),
     )
     return tool_info
 

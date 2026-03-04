@@ -95,7 +95,7 @@ async def save_parameter_internal(
             if not result or not result.parameter_id:
                 return None
 
-        await invalidate_tags(["parameters", "agents"])
+        await invalidate_tags(["parameters", "agents"], redis=get_redis_client())
         return result.parameter_id
 
     except Exception as e:
@@ -232,7 +232,7 @@ async def save_parameter(
         )
 
         # Invalidate cache after mutation
-        await invalidate_tags(tags)
+        await invalidate_tags(tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         return api_response

@@ -73,7 +73,7 @@ async def test_start_handler(data: dict[str, Any]) -> None:
         # Step 2: Refresh MVs so the test is visible immediately
         async with get_db_connection() as conn:
             await conn.execute("REFRESH MATERIALIZED VIEW test_invocation_mv")
-        await invalidate_tags(["test", "tests", "benchmark"])
+        await invalidate_tags(["test", "tests", "benchmark"], redis=get_redis_client())
 
         # Step 3: Delegate to test_proceed
         await internal_sio.emit(

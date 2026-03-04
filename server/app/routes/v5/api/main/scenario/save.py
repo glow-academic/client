@@ -135,7 +135,7 @@ async def save_scenario_internal(
             if not result or not result.scenario_id:
                 return None
 
-        await invalidate_tags(["scenarios"])
+        await invalidate_tags(["scenarios"], redis=get_redis_client())
         return result.scenario_id
 
     except Exception as e:
@@ -657,7 +657,7 @@ async def save_scenario(
 
         # Audit context
         # Invalidate cache after mutation
-        await invalidate_tags(tags)
+        await invalidate_tags(tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         return SaveScenarioApiResponse(results=results)

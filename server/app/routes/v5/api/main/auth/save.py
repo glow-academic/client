@@ -97,7 +97,7 @@ async def save_auth_internal(
             if not result or not result.auth_id:
                 return None
 
-        await invalidate_tags(["auth"])
+        await invalidate_tags(["auth"], redis=get_redis_client())
         return result.auth_id
 
     except Exception as e:
@@ -212,7 +212,7 @@ async def save_auth(
         )
 
         # Invalidate cache after mutation
-        await invalidate_tags(tags)
+        await invalidate_tags(tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         # Trigger Keycloak sync (fire-and-forget)

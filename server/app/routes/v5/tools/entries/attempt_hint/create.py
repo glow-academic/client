@@ -61,7 +61,7 @@ async def create_attempt_hint_entry_internal(
         if not result or not result.entry_id:
             raise ValueError("Failed to create attempt_hint entry")
 
-    await invalidate_tags(tags)
+    await invalidate_tags(tags, redis=get_redis_client())
 
     return CreateAttemptHintEntryResponse(
         id=result.entry_id,

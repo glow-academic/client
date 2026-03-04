@@ -40,7 +40,7 @@ async def get_persona_internal(
     cache_key_val = cache_key("personas/get", {"id": str(id)})
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             item_data = cached.get("data")
             if item_data:
@@ -61,6 +61,7 @@ async def get_persona_internal(
         {"data": item.model_dump(mode="json") if item else None},
         ttl=60,
         tags=["personas"],
+        redis=get_redis_client(),
     )
 
     return item
@@ -93,7 +94,7 @@ async def get_personas_internal(
 
     # Try cache (unless bypassed)
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return [
                 QGetPersonasV4Item.model_validate(item)
@@ -115,6 +116,7 @@ async def get_personas_internal(
         {"items": [item.model_dump(mode="json") for item in items]},
         ttl=60,
         tags=tags,
+        redis=get_redis_client(),
     )
 
     return items

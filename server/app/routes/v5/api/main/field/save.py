@@ -93,7 +93,7 @@ async def save_field_internal(
             if not result or not result.field_id:
                 return None
 
-        await invalidate_tags(["fields"])
+        await invalidate_tags(["fields"], redis=get_redis_client())
         return result.field_id
 
     except Exception as e:
@@ -221,7 +221,7 @@ async def save_field(
             }
         )
 
-        await invalidate_tags(tags)
+        await invalidate_tags(tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         return api_response

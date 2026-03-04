@@ -48,7 +48,7 @@ async def search_test_entries_internal(
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return list(cached.get("items", []))
 
@@ -71,6 +71,7 @@ async def search_test_entries_internal(
         {"items": items if isinstance(items, list) else []},
         ttl=60,
         tags=tags,
+        redis=get_redis_client(),
     )
 
     return items
@@ -111,7 +112,7 @@ async def get_test_list_internal(
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return GetTestListViewSqlRow.model_validate(cached)
 
@@ -147,6 +148,7 @@ async def get_test_list_internal(
         response.model_dump(mode="json"),
         ttl=60,
         tags=["entries", "test", "list"],
+        redis=get_redis_client(),
     )
 
     return response

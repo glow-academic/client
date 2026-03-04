@@ -49,7 +49,7 @@ async def get_access_internal(
         },
     )
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return GetProfileContextAccessSqlRow(**cached["data"])
 
@@ -81,6 +81,7 @@ async def get_access_internal(
             {"data": access_result.model_dump(mode="json")},
             ttl=CACHE_TTL,
             tags=CACHE_TAGS,
+            redis=get_redis_client(),
         )
 
     return access_result

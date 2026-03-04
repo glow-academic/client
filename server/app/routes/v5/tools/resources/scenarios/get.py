@@ -41,7 +41,7 @@ async def get_scenarios_internal(
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached and "items" in cached:
             return [
                 QGetScenariosV4Item.model_validate(item) for item in cached["items"]
@@ -62,6 +62,7 @@ async def get_scenarios_internal(
         {"items": [item.model_dump(mode="json") for item in items]},
         ttl=60,
         tags=tags,
+        redis=get_redis_client(),
     )
 
     return items

@@ -15,7 +15,7 @@ async def refresh_messages_completions_internal(
     start_time = time.time()
     await conn.execute(f"REFRESH MATERIALIZED VIEW CONCURRENTLY {MV_NAME}")
     duration_ms = int((time.time() - start_time) * 1000)
-    await invalidate_tags(["entries", "messages_completions"])
+    await invalidate_tags(["entries", "messages_completions"], redis=get_redis_client())
     return {
         "success": True,
         "duration_ms": duration_ms,

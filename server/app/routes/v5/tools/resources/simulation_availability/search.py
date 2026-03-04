@@ -41,7 +41,7 @@ async def search_simulation_availability_internal(
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return [
                 SimulationAvailabilityV4Item.model_validate(item)
@@ -69,6 +69,7 @@ async def search_simulation_availability_internal(
         {"data": [item.model_dump(mode="json") for item in items]},
         ttl=60,
         tags=["simulation_availability"],
+        redis=get_redis_client(),
     )
 
     return items

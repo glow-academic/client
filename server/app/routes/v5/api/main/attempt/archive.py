@@ -110,7 +110,7 @@ async def archive_attempts(
                 ]
             )
 
-        await invalidate_tags(invalidation_tags)
+        await invalidate_tags(invalidation_tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(invalidation_tags)
 
         # Convert SQL result to API response

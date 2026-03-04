@@ -45,7 +45,7 @@ async def search_evals_internal(
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return [
                 QGetEvalsV4Item.model_validate(item) for item in cached.get("items", [])
@@ -71,6 +71,7 @@ async def search_evals_internal(
         {"items": [item.model_dump(mode="json") for item in items]},
         ttl=60,
         tags=tags,
+        redis=get_redis_client(),
     )
 
     return items

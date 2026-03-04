@@ -67,6 +67,6 @@ async def create_test_grade_entry_internal(
         if tool_info:
             await record_call_args(conn, result.call_id, tool_info, request_dict, mcp)
 
-    await invalidate_tags(tags)
+    await invalidate_tags(tags, redis=get_redis_client())
 
     return CreateTestGradeEntryResponse.model_validate(result.model_dump())

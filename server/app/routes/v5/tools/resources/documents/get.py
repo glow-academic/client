@@ -31,7 +31,7 @@ async def get_document_internal(
     cache_key_val = cache_key("documents/get", {"id": str(id)})
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             item_data = cached.get("data")
             if item_data:
@@ -52,6 +52,7 @@ async def get_document_internal(
         {"data": item.model_dump(mode="json") if item else None},
         ttl=60,
         tags=["documents"],
+        redis=get_redis_client(),
     )
 
     return item
@@ -84,7 +85,7 @@ async def get_documents_internal(
 
     # Try cache (unless bypassed)
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return [
                 QGetDocumentsV4Item.model_validate(item)
@@ -106,6 +107,7 @@ async def get_documents_internal(
         {"items": [item.model_dump(mode="json") for item in items]},
         ttl=60,
         tags=tags,
+        redis=get_redis_client(),
     )
 
     return items

@@ -47,7 +47,7 @@ async def get_rubrics_batch_internal(
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return [
                 QGetRubricsBatchV4Item.model_validate(item)
@@ -69,6 +69,7 @@ async def get_rubrics_batch_internal(
         {"items": [item.model_dump(mode="json") for item in items]},
         ttl=60,
         tags=tags,
+        redis=get_redis_client(),
     )
 
     return items
@@ -102,7 +103,7 @@ async def get_rubrics_internal(
 
     # Try cache (unless bypassed)
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return [
                 QGetRubricsV4Item.model_validate(item)
@@ -128,6 +129,7 @@ async def get_rubrics_internal(
         {"data": [item.model_dump(mode="json") for item in items]},
         ttl=60,
         tags=["rubrics"],
+        redis=get_redis_client(),
     )
 
     return items

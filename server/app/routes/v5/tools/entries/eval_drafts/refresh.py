@@ -15,7 +15,7 @@ async def refresh_eval_drafts_internal(
     start_time = time.time()
     await conn.execute(f"REFRESH MATERIALIZED VIEW CONCURRENTLY {MV_NAME}")
     duration_ms = int((time.time() - start_time) * 1000)
-    await invalidate_tags(["entries", "eval_drafts"])
+    await invalidate_tags(["entries", "eval_drafts"], redis=get_redis_client())
     return {
         "success": True,
         "duration_ms": duration_ms,

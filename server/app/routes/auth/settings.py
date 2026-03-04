@@ -129,7 +129,7 @@ async def get_auth_settings_internal(
     if all_tool_ids:
         async with pool.acquire() as c:
             settings_tools = await get_tools(
-                c, list(set(all_tool_ids)), cache
+                c, list(set(all_tool_ids)), get_redis_client(), bypass_cache=bypass_cache
             )
 
     # Resolve agent→tool→resource entries in Python using already-fetched data.

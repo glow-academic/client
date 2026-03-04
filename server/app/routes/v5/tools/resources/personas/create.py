@@ -69,5 +69,5 @@ async def create_personas_internal(
     if not result or not result.personas_resource_id:
         raise ValueError("Failed to create personas resource")
 
-    await invalidate_tags(["resources", "personas"])
+    await invalidate_tags(["resources", "personas"], redis=get_redis_client())
     return result.personas_resource_id

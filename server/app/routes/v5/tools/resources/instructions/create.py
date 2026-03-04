@@ -56,5 +56,5 @@ async def create_instructions_internal(
             conn, result.call_id, tool_info, {"template": template}, mcp
         )
 
-    await invalidate_tags(["resources", "instructions"])
+    await invalidate_tags(["resources", "instructions"], redis=get_redis_client())
     return result.instruction_id

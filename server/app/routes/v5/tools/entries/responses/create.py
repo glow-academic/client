@@ -34,6 +34,6 @@ async def create_responses_entry_internal(
         if not result or not result.id:
             raise ValueError("Failed to create responses entry")
 
-    await invalidate_tags(tags)
+    await invalidate_tags(tags, redis=get_redis_client())
 
     return CreateResponsesEntriesApiResponse.model_validate(result.model_dump())

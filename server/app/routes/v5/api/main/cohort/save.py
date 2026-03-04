@@ -124,7 +124,7 @@ async def save_cohort_internal(
             if not result or not result.cohort_id:
                 return None
 
-        await invalidate_tags(["cohorts"])
+        await invalidate_tags(["cohorts"], redis=get_redis_client())
 
         # Sync entry rows (fire-and-forget — failure should not fail the save)
         try:
@@ -505,7 +505,7 @@ async def save_cohort(
 
         # Audit context
         # Invalidate cache after mutation
-        await invalidate_tags(tags)
+        await invalidate_tags(tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         # Sync entry rows for each saved cohort (non-fatal)

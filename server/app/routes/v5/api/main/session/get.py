@@ -197,7 +197,7 @@ async def get_session_internal(
     if session.profile_id:
         async with pool.acquire() as conn:
             name_items = await get_names(
-                conn, [session.profile_id], cache
+                conn, [session.profile_id], get_redis_client(), bypass_cache=bypass_cache
             )
             if name_items:
                 profile_name = name_items[0].name
@@ -251,7 +251,7 @@ async def get_session(
         cache_key_val = cache_key(http_request.url.path, body_dict)
 
         if not bypass_cache:
-            cached = await get_cached(cache_key_val)
+            cached = await get_cached(cache_key_val, redis=get_redis_client())
             if cached:
                 response.headers["X-Cache-Tags"] = ",".join(tags)
                 response.headers["X-Cache-Hit"] = "1"
@@ -354,6 +354,7 @@ async def get_session(
             {"data": api_response.model_dump(mode="json")},
             ttl=300,
             tags=tags,
+            redis=get_redis_client(),
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
@@ -419,7 +420,7 @@ async def get_session_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), cache=cache
+                        c, list(set(all_args_ids)), get_redis_client(), bypass_cache=bypass_cache
                     )
 
             async def fetch_args_outputs():
@@ -427,7 +428,7 @@ async def get_session_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), cache=cache
+                        c, list(set(all_args_output_ids)), get_redis_client(), bypass_cache=bypass_cache
                     )
 
             config_args, config_args_outputs = await asyncio.gather(

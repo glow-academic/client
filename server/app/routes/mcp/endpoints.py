@@ -1808,7 +1808,7 @@ def register_endpoints(server: FastMCP) -> None:
                         "status": "error",
                     }
 
-                await invalidate_tags(["entries", "uploads"])
+                await invalidate_tags(["entries", "uploads"], redis=get_redis_client())
 
                 return {
                     "id": str(result.upload_id),

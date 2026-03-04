@@ -237,7 +237,7 @@ async def get_rubric_scores_internal(
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             resp = RubricScoresResponse(
                 items=[
@@ -359,6 +359,7 @@ async def get_rubric_scores_internal(
         },
         ttl=60,
         tags=["entries", "chat", "rubric_scores"],
+        redis=get_redis_client(),
     )
 
     return response
@@ -583,7 +584,7 @@ async def get_message_stats_internal(
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return {
                 UUID(k): MessageStats(
@@ -621,6 +622,7 @@ async def get_message_stats_internal(
         },
         ttl=60,
         tags=["entries", "chat", "message_stats"],
+        redis=get_redis_client(),
     )
 
     return stats_map
@@ -652,7 +654,7 @@ async def fetch_training_doc_ids(
     )
 
     if not bypass_cache:
-        cached = await get_cached(tc_cache_key)
+        cached = await get_cached(tc_cache_key, redis=get_redis_client())
         if cached:
             return {UUID(k): [UUID(d) for d in v] for k, v in cached.items() if v}
 
@@ -670,6 +672,7 @@ async def fetch_training_doc_ids(
         {str(k): [str(d) for d in v] for k, v in doc_map.items()},
         ttl=300,
         tags=["entries", "chat", "training_config"],
+        redis=get_redis_client(),
     )
 
     return doc_map

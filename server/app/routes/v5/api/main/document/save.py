@@ -98,7 +98,7 @@ async def save_document_internal(
             if not result or not result.document_id:
                 return None
 
-        await invalidate_tags(["documents"])
+        await invalidate_tags(["documents"], redis=get_redis_client())
         return result.document_id
 
     except Exception as e:
@@ -232,7 +232,7 @@ async def save_document(
         )
 
         # Invalidate cache after mutation
-        await invalidate_tags(tags)
+        await invalidate_tags(tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         return api_response

@@ -104,7 +104,7 @@ async def save_model_internal(
             if not result or not result.model_id:
                 return None
 
-        await invalidate_tags(["models"])
+        await invalidate_tags(["models"], redis=get_redis_client())
         return result.model_id
 
     except Exception as e:
@@ -248,7 +248,7 @@ async def save_model(
         )
 
         # Invalidate cache after mutation
-        await invalidate_tags(tags)
+        await invalidate_tags(tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         return api_response

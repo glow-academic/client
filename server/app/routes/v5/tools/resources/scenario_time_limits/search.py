@@ -47,7 +47,7 @@ async def search_scenario_time_limits_internal(
 
     # Try cache (unless bypassed)
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return [
                 QGetScenarioTimeLimitsV4Item.model_validate(item)
@@ -77,6 +77,7 @@ async def search_scenario_time_limits_internal(
         {"data": [item.model_dump(mode="json") for item in items]},
         ttl=60,
         tags=["scenario_time_limits"],
+        redis=get_redis_client(),
     )
 
     return items

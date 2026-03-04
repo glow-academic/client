@@ -31,7 +31,7 @@ async def get_profile_summary_view_internal(
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return GetProfileSummaryViewSqlRow.model_validate(cached)
 
@@ -50,6 +50,7 @@ async def get_profile_summary_view_internal(
         response.model_dump(mode="json"),
         ttl=60,
         tags=["views", "activity", "profile_summary"],
+        redis=get_redis_client(),
     )
 
     return response

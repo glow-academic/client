@@ -192,7 +192,7 @@ async def get_pricing_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), cache=cache
+                        c, list(set(all_args_ids)), get_redis_client(), bypass_cache=bypass_cache
                     )
 
             async def fetch_args_outputs():
@@ -200,7 +200,7 @@ async def get_pricing_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), cache=cache
+                        c, list(set(all_args_output_ids)), get_redis_client(), bypass_cache=bypass_cache
                     )
 
             config_args, config_args_outputs = await asyncio.gather(
@@ -239,7 +239,7 @@ async def get_group_list_internal(
     cache_key_val = cache_key(cache_key_path, body)
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return GetGroupListResponse.model_validate(cached["data"])
 
@@ -327,7 +327,7 @@ async def get_group_list_internal(
     # Fetch names via resource layer
     all_name_ids = list(all_agent_ids | all_model_ids | all_profile_ids)
     name_items = (
-        await get_names(conn, all_name_ids, cache)
+        await get_names(conn, all_name_ids, get_redis_client(), bypass_cache=bypass_cache)
         if all_name_ids
         else []
     )
@@ -379,6 +379,7 @@ async def get_group_list_internal(
         {"data": api_response.model_dump(mode="json")},
         ttl=300,
         tags=["artifacts", "group", "list"],
+        redis=get_redis_client(),
     )
 
     return api_response

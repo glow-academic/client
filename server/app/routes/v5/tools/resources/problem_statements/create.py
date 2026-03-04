@@ -65,5 +65,5 @@ async def create_problem_statements_internal(
             mcp,
         )
 
-    await invalidate_tags(["resources", "problem_statements"])
+    await invalidate_tags(["resources", "problem_statements"], redis=get_redis_client())
     return result.problem_statement_id

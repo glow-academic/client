@@ -34,7 +34,7 @@ async def archive_test_artifacts(
 
         updated_count = int(row["updated_count"] or 0)
 
-        await invalidate_tags(tags)
+        await invalidate_tags(tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         return ArchiveTestsResponse(updated_count=updated_count)

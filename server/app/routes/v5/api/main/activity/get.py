@@ -287,7 +287,7 @@ async def get_session_list_internal(
     cache_key_val = cache_key(cache_key_path, body)
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             return GetSessionListResponse.model_validate(cached["data"])
 
@@ -335,7 +335,7 @@ async def get_session_list_internal(
             page_limit=10000,
             bypass_cache=bypass_cache,
         ),
-        get_names(conn, all_profile_ids, cache),
+        get_names(conn, all_profile_ids, get_redis_client(), bypass_cache=bypass_cache),
         get_session_counts_view_internal(conn, session_ids, cache),
     )
 
@@ -440,6 +440,7 @@ async def get_session_list_internal(
         {"data": api_response.model_dump(mode="json")},
         ttl=300,
         tags=["artifacts", "session", "list"],
+        redis=get_redis_client(),
     )
 
     return api_response
@@ -539,7 +540,7 @@ async def get_activity(
             summary_names: dict[UUID, str] = {}
             if summary_pids:
                 async with pool.acquire() as c:
-                    name_items = await get_names(c, summary_pids, cache)
+                    name_items = await get_names(c, summary_pids, get_redis_client(), bypass_cache=bypass_cache)
                     summary_names = {
                         i.id: i.name for i in name_items if i.id and i.name
                     }
@@ -655,7 +656,7 @@ async def get_activity_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), cache=cache
+                        c, list(set(all_args_ids)), get_redis_client(), bypass_cache=bypass_cache
                     )
 
             async def fetch_args_outputs():
@@ -663,7 +664,7 @@ async def get_activity_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), cache=cache
+                        c, list(set(all_args_output_ids)), get_redis_client(), bypass_cache=bypass_cache
                     )
 
             config_args, config_args_outputs = await asyncio.gather(

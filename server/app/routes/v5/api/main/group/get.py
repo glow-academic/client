@@ -153,12 +153,12 @@ async def get_group_internal(
         if tool_ids:
             async with pool.acquire() as c:
                 config_tools_result = await get_tools(
-                    c, list(tool_ids), cache
+                    c, list(tool_ids), get_redis_client(), bypass_cache=bypass_cache
                 )
 
     # 3. Resolve actor name
     async with pool.acquire() as conn:
-        actor_name_items = await get_names(conn, [profile_id], cache)
+        actor_name_items = await get_names(conn, [profile_id], get_redis_client(), bypass_cache=bypass_cache)
     actor_name = actor_name_items[0].name if actor_name_items else None
 
     # 4. Verify group exists
@@ -278,7 +278,7 @@ async def get_group_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), cache=cache
+                        c, list(set(all_args_ids)), get_redis_client(), bypass_cache=bypass_cache
                     )
 
             async def fetch_args_outputs():
@@ -286,7 +286,7 @@ async def get_group_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), cache=cache
+                        c, list(set(all_args_output_ids)), get_redis_client(), bypass_cache=bypass_cache
                     )
 
             config_args, config_args_outputs = await asyncio.gather(
@@ -336,7 +336,7 @@ async def get_group(
     cache_key_val = cache_key(http_request.url.path, body_dict)
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val)
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
             response.headers["X-Cache-Tags"] = ",".join(tags)
             response.headers["X-Cache-Hit"] = "1"
@@ -392,7 +392,7 @@ async def get_group(
         # Fetch names + tools via resource layer (both handle empty lists)
         all_name_ids = list(all_model_ids | all_agent_ids | all_profile_ids)
         name_items, tool_items = await asyncio.gather(
-            get_names(conn, all_name_ids, cache),
+            get_names(conn, all_name_ids, get_redis_client(), bypass_cache=bypass_cache),
             get_tools(conn, list(all_tool_ids), cache),
         )
         name_map = {item.id: item.name for item in name_items if item.id and item.name}
@@ -487,6 +487,7 @@ async def get_group(
             {"data": api_response.model_dump(mode="json")},
             ttl=300,
             tags=tags,
+            redis=get_redis_client(),
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"

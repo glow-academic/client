@@ -67,7 +67,7 @@ async def patch_document_draft(
             message="Draft updated successfully",
         )
 
-        await invalidate_tags(tags)
+        await invalidate_tags(tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         return api_response

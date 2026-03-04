@@ -73,5 +73,5 @@ async def create_name(
     if tool_info and call_id is not None:
         await record_call_args(conn, call_id, tool_info, {"name": name}, mcp)
 
-    await invalidate_tags(["resources", "names"])
+    await invalidate_tags(["resources", "names"], redis=get_redis_client())
     return CreateNameResponse(name_id=name_id, call_id=call_id)

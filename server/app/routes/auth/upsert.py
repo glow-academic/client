@@ -94,7 +94,7 @@ async def create_or_update_profile(
 
         # Invalidate cache after mutation
         tags = ["profile"]  # Profile operations
-        await invalidate_tags(tags)
+        await invalidate_tags(tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         return response_data
