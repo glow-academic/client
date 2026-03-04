@@ -1,71 +1,46 @@
-"""attempt_feedback/create internal — reusable data-access layer."""
+"""Entry CREATE — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
-import asyncpg  # type: ignore
+import asyncpg
 
-from app.infra.tools.call_args import record_call_args, resolve_tool_for_entry
-from app.routes.v5.api.entries.attempt_feedback.types import (
-    CreateAttemptFeedbackEntryResponse,
-    CreateAttemptFeedbackEntrySqlParams,
-    CreateAttemptFeedbackEntrySqlRow,
+from app.routes.v5.tools.entries.attempt_feedback.types import (
+    CreateAttemptFeedbackResponse,
 )
-from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.sql_helper import execute_sql_typed
-from app.utils.storage.file_writer import write_text_file
-
-SQL_PATH = "app/sql/queries/entries/attempt_feedback/create_attempt_feedback_entries_complete.sql"
-
-ENTRY_TYPE = "feedbacks"
 
 
-async def create_attempt_feedback_entry_internal(
+async def create_attempt_feedback(
     conn: asyncpg.Connection,
-    request_dict: dict,
+    grade_id: UUID,
+    call_id: UUID,
+    total: int,
+    feedback: str = "No feedback provided",
+    standard_ids: list[UUID] | None = None,
     mcp: bool = False,
-    run_id: UUID | None = None,
-    tool_id: UUID | None = None,
-) -> CreateAttemptFeedbackEntryResponse:
-    """Internal function to create attempt_feedback entry.
+) -> CreateAttemptFeedbackResponse:
+    """Create an attempt_feedback entry."""
+    entry_id = await conn.fetchval(
+        """
+        INSERT INTO attempt_feedback_entry (grade_id, call_id, total, feedback, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, true)
+        RETURNING id
+        """,
+        grade_id,
+        call_id,
+        total,
+        feedback,
+        mcp,
+    )
 
-    Internal callers can pass run_id and tool_id directly.
-    If not provided, tool is resolved from settings via operation + entry type.
-    """
-    tags = ["entries", "attempt_feedback"]
+    if standard_ids:
+        for standard_id in standard_ids:
+            await conn.execute(
+                """
+                INSERT INTO feedbacks_standards_connection (feedbacks_id, standard_id)
+                VALUES ($1, $2)
+                """,
+                entry_id,
+                standard_id,
+            )
 
-    # Resolve tool if not provided
-    tool_info = None
-    if tool_id is None:
-        tool_info = await resolve_tool_for_entry(conn, "create", ENTRY_TYPE)
-        if tool_info:
-            tool_id = tool_info.tool_id
-
-    async with conn.transaction():
-        request_dict["mcp"] = mcp
-        request_dict["upload_id"] = await write_text_file(
-            conn, None, "Created attempt feedback entry"
-        )
-        request_dict["tool_id"] = tool_id
-        if run_id is not None:
-            request_dict["run_id"] = run_id
-
-        params = CreateAttemptFeedbackEntrySqlParams(**request_dict)
-
-        result = cast(
-            CreateAttemptFeedbackEntrySqlRow,
-            await execute_sql_typed(conn, SQL_PATH, params=params),
-        )
-
-        if not result or not result.id:
-            raise ValueError("Failed to create attempt_feedback entry")
-
-        # Record arg values via connection pattern
-        if tool_info is None and tool_id is not None:
-            tool_info = await resolve_tool_for_entry(conn, "create", ENTRY_TYPE)
-        if tool_info:
-            await record_call_args(conn, result.call_id, tool_info, request_dict, mcp)
-
-    await invalidate_tags(tags, redis=get_redis_client())
-
-    return CreateAttemptFeedbackEntryResponse.model_validate(result.model_dump())
+    return CreateAttemptFeedbackResponse(id=entry_id)
