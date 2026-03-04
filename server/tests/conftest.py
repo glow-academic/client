@@ -12,6 +12,8 @@ import asyncpg  # type: ignore[import]
 import pytest
 import pytest_asyncio
 from dotenv import load_dotenv
+from redis.asyncio import Redis
+from testcontainers.redis import RedisContainer
 
 # Load environment variables from .env file if it exists
 load_dotenv()
@@ -311,6 +313,39 @@ async def conn() -> AsyncGenerator[asyncpg.Connection, None]:
     finally:
         await tx.rollback()  # Undo all test changes
         await connection.close()
+
+
+# --- REDIS FIXTURE ---
+
+_redis_container: RedisContainer | None = None
+_redis_url: str | None = None
+
+
+@pytest.fixture(scope="session", autouse=True)
+def start_redis_container() -> None:
+    """Start a Redis testcontainer for the session."""
+    global _redis_container, _redis_url
+    container = RedisContainer("redis:7-alpine")
+    container = container.with_kwargs(remove=False)
+    container.start()
+    host = container.get_container_host_ip()
+    port = container.get_exposed_port(6379)
+    _redis_url = f"redis://{host}:{port}/0"
+    _redis_container = container
+
+
+@pytest_asyncio.fixture
+async def redis_client() -> AsyncGenerator[Redis, None]:
+    """Provide a clean Redis connection that flushes after each test."""
+    if _redis_url is None:
+        raise RuntimeError("Redis container not started.")
+    client = Redis.from_url(_redis_url)
+    await client.flushdb()
+    try:
+        yield client
+    finally:
+        await client.flushdb()
+        await client.aclose()
 
 
 # --- OTHER CONFIG ---

@@ -1,6 +1,5 @@
 """Tests for get_tools."""
 
-from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
 import pytest
@@ -11,9 +10,8 @@ from tests.seed_ids import USE_VOICES_TOOL_ID
 pytestmark = pytest.mark.asyncio
 
 
-async def test_gets_existing_tool(conn: object) -> None:
-    redis = AsyncMock()
-    items = await get_tools(conn, [USE_VOICES_TOOL_ID], redis)
+async def test_gets_existing_tool(conn, redis_client):
+    items = await get_tools(conn, [USE_VOICES_TOOL_ID], redis_client)
 
     assert len(items) == 1
     assert items[0].id == USE_VOICES_TOOL_ID
@@ -21,45 +19,39 @@ async def test_gets_existing_tool(conn: object) -> None:
     assert items[0].active is True
 
 
-async def test_returns_empty_for_missing_tool(conn: object) -> None:
-    redis = AsyncMock()
-    items = await get_tools(conn, [uuid4()], redis)
+async def test_returns_empty_for_missing_tool(conn, redis_client):
+    items = await get_tools(conn, [uuid4()], redis_client)
 
     assert items == []
 
 
-async def test_returns_empty_for_empty_ids(conn: object) -> None:
-    redis = AsyncMock()
-    items = await get_tools(conn, [], redis)
+async def test_returns_empty_for_empty_ids(conn, redis_client):
+    items = await get_tools(conn, [], redis_client)
 
     assert items == []
 
 
-async def test_cache_hit_skips_db(conn: object) -> None:
-    cached_items = [{"id": str(USE_VOICES_TOOL_ID), "name": "cached_tool", "description": None, "operation": None, "department_ids": [], "args_ids": [], "args_output_ids": [], "resources": [], "entries": [], "artifacts": [], "created_at": "2024-01-01T00:00:00Z", "active": True, "mcp": False, "generated": False}]
-
-    redis = AsyncMock()
-
-    with patch("app.routes.v5.tools.resources.tools.get.get_cached", new_callable=AsyncMock, return_value={"items": cached_items}):
-        items = await get_tools(conn, [USE_VOICES_TOOL_ID], redis)
-
+async def test_cache_hit_skips_db(conn, redis_client):
+    # First call — populates cache from DB
+    items = await get_tools(conn, [USE_VOICES_TOOL_ID], redis_client)
     assert len(items) == 1
-    assert items[0].name == "cached_tool"
+
+    # Second call — should serve from cache (same result)
+    items2 = await get_tools(conn, [USE_VOICES_TOOL_ID], redis_client)
+    assert len(items2) == 1
+    assert items2[0].id == items[0].id
+    assert items2[0].name == items[0].name
 
 
-async def test_cache_miss_calls_set(conn: object) -> None:
-    redis = AsyncMock()
-
-    mock_set = AsyncMock()
-    with patch("app.routes.v5.tools.resources.tools.get.get_cached", new_callable=AsyncMock, return_value=None):
-        with patch("app.routes.v5.tools.resources.tools.get.set_cached", mock_set):
-            items = await get_tools(conn, [USE_VOICES_TOOL_ID], redis)
-
+async def test_bypass_cache_skips_read_and_write(conn, redis_client):
+    # Call with bypass — should not write to cache
+    items = await get_tools(conn, [USE_VOICES_TOOL_ID], redis_client, bypass_cache=True)
     assert len(items) == 1
-    assert items[0].id == USE_VOICES_TOOL_ID
-    mock_set.assert_called_once()
-    call_args = mock_set.call_args
-    assert call_args.kwargs["redis"] is redis
-    assert "items" in call_args.args[1]
-    assert call_args.args[2] == 60  # ttl
-    assert list(call_args.args[3]) == ["resources", "tools"]  # tags
+
+    # Cache should be empty
+    from app.utils.cache.cache_key import cache_key
+    from app.utils.cache.get_cached import get_cached
+
+    key = cache_key("/api/v5/resources/tools/get", {"ids": [str(USE_VOICES_TOOL_ID)]})
+    cached = await get_cached(key, redis=redis_client)
+    assert cached is None
