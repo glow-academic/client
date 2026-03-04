@@ -26,11 +26,11 @@ async def test_visible_via_get(conn, redis_client):
     assert items[0].base_url == "https://visible.example.com"
 
 
-async def test_creates_second_row(conn, redis_client):
+async def test_returns_existing_on_conflict(conn, redis_client):
     first = await create_endpoint(conn, "https://duplicate.example.com", redis_client)
     second = await create_endpoint(conn, "https://duplicate.example.com", redis_client)
 
-    assert first.id != second.id
+    assert first.id == second.id
 
 
 async def test_sets_mcp_flag(conn, redis_client):

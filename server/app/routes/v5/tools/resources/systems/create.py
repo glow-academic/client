@@ -21,8 +21,8 @@ async def create_system(
     """Create a system resource (plain INSERT — no unique constraint)."""
     system_id = await conn.fetchval(
         """
-        INSERT INTO systems_resource (name, description, active, mcp, generated)
-        VALUES ($1, $2, true, $3, $3)
+        INSERT INTO systems_resource (id, name, description, active, mcp, generated)
+        VALUES (uuidv7(), $1, $2, true, $3, $3)
         RETURNING id
         """,
         name, description, mcp,

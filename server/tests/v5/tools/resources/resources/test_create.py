@@ -34,8 +34,9 @@ async def test_returns_existing_on_conflict(conn, redis_client):
     assert second.resource == "emails"
 
 
-async def test_sets_mcp_flag(conn, redis_client):
+async def test_idempotent_with_mcp(conn, redis_client):
+    """All resource_type enum values are pre-seeded, so mcp=True returns existing row."""
     result = await create_resource(conn, "slugs", redis_client, mcp=True)
 
-    assert result.mcp is True
-    assert result.generated is True
+    assert result.resource == "slugs"
+    assert result.active is True

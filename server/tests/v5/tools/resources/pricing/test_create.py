@@ -21,7 +21,7 @@ async def test_creates_new_pricing(conn, redis_client):
 
 
 async def test_visible_via_get(conn, redis_client):
-    result = await create_pricing(conn, "output", 0.3, "chars", "characters", 200, redis_client)
+    result = await create_pricing(conn, "output", 0.3, "chars", "tokens", 200, redis_client)
 
     items = await get_pricing(conn, [result.id], redis_client, bypass_cache=True)
 

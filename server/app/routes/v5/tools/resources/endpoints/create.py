@@ -23,6 +23,7 @@ async def create_endpoint(
         """
         INSERT INTO endpoints_resource (base_url, active, mcp, generated)
         VALUES ($1, true, $2, $2)
+        ON CONFLICT (base_url) WHERE active = true DO UPDATE SET base_url = EXCLUDED.base_url
         RETURNING id
     """,
         base_url,
