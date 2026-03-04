@@ -158,7 +158,7 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
                 conn,
                 group_id=uuid.UUID(payload.group_id),
                 session_id=session_id,
-                profiles_id=profiles_resource_id,
+                profile_id=profiles_resource_id,
             )
             run_id = run_result.id
 

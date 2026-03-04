@@ -11,7 +11,7 @@ async def create_run(
     conn: asyncpg.Connection,
     group_id: UUID,
     session_id: UUID,
-    profiles_id: UUID | None = None,
+    profile_id: UUID | None = None,
     agent_ids: list[UUID] | None = None,
     mcp: bool = False,
 ) -> CreateRunResponse:
@@ -26,11 +26,11 @@ async def create_run(
         raise ValueError("Failed to create runs entry")
 
     # Link run → profiles_resource
-    if profiles_id is not None:
+    if profile_id is not None:
         await conn.execute("""
             INSERT INTO profiles_runs_connection (profiles_id, run_id)
             VALUES ($1, $2)
-        """, profiles_id, run_id)
+        """, profile_id, run_id)
 
     # Link run → agents_resource
     if agent_ids:

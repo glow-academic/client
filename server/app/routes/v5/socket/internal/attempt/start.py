@@ -175,7 +175,7 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
                     conn,
                     session_id=session_id,
                     group_id=payload.group_id,
-                    profiles_id=profiles_resource_id,
+                    profile_id=profiles_resource_id,
                 )
                 run_id = run_result.id
 

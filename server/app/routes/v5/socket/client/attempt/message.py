@@ -146,7 +146,7 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
                 conn,
                 group_id=group_id,
                 session_id=uuid.UUID(session_id_str),
-                profiles_id=profiles_id,
+                profile_id=profiles_id,
             )
             run_id = run_result.id
 

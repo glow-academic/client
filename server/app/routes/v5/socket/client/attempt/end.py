@@ -86,7 +86,7 @@ async def attempt_end(sid: str, data: dict[str, Any]) -> None:
                     conn,
                     session_id=session_id,
                     group_id=group_id,
-                    profiles_id=profiles_id,
+                    profile_id=profiles_id,
                 )
                 run_id = run_result.id
 
