@@ -420,7 +420,9 @@ async def get_profile_internal(
 
     async def fetch_departments():
         async with pool.acquire() as c:
-            selected = await get_departments(c, department_ids, get_redis_client(), bypass_cache=bypass_cache)
+            selected = await get_departments(
+                c, department_ids, get_redis_client(), bypass_cache=bypass_cache
+            )
             suggestions = await search_departments_internal(
                 c,
                 search=None,
@@ -443,7 +445,9 @@ async def get_profile_internal(
             return (None, None, None, None)
 
         async with pool.acquire() as c:
-            agents = await get_agents(c, config_agent_ids, get_redis_client(), bypass_cache)
+            agents = await get_agents(
+                c, config_agent_ids, get_redis_client(), bypass_cache
+            )
             models = (
                 await get_models(c, config_model_ids, get_redis_client(), bypass_cache)
                 if config_model_ids
@@ -457,7 +461,9 @@ async def get_profile_internal(
                 }
             )
             providers = (
-                await get_providers(c, provider_ids, get_redis_client(), bypass_cache=bypass_cache)
+                await get_providers(
+                    c, provider_ids, get_redis_client(), bypass_cache=bypass_cache
+                )
                 if provider_ids
                 else []
             )

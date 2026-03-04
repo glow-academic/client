@@ -35,7 +35,9 @@ async def get_models(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_models_resource(conn, request.ids, get_redis_client(), bypass_cache)
+        items = await get_models_resource(
+            conn, request.ids, get_redis_client(), bypass_cache
+        )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetModelsApiResponse(items=items)
     except HTTPException:

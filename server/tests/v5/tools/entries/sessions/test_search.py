@@ -100,7 +100,9 @@ async def test_bypass_mv_finds_without_refresh(conn):
     result = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
 
     items = await search_sessions(
-        conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID, bypass_mv=True,
+        conn,
+        profile_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+        bypass_mv=True,
     )
 
     ids = [item.id for item in items]

@@ -137,7 +137,12 @@ async def get_test_internal(
                 if not p_provider_id:
                     return None
                 async with pool.acquire() as c:
-                    return await get_providers(                        c, [p_provider_id], get_redis_client(), bypass_cache=bypass_cache                    )
+                    return await get_providers(
+                        c,
+                        [p_provider_id],
+                        get_redis_client(),
+                        bypass_cache=bypass_cache,
+                    )
 
             return await asyncio.gather(
                 fetch_agents(), fetch_models(), fetch_providers()

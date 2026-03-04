@@ -388,7 +388,9 @@ async def get_rubric_internal(
 
     async def fetch_descriptions() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_descriptions(c, description_ids, get_redis_client(), cache)
+            selected = await get_descriptions(
+                c, description_ids, get_redis_client(), cache
+            )
             suggestions = await search_descriptions_internal(
                 c,
                 description_search,
@@ -421,7 +423,9 @@ async def get_rubric_internal(
 
     async def fetch_departments() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_departments(c, department_ids, get_redis_client(), bypass_cache=bypass_cache)
+            selected = await get_departments(
+                c, department_ids, get_redis_client(), bypass_cache=bypass_cache
+            )
             suggestions = await search_departments_internal(
                 c,
                 search=None,

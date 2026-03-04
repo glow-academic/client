@@ -48,7 +48,9 @@ async def test_visible_via_get_after_refresh(conn):
 async def test_passes_mcp_flag(conn):
     session = await _session(conn)
     grant_id = await _grant(conn, session.id)
-    result = await create_emulation(conn, grant_id=grant_id, session_id=session.id, mcp=True)
+    result = await create_emulation(
+        conn, grant_id=grant_id, session_id=session.id, mcp=True
+    )
     await refresh_emulations(conn)
 
     items = await get_emulations(conn, [result.id])

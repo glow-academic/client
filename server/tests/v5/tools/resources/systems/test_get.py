@@ -11,10 +11,13 @@ pytestmark = pytest.mark.asyncio
 
 async def test_gets_created_system(conn, redis_client):
     system_id = uuid4()
-    await conn.execute("""
+    await conn.execute(
+        """
         INSERT INTO systems_resource (id, name, description)
         VALUES ($1, 'test-system', 'Test system desc')
-    """, system_id)
+    """,
+        system_id,
+    )
 
     items = await get_systems(conn, [system_id], redis_client)
 
@@ -40,9 +43,12 @@ async def test_returns_empty_for_empty_ids(conn, redis_client):
 
 async def test_cache_hit_skips_db(conn, redis_client):
     system_id = uuid4()
-    await conn.execute("""
+    await conn.execute(
+        """
         INSERT INTO systems_resource (id, name) VALUES ($1, 'test-system-cache-hit')
-    """, system_id)
+    """,
+        system_id,
+    )
 
     # First call populates cache
     items = await get_systems(conn, [system_id], redis_client)
@@ -56,9 +62,12 @@ async def test_cache_hit_skips_db(conn, redis_client):
 
 async def test_bypass_cache_skips_read_and_write(conn, redis_client):
     system_id = uuid4()
-    await conn.execute("""
+    await conn.execute(
+        """
         INSERT INTO systems_resource (id, name) VALUES ($1, 'test-system-bypass')
-    """, system_id)
+    """,
+        system_id,
+    )
 
     items = await get_systems(conn, [system_id], redis_client, bypass_cache=True)
     assert len(items) == 1

@@ -22,7 +22,9 @@ async def get_provider_keys(
         return []
 
     tags = ["resources", "provider_keys"]
-    key = cache_key("/api/v5/resources/provider_keys/get", {"ids": [str(id) for id in ids]})
+    key = cache_key(
+        "/api/v5/resources/provider_keys/get", {"ids": [str(id) for id in ids]}
+    )
 
     if not bypass_cache:
         cached = await get_cached(key, redis=redis)

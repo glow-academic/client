@@ -319,7 +319,10 @@ async def get_benchmark(
         async def fetch_departments() -> list:
             async with pool.acquire() as c:
                 return await get_departments(
-                    c, list(all_department_ids), get_redis_client(), bypass_cache=bypass_cache
+                    c,
+                    list(all_department_ids),
+                    get_redis_client(),
+                    bypass_cache=bypass_cache,
                 )
 
         evals_list, departments = await asyncio.gather(

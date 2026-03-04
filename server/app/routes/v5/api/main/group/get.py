@@ -95,13 +95,17 @@ async def get_group_internal(
         if not config_agent_resource_ids:
             return []
         async with pool.acquire() as c:
-            return await get_agents(c, config_agent_resource_ids, get_redis_client(), bypass_cache)
+            return await get_agents(
+                c, config_agent_resource_ids, get_redis_client(), bypass_cache
+            )
 
     async def fetch_config_models() -> list[Any]:
         if not config_model_resource_ids:
             return []
         async with pool.acquire() as c:
-            return await get_models(c, config_model_resource_ids, get_redis_client(), bypass_cache)
+            return await get_models(
+                c, config_model_resource_ids, get_redis_client(), bypass_cache
+            )
 
     async def fetch_config_profile() -> list[Any]:
         async with pool.acquire() as c:
@@ -141,7 +145,9 @@ async def get_group_internal(
     config_providers_result: list[Any] = []
     if config_provider_ids:
         async with pool.acquire() as c:
-            config_providers_result = await get_providers(                c, config_provider_ids, get_redis_client(), bypass_cache=bypass_cache            )
+            config_providers_result = await get_providers(
+                c, config_provider_ids, get_redis_client(), bypass_cache=bypass_cache
+            )
 
     # Fetch tools from config agent (sequential — needs agent results)
     config_tools_result: list[Any] = []

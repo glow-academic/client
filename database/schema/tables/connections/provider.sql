@@ -104,6 +104,23 @@ CREATE TABLE public.provider_drafts_names_connection (
 
 --
 
+-- Name: provider_drafts_profiles_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.provider_drafts_profiles_connection (
+    draft_id uuid NOT NULL,
+    profiles_id uuid NOT NULL,
+    version integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    active boolean DEFAULT true NOT NULL
+);
+
+
+--
+
 -- Name: provider_drafts_providers_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -127,23 +144,6 @@ CREATE TABLE public.provider_drafts_providers_connection (
 CREATE TABLE public.provider_drafts_values_connection (
     draft_id uuid NOT NULL,
     values_id uuid NOT NULL,
-    version integer DEFAULT 0 NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL,
-    active boolean DEFAULT true NOT NULL
-);
-
-
---
-
--- Name: provider_drafts_profiles_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.provider_drafts_profiles_connection (
-    draft_id uuid NOT NULL,
-    profiles_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,

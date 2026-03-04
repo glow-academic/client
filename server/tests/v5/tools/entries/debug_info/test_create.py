@@ -24,14 +24,18 @@ async def _call(conn):
 
 async def test_returns_id(conn):
     _, run, call = await _call(conn)
-    result = await create_debug_info(conn, call_id=call.id, content="debug output", run_id=run.id)
+    result = await create_debug_info(
+        conn, call_id=call.id, content="debug output", run_id=run.id
+    )
 
     assert result.id is not None
 
 
 async def test_visible_via_get_after_refresh(conn):
     _, run, call = await _call(conn)
-    result = await create_debug_info(conn, call_id=call.id, content="debug output", run_id=run.id)
+    result = await create_debug_info(
+        conn, call_id=call.id, content="debug output", run_id=run.id
+    )
     await refresh_debug_info(conn)
 
     items = await get_debug_info(conn, [result.id])
@@ -45,7 +49,9 @@ async def test_visible_via_get_after_refresh(conn):
 
 async def test_passes_mcp_flag(conn):
     _, run, call = await _call(conn)
-    result = await create_debug_info(conn, call_id=call.id, content="debug output", run_id=run.id, mcp=True)
+    result = await create_debug_info(
+        conn, call_id=call.id, content="debug output", run_id=run.id, mcp=True
+    )
     await refresh_debug_info(conn)
 
     items = await get_debug_info(conn, [result.id])
@@ -56,7 +62,9 @@ async def test_passes_mcp_flag(conn):
 
 async def test_passes_content(conn):
     _, run, call = await _call(conn)
-    result = await create_debug_info(conn, call_id=call.id, content="specific debug content", run_id=run.id)
+    result = await create_debug_info(
+        conn, call_id=call.id, content="specific debug content", run_id=run.id
+    )
     await refresh_debug_info(conn)
 
     items = await get_debug_info(conn, [result.id])
@@ -67,7 +75,9 @@ async def test_passes_content(conn):
 
 async def test_passes_run_id(conn):
     _, run, call = await _call(conn)
-    result = await create_debug_info(conn, call_id=call.id, content="debug output", run_id=run.id)
+    result = await create_debug_info(
+        conn, call_id=call.id, content="debug output", run_id=run.id
+    )
     await refresh_debug_info(conn)
 
     items = await get_debug_info(conn, [result.id])

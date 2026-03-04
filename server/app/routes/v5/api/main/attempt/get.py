@@ -836,7 +836,10 @@ async def get_attempt_internal(
             async def fetch_config_agents() -> Any:
                 async with pool.acquire() as c:
                     return await get_agents(
-                        c, config_agent_resource_ids, get_redis_client(), bypass_cache=bypass_cache
+                        c,
+                        config_agent_resource_ids,
+                        get_redis_client(),
+                        bypass_cache=bypass_cache,
                     )
 
             async def fetch_config_models() -> Any:
@@ -844,7 +847,10 @@ async def get_attempt_internal(
                     return None
                 async with pool.acquire() as c:
                     return await get_models(
-                        c, config_model_resource_ids, get_redis_client(), bypass_cache=bypass_cache
+                        c,
+                        config_model_resource_ids,
+                        get_redis_client(),
+                        bypass_cache=bypass_cache,
                     )
 
             (
@@ -864,7 +870,12 @@ async def get_attempt_internal(
                 )
                 if config_provider_ids:
                     async with pool.acquire() as c:
-                        config_provider_resources = await get_providers(                            c, config_provider_ids, get_redis_client(), bypass_cache=bypass_cache                        )
+                        config_provider_resources = await get_providers(
+                            c,
+                            config_provider_ids,
+                            get_redis_client(),
+                            bypass_cache=bypass_cache,
+                        )
 
         # === COMPUTE TIME LIMIT FROM CHATS ===
         time_limit_seconds = sum(

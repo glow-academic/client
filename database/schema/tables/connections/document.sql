@@ -155,12 +155,12 @@ CREATE TABLE public.document_drafts_parameters_connection (
 
 --
 
--- Name: document_drafts_texts_connection; Type: TABLE; Schema: public; Owner: -
+-- Name: document_drafts_profiles_connection; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.document_drafts_texts_connection (
+CREATE TABLE public.document_drafts_profiles_connection (
     draft_id uuid NOT NULL,
-    texts_id uuid NOT NULL,
+    profiles_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -172,12 +172,12 @@ CREATE TABLE public.document_drafts_texts_connection (
 
 --
 
--- Name: document_drafts_profiles_connection; Type: TABLE; Schema: public; Owner: -
+-- Name: document_drafts_texts_connection; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.document_drafts_profiles_connection (
+CREATE TABLE public.document_drafts_texts_connection (
     draft_id uuid NOT NULL,
-    profiles_id uuid NOT NULL,
+    texts_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,

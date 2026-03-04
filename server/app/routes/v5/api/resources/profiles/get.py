@@ -9,7 +9,9 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import get_db, get_redis_client
-from app.routes.v5.tools.resources.profiles.get import get_profiles as get_profiles_resource
+from app.routes.v5.tools.resources.profiles.get import (
+    get_profiles as get_profiles_resource,
+)
 from app.sql.types import (
     GetProfilesApiRequest,
     GetProfilesApiResponse,
@@ -45,7 +47,9 @@ async def get_profiles(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_profiles_resource(conn, request.p_ids or [], get_redis_client(), bypass_cache)
+        items = await get_profiles_resource(
+            conn, request.p_ids or [], get_redis_client(), bypass_cache
+        )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetProfilesApiResponse(items=items)
     except HTTPException:

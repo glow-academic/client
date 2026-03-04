@@ -368,7 +368,9 @@ async def get_document_internal(
 
     async def fetch_descriptions():
         async with pool.acquire() as c:
-            selected = await get_descriptions(c, description_ids, get_redis_client(), cache)
+            selected = await get_descriptions(
+                c, description_ids, get_redis_client(), cache
+            )
             suggestions = await search_descriptions_internal(
                 c,
                 None,
@@ -403,7 +405,9 @@ async def get_document_internal(
 
     async def fetch_departments():
         async with pool.acquire() as c:
-            selected = await get_departments(c, department_ids, get_redis_client(), bypass_cache=bypass_cache)
+            selected = await get_departments(
+                c, department_ids, get_redis_client(), bypass_cache=bypass_cache
+            )
             suggestions = await search_departments_internal(
                 c,
                 search=None,
@@ -670,7 +674,9 @@ async def get_document_internal(
         )
         if provider_ids:
             async with pool.acquire() as c:
-                config_providers_result = await get_providers(                    c, provider_ids, get_redis_client(), bypass_cache=bypass_cache                )
+                config_providers_result = await get_providers(
+                    c, provider_ids, get_redis_client(), bypass_cache=bypass_cache
+                )
 
     return DocumentInternalData(
         # Access/context
@@ -738,7 +744,9 @@ async def get_document_websocket(
         if not pool:
             return None
         async with pool.acquire() as conn:
-            return await get_profiles(conn, [profile_id], get_redis_client(), bypass_cache)
+            return await get_profiles(
+                conn, [profile_id], get_redis_client(), bypass_cache
+            )
 
     async def fetch_runs_today():
         if not pool:

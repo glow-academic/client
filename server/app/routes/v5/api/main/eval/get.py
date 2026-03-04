@@ -354,7 +354,9 @@ async def get_eval_internal(
 
     async def fetch_descriptions() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_descriptions(c, description_ids, get_redis_client(), cache)
+            selected = await get_descriptions(
+                c, description_ids, get_redis_client(), cache
+            )
             suggestions = await search_descriptions_internal(
                 c,
                 None,
@@ -373,7 +375,9 @@ async def get_eval_internal(
 
     async def fetch_flags() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_flags(c, all_flag_ids, get_redis_client(), bypass_cache)
+            selected = await get_flags(
+                c, all_flag_ids, get_redis_client(), bypass_cache
+            )
             all_flags = await search_flags_internal(
                 c,
                 None,
@@ -388,7 +392,9 @@ async def get_eval_internal(
 
     async def fetch_departments() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_departments(c, department_ids, get_redis_client(), bypass_cache=bypass_cache)
+            selected = await get_departments(
+                c, department_ids, get_redis_client(), bypass_cache=bypass_cache
+            )
             suggestions = await search_departments_internal(
                 c,
                 search=None,
@@ -550,7 +556,9 @@ async def get_eval_internal(
         provider_ids = list({m.provider_id for m in config_models if m.provider_id})
         if provider_ids:
             async with pool.acquire() as c:
-                config_providers = await get_providers(                    c, provider_ids, get_redis_client(), bypass_cache=bypass_cache                )
+                config_providers = await get_providers(
+                    c, provider_ids, get_redis_client(), bypass_cache=bypass_cache
+                )
     tool_ids = list({tid for a in config_agents for tid in (a.tool_ids or []) if tid})
     if tool_ids:
         async with pool.acquire() as c:

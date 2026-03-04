@@ -54,6 +54,7 @@ async def get_practices(
         for r in rows
     ]
 
+
 SQL_PATH = "app/sql/queries/entries/practice/get_practice_entries_complete.sql"
 
 VIEW_SQL_PATH = (

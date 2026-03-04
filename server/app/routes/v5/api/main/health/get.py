@@ -167,7 +167,12 @@ async def get_health_internal(
     config_providers: list[Any] = []
     if config_provider_resource_ids:
         async with pool.acquire() as conn:
-            config_providers = await get_providers(                conn, config_provider_resource_ids, get_redis_client(), bypass_cache=bypass_cache            )
+            config_providers = await get_providers(
+                conn,
+                config_provider_resource_ids,
+                get_redis_client(),
+                bypass_cache=bypass_cache,
+            )
 
     # 2. Fetch config profile and today's runs in parallel
     async def fetch_config_profile() -> list[QGetProfilesV4Item]:

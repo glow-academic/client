@@ -104,12 +104,12 @@ CREATE TABLE public.eval_drafts_names_connection (
 
 --
 
--- Name: eval_drafts_rubrics_connection; Type: TABLE; Schema: public; Owner: -
+-- Name: eval_drafts_profiles_connection; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.eval_drafts_rubrics_connection (
+CREATE TABLE public.eval_drafts_profiles_connection (
     draft_id uuid NOT NULL,
-    rubrics_id uuid NOT NULL,
+    profiles_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -121,12 +121,12 @@ CREATE TABLE public.eval_drafts_rubrics_connection (
 
 --
 
--- Name: eval_drafts_profiles_connection; Type: TABLE; Schema: public; Owner: -
+-- Name: eval_drafts_rubrics_connection; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.eval_drafts_profiles_connection (
+CREATE TABLE public.eval_drafts_rubrics_connection (
     draft_id uuid NOT NULL,
-    profiles_id uuid NOT NULL,
+    rubrics_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,

@@ -104,6 +104,23 @@ CREATE TABLE public.auth_drafts_names_connection (
 
 --
 
+-- Name: auth_drafts_profiles_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.auth_drafts_profiles_connection (
+    draft_id uuid NOT NULL,
+    profiles_id uuid NOT NULL,
+    version integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    active boolean DEFAULT true NOT NULL
+);
+
+
+--
+
 -- Name: auth_drafts_protocols_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -127,23 +144,6 @@ CREATE TABLE public.auth_drafts_protocols_connection (
 CREATE TABLE public.auth_drafts_slugs_connection (
     draft_id uuid NOT NULL,
     slugs_id uuid NOT NULL,
-    version integer DEFAULT 0 NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL,
-    active boolean DEFAULT true NOT NULL
-);
-
-
---
-
--- Name: auth_drafts_profiles_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.auth_drafts_profiles_connection (
-    draft_id uuid NOT NULL,
-    profiles_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,

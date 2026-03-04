@@ -400,7 +400,9 @@ async def get_cohort_internal(
 
     async def fetch_descriptions() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_descriptions(c, description_ids, get_redis_client(), cache)
+            selected = await get_descriptions(
+                c, description_ids, get_redis_client(), cache
+            )
             suggestions = await search_descriptions_internal(
                 c,
                 descriptions_search,
@@ -435,7 +437,9 @@ async def get_cohort_internal(
 
     async def fetch_departments() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_departments(c, department_ids, get_redis_client(), bypass_cache=bypass_cache)
+            selected = await get_departments(
+                c, department_ids, get_redis_client(), bypass_cache=bypass_cache
+            )
             # Use "all" to show all available departments the user has access to
             suggestions = await search_departments_internal(
                 c,
@@ -507,7 +511,9 @@ async def get_cohort_internal(
     async def fetch_profiles() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
             selected = (
-                await get_profiles(c, profile_ids, get_redis_client(), bypass_cache=bypass_cache)
+                await get_profiles(
+                    c, profile_ids, get_redis_client(), bypass_cache=bypass_cache
+                )
                 if profile_ids
                 else []
             )
@@ -798,7 +804,9 @@ async def get_cohort_internal(
             )
             if provider_ids:
                 async with pool.acquire() as c:
-                    config_providers_result = await get_providers(                        c, provider_ids, get_redis_client(), bypass_cache=bypass_cache                    )
+                    config_providers_result = await get_providers(
+                        c, provider_ids, get_redis_client(), bypass_cache=bypass_cache
+                    )
 
     return CohortInternalData(
         # Access/context
@@ -897,7 +905,9 @@ async def get_cohort_websocket(
         if not pool:
             return None
         async with pool.acquire() as conn:
-            return await get_profiles(conn, [profile_id], get_redis_client(), bypass_cache)
+            return await get_profiles(
+                conn, [profile_id], get_redis_client(), bypass_cache
+            )
 
     async def fetch_runs_today():
         if not pool:

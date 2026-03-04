@@ -24,7 +24,9 @@ async def _call(conn):
 
 async def test_appears_after_refresh(conn):
     run, call = await _call(conn)
-    result = await create_debug_info(conn, call_id=call.id, content="debug output", run_id=run.id)
+    result = await create_debug_info(
+        conn, call_id=call.id, content="debug output", run_id=run.id
+    )
     await refresh_debug_info(conn)
 
     items = await get_debug_info(conn, [result.id])
@@ -35,7 +37,9 @@ async def test_appears_after_refresh(conn):
 
 async def test_not_visible_before_refresh(conn):
     run, call = await _call(conn)
-    result = await create_debug_info(conn, call_id=call.id, content="debug output", run_id=run.id)
+    result = await create_debug_info(
+        conn, call_id=call.id, content="debug output", run_id=run.id
+    )
 
     items = await get_debug_info(conn, [result.id])
 

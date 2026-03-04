@@ -38,15 +38,14 @@ from app.routes.v5.socket.internal.attempt.types import (
 )
 from app.routes.v5.tools.entries.attempt.get import get_attempt_entries_internal
 from app.routes.v5.tools.entries.attempt.refresh import refresh_attempt_internal
-from app.routes.v5.tools.entries.attempt_chat.create import (
-    create_attempt_chat_entry_internal,
-)
+from app.routes.v5.tools.entries.attempt_chat.create import create_attempt_chat
 from app.routes.v5.tools.entries.attempt_chat.refresh import (
     refresh_attempt_chat_internal,
 )
 from app.routes.v5.tools.entries.attempt_chat_bridge.create import (
-    create_attempt_chat_bridge_entry_internal,
+    create_attempt_chat_bridge,
 )
+from app.routes.v5.tools.entries.calls.create import create_call
 from app.routes.v5.tools.entries.attempt_chat_bridge.search import (
     search_attempt_chat_bridge_entries_internal,
 )
@@ -423,20 +422,71 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
                     request_dict[conn_param] = [str(cid) for cid in ids_from_chat]
 
         # Step 8: Create attempt_chat entry + bridge (separate)
+        group_id = uuid.UUID(payload.group_id)
+
+        def _uuids(key: str) -> list[uuid.UUID] | None:
+            vals = request_dict.get(key)
+            return [uuid.UUID(v) for v in vals] if vals else None
+
         async with get_db_connection() as conn:
             async with conn.transaction():
-                chat_result = await create_attempt_chat_entry_internal(
-                    conn, request_dict, run_id=run_id
+                call = await create_call(
+                    conn,
+                    run_id=run_id,
+                    session_id=session_id,
+                )
+                chat_result = await create_attempt_chat(
+                    conn,
+                    call_id=call.id,
+                    group_id=group_id,
+                    chat_id=chat_entry_id,
+                    title=request_dict.get("title", ""),
+                    position=request_dict.get("position", 0),
+                    time_limit=request_dict.get("time_limit"),
+                    negative_time=request_dict.get("negative_time", False),
+                    audio_enabled=request_dict.get("audio_enabled", True),
+                    text_enabled=request_dict.get("text_enabled", True),
+                    hints_enabled=request_dict.get("hints_enabled", False),
+                    copy_paste_allowed=request_dict.get("copy_paste_allowed", True),
+                    show_images=request_dict.get("show_images", True),
+                    show_objectives=request_dict.get("show_objectives", True),
+                    show_problem_statement=request_dict.get(
+                        "show_problem_statement", True
+                    ),
+                    analyses_enabled=request_dict.get("analyses_enabled", True),
+                    improvements_enabled=request_dict.get("improvements_enabled", True),
+                    replacements_enabled=request_dict.get("replacements_enabled", True),
+                    strengths_enabled=request_dict.get("strengths_enabled", True),
+                    use_custom=request_dict.get("use_custom", False),
+                    use_previous=request_dict.get("use_previous", False),
+                    problem_statement_enabled=request_dict.get(
+                        "problem_statement_enabled", True
+                    ),
+                    objectives_enabled=request_dict.get("objectives_enabled", True),
+                    video_enabled=request_dict.get("video_enabled", False),
+                    images_enabled=request_dict.get("images_enabled", False),
+                    questions_enabled=request_dict.get("questions_enabled", False),
+                    rubrics_ids=_uuids("rubrics_ids"),
+                    standards_ids=_uuids("standards_ids"),
+                    standard_groups_ids=_uuids("standard_groups_ids"),
+                    departments_ids=_uuids("departments_ids"),
+                    personas_ids=_uuids("personas_ids"),
+                    problem_statements_ids=_uuids("problem_statements_ids"),
+                    objectives_ids=_uuids("objectives_ids"),
+                    questions_ids=_uuids("questions_ids"),
+                    options_ids=_uuids("options_ids"),
+                    videos_ids=_uuids("videos_ids"),
+                    images_ids=_uuids("images_ids"),
+                    documents_ids=_uuids("documents_ids"),
+                    parameter_fields_ids=_uuids("parameter_fields_ids"),
                 )
                 attempt_chat_id = chat_result.id
 
-                await create_attempt_chat_bridge_entry_internal(
+                await create_attempt_chat_bridge(
                     conn,
-                    {
-                        "attempt_id": str(attempt_id),
-                        "attempt_chat_id": str(attempt_chat_id),
-                    },
-                    run_id=run_id,
+                    attempt_id=attempt_id,
+                    attempt_chat_id=attempt_chat_id,
+                    session_id=session_id,
                 )
 
         # Step 9: Post-write

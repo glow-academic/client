@@ -28,8 +28,7 @@ async def get_keys(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetKeyResponse.model_validate(item)
-                for item in cached.get("items", [])
+                GetKeyResponse.model_validate(item) for item in cached.get("items", [])
             ]
 
     rows = await conn.fetch(

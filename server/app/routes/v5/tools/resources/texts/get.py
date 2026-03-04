@@ -28,8 +28,7 @@ async def get_texts(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetTextResponse.model_validate(item)
-                for item in cached.get("items", [])
+                GetTextResponse.model_validate(item) for item in cached.get("items", [])
             ]
 
     rows = await conn.fetch(

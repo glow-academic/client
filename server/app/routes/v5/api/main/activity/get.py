@@ -155,7 +155,12 @@ async def get_activity_internal(
     config_providers: list[Any] = []
     if config_provider_resource_ids:
         async with pool.acquire() as conn:
-            config_providers = await get_providers(                conn, config_provider_resource_ids, get_redis_client(), bypass_cache=bypass_cache            )
+            config_providers = await get_providers(
+                conn,
+                config_provider_resource_ids,
+                get_redis_client(),
+                bypass_cache=bypass_cache,
+            )
 
     # 2. Parallel fetch: views + config profile + runs today
     async def fetch_activity() -> GetActivityListViewSqlRow:

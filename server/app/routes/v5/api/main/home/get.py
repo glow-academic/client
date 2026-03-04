@@ -1029,7 +1029,9 @@ async def get_home_websocket(
 
     async def fetch_config_profile():
         async with pool.acquire() as conn:
-            return await get_profiles(conn, [profile_id], get_redis_client(), bypass_cache)
+            return await get_profiles(
+                conn, [profile_id], get_redis_client(), bypass_cache
+            )
 
     async def fetch_runs_today():
         from datetime import UTC, datetime

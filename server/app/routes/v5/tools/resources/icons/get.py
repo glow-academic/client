@@ -28,8 +28,7 @@ async def get_icons(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetIconResponse.model_validate(item)
-                for item in cached.get("items", [])
+                GetIconResponse.model_validate(item) for item in cached.get("items", [])
             ]
 
     rows = await conn.fetch(

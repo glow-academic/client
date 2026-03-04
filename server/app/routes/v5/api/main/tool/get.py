@@ -245,7 +245,9 @@ async def get_tool_internal(
 
     async def fetch_descriptions() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_descriptions(c, description_ids, get_redis_client(), cache)
+            selected = await get_descriptions(
+                c, description_ids, get_redis_client(), cache
+            )
             suggestions = await search_descriptions_internal(
                 c,
                 None,
@@ -475,7 +477,9 @@ async def get_tool_internal(
         )
         if provider_ids:
             async with pool.acquire() as c:
-                config_provider_resources = await get_providers(                    c, provider_ids, get_redis_client(), bypass_cache=bypass_cache                )
+                config_provider_resources = await get_providers(
+                    c, provider_ids, get_redis_client(), bypass_cache=bypass_cache
+                )
 
     return ToolInternalData(
         actor_name=actor_name,
@@ -531,7 +535,9 @@ async def get_tool_websocket(
         if not pool:
             return None
         async with pool.acquire() as conn:
-            return await get_profiles(conn, [profile_id], get_redis_client(), bypass_cache)
+            return await get_profiles(
+                conn, [profile_id], get_redis_client(), bypass_cache
+            )
 
     async def fetch_runs_today():
         if not pool:

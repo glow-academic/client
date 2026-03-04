@@ -423,7 +423,9 @@ async def get_persona_internal(
 
     async def fetch_descriptions():
         async with pool.acquire() as c:
-            selected = await get_descriptions(c, description_ids, get_redis_client(), cache)
+            selected = await get_descriptions(
+                c, description_ids, get_redis_client(), cache
+            )
             suggestions = await search_descriptions_internal(
                 c,
                 descriptions_search,
@@ -508,7 +510,9 @@ async def get_persona_internal(
 
     async def fetch_departments():
         async with pool.acquire() as c:
-            selected = await get_departments(c, department_ids, get_redis_client(), bypass_cache=bypass_cache)
+            selected = await get_departments(
+                c, department_ids, get_redis_client(), bypass_cache=bypass_cache
+            )
             # Always use "all" to show all available departments the user has access to
             # This ensures users can see all options when editing, not just recently used ones
             suggestions = await search_departments_internal(
@@ -604,7 +608,9 @@ async def get_persona_internal(
 
     async def fetch_voices():
         async with pool.acquire() as c:
-            selected = await get_voices(c, voice_ids_list, get_redis_client(), bypass_cache)
+            selected = await get_voices(
+                c, voice_ids_list, get_redis_client(), bypass_cache
+            )
             suggestions = await search_voices_internal(
                 c,
                 None,
@@ -617,11 +623,15 @@ async def get_persona_internal(
 
     async def fetch_config_agents():
         async with pool.acquire() as c:
-            return await get_agents(c, config_agent_resource_ids, get_redis_client(), bypass_cache)
+            return await get_agents(
+                c, config_agent_resource_ids, get_redis_client(), bypass_cache
+            )
 
     async def fetch_config_models():
         async with pool.acquire() as c:
-            return await get_models(c, config_model_resource_ids, get_redis_client(), bypass_cache)
+            return await get_models(
+                c, config_model_resource_ids, get_redis_client(), bypass_cache
+            )
 
     # === PARALLEL FETCH (all resources at once) ===
     # Fields are now a top-level catalog resource. Parameters carry field_ids and
@@ -667,7 +677,9 @@ async def get_persona_internal(
     config_providers_result: list[Any] = []
     if config_provider_ids:
         async with pool.acquire() as c:
-            config_providers_result = await get_providers(                c, config_provider_ids, get_redis_client(), bypass_cache=bypass_cache            )
+            config_providers_result = await get_providers(
+                c, config_provider_ids, get_redis_client(), bypass_cache=bypass_cache
+            )
 
     names = _dedupe_by_id(names_selected + names_suggestions, "id")
     descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
@@ -968,7 +980,9 @@ async def get_persona_websocket(
         if not pool:
             return None
         async with pool.acquire() as conn:
-            return await get_profiles(conn, [profile_id], get_redis_client(), bypass_cache)
+            return await get_profiles(
+                conn, [profile_id], get_redis_client(), bypass_cache
+            )
 
     async def fetch_runs_today():
         if not pool:

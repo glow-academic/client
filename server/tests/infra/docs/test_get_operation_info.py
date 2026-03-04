@@ -65,8 +65,7 @@ def test_extracts_return_schema():
     assert "properties" in result.returns["schema"]
 
 
-async def _no_return_func(conn: asyncpg.Connection) -> None:
-    ...
+async def _no_return_func(conn: asyncpg.Connection) -> None: ...
 
 
 def test_handles_none_return():

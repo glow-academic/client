@@ -283,6 +283,23 @@ CREATE TABLE public.chat_drafts_problem_statements_connection (
 
 --
 
+-- Name: chat_drafts_profiles_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.chat_drafts_profiles_connection (
+    draft_id uuid NOT NULL,
+    profiles_id uuid NOT NULL,
+    version integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    active boolean DEFAULT true NOT NULL
+);
+
+
+--
+
 -- Name: chat_drafts_questions_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -329,23 +346,6 @@ CREATE TABLE public.chat_drafts_videos_connection (
     generated boolean DEFAULT false CONSTRAINT training_drafts_videos_connection_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT training_drafts_videos_connection_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT training_drafts_videos_connection_active_not_null NOT NULL
-);
-
-
---
-
--- Name: chat_drafts_profiles_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.chat_drafts_profiles_connection (
-    draft_id uuid NOT NULL,
-    profiles_id uuid NOT NULL,
-    version integer DEFAULT 0 NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL,
-    active boolean DEFAULT true NOT NULL
 );
 
 

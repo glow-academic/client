@@ -24,14 +24,18 @@ async def _call(conn):
 
 async def test_returns_id(conn):
     session, call = await _call(conn)
-    result = await create_problem(conn, session_id=session.id, call_id=call.id, type="bug")
+    result = await create_problem(
+        conn, session_id=session.id, call_id=call.id, type="bug"
+    )
 
     assert result.id is not None
 
 
 async def test_visible_via_get_after_refresh(conn):
     session, call = await _call(conn)
-    result = await create_problem(conn, session_id=session.id, call_id=call.id, type="bug")
+    result = await create_problem(
+        conn, session_id=session.id, call_id=call.id, type="bug"
+    )
     await refresh_problems(conn)
 
     items = await get_problems(conn, [result.id])
@@ -48,7 +52,11 @@ async def test_visible_via_get_after_refresh(conn):
 async def test_passes_custom_message(conn):
     session, call = await _call(conn)
     result = await create_problem(
-        conn, session_id=session.id, call_id=call.id, type="feature", message="Custom message"
+        conn,
+        session_id=session.id,
+        call_id=call.id,
+        type="feature",
+        message="Custom message",
     )
     await refresh_problems(conn)
 
@@ -61,7 +69,9 @@ async def test_passes_custom_message(conn):
 
 async def test_passes_mcp_flag(conn):
     session, call = await _call(conn)
-    result = await create_problem(conn, session_id=session.id, call_id=call.id, type="bug", mcp=True)
+    result = await create_problem(
+        conn, session_id=session.id, call_id=call.id, type="bug", mcp=True
+    )
     await refresh_problems(conn)
 
     items = await get_problems(conn, [result.id])

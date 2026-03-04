@@ -63,6 +63,7 @@ async def get_attempts(
         for r in rows
     ]
 
+
 TRAINING_CONFIG_SQL = (
     "app/sql/queries/views/chat/training_config/get_training_config_complete.sql"
 )

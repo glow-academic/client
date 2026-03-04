@@ -26,7 +26,9 @@ async def _call(conn):
 
 async def test_returns_by_id(conn):
     run, call = await _call(conn)
-    result = await create_debug_info(conn, call_id=call.id, content="debug output", run_id=run.id)
+    result = await create_debug_info(
+        conn, call_id=call.id, content="debug output", run_id=run.id
+    )
     await refresh_debug_info(conn)
 
     items = await get_debug_info(conn, [result.id])
@@ -40,8 +42,12 @@ async def test_returns_by_id(conn):
 
 async def test_returns_multiple(conn):
     run, call = await _call(conn)
-    r1 = await create_debug_info(conn, call_id=call.id, content="debug output 1", run_id=run.id)
-    r2 = await create_debug_info(conn, call_id=call.id, content="debug output 2", run_id=run.id)
+    r1 = await create_debug_info(
+        conn, call_id=call.id, content="debug output 1", run_id=run.id
+    )
+    r2 = await create_debug_info(
+        conn, call_id=call.id, content="debug output 2", run_id=run.id
+    )
     await refresh_debug_info(conn)
 
     items = await get_debug_info(conn, [r1.id, r2.id])
@@ -66,7 +72,9 @@ async def test_returns_empty_for_empty_ids(conn):
 
 async def test_bypass_mv(conn):
     run, call = await _call(conn)
-    result = await create_debug_info(conn, call_id=call.id, content="debug output", run_id=run.id)
+    result = await create_debug_info(
+        conn, call_id=call.id, content="debug output", run_id=run.id
+    )
 
     items = await get_debug_info(conn, [result.id], bypass_mv=True)
 

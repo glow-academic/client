@@ -70,12 +70,12 @@ CREATE TABLE public.department_drafts_names_connection (
 
 --
 
--- Name: department_drafts_settings_connection; Type: TABLE; Schema: public; Owner: -
+-- Name: department_drafts_profiles_connection; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.department_drafts_settings_connection (
+CREATE TABLE public.department_drafts_profiles_connection (
     draft_id uuid NOT NULL,
-    settings_id uuid NOT NULL,
+    profiles_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -87,12 +87,12 @@ CREATE TABLE public.department_drafts_settings_connection (
 
 --
 
--- Name: department_drafts_profiles_connection; Type: TABLE; Schema: public; Owner: -
+-- Name: department_drafts_settings_connection; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.department_drafts_profiles_connection (
+CREATE TABLE public.department_drafts_settings_connection (
     draft_id uuid NOT NULL,
-    profiles_id uuid NOT NULL,
+    settings_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,

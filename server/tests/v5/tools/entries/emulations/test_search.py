@@ -116,8 +116,12 @@ async def test_filters_by_date_to(conn):
 async def test_filters_by_mcp(conn):
     session = await _session(conn)
     grant_id = await _grant(conn, session.id)
-    r_mcp = await create_emulation(conn, grant_id=grant_id, session_id=session.id, mcp=True)
-    r_normal = await create_emulation(conn, grant_id=grant_id, session_id=session.id, mcp=False)
+    r_mcp = await create_emulation(
+        conn, grant_id=grant_id, session_id=session.id, mcp=True
+    )
+    r_normal = await create_emulation(
+        conn, grant_id=grant_id, session_id=session.id, mcp=False
+    )
     await refresh_emulations(conn)
 
     items = await search_emulations(conn, mcp=True)

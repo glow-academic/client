@@ -117,7 +117,12 @@ async def get_pricing_internal(
     config_providers: list[Any] = []
     if config_provider_resource_ids:
         async with pool.acquire() as conn:
-            config_providers = await get_providers(                conn, config_provider_resource_ids, get_redis_client(), bypass_cache=bypass_cache            )
+            config_providers = await get_providers(
+                conn,
+                config_provider_resource_ids,
+                get_redis_client(),
+                bypass_cache=bypass_cache,
+            )
 
     # 4. Fetch config profile + today's runs in parallel
     async def fetch_config_profile() -> list[QGetProfilesV4Item]:
@@ -471,13 +476,19 @@ async def get_pricing(
         async def fetch_agents():
             async with pool.acquire() as c:
                 return await get_agents(
-                    c, list(agent_ids_set), get_redis_client(), bypass_cache=bypass_cache
+                    c,
+                    list(agent_ids_set),
+                    get_redis_client(),
+                    bypass_cache=bypass_cache,
                 )
 
         async def fetch_models():
             async with pool.acquire() as c:
                 return await get_models(
-                    c, list(model_ids_set), get_redis_client(), bypass_cache=bypass_cache
+                    c,
+                    list(model_ids_set),
+                    get_redis_client(),
+                    bypass_cache=bypass_cache,
                 )
 
         agents_list, models_list = await asyncio.gather(fetch_agents(), fetch_models())

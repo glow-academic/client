@@ -10,11 +10,9 @@ from app.routes.v5.api.entries.attempt_message.types import (
     CreateAttemptMessageEntryRequest,
     CreateAttemptMessageEntryResponse,
 )
-from app.routes.v5.tools.entries.attempt_message.create import (
-    SQL_PATH,
-    create_attempt_message_entry_internal,
-)
-from app.sql.types import load_sql_query
+from app.routes.v5.tools.entries.attempt_message.create import create_attempt_message
+from app.routes.v5.tools.entries.calls.create import create_call
+from app.routes.v5.tools.entries.messages.create import create_message
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
@@ -31,7 +29,6 @@ async def create_attempt_message_entry(
 ) -> CreateAttemptMessageEntryResponse:
     """Create attempt_message entry."""
     tags = ["entries", "attempt_message"]
-    sql_query = load_sql_query(SQL_PATH)
 
     try:
         profile_id = http_request.state.profile_id
@@ -41,23 +38,35 @@ async def create_attempt_message_entry(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        if not request.run_id:
+            raise HTTPException(status_code=400, detail="run_id is required")
+
         mcp = getattr(http_request.state, "mcp", False) or False
-        request_dict = request.model_dump()
+        session_id = getattr(http_request.state, "session_id", None)
 
-        # API caller does not pass run_id — resolved internally
-        if "run_id" not in request_dict or request_dict.get("run_id") is None:
-            raise HTTPException(
-                status_code=400,
-                detail="run_id is required",
+        async with conn.transaction():
+            call = await create_call(
+                conn,
+                run_id=request.run_id,
+                session_id=session_id or request.run_id,
+                mcp=mcp,
             )
-
-        api_response = await create_attempt_message_entry_internal(
-            conn, request_dict, mcp
-        )
+            msg = await create_message(
+                conn, run_id=request.run_id, role="assistant", mcp=mcp
+            )
+            result = await create_attempt_message(
+                conn,
+                chat_id=request.chat_id,
+                message_id=request.message_id or msg.id,
+                call_id=call.id,
+                mcp=mcp,
+            )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return api_response
+        return CreateAttemptMessageEntryResponse(
+            id=result.id, call_id=call.id, message_id=msg.id
+        )
     except HTTPException:
         raise
     except ValueError as e:
@@ -67,7 +76,7 @@ async def create_attempt_message_entry(
             error=e,
             route_path=http_request.url.path,
             operation="create_attempt_message_entry",
-            sql_query=sql_query,
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )

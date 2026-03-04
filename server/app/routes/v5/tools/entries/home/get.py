@@ -53,6 +53,7 @@ async def get_homes(
         for r in rows
     ]
 
+
 SQL_PATH = "app/sql/queries/entries/home/get_home_entries_complete.sql"
 
 VIEW_SQL_PATH = "app/sql/queries/views/home/context/get_home_context_view_complete.sql"

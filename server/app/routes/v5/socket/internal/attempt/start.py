@@ -6,8 +6,8 @@ Flow:
 1. Resolve session_id, profiles_resource_id, persona_id, num_chats, simulation metadata
 2. Create run (with profile link) via create_run
 3. Create persona entry (with resource link) via create_persona_entry_internal
-4. Create attempt entry (with profiles connection) via create_attempt_entry_internal
-5. Create parent bridge via create_attempt_practice/home_entry_internal
+4. Create attempt entry (with profiles connection) via create_attempt
+5. Create parent bridge via create_attempt_practice/home
 6. Refresh MVs + invalidate cache
 7. Emit attempt_proceed with attempt_id
 """
@@ -27,17 +27,14 @@ from app.routes.v5.socket.internal.attempt.types import (
     AttemptErrorData,
     AttemptProceedData,
 )
-from app.routes.v5.tools.entries.attempt.create import create_attempt_entry_internal
+from app.routes.v5.tools.entries.attempt.create import create_attempt
 from app.routes.v5.tools.entries.attempt.refresh import refresh_attempt_internal
 from app.routes.v5.tools.entries.attempt_chat.refresh import (
     refresh_attempt_chat_internal,
 )
-from app.routes.v5.tools.entries.attempt_home.create import (
-    create_attempt_home_entry_internal,
-)
-from app.routes.v5.tools.entries.attempt_practice.create import (
-    create_attempt_practice_entry_internal,
-)
+from app.routes.v5.tools.entries.attempt_home.create import create_attempt_home
+from app.routes.v5.tools.entries.attempt_practice.create import create_attempt_practice
+from app.routes.v5.tools.entries.calls.create import create_call
 from app.routes.v5.tools.entries.home.get import get_home_entries_internal
 from app.routes.v5.tools.entries.home_chat.search import (
     search_home_chat_entries_internal,
@@ -185,40 +182,39 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
                     {"run_id": str(run_id), "personas_id": str(persona_id)},
                 )
 
-                # 8. Create attempt entry + profiles connection
-                attempt_result = await create_attempt_entry_internal(
+                # 8. Create call + attempt entry + profiles connection
+                call = await create_call(
                     conn,
-                    {
-                        "run_id": str(run_id),
-                        "infinite_mode": payload.infinite_mode,
-                        "num_chats": num_chats,
-                        "user_persona_id": str(persona_result.id),
-                        "name": sim_name,
-                        "description": sim_desc,
-                        "practice": is_practice,
-                        "profiles_id": str(profiles_resource_id),
-                    },
+                    run_id=run_id,
+                    session_id=session_id,
+                )
+                attempt_result = await create_attempt(
+                    conn,
+                    call_id=call.id,
+                    user_persona_id=persona_result.id,
+                    profiles_id=profiles_resource_id,
+                    name=sim_name or "",
+                    description=sim_desc or "",
+                    infinite_mode=payload.infinite_mode,
+                    num_chats=num_chats,
+                    practice=is_practice,
                 )
                 attempt_id = attempt_result.id
 
                 # 9. Create parent bridge
                 if is_practice:
-                    await create_attempt_practice_entry_internal(
+                    await create_attempt_practice(
                         conn,
-                        {
-                            "run_id": str(run_id),
-                            "attempt_id": str(attempt_id),
-                            "practice_id": str(payload.practice_id),
-                        },
+                        attempt_id=attempt_id,
+                        practice_id=payload.practice_id,
+                        session_id=session_id,
                     )
                 else:
-                    await create_attempt_home_entry_internal(
+                    await create_attempt_home(
                         conn,
-                        {
-                            "run_id": str(run_id),
-                            "attempt_id": str(attempt_id),
-                            "home_id": str(payload.home_id),
-                        },
+                        attempt_id=attempt_id,
+                        home_id=payload.home_id,
+                        session_id=session_id,
                     )
 
         # Step 2: Refresh MVs so the attempt is visible immediately

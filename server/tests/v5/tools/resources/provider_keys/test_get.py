@@ -9,7 +9,9 @@ from app.routes.v5.tools.resources.provider_keys.get import get_provider_keys
 pytestmark = pytest.mark.asyncio
 
 
-async def _insert_provider_key(conn, *, name="test-pk", key="sk-pk-123", description="Test pk desc"):
+async def _insert_provider_key(
+    conn, *, name="test-pk", key="sk-pk-123", description="Test pk desc"
+):
     """Helper to insert provider_keys_resource with required FK deps."""
     provider_id = await conn.fetchval("""
         INSERT INTO providers_resource (name) VALUES ('test-provider-for-pk')
@@ -19,11 +21,18 @@ async def _insert_provider_key(conn, *, name="test-pk", key="sk-pk-123", descrip
         INSERT INTO keys_resource (key, name) VALUES ('sk-fk-dep', 'fk-dep-key')
         RETURNING id
     """)
-    pk_id = await conn.fetchval("""
+    pk_id = await conn.fetchval(
+        """
         INSERT INTO provider_keys_resource (provider_id, key_id, key, name, description)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING id
-    """, provider_id, key_id, key, name, description)
+    """,
+        provider_id,
+        key_id,
+        key,
+        name,
+        description,
+    )
     return pk_id, provider_id, key_id
 
 

@@ -172,7 +172,12 @@ async def get_model_list(
         # Hydrate provider_name per model from cached providers
         if pool and model_provider_ids:
             async with pool.acquire() as c:
-                providers_data = await get_providers(                    c, list(model_provider_ids), get_redis_client(), bypass_cache=bypass_cache                )
+                providers_data = await get_providers(
+                    c,
+                    list(model_provider_ids),
+                    get_redis_client(),
+                    bypass_cache=bypass_cache,
+                )
             provider_map: dict[UUID, Any] = {}
             for p in providers_data:
                 p_id = getattr(p, "id", None)

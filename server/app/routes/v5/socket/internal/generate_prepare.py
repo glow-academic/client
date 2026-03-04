@@ -551,7 +551,9 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
         config_models = []
         if model_ids and pool:
             async with pool.acquire() as c:
-                config_models = await get_models(c, model_ids, get_redis_client(), bypass_cache)
+                config_models = await get_models(
+                    c, model_ids, get_redis_client(), bypass_cache
+                )
         models_by_id = {m.id: m for m in config_models if m.id}
 
         provider_ids = list(
@@ -564,7 +566,9 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
         config_providers = []
         if provider_ids and pool:
             async with pool.acquire() as c:
-                config_providers = await get_providers(                    c, provider_ids, get_redis_client(), bypass_cache=bypass_cache                )
+                config_providers = await get_providers(
+                    c, provider_ids, get_redis_client(), bypass_cache=bypass_cache
+                )
         providers_by_id = {p.id: p for p in config_providers if getattr(p, "id", None)}
 
         # Step 6b: Build agent_groups from systems first, then legacy resource_agent_ids
@@ -878,7 +882,9 @@ async def generate_prepare_handler(data: dict[str, Any]) -> None:
                     if not iids:
                         return []
                     async with pool.acquire() as c:  # type: ignore[union-attr]
-                        instructions = await get_instructions(c, iids, get_redis_client())
+                        instructions = await get_instructions(
+                            c, iids, get_redis_client()
+                        )
                         return [inst.template for inst in instructions if inst.template]
 
                 system_prompt, developer_instruction_templates = await asyncio.gather(

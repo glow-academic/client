@@ -24,7 +24,9 @@ async def _call(conn):
 
 async def test_new_problem_appears_after_refresh(conn):
     session, call = await _call(conn)
-    result = await create_problem(conn, session_id=session.id, call_id=call.id, type="bug")
+    result = await create_problem(
+        conn, session_id=session.id, call_id=call.id, type="bug"
+    )
     await refresh_problems(conn)
 
     items = await get_problems(conn, [result.id])
@@ -35,7 +37,9 @@ async def test_new_problem_appears_after_refresh(conn):
 
 async def test_new_problem_not_visible_before_refresh(conn):
     session, call = await _call(conn)
-    result = await create_problem(conn, session_id=session.id, call_id=call.id, type="bug")
+    result = await create_problem(
+        conn, session_id=session.id, call_id=call.id, type="bug"
+    )
 
     items = await get_problems(conn, [result.id])
 

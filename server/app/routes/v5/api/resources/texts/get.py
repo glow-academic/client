@@ -41,7 +41,9 @@ async def get_texts(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_texts_resource(conn, request.p_ids or [], get_redis_client(), bypass_cache)
+        items = await get_texts_resource(
+            conn, request.p_ids or [], get_redis_client(), bypass_cache
+        )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetTextsApiResponse(items=items)
     except HTTPException:

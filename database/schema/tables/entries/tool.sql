@@ -9,12 +9,11 @@ CREATE TABLE public.tool_drafts_entry (
     id uuid DEFAULT uuidv7() NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL,
-    group_id uuid,
-    session_id uuid
+    group_id uuid NOT NULL,
+    session_id uuid NOT NULL
 );
 
 

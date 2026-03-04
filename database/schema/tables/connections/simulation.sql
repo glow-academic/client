@@ -84,6 +84,23 @@ CREATE TABLE public.simulation_drafts_names_connection (
 
 --
 
+-- Name: simulation_drafts_profiles_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.simulation_drafts_profiles_connection (
+    draft_id uuid NOT NULL,
+    profiles_id uuid NOT NULL,
+    version integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    active boolean DEFAULT true NOT NULL
+);
+
+
+--
+
 -- Name: simulation_drafts_scenario_flags_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -175,23 +192,6 @@ CREATE TABLE public.simulation_drafts_scenarios_connection (
 CREATE TABLE public.simulation_drafts_simulations_connection (
     draft_id uuid NOT NULL,
     simulations_id uuid CONSTRAINT simulation_drafts_simulations_connectio_simulations_id_not_null NOT NULL,
-    version integer DEFAULT 0 NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL,
-    active boolean DEFAULT true NOT NULL
-);
-
-
---
-
--- Name: simulation_drafts_profiles_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.simulation_drafts_profiles_connection (
-    draft_id uuid NOT NULL,
-    profiles_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,

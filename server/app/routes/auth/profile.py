@@ -52,7 +52,9 @@ async def get_auth_profile_internal(
         if not department_ids:
             return []
         async with pool.acquire() as c:
-            return await get_departments(c, department_ids, get_redis_client(), bypass_cache=bypass_cache)
+            return await get_departments(
+                c, department_ids, get_redis_client(), bypass_cache=bypass_cache
+            )
 
     async def fetch_cohorts():
         if not cohort_ids:

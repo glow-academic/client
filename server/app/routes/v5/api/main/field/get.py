@@ -310,7 +310,12 @@ async def get_field_internal(
     async def fetch_departments():
         async with pool.acquire() as c:
             return (
-                await get_departments(                    c, selected_department_ids, get_redis_client(), bypass_cache=bypass_cache                ),
+                await get_departments(
+                    c,
+                    selected_department_ids,
+                    get_redis_client(),
+                    bypass_cache=bypass_cache,
+                ),
                 await search_departments_internal(
                     c,
                     search=None,
@@ -470,7 +475,12 @@ async def get_field_internal(
                 }
             )
             if provider_ids:
-                config_providers = await get_providers(                    config_conn, provider_ids, get_redis_client(), bypass_cache=bypass_cache                )
+                config_providers = await get_providers(
+                    config_conn,
+                    provider_ids,
+                    get_redis_client(),
+                    bypass_cache=bypass_cache,
+                )
     tool_ids: list[UUID] = []
     for agent in config_agents:
         raw = getattr(agent, "tool_ids", None) or []

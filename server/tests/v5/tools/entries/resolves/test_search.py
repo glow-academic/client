@@ -27,14 +27,18 @@ async def _call(conn):
 
 
 async def _problem(conn, session, call):
-    result = await create_problem(conn, session_id=session.id, call_id=call.id, type="bug")
+    result = await create_problem(
+        conn, session_id=session.id, call_id=call.id, type="bug"
+    )
     return result.id
 
 
 async def test_finds_created_resolve(conn):
     session, call = await _call(conn)
     problem_id = await _problem(conn, session, call)
-    result = await create_resolve(conn, problem_id=problem_id, resolved=False, call_id=call.id)
+    result = await create_resolve(
+        conn, problem_id=problem_id, resolved=False, call_id=call.id
+    )
     await refresh_resolves(conn)
 
     items = await search_resolves(conn, problem_id=problem_id)
@@ -57,8 +61,12 @@ async def test_filters_by_problem_id(conn):
 async def test_filters_by_resolved(conn):
     session, call = await _call(conn)
     problem_id = await _problem(conn, session, call)
-    r_resolved = await create_resolve(conn, problem_id=problem_id, resolved=True, call_id=call.id)
-    r_unresolved = await create_resolve(conn, problem_id=problem_id, resolved=False, call_id=call.id)
+    r_resolved = await create_resolve(
+        conn, problem_id=problem_id, resolved=True, call_id=call.id
+    )
+    r_unresolved = await create_resolve(
+        conn, problem_id=problem_id, resolved=False, call_id=call.id
+    )
     await refresh_resolves(conn)
 
     items = await search_resolves(conn, resolved=True)
@@ -71,8 +79,12 @@ async def test_filters_by_resolved(conn):
 async def test_filters_by_mcp(conn):
     session, call = await _call(conn)
     problem_id = await _problem(conn, session, call)
-    r_mcp = await create_resolve(conn, problem_id=problem_id, resolved=False, call_id=call.id, mcp=True)
-    r_normal = await create_resolve(conn, problem_id=problem_id, resolved=False, call_id=call.id, mcp=False)
+    r_mcp = await create_resolve(
+        conn, problem_id=problem_id, resolved=False, call_id=call.id, mcp=True
+    )
+    r_normal = await create_resolve(
+        conn, problem_id=problem_id, resolved=False, call_id=call.id, mcp=False
+    )
     await refresh_resolves(conn)
 
     items = await search_resolves(conn, mcp=True)
@@ -85,7 +97,9 @@ async def test_filters_by_mcp(conn):
 async def test_filters_by_date_from(conn):
     session, call = await _call(conn)
     problem_id = await _problem(conn, session, call)
-    result = await create_resolve(conn, problem_id=problem_id, resolved=False, call_id=call.id)
+    result = await create_resolve(
+        conn, problem_id=problem_id, resolved=False, call_id=call.id
+    )
     await refresh_resolves(conn)
 
     future = datetime.now(UTC) + timedelta(days=1)
@@ -98,7 +112,9 @@ async def test_filters_by_date_from(conn):
 async def test_filters_by_date_to(conn):
     session, call = await _call(conn)
     problem_id = await _problem(conn, session, call)
-    result = await create_resolve(conn, problem_id=problem_id, resolved=False, call_id=call.id)
+    result = await create_resolve(
+        conn, problem_id=problem_id, resolved=False, call_id=call.id
+    )
     await refresh_resolves(conn)
 
     past = datetime.now(UTC) - timedelta(days=1)
@@ -134,7 +150,9 @@ async def test_returns_all_without_filter(conn):
 async def test_bypass_mv_finds_without_refresh(conn):
     session, call = await _call(conn)
     problem_id = await _problem(conn, session, call)
-    result = await create_resolve(conn, problem_id=problem_id, resolved=False, call_id=call.id)
+    result = await create_resolve(
+        conn, problem_id=problem_id, resolved=False, call_id=call.id
+    )
 
     items = await search_resolves(conn, problem_id=problem_id, bypass_mv=True)
 

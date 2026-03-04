@@ -310,7 +310,12 @@ async def get_persona_list(
                 if not department_ids_to_fetch:
                     return []
                 async with pool.acquire() as c:
-                    return await get_departments(                        c, department_ids_to_fetch, get_redis_client(), bypass_cache=bypass_cache                    )
+                    return await get_departments(
+                        c,
+                        department_ids_to_fetch,
+                        get_redis_client(),
+                        bypass_cache=bypass_cache,
+                    )
 
             scenarios_data, fields_data, departments_data = await asyncio.gather(
                 fetch_scenarios(), fetch_fields(), fetch_departments()

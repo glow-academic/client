@@ -300,7 +300,12 @@ async def get_scenario_list(
                 if not department_id_set:
                     return []
                 async with pool.acquire() as c:
-                    return await get_departments(                        c, list(department_id_set), get_redis_client(), bypass_cache=bypass_cache                    )
+                    return await get_departments(
+                        c,
+                        list(department_id_set),
+                        get_redis_client(),
+                        bypass_cache=bypass_cache,
+                    )
 
             async def fetch_objectives() -> list:
                 if not objective_id_set:

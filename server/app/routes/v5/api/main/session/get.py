@@ -104,7 +104,12 @@ async def get_session_internal(
     config_providers: list[Any] = []
     if config_provider_resource_ids:
         async with pool.acquire() as conn:
-            config_providers = await get_providers(                conn, config_provider_resource_ids, get_redis_client(), bypass_cache=bypass_cache            )
+            config_providers = await get_providers(
+                conn,
+                config_provider_resource_ids,
+                get_redis_client(),
+                bypass_cache=bypass_cache,
+            )
 
     # 2. Resolve actor context
     from app.routes.auth.profile import get_auth_profile_internal

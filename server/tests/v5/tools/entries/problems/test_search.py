@@ -27,7 +27,9 @@ async def _call(conn):
 
 async def test_finds_created_problem(conn):
     session, call = await _call(conn)
-    result = await create_problem(conn, session_id=session.id, call_id=call.id, type="bug")
+    result = await create_problem(
+        conn, session_id=session.id, call_id=call.id, type="bug"
+    )
     await refresh_problems(conn)
 
     items = await search_problems(conn, session_id=session.id)
@@ -65,8 +67,12 @@ async def test_filters_by_profile(conn):
 
 async def test_filters_by_type(conn):
     session, call = await _call(conn)
-    r_bug = await create_problem(conn, session_id=session.id, call_id=call.id, type="bug")
-    r_feature = await create_problem(conn, session_id=session.id, call_id=call.id, type="feature")
+    r_bug = await create_problem(
+        conn, session_id=session.id, call_id=call.id, type="bug"
+    )
+    r_feature = await create_problem(
+        conn, session_id=session.id, call_id=call.id, type="feature"
+    )
     await refresh_problems(conn)
 
     items = await search_problems(conn, type="bug")
@@ -78,7 +84,9 @@ async def test_filters_by_type(conn):
 
 async def test_filters_by_date_from(conn):
     session, call = await _call(conn)
-    result = await create_problem(conn, session_id=session.id, call_id=call.id, type="bug")
+    result = await create_problem(
+        conn, session_id=session.id, call_id=call.id, type="bug"
+    )
     await refresh_problems(conn)
 
     future = datetime.now(UTC) + timedelta(days=1)
@@ -90,7 +98,9 @@ async def test_filters_by_date_from(conn):
 
 async def test_filters_by_date_to(conn):
     session, call = await _call(conn)
-    result = await create_problem(conn, session_id=session.id, call_id=call.id, type="bug")
+    result = await create_problem(
+        conn, session_id=session.id, call_id=call.id, type="bug"
+    )
     await refresh_problems(conn)
 
     past = datetime.now(UTC) - timedelta(days=1)
@@ -102,8 +112,12 @@ async def test_filters_by_date_to(conn):
 
 async def test_filters_by_mcp(conn):
     session, call = await _call(conn)
-    r_mcp = await create_problem(conn, session_id=session.id, call_id=call.id, type="bug", mcp=True)
-    r_normal = await create_problem(conn, session_id=session.id, call_id=call.id, type="bug", mcp=False)
+    r_mcp = await create_problem(
+        conn, session_id=session.id, call_id=call.id, type="bug", mcp=True
+    )
+    r_normal = await create_problem(
+        conn, session_id=session.id, call_id=call.id, type="bug", mcp=False
+    )
     await refresh_problems(conn)
 
     items = await search_problems(conn, mcp=True)
@@ -136,7 +150,9 @@ async def test_returns_all_without_filter(conn):
 
 async def test_bypass_mv_finds_without_refresh(conn):
     session, call = await _call(conn)
-    result = await create_problem(conn, session_id=session.id, call_id=call.id, type="question")
+    result = await create_problem(
+        conn, session_id=session.id, call_id=call.id, type="question"
+    )
 
     items = await search_problems(conn, session_id=session.id, bypass_mv=True)
 

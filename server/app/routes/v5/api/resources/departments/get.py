@@ -35,7 +35,9 @@ async def get_departments(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_departments(conn, request.ids, get_redis_client(), bypass_cache=bypass_cache)
+        items = await get_departments(
+            conn, request.ids, get_redis_client(), bypass_cache=bypass_cache
+        )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetDepartmentsApiResponse(items=items)
     except HTTPException:

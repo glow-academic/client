@@ -28,8 +28,7 @@ async def get_slugs(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetSlugResponse.model_validate(item)
-                for item in cached.get("items", [])
+                GetSlugResponse.model_validate(item) for item in cached.get("items", [])
             ]
 
     rows = await conn.fetch(

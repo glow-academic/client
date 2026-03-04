@@ -54,7 +54,9 @@ async def test_passes_mcp_flag(conn):
 
 async def test_stores_input_tokens(conn):
     session, run = await _run(conn)
-    result = await create_token(conn, run_id=run.id, session_id=session.id, input_tokens=100)
+    result = await create_token(
+        conn, run_id=run.id, session_id=session.id, input_tokens=100
+    )
     await refresh_tokens(conn)
 
     items = await get_tokens(conn, [result.id])
@@ -65,7 +67,9 @@ async def test_stores_input_tokens(conn):
 
 async def test_stores_output_tokens(conn):
     session, run = await _run(conn)
-    result = await create_token(conn, run_id=run.id, session_id=session.id, output_tokens=200)
+    result = await create_token(
+        conn, run_id=run.id, session_id=session.id, output_tokens=200
+    )
     await refresh_tokens(conn)
 
     items = await get_tokens(conn, [result.id])
@@ -76,7 +80,9 @@ async def test_stores_output_tokens(conn):
 
 async def test_stores_cached_input_tokens(conn):
     session, run = await _run(conn)
-    result = await create_token(conn, run_id=run.id, session_id=session.id, cached_input_tokens=50)
+    result = await create_token(
+        conn, run_id=run.id, session_id=session.id, cached_input_tokens=50
+    )
     await refresh_tokens(conn)
 
     items = await get_tokens(conn, [result.id])

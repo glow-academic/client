@@ -28,8 +28,7 @@ async def get_flags(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetFlagResponse.model_validate(item)
-                for item in cached.get("items", [])
+                GetFlagResponse.model_validate(item) for item in cached.get("items", [])
             ]
 
     rows = await conn.fetch(

@@ -440,7 +440,9 @@ async def get_model_internal(
 
     async def fetch_descriptions():
         async with pool.acquire() as c:
-            selected = await get_descriptions(c, description_ids, get_redis_client(), cache)
+            selected = await get_descriptions(
+                c, description_ids, get_redis_client(), cache
+            )
             suggestions = await search_descriptions_internal(
                 c,
                 None,
@@ -456,12 +458,16 @@ async def get_model_internal(
 
     async def fetch_values():
         async with pool.acquire() as c:
-            selected = await get_values(c, value_ids_list, get_redis_client(), bypass_cache)
+            selected = await get_values(
+                c, value_ids_list, get_redis_client(), bypass_cache
+            )
             return (selected, [])
 
     async def fetch_providers():
         async with pool.acquire() as c:
-            selected = await get_providers(c, provider_ids_list, get_redis_client(), bypass_cache=bypass_cache)
+            selected = await get_providers(
+                c, provider_ids_list, get_redis_client(), bypass_cache=bypass_cache
+            )
             return (selected, [])
 
     async def fetch_flags():
@@ -475,7 +481,12 @@ async def get_model_internal(
 
     async def fetch_departments():
         async with pool.acquire() as c:
-            selected = await get_departments(                c, selected_department_ids, get_redis_client(), bypass_cache=bypass_cache            )
+            selected = await get_departments(
+                c,
+                selected_department_ids,
+                get_redis_client(),
+                bypass_cache=bypass_cache,
+            )
             suggestions = await search_departments_internal(
                 c,
                 search=None,
@@ -524,7 +535,9 @@ async def get_model_internal(
 
     async def fetch_voices():
         async with pool.acquire() as c:
-            selected = await get_voices(c, selected_voice_ids, get_redis_client(), bypass_cache)
+            selected = await get_voices(
+                c, selected_voice_ids, get_redis_client(), bypass_cache
+            )
             return (selected, [])
 
     # Parallel fetch
@@ -727,7 +740,12 @@ async def get_model_internal(
     )
     if provider_ids_for_config:
         async with pool.acquire() as c:
-            config_providers_result = await get_providers(                c, provider_ids_for_config, get_redis_client(), bypass_cache=bypass_cache            )
+            config_providers_result = await get_providers(
+                c,
+                provider_ids_for_config,
+                get_redis_client(),
+                bypass_cache=bypass_cache,
+            )
 
     return ModelInternalData(
         actor_name=actor_name,
@@ -808,7 +826,9 @@ async def get_model_websocket(
         if not pool:
             return None
         async with pool.acquire() as conn:
-            return await get_profiles(conn, [profile_id], get_redis_client(), bypass_cache)
+            return await get_profiles(
+                conn, [profile_id], get_redis_client(), bypass_cache
+            )
 
     async def fetch_runs_today():
         if not pool:

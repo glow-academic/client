@@ -325,7 +325,9 @@ async def get_department_internal(
 
     async def fetch_descriptions() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_descriptions(c, description_ids, get_redis_client(), cache)
+            selected = await get_descriptions(
+                c, description_ids, get_redis_client(), cache
+            )
             suggestions = await search_descriptions_internal(
                 c,
                 None,
@@ -458,7 +460,10 @@ async def get_department_internal(
     if config_model_resource_ids:
         async with pool.acquire() as c:
             config_models = await get_models(
-                c, config_model_resource_ids, get_redis_client(), bypass_cache=bypass_cache
+                c,
+                config_model_resource_ids,
+                get_redis_client(),
+                bypass_cache=bypass_cache,
             )
         provider_ids = list(
             dict.fromkeys(
@@ -467,7 +472,9 @@ async def get_department_internal(
         )
         if provider_ids:
             async with pool.acquire() as c:
-                config_providers = await get_providers(                    c, provider_ids, get_redis_client(), bypass_cache=bypass_cache                )
+                config_providers = await get_providers(
+                    c, provider_ids, get_redis_client(), bypass_cache=bypass_cache
+                )
     tool_ids: list[UUID] = []
     for agent in config_agents:
         raw = getattr(agent, "tool_ids", None) or []

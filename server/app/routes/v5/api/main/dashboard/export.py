@@ -163,7 +163,10 @@ async def export_dashboard(
         async def _get_profiles() -> list[Any]:
             async with pool.acquire() as c:
                 return await get_profiles(
-                    conn=c, ids=list(profile_ids_set), redis=get_redis_client(), bypass_cache=True
+                    conn=c,
+                    ids=list(profile_ids_set),
+                    redis=get_redis_client(),
+                    bypass_cache=True,
                 )
 
         async def _get_simulations() -> list[Any]:

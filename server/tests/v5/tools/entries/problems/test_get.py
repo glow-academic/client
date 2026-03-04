@@ -26,7 +26,9 @@ async def _call(conn):
 
 async def test_returns_problem_by_id(conn):
     session, call = await _call(conn)
-    result = await create_problem(conn, session_id=session.id, call_id=call.id, type="bug")
+    result = await create_problem(
+        conn, session_id=session.id, call_id=call.id, type="bug"
+    )
     await refresh_problems(conn)
 
     items = await get_problems(conn, [result.id])
@@ -42,7 +44,9 @@ async def test_returns_problem_by_id(conn):
 async def test_returns_multiple(conn):
     session, call = await _call(conn)
     r1 = await create_problem(conn, session_id=session.id, call_id=call.id, type="bug")
-    r2 = await create_problem(conn, session_id=session.id, call_id=call.id, type="feature")
+    r2 = await create_problem(
+        conn, session_id=session.id, call_id=call.id, type="feature"
+    )
     await refresh_problems(conn)
 
     items = await get_problems(conn, [r1.id, r2.id])
@@ -67,7 +71,9 @@ async def test_returns_empty_for_empty_ids(conn):
 
 async def test_bypass_mv_returns_without_refresh(conn):
     session, call = await _call(conn)
-    result = await create_problem(conn, session_id=session.id, call_id=call.id, type="other")
+    result = await create_problem(
+        conn, session_id=session.id, call_id=call.id, type="other"
+    )
 
     items = await get_problems(conn, [result.id], bypass_mv=True)
 

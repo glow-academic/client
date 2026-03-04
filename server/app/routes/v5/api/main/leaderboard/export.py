@@ -181,7 +181,10 @@ async def export_leaderboard(
         async def fetch_profiles() -> list:
             async with pool.acquire() as c:
                 return await get_profiles(
-                    conn=c, ids=list(profile_id_set), redis=get_redis_client(), bypass_cache=True
+                    conn=c,
+                    ids=list(profile_id_set),
+                    redis=get_redis_client(),
+                    bypass_cache=True,
                 )
 
         async def fetch_simulations() -> list:
