@@ -25831,7 +25831,6 @@ class QGetParameterFieldsV4Item(BaseModel):
     name: str | None
     description: str | None
     generated: bool | None
-    conditional_parameter_id: UUID | None
 
 class GetParameterFieldsSqlRow(BaseModel):
 

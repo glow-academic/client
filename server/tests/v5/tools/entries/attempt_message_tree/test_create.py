@@ -1,7 +1,5 @@
 """Tests for create_attempt_message_tree."""
 
-from uuid import uuid4
-
 import pytest
 
 from app.routes.v5.tools.entries.attempt.create import create_attempt
@@ -17,7 +15,9 @@ from app.routes.v5.tools.entries.attempt_message_tree.refresh import (
     refresh_attempt_message_tree,
 )
 from app.routes.v5.tools.entries.calls.create import create_call
+from app.routes.v5.tools.entries.chat.create import create_chat
 from app.routes.v5.tools.entries.groups.create import create_group
+from app.routes.v5.tools.entries.messages.create import create_message
 from app.routes.v5.tools.entries.persona.create import create_persona
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
@@ -38,21 +38,22 @@ async def _attempt_message_tree(conn, **overrides):
         user_persona_id=persona.id,
         profiles_id=SUPERADMIN_PROFILES_RESOURCE_ID,
     )
+    real_chat = await create_chat(conn, session_id=session.id)
     call2 = await create_call(conn, run_id=run.id, session_id=session.id)
     chat = await create_attempt_chat(
-        conn, call_id=call2.id, group_id=group.id, chat_id=uuid4()
+        conn, call_id=call2.id, group_id=group.id, chat_id=real_chat.id
     )
-    msg1_id = uuid4()
-    msg2_id = uuid4()
+    msg1 = await create_message(conn, run_id=run.id, role="user")
+    msg2 = await create_message(conn, run_id=run.id, role="assistant")
     await create_attempt_message(
-        conn, chat_id=chat.id, call_id=call2.id, message_id=msg1_id
+        conn, chat_id=chat.id, call_id=call2.id, message_id=msg1.id
     )
     await create_attempt_message(
-        conn, chat_id=chat.id, call_id=call2.id, message_id=msg2_id
+        conn, chat_id=chat.id, call_id=call2.id, message_id=msg2.id
     )
     defaults = dict(
-        parent_id=msg1_id,
-        child_id=msg2_id,
+        parent_id=msg1.id,
+        child_id=msg2.id,
         session_id=session.id,
     )
     defaults.update(overrides)

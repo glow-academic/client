@@ -56,8 +56,7 @@ CREATE TYPE types.q_get_parameter_fields_v4_item AS (
     parameter_id uuid,
     name text,
     description text,
-    generated boolean,
-    conditional_parameter_id uuid
+    generated boolean
 );
 
 -- Create function - query parameter_fields_resource with join to fields_resource only
@@ -78,8 +77,7 @@ SELECT COALESCE(
             pfr.parameter_id,
             f.name,
             COALESCE(f.description, ''),
-            COALESCE(pfr.generated, false),
-            pfr.conditional_parameter_id
+            COALESCE(pfr.generated, false)
         )::types.q_get_parameter_fields_v4_item
         ORDER BY array_position(ids, pfr.id)
     ),

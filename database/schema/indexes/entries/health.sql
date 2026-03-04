@@ -10,6 +10,22 @@ CREATE INDEX health_service_ts_idx ON public.health_entry USING btree (service, 
 
 --
 
+-- Name: idx_health_entry_active; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_health_entry_active ON public.health_entry USING btree (active);
+
+
+--
+
+-- Name: idx_health_entry_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_health_entry_created_at ON public.health_entry USING btree (created_at);
+
+
+--
+
 -- Name: idx_health_entry_session_id; Type: INDEX; Schema: public; Owner: -
 --
 

@@ -9,7 +9,6 @@ CREATE TABLE public.run_pricing_entry (
     pricing_type public.pricing_type CONSTRAINT run_pricing_usage_pricing_type_not_null NOT NULL,
     count integer DEFAULT 0 CONSTRAINT run_pricing_usage_count_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT run_pricing_usage_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT run_pricing_usage_updated_at_not_null NOT NULL,
     run_id uuid CONSTRAINT run_pricing_usage_run_id_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT run_pricing_usage_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT run_pricing_usage_mcp_not_null NOT NULL,
@@ -21,11 +20,11 @@ CREATE TABLE public.run_pricing_entry (
 
 --
 
--- Name: run_pricing_entry run_pricing_entry_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: run_pricing_entry run_pricing_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.run_pricing_entry
-    ADD CONSTRAINT run_pricing_entry_id_key UNIQUE (id);
+    ADD CONSTRAINT run_pricing_entry_pkey PRIMARY KEY (id);
 
 
 --

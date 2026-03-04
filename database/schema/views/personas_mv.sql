@@ -8,7 +8,6 @@
 CREATE MATERIALIZED VIEW public.personas_mv AS
  SELECT id,
     created_at,
-    updated_at,
     active,
     generated,
     mcp,

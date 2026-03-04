@@ -46,8 +46,7 @@ SELECT COALESCE(
             ppj.parameters_id,
             fr.name,
             COALESCE(fr.description, ''),
-            false,
-            cp_lookup.conditional_parameter_id
+            false
         )::types.q_get_parameter_fields_v4_item
         ORDER BY ppj.parameters_id, fr.name
     ),

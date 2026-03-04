@@ -12,17 +12,22 @@ CREATE TABLE public.metrics_entry (
     avg_latency_ms double precision CONSTRAINT app_metrics_avg_latency_ms_not_null NOT NULL,
     cpu_percent double precision CONSTRAINT app_metrics_cpu_percent_not_null NOT NULL,
     memory_bytes bigint CONSTRAINT app_metrics_memory_bytes_not_null NOT NULL,
-    session_id uuid
+    session_id uuid,
+    id uuid DEFAULT uuidv7() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
 --
 
--- Name: metrics_entry metrics_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: metrics_entry metrics_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.metrics_entry
-    ADD CONSTRAINT metrics_pkey PRIMARY KEY (ts);
+    ADD CONSTRAINT metrics_entry_pkey PRIMARY KEY (id);
 
 
 --

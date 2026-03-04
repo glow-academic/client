@@ -94,7 +94,6 @@ CREATE MATERIALIZED VIEW public.invocation_mv AS
     COALESCE(nm.name_ids, ARRAY[]::uuid[]) AS name_ids,
     COALESCE(dsc.description_ids, ARRAY[]::uuid[]) AS description_ids,
     bbe.created_at,
-    bbe.updated_at,
     bbe.active
    FROM ((((((((((((public.invocation_entry bbe
      LEFT JOIN department_agg dep ON ((dep.invocation_id = bbe.id)))

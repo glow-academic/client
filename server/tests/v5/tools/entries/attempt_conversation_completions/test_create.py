@@ -1,7 +1,5 @@
 """Tests for create_attempt_conversation_completions."""
 
-from uuid import uuid4
-
 import pytest
 
 from app.routes.v5.tools.entries.attempt.create import create_attempt
@@ -19,6 +17,7 @@ from app.routes.v5.tools.entries.attempt_conversations.create import (
     create_attempt_conversations,
 )
 from app.routes.v5.tools.entries.calls.create import create_call
+from app.routes.v5.tools.entries.chat.create import create_chat
 from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.persona.create import create_persona
 from app.routes.v5.tools.entries.runs.create import create_run
@@ -40,9 +39,10 @@ async def _attempt_conversation_completions(conn, **overrides):
         user_persona_id=persona.id,
         profiles_id=SUPERADMIN_PROFILES_RESOURCE_ID,
     )
+    chat = await create_chat(conn, session_id=session.id)
     call2 = await create_call(conn, run_id=run.id, session_id=session.id)
     attempt_chat = await create_attempt_chat(
-        conn, call_id=call2.id, group_id=group.id, chat_id=uuid4()
+        conn, call_id=call2.id, group_id=group.id, chat_id=chat.id
     )
     conversation = await create_attempt_conversations(
         conn, chat_id=attempt_chat.id, call_id=call2.id, run_id=run.id

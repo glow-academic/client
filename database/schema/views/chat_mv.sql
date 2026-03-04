@@ -196,7 +196,6 @@ CREATE MATERIALIZED VIEW public.chat_mv AS
     tbe.generate_options,
     tbe.generate_parameter_fields,
     tbe.created_at,
-    tbe.updated_at,
     tbe.active
    FROM ((((((((((((((((((((public.chat_entry tbe
      LEFT JOIN public.home_chat_entry hte ON ((hte.chat_id = tbe.id)))

@@ -14,18 +14,19 @@ CREATE TABLE public.health_entry (
     generated boolean DEFAULT false CONSTRAINT service_health_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT service_health_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT service_health_active_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT service_health_updated_at_not_null NOT NULL,
-    session_id uuid
+    session_id uuid,
+    id uuid DEFAULT uuidv7() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
 --
 
--- Name: health_entry health_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: health_entry health_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.health_entry
-    ADD CONSTRAINT health_pkey PRIMARY KEY (ts, service);
+    ADD CONSTRAINT health_entry_pkey PRIMARY KEY (id);
 
 
 --

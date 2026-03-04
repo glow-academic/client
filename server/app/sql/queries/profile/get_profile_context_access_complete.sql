@@ -108,7 +108,7 @@ profile_data AS (
         NULL::profile_type as role,
         NULL::boolean as active,
         NULL::uuid as primary_department_id,
-        NULL::text[] as artifacts
+        NULL::artifact_type[] as artifacts
     WHERE (SELECT profile_id FROM params) IS NULL
 ),
 profile_type AS (
@@ -443,7 +443,7 @@ artifact_agent_ids_data AS (
     ),
     artifacts_with_agents AS (
         -- Path 1: artifact has an eligible agent whose tools cover ALL required resources
-        SELECT DISTINCT arr.artifact::text as artifact
+        SELECT DISTINCT arr.artifact as artifact
         FROM artifact_resource_map arr
         WHERE EXISTS (
             SELECT 1 FROM eligible_agents ea
@@ -463,7 +463,7 @@ artifact_agent_ids_data AS (
         )
         UNION
         -- Path 2: artifact has an eligible agent whose tools have ANY matching binding entries
-        SELECT DISTINCT kv.key as artifact
+        SELECT DISTINCT kv.key::artifact_type as artifact
         FROM jsonb_each(p_artifact_entries) AS kv(key, value)
         CROSS JOIN LATERAL jsonb_array_elements_text(kv.value) AS e(entry)
         JOIN entries_resource br ON br.entry = e.entry::entry_type AND br.active = true

@@ -9,7 +9,6 @@ CREATE MATERIALIZED VIEW public.run_pricing_mv AS
  SELECT pricing_type,
     count,
     created_at,
-    updated_at,
     run_id,
     generated,
     mcp,
