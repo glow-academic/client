@@ -1,23 +1,20 @@
 """ConditionalParameters GET endpoint - v4 API following DHH principles."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
+from app.infra.globals import get_db, get_redis_client
 from app.routes.v5.tools.resources.conditional_parameters.get import (
-    SQL_PATH,
-    get_conditional_parameters_internal,
+    get_conditional_parameters as get_conditional_parameters_resource,
 )
 from app.sql.types import (
     GetConditionalParametersApiRequest,
     GetConditionalParametersApiResponse,
-    load_sql_query,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
-# Load SQL with types at module level
 router = APIRouter()
 
 
@@ -36,12 +33,19 @@ async def get_conditional_parameters(
     HTTP wrapper that delegates to internal function for caching and data fetching.
     """
     tags = ["resources", "conditional_parameters"]
-    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+
+    sql_params: tuple[Any, ...] | None = None
 
     try:
-        items = await get_conditional_parameters_internal(
-            conn, request.ids, bypass_cache
+        bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+
+        items = await get_conditional_parameters_resource(
+            conn=conn,
+            ids=request.ids or [],
+            redis=get_redis_client(),
+            bypass_cache=bypass_cache,
         )
+
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetConditionalParametersApiResponse(items=items)
     except HTTPException:
@@ -53,7 +57,7 @@ async def get_conditional_parameters(
             error=e,
             route_path=http_request.url.path,
             operation="get_conditional_parameters",
-            sql_query=load_sql_query(SQL_PATH),
-            sql_params=None,
+            sql_query=None,
+            sql_params=sql_params,
             request=http_request,
         )

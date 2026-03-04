@@ -8,12 +8,14 @@ from typing import Annotated
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
+from app.infra.globals import get_db, get_redis_client
 from app.routes.v5.api.resources.standards.types import (
     GetStandardsApiRequest,
     GetStandardsApiResponse,
 )
-from app.routes.v5.tools.resources.standards.get import get_standards_internal
+from app.routes.v5.tools.resources.standards.get import (
+    get_standards as get_standards_resource,
+)
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
@@ -42,7 +44,12 @@ async def get_standards(
 
     try:
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-        items = await get_standards_internal(conn, request.ids, bypass_cache)
+        items = await get_standards_resource(
+            conn=conn,
+            ids=request.ids or [],
+            redis=get_redis_client(),
+            bypass_cache=bypass_cache,
+        )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetStandardsApiResponse(items=items)
     except HTTPException:

@@ -8,14 +8,13 @@ from typing import Annotated
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
+from app.infra.globals import get_db, get_redis_client
 from app.routes.v5.api.resources.questions.types import (
     GetQuestionApiRequest,
     GetQuestionApiResponse,
 )
-from app.routes.v5.tools.resources.questions.get import SQL_PATH, get_question_internal
-from app.sql.types import (
-    load_sql_query,
+from app.routes.v5.tools.resources.questions.get import (
+    get_questions as get_questions_resource,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -45,7 +44,13 @@ async def get_question(
 
     try:
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-        item = await get_question_internal(conn, request.id, bypass_cache)
+        items = await get_questions_resource(
+            conn=conn,
+            ids=[request.id],
+            redis=get_redis_client(),
+            bypass_cache=bypass_cache,
+        )
+        item = items[0] if items else None
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetQuestionApiResponse(item=item)
     except HTTPException:
@@ -57,7 +62,7 @@ async def get_question(
             error=e,
             route_path=http_request.url.path,
             operation="get_question",
-            sql_query=load_sql_query(SQL_PATH),
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )

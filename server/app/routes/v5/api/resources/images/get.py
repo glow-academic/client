@@ -8,15 +8,12 @@ from typing import Annotated
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
+from app.infra.globals import get_db, get_redis_client
 from app.routes.v5.api.resources.images.types import (
     GetImageApiRequest,
     GetImageApiResponse,
 )
-from app.routes.v5.tools.resources.images.get import SQL_PATH, get_image_internal
-from app.sql.types import (
-    load_sql_query,
-)
+from app.routes.v5.tools.resources.images.get import get_images as get_images_resource
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
@@ -45,7 +42,13 @@ async def get_image(
 
     try:
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-        item = await get_image_internal(conn, request.id, bypass_cache)
+        items = await get_images_resource(
+            conn=conn,
+            ids=[request.id],
+            redis=get_redis_client(),
+            bypass_cache=bypass_cache,
+        )
+        item = items[0] if items else None
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetImageApiResponse(item=item)
     except HTTPException:
@@ -57,7 +60,7 @@ async def get_image(
             error=e,
             route_path=http_request.url.path,
             operation="get_image",
-            sql_query=load_sql_query(SQL_PATH),
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )

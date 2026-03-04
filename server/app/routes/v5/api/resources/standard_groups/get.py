@@ -8,13 +8,13 @@ from typing import Annotated
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
+from app.infra.globals import get_db, get_redis_client
 from app.routes.v5.api.resources.standard_groups.types import (
     GetStandardGroupsApiRequest,
     GetStandardGroupsApiResponse,
 )
 from app.routes.v5.tools.resources.standard_groups.get import (
-    get_standard_groups_internal,
+    get_standard_groups as get_standard_groups_resource,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -44,7 +44,12 @@ async def get_standard_groups(
 
     try:
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-        items = await get_standard_groups_internal(conn, request.ids, bypass_cache)
+        items = await get_standard_groups_resource(
+            conn=conn,
+            ids=request.ids or [],
+            redis=get_redis_client(),
+            bypass_cache=bypass_cache,
+        )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetStandardGroupsApiResponse(items=items)
     except HTTPException:
