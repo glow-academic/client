@@ -11,7 +11,7 @@ class CreateVideoResponse(BaseModel):
 
 class GetVideoResponse(BaseModel):
     id: UUID
-    session_id: UUID | None
+    session_id: UUID
     length_seconds: int
     active: bool
     mcp: bool

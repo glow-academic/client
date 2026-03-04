@@ -11,7 +11,10 @@ CREATE TABLE public.calls_entry (
     id uuid DEFAULT uuidv7() CONSTRAINT calls_id_v7_not_null NOT NULL,
     run_id uuid,
     session_id uuid,
-    completed_at timestamp with time zone
+    completed_at timestamp with time zone,
+    mcp boolean DEFAULT false NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    active boolean DEFAULT true NOT NULL
 );
 
 

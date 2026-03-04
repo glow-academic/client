@@ -12,7 +12,7 @@ CREATE TABLE public.videos_entry (
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     length_seconds integer DEFAULT 0 NOT NULL,
-    session_id uuid
+    session_id uuid NOT NULL
 );
 
 

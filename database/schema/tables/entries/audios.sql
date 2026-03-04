@@ -12,7 +12,7 @@ CREATE TABLE public.audios_entry (
     generated boolean DEFAULT false CONSTRAINT audios_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT audios_mcp_not_null NOT NULL,
     length_seconds integer DEFAULT 0 NOT NULL,
-    session_id uuid
+    session_id uuid NOT NULL
 );
 
 

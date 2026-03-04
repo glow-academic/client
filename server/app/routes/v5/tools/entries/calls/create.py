@@ -1,37 +1,27 @@
-"""calls/create internal — reusable data-access layer."""
+"""Calls CREATE — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.routes.v5.api.entries.calls.types import (
-    CreateCallsEntryResponse,
-    CreateCallsEntrySqlParams,
-    CreateCallsEntrySqlRow,
-)
-from app.utils.sql_helper import execute_sql_typed
+from app.routes.v5.tools.entries.calls.types import CreateCallResponse
 
-SQL_PATH = "app/sql/queries/entries/calls/create_calls_entries_complete.sql"
 
-async def create_calls_entry_internal(
+async def create_call(
     conn: asyncpg.Connection,
-    session_id: UUID,
-    external_call_id: str,
     run_id: UUID | None = None,
+    session_id: UUID | None = None,
+    external_call_id: str | None = None,
     mcp: bool = False,
-) -> CreateCallsEntryResponse:
-    """Create a calls entry. Internal only — no HTTP route."""
-    params = CreateCallsEntrySqlParams(
-        session_id=session_id, external_call_id=external_call_id, run_id=run_id, mcp=mcp
-    )
+) -> CreateCallResponse:
+    """Create a calls entry."""
+    call_id = await conn.fetchval("""
+        INSERT INTO calls_entry (run_id, session_id, external_call_id, mcp, generated)
+        VALUES ($1, $2, $3, $4, true)
+        RETURNING id
+    """, run_id, session_id, external_call_id, mcp)
 
-    result = cast(
-        CreateCallsEntrySqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    if not result or not result.id:
+    if call_id is None:
         raise ValueError("Failed to create calls entry")
 
-    return CreateCallsEntryResponse.model_validate(result.model_dump())
+    return CreateCallResponse(id=call_id)

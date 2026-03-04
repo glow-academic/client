@@ -11,7 +11,7 @@ class CreateImageResponse(BaseModel):
 
 class GetImageResponse(BaseModel):
     id: UUID
-    session_id: UUID | None
+    session_id: UUID
     active: bool
     mcp: bool
     generated: bool

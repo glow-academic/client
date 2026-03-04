@@ -7,7 +7,7 @@
 
 CREATE TABLE public.files_entry (
     id uuid DEFAULT uuidv7() NOT NULL,
-    session_id uuid,
+    session_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
