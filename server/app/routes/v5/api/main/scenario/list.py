@@ -13,7 +13,7 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool, get_redis_client
 from app.routes.auth.profile import get_auth_profile_internal
 from app.routes.v5.api.main.persona.types import ImportField
 from app.routes.v5.api.main.scenario.permissions import (
@@ -38,7 +38,7 @@ from app.routes.v5.api.types import ListFilterSection
 from app.routes.v5.tools.resources.cohorts.get import get_cohorts_internal
 from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.fields.get import get_fields_internal
-from app.routes.v5.tools.resources.objectives.get import get_objectives_internal
+from app.routes.v5.tools.resources.objectives.get import get_objectives
 from app.routes.v5.tools.resources.personas.get import get_personas_internal
 from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
 from app.sql.types import load_sql_query
@@ -311,8 +311,8 @@ async def get_scenario_list(
                 if not objective_id_set:
                     return []
                 async with pool.acquire() as c:
-                    return await get_objectives_internal(
-                        c, list(objective_id_set), bypass_cache
+                    return await get_objectives(
+                        c, list(objective_id_set), get_redis_client(), bypass_cache
                     )
 
             async def fetch_fields() -> list:

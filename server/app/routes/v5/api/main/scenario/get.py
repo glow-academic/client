@@ -101,7 +101,7 @@ from app.routes.v5.tools.resources.images.get import get_images_internal
 from app.routes.v5.tools.resources.images.search import search_images_internal
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
-from app.routes.v5.tools.resources.objectives.get import get_objectives_internal
+from app.routes.v5.tools.resources.objectives.get import get_objectives
 from app.routes.v5.tools.resources.options.get import get_options_internal
 from app.routes.v5.tools.resources.options.search import search_options_internal
 from app.routes.v5.tools.resources.parameter_fields.get import (
@@ -650,8 +650,8 @@ async def get_scenario_internal(
 
     async def fetch_objectives():
         async with pool.acquire() as c:
-            selected = await get_objectives_internal(
-                c, selected_objective_ids, bypass_cache
+            selected = await get_objectives(
+                c, selected_objective_ids, get_redis_client(), bypass_cache
             )
             return (selected, [])
 

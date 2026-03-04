@@ -354,7 +354,7 @@ async def get_chat_internal(
         if not all_ids:
             return (resource_key, [])
         async with pool.acquire() as c:
-            return (resource_key, await fetch_fn(c, all_ids, bypass_cache))
+            return (resource_key, await fetch_fn(c, all_ids, get_redis_client(), bypass_cache))
 
     fetch_tasks = [
         _fetch_resource(rk, va, fn) for rk, va, _da, fn, _ia in RESOURCE_CONFIG

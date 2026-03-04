@@ -1,0 +1,72 @@
+"""Tests for modalities resource get."""
+
+from unittest.mock import AsyncMock, patch
+from uuid import uuid4
+
+import pytest
+
+from app.routes.v5.tools.resources.modalities.get import get_modalities
+
+
+@pytest.mark.asyncio
+async def test_gets_created_modality(conn, redis_client):
+    row_id = await conn.fetchval(
+        """
+        INSERT INTO modalities_resource (modality)
+        VALUES ('text')
+        RETURNING id
+        """
+    )
+    items = await get_modalities(conn, [row_id], redis_client)
+    assert len(items) == 1
+    assert items[0].id == row_id
+    assert items[0].modality == "text"
+    assert items[0].is_input is False
+    assert items[0].active is True
+
+
+@pytest.mark.asyncio
+async def test_returns_empty_for_missing_id(conn, redis_client):
+    items = await get_modalities(conn, [uuid4()], redis_client)
+    assert items == []
+
+
+@pytest.mark.asyncio
+async def test_returns_empty_for_empty_ids(conn, redis_client):
+    items = await get_modalities(conn, [], redis_client)
+    assert items == []
+
+
+@pytest.mark.asyncio
+async def test_cache_hit(conn, redis_client):
+    row_id = await conn.fetchval(
+        """
+        INSERT INTO modalities_resource (modality)
+        VALUES ('text')
+        RETURNING id
+        """
+    )
+    await get_modalities(conn, [row_id], redis_client)
+
+    with patch.object(conn, "fetch", new_callable=AsyncMock) as mock_fetch:
+        items = await get_modalities(conn, [row_id], redis_client)
+        mock_fetch.assert_not_called()
+        assert len(items) == 1
+
+
+@pytest.mark.asyncio
+async def test_bypass_cache(conn, redis_client):
+    row_id = await conn.fetchval(
+        """
+        INSERT INTO modalities_resource (modality)
+        VALUES ('text')
+        RETURNING id
+        """
+    )
+    await get_modalities(conn, [row_id], redis_client)
+
+    items = await get_modalities(
+        conn, [row_id], redis_client, bypass_cache=True
+    )
+    assert len(items) == 1
+    assert items[0].modality == "text"

@@ -14,7 +14,7 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool, get_redis_client
 from app.routes.auth.profile import get_auth_profile_internal
 from app.routes.v5.api.main.document.permissions import (
     compute_can_delete,
@@ -26,7 +26,7 @@ from app.routes.v5.api.main.document.types import (
     ListDocumentApiResponse,
 )
 from app.routes.v5.api.types import ListFilterSection
-from app.routes.v5.tools.resources.uploads.get import get_uploads_internal
+from app.routes.v5.tools.resources.uploads.get import get_uploads
 from app.sql.types import (
     GetDocumentsListApiRequest,
     GetDocumentsListSqlParams,
@@ -177,8 +177,8 @@ async def get_document_list(
                 if not all_upload_resource_ids:
                     return []
                 async with pool.acquire() as c:
-                    return await get_uploads_internal(
-                        c, all_upload_resource_ids, bypass_cache
+                    return await get_uploads(
+                        c, all_upload_resource_ids, get_redis_client(), bypass_cache
                     )
 
             uploads_data = await fetch_uploads()

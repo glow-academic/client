@@ -89,7 +89,7 @@ from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.texts.get import get_texts
 from app.routes.v5.tools.resources.texts.search import search_texts_internal
 from app.routes.v5.tools.resources.tools.get import get_tools
-from app.routes.v5.tools.resources.uploads.get import get_uploads_internal
+from app.routes.v5.tools.resources.uploads.get import get_uploads
 from app.routes.v5.tools.resources.uploads.search import search_uploads_internal
 from app.sql.types import (
     GetDocumentAccessSqlParams,
@@ -441,7 +441,7 @@ async def get_document_internal(
 
     async def fetch_uploads():
         async with pool.acquire() as c:
-            selected = await get_uploads_internal(c, upload_ids, bypass_cache)
+            selected = await get_uploads(c, upload_ids, get_redis_client(), bypass_cache)
             suggestions = await search_uploads_internal(
                 c,
                 search=None,

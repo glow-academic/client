@@ -109,7 +109,7 @@ from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.documents.get import get_documents_internal
 from app.routes.v5.tools.resources.images.get import get_images_internal
 from app.routes.v5.tools.resources.models.get import get_models
-from app.routes.v5.tools.resources.objectives.get import get_objectives_internal
+from app.routes.v5.tools.resources.objectives.get import get_objectives
 from app.routes.v5.tools.resources.options.get import get_options_internal
 from app.routes.v5.tools.resources.personas.get import get_personas_internal
 from app.routes.v5.tools.resources.problem_statements.get import (
@@ -367,8 +367,8 @@ async def get_attempt_internal(
 
                 # Fetch objectives
                 if objective_ids:
-                    items = await get_objectives_internal(
-                        c, objective_ids, bypass_cache=bypass_cache
+                    items = await get_objectives(
+                        c, objective_ids, get_redis_client(), bypass_cache=bypass_cache
                     )
                     for item in items:
                         if item.objective_id:
