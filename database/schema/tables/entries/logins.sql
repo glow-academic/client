@@ -7,9 +7,7 @@
 
 CREATE TABLE public.logins_entry (
     id uuid DEFAULT uuidv7() NOT NULL,
-    last_login timestamp with time zone NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL,

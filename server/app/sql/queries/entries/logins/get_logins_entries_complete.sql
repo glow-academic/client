@@ -28,12 +28,10 @@ BEGIN
             'login_id', m.login_id,
             'profile_id', m.profile_id,
             'session_id', m.session_id,
-            'last_login', m.last_login,
-            'login_created_at', m.login_created_at,
+            'created_at', m.created_at,
             'active', m.active,
             'generated', m.generated,
-            'mcp', m.mcp,
-            'call_id', m.call_id
+            'mcp', m.mcp
         )
     ) AS items
     FROM logins_mv m

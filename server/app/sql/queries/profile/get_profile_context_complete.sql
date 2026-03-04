@@ -243,7 +243,7 @@ profile_data AS (
          LIMIT 1) as role,
         EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE) as active,
         COALESCE(rl.requests_per_day, 0) as req_per_day,
-        (SELECT le.last_login FROM profiles_logins_connection plj JOIN logins_entry le ON le.id = plj.login_id WHERE plj.profiles_id = p.id ORDER BY le.created_at DESC LIMIT 1) as last_login,
+        (SELECT le.created_at FROM profiles_logins_connection plj JOIN logins_entry le ON le.id = plj.login_id WHERE plj.profiles_id = p.id ORDER BY le.created_at DESC LIMIT 1) as last_login,
         pa.last_active,
         p.created_at,
         p.updated_at,

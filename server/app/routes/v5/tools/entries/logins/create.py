@@ -1,34 +1,40 @@
-"""logins/create internal — reusable data-access layer."""
+"""Logins CREATE — insert into logins_entry with profile link."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.routes.v5.api.entries.logins.types import (
-    CreateLoginsEntryResponse,
-    CreateLoginsEntrySqlParams,
-    CreateLoginsEntrySqlRow,
-)
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/entries/logins/create_logins_entries_complete.sql"
+from app.routes.v5.tools.entries.logins.types import CreateLoginResponse
 
 
-async def create_logins_entry_internal(
+async def create_login(
     conn: asyncpg.Connection,
     session_id: UUID,
+    profile_id: UUID | None = None,
     mcp: bool = False,
-) -> CreateLoginsEntryResponse:
-    """Create a logins entry. Internal only — no HTTP route."""
-    params = CreateLoginsEntrySqlParams(session_id=session_id, mcp=mcp)
-
-    result = cast(
-        CreateLoginsEntrySqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
+) -> CreateLoginResponse:
+    """Create a login entry and optionally link to a profile."""
+    login_id = await conn.fetchval(
+        """
+        INSERT INTO logins_entry (session_id, mcp, generated)
+        VALUES ($1, $2, true)
+        RETURNING id
+        """,
+        session_id,
+        mcp,
     )
 
-    if not result or not result.id:
-        raise ValueError("Failed to create logins entry")
+    if login_id is None:
+        raise ValueError("Failed to create login entry")
 
-    return CreateLoginsEntryResponse.model_validate(result.model_dump())
+    if profile_id is not None:
+        await conn.execute(
+            """
+            INSERT INTO profiles_logins_connection (profiles_id, login_id)
+            VALUES ($1, $2)
+            """,
+            profile_id,
+            login_id,
+        )
+
+    return CreateLoginResponse(id=login_id)

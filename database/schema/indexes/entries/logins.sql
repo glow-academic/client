@@ -10,14 +10,6 @@ CREATE INDEX idx_logins_entry_generated ON public.logins_entry USING btree (gene
 
 --
 
--- Name: idx_logins_entry_last_login; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_logins_entry_last_login ON public.logins_entry USING btree (last_login);
-
-
---
-
 -- Name: idx_logins_entry_mcp; Type: INDEX; Schema: public; Owner: -
 --
 

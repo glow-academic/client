@@ -1,120 +1,44 @@
-"""logins/get internal — reusable data-access layer."""
+"""Logins GET — batch get from logins_mv."""
 
-from datetime import datetime
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    GetLoginListViewSqlRow,
-    GetLoginsEntriesSqlParams,
-    GetLoginsEntriesSqlRow,
-)
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
+from app.infra.docs.resolve_mv_source import resolve_mv_source
+from app.routes.v5.tools.entries.logins.types import GetLoginResponse
 
-SQL_PATH = "app/sql/queries/entries/logins/get_logins_entries_complete.sql"
-
-VIEW_SQL_PATH = "app/sql/queries/views/login/list/get_login_list_view_complete.sql"
+MV_NAME = "logins_mv"
 
 
-async def get_login_list_view_internal(
-    conn: asyncpg.Connection,
-    profile_id_filter: UUID | None = None,
-    active_filter: bool | None = None,
-    date_from: datetime | None = None,
-    date_to: datetime | None = None,
-    sort_order: str = "desc",
-    page_limit: int = 50,
-    page_offset: int = 0,
-    bypass_cache: bool = False,
-) -> GetLoginListViewSqlRow:
-    """Internal function for fetching logins data from MV."""
-    from app.sql.types import GetLoginListViewSqlParams
-
-    cache_key_val = cache_key(
-        "views/login/list/get",
-        {
-            "profile_id_filter": str(profile_id_filter) if profile_id_filter else None,
-            "active_filter": active_filter,
-            "date_from": date_from.isoformat() if date_from else None,
-            "date_to": date_to.isoformat() if date_to else None,
-            "sort_order": sort_order,
-            "page_limit": page_limit,
-            "page_offset": page_offset,
-        },
-    )
-
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return GetLoginListViewSqlRow.model_validate(cached)
-
-    params = GetLoginListViewSqlParams(
-        profile_id_filter=profile_id_filter,
-        active_filter=active_filter,
-        date_from=date_from or datetime.min,
-        date_to=date_to or datetime.max,
-        sort_order_field=sort_order,
-        page_limit_val=page_limit,
-        page_offset_val=page_offset,
-    )
-
-    result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
-
-    response = GetLoginListViewSqlRow(
-        items=list(result.items) if result and result.items else [],
-        total_count=result.total_count or 0 if result else 0,
-    )
-
-    await set_cached(
-        cache_key_val,
-        response.model_dump(mode="json"),
-        ttl=60,
-        tags=["views", "login", "list"],
-        redis=get_redis_client(),
-    )
-
-    return response
-
-
-async def get_logins_entries_internal(
+async def get_logins(
     conn: asyncpg.Connection,
     ids: list[UUID],
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to fetch logins entries by IDs."""
+    bypass_mv: bool = False,
+) -> list[GetLoginResponse]:
+    """Get logins by IDs from logins_mv."""
     if not ids:
         return []
 
-    tags = ["entries", "logins"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/logins/get",
-        {"ids": [str(id) for id in ids]},
+    source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
+
+    rows = await conn.fetch(
+        f"""
+        SELECT login_id, profile_id, session_id, created_at, active, mcp, generated
+        FROM {source}
+        WHERE login_id = ANY($1)
+        """,
+        ids,
     )
 
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    params = GetLoginsEntriesSqlParams(ids=ids)
-    result = cast(
-        GetLoginsEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
+    return [
+        GetLoginResponse(
+            id=r["login_id"],
+            profile_id=r["profile_id"],
+            session_id=r["session_id"],
+            created_at=r["created_at"],
+            active=r["active"],
+            mcp=r["mcp"],
+            generated=r["generated"],
+        )
+        for r in rows
+    ]

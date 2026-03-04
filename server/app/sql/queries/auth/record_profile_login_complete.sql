@@ -22,7 +22,6 @@ CREATE OR REPLACE FUNCTION api_record_profile_login_v4(
 RETURNS TABLE (
     login_id uuid,
     profile_id uuid,
-    last_login timestamptz,
     ok boolean
 )
 LANGUAGE sql
@@ -41,13 +40,15 @@ profile_exists AS (
 ),
 -- Insert login entry
 login_insert AS (
-    INSERT INTO logins_entry (last_login, created_at, updated_at)
-    SELECT
-        NOW(),
-        NOW(),
-        NOW()
+    INSERT INTO logins_entry (session_id)
+    SELECT (
+        SELECT s.id FROM sessions_entry s
+        JOIN profiles_sessions_connection psc ON psc.session_id = s.id
+        WHERE psc.profiles_id = (SELECT profile_id FROM params) AND s.active = true
+        ORDER BY s.created_at DESC LIMIT 1
+    )
     WHERE EXISTS (SELECT 1 FROM profile_exists)
-    RETURNING id, last_login
+    RETURNING id
 ),
 -- Link login to profile via junction table
 login_profile_link AS (
@@ -58,14 +59,12 @@ login_profile_link AS (
 SELECT
     li.id as login_id,
     (SELECT profile_id FROM params) as profile_id,
-    li.last_login,
     true as ok
 FROM login_insert li
 UNION ALL
 SELECT
     NULL::uuid as login_id,
     (SELECT profile_id FROM params) as profile_id,
-    NULL::timestamptz as last_login,
     false as ok
 WHERE NOT EXISTS (SELECT 1 FROM login_insert)
 LIMIT 1

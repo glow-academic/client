@@ -5,7 +5,7 @@
 --
 -- Includes:
 -- - Filtering (profile_id, active, date range)
--- - Sorting (by last_login or created_at)
+-- - Sorting (by created_at)
 -- - Pagination
 --
 -- Note: Returns profile_id only — name resolved in hydration layer.
@@ -55,8 +55,7 @@ CREATE TYPE types.q_get_login_list_view_v4_item AS (
     login_id uuid,
     profile_id uuid,
     session_id uuid,
-    last_login timestamptz,
-    login_created_at timestamptz,
+    created_at timestamptz,
     active boolean,
     generated boolean,
     mcp boolean
@@ -89,8 +88,8 @@ AS $$
         WHERE
             (profile_id_filter IS NULL OR mv.profile_id = profile_id_filter)
             AND (active_filter IS NULL OR mv.active = active_filter)
-            AND mv.login_created_at >= date_from
-            AND mv.login_created_at <= date_to
+            AND mv.created_at >= date_from
+            AND mv.created_at <= date_to
     ),
     counted AS (
         SELECT COUNT(*)::int AS total FROM filtered
@@ -99,8 +98,8 @@ AS $$
         SELECT *
         FROM filtered
         ORDER BY
-            CASE WHEN sort_order_field = 'asc' THEN last_login END ASC,
-            CASE WHEN sort_order_field != 'asc' THEN last_login END DESC
+            CASE WHEN sort_order_field = 'asc' THEN created_at END ASC,
+            CASE WHEN sort_order_field != 'asc' THEN created_at END DESC
         LIMIT page_limit_val
         OFFSET page_offset_val
     ),
@@ -111,15 +110,14 @@ AS $$
                     login_id,
                     profile_id,
                     session_id,
-                    last_login,
-                    login_created_at,
+                    created_at,
                     active,
                     generated,
                     mcp
                 )::types.q_get_login_list_view_v4_item
                 ORDER BY
-                    CASE WHEN sort_order_field = 'asc' THEN last_login END ASC,
-                    CASE WHEN sort_order_field != 'asc' THEN last_login END DESC
+                    CASE WHEN sort_order_field = 'asc' THEN created_at END ASC,
+                    CASE WHEN sort_order_field != 'asc' THEN created_at END DESC
             ),
             ARRAY[]::types.q_get_login_list_view_v4_item[]
         ) AS items

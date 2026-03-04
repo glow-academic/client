@@ -1,75 +1,60 @@
-"""logins/search internal — reusable data-access layer."""
+"""Logins search — filtered/paginated query against logins_mv."""
 
-from typing import cast
+from datetime import datetime
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    SearchLoginsEntriesSqlParams,
-    SearchLoginsEntriesSqlRow,
-)
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
+from app.infra.docs.resolve_mv_source import resolve_mv_source
+from app.routes.v5.tools.entries.logins.types import GetLoginResponse
 
-SQL_PATH = "app/sql/queries/entries/logins/search_logins_entries_complete.sql"
+MV_NAME = "logins_mv"
 
 
-async def search_logins_entries_internal(
+async def search_logins(
     conn: asyncpg.Connection,
-    search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
     profile_id: UUID | None = None,
     session_id: UUID | None = None,
-    call_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to search logins entries."""
-    if limit_count is not None and limit_count <= 0:
-        return []
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
+    mcp: bool | None = None,
+    limit: int = 20,
+    offset: int = 0,
+    bypass_mv: bool = False,
+) -> list[GetLoginResponse]:
+    """Search logins from logins_mv with declarative filters."""
+    source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
 
-    tags = ["entries", "logins"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/logins/search",
-        {
-            "search": search,
-            "limit_count": limit_count,
-            "offset_count": offset_count,
-            "profile_id": str(profile_id) if profile_id else None,
-            "session_id": str(session_id) if session_id else None,
-            "call_id": str(call_id) if call_id else None,
-        },
+    rows = await conn.fetch(
+        f"""
+        SELECT login_id, profile_id, session_id, created_at, active, mcp, generated
+        FROM {source}
+        WHERE ($1::uuid IS NULL OR profile_id = $1)
+          AND ($2::uuid IS NULL OR session_id = $2)
+          AND ($3::timestamptz IS NULL OR created_at >= $3)
+          AND ($4::timestamptz IS NULL OR created_at <= $4)
+          AND ($5::boolean IS NULL OR mcp = $5)
+        ORDER BY created_at DESC
+        LIMIT $6 OFFSET $7
+        """,
+        profile_id,
+        session_id,
+        date_from,
+        date_to,
+        mcp,
+        limit,
+        offset,
     )
 
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    params = SearchLoginsEntriesSqlParams(
-        search=search,
-        limit_count=limit_count,
-        offset_count=offset_count,
-        profile_id=profile_id,
-        session_id=session_id,
-        call_id=call_id,
-    )
-    result = cast(
-        SearchLoginsEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
+    return [
+        GetLoginResponse(
+            id=r["login_id"],
+            profile_id=r["profile_id"],
+            session_id=r["session_id"],
+            created_at=r["created_at"],
+            active=r["active"],
+            mcp=r["mcp"],
+            generated=r["generated"],
+        )
+        for r in rows
+    ]

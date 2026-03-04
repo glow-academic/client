@@ -61,7 +61,7 @@ AS $$
             'login'::text,
             l.login_id,
             NULL,
-            l.login_created_at,
+            l.created_at,
             NULL,
             NULL
         FROM logins_mv l
