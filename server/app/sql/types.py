@@ -15220,6 +15220,67 @@ class PrepareSimulationGenerationApiResponse(BaseModel):
 
 
 
+# Generated from: get_generation_run_context_and_create_run
+
+class IPersonaResourceV4(BaseModel):
+
+    resource_type: str | None
+    resource_ids: list[UUID] | None
+
+class GetGenerationRunContextAndCreateRunSqlParams(BaseModel):
+
+    agent_id: UUID
+    profile_id: UUID
+    message_ids: list[UUID] | None = None
+    department_id: UUID | None = None
+    group_id: UUID | None = None
+    developer_instructions: list[str] | None = None
+    user_instructions: list[str] | None = None
+    resources: list[IPersonaResourceV4] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert resources composite array to tuples for asyncpg
+        resources_tuples = [
+            (conn.resource_type, conn.resource_ids)
+            for conn in (self.resources or [])
+        ]
+        return (
+            self.agent_id,
+            self.profile_id,
+            self.message_ids,
+            self.department_id,
+            self.group_id,
+            self.developer_instructions,
+            self.user_instructions,
+            resources_tuples,
+        )
+
+class GetGenerationRunContextAndCreateRunSqlRow(BaseModel):
+
+    run_id: str | None = None
+    group_id: UUID | None = None
+    message_ids: list[UUID] | None = None
+    output_modalities: list[str] | None = None
+
+class GetGenerationRunContextAndCreateRunApiRequest(BaseModel):
+
+    agent_id: UUID
+    message_ids: list[UUID] | None = None
+    department_id: UUID | None = None
+    group_id: UUID | None = None
+    developer_instructions: list[str] | None = None
+    user_instructions: list[str] | None = None
+    resources: list[IPersonaResourceV4] | None = None
+
+class GetGenerationRunContextAndCreateRunApiResponse(BaseModel):
+
+    run_id: str | None = None
+    group_id: UUID | None = None
+    message_ids: list[UUID] | None = None
+    output_modalities: list[str] | None = None
+
+
+
 # Generated from: prepare_suite_generation
 
 class PrepareSuiteGenerationSqlParams(BaseModel):
@@ -15543,11 +15604,6 @@ class StartTestApiResponse(BaseModel):
 
 
 # Generated from: get_text_run_context_for_existing_run
-
-class IPersonaResourceV4(BaseModel):
-
-    resource_type: str | None
-    resource_ids: list[UUID] | None
 
 class GetTextRunContextForExistingRunSqlParams(BaseModel):
 
@@ -36598,6 +36654,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareSimulationGenerationApiRequest",
         "PrepareSimulationGenerationApiResponse",
     ),
+    "app/sql/queries/generate/start/get_generation_run_context_and_create_run_complete.sql": (
+        "GetGenerationRunContextAndCreateRunSqlParams",
+        "GetGenerationRunContextAndCreateRunSqlRow",
+        "GetGenerationRunContextAndCreateRunApiRequest",
+        "GetGenerationRunContextAndCreateRunApiResponse",
+    ),
     "app/sql/queries/generate/suite/prepare_suite_generation_complete.sql": (
         "PrepareSuiteGenerationSqlParams",
         "PrepareSuiteGenerationSqlRow",
@@ -41373,6 +41435,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/generate/simulation/prepare_simulation_generation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/queries/generate/start/get_generation_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload

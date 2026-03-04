@@ -248,7 +248,7 @@ insert_developer_contents AS (
 ),
 update_existing_developer_messages_run AS (
     UPDATE messages_entry m
-    SET run_id = edm.run_id, updated_at = NOW()
+    SET run_id = edm.run_id
     FROM existing_developer_messages edm
     WHERE m.id = edm.message_id AND edm.run_id IS NOT NULL
     RETURNING m.id as message_id, m.run_id
@@ -307,17 +307,16 @@ new_user_messages_data AS (
     WHERE NOT EXISTS (SELECT 1 FROM existing_user_messages e WHERE e.hash = umh.hash)
 ),
 new_user_messages AS (
-    INSERT INTO messages_entry (role, run_id, created_at, updated_at)
-    SELECT 'user'::message_type, nd.run_id, NOW(), NOW()
+    INSERT INTO messages_entry (role, run_id, created_at)
+    SELECT 'user'::message_type, nd.run_id, NOW()
     FROM new_user_messages_data nd
-    RETURNING id, run_id, created_at, updated_at
+    RETURNING id, run_id, created_at
 ),
 new_user_messages_numbered AS (
     SELECT
         id as message_id,
         run_id,
         created_at,
-        updated_at,
         ROW_NUMBER() OVER (ORDER BY created_at) as rn
     FROM new_user_messages
 ),
@@ -352,7 +351,7 @@ insert_user_contents AS (
 ),
 update_existing_user_messages_run AS (
     UPDATE messages_entry m
-    SET run_id = eum.run_id, updated_at = NOW()
+    SET run_id = eum.run_id
     FROM existing_user_messages eum
     WHERE m.id = eum.message_id AND eum.run_id IS NOT NULL
     RETURNING m.id as message_id, m.run_id
