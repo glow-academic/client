@@ -25,11 +25,3 @@ CREATE INDEX idx_reasoning_levels_mcp ON public.reasoning_levels_resource USING 
 
 
 --
-
--- Name: reasoning_levels_reasoning_level_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX reasoning_levels_reasoning_level_id_idx ON public.reasoning_levels_resource USING btree (reasoning_level_id);
-
-
---

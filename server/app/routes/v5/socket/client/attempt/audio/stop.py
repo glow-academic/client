@@ -34,7 +34,7 @@ async def attempt_audio_stop(sid: str, data: dict[str, Any]) -> None:
         try:
             async with get_db_connection() as conn:
                 await conn.execute(
-                    """INSERT INTO conversations_completions_entry (conversation_id, end_reason)
+                    """INSERT INTO attempt_conversation_completions_entry (conversation_id, end_reason)
                     VALUES ($1, $2)""",
                     uuid_mod.UUID(session.conversation_id),
                     data.get("end_reason", "user_stopped"),

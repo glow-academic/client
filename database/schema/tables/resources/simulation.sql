@@ -29,7 +29,8 @@ CREATE TABLE public.simulation_positions_resource (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_positions_resource_v2_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT simulation_positions_resource_v2_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT simulation_positions_resource_v2_mcp_not_null NOT NULL,
-    simulation_id uuid CONSTRAINT simulation_positions_resource_simulation_id_new_not_null NOT NULL
+    simulation_id uuid CONSTRAINT simulation_positions_resource_simulation_id_new_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL
 );
 
 

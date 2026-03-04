@@ -90,9 +90,9 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
                 run_id,
             )
 
-            # Step 3: Create conversations_entry
+            # Step 3: Create attempt_conversations_entry
             conversation_id = await conn.fetchval(
-                """INSERT INTO conversations_entry (chat_id, run_id)
+                """INSERT INTO attempt_conversations_entry (chat_id, run_id)
                 VALUES ($1, $2) RETURNING id""",
                 chat_id,
                 run_id,

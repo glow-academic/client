@@ -7,7 +7,6 @@
 
 CREATE TABLE public.reasoning_levels_resource (
     id uuid DEFAULT uuidv7() CONSTRAINT reasoning_levels_id_not_null NOT NULL,
-    reasoning_level_id uuid CONSTRAINT reasoning_levels_reasoning_level_id_not_null NOT NULL,
     reasoning_level text CONSTRAINT reasoning_levels_reasoning_level_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT reasoning_levels_created_at_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT reasoning_levels_active_not_null NOT NULL,
