@@ -1,70 +1,40 @@
-"""problem_statements/create internal — reusable data-access layer."""
+"""Problem Statements CREATE — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.infra.tools.call_args import record_call_args, resolve_tool
-from app.sql.types import (
-    ProblemStatementsSqlParams,
-    ProblemStatementsSqlRow,
+from app.routes.v5.tools.resources.problem_statements.get import get_problem_statements
+from app.routes.v5.tools.resources.problem_statements.types import (
+    GetProblemStatementResponse,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/resources/problem_statements_complete.sql"
 
 
-async def create_problem_statements_internal(
+async def create_problem_statement(
     conn: asyncpg.Connection,
+    name: str,
     problem_statement: str,
-    name: str | None = None,
+    redis: Redis,
     mcp: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
-) -> UUID:
-    """Create a problem statement resource and return its ID.
-
-    When group_id is provided, creates run/call/tool tracking records.
-    Tool is auto-resolved if tool_id is not provided.
-    """
-    # Resolve tool if not provided (canonical — matches entry pattern)
-    tool_info = None
-    if tool_id is None:
-        tool_info = await resolve_tool(
-            conn, "create", "problem_statements", scope="resources"
-        )
-        if tool_info:
-            tool_id = tool_info.tool_id
-
-    params = ProblemStatementsSqlParams(
-        problem_statement=problem_statement,
-        name=name,
-        mcp=mcp,
-        group_id=group_id,
-        tool_id=tool_id,
+) -> GetProblemStatementResponse:
+    """Create a problem statement resource."""
+    problem_statement_id = await conn.fetchval(
+        """
+        INSERT INTO problem_statements_resource (name, problem_statement, active, mcp, generated)
+        VALUES ($1, $2, true, $3, $3)
+        RETURNING id
+    """,
+        name,
+        problem_statement,
+        mcp,
     )
-    result = cast(
-        ProblemStatementsSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
+
+    await invalidate_tags(["resources", "problem_statements"], redis=redis)
+    items = await get_problem_statements(
+        conn, [problem_statement_id], redis, bypass_cache=True
     )
-    if not result or not result.problem_statement_id:
-        raise ValueError(f"Failed to create problem statement: {problem_statement}")
-
-    # Record arg values (canonical — matches entry pattern)
-    if tool_info is None and tool_id is not None:
-        tool_info = await resolve_tool(
-            conn, "create", "problem_statements", scope="resources"
-        )
-    if tool_info and result.call_id is not None:
-        await record_call_args(
-            conn,
-            result.call_id,
-            tool_info,
-            {"problem_statement": problem_statement, "name": name},
-            mcp,
-        )
-
-    await invalidate_tags(["resources", "problem_statements"], redis=get_redis_client())
-    return result.problem_statement_id
+    return items[0]
