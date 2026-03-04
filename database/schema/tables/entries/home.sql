@@ -13,7 +13,7 @@ CREATE TABLE public.home_chat_entry (
     active boolean DEFAULT true CONSTRAINT home_training_entry_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT home_training_entry_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT home_training_entry_mcp_not_null NOT NULL,
-    session_id uuid
+    session_id uuid NOT NULL
 );
 
 
@@ -32,7 +32,7 @@ CREATE TABLE public.home_entry (
     "position" integer DEFAULT 0 NOT NULL,
     start_time timestamp with time zone,
     end_time timestamp with time zone,
-    session_id uuid
+    session_id uuid NOT NULL
 );
 
 

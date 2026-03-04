@@ -64,7 +64,7 @@ CREATE TABLE public.attempt_chat_entry (
     generated boolean DEFAULT false CONSTRAINT chat_resolved_entry_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT chat_resolved_entry_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT chat_resolved_entry_active_not_null NOT NULL,
-    group_id uuid,
+    group_id uuid NOT NULL,
     chat_id uuid CONSTRAINT chat_resolved_entry_chat_id_not_null NOT NULL,
     "position" integer DEFAULT 0 NOT NULL,
     time_limit integer,
@@ -87,7 +87,7 @@ CREATE TABLE public.attempt_chat_entry (
     video_enabled boolean DEFAULT false NOT NULL,
     images_enabled boolean DEFAULT false NOT NULL,
     questions_enabled boolean DEFAULT false NOT NULL,
-    assistant_persona_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    assistant_persona_ids uuid[] DEFAULT ARRAY[]::uuid[] NOT NULL,
     call_id uuid NOT NULL
 );
 
@@ -123,10 +123,10 @@ CREATE TABLE public.attempt_entry (
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL,
     num_chats integer DEFAULT 1 NOT NULL,
-    user_persona_id uuid,
+    user_persona_id uuid NOT NULL,
     call_id uuid NOT NULL,
-    name text,
-    description text,
+    name text DEFAULT ''::text NOT NULL,
+    description text DEFAULT ''::text NOT NULL,
     practice boolean DEFAULT false NOT NULL
 );
 
@@ -213,7 +213,7 @@ CREATE TABLE public.attempt_message_entry (
     chat_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    message_id uuid,
+    message_id uuid NOT NULL,
     call_id uuid NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     generated boolean DEFAULT false NOT NULL,

@@ -64,7 +64,7 @@ CREATE TABLE public.chat_entry (
     generate_parameter_fields boolean DEFAULT false NOT NULL,
     name text DEFAULT ''::text NOT NULL,
     description text DEFAULT ''::text NOT NULL,
-    session_id uuid
+    session_id uuid NOT NULL
 );
 
 

@@ -1,60 +1,66 @@
-"""endpoints/get internal — reusable data-access layer."""
+"""Endpoints Resource GET — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    GetEndpointsSqlParams,
-    GetEndpointsSqlRow,
-    QGetEndpointsV4Item,
-)
+from app.routes.v5.tools.resources.endpoints.types import GetEndpointResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/resources/endpoints/get_endpoints_complete.sql"
 
 
-async def get_endpoints_internal(
+async def get_endpoints(
     conn: asyncpg.Connection,
     ids: list[UUID],
+    redis: Redis,
     bypass_cache: bool = False,
-) -> list[QGetEndpointsV4Item]:
-    """Internal function to fetch endpoints by IDs."""
+) -> list[GetEndpointResponse]:
+    """Fetch endpoints_resource entries by IDs."""
     if not ids:
         return []
 
     tags = ["resources", "endpoints"]
-    cache_key_val = cache_key(
-        "/api/v5/resources/endpoints/get",
-        {"ids": [str(id) for id in ids]},
-    )
+    key = cache_key("/api/v5/resources/endpoints/get", {"ids": [str(id) for id in ids]})
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetEndpointsV4Item.model_validate(item)
+                GetEndpointResponse.model_validate(item)
                 for item in cached.get("items", [])
             ]
 
-    params = GetEndpointsSqlParams(ids=ids)
-    result = cast(
-        GetEndpointsSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
+    rows = await conn.fetch(
+        """
+        SELECT id, base_url,
+               created_at, active, mcp, generated
+        FROM endpoints_resource
+        WHERE id = ANY($1)
+        ORDER BY array_position($1, id)
+    """,
+        ids,
     )
 
-    items: list[QGetEndpointsV4Item] = result.items if result and result.items else []
+    items = [
+        GetEndpointResponse(
+            id=r["id"],
+            base_url=r["base_url"],
+            created_at=r["created_at"],
+            active=r["active"],
+            mcp=r["mcp"],
+            generated=r["generated"],
+        )
+        for r in rows
+    ]
 
-    await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
+    if not bypass_cache:
+        await set_cached(
+            key,
+            {"items": [i.model_dump(mode="json") for i in items]},
+            60,
+            tags,
+            redis=redis,
+        )
     return items
