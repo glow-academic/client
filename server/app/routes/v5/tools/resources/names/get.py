@@ -1,51 +1,31 @@
-"""Names GET — reusable data-access layer."""
+"""Names Resource GET — reusable data-access layer."""
 
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.routes.v5.tools.resources.names.types import NameItem
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
+from app.routes.v5.tools.resources.names.types import GetNameResponse
 
 
-async def get_names(
+async def get_name(
     conn: asyncpg.Connection,
-    ids: list[UUID],
-    bypass_cache: bool = False,
-) -> list[NameItem]:
-    """Fetch names by IDs."""
-    if not ids:
-        return []
-
-    tags = ["resources", "names"]
-    cache_key_val = cache_key(
-        "/api/v5/resources/names/get",
-        {"ids": [str(id) for id in ids]},
-    )
-
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val)
-        if cached:
-            return [NameItem.model_validate(item) for item in cached.get("items", [])]
-
-    rows = await conn.fetch("""
-        SELECT id, name, COALESCE(generated, false) AS generated
+    name_id: UUID,
+) -> GetNameResponse | None:
+    """Get a names_resource entry by ID."""
+    row = await conn.fetchrow("""
+        SELECT id, name, created_at, active, mcp, generated
         FROM names_resource
-        WHERE id = ANY($1)
-          AND name IS NOT NULL
-          AND name != ''
-        ORDER BY array_position($1, id)
-    """, ids)
+        WHERE id = $1
+    """, name_id)
 
-    items = [NameItem(id=r["id"], name=r["name"], generated=r["generated"]) for r in rows]
+    if row is None:
+        return None
 
-    await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=tags,
+    return GetNameResponse(
+        id=row["id"],
+        name=row["name"],
+        created_at=row["created_at"],
+        active=row["active"],
+        mcp=row["mcp"],
+        generated=row["generated"],
     )
-
-    return items

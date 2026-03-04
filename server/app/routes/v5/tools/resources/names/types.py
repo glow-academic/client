@@ -1,33 +1,15 @@
 """Names resource types — handcrafted, co-located with handler."""
 
+from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
-class NameItem(BaseModel):
+class GetNameResponse(BaseModel):
     id: UUID
     name: str
+    created_at: datetime
+    active: bool
+    mcp: bool
     generated: bool
-
-
-# Backward-compat alias — artifact types.py files reference this name.
-# TODO: migrate downstream imports to NameItem, then remove.
-QGetNamesV4Item = NameItem
-
-
-class GetNamesRequest(BaseModel):
-    ids: list[UUID] = Field(default_factory=list)
-
-
-class GetNamesResponse(BaseModel):
-    items: list[NameItem] = Field(default_factory=list)
-
-
-class CreateNameRequest(BaseModel):
-    name: str
-
-
-class CreateNameResponse(BaseModel):
-    name_id: UUID
-    call_id: UUID | None = None
