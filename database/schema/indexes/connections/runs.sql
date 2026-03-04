@@ -26,22 +26,6 @@ CREATE INDEX runs_agents_connection_run_idx ON public.runs_agents_connection USI
 
 --
 
--- Name: runs_calls_connection_call_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX runs_calls_connection_call_id_idx ON public.runs_calls_connection USING btree (call_id);
-
-
---
-
--- Name: runs_calls_connection_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX runs_calls_connection_id_idx ON public.runs_calls_connection USING btree (runs_id);
-
-
---
-
 -- Name: runs_keys_connection_key_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -54,22 +38,6 @@ CREATE INDEX runs_keys_connection_key_id_idx ON public.runs_keys_connection USIN
 --
 
 CREATE INDEX runs_keys_connection_runs_id_idx ON public.runs_keys_connection USING btree (runs_id);
-
-
---
-
--- Name: runs_runs_connection_run_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX runs_runs_connection_run_id_idx ON public.runs_runs_connection USING btree (run_id);
-
-
---
-
--- Name: runs_runs_connection_runs_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX runs_runs_connection_runs_id_idx ON public.runs_runs_connection USING btree (runs_id);
 
 
 --

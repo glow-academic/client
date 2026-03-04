@@ -6,21 +6,7 @@
 --
 
 CREATE MATERIALIZED VIEW public.test_invocation_mv AS
- WITH runs_entry_links AS (
-         SELECT re.test_invocation_id,
-            array_agg(DISTINCT rrc.runs_id ORDER BY rrc.runs_id) FILTER (WHERE (rrc.runs_id IS NOT NULL)) AS run_ids
-           FROM (public.test_invocation_runs_entry re
-             JOIN public.test_invocation_runs_runs_connection rrc ON (((rrc.test_invocation_runs_id = re.id) AND (rrc.active = true))))
-          WHERE (re.active = true)
-          GROUP BY re.test_invocation_id
-        ), groups_entry_links AS (
-         SELECT ge.test_invocation_id,
-            array_agg(DISTINCT ggc.groups_id ORDER BY ggc.groups_id) FILTER (WHERE (ggc.groups_id IS NOT NULL)) AS group_ids
-           FROM (public.test_invocation_groups_entry ge
-             JOIN public.test_invocation_groups_groups_connection ggc ON (((ggc.test_invocation_groups_id = ge.id) AND (ggc.active = true))))
-          WHERE (ge.active = true)
-          GROUP BY ge.test_invocation_id
-        ), groups_agents_links AS (
+ WITH groups_agents_links AS (
          SELECT ge.test_invocation_id,
             array_agg(DISTINCT gac.agents_id ORDER BY gac.agents_id) FILTER (WHERE (gac.agents_id IS NOT NULL)) AS group_agent_ids
            FROM (public.test_invocation_groups_entry ge
@@ -64,14 +50,6 @@ CREATE MATERIALIZED VIEW public.test_invocation_mv AS
              LEFT JOIN public.test_invocation_keys_connection irk ON (((irk.test_invocation_id = ir.id) AND (irk.active = true))))
           WHERE (ir.active = true)
           GROUP BY ir.id
-        ), historical_runs AS (
-         SELECT i_1.id AS invocation_id,
-            array_agg(rrc.runs_id ORDER BY re.created_at) FILTER (WHERE (rrc.runs_id IS NOT NULL)) AS historical_run_ids
-           FROM ((public.test_invocation_entry i_1
-             JOIN public.runs_entry re ON ((re.group_id = i_1.group_id)))
-             JOIN public.runs_runs_connection rrc ON (((rrc.run_id = re.id) AND (rrc.active = true))))
-          WHERE ((i_1.active = true) AND (i_1.group_id IS NOT NULL))
-          GROUP BY i_1.id
         )
  SELECT i.id AS invocation_id,
     i.test_id,
@@ -87,25 +65,19 @@ CREATE MATERIALIZED VIEW public.test_invocation_mv AS
     lg.grade_time_taken,
     NULL::uuid AS rubric_id,
     COALESCE(dl.department_ids, ARRAY[]::uuid[]) AS department_ids,
-    COALESCE(rel.run_ids, ARRAY[]::uuid[]) AS run_ids,
-    COALESCE(gel.group_ids, ARRAY[]::uuid[]) AS group_ids,
     COALESCE(ral.run_agent_ids, ARRAY[]::uuid[]) AS run_agent_ids,
     COALESCE(gal.group_agent_ids, ARRAY[]::uuid[]) AS group_agent_ids,
     bs.model_id,
     bs.voice_id,
     bs.temperature_level_id,
     bs.reasoning_level_id,
-    bs.key_id,
-    COALESCE(hr.historical_run_ids, ARRAY[]::uuid[]) AS historical_run_ids
-   FROM ((((((((public.test_invocation_entry i
-     LEFT JOIN runs_entry_links rel ON ((rel.test_invocation_id = i.id)))
-     LEFT JOIN groups_entry_links gel ON ((gel.test_invocation_id = i.id)))
+    bs.key_id
+   FROM (((((public.test_invocation_entry i
      LEFT JOIN groups_agents_links gal ON ((gal.test_invocation_id = i.id)))
      LEFT JOIN runs_agents_links ral ON ((ral.test_invocation_id = i.id)))
      LEFT JOIN department_links dl ON ((dl.test_invocation_id = i.id)))
      LEFT JOIN latest_grade lg ON ((lg.invocation_id = i.id)))
      LEFT JOIN bundle_snapshot bs ON ((bs.test_invocation_id = i.id)))
-     LEFT JOIN historical_runs hr ON ((hr.invocation_id = i.id)))
   WHERE (i.active = true)
   WITH NO DATA;
 

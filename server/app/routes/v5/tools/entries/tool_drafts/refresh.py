@@ -3,6 +3,6 @@
 import asyncpg
 
 
-async def refresh_tool(conn: asyncpg.Connection) -> None:
-    """Refresh tool_mv concurrently."""
-    await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY tool_mv")
+async def refresh_tool_drafts(conn: asyncpg.Connection) -> None:
+    """Refresh tool_drafts_mv concurrently."""
+    await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY tool_drafts_mv")

@@ -62,21 +62,6 @@ CREATE TABLE public.test_invocation_groups_agents_connection (
 
 --
 
--- Name: test_invocation_groups_groups_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.test_invocation_groups_groups_connection (
-    test_invocation_groups_id uuid CONSTRAINT test_invocation_groups_group_test_invocation_groups_id_not_null NOT NULL,
-    groups_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL
-);
-
-
---
-
 -- Name: test_invocation_keys_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -128,21 +113,6 @@ CREATE TABLE public.test_invocation_reasoning_levels_connection (
 CREATE TABLE public.test_invocation_runs_agents_connection (
     test_invocation_runs_id uuid CONSTRAINT test_invocation_runs_agents_co_test_invocation_runs_id_not_null NOT NULL,
     agents_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL
-);
-
-
---
-
--- Name: test_invocation_runs_runs_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.test_invocation_runs_runs_connection (
-    test_invocation_runs_id uuid CONSTRAINT test_invocation_runs_runs_conn_test_invocation_runs_id_not_null NOT NULL,
-    runs_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
@@ -311,29 +281,11 @@ ALTER TABLE ONLY public.test_invocation_groups_agents_connection
 
 --
 
--- Name: test_invocation_groups_groups_connection test_invocation_groups_groups_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.test_invocation_groups_groups_connection
-    ADD CONSTRAINT test_invocation_groups_groups_connection_pkey PRIMARY KEY (test_invocation_groups_id, groups_id);
-
-
---
-
 -- Name: test_invocation_runs_agents_connection test_invocation_runs_agents_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.test_invocation_runs_agents_connection
     ADD CONSTRAINT test_invocation_runs_agents_connection_pkey PRIMARY KEY (test_invocation_runs_id, agents_id);
-
-
---
-
--- Name: test_invocation_runs_runs_connection test_invocation_runs_runs_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.test_invocation_runs_runs_connection
-    ADD CONSTRAINT test_invocation_runs_runs_connection_pkey PRIMARY KEY (test_invocation_runs_id, runs_id);
 
 
 --

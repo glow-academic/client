@@ -3,6 +3,6 @@
 import asyncpg
 
 
-async def refresh_chat(conn: asyncpg.Connection) -> None:
-    """Refresh chat_mv concurrently."""
-    await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY chat_mv")
+async def refresh_chat_drafts(conn: asyncpg.Connection) -> None:
+    """Refresh chat_drafts_mv concurrently."""
+    await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY chat_drafts_mv")

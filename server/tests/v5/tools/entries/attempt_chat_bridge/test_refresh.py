@@ -1,0 +1,88 @@
+"""Tests for refresh_attempt_chat_bridge."""
+
+import pytest
+
+from app.routes.v5.tools.entries.attempt.create import create_attempt
+from app.routes.v5.tools.entries.attempt_chat.create import create_attempt_chat
+from app.routes.v5.tools.entries.attempt_chat_bridge.create import (
+    create_attempt_chat_bridge,
+)
+from app.routes.v5.tools.entries.attempt_chat_bridge.refresh import (
+    refresh_attempt_chat_bridge,
+)
+from app.routes.v5.tools.entries.attempt_chat_bridge.search import (
+    search_attempt_chat_bridge_entries_internal,
+)
+from app.routes.v5.tools.entries.calls.create import create_call
+from app.routes.v5.tools.entries.chat.create import create_chat
+from app.routes.v5.tools.entries.groups.create import create_group
+from app.routes.v5.tools.entries.persona.create import create_persona
+from app.routes.v5.tools.entries.runs.create import create_run
+from app.routes.v5.tools.entries.sessions.create import create_session
+from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
+
+pytestmark = pytest.mark.asyncio
+
+
+async def test_new_attempt_chat_bridge_appears_after_refresh(conn):
+    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+    group = await create_group(conn, session_id=session.id)
+    run = await create_run(conn, group_id=group.id, session_id=session.id)
+    call = await create_call(conn, run_id=run.id, session_id=session.id)
+    persona = await create_persona(conn)
+    attempt = await create_attempt(
+        conn,
+        call_id=call.id,
+        user_persona_id=persona.id,
+        profiles_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+    )
+    chat = await create_chat(conn, session_id=session.id)
+    call2 = await create_call(conn, run_id=run.id, session_id=session.id)
+    attempt_chat = await create_attempt_chat(
+        conn, call_id=call2.id, group_id=group.id, chat_id=chat.id
+    )
+    result = await create_attempt_chat_bridge(
+        conn,
+        attempt_id=attempt.id,
+        attempt_chat_id=attempt_chat.id,
+        session_id=session.id,
+    )
+
+    await refresh_attempt_chat_bridge(conn)
+
+    items = await search_attempt_chat_bridge_entries_internal(
+        conn, attempt_id=attempt.id
+    )
+    assert len(items) == 1
+    assert items[0]["attempt_id"] == result.attempt_id
+    assert items[0]["attempt_chat_id"] == result.attempt_chat_id
+
+
+async def test_new_attempt_chat_bridge_not_visible_before_refresh(conn):
+    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+    group = await create_group(conn, session_id=session.id)
+    run = await create_run(conn, group_id=group.id, session_id=session.id)
+    call = await create_call(conn, run_id=run.id, session_id=session.id)
+    persona = await create_persona(conn)
+    attempt = await create_attempt(
+        conn,
+        call_id=call.id,
+        user_persona_id=persona.id,
+        profiles_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+    )
+    chat = await create_chat(conn, session_id=session.id)
+    call2 = await create_call(conn, run_id=run.id, session_id=session.id)
+    attempt_chat = await create_attempt_chat(
+        conn, call_id=call2.id, group_id=group.id, chat_id=chat.id
+    )
+    result = await create_attempt_chat_bridge(
+        conn,
+        attempt_id=attempt.id,
+        attempt_chat_id=attempt_chat.id,
+        session_id=session.id,
+    )
+
+    items = await search_attempt_chat_bridge_entries_internal(
+        conn, attempt_id=attempt.id
+    )
+    assert items == []

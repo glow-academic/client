@@ -191,24 +191,6 @@ ALTER TABLE ONLY public.test_invocation_groups_agents_connection
 
 --
 
--- Name: test_invocation_groups_groups_connection test_invocation_groups_groups_co_test_invocation_groups_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.test_invocation_groups_groups_connection
-    ADD CONSTRAINT test_invocation_groups_groups_co_test_invocation_groups_id_fkey FOREIGN KEY (test_invocation_groups_id) REFERENCES public.test_invocation_groups_entry(id) ON DELETE CASCADE;
-
-
---
-
--- Name: test_invocation_groups_groups_connection test_invocation_groups_groups_connection_groups_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.test_invocation_groups_groups_connection
-    ADD CONSTRAINT test_invocation_groups_groups_connection_groups_id_fkey FOREIGN KEY (groups_id) REFERENCES public.groups_resource(id);
-
-
---
-
 -- Name: test_invocation_models_connection test_invocation_models_connection_models_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -232,24 +214,6 @@ ALTER TABLE ONLY public.test_invocation_runs_agents_connection
 
 ALTER TABLE ONLY public.test_invocation_runs_agents_connection
     ADD CONSTRAINT test_invocation_runs_agents_connection_agents_id_fkey FOREIGN KEY (agents_id) REFERENCES public.agents_resource(id);
-
-
---
-
--- Name: test_invocation_runs_runs_connection test_invocation_runs_runs_connecti_test_invocation_runs_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.test_invocation_runs_runs_connection
-    ADD CONSTRAINT test_invocation_runs_runs_connecti_test_invocation_runs_id_fkey FOREIGN KEY (test_invocation_runs_id) REFERENCES public.test_invocation_runs_entry(id) ON DELETE CASCADE;
-
-
---
-
--- Name: test_invocation_runs_runs_connection test_invocation_runs_runs_connection_runs_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.test_invocation_runs_runs_connection
-    ADD CONSTRAINT test_invocation_runs_runs_connection_runs_id_fkey FOREIGN KEY (runs_id) REFERENCES public.runs_resource(id);
 
 
 --

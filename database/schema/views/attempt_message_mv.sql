@@ -13,11 +13,6 @@ CREATE MATERIALIZED VIEW public.attempt_message_mv AS
              JOIN public.audio_uploads_entry aue ON (((aue.audio_id = ae.id) AND (aue.active = true))))
              JOIN public.message_uploads_entry mue ON (((mue.upload_id = aue.upload_id) AND (mue.active = true))))
           WHERE (ae.active = true)
-        ), runs_resource_agg AS (
-         SELECT rrc.run_id,
-            rrc.runs_id
-           FROM public.runs_runs_connection rrc
-          WHERE (rrc.active = true)
         ), base_messages AS (
          SELECT sm.id AS message_id,
             sm.chat_id,
@@ -25,16 +20,14 @@ CREATE MATERIALIZED VIEW public.attempt_message_mv AS
             m.role,
             (mc.message_id IS NOT NULL) AS completed,
             m.created_at,
-            rra.runs_id,
             tue.text_id,
             ue.file_path AS history_file_path,
             aa.audio_id
-           FROM (((((((((((public.attempt_message_entry sm
+           FROM ((((((((((public.attempt_message_entry sm
              JOIN public.messages_entry m ON ((m.id = sm.id)))
              JOIN public.attempt_chat_entry c ON ((c.id = sm.chat_id)))
              JOIN public.attempt_chat_bridge_entry ac ON ((ac.attempt_chat_id = c.id)))
              JOIN public.attempt_entry a ON ((a.id = ac.attempt_id)))
-             LEFT JOIN runs_resource_agg rra ON ((rra.run_id = m.run_id)))
              LEFT JOIN public.message_uploads_entry mue ON (((mue.message_id = m.id) AND (mue.active = true))))
              LEFT JOIN public.uploads_entry ue ON ((ue.id = mue.upload_id)))
              LEFT JOIN public.text_uploads_entry tue ON (((tue.upload_id = mue.upload_id) AND (tue.active = true))))
@@ -60,7 +53,6 @@ CREATE MATERIALIZED VIEW public.attempt_message_mv AS
         END AS type,
     created_at,
     completed,
-    runs_id,
     text_id,
     history_file_path,
     audio_id

@@ -20,24 +20,6 @@ ALTER TABLE ONLY public.runs_agents_connection
 
 --
 
--- Name: runs_calls_connection runs_calls_connection_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.runs_calls_connection
-    ADD CONSTRAINT runs_calls_connection_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls_entry(id) ON DELETE CASCADE;
-
-
---
-
--- Name: runs_calls_connection runs_calls_connection_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.runs_calls_connection
-    ADD CONSTRAINT runs_calls_connection_id_fkey FOREIGN KEY (runs_id) REFERENCES public.runs_resource(id) ON DELETE CASCADE;
-
-
---
-
 -- Name: runs_keys_connection runs_keys_connection_key_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -52,24 +34,6 @@ ALTER TABLE ONLY public.runs_keys_connection
 
 ALTER TABLE ONLY public.runs_keys_connection
     ADD CONSTRAINT runs_keys_connection_runs_id_fkey FOREIGN KEY (runs_id) REFERENCES public.runs_entry(id) ON DELETE CASCADE;
-
-
---
-
--- Name: runs_runs_connection runs_runs_connection_run_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.runs_runs_connection
-    ADD CONSTRAINT runs_runs_connection_run_id_fkey FOREIGN KEY (run_id) REFERENCES public.runs_entry(id) ON DELETE CASCADE;
-
-
---
-
--- Name: runs_runs_connection runs_runs_connection_runs_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.runs_runs_connection
-    ADD CONSTRAINT runs_runs_connection_runs_id_fkey FOREIGN KEY (runs_id) REFERENCES public.runs_resource(id) ON DELETE CASCADE;
 
 
 --
