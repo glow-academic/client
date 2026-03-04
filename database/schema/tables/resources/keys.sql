@@ -7,7 +7,6 @@
 
 CREATE TABLE public.keys_resource (
     id uuid DEFAULT uuidv7() NOT NULL,
-    key_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
@@ -16,15 +15,6 @@ CREATE TABLE public.keys_resource (
     name text DEFAULT ''::text NOT NULL,
     description text DEFAULT ''::text NOT NULL
 );
-
-
---
-
--- Name: keys_resource keys_resource_key_id_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.keys_resource
-    ADD CONSTRAINT keys_resource_key_id_key UNIQUE (key_id);
 
 
 --

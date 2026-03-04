@@ -35,18 +35,18 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.id, q.key_id, q.key, q.name, q.description, q.generated)::types.q_get_keys_v4_item
+        (q.id, q.key, q.name, q.description, q.generated)::types.q_get_keys_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_keys_v4_item[]
 ) as items
 FROM (
-    SELECT r.id, r.key_id, r.key, r.name, r.description, COALESCE(r.generated, false) AS generated
+    SELECT r.id, r.key, r.name, r.description, COALESCE(r.generated, false) AS generated
     FROM keys_resource r
     WHERE r.active = true
       AND (search IS NULL OR search = '' OR LOWER(r.name) LIKE '%' || LOWER(search) || '%' OR LOWER(r.description) LIKE '%' || LOWER(search) || '%')
       AND (exclude_ids IS NULL OR NOT (r.id = ANY(exclude_ids)))
-      AND (COALESCE(array_length(key_ids, 1), 0) = 0 OR r.key_id = ANY(key_ids))
+      AND (COALESCE(array_length(key_ids, 1), 0) = 0 OR r.id = ANY(key_ids))
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT provider OR EXISTS (SELECT 1 FROM provider_keys_junction j WHERE j.key_id = r.id AND j.active = true))
     ORDER BY r.name

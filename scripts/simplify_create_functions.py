@@ -1023,15 +1023,10 @@ def build_configs():
                 params="key_id uuid",
                 return_col="id",
                 var_name="v_resource_id",
-                body=f"""    -- Validate that key exists
-    IF NOT EXISTS (SELECT 1 FROM keys WHERE id = {fn.format("keys")}.key_id) THEN
-        RAISE EXCEPTION 'Key % does not exist', {fn.format("keys")}.key_id;
-    END IF;
-
-    -- Check if keys_resource entry already exists for this key_id
+                body=f"""    -- Check if keys_resource entry already exists for this key_id
     SELECT r.id INTO v_resource_id
     FROM keys_resource r
-    WHERE r.key_id = {fn.format("keys")}.key_id
+    WHERE r.id = {fn.format("keys")}.key_id
     LIMIT 1;
 
     IF v_resource_id IS NOT NULL THEN
@@ -1040,7 +1035,7 @@ def build_configs():
     END IF;
 
     -- INSERT INTO keys_resource table
-    INSERT INTO keys_resource(key_id, active, generated, mcp)
+    INSERT INTO keys_resource(id, active, generated, mcp)
     VALUES ({fn.format("keys")}.key_id, true, true, mcp)
     RETURNING id INTO v_resource_id;""",
             ),

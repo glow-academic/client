@@ -37,15 +37,10 @@ DECLARE
     v_run_id uuid;
     v_call_id uuid;
 BEGIN
-    -- Validate that key exists
-    IF NOT EXISTS (SELECT 1 FROM keys WHERE id = api_create_keys_v4.key_id) THEN
-        RAISE EXCEPTION 'Key % does not exist', api_create_keys_v4.key_id;
-    END IF;
-
     -- Check if keys_resource entry already exists for this key_id
     SELECT r.id INTO v_resource_id
     FROM keys_resource r
-    WHERE r.key_id = api_create_keys_v4.key_id
+    WHERE r.id = api_create_keys_v4.key_id
     LIMIT 1;
 
     IF v_resource_id IS NOT NULL THEN
@@ -54,7 +49,7 @@ BEGIN
     END IF;
 
     -- INSERT INTO keys_resource table
-    INSERT INTO keys_resource(key_id, active, generated, mcp)
+    INSERT INTO keys_resource(id, active, generated, mcp)
     VALUES (api_create_keys_v4.key_id, true, true, mcp)
     RETURNING id INTO v_resource_id;
     -- If tool_id and group_id provided, create run and call for tracking

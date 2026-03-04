@@ -51,7 +51,6 @@ END $$;
 -- Create composite type for key item
 CREATE TYPE types.q_get_keys_v4_item AS (
     id uuid,
-    key_id uuid,
     key text,
     name text,
     description text,
@@ -70,7 +69,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (k.id, k.key_id, k.key, k.name, k.description, COALESCE(k.generated, false))::types.q_get_keys_v4_item
+        (k.id, k.key, k.name, k.description, COALESCE(k.generated, false))::types.q_get_keys_v4_item
         ORDER BY array_position(ids, k.id)
     ),
     ARRAY[]::types.q_get_keys_v4_item[]

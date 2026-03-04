@@ -18,26 +18,10 @@ CREATE INDEX idx_keys_resource_generated ON public.keys_resource USING btree (ge
 
 --
 
--- Name: idx_keys_resource_key_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_keys_resource_key_id ON public.keys_resource USING btree (key_id);
-
-
---
-
 -- Name: idx_keys_resource_mcp; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_keys_resource_mcp ON public.keys_resource USING btree (mcp);
-
-
---
-
--- Name: keys_resource_key_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX keys_resource_key_id_idx ON public.keys_resource USING btree (key_id);
 
 
 --

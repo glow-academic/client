@@ -23884,7 +23884,6 @@ class GetKeysSqlParams(BaseModel):
 class QGetKeysV4Item(BaseModel):
 
     id: UUID | None
-    key_id: UUID | None
     key: str | None
     name: str | None
     description: str | None
