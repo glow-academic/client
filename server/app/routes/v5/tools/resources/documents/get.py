@@ -1,115 +1,75 @@
-"""documents/get internal — reusable data-access layer."""
+"""Documents Resource GET — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    GetDocumentResourceSqlParams,
-    GetDocumentResourceSqlRow,
-    GetDocumentsSqlParams,
-    GetDocumentsSqlRow,
-    QGetDocumentResourceV4Item,
-    QGetDocumentsV4Item,
-)
+from app.routes.v5.tools.resources.documents.types import GetDocumentResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/documents/get_document_resource_data_complete.sql"
-
-BATCH_SQL_PATH = "app/sql/queries/resources/documents/get_documents_complete.sql"
 
 
-async def get_document_internal(
-    conn: asyncpg.Connection,
-    id: UUID,
-    bypass_cache: bool = False,
-) -> QGetDocumentResourceV4Item | None:
-    """Internal function for fetching a single document."""
-    cache_key_val = cache_key("documents/get", {"id": str(id)})
-
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            item_data = cached.get("data")
-            if item_data:
-                return QGetDocumentResourceV4Item.model_validate(item_data)
-            return None
-
-    params = GetDocumentResourceSqlParams(document_id=id)
-    result = cast(
-        GetDocumentResourceSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items = result.items if result and result.items else []
-    item = items[0] if items else None
-
-    await set_cached(
-        cache_key_val,
-        {"data": item.model_dump(mode="json") if item else None},
-        ttl=60,
-        tags=["documents"],
-        redis=get_redis_client(),
-    )
-
-    return item
-
-
-async def get_documents_internal(
+async def get_documents(
     conn: asyncpg.Connection,
     ids: list[UUID],
+    redis: Redis,
     bypass_cache: bool = False,
-) -> list[QGetDocumentsV4Item]:
-    """Internal function for batch fetching documents by IDs.
-
-    This is a simple fetch without active flag check, used by scenario GET.
-
-    Args:
-        conn: Database connection
-        ids: List of document IDs to fetch
-        bypass_cache: Whether to bypass cache
-
-    Returns:
-        List of document items (may be fewer than requested if some don't exist)
-    """
+) -> list[GetDocumentResponse]:
+    """Fetch documents_resource entries by IDs."""
     if not ids:
         return []
 
     tags = ["resources", "documents"]
-    cache_key_val = cache_key(
-        "/api/v5/resources/documents/get-batch",
-        {"ids": [str(id) for id in ids]},
-    )
+    key = cache_key("/api/v5/resources/documents/get", {"ids": [str(id) for id in ids]})
 
-    # Try cache (unless bypassed)
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetDocumentsV4Item.model_validate(item)
+                GetDocumentResponse.model_validate(item)
                 for item in cached.get("items", [])
             ]
 
-    # Execute SQL
-    params = GetDocumentsSqlParams(p_ids=ids)
-    result = cast(
-        GetDocumentsSqlRow,
-        await execute_sql_typed(conn, BATCH_SQL_PATH, params=params),
+    rows = await conn.fetch(
+        """
+        SELECT id, name, description, department_ids, upload_id, text_id, image_ids,
+               template, parameter_ids, parameter_field_ids, created_at, active,
+               generated, mcp
+        FROM documents_resource
+        WHERE id = ANY($1)
+        ORDER BY array_position($1, id)
+    """,
+        ids,
     )
 
-    items: list[QGetDocumentsV4Item] = result.items if result and result.items else []
+    items = [
+        GetDocumentResponse(
+            id=r["id"],
+            name=r["name"],
+            description=r["description"],
+            department_ids=r["department_ids"] or [],
+            upload_id=r["upload_id"],
+            text_id=r["text_id"],
+            image_ids=r["image_ids"] or [],
+            template=r["template"],
+            parameter_ids=r["parameter_ids"] or [],
+            parameter_field_ids=r["parameter_field_ids"] or [],
+            created_at=r["created_at"],
+            active=r["active"],
+            generated=r["generated"],
+            mcp=r["mcp"],
+        )
+        for r in rows
+    ]
 
-    # Cache result
-    await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
+    if not bypass_cache:
+        await set_cached(
+            key,
+            {"items": [i.model_dump(mode="json") for i in items]},
+            60,
+            tags,
+            redis=redis,
+        )
     return items

@@ -1,70 +1,67 @@
-"""parameter_fields/get internal — reusable data-access layer."""
+"""Parameter Fields Resource GET — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    GetParameterFieldsSqlParams,
-    GetParameterFieldsSqlRow,
-    QGetParameterFieldsV4Item,
-)
+from app.routes.v5.tools.resources.parameter_fields.types import GetParameterFieldResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = (
-    "app/sql/queries/resources/parameter_fields/get_parameter_fields_complete.sql"
-)
 
 
-async def get_parameter_fields_internal(
+async def get_parameter_fields(
     conn: asyncpg.Connection,
     ids: list[UUID],
+    redis: Redis,
     bypass_cache: bool = False,
-) -> list[QGetParameterFieldsV4Item]:
-    """Internal function to fetch parameter fields by IDs.
-
-    Can be called directly from other routes without HTTP overhead.
-    """
+) -> list[GetParameterFieldResponse]:
+    """Fetch parameter_fields_resource entries by IDs."""
     if not ids:
         return []
 
     tags = ["resources", "parameter_fields"]
-    cache_key_val = cache_key(
-        "/api/v5/resources/parameter_fields/get",
-        {"ids": [str(id) for id in ids]},
-    )
+    key = cache_key("/api/v5/resources/parameter_fields/get", {"ids": [str(id) for id in ids]})
 
-    # Try cache (unless bypassed)
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetParameterFieldsV4Item.model_validate(item)
+                GetParameterFieldResponse.model_validate(item)
                 for item in cached.get("items", [])
             ]
 
-    # Execute SQL
-    params = GetParameterFieldsSqlParams(ids=ids)
-    result = cast(
-        GetParameterFieldsSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
+    rows = await conn.fetch(
+        """
+        SELECT id, field_id, parameter_id, created_at, updated_at, active, generated, mcp
+        FROM parameter_fields_resource
+        WHERE id = ANY($1)
+        ORDER BY array_position($1, id)
+    """,
+        ids,
     )
 
-    items: list[QGetParameterFieldsV4Item] = (
-        result.items if result and result.items else []
-    )
+    items = [
+        GetParameterFieldResponse(
+            id=r["id"],
+            field_id=r["field_id"],
+            parameter_id=r["parameter_id"],
+            created_at=r["created_at"],
+            updated_at=r["updated_at"],
+            active=r["active"],
+            generated=r["generated"],
+            mcp=r["mcp"],
+        )
+        for r in rows
+    ]
 
-    # Cache result
-    await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
+    if not bypass_cache:
+        await set_cached(
+            key,
+            {"items": [i.model_dump(mode="json") for i in items]},
+            60,
+            tags,
+            redis=redis,
+        )
     return items
