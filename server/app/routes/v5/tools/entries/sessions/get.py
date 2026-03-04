@@ -1,4 +1,4 @@
-"""Sessions GET — reusable data-access layer."""
+"""Sessions GET — batch get from sessions_mv."""
 
 from uuid import UUID
 
@@ -7,34 +7,26 @@ import asyncpg  # type: ignore
 from app.routes.v5.tools.entries.sessions.types import GetSessionResponse
 
 
-async def get_session(
+async def get_sessions(
     conn: asyncpg.Connection,
-    session_id: UUID,
-    profile: bool = False,
-) -> GetSessionResponse | None:
-    """Get a sessions entry by ID, optionally including the linked profile."""
-    if profile:
-        row = await conn.fetchrow("""
-            SELECT s.id, s.active, s.mcp, s.generated,
-                   psc.profiles_id
-            FROM sessions_entry s
-            LEFT JOIN profiles_sessions_connection psc ON psc.session_id = s.id
-            WHERE s.id = $1
-        """, session_id)
-    else:
-        row = await conn.fetchrow("""
-            SELECT id, active, mcp, generated
-            FROM sessions_entry
-            WHERE id = $1
-        """, session_id)
+    ids: list[UUID],
+) -> list[GetSessionResponse]:
+    """Get sessions by IDs from sessions_mv."""
+    if not ids:
+        return []
 
-    if row is None:
-        return None
+    rows = await conn.fetch("""
+        SELECT session_id, profile_id, session_created_at, active
+        FROM sessions_mv
+        WHERE session_id = ANY($1)
+    """, ids)
 
-    return GetSessionResponse(
-        id=row["id"],
-        active=row["active"],
-        mcp=row["mcp"],
-        generated=row["generated"],
-        profiles_id=row["profiles_id"] if profile else None,
-    )
+    return [
+        GetSessionResponse(
+            id=r["session_id"],
+            profile_id=r["profile_id"],
+            created_at=r["session_created_at"],
+            active=r["active"],
+        )
+        for r in rows
+    ]

@@ -6,14 +6,10 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import get_db
-from app.routes.v5.tools.entries.sessions.get import (
-    SQL_PATH,
-    get_sessions_entries_internal,
-)
+from app.routes.v5.tools.entries.sessions.get import get_sessions
 from app.sql.types import (
     GetSessionsEntriesApiRequest,
     GetSessionsEntriesApiResponse,
-    load_sql_query,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -30,13 +26,11 @@ async def get_sessions_entries(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetSessionsEntriesApiResponse:
     """Get sessions entries by IDs."""
-    tags = ["entries", "sessions"]
-    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-
     try:
-        items = await get_sessions_entries_internal(conn, request.ids, bypass_cache)
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        return GetSessionsEntriesApiResponse(items=items)
+        items = await get_sessions(conn, request.ids)
+        return GetSessionsEntriesApiResponse(
+            items=[item.model_dump(mode="json") for item in items],
+        )
     except HTTPException:
         raise
     except ValueError as e:
@@ -46,7 +40,5 @@ async def get_sessions_entries(
             error=e,
             route_path=http_request.url.path,
             operation="get_sessions_entries",
-            sql_query=load_sql_query(SQL_PATH),
-            sql_params=None,
             request=http_request,
         )
