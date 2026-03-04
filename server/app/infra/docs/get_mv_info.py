@@ -32,7 +32,7 @@ async def get_mv_info(conn: asyncpg.Connection, mv_name: str) -> MvInfo | None:
 
     return MvInfo(
         name=mv_name,
-        definition=definition.strip(),
+        definition=definition.strip().rstrip(";"),
         columns=[
             ColumnInfo(
                 name=c["column_name"],

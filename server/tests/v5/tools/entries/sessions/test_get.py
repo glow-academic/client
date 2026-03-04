@@ -48,3 +48,13 @@ async def test_returns_empty_for_empty_ids(conn):
     items = await get_sessions(conn, [])
 
     assert items == []
+
+
+async def test_bypass_mv_returns_without_refresh(conn):
+    result = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+
+    items = await get_sessions(conn, [result.id], bypass_mv=True)
+
+    assert len(items) == 1
+    assert items[0].id == result.id
+    assert items[0].profile_id == SUPERADMIN_PROFILES_RESOURCE_ID

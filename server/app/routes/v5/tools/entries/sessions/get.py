@@ -4,23 +4,29 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
+from app.infra.docs.resolve_mv_source import resolve_mv_source
 from app.routes.v5.tools.entries.sessions.types import GetSessionResponse
+
+MV_NAME = "sessions_mv"
 
 
 async def get_sessions(
     conn: asyncpg.Connection,
     ids: list[UUID],
+    bypass_mv: bool = False,
 ) -> list[GetSessionResponse]:
     """Get sessions by IDs from sessions_mv."""
     if not ids:
         return []
 
+    source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
+
     rows = await conn.fetch(
-        """
+        f"""
         SELECT session_id, profile_id, session_created_at, active, mcp
-        FROM sessions_mv
+        FROM {source}
         WHERE session_id = ANY($1)
-    """,
+        """,
         ids,
     )
 
