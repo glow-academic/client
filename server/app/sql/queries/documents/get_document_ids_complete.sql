@@ -94,8 +94,8 @@ document_uploads_data AS (
         CASE
             WHEN (SELECT document_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(du.uploads_id ORDER BY du.created_at)
-                 FROM document_uploads_junction du
+                (SELECT ARRAY_AGG(du.files_id ORDER BY du.created_at)
+                 FROM document_files_junction du
                  WHERE du.document_id = (SELECT document_id FROM params) AND du.active = true),
                 ARRAY[]::uuid[]
             )

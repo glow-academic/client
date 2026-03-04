@@ -12,8 +12,8 @@ CREATE MATERIALIZED VIEW public.uploads_mv AS
     ue.mime_type,
     ue.size,
     ue.created_at
-   FROM ((public.uploads_resource ur
-     JOIN public.uploads_uploads_connection uuc ON (((uuc.uploads_id = ur.id) AND (uuc.active = true))))
+   FROM ((public.files_resource ur
+     JOIN public.files_uploads_connection uuc ON (((uuc.files_id = ur.id) AND (uuc.active = true))))
      JOIN public.uploads_entry ue ON (((ue.id = uuc.upload_id) AND (ue.active = true))))
   WHERE (ur.active = true)
   WITH NO DATA;

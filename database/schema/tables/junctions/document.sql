@@ -47,6 +47,21 @@ CREATE TABLE public.document_documents_junction (
 
 --
 
+-- Name: document_files_junction; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.document_files_junction (
+    active boolean DEFAULT true CONSTRAINT document_uploads_active_not_null NOT NULL,
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT document_uploads_created_at_not_null NOT NULL,
+    files_id uuid CONSTRAINT document_uploads_resource_uploads_id_not_null NOT NULL,
+    document_id uuid CONSTRAINT document_uploads_resource_document_id_new_not_null NOT NULL,
+    generated boolean DEFAULT false CONSTRAINT document_uploads_junction_generated_not_null NOT NULL,
+    mcp boolean DEFAULT false CONSTRAINT document_uploads_junction_mcp_not_null NOT NULL
+);
+
+
+--
+
 -- Name: document_flags_junction; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -135,21 +150,6 @@ CREATE TABLE public.document_texts_junction (
 
 --
 
--- Name: document_uploads_junction; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.document_uploads_junction (
-    active boolean DEFAULT true CONSTRAINT document_uploads_active_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT document_uploads_created_at_not_null NOT NULL,
-    uploads_id uuid CONSTRAINT document_uploads_resource_uploads_id_not_null NOT NULL,
-    document_id uuid CONSTRAINT document_uploads_resource_document_id_new_not_null NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL
-);
-
-
---
-
 -- Name: document_departments_junction document_departments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -173,6 +173,15 @@ ALTER TABLE ONLY public.document_descriptions_junction
 
 ALTER TABLE ONLY public.document_documents_junction
     ADD CONSTRAINT document_documents_junction_pkey PRIMARY KEY (document_id, documents_id);
+
+
+--
+
+-- Name: document_files_junction document_files_junction_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.document_files_junction
+    ADD CONSTRAINT document_files_junction_pkey PRIMARY KEY (document_id, files_id);
 
 
 --
@@ -227,15 +236,6 @@ ALTER TABLE ONLY public.document_parameters_junction
 
 ALTER TABLE ONLY public.document_texts_junction
     ADD CONSTRAINT document_texts_junction_pkey PRIMARY KEY (document_id, texts_id);
-
-
---
-
--- Name: document_uploads_junction document_uploads_junction_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.document_uploads_junction
-    ADD CONSTRAINT document_uploads_junction_pkey PRIMARY KEY (document_id, uploads_id);
 
 
 --

@@ -183,14 +183,14 @@ async def get_document_list(
 
             uploads_data = await fetch_uploads()
 
-        # Build uploads_id -> upload_id map (resource ID -> file ID for download URL)
+        # Build files_id -> upload_id map (resource ID -> file ID for download URL)
         upload_resource_to_file_id: dict[UUID, UUID] = {}
         for u in uploads_data:
-            if u.uploads_id and u.upload_id:
+            if u.files_id and u.upload_id:
                 uid = (
-                    UUID(str(u.uploads_id))
-                    if not isinstance(u.uploads_id, UUID)
-                    else u.uploads_id
+                    UUID(str(u.files_id))
+                    if not isinstance(u.files_id, UUID)
+                    else u.files_id
                 )
                 upload_resource_to_file_id[uid] = u.upload_id
 

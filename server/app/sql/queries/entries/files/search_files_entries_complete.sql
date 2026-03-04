@@ -18,7 +18,7 @@ CREATE OR REPLACE FUNCTION public.api_search_files_entries_v4(
     search text DEFAULT NULL,
     limit_count integer DEFAULT 20,
     offset_count integer DEFAULT 0,
-    uploads_id uuid DEFAULT NULL,
+    files_id uuid DEFAULT NULL,
     mime_type text DEFAULT NULL
 ) RETURNS TABLE(
     items jsonb
@@ -32,7 +32,7 @@ BEGIN
     FROM (
         SELECT jsonb_build_object(
             'file_id', m.file_id,
-            'uploads_id', m.uploads_id,
+            'files_id', m.files_id,
             'file_path', m.file_path,
             'mime_type', m.mime_type,
             'size', m.size,
@@ -40,7 +40,7 @@ BEGIN
         ) AS row_data
         FROM files_mv m
         WHERE true
-          AND (uploads_id IS NULL OR m.uploads_id = uploads_id)
+          AND (files_id IS NULL OR m.files_id = files_id)
           AND (mime_type IS NULL OR m.mime_type = mime_type)
         ORDER BY m.created_at DESC
         LIMIT limit_count

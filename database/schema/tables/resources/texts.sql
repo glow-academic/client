@@ -10,8 +10,7 @@ CREATE TABLE public.texts_resource (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT texts_created_at_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT texts_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT texts_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT texts_mcp_not_null NOT NULL,
-    text_id uuid
+    mcp boolean DEFAULT false CONSTRAINT texts_mcp_not_null NOT NULL
 );
 
 

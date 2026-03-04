@@ -15,7 +15,7 @@ ALTER TABLE ONLY public.documents_resource
 --
 
 ALTER TABLE ONLY public.documents_resource
-    ADD CONSTRAINT documents_resource_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES public.uploads_resource(id) ON DELETE SET NULL;
+    ADD CONSTRAINT documents_resource_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES public.files_resource(id) ON DELETE SET NULL;
 
 
 --

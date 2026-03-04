@@ -67,7 +67,7 @@ async def create_uploads(
                 ),
             )
 
-            if not result or not result.uploads_id:
+            if not result or not result.files_id:
                 raise ValueError("Failed to create uploads")
 
         # Convert SQL result to API response (auto-generated types)

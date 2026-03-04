@@ -4,7 +4,7 @@
 -- Section: VIEWS/UPLOAD/LIST
 --
 -- Includes:
--- - Filtering (uploads_id)
+-- - Filtering (files_id)
 -- - Ordering (by created_at)
 -- - Pagination
 -- ============================================================================
@@ -50,7 +50,7 @@ END $$;
 -- ============================================================================
 
 CREATE TYPE types.q_get_upload_list_view_v4_item AS (
-    uploads_id uuid,
+    files_id uuid,
     upload_id uuid,
     file_path text,
     mime_type text,
@@ -63,7 +63,7 @@ CREATE TYPE types.q_get_upload_list_view_v4_item AS (
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION api_get_upload_list_view_v4(
-    uploads_id_filter uuid DEFAULT NULL,
+    files_id_filter uuid DEFAULT NULL,
     page_limit_val int DEFAULT 10000,
     page_offset_val int DEFAULT 0
 )
@@ -79,7 +79,7 @@ AS $$
         SELECT mv.*
         FROM uploads_mv mv
         WHERE
-            (uploads_id_filter IS NULL OR mv.uploads_id = uploads_id_filter)
+            (files_id_filter IS NULL OR mv.files_id = files_id_filter)
     ),
     counted AS (
         SELECT COUNT(*)::int AS total FROM filtered
@@ -95,7 +95,7 @@ AS $$
         SELECT COALESCE(
             ARRAY_AGG(
                 (
-                    uploads_id,
+                    files_id,
                     upload_id,
                     file_path,
                     mime_type,

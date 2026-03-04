@@ -15,8 +15,8 @@ CREATE MATERIALIZED VIEW public.files_mv AS
    FROM ((((public.files_entry fe
      JOIN public.file_uploads_entry fue ON (((fue.file_id = fe.id) AND (fue.active = true))))
      JOIN public.uploads_entry ue ON (((ue.id = fue.upload_id) AND (ue.active = true))))
-     JOIN public.uploads_uploads_connection uuc ON (((uuc.upload_id = ue.id) AND (uuc.active = true))))
-     JOIN public.uploads_resource ur ON (((ur.id = uuc.uploads_id) AND (ur.active = true))))
+     JOIN public.files_uploads_connection uuc ON (((uuc.upload_id = ue.id) AND (uuc.active = true))))
+     JOIN public.files_resource ur ON (((ur.id = uuc.files_id) AND (ur.active = true))))
   WHERE (fe.active = true)
   WITH NO DATA;
 

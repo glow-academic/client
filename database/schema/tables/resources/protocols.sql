@@ -10,7 +10,8 @@ CREATE TABLE public.protocols_resource (
     value text CONSTRAINT protocols_value_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT protocols_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT protocols_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT protocols_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT protocols_mcp_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL
 );
 
 

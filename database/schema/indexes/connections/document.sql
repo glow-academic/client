@@ -26,6 +26,14 @@ CREATE INDEX idx_document_drafts_documents_resource_id ON public.document_drafts
 
 --
 
+-- Name: idx_document_drafts_files_resource_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_document_drafts_files_resource_id ON public.document_drafts_files_connection USING btree (files_id);
+
+
+--
+
 -- Name: idx_document_drafts_flags_resource_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -78,14 +86,6 @@ CREATE INDEX idx_document_drafts_profiles_resource_id ON public.document_drafts_
 --
 
 CREATE INDEX idx_document_drafts_texts_resource_id ON public.document_drafts_texts_connection USING btree (texts_id);
-
-
---
-
--- Name: idx_document_drafts_uploads_resource_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_document_drafts_uploads_resource_id ON public.document_drafts_uploads_connection USING btree (uploads_id);
 
 
 --

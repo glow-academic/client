@@ -61,11 +61,11 @@ CREATE MATERIALIZED VIEW public.document_drafts_mv AS
            FROM public.document_drafts_texts_connection
           WHERE (document_drafts_texts_connection.active = true)
         UNION ALL
-         SELECT document_drafts_uploads_connection.draft_id,
+         SELECT document_drafts_files_connection.draft_id,
             'uploads'::text AS resource_type,
-            document_drafts_uploads_connection.uploads_id AS resource_id
-           FROM public.document_drafts_uploads_connection
-          WHERE (document_drafts_uploads_connection.active = true)
+            document_drafts_files_connection.files_id AS resource_id
+           FROM public.document_drafts_files_connection
+          WHERE (document_drafts_files_connection.active = true)
         )
  SELECT d.id AS draft_id,
     d.created_at,

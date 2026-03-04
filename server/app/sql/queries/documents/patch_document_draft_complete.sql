@@ -129,7 +129,7 @@ BEGIN
 
     IF EXISTS (
         SELECT 1 FROM UNNEST(v_upload_ids) AS uid
-        WHERE NOT EXISTS (SELECT 1 FROM uploads_resource WHERE id = uid)
+        WHERE NOT EXISTS (SELECT 1 FROM files_resource WHERE id = uid)
     ) THEN
         RAISE EXCEPTION 'One or more upload_ids not found';
     END IF;
@@ -217,7 +217,7 @@ BEGIN
     DELETE FROM document_drafts_flags_connection WHERE draft_id = v_draft_id;
     DELETE FROM document_drafts_departments_connection WHERE draft_id = v_draft_id;
     DELETE FROM document_drafts_fields_connection WHERE draft_id = v_draft_id;
-    DELETE FROM document_drafts_uploads_connection WHERE draft_id = v_draft_id;
+    DELETE FROM document_drafts_files_connection WHERE draft_id = v_draft_id;
     DELETE FROM document_drafts_images_connection WHERE draft_id = v_draft_id;
     DELETE FROM document_drafts_texts_connection WHERE draft_id = v_draft_id;
 
@@ -249,7 +249,7 @@ BEGIN
     FROM UNNEST(v_field_ids) fid
     ON CONFLICT ON CONSTRAINT fields_draft_pkey DO UPDATE SET version = v_new_version;
 
-    INSERT INTO document_drafts_uploads_connection (draft_id, uploads_id, version)
+    INSERT INTO document_drafts_files_connection (draft_id, files_id, version)
     SELECT v_draft_id, uid, v_new_version
     FROM UNNEST(v_upload_ids) uid
     ON CONFLICT ON CONSTRAINT uploads_draft_pkey DO UPDATE SET version = v_new_version;
@@ -365,7 +365,7 @@ BEGIN
                 INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
                 VALUES (v_call_id, 'document_draft_create_uploads_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((uploads).create_tool_id, v_call_id);
-                INSERT INTO uploads_calls_connection (uploads_id, call_id)
+                INSERT INTO files_calls_connection (files_id, call_id)
                 SELECT uid, v_call_id FROM UNNEST(v_upload_ids) uid;
             END IF;
             IF (uploads).link_tool_id IS NOT NULL THEN
@@ -373,7 +373,7 @@ BEGIN
                 INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
                 VALUES (v_call_id, 'document_draft_link_uploads_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((uploads).link_tool_id, v_call_id);
-                INSERT INTO uploads_calls_connection (uploads_id, call_id)
+                INSERT INTO files_calls_connection (files_id, call_id)
                 SELECT uid, v_call_id FROM UNNEST(v_upload_ids) uid;
             END IF;
         END IF;

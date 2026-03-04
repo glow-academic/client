@@ -56,6 +56,24 @@ ALTER TABLE ONLY public.document_drafts_documents_connection
 
 --
 
+-- Name: document_drafts_files_connection document_drafts_files_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.document_drafts_files_connection
+    ADD CONSTRAINT document_drafts_files_connection_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.document_drafts_entry(id) ON DELETE CASCADE;
+
+
+--
+
+-- Name: document_drafts_files_connection document_drafts_files_connection_files_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.document_drafts_files_connection
+    ADD CONSTRAINT document_drafts_files_connection_files_id_fkey FOREIGN KEY (files_id) REFERENCES public.files_resource(id);
+
+
+--
+
 -- Name: document_drafts_flags_connection document_drafts_flags_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -178,24 +196,6 @@ ALTER TABLE ONLY public.document_drafts_texts_connection
 
 ALTER TABLE ONLY public.document_drafts_texts_connection
     ADD CONSTRAINT document_drafts_texts_connection_texts_id_fkey FOREIGN KEY (texts_id) REFERENCES public.texts_resource(id);
-
-
---
-
--- Name: document_drafts_uploads_connection document_drafts_uploads_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.document_drafts_uploads_connection
-    ADD CONSTRAINT document_drafts_uploads_connection_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.document_drafts_entry(id) ON DELETE CASCADE;
-
-
---
-
--- Name: document_drafts_uploads_connection document_drafts_uploads_connection_uploads_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.document_drafts_uploads_connection
-    ADD CONSTRAINT document_drafts_uploads_connection_uploads_id_fkey FOREIGN KEY (uploads_id) REFERENCES public.uploads_resource(id);
 
 
 --

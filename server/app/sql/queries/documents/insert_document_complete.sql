@@ -105,22 +105,22 @@ link_document_template_flag AS (
     ON CONFLICT (document_id, flag_id) DO UPDATE SET 
         value = false
 ),
-get_uploads_resource_id AS (
-    -- Look up uploads_resource.id from upload_id via connection table
-    SELECT ur.id as uploads_id
-    FROM uploads_resource ur
-    JOIN uploads_uploads_connection uuc ON uuc.uploads_id = ur.id
+get_files_resource_id AS (
+    -- Look up files_resource.id from upload_id via connection table
+    SELECT ur.id as files_id
+    FROM files_resource ur
+    JOIN files_uploads_connection uuc ON uuc.files_id = ur.id
     WHERE uuc.upload_id = api_insert_document_v4.upload_id
     AND api_insert_document_v4.upload_id IS NOT NULL
     LIMIT 1
 ),
 insert_upload AS (
     -- Link regular upload if provided
-    INSERT INTO document_uploads_junction (document_id, uploads_id, active, created_at)
-    SELECT id.document_id, gur.uploads_id, true, NOW()
+    INSERT INTO document_files_junction (document_id, files_id, active, created_at)
+    SELECT id.document_id, gur.files_id, true, NOW()
     FROM insert_doc id
-    CROSS JOIN get_uploads_resource_id gur
-    ON CONFLICT (document_id, uploads_id) DO UPDATE SET
+    CROSS JOIN get_files_resource_id gur
+    ON CONFLICT (document_id, files_id) DO UPDATE SET
         active = true
 ),
 insert_depts AS (

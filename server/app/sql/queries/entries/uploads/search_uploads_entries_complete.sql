@@ -30,7 +30,7 @@ BEGIN
     SELECT jsonb_agg(row_data) AS items
     FROM (
         SELECT jsonb_build_object(
-            'uploads_id', m.uploads_id,
+            'files_id', m.files_id,
             'upload_id', m.upload_id,
             'file_path', m.file_path,
             'mime_type', m.mime_type,

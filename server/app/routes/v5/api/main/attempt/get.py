@@ -287,7 +287,7 @@ async def get_attempt_internal(
                             if item.upload_id:
                                 upload_view = await get_upload_list_view_internal(
                                     conn=c,
-                                    uploads_id_filter=item.upload_id,
+                                    files_id_filter=item.upload_id,
                                     bypass_cache=bypass_cache,
                                 )
                                 if upload_view.items:
@@ -312,7 +312,7 @@ async def get_attempt_internal(
                             if item.upload_id:
                                 upload_view = await get_upload_list_view_internal(
                                     conn=c,
-                                    uploads_id_filter=item.upload_id,
+                                    files_id_filter=item.upload_id,
                                     bypass_cache=bypass_cache,
                                 )
                                 if upload_view.items:
@@ -337,7 +337,7 @@ async def get_attempt_internal(
                             if item.upload_id:
                                 upload_view = await get_upload_list_view_internal(
                                     conn=c,
-                                    uploads_id_filter=item.upload_id,
+                                    files_id_filter=item.upload_id,
                                     bypass_cache=bypass_cache,
                                 )
                                 if upload_view.items:

@@ -25,7 +25,7 @@ BEGIN
     RETURN QUERY
     SELECT jsonb_agg(
         jsonb_build_object(
-            'uploads_id', m.uploads_id,
+            'files_id', m.files_id,
             'upload_id', m.upload_id,
             'file_path', m.file_path,
             'mime_type', m.mime_type,
@@ -34,6 +34,6 @@ BEGIN
         )
     ) AS items
     FROM uploads_mv m
-    WHERE m.uploads_id = ANY(ids);
+    WHERE m.files_id = ANY(ids);
 END;
 $$;

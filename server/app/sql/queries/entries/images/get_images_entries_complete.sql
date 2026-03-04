@@ -26,7 +26,7 @@ BEGIN
     SELECT jsonb_agg(
         jsonb_build_object(
             'image_id', m.image_id,
-            'uploads_id', m.uploads_id,
+            'files_id', m.files_id,
             'file_path', m.file_path,
             'mime_type', m.mime_type,
             'size', m.size,

@@ -133,7 +133,7 @@ CREATE INDEX document_parameters_type_idx ON public.document_parameters_junction
 -- Name: document_uploads_junction_document_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX document_uploads_junction_document_id_idx ON public.document_uploads_junction USING btree (document_id);
+CREATE INDEX document_uploads_junction_document_id_idx ON public.document_files_junction USING btree (document_id);
 
 
 --
@@ -141,7 +141,7 @@ CREATE INDEX document_uploads_junction_document_id_idx ON public.document_upload
 -- Name: document_uploads_junction_uploads_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX document_uploads_junction_uploads_id_idx ON public.document_uploads_junction USING btree (uploads_id);
+CREATE INDEX document_uploads_junction_uploads_id_idx ON public.document_files_junction USING btree (files_id);
 
 
 --

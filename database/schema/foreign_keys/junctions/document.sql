@@ -56,6 +56,24 @@ ALTER TABLE ONLY public.document_documents_junction
 
 --
 
+-- Name: document_files_junction document_files_junction_document_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.document_files_junction
+    ADD CONSTRAINT document_files_junction_document_id_fkey FOREIGN KEY (document_id) REFERENCES public.document_artifact(id) ON DELETE CASCADE;
+
+
+--
+
+-- Name: document_files_junction document_files_junction_files_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.document_files_junction
+    ADD CONSTRAINT document_files_junction_files_id_fkey FOREIGN KEY (files_id) REFERENCES public.files_resource(id) ON DELETE CASCADE;
+
+
+--
+
 -- Name: document_flags_junction document_flags_document_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -160,24 +178,6 @@ ALTER TABLE ONLY public.document_texts_junction
 
 ALTER TABLE ONLY public.document_texts_junction
     ADD CONSTRAINT document_texts_texts_id_fkey FOREIGN KEY (texts_id) REFERENCES public.texts_resource(id) ON DELETE CASCADE;
-
-
---
-
--- Name: document_uploads_junction document_uploads_junction_document_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.document_uploads_junction
-    ADD CONSTRAINT document_uploads_junction_document_id_fkey FOREIGN KEY (document_id) REFERENCES public.document_artifact(id) ON DELETE CASCADE;
-
-
---
-
--- Name: document_uploads_junction document_uploads_junction_uploads_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.document_uploads_junction
-    ADD CONSTRAINT document_uploads_junction_uploads_id_fkey FOREIGN KEY (uploads_id) REFERENCES public.uploads_resource(id) ON DELETE CASCADE;
 
 
 --

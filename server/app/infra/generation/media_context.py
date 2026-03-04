@@ -2,20 +2,20 @@
 
 Provides `.media` on the 6 canonical media entry types (texts, calls, audios,
 images, videos, files).  When a Jinja template references ``{{ item.media }}``,
-a sentinel token ``[[<modality>:<uploads_id>]]`` is emitted.  After rendering,
+a sentinel token ``[[<modality>:<files_id>]]`` is emitted.  After rendering,
 ``post_process_media_sentinels`` splits the rendered string at sentinel
 boundaries and produces a multi-part ``content`` list suitable for LLM APIs.
 
 The 6 media modalities and their sentinel types:
 
-    texts  → [[text:<uploads_id>]]
-    calls  → [[call:<uploads_id>]]
-    audios → [[audio:<uploads_id>]]
-    images → [[image:<uploads_id>]]
-    videos → [[video:<uploads_id>]]
-    files  → [[file:<uploads_id>]]
+    texts  → [[text:<files_id>]]
+    calls  → [[call:<files_id>]]
+    audios → [[audio:<files_id>]]
+    images → [[image:<files_id>]]
+    videos → [[video:<files_id>]]
+    files  → [[file:<files_id>]]
 
-Resolution of uploads_id → actual content is handled externally.
+Resolution of files_id → actual content is handled externally.
 """
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ MEDIA_ENTRY_TYPES: dict[str, str] = {
     "files": "file",
 }
 
-# Sentinel pattern: [[modality:uploads_id]]
+# Sentinel pattern: [[modality:files_id]]
 _SENTINEL_RE = re.compile(r"\[\[(text|call|audio|image|video|file):([^\]]+)\]\]")
 
 
@@ -54,12 +54,12 @@ class MediaItem:
     def media(self) -> str:
         """Emit a sentinel token for post-processing.
 
-        Returns empty string if no uploads_id is present (graceful no-op).
+        Returns empty string if no files_id is present (graceful no-op).
         """
-        uploads_id = self._data.get("uploads_id")
-        if not uploads_id:
+        files_id = self._data.get("files_id")
+        if not files_id:
             return ""
-        return f"[[{self._modality}:{uploads_id}]]"
+        return f"[[{self._modality}:{files_id}]]"
 
     def __getattr__(self, name: str) -> Any:
         try:
@@ -133,9 +133,9 @@ def post_process_media_sentinels(
         blocks.
 
         Text blocks:  {"type": "text", "text": "..."}
-        Media blocks: {"type": "<modality>", "uploads_id": "<id>"}
+        Media blocks: {"type": "<modality>", "files_id": "<id>"}
 
-        Media blocks carry the ``uploads_id`` for the caller to resolve
+        Media blocks carry the ``files_id`` for the caller to resolve
         into actual content (base64, URL, etc.) via the external upload
         mechanism.
     """
@@ -148,7 +148,7 @@ def post_process_media_sentinels(
 
     for match in _SENTINEL_RE.finditer(rendered):
         modality = match.group(1)
-        uploads_id = match.group(2)
+        files_id = match.group(2)
 
         # Text before this sentinel
         text_before = rendered[last_end : match.start()]
@@ -157,7 +157,7 @@ def post_process_media_sentinels(
 
         # Only include media block if agent supports this input modality
         if agent_input_modalities is None or modality in agent_input_modalities:
-            blocks.append({"type": modality, "uploads_id": uploads_id})
+            blocks.append({"type": modality, "files_id": files_id})
 
         last_end = match.end()
 

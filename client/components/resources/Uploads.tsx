@@ -1,7 +1,7 @@
 /**
  * Uploads.tsx
  * Resource component for file uploads
- * Handles file upload via dropzone, creates uploads_resource entries
+ * Handles file upload via dropzone, creates files_resource entries
  * Uses GenericPicker to select existing uploads
  */
 
@@ -27,7 +27,7 @@ import { toast } from "sonner";
 import * as tus from "tus-js-client";
 import { v4 as uuidv4 } from "uuid";
 
-type FlushResult = { uploads_id: string | null } | void;
+type FlushResult = { files_id: string | null } | void;
 
 type CreateDraftUploadsIn = InputOf<"/api/v5/resources/uploads", "post">;
 type CreateDraftUploadsOut = OutputOf<"/api/v5/resources/uploads", "post">;
@@ -37,7 +37,7 @@ type UploadGetResponse = OutputOf<"/api/v5/resources/uploads/get", "post">;
 export type UploadResourceItem = NonNullable<UploadGetResponse["items"]>[number];
 
 export interface UploadsProps {
-  upload_ids?: string[]; // Current uploads_resource IDs (standardized prop name)
+  upload_ids?: string[]; // Current files_resource IDs (standardized prop name)
   upload_resources?: UploadResourceItem[]; // Selected upload resources
   show_uploads?: boolean; // Whether to show this resource picker
   upload_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
@@ -136,7 +136,7 @@ export function Uploads({
     }
     // Return the most recently added ID, or null if no uploads
     const lastId = ids.length > 0 ? ids[ids.length - 1] : null;
-    return { uploads_id: lastId };
+    return { files_id: lastId };
   };
 
   // Register flush callback with parent
@@ -155,7 +155,7 @@ export function Uploads({
   const uploadItems = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     return allUploads
-      .filter((u) => u.uploads_id && u.file_path)
+      .filter((u) => u.files_id && u.file_path)
       .filter((u) => {
         if (!term) return true;
         const filePath = u.file_path ?? "";
@@ -170,7 +170,7 @@ export function Uploads({
         );
       })
       .map((u) => ({
-        id: u.uploads_id!,
+        id: u.files_id!,
         name: u.file_path!.split("/").pop() || "Unknown file",
         description: u.mime_type || undefined,
       }));
@@ -278,7 +278,7 @@ export function Uploads({
 
               const databaseUploadId = finalizeResult.upload_id;
 
-              // Create uploads_resource entry
+              // Create files_resource entry
               // Note: agent_id is deprecated, server now routes via tool_id
               const createResult = await createUploadsAction({
                 body: {
@@ -290,11 +290,11 @@ export function Uploads({
                 },
               });
 
-              if (!createResult.uploads_id) {
-                throw new Error("Failed to create uploads resource");
+              if (!createResult.files_id) {
+                throw new Error("Failed to create files resource");
               }
 
-              const uploadsResourceId = createResult.uploads_id;
+              const uploadsResourceId = createResult.files_id;
               createdUploadIdsRef.current.add(uploadsResourceId);
 
               // Add to selection

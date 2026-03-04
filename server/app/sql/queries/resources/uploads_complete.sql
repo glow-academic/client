@@ -1,8 +1,8 @@
--- Create uploads resource
+-- Create files resource
 -- SIMPLIFIED: No agent_id required, optional tool_id for tracking
 -- Get or create operation (returns existing ID if upload_id already exists)
 -- Parameters: upload_id (uuid), mcp (boolean), group_id (uuid, optional), tool_id (uuid, optional)
--- Returns: uploads_id (uuid)
+-- Returns: files_id (uuid)
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -26,14 +26,14 @@ CREATE OR REPLACE FUNCTION api_create_uploads_v4(
     tool_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    uploads_id uuid
+    files_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
 AS $$
 #variable_conflict use_column
 DECLARE
-    v_uploads_id uuid;
+    v_files_id uuid;
     v_run_id uuid;
     v_call_id uuid;
 BEGIN
@@ -42,22 +42,22 @@ BEGIN
         RAISE EXCEPTION 'Upload % does not exist', upload_id;
     END IF;
 
-    -- Check if uploads_resource entry already exists for this upload_id
-    SELECT id INTO v_uploads_id
-    FROM uploads_resource
+    -- Check if files_resource entry already exists for this upload_id
+    SELECT id INTO v_files_id
+    FROM files_resource
     WHERE upload_id = api_create_uploads_v4.upload_id
     LIMIT 1;
 
     -- If exists, return existing ID
-    IF v_uploads_id IS NOT NULL THEN
-        RETURN QUERY SELECT v_uploads_id;
+    IF v_files_id IS NOT NULL THEN
+        RETURN QUERY SELECT v_files_id;
         RETURN;
     END IF;
 
-    -- INSERT INTO uploads_resource table
-    INSERT INTO uploads_resource(upload_id, active, mcp)
+    -- INSERT INTO files_resource table
+    INSERT INTO files_resource(upload_id, active, mcp)
     VALUES (api_create_uploads_v4.upload_id, true, mcp)
-    RETURNING id INTO v_uploads_id;
+    RETURNING id INTO v_files_id;
     -- If tool_id and group_id provided, create run and call for tracking
     IF tool_id IS NOT NULL AND group_id IS NOT NULL THEN
         -- Create run record
@@ -74,10 +74,10 @@ BEGIN
         INSERT INTO tools_calls_connection (tools_id, call_id) VALUES (api_create_uploads_v4.tool_id, v_call_id);
 
         -- Link resource to call
-        INSERT INTO uploads_calls_connection (uploads_id, call_id)
-        VALUES (v_uploads_id, v_call_id);
+        INSERT INTO files_calls_connection (files_id, call_id)
+        VALUES (v_files_id, v_call_id);
     END IF;
 
-    RETURN QUERY SELECT v_uploads_id;
+    RETURN QUERY SELECT v_files_id;
 END;
 $$;

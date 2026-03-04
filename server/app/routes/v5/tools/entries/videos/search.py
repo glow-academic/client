@@ -22,7 +22,7 @@ async def search_videos_entries_internal(
     search: str | None = None,
     limit_count: int | None = 20,
     offset_count: int | None = 0,
-    uploads_id: UUID | None = None,
+    files_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> list[dict]:
     """Internal function to search videos entries."""
@@ -36,7 +36,7 @@ async def search_videos_entries_internal(
             "search": search,
             "limit_count": limit_count,
             "offset_count": offset_count,
-            "uploads_id": str(uploads_id) if uploads_id else None,
+            "files_id": str(files_id) if files_id else None,
         },
     )
 
@@ -49,7 +49,7 @@ async def search_videos_entries_internal(
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
-        uploads_id=uploads_id,
+        files_id=files_id,
     )
     result = cast(
         SearchVideosEntriesSqlRow,

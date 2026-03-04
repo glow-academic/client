@@ -126,8 +126,8 @@ document_departments_data AS (
 document_uploads_cte AS (
     SELECT
         du.document_id,
-        ARRAY_AGG(du.uploads_id) as upload_ids
-    FROM document_uploads_junction du
+        ARRAY_AGG(du.files_id) as upload_ids
+    FROM document_files_junction du
     WHERE du.active = true
     GROUP BY du.document_id
 ),

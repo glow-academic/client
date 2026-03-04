@@ -6,6 +6,6 @@ from pydantic import BaseModel
 class UploadsResourceData(BaseModel):
     """Canonical uploads resource fields. All optional for streaming support."""
 
-    uploads_id: str | None = None
+    files_id: str | None = None
     upload_id: str | None = None
     generated: bool | None = None

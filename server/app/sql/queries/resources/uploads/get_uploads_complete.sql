@@ -1,7 +1,7 @@
--- Get uploads resources by IDs
--- Simple data fetching from uploads_resource only (upload_id denormalized)
+-- Get files resources by IDs
+-- Simple data fetching from files_resource only (upload_id denormalized)
 -- Parameters: ids (uuid[])
--- Returns: items (array of upload resources with upload_id)
+-- Returns: items (array of file resources with upload_id)
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -33,14 +33,14 @@ BEGIN
     END LOOP;
 END $$;
 
--- Create composite type for upload item (upload_id denormalized on resource)
+-- Create composite type for file item (upload_id denormalized on resource)
 CREATE TYPE types.q_get_uploads_v4_item AS (
-    uploads_id uuid,
+    files_id uuid,
     upload_id uuid,
     generated boolean
 );
 
--- Create function — reads directly from uploads_resource columns
+-- Create function — reads directly from files_resource columns
 CREATE OR REPLACE FUNCTION api_get_uploads_v4(
     ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
@@ -57,7 +57,7 @@ SELECT COALESCE(
     ),
     ARRAY[]::types.q_get_uploads_v4_item[]
 ) as items
-FROM uploads_resource ur
+FROM files_resource ur
 WHERE ur.id = ANY(ids)
   AND ur.active = true;
 $$;

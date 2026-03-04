@@ -16,8 +16,8 @@ CREATE MATERIALIZED VIEW public.calls_mv AS
    FROM (((((public.calls_entry c
      LEFT JOIN public.call_uploads_entry cue ON (((cue.call_id = c.id) AND (cue.active = true))))
      LEFT JOIN public.uploads_entry ue ON (((ue.id = cue.upload_id) AND (ue.active = true))))
-     LEFT JOIN public.uploads_uploads_connection uuc ON (((uuc.upload_id = ue.id) AND (uuc.active = true))))
-     LEFT JOIN public.uploads_resource ur ON (((ur.id = uuc.uploads_id) AND (ur.active = true))))
+     LEFT JOIN public.files_uploads_connection uuc ON (((uuc.upload_id = ue.id) AND (uuc.active = true))))
+     LEFT JOIN public.files_resource ur ON (((ur.id = uuc.files_id) AND (ur.active = true))))
      LEFT JOIN public.tools_calls_connection tcc ON ((tcc.call_id = c.id)))
   WHERE (c.run_id IS NOT NULL)
   WITH NO DATA;

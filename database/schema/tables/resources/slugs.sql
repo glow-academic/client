@@ -10,7 +10,8 @@ CREATE TABLE public.slugs_resource (
     value text CONSTRAINT slugs_value_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT slugs_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT slugs_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT slugs_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT slugs_mcp_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL
 );
 
 

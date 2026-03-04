@@ -16,8 +16,8 @@ CREATE MATERIALIZED VIEW public.videos_mv AS
    FROM ((((public.videos_entry ve
      JOIN public.video_uploads_entry vue ON (((vue.video_id = ve.id) AND (vue.active = true))))
      JOIN public.uploads_entry ue ON (((ue.id = vue.upload_id) AND (ue.active = true))))
-     JOIN public.uploads_uploads_connection uuc ON (((uuc.upload_id = ue.id) AND (uuc.active = true))))
-     JOIN public.uploads_resource ur ON (((ur.id = uuc.uploads_id) AND (ur.active = true))))
+     JOIN public.files_uploads_connection uuc ON (((uuc.upload_id = ue.id) AND (uuc.active = true))))
+     JOIN public.files_resource ur ON (((ur.id = uuc.files_id) AND (ur.active = true))))
   WHERE (ve.active = true)
   WITH NO DATA;
 
