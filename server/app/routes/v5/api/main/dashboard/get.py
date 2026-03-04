@@ -1107,16 +1107,16 @@ async def get_dashboard_websocket(
                 all_args_output_ids.extend(tool.args_output_ids)
 
         if all_args_ids or all_args_output_ids:
-            from app.routes.v5.tools.resources.args.get import get_args_internal
+            from app.routes.v5.tools.resources.args.get import get_args
             from app.routes.v5.tools.resources.args_outputs.get import (
-                get_args_outputs_internal,
+                get_args_outputs,
             )
 
             async def _fetch_args():
                 if not all_args_ids:
                     return None
                 async with pool.acquire() as c:
-                    return await get_args_internal(
+                    return await get_args(
                         c, list(set(all_args_ids)), bypass_cache=bypass_cache
                     )
 
@@ -1124,7 +1124,7 @@ async def get_dashboard_websocket(
                 if not all_args_output_ids:
                     return None
                 async with pool.acquire() as c:
-                    return await get_args_outputs_internal(
+                    return await get_args_outputs(
                         c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
                     )
 

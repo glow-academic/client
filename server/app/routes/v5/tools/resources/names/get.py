@@ -7,25 +7,30 @@ import asyncpg  # type: ignore
 from app.routes.v5.tools.resources.names.types import GetNameResponse
 
 
-async def get_name(
+async def get_names(
     conn: asyncpg.Connection,
-    name_id: UUID,
-) -> GetNameResponse | None:
-    """Get a names_resource entry by ID."""
-    row = await conn.fetchrow("""
+    ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[GetNameResponse]:
+    """Fetch names_resource entries by IDs."""
+    if not ids:
+        return []
+
+    rows = await conn.fetch("""
         SELECT id, name, created_at, active, mcp, generated
         FROM names_resource
-        WHERE id = $1
-    """, name_id)
+        WHERE id = ANY($1)
+        ORDER BY array_position($1, id)
+    """, ids)
 
-    if row is None:
-        return None
-
-    return GetNameResponse(
-        id=row["id"],
-        name=row["name"],
-        created_at=row["created_at"],
-        active=row["active"],
-        mcp=row["mcp"],
-        generated=row["generated"],
-    )
+    return [
+        GetNameResponse(
+            id=r["id"],
+            name=r["name"],
+            created_at=r["created_at"],
+            active=r["active"],
+            mcp=r["mcp"],
+            generated=r["generated"],
+        )
+        for r in rows
+    ]

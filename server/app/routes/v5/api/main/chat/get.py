@@ -51,8 +51,8 @@ from app.routes.v5.tools.entries.training.get import get_training_view_internal
 from app.routes.v5.tools.entries.training_drafts.get import (
     get_training_drafts_entries_internal,
 )
-from app.routes.v5.tools.resources.args.get import get_args_internal
-from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
+from app.routes.v5.tools.resources.args.get import get_args
+from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments_internal
 from app.routes.v5.tools.resources.documents.get import get_documents_internal
 from app.routes.v5.tools.resources.images.get import get_images_internal
@@ -543,7 +543,7 @@ async def get_chat_websocket(
                 if not all_args_ids:
                     return None
                 async with pool.acquire() as c:
-                    return await get_args_internal(
+                    return await get_args(
                         c, list(set(all_args_ids)), bypass_cache=bypass_cache
                     )
 
@@ -551,7 +551,7 @@ async def get_chat_websocket(
                 if not all_args_output_ids:
                     return None
                 async with pool.acquire() as c:
-                    return await get_args_outputs_internal(
+                    return await get_args_outputs(
                         c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
                     )
 

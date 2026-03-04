@@ -7,36 +7,41 @@ import asyncpg  # type: ignore
 from app.routes.v5.tools.resources.tools.types import GetToolResponse
 
 
-async def get_tool(
+async def get_tools(
     conn: asyncpg.Connection,
-    tool_id: UUID,
-) -> GetToolResponse | None:
-    """Get a tools_resource entry by ID."""
-    row = await conn.fetchrow("""
+    ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[GetToolResponse]:
+    """Fetch tools_resource entries by IDs."""
+    if not ids:
+        return []
+
+    rows = await conn.fetch("""
         SELECT id, name, description, operation,
                department_ids, args_ids, args_output_ids,
                resources, entries, artifacts,
                created_at, active, mcp, generated
         FROM tools_resource
-        WHERE id = $1
-    """, tool_id)
+        WHERE id = ANY($1)
+        ORDER BY array_position($1, id)
+    """, ids)
 
-    if row is None:
-        return None
-
-    return GetToolResponse(
-        id=row["id"],
-        name=row["name"],
-        description=row["description"],
-        operation=row["operation"],
-        department_ids=row["department_ids"] or [],
-        args_ids=row["args_ids"] or [],
-        args_output_ids=row["args_output_ids"] or [],
-        resources=row["resources"] or [],
-        entries=row["entries"] or [],
-        artifacts=row["artifacts"] or [],
-        created_at=row["created_at"],
-        active=row["active"],
-        mcp=row["mcp"],
-        generated=row["generated"],
-    )
+    return [
+        GetToolResponse(
+            id=r["id"],
+            name=r["name"],
+            description=r["description"],
+            operation=r["operation"],
+            department_ids=r["department_ids"] or [],
+            args_ids=r["args_ids"] or [],
+            args_output_ids=r["args_output_ids"] or [],
+            resources=r["resources"] or [],
+            entries=r["entries"] or [],
+            artifacts=r["artifacts"] or [],
+            created_at=r["created_at"],
+            active=r["active"],
+            mcp=r["mcp"],
+            generated=r["generated"],
+        )
+        for r in rows
+    ]

@@ -55,9 +55,9 @@ from app.routes.v5.tools.resources.arg_positions.get import get_arg_positions_in
 from app.routes.v5.tools.resources.arg_positions.search import (
     search_arg_positions_internal,
 )
-from app.routes.v5.tools.resources.args.get import get_args_internal
+from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args.search import search_args_internal
-from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
+from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.args_outputs.search import (
     search_args_outputs_internal,
 )
@@ -72,7 +72,7 @@ from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
 from app.routes.v5.tools.resources.providers.get import get_providers_internal
-from app.routes.v5.tools.resources.tools.get import get_tools_internal
+from app.routes.v5.tools.resources.tools.get import get_tools
 from app.sql.types import (
     GetToolAccessSqlParams,
     GetToolAccessSqlRow,
@@ -259,7 +259,7 @@ async def get_tool_internal(
 
     async def fetch_args() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_args_internal(c, selected_args_ids, bypass_cache)
+            selected = await get_args(c, selected_args_ids, bypass_cache)
             suggestions = await search_args_internal(
                 c,
                 None,
@@ -293,7 +293,7 @@ async def get_tool_internal(
 
     async def fetch_args_outputs() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_args_outputs_internal(
+            selected = await get_args_outputs(
                 c,
                 selected_args_outputs_ids,
                 bypass_cache,
@@ -555,7 +555,7 @@ async def get_tool_websocket(
         if not agent_resource or not agent_resource.tool_ids:
             return []
         async with pool.acquire() as c:
-            return await get_tools_internal(
+            return await get_tools(
                 c, list(agent_resource.tool_ids), bypass_cache
             )
 
@@ -603,7 +603,7 @@ async def get_tool_websocket(
                 if not all_args_ids:
                     return None
                 async with pool.acquire() as c:
-                    return await get_args_internal(
+                    return await get_args(
                         c, list(set(all_args_ids)), bypass_cache=bypass_cache
                     )
 
@@ -611,7 +611,7 @@ async def get_tool_websocket(
                 if not all_args_output_ids:
                     return None
                 async with pool.acquire() as c:
-                    return await get_args_outputs_internal(
+                    return await get_args_outputs(
                         c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
                     )
 

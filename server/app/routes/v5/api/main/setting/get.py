@@ -74,8 +74,8 @@ from app.routes.v5.tools.entries.setting_drafts.get import (
     get_setting_drafts_entries_internal,
 )
 from app.routes.v5.tools.resources.agents.get import get_agents_internal
-from app.routes.v5.tools.resources.args.get import get_args_internal
-from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
+from app.routes.v5.tools.resources.args.get import get_args
+from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.auth_item_keys.get import get_auth_item_keys_internal
 from app.routes.v5.tools.resources.auth_item_keys.search import (
     search_auth_item_keys_internal,
@@ -104,7 +104,7 @@ from app.routes.v5.tools.resources.provider_keys.search import (
 from app.routes.v5.tools.resources.providers.get import get_providers_internal
 from app.routes.v5.tools.resources.roles.get import get_roles_internal
 from app.routes.v5.tools.resources.roles.search import search_roles_internal
-from app.routes.v5.tools.resources.tools.get import get_tools_internal
+from app.routes.v5.tools.resources.tools.get import get_tools
 from app.sql.types import (
     GetSettingAccessSqlParams,
     GetSettingAccessSqlRow,
@@ -738,7 +738,7 @@ async def get_setting_websocket(
         if not agent_resource or not agent_resource.tool_ids:
             return []
         async with pool.acquire() as c:
-            return await get_tools_internal(
+            return await get_tools(
                 c, list(agent_resource.tool_ids), bypass_cache
             )
 
@@ -772,7 +772,7 @@ async def get_setting_websocket(
                 if not all_args_ids:
                     return None
                 async with pool.acquire() as c:
-                    return await get_args_internal(
+                    return await get_args(
                         c, list(set(all_args_ids)), bypass_cache=bypass_cache
                     )
 
@@ -780,7 +780,7 @@ async def get_setting_websocket(
                 if not all_args_output_ids:
                     return None
                 async with pool.acquire() as c:
-                    return await get_args_outputs_internal(
+                    return await get_args_outputs(
                         c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
                     )
 

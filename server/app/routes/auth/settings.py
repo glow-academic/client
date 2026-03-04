@@ -23,7 +23,7 @@ from app.routes.auth.types import (
 from app.routes.v5.tools.resources.agents.get import get_agents_internal
 from app.routes.v5.tools.resources.settings.get import get_settings_internal
 from app.routes.v5.tools.resources.systems.get import get_systems_internal
-from app.routes.v5.tools.resources.tools.get import get_tools_internal
+from app.routes.v5.tools.resources.tools.get import get_tools
 from app.utils.error.handle_route_error import handle_route_error
 from app.infra.globals import get_db, get_pool
 from app.sql.types import (
@@ -127,7 +127,7 @@ async def get_auth_settings_internal(
     settings_tools = []
     if all_tool_ids:
         async with pool.acquire() as c:
-            settings_tools = await get_tools_internal(
+            settings_tools = await get_tools(
                 c, list(set(all_tool_ids)), bypass_cache
             )
 

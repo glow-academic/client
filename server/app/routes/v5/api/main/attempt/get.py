@@ -104,8 +104,8 @@ from app.routes.v5.tools.entries.attempt_strength.get import (
 from app.routes.v5.tools.entries.responses.get import get_simulation_responses_internal
 from app.routes.v5.tools.entries.uploads.get import get_upload_list_view_internal
 from app.routes.v5.tools.resources.agents.get import get_agents_internal
-from app.routes.v5.tools.resources.args.get import get_args_internal
-from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
+from app.routes.v5.tools.resources.args.get import get_args
+from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.documents.get import get_documents_internal
 from app.routes.v5.tools.resources.images.get import get_images_internal
 from app.routes.v5.tools.resources.models.get import get_models_internal
@@ -125,7 +125,7 @@ from app.routes.v5.tools.resources.standard_groups.get import (
     get_standard_groups_internal,
 )
 from app.routes.v5.tools.resources.standards.get import get_standards_internal
-from app.routes.v5.tools.resources.tools.get import get_tools_internal
+from app.routes.v5.tools.resources.tools.get import get_tools
 from app.routes.v5.tools.resources.videos.get import get_videos_internal
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -1727,7 +1727,7 @@ async def get_attempt_websocket(
         if not tool_ids:
             return None
         async with pool.acquire() as c:
-            return await get_tools_internal(
+            return await get_tools(
                 c, list(set(tool_ids)), bypass_cache=bypass_cache
             )
 
@@ -1755,7 +1755,7 @@ async def get_attempt_websocket(
                 if not all_args_ids:
                     return None
                 async with pool.acquire() as c:
-                    return await get_args_internal(
+                    return await get_args(
                         c, list(set(all_args_ids)), bypass_cache=bypass_cache
                     )
 
@@ -1763,7 +1763,7 @@ async def get_attempt_websocket(
                 if not all_args_output_ids:
                     return None
                 async with pool.acquire() as c:
-                    return await get_args_outputs_internal(
+                    return await get_args_outputs(
                         c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
                     )
 

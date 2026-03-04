@@ -59,8 +59,8 @@ from app.routes.v5.tools.entries.profile_drafts.get import (
 )
 from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
 from app.routes.v5.tools.resources.agents.get import get_agents_internal
-from app.routes.v5.tools.resources.args.get import get_args_internal
-from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
+from app.routes.v5.tools.resources.args.get import get_args
+from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments_internal
 from app.routes.v5.tools.resources.departments.search import search_departments_internal
 from app.routes.v5.tools.resources.emails.get import get_emails_internal
@@ -76,7 +76,7 @@ from app.routes.v5.tools.resources.request_limits.get import get_request_limits_
 from app.routes.v5.tools.resources.request_limits.search import (
     search_request_limits_internal,
 )
-from app.routes.v5.tools.resources.tools.get import get_tools_internal
+from app.routes.v5.tools.resources.tools.get import get_tools
 from app.sql.types import (
     GetProfileAccessSqlParams,
     GetProfileAccessSqlRow,
@@ -463,7 +463,7 @@ async def get_profile_internal(
                 {tid for a in agents for tid in (a.tool_ids or []) if tid is not None}
             )
             tools = (
-                await get_tools_internal(c, tool_ids, bypass_cache) if tool_ids else []
+                await get_tools(c, tool_ids, bypass_cache) if tool_ids else []
             )
             return (agents or None, models or None, providers or None, tools or None)
 
@@ -711,7 +711,7 @@ async def get_profile_websocket(
                 if not all_args_ids:
                     return None
                 async with pool.acquire() as c:
-                    return await get_args_internal(
+                    return await get_args(
                         c, list(set(all_args_ids)), bypass_cache=bypass_cache
                     )
 
@@ -719,7 +719,7 @@ async def get_profile_websocket(
                 if not all_args_output_ids:
                     return None
                 async with pool.acquire() as c:
-                    return await get_args_outputs_internal(
+                    return await get_args_outputs(
                         c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
                     )
 

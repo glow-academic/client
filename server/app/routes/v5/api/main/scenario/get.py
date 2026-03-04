@@ -84,8 +84,8 @@ from app.routes.v5.tools.entries.scenario_drafts.get import (
     get_scenario_drafts_entries_internal,
 )
 from app.routes.v5.tools.resources.agents.get import get_agents_internal
-from app.routes.v5.tools.resources.args.get import get_args_internal
-from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
+from app.routes.v5.tools.resources.args.get import get_args
+from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments_internal
 from app.routes.v5.tools.resources.departments.search import search_departments_internal
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions_internal
@@ -123,7 +123,7 @@ from app.routes.v5.tools.resources.problem_statements.search import (
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
 from app.routes.v5.tools.resources.questions.get import get_questions_internal
 from app.routes.v5.tools.resources.questions.search import search_questions_internal
-from app.routes.v5.tools.resources.tools.get import get_tools_internal
+from app.routes.v5.tools.resources.tools.get import get_tools
 from app.routes.v5.tools.resources.videos.get import get_videos_internal
 from app.routes.v5.tools.resources.videos.search import search_videos_internal
 from app.sql.types import (
@@ -1289,7 +1289,7 @@ async def get_scenario_websocket(
         if not deduped_tool_ids:
             return []
         async with pool.acquire() as conn:
-            return await get_tools_internal(conn, deduped_tool_ids, bypass_cache)
+            return await get_tools(conn, deduped_tool_ids, bypass_cache)
 
     async def fetch_fields():
         async with pool.acquire() as c:
@@ -1336,7 +1336,7 @@ async def get_scenario_websocket(
                 if not all_args_ids:
                     return None
                 async with pool.acquire() as c:
-                    return await get_args_internal(
+                    return await get_args(
                         c, list(set(all_args_ids)), bypass_cache=bypass_cache
                     )
 
@@ -1344,7 +1344,7 @@ async def get_scenario_websocket(
                 if not all_args_output_ids:
                     return None
                 async with pool.acquire() as c:
-                    return await get_args_outputs_internal(
+                    return await get_args_outputs(
                         c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
                     )
 

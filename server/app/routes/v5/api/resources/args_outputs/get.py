@@ -6,14 +6,10 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import get_db
-from app.routes.v5.tools.resources.args_outputs.get import (
-    SQL_PATH,
-    get_args_outputs_internal,
-)
+from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.sql.types import (
     GetArgsOutputsApiRequest,
     GetArgsOutputsApiResponse,
-    load_sql_query,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -23,7 +19,7 @@ router = APIRouter()
     "/args_outputs/get",
     response_model=GetArgsOutputsApiResponse,
 )
-async def get_args_outputs(
+async def get_args_outputs_endpoint(
     request: GetArgsOutputsApiRequest,
     http_request: Request,
     response: Response,
@@ -34,7 +30,7 @@ async def get_args_outputs(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_args_outputs_internal(conn, request.ids, bypass_cache)
+        items = await get_args_outputs(conn, request.ids, bypass_cache)
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetArgsOutputsApiResponse(items=items)
     except HTTPException:
@@ -46,7 +42,7 @@ async def get_args_outputs(
             error=e,
             route_path=http_request.url.path,
             operation="get_args_outputs",
-            sql_query=load_sql_query(SQL_PATH),
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )

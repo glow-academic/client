@@ -1,25 +1,31 @@
-"""Tests for get_tool."""
+"""Tests for get_tools."""
+
+from uuid import uuid4
 
 import pytest
 
-from app.routes.v5.tools.resources.tools.get import get_tool
+from app.routes.v5.tools.resources.tools.get import get_tools
 from tests.seed_ids import USE_VOICES_TOOL_ID
 
 pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_existing_tool(conn):
-    tool = await get_tool(conn, USE_VOICES_TOOL_ID)
+    items = await get_tools(conn, [USE_VOICES_TOOL_ID])
 
-    assert tool is not None
-    assert tool.id == USE_VOICES_TOOL_ID
-    assert tool.name == "use_voices"
-    assert tool.active is True
+    assert len(items) == 1
+    assert items[0].id == USE_VOICES_TOOL_ID
+    assert items[0].name == "use_voices"
+    assert items[0].active is True
 
 
-async def test_returns_none_for_missing_tool(conn):
-    from uuid import uuid4
+async def test_returns_empty_for_missing_tool(conn):
+    items = await get_tools(conn, [uuid4()])
 
-    tool = await get_tool(conn, uuid4())
+    assert items == []
 
-    assert tool is None
+
+async def test_returns_empty_for_empty_ids(conn):
+    items = await get_tools(conn, [])
+
+    assert items == []

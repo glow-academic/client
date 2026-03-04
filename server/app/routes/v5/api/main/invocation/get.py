@@ -37,8 +37,8 @@ from app.routes.v5.api.main.invocation.types import (
 from app.routes.v5.api.permissions import resolve_agents_for_artifact
 from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
 from app.routes.v5.tools.entries.suite.get import get_suite_view_internal
-from app.routes.v5.tools.resources.args.get import get_args_internal
-from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
+from app.routes.v5.tools.resources.args.get import get_args
+from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments_internal
 from app.routes.v5.tools.resources.instructions.get import get_instructions_internal
 from app.routes.v5.tools.resources.keys.get import get_keys_internal
@@ -52,7 +52,7 @@ from app.routes.v5.tools.resources.reasoning_levels.get import (
 from app.routes.v5.tools.resources.temperature_levels.get import (
     get_temperature_levels_internal,
 )
-from app.routes.v5.tools.resources.tools.get import get_tools_internal
+from app.routes.v5.tools.resources.tools.get import get_tools
 from app.routes.v5.tools.resources.voices.get import get_voices_internal
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -136,7 +136,7 @@ RESOURCE_CONFIG: list[tuple[str, str, Any, str]] = [
         get_reasoning_levels_internal,
         "id",
     ),
-    ("tools", "tool_ids", get_tools_internal, "id"),
+    ("tools", "tool_ids", get_tools, "id"),
     ("keys", "key_ids", get_keys_internal, "id"),
 ]
 
@@ -407,7 +407,7 @@ async def get_invocation_websocket(
                 if not all_args_ids:
                     return None
                 async with pool.acquire() as c:
-                    return await get_args_internal(
+                    return await get_args(
                         c, list(set(all_args_ids)), bypass_cache=bypass_cache
                     )
 
@@ -415,7 +415,7 @@ async def get_invocation_websocket(
                 if not all_args_output_ids:
                     return None
                 async with pool.acquire() as c:
-                    return await get_args_outputs_internal(
+                    return await get_args_outputs(
                         c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
                     )
 

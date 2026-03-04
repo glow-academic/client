@@ -51,8 +51,8 @@ from app.routes.v5.tools.entries.field_drafts.get import (
 )
 from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
 from app.routes.v5.tools.resources.agents.get import get_agents_internal
-from app.routes.v5.tools.resources.args.get import get_args_internal
-from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
+from app.routes.v5.tools.resources.args.get import get_args
+from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments_internal
 from app.routes.v5.tools.resources.departments.search import search_departments_internal
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions_internal
@@ -68,7 +68,7 @@ from app.routes.v5.tools.resources.parameters.get import get_parameters_internal
 from app.routes.v5.tools.resources.parameters.search import search_parameters_internal
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
 from app.routes.v5.tools.resources.providers.get import get_providers_internal
-from app.routes.v5.tools.resources.tools.get import get_tools_internal
+from app.routes.v5.tools.resources.tools.get import get_tools
 from app.sql.types import (
     GetFieldAccessSqlParams,
     GetFieldAccessSqlRow,
@@ -480,7 +480,7 @@ async def get_field_internal(
     tool_ids = list(dict.fromkeys(tool_ids))
     if tool_ids:
         async with pool.acquire() as config_conn:
-            config_tools = await get_tools_internal(config_conn, tool_ids, bypass_cache)
+            config_tools = await get_tools(config_conn, tool_ids, bypass_cache)
 
     return FieldInternalData(
         actor_name=actor_name,
@@ -586,7 +586,7 @@ async def get_field_websocket(
         if not agent_resource or not agent_resource.tool_ids:
             return []
         async with pool.acquire() as c:
-            return await get_tools_internal(
+            return await get_tools(
                 c, list(agent_resource.tool_ids), bypass_cache
             )
 
@@ -627,7 +627,7 @@ async def get_field_websocket(
                 if not all_args_ids:
                     return None
                 async with pool.acquire() as c:
-                    return await get_args_internal(
+                    return await get_args(
                         c, list(set(all_args_ids)), bypass_cache=bypass_cache
                     )
 
@@ -635,7 +635,7 @@ async def get_field_websocket(
                 if not all_args_output_ids:
                     return None
                 async with pool.acquire() as c:
-                    return await get_args_outputs_internal(
+                    return await get_args_outputs(
                         c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
                     )
 

@@ -55,8 +55,8 @@ from app.routes.v5.tools.entries.provider_drafts.get import (
 )
 from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
 from app.routes.v5.tools.resources.agents.get import get_agents_internal
-from app.routes.v5.tools.resources.args.get import get_args_internal
-from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs_internal
+from app.routes.v5.tools.resources.args.get import get_args
+from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments_internal
 from app.routes.v5.tools.resources.departments.search import search_departments_internal
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions_internal
@@ -72,7 +72,7 @@ from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.tools.resources.profiles.get import get_profiles_internal
 from app.routes.v5.tools.resources.providers.get import get_providers_internal
-from app.routes.v5.tools.resources.tools.get import get_tools_internal
+from app.routes.v5.tools.resources.tools.get import get_tools
 from app.routes.v5.tools.resources.values.get import get_values_internal
 from app.routes.v5.tools.resources.values.search import search_values_internal
 from app.sql.types import (
@@ -570,7 +570,7 @@ async def get_provider_websocket(
         if not selected_tool_ids:
             return []
         async with pool.acquire() as c:
-            return await get_tools_internal(c, list(selected_tool_ids), bypass_cache)
+            return await get_tools(c, list(selected_tool_ids), bypass_cache)
 
     (
         draft_view,
@@ -609,7 +609,7 @@ async def get_provider_websocket(
                 if not all_args_ids:
                     return None
                 async with pool.acquire() as c:
-                    return await get_args_internal(
+                    return await get_args(
                         c, list(set(all_args_ids)), bypass_cache=bypass_cache
                     )
 
@@ -617,7 +617,7 @@ async def get_provider_websocket(
                 if not all_args_output_ids:
                     return None
                 async with pool.acquire() as c:
-                    return await get_args_outputs_internal(
+                    return await get_args_outputs(
                         c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
                     )
 

@@ -1,58 +1,39 @@
-"""args_outputs/get internal — reusable data-access layer."""
+"""Args Outputs Resource GET — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    GetArgsOutputsSqlParams,
-    GetArgsOutputsSqlRow,
-    QGetArgsOutputsV4Item,
-)
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
+from app.routes.v5.tools.resources.args_outputs.types import GetArgOutputResponse
 
-SQL_PATH = "app/sql/queries/resources/args_outputs/get_args_outputs_complete.sql"
 
-async def get_args_outputs_internal(
+async def get_args_outputs(
     conn: asyncpg.Connection,
     ids: list[UUID],
     bypass_cache: bool = False,
-) -> list[QGetArgsOutputsV4Item]:
-    """Internal function to fetch args_outputs by IDs."""
+) -> list[GetArgOutputResponse]:
+    """Fetch args_outputs_resource entries by IDs."""
     if not ids:
         return []
 
-    tags = ["resources", "args_outputs"]
-    cache_key_val = cache_key(
-        "/api/v5/resources/args_outputs/get",
-        {"ids": [str(id) for id in ids]},
-    )
+    rows = await conn.fetch("""
+        SELECT id, args_id, name, template,
+               created_at, active, mcp, generated
+        FROM args_outputs_resource
+        WHERE id = ANY($1)
+        ORDER BY array_position($1, id)
+    """, ids)
 
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val)
-        if cached:
-            return [
-                QGetArgsOutputsV4Item.model_validate(item)
-                for item in cached.get("items", [])
-            ]
-
-    params = GetArgsOutputsSqlParams(ids=ids)
-    result = cast(
-        GetArgsOutputsSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[QGetArgsOutputsV4Item] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=tags,
-    )
-
-    return items
+    return [
+        GetArgOutputResponse(
+            id=r["id"],
+            args_id=r["args_id"],
+            name=r["name"],
+            template=r["template"],
+            created_at=r["created_at"],
+            active=r["active"],
+            mcp=r["mcp"],
+            generated=r["generated"],
+        )
+        for r in rows
+    ]

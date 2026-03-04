@@ -1,57 +1,41 @@
-"""args/get internal — reusable data-access layer."""
+"""Args Resource GET — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    GetArgsSqlParams,
-    GetArgsSqlRow,
-    QGetArgsV4Item,
-)
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
+from app.routes.v5.tools.resources.args.types import GetArgResponse
 
-SQL_PATH = "app/sql/queries/resources/args/get_args_complete.sql"
 
-async def get_args_internal(
+async def get_args(
     conn: asyncpg.Connection,
     ids: list[UUID],
     bypass_cache: bool = False,
-) -> list[QGetArgsV4Item]:
-    """Internal function to fetch args by IDs."""
+) -> list[GetArgResponse]:
+    """Fetch args_resource entries by IDs."""
     if not ids:
         return []
 
-    tags = ["resources", "args"]
-    cache_key_val = cache_key(
-        "/api/v5/resources/args/get",
-        {"ids": [str(id) for id in ids]},
-    )
+    rows = await conn.fetch("""
+        SELECT id, name, description, field_type, required, default_value,
+               created_at, active, mcp, generated
+        FROM args_resource
+        WHERE id = ANY($1)
+        ORDER BY array_position($1, id)
+    """, ids)
 
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val)
-        if cached:
-            return [
-                QGetArgsV4Item.model_validate(item) for item in cached.get("items", [])
-            ]
-
-    params = GetArgsSqlParams(ids=ids)
-    result = cast(
-        GetArgsSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[QGetArgsV4Item] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=tags,
-    )
-
-    return items
+    return [
+        GetArgResponse(
+            id=r["id"],
+            name=r["name"],
+            description=r["description"],
+            field_type=r["field_type"],
+            required=r["required"],
+            default_value=r["default_value"],
+            created_at=r["created_at"],
+            active=r["active"],
+            mcp=r["mcp"],
+            generated=r["generated"],
+        )
+        for r in rows
+    ]
