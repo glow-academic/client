@@ -5,7 +5,7 @@
 
 
 -- Entry resource
-INSERT INTO public.entries_resource (id, entry, created_at, active, generated, mcp) VALUES ('f4194a40-0e15-4ac4-a82f-3d213067a3f8', 'conversations_completions', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.entries_resource (id, entry, created_at, active, generated, mcp) VALUES ('f4194a40-0e15-4ac4-a82f-3d213067a3f8', 'attempt_conversation_completions', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Resource rows
 INSERT INTO public.args_resource (id, name, description, field_type, required, default_value, created_at, active, generated, mcp) VALUES ('5475fe89-f8ff-4d08-ad33-a54208d67d35', 'call_id', '', 'string', false, '', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
