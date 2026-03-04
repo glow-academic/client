@@ -1,23 +1,56 @@
-"""field_drafts CREATE — thin wrapper around shared drafts CRUD."""
+"""Field drafts CREATE — insert entry + connection tables."""
 
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.infra.drafts.crud import create_draft
-from app.infra.drafts.types import CreateDraftResponse
-
-TABLE = "field_drafts_entry"
+from app.routes.v5.tools.entries.field_drafts.types import CreateFieldDraftResponse
 
 
-async def create_field_drafts(
+async def create_field_draft(
     conn: asyncpg.Connection,
     group_id: UUID,
     session_id: UUID,
     version: int = 0,
     mcp: bool = False,
-) -> CreateDraftResponse:
-    """Create a field_drafts entry."""
-    return await create_draft(
-        conn, TABLE, group_id=group_id, session_id=session_id, version=version, mcp=mcp
+    conditional_parameter_ids: list[UUID] | None = None,
+    department_ids: list[UUID] | None = None,
+    description_ids: list[UUID] | None = None,
+    flag_ids: list[UUID] | None = None,
+    name_ids: list[UUID] | None = None,
+    profile_ids: list[UUID] | None = None,
+) -> CreateFieldDraftResponse:
+    """Create a field_drafts entry with optional connection table links."""
+    draft_id = await conn.fetchval(
+        """
+        INSERT INTO field_drafts_entry (group_id, session_id, version, mcp, generated)
+        VALUES ($1, $2, $3, $4, true)
+        RETURNING id
+        """,
+        group_id,
+        session_id,
+        version,
+        mcp,
     )
+
+    if draft_id is None:
+        raise ValueError("Failed to create field_drafts entry")
+
+    connections: list[tuple[str, str, list[UUID]]] = [
+        ("field_drafts_conditional_parameters_connection", "conditional_parameters_id", conditional_parameter_ids or []),
+        ("field_drafts_departments_connection", "departments_id", department_ids or []),
+        ("field_drafts_descriptions_connection", "descriptions_id", description_ids or []),
+        ("field_drafts_flags_connection", "flags_id", flag_ids or []),
+        ("field_drafts_names_connection", "names_id", name_ids or []),
+        ("field_drafts_profiles_connection", "profiles_id", profile_ids or []),
+    ]
+
+    for table, col, ids in connections:
+        for rid in ids:
+            await conn.execute(
+                f"INSERT INTO {table} (draft_id, {col}) VALUES ($1, $2)",
+                draft_id,
+                rid,
+            )
+
+    return CreateFieldDraftResponse(id=draft_id)

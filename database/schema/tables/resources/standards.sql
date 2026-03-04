@@ -11,7 +11,7 @@ CREATE TABLE public.standards_resource (
     description text NOT NULL,
     points integer NOT NULL,
     id uuid DEFAULT uuidv7() NOT NULL,
-    standard_group_id uuid,
+    standard_group_id uuid NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL
