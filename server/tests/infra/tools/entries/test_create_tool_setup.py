@@ -21,39 +21,44 @@ pytestmark = pytest.mark.asyncio
 async def _deps(conn):
     session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
     group = await create_group(conn, session_id=session.id)
-    upload = await create_upload(
+    text_upload = await create_upload(
         conn, session_id=session.id, file_path="test/file.txt", mime_type="text/plain", size=1024,
     )
-    return session, group, upload
+    call_upload = await create_upload(
+        conn, session_id=session.id, file_path="test/response.json", mime_type="application/json", size=512,
+    )
+    return session, group, text_upload, call_upload
 
 
-async def test_returns_all_ids(conn):
-    session, group, upload = await _deps(conn)
+async def _setup(conn):
+    session, group, text_upload, call_upload = await _deps(conn)
     result = await create_tool_setup(
         conn,
         group_id=group.id,
         session_id=session.id,
         tool_id=USE_VOICES_TOOL_ID,
-        upload_id=upload.id,
+        text_upload_id=text_upload.id,
+        call_upload_id=call_upload.id,
         profile_id=SUPERADMIN_PROFILES_RESOURCE_ID,
     )
+    return session, group, text_upload, call_upload, result
+
+
+async def test_returns_all_ids(conn):
+    _, _, _, _, result = await _setup(conn)
 
     assert result.run_id is not None
     assert result.call_id is not None
     assert result.message_id is not None
     assert result.text_id is not None
+    assert result.text_upload_junction_id is not None
+    assert result.call_upload_junction_id is not None
+    assert result.message_text_upload_junction_id is not None
+    assert result.message_call_upload_junction_id is not None
 
 
 async def test_creates_run(conn):
-    session, group, upload = await _deps(conn)
-    result = await create_tool_setup(
-        conn,
-        group_id=group.id,
-        session_id=session.id,
-        tool_id=USE_VOICES_TOOL_ID,
-        upload_id=upload.id,
-        profile_id=SUPERADMIN_PROFILES_RESOURCE_ID,
-    )
+    session, group, _, _, result = await _setup(conn)
 
     run = await get_run(conn, result.run_id)
 
@@ -63,15 +68,7 @@ async def test_creates_run(conn):
 
 
 async def test_creates_call_with_tool(conn):
-    session, group, upload = await _deps(conn)
-    result = await create_tool_setup(
-        conn,
-        group_id=group.id,
-        session_id=session.id,
-        tool_id=USE_VOICES_TOOL_ID,
-        upload_id=upload.id,
-        profile_id=SUPERADMIN_PROFILES_RESOURCE_ID,
-    )
+    session, _, _, _, result = await _setup(conn)
 
     call = await get_call(conn, result.call_id)
 
@@ -81,15 +78,7 @@ async def test_creates_call_with_tool(conn):
 
 
 async def test_creates_message(conn):
-    session, group, upload = await _deps(conn)
-    result = await create_tool_setup(
-        conn,
-        group_id=group.id,
-        session_id=session.id,
-        tool_id=USE_VOICES_TOOL_ID,
-        upload_id=upload.id,
-        profile_id=SUPERADMIN_PROFILES_RESOURCE_ID,
-    )
+    _, _, _, _, result = await _setup(conn)
 
     message = await get_message(conn, result.message_id)
 
@@ -99,15 +88,7 @@ async def test_creates_message(conn):
 
 
 async def test_creates_text(conn):
-    session, group, upload = await _deps(conn)
-    result = await create_tool_setup(
-        conn,
-        group_id=group.id,
-        session_id=session.id,
-        tool_id=USE_VOICES_TOOL_ID,
-        upload_id=upload.id,
-        profile_id=SUPERADMIN_PROFILES_RESOURCE_ID,
-    )
+    session, _, _, _, result = await _setup(conn)
 
     text = await get_text(conn, result.text_id)
 
@@ -115,55 +96,41 @@ async def test_creates_text(conn):
     assert text.session_id == session.id
 
 
-async def test_links_upload_to_text(conn):
-    session, group, upload = await _deps(conn)
-    result = await create_tool_setup(
-        conn,
-        group_id=group.id,
-        session_id=session.id,
-        tool_id=USE_VOICES_TOOL_ID,
-        upload_id=upload.id,
-        profile_id=SUPERADMIN_PROFILES_RESOURCE_ID,
-    )
+async def test_links_text_upload_to_text(conn):
+    _, _, text_upload, _, result = await _setup(conn)
 
-    row = await get_text_upload(conn, result.text_upload_id)
+    row = await get_text_upload(conn, result.text_upload_junction_id)
 
     assert row is not None
     assert row.text_id == result.text_id
-    assert row.upload_id == upload.id
+    assert row.upload_id == text_upload.id
 
 
-async def test_links_upload_to_call(conn):
-    session, group, upload = await _deps(conn)
-    result = await create_tool_setup(
-        conn,
-        group_id=group.id,
-        session_id=session.id,
-        tool_id=USE_VOICES_TOOL_ID,
-        upload_id=upload.id,
-        profile_id=SUPERADMIN_PROFILES_RESOURCE_ID,
-    )
+async def test_links_call_upload_to_call(conn):
+    _, _, _, call_upload, result = await _setup(conn)
 
-    row = await get_call_upload(conn, result.call_upload_id)
+    row = await get_call_upload(conn, result.call_upload_junction_id)
 
     assert row is not None
     assert row.call_id == result.call_id
-    assert row.upload_id == upload.id
+    assert row.upload_id == call_upload.id
 
 
-async def test_links_upload_to_message(conn):
-    session, group, upload = await _deps(conn)
-    result = await create_tool_setup(
-        conn,
-        group_id=group.id,
-        session_id=session.id,
-        tool_id=USE_VOICES_TOOL_ID,
-        upload_id=upload.id,
-        profile_id=SUPERADMIN_PROFILES_RESOURCE_ID,
-    )
+async def test_links_text_upload_to_message(conn):
+    _, _, text_upload, _, result = await _setup(conn)
 
-    row = await get_message_upload(conn, result.message_upload_id)
+    row = await get_message_upload(conn, result.message_text_upload_junction_id)
 
     assert row is not None
     assert row.message_id == result.message_id
-    assert row.upload_id == upload.id
+    assert row.upload_id == text_upload.id
+
+
+async def test_links_call_upload_to_message(conn):
+    _, _, _, call_upload, result = await _setup(conn)
+
+    row = await get_message_upload(conn, result.message_call_upload_junction_id)
+
+    assert row is not None
+    assert row.message_id == result.message_id
+    assert row.upload_id == call_upload.id

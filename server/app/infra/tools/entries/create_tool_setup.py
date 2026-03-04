@@ -19,15 +19,16 @@ async def create_tool_setup(
     group_id: UUID,
     session_id: UUID,
     tool_id: UUID,
-    upload_id: UUID,
+    text_upload_id: UUID,
+    call_upload_id: UUID,
     profile_id: UUID,
     role: str = "assistant",
     mcp: bool = False,
 ) -> CreateToolSetupResponse:
     """Create the full entry chain for a tool call.
 
-    Creates: run → call → message → text, then links the upload
-    to text, call, and message via junction tables.
+    Creates: run → call → message → text, then links the two uploads
+    to their respective entries and both to the message.
     """
     run = await create_run(
         conn, group_id=group_id, session_id=session_id, profile_id=profile_id, mcp=mcp,
@@ -45,16 +46,20 @@ async def create_tool_setup(
         conn, session_id=session_id, mcp=mcp,
     )
 
-    text_upload = await create_text_upload(
-        conn, text_id=text.id, upload_id=upload_id, session_id=session_id, mcp=mcp,
+    text_upload_junction = await create_text_upload(
+        conn, text_id=text.id, upload_id=text_upload_id, session_id=session_id, mcp=mcp,
     )
 
-    call_upload = await create_call_upload(
-        conn, call_id=call.id, upload_id=upload_id, session_id=session_id, mcp=mcp,
+    call_upload_junction = await create_call_upload(
+        conn, call_id=call.id, upload_id=call_upload_id, session_id=session_id, mcp=mcp,
     )
 
-    message_upload = await create_message_upload(
-        conn, message_id=message.id, upload_id=upload_id, session_id=session_id, mcp=mcp,
+    message_text_upload_junction = await create_message_upload(
+        conn, message_id=message.id, upload_id=text_upload_id, session_id=session_id, mcp=mcp,
+    )
+
+    message_call_upload_junction = await create_message_upload(
+        conn, message_id=message.id, upload_id=call_upload_id, session_id=session_id, mcp=mcp,
     )
 
     return CreateToolSetupResponse(
@@ -62,7 +67,8 @@ async def create_tool_setup(
         call_id=call.id,
         message_id=message.id,
         text_id=text.id,
-        text_upload_id=text_upload.id,
-        call_upload_id=call_upload.id,
-        message_upload_id=message_upload.id,
+        text_upload_junction_id=text_upload_junction.id,
+        call_upload_junction_id=call_upload_junction.id,
+        message_text_upload_junction_id=message_text_upload_junction.id,
+        message_call_upload_junction_id=message_call_upload_junction.id,
     )

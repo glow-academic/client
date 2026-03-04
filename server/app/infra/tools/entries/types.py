@@ -10,6 +10,7 @@ class CreateToolSetupResponse(BaseModel):
     call_id: UUID
     message_id: UUID
     text_id: UUID
-    text_upload_id: UUID
-    call_upload_id: UUID
-    message_upload_id: UUID
+    text_upload_junction_id: UUID
+    call_upload_junction_id: UUID
+    message_text_upload_junction_id: UUID
+    message_call_upload_junction_id: UUID
