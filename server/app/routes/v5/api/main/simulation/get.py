@@ -101,7 +101,7 @@ from app.routes.v5.tools.resources.scenario_positions.search import (
     search_scenario_positions_internal,
 )
 from app.routes.v5.tools.resources.scenario_rubrics.get import (
-    get_scenario_rubrics_internal,
+    get_scenario_rubrics,
 )
 from app.routes.v5.tools.resources.scenario_rubrics.search import (
     search_scenario_rubrics_internal,
@@ -475,8 +475,8 @@ async def get_simulation_internal(
 
     async def fetch_scenario_rubrics():
         async with pool.acquire() as c:
-            selected = await get_scenario_rubrics_internal(
-                c, scenario_rubric_ids, bypass_cache
+            selected = await get_scenario_rubrics(
+                c, scenario_rubric_ids, get_redis_client(), bypass_cache
             )
             suggestions = await search_scenario_rubrics_internal(
                 c, effective_scenario_ids, bypass_cache=bypass_cache

@@ -65,7 +65,7 @@ from app.routes.v5.tools.resources.scenario_time_limits.get import (
 from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
 from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
 from app.routes.v5.tools.resources.standard_groups.get import (
-    get_standard_groups_internal,
+    get_standard_groups,
 )
 from app.routes.v5.tools.resources.standards.search import search_standards_internal
 from app.sql.types import GetPracticeContextViewSqlRow
@@ -661,8 +661,8 @@ async def get_practice_internal(
         if not standard_group_ids_list:
             return []
         async with pool.acquire() as c:
-            return await get_standard_groups_internal(
-                c, standard_group_ids_list, bypass_cache=bypass_cache
+            return await get_standard_groups(
+                c, standard_group_ids_list, get_redis_client(), bypass_cache=bypass_cache
             )
 
     async def fetch_standards() -> list:

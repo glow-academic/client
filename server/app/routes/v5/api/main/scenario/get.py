@@ -657,7 +657,7 @@ async def get_scenario_internal(
 
     async def fetch_images():
         async with pool.acquire() as c:
-            selected = await get_images_internal(c, selected_image_ids, bypass_cache)
+            selected = await get_images(c, selected_image_ids, get_redis_client(), bypass_cache)
             suggestions = await search_images_internal(
                 c,
                 image_search,
@@ -671,7 +671,7 @@ async def get_scenario_internal(
 
     async def fetch_videos():
         async with pool.acquire() as c:
-            selected = await get_videos_internal(c, selected_video_ids, bypass_cache)
+            selected = await get_videos(c, selected_video_ids, get_redis_client(), bypass_cache)
             suggestions = await search_videos_internal(
                 c,
                 video_search,
@@ -685,8 +685,8 @@ async def get_scenario_internal(
 
     async def fetch_questions():
         async with pool.acquire() as c:
-            selected = await get_questions_internal(
-                c, selected_question_ids, bypass_cache
+            selected = await get_questions(
+                c, selected_question_ids, get_redis_client(), bypass_cache
             )
             suggestions = await search_questions_internal(
                 c,

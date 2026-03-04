@@ -90,14 +90,14 @@ async def sync_cohort_entries(
         get_scenario_positions,
     )
     from app.routes.v5.tools.resources.scenario_rubrics.get import (
-        get_scenario_rubrics_internal,
+        get_scenario_rubrics,
     )
     from app.routes.v5.tools.resources.scenario_time_limits.get import (
         get_scenario_time_limits,
     )
     from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
     from app.routes.v5.tools.resources.simulation_availability.get import (
-        get_simulation_availability_internal,
+        get_simulation_availability,
     )
     from app.routes.v5.tools.resources.simulation_positions.get import (
         get_simulation_positions,
@@ -147,8 +147,8 @@ async def sync_cohort_entries(
 
     async def _fetch_scenario_rubrics() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_scenario_rubrics_internal(
-                c, all_scenario_rubric_ids, bypass_cache=True
+            return await get_scenario_rubrics(
+                c, all_scenario_rubric_ids, get_redis_client(), bypass_cache=True
             )
 
     async def _fetch_scenario_flags() -> list[Any]:
@@ -177,8 +177,8 @@ async def sync_cohort_entries(
 
     async def _fetch_sim_availability() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_simulation_availability_internal(
-                c, simulation_availability_ids, bypass_cache=True
+            return await get_simulation_availability(
+                c, simulation_availability_ids, get_redis_client(), bypass_cache=True
             )
 
     gather_results = await asyncio.gather(

@@ -64,7 +64,7 @@ async def sync_benchmark_entries(
         get_model_positions,
     )
     from app.routes.v5.tools.resources.model_rubrics.get import (
-        get_model_rubrics_internal,
+        get_model_rubrics,
     )
 
     if not model_ids:
@@ -81,8 +81,8 @@ async def sync_benchmark_entries(
 
     async def _fetch_model_rubrics() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_model_rubrics_internal(
-                c, model_rubric_ids, bypass_cache=True
+            return await get_model_rubrics(
+                c, model_rubric_ids, get_redis_client(), bypass_cache=True
             )
 
     async def _fetch_model_positions() -> list[Any]:

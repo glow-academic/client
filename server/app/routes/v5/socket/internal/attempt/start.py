@@ -17,7 +17,7 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from app.infra.globals import get_internal_sio
+from app.infra.globals import get_internal_sio, get_redis_client
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.infra.websocket.get_db_connection import get_db_connection
@@ -44,7 +44,7 @@ from app.routes.v5.tools.entries.practice_chat.search import (
 )
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.resources.profile_personas.get import (
-    get_profile_personas_internal,
+    get_profile_personas,
 )
 from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
 from app.utils.logging.db_logger import get_logger
@@ -116,9 +116,10 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
                 if not persona_ids:
                     raise ValueError("No profile personas found in parent")
 
-                profile_personas = await get_profile_personas_internal(
+                profile_personas = await get_profile_personas(
                     conn,
                     [uuid.UUID(pid) for pid in persona_ids],
+                    redis=get_redis_client(),
                     bypass_cache=True,
                 )
 

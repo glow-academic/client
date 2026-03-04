@@ -7,11 +7,12 @@ from uuid import UUID
 
 import asyncpg
 
+from app.infra.globals import get_redis_client
 from app.routes.v5.api.main.dashboard.types import DashboardRequest
 from app.routes.v5.tools.entries.attempt_chat.get import FilterOption, GetChatsResponse
 from app.routes.v5.tools.resources.rubrics.get import get_rubrics_batch_internal
 from app.routes.v5.tools.resources.standard_groups.get import (
-    get_standard_groups_internal,
+    get_standard_groups,
 )
 from app.sql.types import GetActiveSettingsSqlParams, GetActiveSettingsSqlRow
 from app.utils.cache.cache_key import cache_key
@@ -441,9 +442,10 @@ async def hydrate_rubric_resources(
     standard_group_name_map: dict[str, str] = {}
     if all_sg_ids:
         async with pool.acquire() as c:
-            sg_items = await get_standard_groups_internal(
+            sg_items = await get_standard_groups(
                 conn=c,
                 ids=all_sg_ids,
+                redis=get_redis_client(),
                 bypass_cache=bypass_cache,
             )
         for sg in sg_items:

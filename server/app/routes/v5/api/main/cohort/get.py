@@ -94,13 +94,13 @@ from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.tools.resources.personas.search import search_personas_internal
 from app.routes.v5.tools.resources.profile_personas.get import (
-    get_profile_personas_internal,
+    get_profile_personas,
 )
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.profiles.search import search_profiles_internal
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.simulation_availability.get import (
-    get_simulation_availability_internal,
+    get_simulation_availability,
 )
 from app.routes.v5.tools.resources.simulation_positions.get import (
     get_simulation_positions,
@@ -493,8 +493,8 @@ async def get_cohort_internal(
         if not simulation_availability_ids:
             return []
         async with pool.acquire() as c:
-            items = await get_simulation_availability_internal(
-                c, simulation_availability_ids, bypass_cache=bypass_cache
+            items = await get_simulation_availability(
+                c, simulation_availability_ids, get_redis_client(), bypass_cache=bypass_cache
             )
             return [
                 CohortSimulationAvailability(
@@ -532,8 +532,8 @@ async def get_cohort_internal(
         if not profile_persona_ids:
             return []
         async with pool.acquire() as c:
-            items = await get_profile_personas_internal(
-                c, profile_persona_ids, bypass_cache=bypass_cache
+            items = await get_profile_personas(
+                c, profile_persona_ids, get_redis_client(), bypass_cache=bypass_cache
             )
             return [
                 CohortProfilePersona(

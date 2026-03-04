@@ -84,9 +84,9 @@ from app.routes.v5.tools.resources.points.get import get_points
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.standard_groups.get import (
-    get_standard_groups_internal,
+    get_standard_groups,
 )
-from app.routes.v5.tools.resources.standards.get import get_standards_internal
+from app.routes.v5.tools.resources.standards.get import get_standards
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.sql.types import (
     GetRubricAccessSqlParams,
@@ -449,13 +449,13 @@ async def get_rubric_internal(
 
     async def fetch_standard_groups() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_standard_groups_internal(
-                c, standard_group_ids, bypass_cache
+            return await get_standard_groups(
+                c, standard_group_ids, get_redis_client(), bypass_cache
             )
 
     async def fetch_standards() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_standards_internal(c, standard_ids, bypass_cache)
+            return await get_standards(c, standard_ids, get_redis_client(), bypass_cache)
 
     # Parallel fetch all resources
     (

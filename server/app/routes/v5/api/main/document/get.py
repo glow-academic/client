@@ -76,7 +76,7 @@ from app.routes.v5.tools.resources.descriptions.search import (
 from app.routes.v5.tools.resources.fields.search import search_fields_internal
 from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags_internal
-from app.routes.v5.tools.resources.images.get import get_images_internal
+from app.routes.v5.tools.resources.images.get import get_images
 from app.routes.v5.tools.resources.images.search import search_images_internal
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
@@ -455,7 +455,7 @@ async def get_document_internal(
 
     async def fetch_images():
         async with pool.acquire() as c:
-            selected = await get_images_internal(c, image_ids, bypass_cache)
+            selected = await get_images(c, image_ids, get_redis_client(), bypass_cache)
             suggestions = await search_images_internal(
                 c,
                 search=None,
