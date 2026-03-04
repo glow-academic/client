@@ -5,12 +5,12 @@ from typing import Annotated
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
+from app.infra.globals import get_db, get_redis_client
 from app.routes.v5.api.resources.cohorts.types import (
     GetCohortsApiRequest,
     GetCohortsApiResponse,
 )
-from app.routes.v5.tools.resources.cohorts.get import get_cohorts_internal
+from app.routes.v5.tools.resources.cohorts.get import get_cohorts as get_cohorts_resource
 from app.utils.error.handle_route_error import handle_route_error
 
 # Load SQL with types at module level
@@ -43,7 +43,7 @@ async def get_cohorts(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_cohorts_internal(conn, request.ids or [], bypass_cache)
+        items = await get_cohorts_resource(conn, request.ids or [], get_redis_client(), bypass_cache)
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetCohortsApiResponse(items=items)
     except HTTPException:

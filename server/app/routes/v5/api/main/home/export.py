@@ -18,9 +18,9 @@ from app.infra.globals import UPLOAD_FOLDER, get_db, get_pool, get_redis_client
 from app.routes.auth.profile import get_auth_profile_internal
 from app.routes.v5.api.main.home.types import ExportHomeApiResponse
 from app.routes.v5.tools.entries.attempt_chat.get import get_chats_internal
-from app.routes.v5.tools.resources.cohorts.get import get_cohorts_internal
+from app.routes.v5.tools.resources.cohorts.get import get_cohorts
 from app.routes.v5.tools.resources.profiles.get import get_profiles
-from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
+from app.routes.v5.tools.resources.simulations.get import get_simulations
 from app.sql.types import InsertUploadSqlParams, InsertUploadSqlRow
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
@@ -85,11 +85,11 @@ async def _compute_certificate_scores(
 
     async def fetch_cohorts(ids: list[UUID]) -> list[Any]:
         async with pool.acquire() as conn:
-            return await get_cohorts_internal(conn=conn, ids=ids)
+            return await get_cohorts(conn=conn, ids=ids, redis=get_redis_client())
 
     async def fetch_simulations(ids: list[UUID]) -> list[Any]:
         async with pool.acquire() as conn:
-            return await get_simulations_internal(conn=conn, ids=ids)
+            return await get_simulations(conn=conn, ids=ids, redis=get_redis_client())
 
     profiles, cohorts, simulations = await asyncio.gather(
         fetch_profiles([profile_id]),

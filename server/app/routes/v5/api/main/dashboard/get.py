@@ -70,7 +70,7 @@ from app.routes.v5.tools.resources.parameters.get import get_parameters
 from app.routes.v5.tools.resources.personas.get import get_personas
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.scenarios.get import get_scenarios
-from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
+from app.routes.v5.tools.resources.simulations.get import get_simulations
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
@@ -356,8 +356,8 @@ async def fetch_dashboard_history_data(
         if not h_sim_ids:
             return []
         async with pool.acquire() as c:
-            return await get_simulations_internal(
-                c, list(h_sim_ids), bypass_cache=bypass_cache
+            return await get_simulations(
+                c, list(h_sim_ids), get_redis_client(), bypass_cache=bypass_cache
             )
 
     async def _h_profiles():
@@ -640,8 +640,8 @@ async def get_dashboard_internal(
     # Phase 3 — Parallel resource hydration
     async def _get_simulations() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_simulations_internal(
-                conn=c, ids=list(simulation_ids_set), bypass_cache=bypass_cache
+            return await get_simulations(
+                conn=c, ids=list(simulation_ids_set), redis=get_redis_client(), bypass_cache=bypass_cache
             )
 
     async def _get_personas() -> list[Any]:

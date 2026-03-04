@@ -35,7 +35,7 @@ from app.routes.v5.tools.entries.runs.search import (
 )
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.cohorts.get import get_cohorts_internal
+from app.routes.v5.tools.resources.cohorts.get import get_cohorts
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
@@ -396,9 +396,10 @@ async def get_reports(
                 redis=get_redis_client(),
                 bypass_cache=bypass_cache,
             )
-            cohorts = await get_cohorts_internal(
+            cohorts = await get_cohorts(
                 conn=c,
                 ids=[UUID(cohort_id) for cohort_id in cohort_ids],
+                redis=get_redis_client(),
                 bypass_cache=bypass_cache,
             )
 

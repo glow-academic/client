@@ -40,7 +40,7 @@ from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.fields.get import get_fields
 from app.routes.v5.tools.resources.objectives.get import get_objectives
 from app.routes.v5.tools.resources.personas.get import get_personas
-from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
+from app.routes.v5.tools.resources.simulations.get import get_simulations
 from app.sql.types import load_sql_query
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -292,8 +292,8 @@ async def get_scenario_list(
                 if not simulation_id_set:
                     return []
                 async with pool.acquire() as c:
-                    return await get_simulations_internal(
-                        c, list(simulation_id_set), bypass_cache
+                    return await get_simulations(
+                        c, list(simulation_id_set), get_redis_client(), bypass_cache
                     )
 
             async def fetch_departments() -> list:
