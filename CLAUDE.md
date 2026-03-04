@@ -125,7 +125,7 @@ ls database/migrate/ | sort -n | tail -1   # Find latest number
 make migrate-db                             # Apply migration
 ```
 
-**IMPORTANT: MVs are part of the schema.** Materialized view definitions live in `database/schema/views/` (pure `CREATE MATERIALIZED VIEW ... WITH NO DATA` format) with indexes in `database/schema/indexes/views/`. **Never** put MV CREATE/DROP/REFRESH statements in migration files. Migrations should only contain DDL for tables, indexes, constraints, and enum values. To change an MV, edit its source SQL file in `database/schema/views/` directly.
+**MVs live in the database.** MV definitions are in `database/schema/views/` for reference, but changes to MVs (DROP/CREATE/REFRESH) should be done via migration files. Edit the source SQL file in `database/schema/views/` and create a corresponding migration to apply the change.
 
 ## Testing
 

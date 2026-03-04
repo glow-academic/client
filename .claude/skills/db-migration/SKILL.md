@@ -21,7 +21,7 @@ This will show something like `397_backfill_group_connections.sql` — the next 
 
 4. Create and apply migration:
 - Add a new file in `database/migrate/` named `{next_number}_{desc}.sql` (incrementing from the number found in step 3).
-- **IMPORTANT: Never put MV (materialized view) definitions in migrations.** MVs live in `database/schema/views/` and are loaded as part of the schema. Migrations should only contain DDL for tables, indexes, constraints, and enum values. To change an MV, edit its source SQL file in `database/schema/views/` directly.
+- **MVs live in the database.** MV definitions are in `database/schema/views/` for reference, but changes to MVs (DROP/CREATE/REFRESH) should be done via migration files. Edit the source SQL file in `database/schema/views/` and create a corresponding migration to apply the change.
 - Run:
 ```bash
 make migrate-db
