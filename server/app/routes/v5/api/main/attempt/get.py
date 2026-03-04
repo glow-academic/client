@@ -118,7 +118,7 @@ from app.routes.v5.tools.resources.problem_statements.get import (
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.questions.get import get_questions
-from app.routes.v5.tools.resources.rubrics.get import get_rubrics_batch_internal
+from app.routes.v5.tools.resources.rubrics.get import get_rubrics
 from app.routes.v5.tools.resources.scenarios.get import get_scenarios
 from app.routes.v5.tools.resources.simulations.get import get_simulations
 from app.routes.v5.tools.resources.standard_groups.get import (
@@ -427,12 +427,12 @@ async def get_attempt_internal(
 
                 # Fetch rubrics
                 if rubric_ids:
-                    items = await get_rubrics_batch_internal(
-                        c, rubric_ids, bypass_cache=bypass_cache
+                    items = await get_rubrics(
+                        c, rubric_ids, get_redis_client(), bypass_cache=bypass_cache
                     )
                     for item in items:
-                        if item.rubric_id:
-                            result["rubrics"][item.rubric_id] = {
+                        if item.id:
+                            result["rubrics"][item.id] = {
                                 "name": item.name,
                                 "description": item.description,
                                 "total_points": item.total_points,

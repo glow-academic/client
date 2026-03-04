@@ -41,7 +41,7 @@ from app.routes.v5.tools.resources.evals.get import get_evals
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.providers.get import get_providers
-from app.routes.v5.tools.resources.rubrics.get import get_rubrics_batch_internal
+from app.routes.v5.tools.resources.rubrics.get import get_rubrics
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -300,11 +300,11 @@ async def get_test_internal(
             if not rubric_ids:
                 return {}
             async with pool.acquire() as c:
-                rubrics_list = await get_rubrics_batch_internal(
-                    c, list(rubric_ids), bypass_cache=bypass_cache
+                rubrics_list = await get_rubrics(
+                    c, list(rubric_ids), get_redis_client(), bypass_cache=bypass_cache
                 )
                 return {
-                    r.rubric_id: r.name for r in rubrics_list if r.rubric_id and r.name
+                    r.id: r.name for r in rubrics_list if r.id and r.name
                 }
 
         (eval_name, eval_description), name_map, rubric_name_map = await asyncio.gather(

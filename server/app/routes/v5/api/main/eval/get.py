@@ -79,7 +79,7 @@ from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
-from app.routes.v5.tools.resources.rubrics.get import get_rubrics_batch_internal
+from app.routes.v5.tools.resources.rubrics.get import get_rubrics
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.sql.types import (
     GetEvalAccessSqlParams,
@@ -410,11 +410,11 @@ async def get_eval_internal(
 
     async def fetch_rubrics() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_rubrics_batch_internal(
-                c, selected_rubric_ids, bypass_cache
+            selected = await get_rubrics(
+                c, selected_rubric_ids, get_redis_client(), bypass_cache
             )
-            suggestions = await get_rubrics_batch_internal(
-                c, rubric_suggestion_ids, bypass_cache
+            suggestions = await get_rubrics(
+                c, rubric_suggestion_ids, get_redis_client(), bypass_cache
             )
             return (selected, suggestions)
 

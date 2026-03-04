@@ -92,7 +92,7 @@ from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
-from app.routes.v5.tools.resources.rubrics.get import get_rubrics_internal
+from app.routes.v5.tools.resources.rubrics.get import get_rubrics
 from app.routes.v5.tools.resources.scenario_flags.get import get_scenario_flags
 from app.routes.v5.tools.resources.scenario_positions.get import (
     get_scenario_positions,
@@ -495,7 +495,7 @@ async def get_simulation_internal(
 
     async def fetch_rubrics():
         async with pool.acquire() as c:
-            return await get_rubrics_internal(c, None, bypass_cache)
+            return await get_rubrics(c, None, get_redis_client(), bypass_cache)
 
     # Parallel fetch all resources
     (

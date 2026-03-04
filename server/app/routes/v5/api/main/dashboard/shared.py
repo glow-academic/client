@@ -10,7 +10,7 @@ import asyncpg
 from app.infra.globals import get_redis_client
 from app.routes.v5.api.main.dashboard.types import DashboardRequest
 from app.routes.v5.tools.entries.attempt_chat.get import FilterOption, GetChatsResponse
-from app.routes.v5.tools.resources.rubrics.get import get_rubrics_batch_internal
+from app.routes.v5.tools.resources.rubrics.get import get_rubrics
 from app.routes.v5.tools.resources.standard_groups.get import (
     get_standard_groups,
 )
@@ -424,9 +424,10 @@ async def hydrate_rubric_resources(
         (rubrics, standard_group_name_map)
     """
     async with pool.acquire() as c:
-        rubrics = await get_rubrics_batch_internal(
+        rubrics = await get_rubrics(
             conn=c,
             ids=rubric_ids,
+            redis=get_redis_client(),
             bypass_cache=bypass_cache,
         )
 
