@@ -7,3 +7,11 @@ from pydantic import BaseModel
 
 class CreateTextResponse(BaseModel):
     id: UUID
+
+
+class GetTextResponse(BaseModel):
+    id: UUID
+    session_id: UUID | None
+    active: bool
+    mcp: bool
+    generated: bool

@@ -1,54 +1,30 @@
-"""texts/get internal — reusable data-access layer."""
+"""Texts GET — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    GetTextsEntriesSqlParams,
-    GetTextsEntriesSqlRow,
-)
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
+from app.routes.v5.tools.entries.texts.types import GetTextResponse
 
-SQL_PATH = "app/sql/queries/entries/texts/get_texts_entries_complete.sql"
 
-async def get_texts_entries_internal(
+async def get_text(
     conn: asyncpg.Connection,
-    ids: list[UUID],
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to fetch texts entries by IDs."""
-    if not ids:
-        return []
+    text_id: UUID,
+) -> GetTextResponse | None:
+    """Get a texts entry by ID."""
+    row = await conn.fetchrow("""
+        SELECT id, session_id, active, mcp, generated
+        FROM texts_entry
+        WHERE id = $1
+    """, text_id)
 
-    tags = ["entries", "texts"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/texts/get",
-        {"ids": [str(id) for id in ids]},
+    if row is None:
+        return None
+
+    return GetTextResponse(
+        id=row["id"],
+        session_id=row["session_id"],
+        active=row["active"],
+        mcp=row["mcp"],
+        generated=row["generated"],
     )
-
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val)
-        if cached:
-            return list(cached.get("items", []))
-
-    params = GetTextsEntriesSqlParams(ids=ids)
-    result = cast(
-        GetTextsEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-    )
-
-    return items
