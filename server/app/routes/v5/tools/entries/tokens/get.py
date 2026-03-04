@@ -1,56 +1,48 @@
-"""tokens/get internal — reusable data-access layer."""
+"""Tokens GET — batch get from tokens_mv."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    GetTokensEntriesSqlParams,
-    GetTokensEntriesSqlRow,
-)
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
+from app.infra.docs.resolve_mv_source import resolve_mv_source
+from app.routes.v5.tools.entries.tokens.types import GetTokenResponse
 
-SQL_PATH = "app/sql/queries/entries/tokens/get_tokens_entries_complete.sql"
+MV_NAME = "tokens_mv"
 
 
-async def get_tokens_entries_internal(
+async def get_tokens(
     conn: asyncpg.Connection,
     ids: list[UUID],
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to fetch tokens entries by IDs."""
+    bypass_mv: bool = False,
+) -> list[GetTokenResponse]:
+    """Get tokens by IDs from tokens_mv."""
     if not ids:
         return []
 
-    tags = ["entries", "tokens"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/tokens/get",
-        {"ids": [str(id) for id in ids]},
+    source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
+
+    rows = await conn.fetch(
+        f"""
+        SELECT id, created_at, generated, mcp, active, run_id,
+               input_tokens, output_tokens, cached_input_tokens, session_id
+        FROM {source}
+        WHERE id = ANY($1)
+        """,
+        ids,
     )
 
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    params = GetTokensEntriesSqlParams(ids=ids)
-    result = cast(
-        GetTokensEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
+    return [
+        GetTokenResponse(
+            id=r["id"],
+            created_at=r["created_at"],
+            generated=r["generated"],
+            mcp=r["mcp"],
+            active=r["active"],
+            run_id=r["run_id"],
+            input_tokens=r["input_tokens"],
+            output_tokens=r["output_tokens"],
+            cached_input_tokens=r["cached_input_tokens"],
+            session_id=r["session_id"],
+        )
+        for r in rows
+    ]

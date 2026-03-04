@@ -1,56 +1,45 @@
-"""resolves/get internal — reusable data-access layer."""
+"""Resolves GET — batch get from resolves_mv."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    GetResolvesEntriesSqlParams,
-    GetResolvesEntriesSqlRow,
-)
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
+from app.infra.docs.resolve_mv_source import resolve_mv_source
+from app.routes.v5.tools.entries.resolves.types import GetResolveResponse
 
-SQL_PATH = "app/sql/queries/entries/resolves/get_resolves_entries_complete.sql"
+MV_NAME = "resolves_mv"
 
 
-async def get_resolves_entries_internal(
+async def get_resolves(
     conn: asyncpg.Connection,
     ids: list[UUID],
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to fetch resolves entries by IDs."""
+    bypass_mv: bool = False,
+) -> list[GetResolveResponse]:
+    """Get resolves by IDs from resolves_mv."""
     if not ids:
         return []
 
-    tags = ["entries", "resolves"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/resolves/get",
-        {"ids": [str(id) for id in ids]},
+    source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
+
+    rows = await conn.fetch(
+        f"""
+        SELECT id, created_at, generated, mcp, active, problem_id, resolved, call_id
+        FROM {source}
+        WHERE id = ANY($1)
+        """,
+        ids,
     )
 
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    params = GetResolvesEntriesSqlParams(ids=ids)
-    result = cast(
-        GetResolvesEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
+    return [
+        GetResolveResponse(
+            id=r["id"],
+            created_at=r["created_at"],
+            generated=r["generated"],
+            mcp=r["mcp"],
+            active=r["active"],
+            problem_id=r["problem_id"],
+            resolved=r["resolved"],
+            call_id=r["call_id"],
+        )
+        for r in rows
+    ]

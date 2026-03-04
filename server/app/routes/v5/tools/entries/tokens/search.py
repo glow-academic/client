@@ -1,69 +1,64 @@
-"""tokens/search internal — reusable data-access layer."""
+"""Tokens search — filtered/paginated query against tokens_mv."""
 
-from typing import cast
+from datetime import datetime
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    SearchTokensEntriesSqlParams,
-    SearchTokensEntriesSqlRow,
-)
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
+from app.infra.docs.resolve_mv_source import resolve_mv_source
+from app.routes.v5.tools.entries.tokens.types import GetTokenResponse
 
-SQL_PATH = "app/sql/queries/entries/tokens/search_tokens_entries_complete.sql"
+MV_NAME = "tokens_mv"
 
 
-async def search_tokens_entries_internal(
+async def search_tokens(
     conn: asyncpg.Connection,
-    search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
     run_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to search tokens entries."""
-    if limit_count is not None and limit_count <= 0:
-        return []
+    session_id: UUID | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
+    mcp: bool | None = None,
+    limit: int = 20,
+    offset: int = 0,
+    bypass_mv: bool = False,
+) -> list[GetTokenResponse]:
+    """Search tokens from tokens_mv with declarative filters."""
+    source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
 
-    tags = ["entries", "tokens"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/tokens/search",
-        {
-            "search": search,
-            "limit_count": limit_count,
-            "offset_count": offset_count,
-            "run_id": str(run_id) if run_id else None,
-        },
+    rows = await conn.fetch(
+        f"""
+        SELECT id, created_at, generated, mcp, active, run_id,
+               input_tokens, output_tokens, cached_input_tokens, session_id
+        FROM {source}
+        WHERE ($1::uuid IS NULL OR run_id = $1)
+          AND ($2::uuid IS NULL OR session_id = $2)
+          AND ($3::timestamptz IS NULL OR created_at >= $3)
+          AND ($4::timestamptz IS NULL OR created_at <= $4)
+          AND ($5::boolean IS NULL OR mcp = $5)
+        ORDER BY created_at DESC
+        LIMIT $6 OFFSET $7
+        """,
+        run_id,
+        session_id,
+        date_from,
+        date_to,
+        mcp,
+        limit,
+        offset,
     )
 
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    params = SearchTokensEntriesSqlParams(
-        search=search,
-        limit_count=limit_count,
-        offset_count=offset_count,
-        run_id=run_id,
-    )
-    result = cast(
-        SearchTokensEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
+    return [
+        GetTokenResponse(
+            id=r["id"],
+            created_at=r["created_at"],
+            generated=r["generated"],
+            mcp=r["mcp"],
+            active=r["active"],
+            run_id=r["run_id"],
+            input_tokens=r["input_tokens"],
+            output_tokens=r["output_tokens"],
+            cached_input_tokens=r["cached_input_tokens"],
+            session_id=r["session_id"],
+        )
+        for r in rows
+    ]

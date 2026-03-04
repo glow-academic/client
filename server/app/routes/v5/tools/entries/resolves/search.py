@@ -1,69 +1,64 @@
-"""resolves/search internal — reusable data-access layer."""
+"""Resolves search — filtered/paginated query against resolves_mv."""
 
-from typing import cast
+from datetime import datetime
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    SearchResolvesEntriesSqlParams,
-    SearchResolvesEntriesSqlRow,
-)
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
+from app.infra.docs.resolve_mv_source import resolve_mv_source
+from app.routes.v5.tools.entries.resolves.types import GetResolveResponse
 
-SQL_PATH = "app/sql/queries/entries/resolves/search_resolves_entries_complete.sql"
+MV_NAME = "resolves_mv"
 
 
-async def search_resolves_entries_internal(
+async def search_resolves(
     conn: asyncpg.Connection,
-    search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
     problem_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to search resolves entries."""
-    if limit_count is not None and limit_count <= 0:
-        return []
+    call_id: UUID | None = None,
+    resolved: bool | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
+    mcp: bool | None = None,
+    limit: int = 20,
+    offset: int = 0,
+    bypass_mv: bool = False,
+) -> list[GetResolveResponse]:
+    """Search resolves from resolves_mv with declarative filters."""
+    source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
 
-    tags = ["entries", "resolves"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/resolves/search",
-        {
-            "search": search,
-            "limit_count": limit_count,
-            "offset_count": offset_count,
-            "problem_id": str(problem_id) if problem_id else None,
-        },
+    rows = await conn.fetch(
+        f"""
+        SELECT id, created_at, generated, mcp, active, problem_id, resolved, call_id
+        FROM {source}
+        WHERE ($1::uuid IS NULL OR problem_id = $1)
+          AND ($2::uuid IS NULL OR call_id = $2)
+          AND ($3::boolean IS NULL OR resolved = $3)
+          AND ($4::timestamptz IS NULL OR created_at >= $4)
+          AND ($5::timestamptz IS NULL OR created_at <= $5)
+          AND ($6::boolean IS NULL OR mcp = $6)
+        ORDER BY created_at DESC
+        LIMIT $7 OFFSET $8
+        """,
+        problem_id,
+        call_id,
+        resolved,
+        date_from,
+        date_to,
+        mcp,
+        limit,
+        offset,
     )
 
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    params = SearchResolvesEntriesSqlParams(
-        search=search,
-        limit_count=limit_count,
-        offset_count=offset_count,
-        problem_id=problem_id,
-    )
-    result = cast(
-        SearchResolvesEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
+    return [
+        GetResolveResponse(
+            id=r["id"],
+            created_at=r["created_at"],
+            generated=r["generated"],
+            mcp=r["mcp"],
+            active=r["active"],
+            problem_id=r["problem_id"],
+            resolved=r["resolved"],
+            call_id=r["call_id"],
+        )
+        for r in rows
+    ]
