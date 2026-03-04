@@ -97,7 +97,7 @@ from app.routes.v5.tools.resources.documents.search import search_documents_inte
 from app.routes.v5.tools.resources.fields.search import search_fields_internal
 from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags_internal
-from app.routes.v5.tools.resources.images.get import get_images_internal
+from app.routes.v5.tools.resources.images.get import get_images
 from app.routes.v5.tools.resources.images.search import search_images_internal
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names_internal
@@ -121,10 +121,10 @@ from app.routes.v5.tools.resources.problem_statements.search import (
     search_problem_statements_internal,
 )
 from app.routes.v5.tools.resources.profiles.get import get_profiles
-from app.routes.v5.tools.resources.questions.get import get_questions_internal
+from app.routes.v5.tools.resources.questions.get import get_questions
 from app.routes.v5.tools.resources.questions.search import search_questions_internal
 from app.routes.v5.tools.resources.tools.get import get_tools
-from app.routes.v5.tools.resources.videos.get import get_videos_internal
+from app.routes.v5.tools.resources.videos.get import get_videos
 from app.routes.v5.tools.resources.videos.search import search_videos_internal
 from app.sql.types import (
     GetScenarioAccessSqlParams,

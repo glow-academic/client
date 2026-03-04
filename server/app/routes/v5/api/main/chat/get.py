@@ -54,24 +54,24 @@ from app.routes.v5.tools.entries.training_drafts.get import (
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.documents.get import get_documents_internal
-from app.routes.v5.tools.resources.images.get import get_images_internal
+from app.routes.v5.tools.resources.documents.get import get_documents
+from app.routes.v5.tools.resources.images.get import get_images
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.objectives.get import get_objectives
 from app.routes.v5.tools.resources.options.get import get_options
 from app.routes.v5.tools.resources.parameter_fields.get import (
-    get_parameter_fields_internal,
+    get_parameter_fields,
 )
-from app.routes.v5.tools.resources.parameters.get import get_parameters_internal
-from app.routes.v5.tools.resources.personas.get import get_personas_internal
+from app.routes.v5.tools.resources.parameters.get import get_parameters
+from app.routes.v5.tools.resources.personas.get import get_personas
 from app.routes.v5.tools.resources.problem_statements.get import (
     get_problem_statements,
 )
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
-from app.routes.v5.tools.resources.questions.get import get_questions_internal
-from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
-from app.routes.v5.tools.resources.videos.get import get_videos_internal
+from app.routes.v5.tools.resources.questions.get import get_questions
+from app.routes.v5.tools.resources.scenarios.get import get_scenarios
+from app.routes.v5.tools.resources.videos.get import get_videos
 from app.sql.types import (
     GetTrainingStartContextSqlParams,
     GetTrainingStartContextSqlRow,
@@ -215,39 +215,39 @@ RESOURCE_CONFIG: list[tuple[str, str, str, Any, str]] = [
         get_departments,
         "department_id",
     ),
-    ("personas", "persona_ids", "persona_ids", get_personas_internal, "persona_id"),
+    ("personas", "persona_ids", "persona_ids", get_personas, "persona_id"),
     (
         "documents",
         "document_ids",
         "document_ids",
-        get_documents_internal,
+        get_documents,
         "document_id",
     ),
     (
         "parameter_fields",
         "parameter_field_ids",
         "parameter_field_ids",
-        get_parameter_fields_internal,
+        get_parameter_fields,
         "field_id",
     ),
-    ("scenarios", "scenario_id", None, get_scenarios_internal, "scenario_id"),
+    ("scenarios", "scenario_id", None, get_scenarios, "scenario_id"),
     (
         "parameters",
         "parameter_ids",
         "parameter_ids",
-        get_parameters_internal,
+        get_parameters,
         "parameter_id",
     ),
     (
         "questions",
         "question_ids",
         "question_ids",
-        get_questions_internal,
+        get_questions,
         "question_id",
     ),
     ("options", "option_ids", "option_ids", get_options, "option_id"),
-    ("videos", "video_ids", "video_ids", get_videos_internal, "video_id"),
-    ("images", "image_ids", "image_ids", get_images_internal, "image_id"),
+    ("videos", "video_ids", "video_ids", get_videos, "video_id"),
+    ("images", "image_ids", "image_ids", get_images, "image_id"),
     (
         "problem_statements",
         "problem_statement_ids",
@@ -439,12 +439,12 @@ async def get_chat_internal(
     simulation_name: str | None = None
     if simulation_id:
         from app.routes.v5.tools.resources.simulations.get import (
-            get_simulations_internal,
+            get_simulations,
         )
 
         async with pool.acquire() as conn:
-            sim_list = await get_simulations_internal(
-                conn, [simulation_id], bypass_cache=bypass_cache
+            sim_list = await get_simulations(
+                conn, [simulation_id], get_redis_client(), bypass_cache=bypass_cache
             )
         if sim_list:
             simulation_name = sim_list[0].name

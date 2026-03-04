@@ -107,7 +107,7 @@ from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.documents.get import get_documents_internal
-from app.routes.v5.tools.resources.images.get import get_images_internal
+from app.routes.v5.tools.resources.images.get import get_images
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.objectives.get import get_objectives
 from app.routes.v5.tools.resources.options.get import get_options
@@ -117,16 +117,16 @@ from app.routes.v5.tools.resources.problem_statements.get import (
 )
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
-from app.routes.v5.tools.resources.questions.get import get_questions_internal
+from app.routes.v5.tools.resources.questions.get import get_questions
 from app.routes.v5.tools.resources.rubrics.get import get_rubrics_batch_internal
 from app.routes.v5.tools.resources.scenarios.get import get_scenarios_internal
 from app.routes.v5.tools.resources.simulations.get import get_simulations_internal
 from app.routes.v5.tools.resources.standard_groups.get import (
-    get_standard_groups_internal,
+    get_standard_groups,
 )
-from app.routes.v5.tools.resources.standards.get import get_standards_internal
+from app.routes.v5.tools.resources.standards.get import get_standards
 from app.routes.v5.tools.resources.tools.get import get_tools
-from app.routes.v5.tools.resources.videos.get import get_videos_internal
+from app.routes.v5.tools.resources.videos.get import get_videos
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -276,8 +276,8 @@ async def get_attempt_internal(
             async with pool.acquire() as c:
                 # Fetch images
                 if image_ids:
-                    items = await get_images_internal(
-                        c, image_ids, bypass_cache=bypass_cache
+                    items = await get_images(
+                        c, image_ids, get_redis_client(), bypass_cache=bypass_cache
                     )
                     for item in items:
                         if item.image_id:
@@ -301,8 +301,8 @@ async def get_attempt_internal(
 
                 # Fetch videos
                 if video_ids:
-                    items = await get_videos_internal(
-                        c, video_ids, bypass_cache=bypass_cache
+                    items = await get_videos(
+                        c, video_ids, get_redis_client(), bypass_cache=bypass_cache
                     )
                     for item in items:
                         if item.video_id:
@@ -378,8 +378,8 @@ async def get_attempt_internal(
 
                 # Fetch questions
                 if question_ids:
-                    items = await get_questions_internal(
-                        c, question_ids, bypass_cache=bypass_cache
+                    items = await get_questions(
+                        c, question_ids, get_redis_client(), bypass_cache=bypass_cache
                     )
                     for item in items:
                         if item.question_id:
@@ -441,8 +441,8 @@ async def get_attempt_internal(
 
                 # Fetch standard groups
                 if standard_group_ids:
-                    items = await get_standard_groups_internal(
-                        c, standard_group_ids, bypass_cache=bypass_cache
+                    items = await get_standard_groups(
+                        c, standard_group_ids, get_redis_client(), bypass_cache=bypass_cache
                     )
                     for item in items:
                         if item.standard_group_id:
@@ -455,8 +455,8 @@ async def get_attempt_internal(
 
                 # Fetch standards
                 if standard_ids:
-                    items = await get_standards_internal(
-                        c, standard_ids, bypass_cache=bypass_cache
+                    items = await get_standards(
+                        c, standard_ids, get_redis_client(), bypass_cache=bypass_cache
                     )
                     for item in items:
                         if item.standard_id:
