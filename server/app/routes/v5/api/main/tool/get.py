@@ -227,7 +227,7 @@ async def get_tool_internal(
 
     async def fetch_names() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_names(c, name_ids, bypass_cache)
+            selected = await get_names(c, name_ids, cache)
             suggestions = await search_names_internal(
                 c,
                 None,
@@ -243,7 +243,7 @@ async def get_tool_internal(
 
     async def fetch_descriptions() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_descriptions_internal(c, description_ids, bypass_cache)
+            selected = await get_descriptions_internal(c, description_ids, cache)
             suggestions = await search_descriptions_internal(
                 c,
                 None,
@@ -259,7 +259,7 @@ async def get_tool_internal(
 
     async def fetch_args() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_args(c, selected_args_ids, bypass_cache)
+            selected = await get_args(c, selected_args_ids, cache)
             suggestions = await search_args_internal(
                 c,
                 None,
@@ -286,7 +286,7 @@ async def get_tool_internal(
                 limit_count=100,
                 offset_count=0,
                 exclude_ids=selected_arg_position_ids,
-                bypass_cache=bypass_cache,
+                cache=cache,
                 tool=True,
             )
             return selected, suggestions
@@ -313,7 +313,7 @@ async def get_tool_internal(
 
     async def fetch_flags() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_flags_internal(c, flag_ids, bypass_cache)
+            selected = await get_flags_internal(c, flag_ids, cache)
             all_flags = await search_flags_internal(
                 c,
                 None,
@@ -455,7 +455,7 @@ async def get_tool_internal(
     if config_agent_ids:
         async with pool.acquire() as c:
             config_agent_resources = await get_agents_internal(
-                c, config_agent_ids, bypass_cache
+                c, config_agent_ids, cache
             )
     if config_model_ids:
         async with pool.acquire() as c:
@@ -508,7 +508,7 @@ async def get_tool_websocket(
         profile_id=profile_id,
         tool_id=tool_id,
         draft_id=draft_id,
-        bypass_cache=bypass_cache,
+        cache=cache,
     )
 
     # Fetch draft tool view, config_profile, runs_today, and tools in parallel
@@ -521,7 +521,7 @@ async def get_tool_websocket(
             draft_items = await get_tool_drafts_entries_internal(
                 conn=conn,
                 ids=[draft_id],
-                bypass_cache=bypass_cache,
+                cache=cache,
             )
             return draft_items[0] if draft_items else None
 
@@ -556,7 +556,7 @@ async def get_tool_websocket(
             return []
         async with pool.acquire() as c:
             return await get_tools(
-                c, list(agent_resource.tool_ids), bypass_cache
+                c, list(agent_resource.tool_ids), cache
             )
 
     (
@@ -604,7 +604,7 @@ async def get_tool_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_ids)), cache=cache
                     )
 
             async def fetch_args_outputs():
@@ -612,7 +612,7 @@ async def get_tool_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_output_ids)), cache=cache
                     )
 
             config_args, config_args_outputs = await asyncio.gather(
@@ -662,7 +662,7 @@ async def get_tool_client(
         profile_id=profile_id,
         tool_id=tool_id,
         draft_id=draft_id,
-        bypass_cache=bypass_cache,
+        cache=cache,
         group_id=group_id,
     )
 
@@ -762,6 +762,7 @@ async def get_tool(
 ) -> GetToolApiResponse:
     """Get tool information via section-first BFF response."""
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+    cache = None if bypass_cache else (get_cached, set_cached)
 
     try:
         profile_id = http_request.state.profile_id
@@ -797,3 +798,5 @@ async def get_tool(
             sql_params=None,
             request=http_request,
         )
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached

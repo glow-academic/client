@@ -307,7 +307,7 @@ async def get_department_internal(
 
     async def fetch_names() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_names(c, name_ids, bypass_cache)
+            selected = await get_names(c, name_ids, cache)
             suggestions = await search_names_internal(
                 c,
                 None,
@@ -323,7 +323,7 @@ async def get_department_internal(
 
     async def fetch_descriptions() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_descriptions_internal(c, description_ids, bypass_cache)
+            selected = await get_descriptions_internal(c, description_ids, cache)
             suggestions = await search_descriptions_internal(
                 c,
                 None,
@@ -451,7 +451,7 @@ async def get_department_internal(
     if config_agent_resource_ids:
         async with pool.acquire() as c:
             config_agents = await get_agents_internal(
-                c, config_agent_resource_ids, bypass_cache=bypass_cache
+                c, config_agent_resource_ids, cache=cache
             )
     if config_model_resource_ids:
         async with pool.acquire() as c:
@@ -476,7 +476,7 @@ async def get_department_internal(
     if tool_ids:
         async with pool.acquire() as c:
             config_tools = await get_tools(
-                c, tool_ids, bypass_cache=bypass_cache
+                c, tool_ids, cache=cache
             )
 
     # Build show_ai_generate map
@@ -538,7 +538,7 @@ async def get_department_websocket(
         profile_id=profile_id,
         department_id=department_id,
         draft_id=draft_id,
-        bypass_cache=bypass_cache,
+        cache=cache,
     )
 
     # Fetch draft department view, config_profile, runs_today, and tools in parallel
@@ -559,7 +559,7 @@ async def get_department_websocket(
         if not pool:
             return None
         async with pool.acquire() as conn:
-            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+            return await get_profiles_internal(conn, [profile_id], cache)
 
     async def fetch_runs_today():
         if not pool:
@@ -584,7 +584,7 @@ async def get_department_websocket(
             return []
         async with pool.acquire() as c:
             return await get_tools(
-                c, list(agent_resource.tool_ids), bypass_cache
+                c, list(agent_resource.tool_ids), cache
             )
 
     (
@@ -625,7 +625,7 @@ async def get_department_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_ids)), cache=cache
                     )
 
             async def fetch_args_outputs():
@@ -633,7 +633,7 @@ async def get_department_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_output_ids)), cache=cache
                     )
 
             config_args, config_args_outputs = await asyncio.gather(
@@ -678,7 +678,7 @@ async def get_department_client(
         profile_id=profile_id,
         department_id=department_id,
         draft_id=draft_id,
-        bypass_cache=bypass_cache,
+        cache=cache,
         group_id=group_id,
     )
 
@@ -765,6 +765,7 @@ async def get_department(
     This is a thin HTTP wrapper around get_department_internal().
     """
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+    cache = None if bypass_cache else (get_cached, set_cached)
 
     try:
         profile_id = http_request.state.profile_id
@@ -800,3 +801,5 @@ async def get_department(
             sql_params=None,
             request=http_request,
         )
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached

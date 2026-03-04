@@ -51,6 +51,7 @@ async def get_auth_settings_internal(
     Underlying resource calls are individually cached, so repeated calls
     across artifact endpoints within the same request window are cheap.
     """
+    cache = None if bypass_cache else (get_cached, set_cached)
     access = await get_access_internal(conn, profile_id, bypass_cache)
 
     pool = get_pool()
@@ -128,7 +129,7 @@ async def get_auth_settings_internal(
     if all_tool_ids:
         async with pool.acquire() as c:
             settings_tools = await get_tools(
-                c, list(set(all_tool_ids)), bypass_cache
+                c, list(set(all_tool_ids)), cache
             )
 
     # Resolve agent→tool→resource entries in Python using already-fetched data.
@@ -203,6 +204,7 @@ async def get_auth_settings(
             profile_id = None
 
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+    cache = None if bypass_cache else (get_cached, set_cached)
 
         pass1_start = time.time()
         data = await get_auth_settings_internal(conn, profile_id, bypass_cache)
@@ -240,3 +242,5 @@ async def get_auth_settings(
             sql_params=sql_params,
             request=http_request,
         )
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached

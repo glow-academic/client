@@ -286,7 +286,7 @@ async def get_test_internal(
                 return {}
             async with pool.acquire() as c:
                 names_list = await get_names(
-                    c, list(eval_name_ids), bypass_cache=bypass_cache
+                    c, list(eval_name_ids), cache=cache
                 )
                 return {n.id: n.name for n in names_list if n.id and n.name}
 
@@ -518,7 +518,7 @@ async def get_test_websocket(
         if not pool or not profile_id:
             return None
         async with pool.acquire() as c:
-            return await get_profiles_internal(c, [profile_id], bypass_cache)
+            return await get_profiles_internal(c, [profile_id], cache)
 
     async def fetch_runs_today():
         if not pool or not profile_id:
@@ -546,7 +546,7 @@ async def get_test_websocket(
             return None
         async with pool.acquire() as c:
             return await get_tools(
-                c, list(set(tool_ids)), bypass_cache=bypass_cache
+                c, list(set(tool_ids)), cache=cache
             )
 
     config_profile_result, runs_result, config_tools = await asyncio.gather(
@@ -574,7 +574,7 @@ async def get_test_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_ids)), cache=cache
                     )
 
             async def fetch_args_outputs():
@@ -582,7 +582,7 @@ async def get_test_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_output_ids)), cache=cache
                     )
 
             config_args, config_args_outputs = await asyncio.gather(
@@ -632,6 +632,7 @@ async def get_test_artifact(
     """Get benchmark test artifact details with tests/invocations in parallel."""
     tags = ["artifacts", "test"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+    cache = None if bypass_cache else (get_cached, set_cached)
 
     try:
         response_data, cache_hit = await get_test_client(

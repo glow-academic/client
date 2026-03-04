@@ -259,7 +259,7 @@ async def get_field_internal(
     async def fetch_names():
         async with pool.acquire() as c:
             return (
-                await get_names(c, name_ids, bypass_cache),
+                await get_names(c, name_ids, cache),
                 await search_names_internal(
                     c,
                     None,
@@ -276,7 +276,7 @@ async def get_field_internal(
     async def fetch_descriptions():
         async with pool.acquire() as c:
             return (
-                await get_descriptions_internal(c, description_ids, bypass_cache),
+                await get_descriptions_internal(c, description_ids, cache),
                 await search_descriptions_internal(
                     c,
                     description_search,
@@ -319,7 +319,7 @@ async def get_field_internal(
                     department_ids=user_department_ids,
                     suggest_source="all",
                     exclude_ids=selected_department_ids,
-                    bypass_cache=bypass_cache,
+                    cache=cache,
                     field=True,
                 ),
             )
@@ -480,7 +480,7 @@ async def get_field_internal(
     tool_ids = list(dict.fromkeys(tool_ids))
     if tool_ids:
         async with pool.acquire() as config_conn:
-            config_tools = await get_tools(config_conn, tool_ids, bypass_cache)
+            config_tools = await get_tools(config_conn, tool_ids, cache)
 
     return FieldInternalData(
         actor_name=actor_name,
@@ -539,7 +539,7 @@ async def get_field_websocket(
         description_search=description_search,
         conditional_parameter_search=conditional_parameter_search,
         conditional_parameter_show_selected=conditional_parameter_show_selected,
-        bypass_cache=bypass_cache,
+        cache=cache,
     )
 
     # Fetch draft, config_profile, runs_today, and tools in parallel
@@ -560,7 +560,7 @@ async def get_field_websocket(
         if not pool:
             return None
         async with pool.acquire() as conn:
-            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+            return await get_profiles_internal(conn, [profile_id], cache)
 
     async def fetch_runs_today():
         if not pool:
@@ -587,7 +587,7 @@ async def get_field_websocket(
             return []
         async with pool.acquire() as c:
             return await get_tools(
-                c, list(agent_resource.tool_ids), bypass_cache
+                c, list(agent_resource.tool_ids), cache
             )
 
     (
@@ -628,7 +628,7 @@ async def get_field_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_ids)), cache=cache
                     )
 
             async def fetch_args_outputs():
@@ -636,7 +636,7 @@ async def get_field_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_output_ids)), cache=cache
                     )
 
             config_args, config_args_outputs = await asyncio.gather(
@@ -691,7 +691,7 @@ async def get_field_client(
         description_search=description_search,
         conditional_parameter_search=conditional_parameter_search,
         conditional_parameter_show_selected=conditional_parameter_show_selected,
-        bypass_cache=bypass_cache,
+        cache=cache,
         group_id=group_id,
     )
 
@@ -763,6 +763,7 @@ async def get_field(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetFieldApiResponse:
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+    cache = None if bypass_cache else (get_cached, set_cached)
 
     try:
         profile_id = http_request.state.profile_id
@@ -800,3 +801,5 @@ async def get_field(
             sql_params=None,
             request=http_request,
         )
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached

@@ -8,6 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.infra.globals import get_db
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.types import GetNamesRequest, GetNamesResponse
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
@@ -26,9 +28,10 @@ async def get_names_endpoint(
     """Get names resources by IDs."""
     tags = ["resources", "names"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+    cache = None if bypass_cache else (get_cached, set_cached)
 
     try:
-        items = await get_names(conn, request.ids, bypass_cache)
+        items = await get_names(conn, request.ids, cache)
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetNamesResponse(items=items)
     except HTTPException:

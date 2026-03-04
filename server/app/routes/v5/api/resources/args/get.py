@@ -11,6 +11,8 @@ from app.sql.types import (
     GetArgsApiRequest,
     GetArgsApiResponse,
 )
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
@@ -28,9 +30,10 @@ async def get_args_endpoint(
     """Get args resources by IDs."""
     tags = ["resources", "args"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+    cache = None if bypass_cache else (get_cached, set_cached)
 
     try:
-        items = await get_args(conn, request.ids, bypass_cache)
+        items = await get_args(conn, request.ids, cache)
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetArgsApiResponse(items=items)
     except HTTPException:

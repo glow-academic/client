@@ -382,7 +382,7 @@ async def get_cohort_internal(
 
     async def fetch_names() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_names(c, name_ids, bypass_cache)
+            selected = await get_names(c, name_ids, cache)
             suggestions = await search_names_internal(
                 c,
                 None,
@@ -398,7 +398,7 @@ async def get_cohort_internal(
 
     async def fetch_descriptions() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_descriptions_internal(c, description_ids, bypass_cache)
+            selected = await get_descriptions_internal(c, description_ids, cache)
             suggestions = await search_descriptions_internal(
                 c,
                 descriptions_search,
@@ -424,7 +424,7 @@ async def get_cohort_internal(
                 50,
                 0,
                 flag_ids,
-                bypass_cache=bypass_cache,
+                cache=cache,
                 cohort=True,
             )
             # Filter to only cohort-specific flags (business logic in Python)
@@ -927,7 +927,7 @@ async def get_cohort_websocket(
         if not deduped_tool_ids:
             return []
         async with pool.acquire() as conn:
-            return await get_tools(conn, deduped_tool_ids, bypass_cache)
+            return await get_tools(conn, deduped_tool_ids, cache)
 
     (
         draft_view,
@@ -962,7 +962,7 @@ async def get_cohort_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_ids)), cache=cache
                     )
 
             async def fetch_args_outputs():
@@ -970,7 +970,7 @@ async def get_cohort_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_output_ids)), cache=cache
                     )
 
             config_args, config_args_outputs = await asyncio.gather(
@@ -1039,7 +1039,7 @@ async def get_cohort_client(
         profile_id=profile_id,
         cohort_id=cohort_id,
         draft_id=draft_id,
-        bypass_cache=bypass_cache,
+        cache=cache,
         group_id=group_id,
     )
 
@@ -1150,6 +1150,7 @@ async def get_cohort(
     """
     # Check for cache bypass header
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+    cache = None if bypass_cache else (get_cached, set_cached)
 
     try:
         # Get profile_id from header (set by router-level dependency)
@@ -1188,3 +1189,5 @@ async def get_cohort(
             sql_params=None,
             request=http_request,
         )
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached

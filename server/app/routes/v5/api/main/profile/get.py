@@ -356,7 +356,7 @@ async def get_profile_internal(
 
     async def fetch_names():
         async with pool.acquire() as c:
-            selected = await get_names(c, name_ids, bypass_cache)
+            selected = await get_names(c, name_ids, cache)
             suggestions = await search_names_internal(
                 c,
                 None,
@@ -372,7 +372,7 @@ async def get_profile_internal(
 
     async def fetch_emails():
         async with pool.acquire() as c:
-            selected = await get_emails_internal(c, email_ids, bypass_cache)
+            selected = await get_emails_internal(c, email_ids, cache)
             suggestions = await search_emails_internal(
                 c,
                 None,
@@ -409,7 +409,7 @@ async def get_profile_internal(
                 50,
                 0,
                 flag_ids,
-                bypass_cache=bypass_cache,
+                cache=cache,
                 profile=True,
             )
             # Filter to only profile-specific flags
@@ -463,7 +463,7 @@ async def get_profile_internal(
                 {tid for a in agents for tid in (a.tool_ids or []) if tid is not None}
             )
             tools = (
-                await get_tools(c, tool_ids, bypass_cache) if tool_ids else []
+                await get_tools(c, tool_ids, cache) if tool_ids else []
             )
             return (agents or None, models or None, providers or None, tools or None)
 
@@ -643,7 +643,7 @@ async def get_profile_websocket(
         profile_id=profile_id,
         target_profile_id=target_profile_id,
         draft_id=draft_id,
-        bypass_cache=bypass_cache,
+        cache=cache,
     )
 
     # Fetch draft, config_profile, and runs_today in parallel
@@ -664,7 +664,7 @@ async def get_profile_websocket(
         if not pool:
             return None
         async with pool.acquire() as conn:
-            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+            return await get_profiles_internal(conn, [profile_id], cache)
 
     async def fetch_runs_today():
         if not pool:
@@ -712,7 +712,7 @@ async def get_profile_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_ids)), cache=cache
                     )
 
             async def fetch_args_outputs():
@@ -720,7 +720,7 @@ async def get_profile_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_output_ids)), cache=cache
                     )
 
             config_args, config_args_outputs = await asyncio.gather(
@@ -875,6 +875,7 @@ async def get_profile(
 ) -> GetProfileApiResponse:
     """Get profile information using two-pass architecture."""
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+    cache = None if bypass_cache else (get_cached, set_cached)
 
     try:
         profile_id = http_request.state.profile_id
@@ -910,3 +911,5 @@ async def get_profile(
             sql_params=None,
             request=http_request,
         )
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached

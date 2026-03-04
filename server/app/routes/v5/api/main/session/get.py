@@ -197,7 +197,7 @@ async def get_session_internal(
     if session.profile_id:
         async with pool.acquire() as conn:
             name_items = await get_names(
-                conn, [session.profile_id], bypass_cache
+                conn, [session.profile_id], cache
             )
             if name_items:
                 profile_name = name_items[0].name
@@ -235,6 +235,7 @@ async def get_session(
     """Get session detail with groups."""
     tags = ["artifacts", "session"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+    cache = None if bypass_cache else (get_cached, set_cached)
 
     try:
         profile_id = http_request.state.profile_id
@@ -261,7 +262,7 @@ async def get_session(
             pool=pool,
             profile_id=profile_id,
             session_id=request.session_id,
-            bypass_cache=bypass_cache,
+            cache=cache,
         )
 
         session = data.session_view.items[0]
@@ -418,7 +419,7 @@ async def get_session_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_ids)), cache=cache
                     )
 
             async def fetch_args_outputs():
@@ -426,7 +427,7 @@ async def get_session_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_output_ids)), cache=cache
                     )
 
             config_args, config_args_outputs = await asyncio.gather(

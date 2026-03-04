@@ -11,9 +11,10 @@ from app.sql.types import (
     GetToolsApiRequest,
     GetToolsApiResponse,
 )
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 
-# Load SQL with types at module level
 router = APIRouter()
 
 @router.post(
@@ -26,15 +27,13 @@ async def get_tools_endpoint(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetToolsApiResponse:
-    """Get tools resources by IDs.
-
-    HTTP wrapper that delegates to internal function for caching and data fetching.
-    """
+    """Get tools resources by IDs."""
     tags = ["resources", "tools"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+    cache = None if bypass_cache else (get_cached, set_cached)
 
     try:
-        items = await get_tools(conn, request.ids, bypass_cache)
+        items = await get_tools(conn, request.ids, cache)
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetToolsApiResponse(items=items)
     except HTTPException:

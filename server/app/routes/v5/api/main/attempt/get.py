@@ -1728,7 +1728,7 @@ async def get_attempt_websocket(
             return None
         async with pool.acquire() as c:
             return await get_tools(
-                c, list(set(tool_ids)), bypass_cache=bypass_cache
+                c, list(set(tool_ids)), cache=cache
             )
 
     config_profile_result, runs_result, config_tools = await asyncio.gather(
@@ -1756,7 +1756,7 @@ async def get_attempt_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_ids)), cache=cache
                     )
 
             async def fetch_args_outputs():
@@ -1764,7 +1764,7 @@ async def get_attempt_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_output_ids)), cache=cache
                     )
 
             config_args, config_args_outputs = await asyncio.gather(
@@ -1838,6 +1838,7 @@ async def attempt_get(
     """
     tags = ["attempt"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+    cache = None if bypass_cache else (get_cached, set_cached)
 
     try:
         profile_id_str = http_request.state.profile_id

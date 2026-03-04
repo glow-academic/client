@@ -192,7 +192,7 @@ async def get_pricing_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_ids)), cache=cache
                     )
 
             async def fetch_args_outputs():
@@ -200,7 +200,7 @@ async def get_pricing_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_output_ids)), cache=cache
                     )
 
             config_args, config_args_outputs = await asyncio.gather(
@@ -274,7 +274,7 @@ async def get_group_list_internal(
     )
 
     # Compute per-run costs
-    run_costs = await compute_costs_from_runs(conn, runs_result.items, bypass_cache)
+    run_costs = await compute_costs_from_runs(conn, runs_result.items, cache)
 
     # Aggregate run stats per group + collect all name IDs
     group_stats: dict[UUID, dict] = {}
@@ -327,7 +327,7 @@ async def get_group_list_internal(
     # Fetch names via resource layer
     all_name_ids = list(all_agent_ids | all_model_ids | all_profile_ids)
     name_items = (
-        await get_names(conn, all_name_ids, bypass_cache)
+        await get_names(conn, all_name_ids, cache)
         if all_name_ids
         else []
     )
@@ -407,7 +407,7 @@ async def _fetch_group_history_data(
             conn=conn,
             profile_id=profile_id,
             request=group_request,
-            bypass_cache=bypass_cache,
+            cache=cache,
         )
 
 
@@ -421,6 +421,7 @@ async def get_pricing(
     """Get pricing artifact data."""
     tags = ["artifacts", "pricing"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+    cache = None if bypass_cache else (get_cached, set_cached)
     pool = get_pool()
 
     try:
@@ -443,7 +444,7 @@ async def get_pricing(
 
         parallel_tasks: list = [
             fetch_runs(),
-            _fetch_group_history_data(pool, profile_id, request, bypass_cache),
+            _fetch_group_history_data(pool, profile_id, request, cache),
         ]
 
         parallel_results = await asyncio.gather(*parallel_tasks)
@@ -488,7 +489,7 @@ async def get_pricing(
         ]
 
         # Step 4: Aggregate runs into daily buckets by (date, model_id)
-        run_costs = await compute_costs_from_runs(conn, runs_result.items, bypass_cache)
+        run_costs = await compute_costs_from_runs(conn, runs_result.items, cache)
         daily_buckets: dict[tuple[str, str | None], dict] = {}
         for run in runs_result.items:
             date_key = (

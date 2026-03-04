@@ -370,7 +370,7 @@ async def get_rubric_internal(
 
     async def fetch_names() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_names(c, name_ids, bypass_cache)
+            selected = await get_names(c, name_ids, cache)
             suggestions = await search_names_internal(
                 c,
                 None,
@@ -386,7 +386,7 @@ async def get_rubric_internal(
 
     async def fetch_descriptions() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_descriptions_internal(c, description_ids, bypass_cache)
+            selected = await get_descriptions_internal(c, description_ids, cache)
             suggestions = await search_descriptions_internal(
                 c,
                 description_search,
@@ -428,7 +428,7 @@ async def get_rubric_internal(
                 department_ids=user_department_ids,
                 suggest_source="all",
                 exclude_ids=department_ids,
-                bypass_cache=bypass_cache,
+                cache=cache,
                 rubric=True,
             )
             return (selected, suggestions)
@@ -610,7 +610,7 @@ async def get_rubric_internal(
             config_tools = await get_tools(
                 c,
                 tool_ids,
-                bypass_cache=bypass_cache,
+                cache=cache,
             )
 
     # Build show_ai_generate map
@@ -700,7 +700,7 @@ async def get_rubric_websocket(
         profile_id=profile_id,
         rubric_id=rubric_id,
         draft_id=draft_id,
-        bypass_cache=bypass_cache,
+        cache=cache,
         description_search=description_search,
         standard_group_search=standard_group_search,
     )
@@ -723,7 +723,7 @@ async def get_rubric_websocket(
         if not pool:
             return None
         async with pool.acquire() as conn:
-            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+            return await get_profiles_internal(conn, [profile_id], cache)
 
     async def fetch_runs_today():
         if not pool:
@@ -748,7 +748,7 @@ async def get_rubric_websocket(
             return []
         async with pool.acquire() as c:
             return await get_tools(
-                c, list(agent_resource.tool_ids), bypass_cache
+                c, list(agent_resource.tool_ids), cache
             )
 
     (
@@ -782,7 +782,7 @@ async def get_rubric_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_ids)), cache=cache
                     )
 
             async def fetch_args_outputs():
@@ -790,7 +790,7 @@ async def get_rubric_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_output_ids)), cache=cache
                     )
 
             config_args, config_args_outputs = await asyncio.gather(
@@ -847,7 +847,7 @@ async def get_rubric_client(
         profile_id=profile_id,
         rubric_id=rubric_id,
         draft_id=draft_id,
-        bypass_cache=bypass_cache,
+        cache=cache,
         group_id=group_id,
     )
 
@@ -976,6 +976,7 @@ async def get_rubric(
     Pass 2: Parallel resource fetching (each resource type has own cache)
     """
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+    cache = None if bypass_cache else (get_cached, set_cached)
 
     try:
         profile_id = http_request.state.profile_id
@@ -1011,3 +1012,5 @@ async def get_rubric(
             sql_params=None,
             request=http_request,
         )
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached

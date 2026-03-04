@@ -335,8 +335,8 @@ async def get_session_list_internal(
             page_limit=10000,
             bypass_cache=bypass_cache,
         ),
-        get_names(conn, all_profile_ids, bypass_cache),
-        get_session_counts_view_internal(conn, session_ids, bypass_cache),
+        get_names(conn, all_profile_ids, cache),
+        get_session_counts_view_internal(conn, session_ids, cache),
     )
 
     # Build profile name lookup
@@ -357,7 +357,7 @@ async def get_session_list_internal(
         conn=conn,
         group_ids=group_ids if group_ids else None,
         page_limit=10000,
-        bypass_cache=bypass_cache,
+        cache=cache,
     )
 
     # Compute costs from runs
@@ -489,6 +489,7 @@ async def get_activity(
     """Get activity artifact data."""
     tags = ["artifacts", "activity"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+    cache = None if bypass_cache else (get_cached, set_cached)
     pool = get_pool()
     profile_id = http_request.state.profile_id
 
@@ -538,7 +539,7 @@ async def get_activity(
             summary_names: dict[UUID, str] = {}
             if summary_pids:
                 async with pool.acquire() as c:
-                    name_items = await get_names(c, summary_pids, bypass_cache)
+                    name_items = await get_names(c, summary_pids, cache)
                     summary_names = {
                         i.id: i.name for i in name_items if i.id and i.name
                     }
@@ -631,7 +632,7 @@ async def get_activity_websocket(
     data = await get_activity_internal(
         pool=pool,
         profile_id=profile_id,
-        bypass_cache=bypass_cache,
+        cache=cache,
     )
 
     # Pre-fetch args and args_outputs from tool IDs (both cached via *_internal)
@@ -654,7 +655,7 @@ async def get_activity_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_ids)), cache=cache
                     )
 
             async def fetch_args_outputs():
@@ -662,7 +663,7 @@ async def get_activity_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_output_ids)), cache=cache
                     )
 
             config_args, config_args_outputs = await asyncio.gather(

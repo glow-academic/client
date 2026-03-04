@@ -335,7 +335,7 @@ async def get_eval_internal(
 
     async def fetch_names() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_names(c, name_ids, bypass_cache)
+            selected = await get_names(c, name_ids, cache)
             suggestions = await search_names_internal(
                 c,
                 None,
@@ -351,7 +351,7 @@ async def get_eval_internal(
 
     async def fetch_descriptions() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
-            selected = await get_descriptions_internal(c, description_ids, bypass_cache)
+            selected = await get_descriptions_internal(c, description_ids, cache)
             suggestions = await search_descriptions_internal(
                 c,
                 None,
@@ -394,7 +394,7 @@ async def get_eval_internal(
                 department_ids=user_department_ids,
                 suggest_source="all",
                 exclude_ids=department_ids,
-                bypass_cache=bypass_cache,
+                cache=cache,
                 eval=True,
             )
             return (selected, suggestions)
@@ -553,7 +553,7 @@ async def get_eval_internal(
     tool_ids = list({tid for a in config_agents for tid in (a.tool_ids or []) if tid})
     if tool_ids:
         async with pool.acquire() as c:
-            config_tools = await get_tools(c, tool_ids, bypass_cache)
+            config_tools = await get_tools(c, tool_ids, cache)
 
     return EvalInternalData(
         # Access/context
@@ -631,7 +631,7 @@ async def get_eval_websocket(
         profile_id=profile_id,
         eval_id=eval_id,
         draft_id=draft_id,
-        bypass_cache=bypass_cache,
+        cache=cache,
         agent_search=agent_search,
         group_search=group_search,
         available_model_runs_search=available_model_runs_search,
@@ -658,7 +658,7 @@ async def get_eval_websocket(
         if not pool:
             return None
         async with pool.acquire() as conn:
-            return await get_profiles_internal(conn, [profile_id], bypass_cache)
+            return await get_profiles_internal(conn, [profile_id], cache)
 
     async def fetch_runs_today():
         if not pool:
@@ -685,7 +685,7 @@ async def get_eval_websocket(
             return []
         async with pool.acquire() as c:
             return await get_tools(
-                c, list(agent_resource.tool_ids), bypass_cache
+                c, list(agent_resource.tool_ids), cache
             )
 
     (
@@ -719,7 +719,7 @@ async def get_eval_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_ids)), cache=cache
                     )
 
             async def fetch_args_outputs():
@@ -727,7 +727,7 @@ async def get_eval_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_output_ids)), cache=cache
                     )
 
             config_args, config_args_outputs = await asyncio.gather(
@@ -815,7 +815,7 @@ async def get_eval_client(
         profile_id=profile_id,
         eval_id=eval_id,
         draft_id=draft_id,
-        bypass_cache=bypass_cache,
+        cache=cache,
         group_id=group_id,
     )
 
@@ -1001,6 +1001,7 @@ async def get_eval(
     """
     # Check for cache bypass header
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+    cache = None if bypass_cache else (get_cached, set_cached)
 
     try:
         # Get profile_id from header (set by router-level dependency)
@@ -1039,3 +1040,5 @@ async def get_eval(
             sql_params=None,
             request=http_request,
         )
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached

@@ -5,16 +5,27 @@ from uuid import UUID
 import asyncpg  # type: ignore
 
 from app.routes.v5.tools.resources.tools.types import GetToolResponse
+from app.utils.cache import CacheFns
+from app.utils.cache.cache_key import cache_key
 
 
 async def get_tools(
     conn: asyncpg.Connection,
     ids: list[UUID],
-    bypass_cache: bool = False,
+    cache: CacheFns | None = None,
 ) -> list[GetToolResponse]:
     """Fetch tools_resource entries by IDs."""
     if not ids:
         return []
+
+    tags = ["resources", "tools"]
+    key = cache_key("/api/v5/resources/tools/get", {"ids": [str(id) for id in ids]})
+
+    if cache:
+        get_fn, _ = cache
+        cached = await get_fn(key)
+        if cached:
+            return [GetToolResponse.model_validate(item) for item in cached.get("items", [])]
 
     rows = await conn.fetch("""
         SELECT id, name, description, operation,
@@ -26,7 +37,7 @@ async def get_tools(
         ORDER BY array_position($1, id)
     """, ids)
 
-    return [
+    items = [
         GetToolResponse(
             id=r["id"],
             name=r["name"],
@@ -45,3 +56,9 @@ async def get_tools(
         )
         for r in rows
     ]
+
+    if cache:
+        _, set_fn = cache
+        await set_fn(key, {"items": [i.model_dump(mode="json") for i in items]}, 60, tags)
+
+    return items

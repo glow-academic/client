@@ -452,7 +452,7 @@ async def get_scenario_internal(
 
     async def fetch_names():
         async with pool.acquire() as c:
-            selected = await get_names(c, selected_name_ids, bypass_cache)
+            selected = await get_names(c, selected_name_ids, cache)
             suggestions = await search_names_internal(
                 c,
                 None,
@@ -469,7 +469,7 @@ async def get_scenario_internal(
     async def fetch_descriptions():
         async with pool.acquire() as c:
             selected = await get_descriptions_internal(
-                c, selected_description_ids, bypass_cache
+                c, selected_description_ids, cache
             )
             suggestions = await search_descriptions_internal(
                 c,
@@ -533,7 +533,7 @@ async def get_scenario_internal(
                 50,
                 0,
                 all_selected_ids,
-                bypass_cache=bypass_cache,
+                cache=cache,
                 scenario=True,
             )
             # Filter to only scenario-specific flags (business logic in Python)
@@ -1289,7 +1289,7 @@ async def get_scenario_websocket(
         if not deduped_tool_ids:
             return []
         async with pool.acquire() as conn:
-            return await get_tools(conn, deduped_tool_ids, bypass_cache)
+            return await get_tools(conn, deduped_tool_ids, cache)
 
     async def fetch_fields():
         async with pool.acquire() as c:
@@ -1299,7 +1299,7 @@ async def get_scenario_websocket(
                 limit_count=200,
                 offset_count=0,
                 department_ids=None,
-                bypass_cache=bypass_cache,
+                cache=cache,
             )
 
     (
@@ -1337,7 +1337,7 @@ async def get_scenario_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_ids)), cache=cache
                     )
 
             async def fetch_args_outputs():
@@ -1345,7 +1345,7 @@ async def get_scenario_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_output_ids)), cache=cache
                     )
 
             config_args, config_args_outputs = await asyncio.gather(
@@ -1592,6 +1592,7 @@ async def get_scenario(
     """
     # Check for cache bypass header
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+    cache = None if bypass_cache else (get_cached, set_cached)
 
     try:
         # Get profile_id from header (set by router-level dependency)
@@ -1649,3 +1650,5 @@ async def get_scenario(
 
 from app.routes.v5.tools.resources.models.get import get_models_internal
 from app.routes.v5.tools.resources.providers.get import get_providers_internal
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached

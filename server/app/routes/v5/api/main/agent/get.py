@@ -415,7 +415,7 @@ async def get_agent_internal(
 
     async def fetch_names():
         async with pool.acquire() as c:
-            selected = await get_names(c, name_ids, bypass_cache)
+            selected = await get_names(c, name_ids, cache)
             suggestions = await search_names_internal(
                 c,
                 None,
@@ -431,7 +431,7 @@ async def get_agent_internal(
 
     async def fetch_descriptions():
         async with pool.acquire() as c:
-            selected = await get_descriptions_internal(c, description_ids, bypass_cache)
+            selected = await get_descriptions_internal(c, description_ids, cache)
             suggestions = await search_descriptions_internal(
                 c,
                 None,
@@ -454,7 +454,7 @@ async def get_agent_internal(
                 limit_count=20,
                 offset_count=0,
                 exclude_ids=model_ids,
-                bypass_cache=bypass_cache,
+                cache=cache,
                 agent=True,
             )
             return (selected, suggestions)
@@ -521,14 +521,14 @@ async def get_agent_internal(
 
     async def fetch_tools():
         async with pool.acquire() as c:
-            selected = await get_tools(c, tool_ids_list, bypass_cache)
+            selected = await get_tools(c, tool_ids_list, cache)
             suggestions = await search_tools_internal(
                 c,
                 search=None,
                 limit_count=20,
                 offset_count=0,
                 exclude_ids=tool_ids_list,
-                bypass_cache=bypass_cache,
+                cache=cache,
                 agent=True,
             )
             return (selected, suggestions)
@@ -536,7 +536,7 @@ async def get_agent_internal(
     async def fetch_temperature_levels():
         async with pool.acquire() as c:
             selected = await get_temperature_levels_internal(
-                c, temperature_level_ids, bypass_cache
+                c, temperature_level_ids, cache
             )
             suggestions = await search_temperature_levels_internal(
                 c, None, 20, 0, temperature_level_ids, bypass_cache
@@ -865,7 +865,7 @@ async def get_agent_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_ids)), cache=cache
                     )
 
             async def fetch_args_outputs():
@@ -873,7 +873,7 @@ async def get_agent_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), bypass_cache=bypass_cache
+                        c, list(set(all_args_output_ids)), cache=cache
                     )
 
             config_args, config_args_outputs = await asyncio.gather(
@@ -1105,6 +1105,7 @@ async def get_agent(
 ) -> GetAgentApiResponse:
     """Get agent information using two-pass architecture."""
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+    cache = None if bypass_cache else (get_cached, set_cached)
 
     try:
         profile_id = http_request.state.profile_id
@@ -1140,3 +1141,5 @@ async def get_agent(
             sql_params=None,
             request=http_request,
         )
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
