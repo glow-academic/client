@@ -1,4 +1,4 @@
-"""attempt/refresh internal — reusable data-access layer."""
+"""attempt/refresh — reusable data-access layer."""
 
 import time
 
@@ -7,6 +7,11 @@ import asyncpg
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 MV_NAME = "attempt_mv"
+
+
+async def refresh_attempt(conn: asyncpg.Connection) -> None:
+    """Refresh attempt_mv concurrently."""
+    await conn.execute(f"REFRESH MATERIALIZED VIEW CONCURRENTLY {MV_NAME}")
 
 
 async def refresh_attempt_internal(
