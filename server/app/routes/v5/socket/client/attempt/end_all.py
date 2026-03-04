@@ -32,6 +32,7 @@ async def _attempt_end_all_impl(sid: str, data: AttemptEndAllPayload) -> None:
             AttemptProceedData(
                 sid=sid,
                 attempt_id=attempt_id,
+                group_id=str(data.group_id),
                 complete_all=True,
             ).model_dump(mode="json"),
         )

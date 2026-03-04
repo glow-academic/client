@@ -12,11 +12,10 @@ class CreateCallResponse(BaseModel):
 
 class GetCallResponse(BaseModel):
     id: UUID
-    run_id: UUID | None
-    session_id: UUID | None
-    external_call_id: str | None
+    run_id: UUID
+    session_id: UUID
+    external_call_id: str
     created_at: datetime
-    completed_at: datetime | None
     active: bool
     mcp: bool
     generated: bool

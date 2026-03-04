@@ -11,7 +11,7 @@ class CreateRunResponse(BaseModel):
 
 class GetRunResponse(BaseModel):
     id: UUID
-    session_id: UUID | None
-    group_id: UUID | None
+    session_id: UUID
+    group_id: UUID
     mcp: bool
     generated: bool

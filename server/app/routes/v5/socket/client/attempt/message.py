@@ -19,6 +19,7 @@ from typing import Any
 
 from app.infra.globals import get_internal_sio, sio
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.infra.websocket.get_db_connection import get_db_connection
 from app.routes.auth.access import get_access_internal
 from app.routes.v5.socket.client.types import AttemptMessagePayload
@@ -124,13 +125,27 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
                 )
                 return
 
-            # Step 2: Resolve profiles_id via access internal + create run
+            # Step 2: Resolve session + profiles_id, then create run
+            session_id_str = await find_session_by_socket(sid)
+            if not session_id_str:
+                await internal_sio.emit(
+                    "attempt_error",
+                    AttemptErrorData(
+                        sid=sid,
+                        error_type="send",
+                        message="Session not found for socket",
+                        chat_id=str(chat_id),
+                    ).model_dump(mode="json"),
+                )
+                return
+
             access = await get_access_internal(conn, profile_id)
             profiles_id = access.profiles_id
 
             run_result = await create_run(
                 conn,
                 group_id=group_id,
+                session_id=uuid.UUID(session_id_str),
                 profiles_id=profiles_id,
             )
             run_id = run_result.id

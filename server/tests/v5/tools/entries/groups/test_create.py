@@ -15,32 +15,26 @@ async def _session(conn):
 
 
 async def test_creates_group_entry(conn):
-    result = await create_group(conn)
+    session = await _session(conn)
+    result = await create_group(conn, session_id=session.id)
 
     assert result.id is not None
 
 
 async def test_group_exists_in_table(conn):
-    result = await create_group(conn)
-
-    group = await get_group(conn, result.id)
-
-    assert group is not None
-    assert group.active is True
-
-
-async def test_passes_session_id(conn):
     session = await _session(conn)
     result = await create_group(conn, session_id=session.id)
 
     group = await get_group(conn, result.id)
 
     assert group is not None
+    assert group.active is True
     assert group.session_id == session.id
 
 
 async def test_passes_name(conn):
-    result = await create_group(conn, name="test-group")
+    session = await _session(conn)
+    result = await create_group(conn, session_id=session.id, name="test-group")
 
     group = await get_group(conn, result.id)
 
@@ -49,7 +43,8 @@ async def test_passes_name(conn):
 
 
 async def test_passes_mcp_flag(conn):
-    result = await create_group(conn, mcp=True)
+    session = await _session(conn)
+    result = await create_group(conn, session_id=session.id, mcp=True)
 
     group = await get_group(conn, result.id)
 

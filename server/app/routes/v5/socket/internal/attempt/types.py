@@ -51,12 +51,14 @@ class AttemptProceedData(BaseModel):
     """Internal bus payload for attempt_proceed — shared core logic.
 
     Fields:
+        group_id: Required — the group for creating the run.
         completed_chat_id: If set, mark this chat completed before proceeding.
         complete_all: If True, mark all remaining chats completed → emit attempt_ended.
     """
 
     sid: str
     attempt_id: str
+    group_id: str
     draft_id: str | None = None
     force_proceed: bool = False
     completed_chat_id: str | None = None

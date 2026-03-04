@@ -10,15 +10,14 @@ from app.routes.v5.tools.entries.sessions.types import CreateSessionResponse
 async def create_session(
     conn: asyncpg.Connection,
     profile_id: UUID,
-    session_id: UUID | None = None,
     mcp: bool = False,
 ) -> CreateSessionResponse:
     """Create a sessions entry with profile link via connection table."""
     entry_id = await conn.fetchval("""
-        INSERT INTO sessions_entry (session_id, mcp, generated)
-        VALUES ($1, $2, true)
+        INSERT INTO sessions_entry (mcp, generated)
+        VALUES ($1, true)
         RETURNING id
-    """, session_id, mcp)
+    """, mcp)
 
     if entry_id is None:
         raise ValueError("Failed to create sessions entry")

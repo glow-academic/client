@@ -4,6 +4,7 @@ import pytest
 
 from app.routes.v5.tools.entries.messages.create import create_message
 from app.routes.v5.tools.entries.messages.get import get_message
+from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
 from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
@@ -13,7 +14,8 @@ pytestmark = pytest.mark.asyncio
 
 async def _run(conn):
     session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
-    return await create_run(conn, session_id=session.id)
+    group = await create_group(conn, session_id=session.id)
+    return await create_run(conn, group_id=group.id, session_id=session.id)
 
 
 async def test_creates_message_entry(conn):

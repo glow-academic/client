@@ -3,15 +3,18 @@
 -- Description: Text entries and connections for document texts
 -- ============================================================
 
+-- sessions_entry (shared session for seed text entries)
+INSERT INTO public.sessions_entry (id, created_at, active, mcp, generated) VALUES ('019c29d6-0000-7000-8000-000000000001', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+
 -- texts_entry
-INSERT INTO public.texts_entry (id, created_at, updated_at, active, generated, mcp) VALUES ('019c29d6-003a-7f3d-9c60-a6c537f708ce', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.texts_entry (id, created_at, updated_at, active, generated, mcp) VALUES ('019c29d6-003a-7541-984b-5374263aa03b', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.texts_entry (id, created_at, updated_at, active, generated, mcp) VALUES ('019c29d6-003b-71b1-bfa5-69ef5f636751', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.texts_entry (id, created_at, updated_at, active, generated, mcp) VALUES ('019c29d6-003a-731f-b918-64b6c99d0464', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.texts_entry (id, created_at, updated_at, active, generated, mcp) VALUES ('019c29d6-003a-740e-8854-4d9ee26d34a6', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.texts_entry (id, created_at, updated_at, active, generated, mcp) VALUES ('019c29d6-003b-7026-b46a-5def99ec275a', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.texts_entry (id, created_at, updated_at, active, generated, mcp) VALUES ('019c29d6-003a-7647-aa7f-b9baebd83bf3', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.texts_entry (id, created_at, updated_at, active, generated, mcp) VALUES ('019c5ad4-73da-75a6-a9bf-5c4c5e79178e', '2026-02-14T06:26:38.435028+00:00', '2026-02-14T06:26:38.435028+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.texts_entry (id, created_at, updated_at, active, generated, mcp, session_id) VALUES ('019c29d6-003a-7f3d-9c60-a6c537f708ce', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false, '019c29d6-0000-7000-8000-000000000001') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.texts_entry (id, created_at, updated_at, active, generated, mcp, session_id) VALUES ('019c29d6-003a-7541-984b-5374263aa03b', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false, '019c29d6-0000-7000-8000-000000000001') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.texts_entry (id, created_at, updated_at, active, generated, mcp, session_id) VALUES ('019c29d6-003b-71b1-bfa5-69ef5f636751', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false, '019c29d6-0000-7000-8000-000000000001') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.texts_entry (id, created_at, updated_at, active, generated, mcp, session_id) VALUES ('019c29d6-003a-731f-b918-64b6c99d0464', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false, '019c29d6-0000-7000-8000-000000000001') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.texts_entry (id, created_at, updated_at, active, generated, mcp, session_id) VALUES ('019c29d6-003a-740e-8854-4d9ee26d34a6', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false, '019c29d6-0000-7000-8000-000000000001') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.texts_entry (id, created_at, updated_at, active, generated, mcp, session_id) VALUES ('019c29d6-003b-7026-b46a-5def99ec275a', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false, '019c29d6-0000-7000-8000-000000000001') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.texts_entry (id, created_at, updated_at, active, generated, mcp, session_id) VALUES ('019c29d6-003a-7647-aa7f-b9baebd83bf3', '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false, '019c29d6-0000-7000-8000-000000000001') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.texts_entry (id, created_at, updated_at, active, generated, mcp, session_id) VALUES ('019c5ad4-73da-75a6-a9bf-5c4c5e79178e', '2026-02-14T06:26:38.435028+00:00', '2026-02-14T06:26:38.435028+00:00', true, false, false, '019c29d6-0000-7000-8000-000000000001') ON CONFLICT (id) DO NOTHING;
 
 -- uploads_entry (text file uploads)
 INSERT INTO public.uploads_entry (id, file_path, mime_type, size, created_at, updated_at, active, generated, mcp) VALUES ('56956ca9-c215-4196-97ac-d4a36edcfe90', 'text/240250e5-efb5-4d74-91b2-5484d0d9d0d9.txt', 'text/plain', 10044, '2025-12-06T02:59:23.893847+00:00', '2025-12-06T02:59:23.893847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;

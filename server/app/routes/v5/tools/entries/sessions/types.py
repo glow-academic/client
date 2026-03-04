@@ -11,7 +11,6 @@ class CreateSessionResponse(BaseModel):
 
 class GetSessionResponse(BaseModel):
     id: UUID
-    session_id: UUID | None
     active: bool
     mcp: bool
     generated: bool

@@ -39,7 +39,9 @@ async def emit_chat_generate(
 
     # Resolve session_id + profiles_id, then create group + run
     session_id_str = await find_session_by_socket(sid)
-    session_id = uuid.UUID(session_id_str) if session_id_str else None
+    if not session_id_str:
+        raise ValueError("Session not found for socket")
+    session_id = uuid.UUID(session_id_str)
 
     async with get_db_connection() as conn:
         access = await get_access_internal(conn, profile_id)

@@ -9,8 +9,8 @@ from app.routes.v5.tools.entries.groups.types import CreateGroupResponse
 
 async def create_group(
     conn: asyncpg.Connection,
-    session_id: UUID | None = None,
-    name: str | None = None,
+    session_id: UUID,
+    name: str = "",
     mcp: bool = False,
 ) -> CreateGroupResponse:
     """Create a groups entry."""

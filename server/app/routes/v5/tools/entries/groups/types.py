@@ -11,8 +11,8 @@ class CreateGroupResponse(BaseModel):
 
 class GetGroupResponse(BaseModel):
     id: UUID
-    session_id: UUID | None
-    name: str | None
+    session_id: UUID
+    name: str
     active: bool
     mcp: bool
     generated: bool

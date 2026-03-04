@@ -9,8 +9,8 @@ from app.routes.v5.tools.entries.runs.types import CreateRunResponse
 
 async def create_run(
     conn: asyncpg.Connection,
-    session_id: UUID | None = None,
-    group_id: UUID | None = None,
+    group_id: UUID,
+    session_id: UUID,
     profiles_id: UUID | None = None,
     agent_ids: list[UUID] | None = None,
     mcp: bool = False,

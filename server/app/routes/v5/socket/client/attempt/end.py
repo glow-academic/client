@@ -68,7 +68,9 @@ async def attempt_end(sid: str, data: dict[str, Any]) -> None:
         # Step 1: Trigger grading if requested
         if payload.grade:
             session_id_str = await find_session_by_socket(sid)
-            session_id = uuid.UUID(session_id_str) if session_id_str else None
+            if not session_id_str:
+                raise ValueError("Session not found for socket")
+            session_id = uuid.UUID(session_id_str)
 
             async with get_db_connection() as conn:
                 access = await get_access_internal(conn, profile_id)
@@ -133,6 +135,7 @@ async def attempt_end(sid: str, data: dict[str, Any]) -> None:
             AttemptProceedData(
                 sid=sid,
                 attempt_id=attempt_id,
+                group_id=str(payload.group_id),
                 completed_chat_id=chat_id,
             ).model_dump(mode="json"),
         )

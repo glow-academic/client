@@ -15,42 +15,34 @@ async def _session(conn):
     return await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
 
 
+async def _group(conn, session_id):
+    return await create_group(conn, session_id=session_id)
+
+
 async def test_creates_run_entry(conn):
-    result = await create_run(conn)
+    session = await _session(conn)
+    group = await _group(conn, session.id)
+    result = await create_run(conn, group_id=group.id, session_id=session.id)
 
     assert result.id is not None
 
 
 async def test_run_exists_in_table(conn):
-    result = await create_run(conn)
-
-    run = await get_run(conn, result.id)
-
-    assert run is not None
-
-
-async def test_passes_session_id(conn):
     session = await _session(conn)
-    result = await create_run(conn, session_id=session.id)
-
-    run = await get_run(conn, result.id)
-
-    assert run is not None
-    assert run.session_id == session.id
-
-
-async def test_passes_group_id(conn):
-    group = await create_group(conn)
-    result = await create_run(conn, group_id=group.id)
+    group = await _group(conn, session.id)
+    result = await create_run(conn, group_id=group.id, session_id=session.id)
 
     run = await get_run(conn, result.id)
 
     assert run is not None
     assert run.group_id == group.id
+    assert run.session_id == session.id
 
 
 async def test_passes_mcp_flag(conn):
-    result = await create_run(conn, mcp=True)
+    session = await _session(conn)
+    group = await _group(conn, session.id)
+    result = await create_run(conn, group_id=group.id, session_id=session.id, mcp=True)
 
     run = await get_run(conn, result.id)
 

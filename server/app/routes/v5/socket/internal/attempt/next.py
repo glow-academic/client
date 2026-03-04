@@ -40,6 +40,7 @@ async def attempt_next_handler(data: dict[str, Any]) -> None:
             AttemptProceedData(
                 sid=sid,
                 attempt_id=str(payload.attempt_id),
+                group_id=str(payload.group_id),
                 draft_id=str(payload.draft_id) if payload.draft_id else None,
                 force_proceed=True,
             ).model_dump(mode="json"),

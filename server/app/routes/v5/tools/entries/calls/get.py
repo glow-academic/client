@@ -14,7 +14,7 @@ async def get_call(
     """Get a calls entry by ID."""
     row = await conn.fetchrow("""
         SELECT id, run_id, session_id, external_call_id,
-               created_at, completed_at, active, mcp, generated
+               created_at, active, mcp, generated
         FROM calls_entry
         WHERE id = $1
     """, call_id)
@@ -28,7 +28,6 @@ async def get_call(
         session_id=row["session_id"],
         external_call_id=row["external_call_id"],
         created_at=row["created_at"],
-        completed_at=row["completed_at"],
         active=row["active"],
         mcp=row["mcp"],
         generated=row["generated"],

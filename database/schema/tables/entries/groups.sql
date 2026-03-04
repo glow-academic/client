@@ -13,8 +13,8 @@ CREATE TABLE public.groups_entry (
     generated boolean DEFAULT false CONSTRAINT groups_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT groups_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT groups_active_not_null NOT NULL,
-    session_id uuid,
-    name text
+    session_id uuid NOT NULL,
+    name text DEFAULT ''::text NOT NULL
 );
 
 

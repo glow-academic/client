@@ -232,6 +232,7 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
             AttemptProceedData(
                 sid=sid,
                 attempt_id=str(attempt_id),
+                group_id=str(payload.group_id),
                 force_proceed=False,
             ).model_dump(mode="json"),
         )

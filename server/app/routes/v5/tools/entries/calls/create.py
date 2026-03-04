@@ -9,9 +9,9 @@ from app.routes.v5.tools.entries.calls.types import CreateCallResponse
 
 async def create_call(
     conn: asyncpg.Connection,
-    run_id: UUID | None = None,
-    session_id: UUID | None = None,
-    external_call_id: str | None = None,
+    run_id: UUID,
+    session_id: UUID,
+    external_call_id: str = "",
     mcp: bool = False,
 ) -> CreateCallResponse:
     """Create a calls entry."""

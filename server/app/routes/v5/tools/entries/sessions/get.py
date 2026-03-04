@@ -15,7 +15,7 @@ async def get_session(
     """Get a sessions entry by ID, optionally including the linked profile."""
     if profile:
         row = await conn.fetchrow("""
-            SELECT s.id, s.session_id, s.active, s.mcp, s.generated,
+            SELECT s.id, s.active, s.mcp, s.generated,
                    psc.profiles_id
             FROM sessions_entry s
             LEFT JOIN profiles_sessions_connection psc ON psc.session_id = s.id
@@ -23,7 +23,7 @@ async def get_session(
         """, session_id)
     else:
         row = await conn.fetchrow("""
-            SELECT id, session_id, active, mcp, generated
+            SELECT id, active, mcp, generated
             FROM sessions_entry
             WHERE id = $1
         """, session_id)
@@ -33,7 +33,6 @@ async def get_session(
 
     return GetSessionResponse(
         id=row["id"],
-        session_id=row["session_id"],
         active=row["active"],
         mcp=row["mcp"],
         generated=row["generated"],

@@ -7,10 +7,10 @@
 
 CREATE TABLE public.calls_entry (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT tool_calls_created_at_not_null NOT NULL,
-    external_call_id text,
+    external_call_id text DEFAULT ''::text NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT calls_id_v7_not_null NOT NULL,
-    run_id uuid,
-    session_id uuid,
+    run_id uuid NOT NULL,
+    session_id uuid NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL

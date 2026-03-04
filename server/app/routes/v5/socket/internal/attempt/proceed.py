@@ -156,6 +156,7 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
 
             run_result = await create_run(
                 conn,
+                group_id=uuid.UUID(payload.group_id),
                 session_id=session_id,
                 profiles_id=profiles_resource_id,
             )

@@ -58,6 +58,7 @@ async def _attempt_use_previous_impl(sid: str, data: AttemptUsePreviousPayload) 
             AttemptProceedData(
                 sid=sid,
                 attempt_id=str(attempt_id),
+                group_id=str(data.group_id),
                 force_proceed=False,
             ).model_dump(mode="json"),
         )
