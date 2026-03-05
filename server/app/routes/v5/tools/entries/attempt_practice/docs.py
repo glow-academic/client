@@ -9,6 +9,9 @@ from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.attempt_practice.create import (
     create_attempt_practice,
 )
+from app.routes.v5.tools.entries.attempt_practice.get import (
+    get_attempt_practice,
+)
 from app.routes.v5.tools.entries.attempt_practice.refresh import (
     refresh_attempt_practice,
 )
@@ -41,6 +44,10 @@ async def get_attempt_practice_docs(conn: asyncpg.Connection) -> DocsResponse:
                     "Creates a new attempt_practice entry linking an attempt "
                     "to a practice artifact within a session."
                 ),
+            ),
+            get_operation_info(
+                get_attempt_practice,
+                description="Retrieves attempt_practice entries by attempt IDs from MV.",
             ),
             get_operation_info(
                 refresh_attempt_practice,

@@ -9,6 +9,9 @@ from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.attempt_chat_bridge.create import (
     create_attempt_chat_bridge,
 )
+from app.routes.v5.tools.entries.attempt_chat_bridge.get import (
+    get_attempt_chat_bridge,
+)
 from app.routes.v5.tools.entries.attempt_chat_bridge.refresh import (
     refresh_attempt_chat_bridge,
 )
@@ -41,6 +44,10 @@ async def get_attempt_chat_bridge_docs(conn: asyncpg.Connection) -> DocsResponse
                     "Creates a new attempt_chat_bridge entry linking an attempt "
                     "to a chat within a session."
                 ),
+            ),
+            get_operation_info(
+                get_attempt_chat_bridge,
+                description="Retrieves attempt_chat_bridge entries by attempt IDs from MV.",
             ),
             get_operation_info(
                 refresh_attempt_chat_bridge,

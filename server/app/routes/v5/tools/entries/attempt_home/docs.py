@@ -7,6 +7,7 @@ from app.infra.docs.get_operation_info import get_operation_info
 from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.attempt_home.create import create_attempt_home
+from app.routes.v5.tools.entries.attempt_home.get import get_attempt_home
 from app.routes.v5.tools.entries.attempt_home.refresh import refresh_attempt_home
 from app.routes.v5.tools.entries.attempt_home.search import (
     search_attempt_home_entries_internal,
@@ -37,6 +38,10 @@ async def get_attempt_home_docs(conn: asyncpg.Connection) -> DocsResponse:
                     "Creates a new attempt_home entry linking an attempt "
                     "to a home artifact within a session."
                 ),
+            ),
+            get_operation_info(
+                get_attempt_home,
+                description="Retrieves attempt_home entries by attempt IDs from MV.",
             ),
             get_operation_info(
                 refresh_attempt_home,

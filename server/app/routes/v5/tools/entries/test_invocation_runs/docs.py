@@ -15,6 +15,9 @@ from app.routes.v5.tools.entries.test_invocation_runs.get import (
 from app.routes.v5.tools.entries.test_invocation_runs.refresh import (
     refresh_test_invocation_runs,
 )
+from app.routes.v5.tools.entries.test_invocation_runs.search import (
+    search_test_invocation_runs,
+)
 
 
 async def get_test_invocation_runs_docs(
@@ -61,6 +64,10 @@ async def get_test_invocation_runs_docs(
             get_operation_info(
                 get_test_invocation_runs,
                 description="Batch retrieves test_invocation_runs entries by IDs from test_invocation_runs_mv.",
+            ),
+            get_operation_info(
+                search_test_invocation_runs,
+                description="Filtered paginated search against test_invocation_runs_mv.",
             ),
         ],
     )

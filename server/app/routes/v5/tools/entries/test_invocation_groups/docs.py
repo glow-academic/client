@@ -15,6 +15,9 @@ from app.routes.v5.tools.entries.test_invocation_groups.get import (
 from app.routes.v5.tools.entries.test_invocation_groups.refresh import (
     refresh_test_invocation_groups,
 )
+from app.routes.v5.tools.entries.test_invocation_groups.search import (
+    search_test_invocation_groups,
+)
 
 
 async def get_test_invocation_groups_docs(
@@ -61,6 +64,10 @@ async def get_test_invocation_groups_docs(
             get_operation_info(
                 get_test_invocation_groups,
                 description="Batch retrieves test_invocation_groups entries by IDs from test_invocation_groups_mv.",
+            ),
+            get_operation_info(
+                search_test_invocation_groups,
+                description="Filtered paginated search against test_invocation_groups_mv.",
             ),
         ],
     )

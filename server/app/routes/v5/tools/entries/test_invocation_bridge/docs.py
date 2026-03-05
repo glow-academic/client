@@ -9,8 +9,14 @@ from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.test_invocation_bridge.create import (
     create_test_invocation_bridge,
 )
+from app.routes.v5.tools.entries.test_invocation_bridge.get import (
+    get_test_invocation_bridge,
+)
 from app.routes.v5.tools.entries.test_invocation_bridge.refresh import (
     refresh_test_invocation_bridge,
+)
+from app.routes.v5.tools.entries.test_invocation_bridge.search import (
+    search_test_invocation_bridge,
 )
 
 
@@ -40,8 +46,16 @@ async def get_test_invocation_bridge_docs(conn: asyncpg.Connection) -> DocsRespo
                 ),
             ),
             get_operation_info(
+                get_test_invocation_bridge,
+                description="Retrieves test_invocation_bridge entries by test_invocation IDs from MV.",
+            ),
+            get_operation_info(
                 refresh_test_invocation_bridge,
                 description="Refreshes test_invocation_bridge_mv concurrently to reflect latest writes.",
+            ),
+            get_operation_info(
+                search_test_invocation_bridge,
+                description="Filtered paginated search against test_invocation_bridge_mv.",
             ),
         ],
     )
