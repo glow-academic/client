@@ -4,6 +4,7 @@ import pytest
 
 from app.routes.v5.tools.entries.attempt.create import create_attempt
 from app.routes.v5.tools.entries.attempt_home.create import create_attempt_home
+from app.routes.v5.tools.entries.attempt_home.get import get_attempt_home
 from app.routes.v5.tools.entries.attempt_home.refresh import refresh_attempt_home
 from app.routes.v5.tools.entries.calls.create import create_call
 from app.routes.v5.tools.entries.groups.create import create_group
@@ -22,8 +23,6 @@ from tests.seed_ids import (
 )
 
 pytestmark = pytest.mark.asyncio
-
-MV = "attempt_home_mv"
 
 
 async def _setup(conn):
@@ -61,20 +60,12 @@ async def test_appears_after_refresh(conn):
     result = await _setup(conn)
     await refresh_attempt_home(conn)
 
-    row = await conn.fetchrow(
-        f"SELECT * FROM {MV} WHERE attempt_id = $1 AND home_id = $2",
-        result.attempt_id,
-        result.home_id,
-    )
-    assert row is not None
+    items = await get_attempt_home(conn, attempt_ids=[result.attempt_id])
+    assert len(items) >= 1
 
 
 async def test_not_visible_before_refresh(conn):
     result = await _setup(conn)
 
-    row = await conn.fetchrow(
-        f"SELECT * FROM {MV} WHERE attempt_id = $1 AND home_id = $2",
-        result.attempt_id,
-        result.home_id,
-    )
-    assert row is None
+    items = await get_attempt_home(conn, attempt_ids=[result.attempt_id])
+    assert len(items) == 0

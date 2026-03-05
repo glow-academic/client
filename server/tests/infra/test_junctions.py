@@ -1,7 +1,7 @@
 """Tests for infra.junctions — reusable junction upsert/insert helpers.
 
-Uses persona_* junction tables as a concrete test bed, but the functions
-themselves are artifact-agnostic.
+Uses temporary tables as an isolated test bed so there is no dependency
+on any real artifact/resource tables.
 """
 
 import pytest
@@ -15,41 +15,52 @@ from app.infra.junctions import (
 
 pytestmark = pytest.mark.asyncio
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
+OWNER_COL = "owner_id"
+RESOURCE_COL = "resource_id"
+TABLE = "_test_junction"
+CONSTRAINT = "_test_junction_pkey"
 
-OWNER_COL = "persona_id"
 
-
-async def _make_persona(conn):
-    return await conn.fetchval(
-        "INSERT INTO persona_artifact (generated, mcp) VALUES (false, false) RETURNING id"
+async def _setup_tables(conn):
+    """Create temporary tables that mimic the junction pattern."""
+    await conn.execute(
+        "CREATE TEMPORARY TABLE IF NOT EXISTS _test_owner ("
+        "  id uuid PRIMARY KEY DEFAULT gen_random_uuid()"
+        ")"
+    )
+    await conn.execute(
+        "CREATE TEMPORARY TABLE IF NOT EXISTS _test_resource ("
+        "  id uuid PRIMARY KEY DEFAULT gen_random_uuid()"
+        ")"
+    )
+    await conn.execute(
+        "CREATE TEMPORARY TABLE IF NOT EXISTS _test_junction ("
+        "  owner_id uuid NOT NULL REFERENCES _test_owner(id),"
+        "  resource_id uuid NOT NULL REFERENCES _test_resource(id),"
+        "  active boolean NOT NULL DEFAULT true,"
+        "  created_at timestamptz NOT NULL DEFAULT now(),"
+        "  generated boolean NOT NULL DEFAULT false,"
+        "  mcp boolean NOT NULL DEFAULT false,"
+        "  CONSTRAINT _test_junction_pkey PRIMARY KEY (owner_id, resource_id)"
+        ")"
     )
 
 
-async def _make_name(conn):
-    from uuid import uuid4
-
-    return await conn.fetchval(
-        "INSERT INTO names_resource (name) VALUES ($1) RETURNING id",
-        f"test-{uuid4().hex[:8]}",
-    )
+async def _make_owner(conn):
+    return await conn.fetchval("INSERT INTO _test_owner DEFAULT VALUES RETURNING id")
 
 
-async def _make_dept(conn):
-    return await conn.fetchval(
-        "INSERT INTO departments_resource DEFAULT VALUES RETURNING id"
-    )
+async def _make_resource(conn):
+    return await conn.fetchval("INSERT INTO _test_resource DEFAULT VALUES RETURNING id")
 
 
-async def _active_ids(conn, table, owner_id, resource_col):
+async def _active_ids(conn, owner_id):
     rows = await conn.fetch(
-        f"SELECT {resource_col} FROM {table} "
+        f"SELECT {RESOURCE_COL} FROM {TABLE} "
         f"WHERE {OWNER_COL} = $1 AND active = true",
         owner_id,
     )
-    return {r[resource_col] for r in rows}
+    return {r[RESOURCE_COL] for r in rows}
 
 
 # ---------------------------------------------------------------------------
@@ -58,20 +69,20 @@ async def _active_ids(conn, table, owner_id, resource_col):
 
 
 async def test_insert_single(conn):
-    pid = await _make_persona(conn)
-    nid = await _make_name(conn)
+    await _setup_tables(conn)
+    oid = await _make_owner(conn)
+    rid = await _make_resource(conn)
 
     await insert_single(
         conn,
-        table="persona_names_junction",
+        table=TABLE,
         owner_col=OWNER_COL,
-        owner_id=pid,
-        resource_col="names_id",
-        resource_id=nid,
+        owner_id=oid,
+        resource_col=RESOURCE_COL,
+        resource_id=rid,
     )
 
-    ids = await _active_ids(conn, "persona_names_junction", pid, "names_id")
-    assert ids == {nid}
+    assert await _active_ids(conn, oid) == {rid}
 
 
 # ---------------------------------------------------------------------------
@@ -80,37 +91,37 @@ async def test_insert_single(conn):
 
 
 async def test_insert_multi(conn):
-    pid = await _make_persona(conn)
-    d1 = await _make_dept(conn)
-    d2 = await _make_dept(conn)
+    await _setup_tables(conn)
+    oid = await _make_owner(conn)
+    r1 = await _make_resource(conn)
+    r2 = await _make_resource(conn)
 
     await insert_multi(
         conn,
-        table="persona_departments_junction",
+        table=TABLE,
         owner_col=OWNER_COL,
-        owner_id=pid,
-        resource_col="departments_id",
-        resource_ids=[d1, d2],
+        owner_id=oid,
+        resource_col=RESOURCE_COL,
+        resource_ids=[r1, r2],
     )
 
-    ids = await _active_ids(conn, "persona_departments_junction", pid, "departments_id")
-    assert ids == {d1, d2}
+    assert await _active_ids(conn, oid) == {r1, r2}
 
 
 async def test_insert_multi_empty_is_noop(conn):
-    pid = await _make_persona(conn)
+    await _setup_tables(conn)
+    oid = await _make_owner(conn)
 
     await insert_multi(
         conn,
-        table="persona_departments_junction",
+        table=TABLE,
         owner_col=OWNER_COL,
-        owner_id=pid,
-        resource_col="departments_id",
+        owner_id=oid,
+        resource_col=RESOURCE_COL,
         resource_ids=[],
     )
 
-    ids = await _active_ids(conn, "persona_departments_junction", pid, "departments_id")
-    assert ids == set()
+    assert await _active_ids(conn, oid) == set()
 
 
 # ---------------------------------------------------------------------------
@@ -119,67 +130,48 @@ async def test_insert_multi_empty_is_noop(conn):
 
 
 async def test_upsert_single_replaces_old(conn):
-    pid = await _make_persona(conn)
-    n1 = await _make_name(conn)
-    n2 = await _make_name(conn)
+    await _setup_tables(conn)
+    oid = await _make_owner(conn)
+    r1 = await _make_resource(conn)
+    r2 = await _make_resource(conn)
 
     await insert_single(
-        conn,
-        table="persona_names_junction",
-        owner_col=OWNER_COL,
-        owner_id=pid,
-        resource_col="names_id",
-        resource_id=n1,
+        conn, table=TABLE, owner_col=OWNER_COL, owner_id=oid,
+        resource_col=RESOURCE_COL, resource_id=r1,
     )
 
     await upsert_single(
-        conn,
-        table="persona_names_junction",
-        owner_col=OWNER_COL,
-        owner_id=pid,
-        resource_col="names_id",
-        resource_id=n2,
-        constraint="persona_names_pkey",
+        conn, table=TABLE, owner_col=OWNER_COL, owner_id=oid,
+        resource_col=RESOURCE_COL, resource_id=r2, constraint=CONSTRAINT,
     )
 
-    ids = await _active_ids(conn, "persona_names_junction", pid, "names_id")
-    assert ids == {n2}
+    assert await _active_ids(conn, oid) == {r2}
 
     # Old row deactivated, not deleted
     old = await conn.fetchval(
-        "SELECT active FROM persona_names_junction "
-        "WHERE persona_id = $1 AND names_id = $2",
-        pid,
-        n1,
+        f"SELECT active FROM {TABLE} "
+        f"WHERE {OWNER_COL} = $1 AND {RESOURCE_COL} = $2",
+        oid, r1,
     )
     assert old is False
 
 
 async def test_upsert_single_keeps_same(conn):
-    pid = await _make_persona(conn)
-    n1 = await _make_name(conn)
+    await _setup_tables(conn)
+    oid = await _make_owner(conn)
+    r1 = await _make_resource(conn)
 
     await insert_single(
-        conn,
-        table="persona_names_junction",
-        owner_col=OWNER_COL,
-        owner_id=pid,
-        resource_col="names_id",
-        resource_id=n1,
+        conn, table=TABLE, owner_col=OWNER_COL, owner_id=oid,
+        resource_col=RESOURCE_COL, resource_id=r1,
     )
 
     await upsert_single(
-        conn,
-        table="persona_names_junction",
-        owner_col=OWNER_COL,
-        owner_id=pid,
-        resource_col="names_id",
-        resource_id=n1,
-        constraint="persona_names_pkey",
+        conn, table=TABLE, owner_col=OWNER_COL, owner_id=oid,
+        resource_col=RESOURCE_COL, resource_id=r1, constraint=CONSTRAINT,
     )
 
-    ids = await _active_ids(conn, "persona_names_junction", pid, "names_id")
-    assert ids == {n1}
+    assert await _active_ids(conn, oid) == {r1}
 
 
 # ---------------------------------------------------------------------------
@@ -188,93 +180,63 @@ async def test_upsert_single_keeps_same(conn):
 
 
 async def test_upsert_multi_adds_new(conn):
-    pid = await _make_persona(conn)
-    d1 = await _make_dept(conn)
-    d2 = await _make_dept(conn)
+    await _setup_tables(conn)
+    oid = await _make_owner(conn)
+    r1 = await _make_resource(conn)
+    r2 = await _make_resource(conn)
 
     await insert_multi(
-        conn,
-        table="persona_departments_junction",
-        owner_col=OWNER_COL,
-        owner_id=pid,
-        resource_col="departments_id",
-        resource_ids=[d1],
+        conn, table=TABLE, owner_col=OWNER_COL, owner_id=oid,
+        resource_col=RESOURCE_COL, resource_ids=[r1],
     )
 
     await upsert_multi(
-        conn,
-        table="persona_departments_junction",
-        owner_col=OWNER_COL,
-        owner_id=pid,
-        resource_col="departments_id",
-        resource_ids=[d1, d2],
-        constraint="persona_departments_pkey",
+        conn, table=TABLE, owner_col=OWNER_COL, owner_id=oid,
+        resource_col=RESOURCE_COL, resource_ids=[r1, r2], constraint=CONSTRAINT,
     )
 
-    ids = await _active_ids(conn, "persona_departments_junction", pid, "departments_id")
-    assert ids == {d1, d2}
+    assert await _active_ids(conn, oid) == {r1, r2}
 
 
 async def test_upsert_multi_removes_old(conn):
-    pid = await _make_persona(conn)
-    d1 = await _make_dept(conn)
-    d2 = await _make_dept(conn)
+    await _setup_tables(conn)
+    oid = await _make_owner(conn)
+    r1 = await _make_resource(conn)
+    r2 = await _make_resource(conn)
 
     await insert_multi(
-        conn,
-        table="persona_departments_junction",
-        owner_col=OWNER_COL,
-        owner_id=pid,
-        resource_col="departments_id",
-        resource_ids=[d1, d2],
+        conn, table=TABLE, owner_col=OWNER_COL, owner_id=oid,
+        resource_col=RESOURCE_COL, resource_ids=[r1, r2],
     )
 
     await upsert_multi(
-        conn,
-        table="persona_departments_junction",
-        owner_col=OWNER_COL,
-        owner_id=pid,
-        resource_col="departments_id",
-        resource_ids=[d1],
-        constraint="persona_departments_pkey",
+        conn, table=TABLE, owner_col=OWNER_COL, owner_id=oid,
+        resource_col=RESOURCE_COL, resource_ids=[r1], constraint=CONSTRAINT,
     )
 
-    ids = await _active_ids(conn, "persona_departments_junction", pid, "departments_id")
-    assert ids == {d1}
+    assert await _active_ids(conn, oid) == {r1}
 
-    d2_active = await conn.fetchval(
-        "SELECT active FROM persona_departments_junction "
-        "WHERE persona_id = $1 AND departments_id = $2",
-        pid,
-        d2,
+    r2_active = await conn.fetchval(
+        f"SELECT active FROM {TABLE} "
+        f"WHERE {OWNER_COL} = $1 AND {RESOURCE_COL} = $2",
+        oid, r2,
     )
-    assert d2_active is False
+    assert r2_active is False
 
 
 async def test_upsert_multi_clears_all(conn):
-    pid = await _make_persona(conn)
-    d1 = await _make_dept(conn)
+    await _setup_tables(conn)
+    oid = await _make_owner(conn)
+    r1 = await _make_resource(conn)
 
     await insert_multi(
-        conn,
-        table="persona_departments_junction",
-        owner_col=OWNER_COL,
-        owner_id=pid,
-        resource_col="departments_id",
-        resource_ids=[d1],
+        conn, table=TABLE, owner_col=OWNER_COL, owner_id=oid,
+        resource_col=RESOURCE_COL, resource_ids=[r1],
     )
 
     await upsert_multi(
-        conn,
-        table="persona_departments_junction",
-        owner_col=OWNER_COL,
-        owner_id=pid,
-        resource_col="departments_id",
-        resource_ids=[],
-        constraint="persona_departments_pkey",
+        conn, table=TABLE, owner_col=OWNER_COL, owner_id=oid,
+        resource_col=RESOURCE_COL, resource_ids=[], constraint=CONSTRAINT,
     )
 
-    ids = await _active_ids(conn, "persona_departments_junction", pid, "departments_id")
-    assert ids == set()
-
-
+    assert await _active_ids(conn, oid) == set()

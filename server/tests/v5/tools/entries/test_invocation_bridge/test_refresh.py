@@ -13,14 +13,15 @@ from app.routes.v5.tools.entries.test_invocation.create import create_test_invoc
 from app.routes.v5.tools.entries.test_invocation_bridge.create import (
     create_test_invocation_bridge,
 )
+from app.routes.v5.tools.entries.test_invocation_bridge.get import (
+    get_test_invocation_bridge,
+)
 from app.routes.v5.tools.entries.test_invocation_bridge.refresh import (
     refresh_test_invocation_bridge,
 )
 from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 
 pytestmark = pytest.mark.asyncio
-
-MV = "test_invocation_bridge_mv"
 
 
 async def _setup(conn):
@@ -51,20 +52,16 @@ async def test_appears_after_refresh(conn):
     result = await _setup(conn)
     await refresh_test_invocation_bridge(conn)
 
-    row = await conn.fetchrow(
-        f"SELECT * FROM {MV} WHERE test_invocation_id = $1 AND invocation_id = $2",
-        result.test_invocation_id,
-        result.invocation_id,
+    items = await get_test_invocation_bridge(
+        conn, test_invocation_ids=[result.test_invocation_id]
     )
-    assert row is not None
+    assert len(items) >= 1
 
 
 async def test_not_visible_before_refresh(conn):
     result = await _setup(conn)
 
-    row = await conn.fetchrow(
-        f"SELECT * FROM {MV} WHERE test_invocation_id = $1 AND invocation_id = $2",
-        result.test_invocation_id,
-        result.invocation_id,
+    items = await get_test_invocation_bridge(
+        conn, test_invocation_ids=[result.test_invocation_id]
     )
-    assert row is None
+    assert len(items) == 0

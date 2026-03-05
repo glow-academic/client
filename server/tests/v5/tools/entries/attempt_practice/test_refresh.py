@@ -4,6 +4,7 @@ import pytest
 
 from app.routes.v5.tools.entries.attempt.create import create_attempt
 from app.routes.v5.tools.entries.attempt_practice.create import create_attempt_practice
+from app.routes.v5.tools.entries.attempt_practice.get import get_attempt_practice
 from app.routes.v5.tools.entries.attempt_practice.refresh import (
     refresh_attempt_practice,
 )
@@ -24,8 +25,6 @@ from tests.seed_ids import (
 )
 
 pytestmark = pytest.mark.asyncio
-
-MV = "attempt_practice_mv"
 
 
 async def _setup(conn):
@@ -64,20 +63,12 @@ async def test_appears_after_refresh(conn):
     result = await _setup(conn)
     await refresh_attempt_practice(conn)
 
-    row = await conn.fetchrow(
-        f"SELECT * FROM {MV} WHERE attempt_id = $1 AND practice_id = $2",
-        result.attempt_id,
-        result.practice_id,
-    )
-    assert row is not None
+    items = await get_attempt_practice(conn, attempt_ids=[result.attempt_id])
+    assert len(items) >= 1
 
 
 async def test_not_visible_before_refresh(conn):
     result = await _setup(conn)
 
-    row = await conn.fetchrow(
-        f"SELECT * FROM {MV} WHERE attempt_id = $1 AND practice_id = $2",
-        result.attempt_id,
-        result.practice_id,
-    )
-    assert row is None
+    items = await get_attempt_practice(conn, attempt_ids=[result.attempt_id])
+    assert len(items) == 0

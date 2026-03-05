@@ -5,6 +5,9 @@ import pytest
 from app.routes.v5.tools.entries.grant_consumptions.create import (
     create_grant_consumption,
 )
+from app.routes.v5.tools.entries.grant_consumptions.get import (
+    get_grant_consumptions,
+)
 from app.routes.v5.tools.entries.grant_consumptions.refresh import (
     refresh_grant_consumptions,
 )
@@ -13,8 +16,6 @@ from app.routes.v5.tools.entries.sessions.create import create_session
 from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 
 pytestmark = pytest.mark.asyncio
-
-MV = "grant_consumptions_mv"
 
 
 async def _setup(conn):
@@ -27,18 +28,12 @@ async def test_appears_after_refresh(conn):
     result = await _setup(conn)
     await refresh_grant_consumptions(conn)
 
-    row = await conn.fetchrow(
-        f"SELECT * FROM {MV} WHERE id = $1",
-        result.id,
-    )
-    assert row is not None
+    items = await get_grant_consumptions(conn, ids=[result.id])
+    assert len(items) >= 1
 
 
 async def test_not_visible_before_refresh(conn):
     result = await _setup(conn)
 
-    row = await conn.fetchrow(
-        f"SELECT * FROM {MV} WHERE id = $1",
-        result.id,
-    )
-    assert row is None
+    items = await get_grant_consumptions(conn, ids=[result.id])
+    assert len(items) == 0
