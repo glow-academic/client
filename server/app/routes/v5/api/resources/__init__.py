@@ -91,12 +91,10 @@ router.include_router(cohorts_get_router)
 router.include_router(cohorts_search_router)
 from app.routes.v5.api.resources.colors.create import router as colors_router
 from app.routes.v5.api.resources.colors.get import router as colors_get_router
-from app.routes.v5.api.resources.colors.link import router as colors_link_router
 from app.routes.v5.api.resources.colors.search import router as colors_search_router
 
 router.include_router(colors_router)
 router.include_router(colors_get_router)
-router.include_router(colors_link_router)
 router.include_router(colors_search_router)
 # NOTE: conditional_parameters removed - non-creatable (migration 328)
 # GET/Search endpoints available for two-pass architecture
@@ -114,15 +112,11 @@ router.include_router(conditional_parameters_search_router)
 # NOTE: departments removed - non-creatable, sync via artifact save (migration 328)
 # GET endpoint available for personas two-pass architecture
 from app.routes.v5.api.resources.departments.get import router as departments_get_router
-from app.routes.v5.api.resources.departments.link import (
-    router as departments_link_router,
-)
 from app.routes.v5.api.resources.departments.search import (
     router as departments_search_router,
 )
 
 router.include_router(departments_get_router)
-router.include_router(departments_link_router)
 router.include_router(departments_search_router)
 from app.routes.v5.api.resources.descriptions.create import (
     router as descriptions_router,
@@ -130,16 +124,12 @@ from app.routes.v5.api.resources.descriptions.create import (
 from app.routes.v5.api.resources.descriptions.get import (
     router as descriptions_get_router,
 )
-from app.routes.v5.api.resources.descriptions.link import (
-    router as descriptions_link_router,
-)
 from app.routes.v5.api.resources.descriptions.search import (
     router as descriptions_search_router,
 )
 
 router.include_router(descriptions_router)
 router.include_router(descriptions_get_router)
-router.include_router(descriptions_link_router)
 router.include_router(descriptions_search_router)
 # NOTE: resources (was domains) - non-creatable (migration 328)
 # GET/Search endpoints available for two-pass architecture
@@ -155,9 +145,6 @@ router.include_router(resources_search_router)
 from app.routes.v5.api.resources.documents.get import router as documents_get_router
 
 router.include_router(documents_get_router)
-from app.routes.v5.api.resources.documents.link import router as documents_link_router
-
-router.include_router(documents_link_router)
 from app.routes.v5.api.resources.documents.search import (
     router as documents_search_router,
 )
@@ -189,22 +176,18 @@ router.include_router(evals_get_router)
 router.include_router(evals_search_router)
 from app.routes.v5.api.resources.examples.create import router as examples_router
 from app.routes.v5.api.resources.examples.get import router as examples_get_router
-from app.routes.v5.api.resources.examples.link import router as examples_link_router
 from app.routes.v5.api.resources.examples.search import router as examples_search_router
 
 router.include_router(examples_router)
 router.include_router(examples_get_router)
-router.include_router(examples_link_router)
 router.include_router(examples_search_router)
 # NOTE: feedbacks removed - converted to entry table (migration 305)
 # NOTE: fields removed - non-creatable, sync via artifact save (migration 328)
 # GET endpoint available for personas two-pass architecture
 from app.routes.v5.api.resources.fields.get import router as fields_get_router
-from app.routes.v5.api.resources.fields.link import router as fields_link_router
 from app.routes.v5.api.resources.fields.search import router as fields_search_router
 
 router.include_router(fields_get_router)
-router.include_router(fields_link_router)
 router.include_router(fields_search_router)
 # Parameter fields endpoints for personas two-pass architecture
 from app.routes.v5.api.resources.parameter_fields.create import (
@@ -213,27 +196,21 @@ from app.routes.v5.api.resources.parameter_fields.create import (
 from app.routes.v5.api.resources.parameter_fields.get import (
     router as parameter_fields_get_router,
 )
-from app.routes.v5.api.resources.parameter_fields.link import (
-    router as parameter_fields_link_router,
-)
 from app.routes.v5.api.resources.parameter_fields.search import (
     router as parameter_fields_search_router,
 )
 
 router.include_router(parameter_fields_create_router)
 router.include_router(parameter_fields_get_router)
-router.include_router(parameter_fields_link_router)
 router.include_router(parameter_fields_search_router)
 # NOTE: persona_fields removed - non-creatable (migration 328)
 # NOTE: document_fields removed - non-creatable (migration 328)
 # NOTE: flags removed - non-creatable (migration 328)
 # GET endpoint available for personas two-pass architecture
 from app.routes.v5.api.resources.flags.get import router as flags_get_router
-from app.routes.v5.api.resources.flags.link import router as flags_link_router
 from app.routes.v5.api.resources.flags.search import router as flags_search_router
 
 router.include_router(flags_get_router)
-router.include_router(flags_link_router)
 router.include_router(flags_search_router)
 # NOTE: group_positions removed (migration 18)
 # NOTE: group_rubrics removed (migration 18)
@@ -242,19 +219,15 @@ router.include_router(flags_search_router)
 # NOTE: icons removed - non-creatable (migration 328)
 # GET endpoint available for personas two-pass architecture
 from app.routes.v5.api.resources.icons.get import router as icons_get_router
-from app.routes.v5.api.resources.icons.link import router as icons_link_router
 from app.routes.v5.api.resources.icons.search import router as icons_search_router
 
 router.include_router(icons_get_router)
-router.include_router(icons_link_router)
 router.include_router(icons_search_router)
 from app.routes.v5.api.resources.images.create import router as images_router
 from app.routes.v5.api.resources.images.get import router as images_get_router
-from app.routes.v5.api.resources.images.link import router as images_link_router
 
 router.include_router(images_router)
 router.include_router(images_get_router)
-router.include_router(images_link_router)
 from app.routes.v5.api.resources.images.search import router as images_search_router
 
 router.include_router(images_search_router)
@@ -265,16 +238,12 @@ from app.routes.v5.api.resources.instructions.create import (
 from app.routes.v5.api.resources.instructions.get import (
     router as instructions_get_router,
 )
-from app.routes.v5.api.resources.instructions.link import (
-    router as instructions_link_router,
-)
 from app.routes.v5.api.resources.instructions.search import (
     router as instructions_search_router,
 )
 
 router.include_router(instructions_router)
 router.include_router(instructions_get_router)
-router.include_router(instructions_link_router)
 router.include_router(instructions_search_router)
 from app.routes.v5.api.resources.items.create import router as items_router
 from app.routes.v5.api.resources.items.get import router as items_get_router
@@ -357,20 +326,16 @@ router.include_router(model_positions_get_router)
 router.include_router(model_positions_search_router)
 from app.routes.v5.api.resources.names.create import router as names_router
 from app.routes.v5.api.resources.names.get import router as names_get_router
-from app.routes.v5.api.resources.names.link import router as names_link_router
 from app.routes.v5.api.resources.names.search import router as names_search_router
 
 router.include_router(names_router)
 router.include_router(names_get_router)
-router.include_router(names_link_router)
 router.include_router(names_search_router)
 from app.routes.v5.api.resources.objectives.create import router as objectives_router
 from app.routes.v5.api.resources.objectives.get import router as objectives_get_router
-from app.routes.v5.api.resources.objectives.link import router as objectives_link_router
 
 router.include_router(objectives_router)
 router.include_router(objectives_get_router)
-router.include_router(objectives_link_router)
 from app.routes.v5.api.resources.objectives.search import (
     router as objectives_search_router,
 )
@@ -378,11 +343,9 @@ from app.routes.v5.api.resources.objectives.search import (
 router.include_router(objectives_search_router)
 from app.routes.v5.api.resources.options.create import router as options_router
 from app.routes.v5.api.resources.options.get import router as options_get_router
-from app.routes.v5.api.resources.options.link import router as options_link_router
 
 router.include_router(options_router)
 router.include_router(options_get_router)
-router.include_router(options_link_router)
 from app.routes.v5.api.resources.options.search import router as options_search_router
 
 router.include_router(options_search_router)
@@ -400,9 +363,6 @@ router.include_router(parameters_search_router)
 from app.routes.v5.api.resources.personas.get import router as personas_get_router
 
 router.include_router(personas_get_router)
-from app.routes.v5.api.resources.personas.link import router as personas_link_router
-
-router.include_router(personas_link_router)
 from app.routes.v5.api.resources.personas.search import router as personas_search_router
 
 router.include_router(personas_search_router)
@@ -428,13 +388,9 @@ from app.routes.v5.api.resources.problem_statements.create import (
 from app.routes.v5.api.resources.problem_statements.get import (
     router as problem_statements_get_router,
 )
-from app.routes.v5.api.resources.problem_statements.link import (
-    router as problem_statements_link_router,
-)
 
 router.include_router(problem_statements_router)
 router.include_router(problem_statements_get_router)
-router.include_router(problem_statements_link_router)
 # NOTE: profiles removed - non-creatable, sync via artifact save (migration 328)
 # GET endpoint available for profile context two-pass architecture
 from app.routes.v5.api.resources.profiles.get import router as profiles_get_router
@@ -442,9 +398,6 @@ from app.routes.v5.api.resources.profiles.search import router as profiles_searc
 
 router.include_router(profiles_get_router)
 router.include_router(profiles_search_router)
-from app.routes.v5.api.resources.profiles.link import router as profiles_link_router
-
-router.include_router(profiles_link_router)
 from app.routes.v5.api.resources.prompts.create import router as prompts_router
 from app.routes.v5.api.resources.prompts.get import router as prompts_get_router
 
@@ -486,11 +439,9 @@ router.include_router(qualities_get_router)
 router.include_router(qualities_search_router)
 from app.routes.v5.api.resources.questions.create import router as questions_router
 from app.routes.v5.api.resources.questions.get import router as questions_get_router
-from app.routes.v5.api.resources.questions.link import router as questions_link_router
 
 router.include_router(questions_router)
 router.include_router(questions_get_router)
-router.include_router(questions_link_router)
 # NOTE: reasoning_levels removed - non-creatable (migration 328)
 # GET/Search endpoints available for agent two-pass architecture
 from app.routes.v5.api.resources.reasoning_levels.get import (
@@ -547,11 +498,6 @@ from app.routes.v5.api.resources.scenario_flags.search import (
 
 router.include_router(scenario_flags_get_router)
 router.include_router(scenario_flags_search_router)
-from app.routes.v5.api.resources.scenario_flags.link import (
-    router as scenario_flags_link_router,
-)
-
-router.include_router(scenario_flags_link_router)
 # NOTE: scenario_personas removed - replaced by profile_personas on cohort (migration 500)
 from app.routes.v5.api.resources.profile_personas.create import (
     router as profile_personas_router,
@@ -566,11 +512,6 @@ from app.routes.v5.api.resources.profile_personas.search import (
 router.include_router(profile_personas_router)
 router.include_router(profile_personas_get_router)
 router.include_router(profile_personas_search_router)
-from app.routes.v5.api.resources.profile_personas.link import (
-    router as profile_personas_link_router,
-)
-
-router.include_router(profile_personas_link_router)
 from app.routes.v5.api.resources.scenario_positions.create import (
     router as scenario_positions_router,
 )
@@ -584,11 +525,6 @@ from app.routes.v5.api.resources.scenario_positions.search import (
 router.include_router(scenario_positions_router)
 router.include_router(scenario_positions_get_router)
 router.include_router(scenario_positions_search_router)
-from app.routes.v5.api.resources.scenario_positions.link import (
-    router as scenario_positions_link_router,
-)
-
-router.include_router(scenario_positions_link_router)
 from app.routes.v5.api.resources.scenario_rubrics.create import (
     router as scenario_rubrics_router,
 )
@@ -602,11 +538,6 @@ from app.routes.v5.api.resources.scenario_rubrics.search import (
 router.include_router(scenario_rubrics_router)
 router.include_router(scenario_rubrics_get_router)
 router.include_router(scenario_rubrics_search_router)
-from app.routes.v5.api.resources.scenario_rubrics.link import (
-    router as scenario_rubrics_link_router,
-)
-
-router.include_router(scenario_rubrics_link_router)
 from app.routes.v5.api.resources.scenario_time_limits.create import (
     router as scenario_time_limits_router,
 )
@@ -620,18 +551,11 @@ from app.routes.v5.api.resources.scenario_time_limits.search import (
 router.include_router(scenario_time_limits_router)
 router.include_router(scenario_time_limits_get_router)
 router.include_router(scenario_time_limits_search_router)
-from app.routes.v5.api.resources.scenario_time_limits.link import (
-    router as scenario_time_limits_link_router,
-)
-
-router.include_router(scenario_time_limits_link_router)
 # NOTE: scenarios removed - non-creatable, sync via artifact save (migration 328)
 # GET/Search endpoints available for simulations two-pass architecture
 from app.routes.v5.api.resources.scenarios import router as scenarios_router
-from app.routes.v5.api.resources.scenarios.link import router as scenarios_link_router
 
 router.include_router(scenarios_router)
-router.include_router(scenarios_link_router)
 # NOTE: settings removed - non-creatable, sync via artifact save (migration 328)
 # GET endpoint available for profile context two-pass architecture
 from app.routes.v5.api.resources.settings.get import router as settings_get_router
@@ -653,11 +577,6 @@ from app.routes.v5.api.resources.simulation_positions.search import (
 router.include_router(simulation_positions_router)
 router.include_router(simulation_positions_get_router)
 router.include_router(simulation_positions_search_router)
-from app.routes.v5.api.resources.simulation_positions.link import (
-    router as simulation_positions_link_router,
-)
-
-router.include_router(simulation_positions_link_router)
 from app.routes.v5.api.resources.simulation_availability.create import (
     router as simulation_availability_router,
 )
@@ -671,11 +590,6 @@ from app.routes.v5.api.resources.simulation_availability.search import (
 router.include_router(simulation_availability_router)
 router.include_router(simulation_availability_get_router)
 router.include_router(simulation_availability_search_router)
-from app.routes.v5.api.resources.simulation_availability.link import (
-    router as simulation_availability_link_router,
-)
-
-router.include_router(simulation_availability_link_router)
 # NOTE: simulations removed - non-creatable, sync via artifact save (migration 328)
 # GET/Search endpoints available for cohorts two-pass architecture
 from app.routes.v5.api.resources.simulations.get import router as simulations_get_router
@@ -685,11 +599,6 @@ from app.routes.v5.api.resources.simulations.search import (
 
 router.include_router(simulations_get_router)
 router.include_router(simulations_search_router)
-from app.routes.v5.api.resources.simulations.link import (
-    router as simulations_link_router,
-)
-
-router.include_router(simulations_link_router)
 from app.routes.v5.api.resources.slugs.create import router as slugs_router
 from app.routes.v5.api.resources.slugs.get import router as slugs_get_router
 from app.routes.v5.api.resources.slugs.search import router as slugs_search_router
@@ -760,18 +669,14 @@ router.include_router(values_get_router)
 router.include_router(values_search_router)
 from app.routes.v5.api.resources.videos.create import router as videos_router
 from app.routes.v5.api.resources.videos.get import router as videos_get_router
-from app.routes.v5.api.resources.videos.link import router as videos_link_router
 
 router.include_router(videos_router)
 router.include_router(videos_get_router)
-router.include_router(videos_link_router)
 from app.routes.v5.api.resources.voices.create import router as voices_router
 from app.routes.v5.api.resources.voices.get import router as voices_get_router
-from app.routes.v5.api.resources.voices.link import router as voices_link_router
 
 router.include_router(voices_router)
 router.include_router(voices_get_router)
-router.include_router(voices_link_router)
 from app.routes.v5.api.resources.voices.search import router as voices_search_router
 
 router.include_router(voices_search_router)
